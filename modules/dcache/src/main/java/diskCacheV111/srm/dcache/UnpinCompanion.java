@@ -96,6 +96,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +109,8 @@ import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
-import org.dcache.srm.UnpinCallbacks;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 
 import static diskCacheV111.util.CacheException.TIMEOUT;
 
@@ -121,20 +124,19 @@ public class UnpinCompanion
     private static final Logger _log =
         LoggerFactory.getLogger(UnpinCompanion.class);
 
-    private UnpinCallbacks callbacks;
     private PnfsId pnfsId;
+    private final SettableFuture<String> future = SettableFuture.create();
 
     /** Creates a new instance of StageAndPinCompanion */
-    private UnpinCompanion(PnfsId pnfsId, UnpinCallbacks callbacks)
+    private UnpinCompanion(PnfsId pnfsId)
     {
         this.pnfsId = pnfsId;
-        this.callbacks = callbacks;
     }
 
     @Override
     public void success(PinManagerUnpinMessage message)
     {
-        callbacks.Unpinned(String.valueOf(message.getPinId()));
+        future.set(String.valueOf(message.getPinId()));
     }
 
     @Override
@@ -143,16 +145,14 @@ public class UnpinCompanion
         switch (rc) {
         case TIMEOUT:
             _log.error(error.toString());
-            callbacks.Timeout();
+            future.setException(new SRMInternalErrorException("Unpinning failed due to internal timeout."));
             break;
 
         default:
             _log.error("Unpinning failed for {} [rc={},msg={}]", pnfsId, rc, error);
-
             String reason =
-                String.format("Failed to unpin file [rc=%d,msg=%s]",
-                              rc, error);
-            callbacks.UnpinningFailed(reason);
+                String.format("Failed to unpin file [rc=%d,msg=%s]", rc, error);
+            future.setException(new SRMException(reason));
             break;
         }
     }
@@ -162,50 +162,50 @@ public class UnpinCompanion
         return getClass().getName() + " " + pnfsId;
     }
 
-    public static void unpinFile(Subject subject,
-                                 PnfsId pnfsId,
-                                 long pinId,
-                                 UnpinCallbacks callbacks,
-                                 CellStub pinManagerStub)
+    public static ListenableFuture<String> unpinFile(Subject subject,
+                                                     PnfsId pnfsId,
+                                                     long pinId,
+                                                     CellStub pinManagerStub)
     {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
-        UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
+        UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
-                            new ThreadManagerMessageCallback(companion));
+                            new ThreadManagerMessageCallback<>(companion));
+        return companion.future;
     }
 
-    public static void unpinFileBySrmRequestId(Subject subject,
-                                               PnfsId pnfsId,
-                                               String requestToken,
-                                               UnpinCallbacks callbacks,
-                                               CellStub pinManagerStub)
+    public static ListenableFuture<String> unpinFileBySrmRequestId(Subject subject,
+                                                                   PnfsId pnfsId,
+                                                                   String requestToken,
+                                                                   CellStub pinManagerStub)
     {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
-        UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
+        UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(requestToken);
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
-                            new ThreadManagerMessageCallback(companion));
+                            new ThreadManagerMessageCallback<>(companion));
+        return companion.future;
     }
 
-    public static void unpinFile(Subject subject,
-                                 PnfsId pnfsId,
-                                 UnpinCallbacks callbacks,
-                                 CellStub pinManagerStub)
+    public static ListenableFuture<String> unpinFile(Subject subject,
+                                                     PnfsId pnfsId,
+                                                     CellStub pinManagerStub)
     {
         _log.info("UnpinCompanion.unpinFile({}", pnfsId);
-        UnpinCompanion companion = new UnpinCompanion(pnfsId, callbacks);
+        UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
         pinManagerStub.send(msg, PinManagerUnpinMessage.class,
-                            new ThreadManagerMessageCallback(companion));
+                            new ThreadManagerMessageCallback<>(companion));
+        return companion.future;
     }
 }
 

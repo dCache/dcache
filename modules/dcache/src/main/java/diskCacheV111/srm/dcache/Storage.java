@@ -201,7 +201,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
-import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.RemoveFileCallback;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAbortedException;
@@ -218,7 +217,6 @@ import org.dcache.srm.SRMSpaceLifetimeExpiredException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.srm.SrmReserveSpaceCallback;
-import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -1004,57 +1002,60 @@ public final class Storage
     }
 
     @Override
-    public void pinFile(SRMUser user,
-                        URI surl,
-                        String clientHost,
-                        long pinLifetime,
-                        String requestToken,
-                        PinCallbacks callbacks)
+    public CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
+                                                              URI surl,
+                                                              String clientHost,
+                                                              long pinLifetime,
+                                                              String requestToken)
     {
         try {
-            PinCompanion.pinFile(((DcacheUser) user).getSubject(),
-                                 getPath(surl),
-                                 clientHost,
-                                 callbacks,
-                                 pinLifetime,
-                                 requestToken,
-                                 _isOnlinePinningEnabled,
-                                 _poolMonitor,
-                                 _pnfsStub,
-                                 _poolManagerStub,
-                                 _pinManagerStub);
+            return Futures.makeChecked(PinCompanion.pinFile(((DcacheUser) user).getSubject(),
+                                                            getPath(surl),
+                                                            clientHost,
+                                                            pinLifetime,
+                                                            requestToken,
+                                                            _isOnlinePinningEnabled,
+                                                            _poolMonitor,
+                                                            _pnfsStub,
+                                                            _poolManagerStub,
+                                                            _pinManagerStub),
+                                       new ToSRMException());
         } catch (SRMInvalidPathException e) {
-            callbacks.FileNotFound(e.getMessage());
+            return Futures.immediateFailedCheckedFuture(new SRMInvalidPathException(e.getMessage()));
         }
     }
 
     @Override
-    public void unPinFile(SRMUser user, String fileId,
-                          UnpinCallbacks callbacks,
-                          String pinId)
+    public CheckedFuture<String, ? extends SRMException> unPinFile(SRMUser user, String fileId, String pinId)
     {
         if (PinCompanion.isFakePinId(pinId)) {
-            return;
+            return Futures.immediateCheckedFuture(null);
         }
 
-        UnpinCompanion.unpinFile(((DcacheUser) user).getSubject(),
-                                 new PnfsId(fileId), Long.parseLong(pinId), callbacks, _pinManagerStub);
+        return Futures.makeChecked(
+                UnpinCompanion.unpinFile(
+                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), Long.parseLong(pinId), _pinManagerStub),
+                new ToSRMException());
     }
 
     @Override
-    public void unPinFileBySrmRequestId(SRMUser user, String fileId,
-                                        UnpinCallbacks callbacks,
-                                        String requestToken)
+    public CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
+            SRMUser user, String fileId, String requestToken)
     {
-        UnpinCompanion.unpinFileBySrmRequestId(((DcacheUser) user).getSubject(),
-                                               new PnfsId(fileId), requestToken, callbacks, _pinManagerStub);
+        return Futures.makeChecked(
+                UnpinCompanion.unpinFileBySrmRequestId(
+                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), requestToken, _pinManagerStub),
+                new ToSRMException());
     }
 
     @Override
-    public void unPinFile(SRMUser user, String fileId, UnpinCallbacks callbacks)
+    public CheckedFuture<String, ? extends SRMException> unPinFile(
+            SRMUser user, String fileId)
     {
-        UnpinCompanion.unpinFile(((DcacheUser) user).getSubject(),
-                                 new PnfsId(fileId), callbacks, _pinManagerStub);
+        return Futures.makeChecked(
+                UnpinCompanion.unpinFile(
+                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), _pinManagerStub),
+                new ToSRMException());
     }
 
     @Override

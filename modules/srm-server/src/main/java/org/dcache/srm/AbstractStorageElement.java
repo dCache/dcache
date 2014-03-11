@@ -189,24 +189,34 @@ public interface AbstractStorageElement {
 
     /** This method allows to pin file in the Storage Element,
      * i.e. put the file in "fast access state"
-     * @param user User ID
-     * @param surl
-     * @param network address from which file will be read
+     * @param user user ID
+     * @param surl site URL
+     * @param clientHost network address from which file will be read
      *        null, if unknown
-     * @param pinLifetime Requested pin operation lifetime in millis
-     * @param requestToken - pin will save request token
+     * @param pinLifetime requested pin operation lifetime in milliseconds
+     * @param requestToken pin will save request token
      *        so that unpinning by file name and request token can take place
-     * @param callbacks This interface is used for asynchronous notification of SRM of the
-     * various actions performed to "pin" file in the storage
      */
+    public CheckedFuture<Pin, ? extends SRMException> pinFile(SRMUser user,
+                                                              URI surl,
+                                                              String clientHost,
+                                                              long pinLifetime,
+                                                              String requestToken);
 
+    /**
+     * Contains the result of a pin operation.
+     */
+    public class Pin
+    {
+        public final FileMetaData fileMetaData;
+        public final String pinId;
 
-    public void pinFile(SRMUser user,
-           URI surl,
-           String clientHost,
-           long pinLifetime,
-           String requestToken,
-           PinCallbacks callbacks);
+        public Pin(FileMetaData fileMetaData, String pinId)
+        {
+            this.fileMetaData = fileMetaData;
+            this.pinId = pinId;
+        }
+    }
 
     /**
      * @param user User ID
@@ -344,31 +354,29 @@ public interface AbstractStorageElement {
      * i.e. cancel the request to have the file in "fast access state"
      * @param user User ID
      * @param fileId Storage Element internal file ID
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to "unpin" file in the storage
      * @param pinId Unique id received during pinFile operation (?)
+     * @return A promise of an ID of the pin that was released
      */
-    public void unPinFile(SRMUser user,String fileId,UnpinCallbacks callbacks,String pinId);
+    public CheckedFuture<String, ? extends SRMException> unPinFile(
+            SRMUser user, String fileId, String pinId);
 
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"
      * @param user User ID
      * @param fileId Storage Element internal file ID
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to "unpin" file in the storage
      * @param requestToken id given to the storage  during pinFile operation
+     * @return A promise of an ID of the pin that was released
      */
-    public void unPinFileBySrmRequestId(SRMUser user,String fileId,
-            UnpinCallbacks callbacks,
-            String requestToken);
+    public CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(
+            SRMUser user, String fileId, String requestToken);
+
     /** Unpin all pins on this file that user has permission to unpin
      * @param user Authorization Record of the user
      * @param fileId Storage Element internal file ID
-     * @param callbacks This interface is used for asyncronous notification of SRM of the
-     * various actions performed to "unpin" file in the storage
+     * @return A promise of an ID of the pin that was released
      */
-    public void unPinFile(SRMUser user,String fileId,
-            UnpinCallbacks callbacks);
+    public CheckedFuture<String, ? extends SRMException> unPinFile(
+            SRMUser user, String fileId);
 
     /** This method tells SE that the specified file can be removed from the storage.
      * This is up to SE to decide when the file will be deleted
