@@ -402,8 +402,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
         try(CDC cdc = CDC.reset(_cellName, _domainName)) {
-            NDC.push("pnfsid=" + inode);
-            NDC.push("client=" + context.getRpcCall().getTransport().getRemoteSocketAddress());
+            NDC.push(inode.toString());
+            NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             deviceid4 deviceid;
             if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
                 /*
