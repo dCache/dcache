@@ -75,6 +75,9 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import org.globus.ftp.exception.ServerException;
+import org.globus.ftp.exception.UnexpectedReplyCodeException;
+import org.globus.ftp.vanilla.Reply;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 
@@ -284,16 +287,16 @@ public class Copier implements Runnable {
                             job_success=true;
                             say("execution of "+nextJob+" completed");
                             break;
-                        }
-                        catch(Exception e1) {
+                        } catch(Exception e) {
                             esay("copy failed with the error");
-                            esay(e1);
+                            esay(e);
+                            throwIfPermanent(e);
                             if(i < retry_num) {
                                 i++;
                                 esay(" try again");
                             }
                             else {
-                                throw e1;
+                                throw e;
                             }
                         }
                         try {
@@ -363,6 +366,19 @@ public class Copier implements Runnable {
             notifyAll();
         }
 
+    }
+
+    private void throwIfPermanent(Exception e) throws Exception
+    {
+        if (e instanceof ServerException) {
+            ServerException serverException = (ServerException) e;
+            if (serverException.getRootCause() instanceof UnexpectedReplyCodeException) {
+                UnexpectedReplyCodeException rootCause = (UnexpectedReplyCodeException) serverException.getRootCause();
+                if (Reply.isPermanentNegativeCompletion(rootCause.getReply())) {
+                    throw e;
+                }
+            }
+        }
     }
 
     public void copy(CopyJob job) throws Exception {
