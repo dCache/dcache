@@ -53,8 +53,8 @@ public class NfsTransferService extends AbstractCellComponent
     private InetSocketAddress[] _localSocketAddresses;
     private CellStub _door;
     private PostTransferService _postTransferService;
-
     private FaultListener _faultListener;
+    private final long _bootVerifier = System.currentTimeMillis();
 
     public void init() throws IOException, GSSException, OncRpcException {
 
@@ -101,7 +101,7 @@ public class NfsTransferService extends AbstractCellComponent
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
             final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateId));
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateId, _bootVerifier));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).

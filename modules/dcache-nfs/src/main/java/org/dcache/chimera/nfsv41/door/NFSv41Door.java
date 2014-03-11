@@ -305,11 +305,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         InetSocketAddress[] poolAddress = message.socketAddresses();
         PoolDS device = _poolDeviceMap.getByPoolName(poolName);
 
-        if (device == null || !Arrays.equals(device.getInetSocketAddress(), poolAddress)) {
+        if (device == null || isPoolRestarted(device, message)) {
             /* pool is unknown yet or has been restarted so create new device and device-id */
             final int id = this.nextDeviceID();
             final deviceid4 deviceid = deviceidOf(id);
-            final PoolDS newDevice = new PoolDS(deviceid, _stripingPattern, poolAddress);
+            final PoolDS newDevice = new PoolDS(deviceid, _stripingPattern, poolAddress, message.getVerifier());
 
             _log.debug("new mapping: {}", newDevice);
             _poolDeviceMap.add(poolName, newDevice);
@@ -327,6 +327,16 @@ public class NFSv41Door extends AbstractCellComponent implements
         if(transfer != null) {
             transfer.redirect(device);
         }
+    }
+
+    private boolean isPoolRestarted(PoolDS ds, PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+        long verifier = message.getVerifier();
+        if (verifier != 0) {
+            // pool supports verifier
+            return ds.getVerifier() != verifier;
+        }
+        // pre-2.9 pool
+        return !Arrays.equals(ds.getInetSocketAddress(), message.socketAddresses());
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
@@ -583,12 +593,14 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final deviceid4 _deviceId;
         private final InetSocketAddress[] _socketAddress;
         private final device_addr4 _deviceAddr;
+        private final long _verifier;
 
         public PoolDS(deviceid4 deviceId, StripingPattern<InetSocketAddress[]> stripingPattern,
-                InetSocketAddress[] ip) {
+                InetSocketAddress[] ip, long verifier) {
             _deviceId = deviceId;
             _socketAddress = ip;
             _deviceAddr = deviceAddrOf(stripingPattern, ip);
+            _verifier = verifier;
         }
 
         public deviceid4 getDeviceId() {
@@ -601,6 +613,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         public device_addr4 getDeviceAddr() {
             return _deviceAddr;
+        }
+
+        public long getVerifier() {
+            return _verifier;
         }
 
         @Override

@@ -49,7 +49,7 @@ public class PoolDeviceMapTest {
         deviceid4 id1 = deviceidOf(1);
         InetSocketAddress[] ip = new InetSocketAddress[]{new InetSocketAddress(0)};
 
-        NFSv41Door.PoolDS ds1 = new NFSv41Door.PoolDS(id1, _stripingPattern, ip);
+        NFSv41Door.PoolDS ds1 = new NFSv41Door.PoolDS(id1, _stripingPattern, ip, 0);
 
         _poolDeviceMap.add(name, ds1);
         NFSv41Door.PoolDS ds;
@@ -67,8 +67,8 @@ public class PoolDeviceMapTest {
         deviceid4 id2 = deviceidOf(2);
         InetSocketAddress[] ip = new InetSocketAddress[]{new InetSocketAddress(0)};
 
-        NFSv41Door.PoolDS ds1 = new NFSv41Door.PoolDS(id1, _stripingPattern, ip);
-        NFSv41Door.PoolDS ds2 = new NFSv41Door.PoolDS(id2, _stripingPattern, ip);
+        NFSv41Door.PoolDS ds1 = new NFSv41Door.PoolDS(id1, _stripingPattern, ip, 0);
+        NFSv41Door.PoolDS ds2 = new NFSv41Door.PoolDS(id2, _stripingPattern, ip, 0);
 
         _poolDeviceMap.add(name, ds1);
         _poolDeviceMap.add(name, ds2);

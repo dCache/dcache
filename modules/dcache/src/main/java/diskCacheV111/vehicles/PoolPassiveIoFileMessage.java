@@ -1,6 +1,3 @@
-/*
- * $Id: PoolPassiveIoFileMessage.java,v 1.3 2007-03-21 08:47:24 tigran Exp $
- */
 package diskCacheV111.vehicles;
 
 import java.io.Serializable;
@@ -13,15 +10,30 @@ public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessag
     private final InetSocketAddress[] _socketAddresses;
     private final T _challange;
 
+    /**
+     * Pool's restart verifier.
+     */
+    private final long _verifier;
+
     public PoolPassiveIoFileMessage(String pool, InetSocketAddress socketAddress, T challenge) {
-        this(pool, new InetSocketAddress[] { socketAddress }, challenge);
+        this(pool, new InetSocketAddress[] { socketAddress }, challenge, 0);
     }
 
-    public PoolPassiveIoFileMessage(String pool, InetSocketAddress[] socketAddresses, T challenge) {
+    /**
+     * Create message for given {@code pool}, {@code socketAddresses}, {@code challenge} and
+     * {@code boot verifier}.
+     *
+     * @param pool
+     * @param socketAddresses
+     * @param challenge
+     * @param verifier
+     */
+    public PoolPassiveIoFileMessage(String pool, InetSocketAddress[] socketAddresses, T challenge,  long verifier) {
         super(pool);
         _socketAddresses = socketAddresses;
         _socketAddress = _socketAddresses[0];
         _challange = challenge;
+        _verifier = verifier;
     }
 
     public InetSocketAddress socketAddress() {
@@ -34,6 +46,10 @@ public class PoolPassiveIoFileMessage<T extends Serializable> extends PoolMessag
          */
         return _socketAddresses == null?
                 new InetSocketAddress[] { _socketAddress } : _socketAddresses;
+    }
+
+    public long getVerifier() {
+        return _verifier;
     }
 
     public T challange() {
