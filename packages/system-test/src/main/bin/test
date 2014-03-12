@@ -205,10 +205,10 @@ def OptionParser.parse(args)
   options.includes = []
   options.excludes = []
   options.tests = {
-    :gridftp => [ [ :gridftp ],
-                  [ :gridftp, '-p 1' ],
-                  [ :gridftp, '-p 10' ],
-                  [ :gridftp, '-p 100' ],
+    :gridftp => [ [ :gridftp, '-no-g2' ],
+                  [ :gridftp, '-no-g2 -p 1' ],
+                  [ :gridftp, '-no-g2 -p 10' ],
+                  [ :gridftp, '-no-g2 -p 100' ],
                   [ :gridftp, '-g2' ],
                   [ :gridftp, '-g2', '-p 1' ],
                   [ :gridftp, '-g2', '-p 10' ],
