@@ -17,7 +17,9 @@
       <dependency>
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
-          <version>1.1.1</version>
+          <!-- Alarms server fails to configure because of an NPE
+                     with version 1.1.1 (see patch 6719) -->
+          <version>1.0.12</version>
       </dependency>
   </dependencies>
 

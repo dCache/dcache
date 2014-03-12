@@ -132,7 +132,9 @@
                 <artifactId>logback-classic</artifactId>
                 <!-- Remember to update modules/logback-test-config/pom.xml
                      when upgrading logback. -->
-                <version>1.1.1</version>
+                <!-- Alarms server fails to configure because of an NPE
+                     with version 1.1.1 (see patch 6719) -->
+                <version>1.0.12</version>
             </dependency>
             <dependency>
                 <groupId>jline</groupId>
