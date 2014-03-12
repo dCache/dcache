@@ -206,14 +206,14 @@
         <rollback/>
     </changeSet>
 
-    <changeSet id="7" author="behrmann" dbms="postgresql">
+    <changeSet id="7.1" author="behrmann" dbms="postgresql">
         <!-- A workaround to https://liquibase.jira.com/browse/CORE-1705 -->
         <comment>Postgresql specific auto increment sequences initialization</comment>
 
         <sql>
-            SELECT setval('srmlinkgroup_id_seq', (SELECT max(id) FROM srmlinkgroup));
-            SELECT setval('srmspace_id_seq', (SELECT max(id) FROM srmspace));
-            SELECT setval('srmspacefile_id_seq', (SELECT max(id) FROM srmspacefile));
+            SELECT setval('srmlinkgroup_id_seq', (SELECT greatest(max(id), 1) FROM srmlinkgroup));
+            SELECT setval('srmspace_id_seq', (SELECT greatest(max(id), 1) FROM srmspace));
+            SELECT setval('srmspacefile_id_seq', (SELECT greatest(max(id), 1) FROM srmspacefile));
         </sql>
 
         <!-- This rollback really belongs to changeset 6. It is however postgresql
