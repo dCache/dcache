@@ -1,9 +1,10 @@
 package org.dcache.http;
 
-
 import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -13,6 +14,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -24,6 +26,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
+import org.mockito.BDDMockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.python.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -31,11 +37,10 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import diskCacheV111.util.FsPath;
@@ -55,8 +60,9 @@ import static org.jboss.netty.handler.codec.http.HttpMethod.*;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.junit.Assert.assertThat;
-import static org.mockito.BDDMockito.any;
-import static org.mockito.BDDMockito.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  *  This class provides unit-tests for how the pool responses to HTTP requests
@@ -596,8 +602,7 @@ public class HttpPoolRequestHandlerTests
         private HttpMethod _method;
         private HttpVersion _version = HTTP_1_1;
         private String _uri;
-        private Map<String,List<String>> _headers =
-                new HashMap<>();
+        private Multimap<String,String> _headers = ArrayListMultimap.create();
 
         public RequestInfo(HttpMethod type)
         {
@@ -613,14 +618,7 @@ public class HttpPoolRequestHandlerTests
 
         public RequestInfo withHeader(String header, String value)
         {
-            List<String> values = _headers.get(header);
-            if( values == null) {
-                values = new LinkedList<>();
-                _headers.put(header, values);
-            }
-
-            values.add(value);
-
+            _headers.put(header, value);
             return this;
         }
 
@@ -636,14 +634,9 @@ public class HttpPoolRequestHandlerTests
             return _uri;
         }
 
-        public Set<Map.Entry<String,List<String>>> getHeaders()
+        public Multimap<String,String> getHeaders()
         {
-            return _headers.entrySet();
-        }
-
-        public Set<String> getHeaderNames()
-        {
-            return _headers.keySet();
+            return _headers;
         }
 
         public HttpVersion getProtocolVersion()
@@ -682,19 +675,36 @@ public class HttpPoolRequestHandlerTests
 
         given(request.getMethod()).willReturn(info.getMethod());
 
-        for(Map.Entry<String,List<String>> entry : info.getHeaders()) {
+        HttpHeaders headers = mock(HttpHeaders.class);
+        given(request.headers()).willReturn(headers);
+
+        final Multimap<String,String> headersSource = info.getHeaders();
+        for(Map.Entry<String,Collection<String>> entry : headersSource.asMap().entrySet()) {
             String name = entry.getKey();
-            List<String> values = entry.getValue();
+            List<String> values = Lists.newArrayList(entry.getValue());
 
             given(request.getHeaders(name)).willReturn(values);
+            given(headers.getAll(name)).willReturn(values);
+            given(headers.contains(name)).willReturn(Boolean.TRUE);
 
             String lastValue = values.isEmpty() ? null :
                     values.get(values.size()-1);
 
             given(request.getHeader(name)).willReturn(lastValue);
+            given(headers.get(name)).willReturn(lastValue);
         }
 
-        given(request.getHeaderNames()).willReturn(info.getHeaderNames());
+        given(headers.isEmpty()).willReturn(Boolean.valueOf(info.getHeaders().isEmpty()));
+        given(headers.names()).willReturn(info.getHeaders().keySet());
+        given(headers.iterator()).willAnswer(new Answer<Iterator<Map.Entry<String, String>>>() {
+            @Override
+            public Iterator<Map.Entry<String, String>> answer(InvocationOnMock invocation) throws Throwable
+            {
+                return headersSource.entries().iterator();
+            }
+        });
+
+        given(request.getHeaderNames()).willReturn(headersSource.keySet());
         given(request.getProtocolVersion()).
                 willReturn(info.getProtocolVersion());
         given(request.getUri()).willReturn(info.getUri());
@@ -709,7 +719,7 @@ public class HttpPoolRequestHandlerTests
         ChannelFuture future = mock(ChannelFuture.class);
 
         // TODO: make this more specific
-        given(channel.write(any(ChunkedInput.class))).willReturn(future);
+        given(channel.write(BDDMockito.any(ChunkedInput.class))).willReturn(future);
 
         MessageEvent event = mock(MessageEvent.class);
         given(event.getMessage()).willReturn(request);
