@@ -343,7 +343,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_TYPE,
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
-        assertThat(_response, not(hasHeader(CONTENT_LENGTH)));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "150"));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
@@ -351,7 +351,6 @@ public class HttpPoolRequestHandlerTests
         assertThat(_additionalWrites.get(0), isMultipart().
                 emptyLine().
                 line("--__AAAAAAAAAAAAAAAA__").
-                line("Content-Length: 1").
                 line("Content-Range: bytes 0-0/1024").
                 emptyLine());
         assertThat(_additionalWrites.get(1),
@@ -359,7 +358,6 @@ public class HttpPoolRequestHandlerTests
         assertThat(_additionalWrites.get(2), isMultipart().
                 emptyLine().
                 line("--__AAAAAAAAAAAAAAAA__").
-                line("Content-Length: 1").
                 line("Content-Range: bytes 1023-1023/1024").
                 emptyLine());
         assertThat(_additionalWrites.get(3),
