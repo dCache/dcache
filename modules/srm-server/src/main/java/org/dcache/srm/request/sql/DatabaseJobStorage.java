@@ -93,6 +93,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -274,23 +275,41 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     private void insertStates() throws DataAccessException
     {
-        final String insertState = "INSERT INTO " + srmStateTableName +
-                " (SELECT * FROM (VALUES (?,?)) AS new WHERE NOT EXISTS (SELECT 1 FROM " + srmStateTableName + " WHERE ID=? AND STATE=?))";
-        for (final State state : State.values()) {
-            logger.debug("inserting into {} values: {} {}",
-                    srmStateTableName, state.getStateId(), state);
-            jdbcTemplate.update(insertState, new PreparedStatementSetter()
+        jdbcTemplate.execute(new ConnectionCallback<Void>()
+        {
+            @Override
+            public Void doInConnection(Connection connection) throws SQLException, DataAccessException
             {
-                @Override
-                public void setValues(PreparedStatement ps) throws SQLException
-                {
-                    ps.setInt(1, state.getStateId());
-                    ps.setString(2, state.toString());
-                    ps.setInt(3, state.getStateId());
-                    ps.setString(4, state.toString());
+                connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+
+                EnumSet<State> states = EnumSet.allOf(State.class);
+                try (Statement s = connection.createStatement()) {
+                    ResultSet rs = s.executeQuery("SELECT ID,STATE FROM " + srmStateTableName);
+                    while (rs.next()) {
+                        int id = rs.getInt(1);
+                        String name = rs.getString(2);
+                        State state = State.getState(id);
+                        if (state.toString().equals(name)) {
+                            states.remove(state);
+                        }
+                    }
                 }
-            });
-        }
+                if (!states.isEmpty()) {
+                    try (Statement s = connection.createStatement()) {
+                        s.executeUpdate("DELETE FROM " + srmStateTableName);
+                    }
+                    try (PreparedStatement s = connection.prepareStatement("INSERT INTO " + srmStateTableName + " VALUES (?,?)")) {
+                        for (State state : State.values()) {
+                            s.setInt(1, state.getStateId());
+                            s.setString(2, state.toString());
+                            s.addBatch();
+                        }
+                        s.executeBatch();
+                    }
+                }
+                return null;
+            }
+        });
     }
 
     protected abstract J getJob(
