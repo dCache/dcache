@@ -197,6 +197,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         FsPath path = new FsPath(file.getProtocolInfo().getPath());
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        response.headers().add(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_LENGTH, file.size());
         String digest = buildDigest(file);
         if(!digest.isEmpty()) {
@@ -206,6 +207,27 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 .getName()));
         if (file.getProtocolInfo().getLocation() != null) {
             response.setHeader(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
+        }
+
+        return context.getChannel().write(response);
+    }
+
+    private static ChannelFuture sendHeadResponse(ChannelHandlerContext context,
+            MoverChannel<HttpProtocolInfo> file)
+            throws IOException {
+        FsPath path = new FsPath(file.getProtocolInfo().getPath());
+
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        response.headers().add(ACCEPT_RANGES, BYTES);
+        response.headers().add(CONTENT_LENGTH, file.size());
+        String digest = buildDigest(file);
+        if (!digest.isEmpty()) {
+            response.headers().add(DIGEST, digest);
+        }
+        response.headers().add("Content-Disposition", contentDisposition(path
+                .getName()));
+        if (file.getProtocolInfo().getLocation() != null) {
+            response.headers().add(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
         }
 
         return context.getChannel().write(response);
@@ -577,6 +599,32 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 if (future != null && (!isKeepAlive() || !chunk.isLast())) {
                     future.addListener(ChannelFutureListener.CLOSE);
                 }
+            }
+        }
+    }
+
+    @Override
+    protected void doOnHead(ChannelHandlerContext context,
+            MessageEvent event,
+            HttpRequest request) {
+        ChannelFuture future = null;
+        MoverChannel<HttpProtocolInfo> file;
+
+        try {
+            file = open(request, false);
+            future = sendHeadResponse(context, file);
+        } catch (IOException | IllegalArgumentException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, e.getMessage());
+        } catch (URISyntaxException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, "URI not valid: " + e.getMessage());
+        } catch (RuntimeException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, INTERNAL_SERVER_ERROR, e.getMessage());
+        } finally {
+            if (future != null && !isKeepAlive()) {
+                future.addListener(ChannelFutureListener.CLOSE);
             }
         }
     }
