@@ -65,20 +65,20 @@ COPYRIGHT STATUS:
  */
 package org.dcache.alarms.server;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.google.common.base.Strings;
-
-import java.io.File;
-
-import org.dcache.cells.UniversalSpringCell;
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.net.SimpleSocketServer;
 import ch.qos.logback.core.joran.spi.JoranException;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+
+import org.dcache.cells.UniversalSpringCell;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Simple POJO wrapper around {@link SimpleSocketServer} to be run inside a
@@ -87,6 +87,8 @@ import ch.qos.logback.core.joran.spi.JoranException;
  * @author arossi
  */
 public class LogEntryServerWrapper {
+    private static final Logger LOGGER
+        = LoggerFactory.getLogger(LogEntryServerWrapper.class);
 
     private String baseDir;
     private String configFile;
@@ -151,35 +153,57 @@ public class LogEntryServerWrapper {
         }
     }
 
-    public void startUp() throws JoranException {
+    public void startUp() {
         if (Strings.isNullOrEmpty(url)) {
-            LoggerFactory.getLogger("root")
-                .warn("alarms database type is OFF; server will not be started");
+            LOGGER.warn("Alarms database type is OFF; server will not be started.");
             return;
         }
 
-        checkNotNull(configFile);
-        checkNotNull(baseDir);
-        File f = new File(baseDir);
-        checkArgument(f.isDirectory());
-        checkNotNull(port);
-        checkArgument(port > 0);
+        File alarmsDirectory;
+
+        try {
+            checkNotNull(configFile);
+            checkNotNull(baseDir);
+            alarmsDirectory = new File(baseDir);
+            checkArgument(alarmsDirectory.isDirectory());
+            checkNotNull(port);
+            checkArgument(port > 0);
+        } catch (IllegalArgumentException ie) {
+            LOGGER.error("Configuration precondition failure: {}; "
+                            + "server will not be started.", ie.getMessage());
+            return;
+        }
+
         LoggerContext loggerContext
             = (LoggerContext) LoggerFactory.getILoggerFactory();
-        loggerContext.reset();
 
-        loggerContext.putProperty("alarms.dir", f.getAbsolutePath());
-        loggerContext.putProperty("alarms.db.xml.path", path);
-        loggerContext.putProperty("alarms.db.url", url);
-        loggerContext.putProperty("alarms.db.user", user);
-        loggerContext.putProperty("alarms.db.password", pass);
-        loggerContext.putProperty("alarms.db.config.path", properties);
-        loggerContext.putProperty("alarms.definitions.path", definitionsPath);
-        loggerContext.putProperty("alarms.log.root-level", level);
+        try {
+            loggerContext.reset();
 
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(loggerContext);
-        configurator.doConfigure(configFile);
+            loggerContext.putProperty("alarms.dir",
+                            alarmsDirectory.getAbsolutePath());
+            loggerContext.putProperty("alarms.db.xml.path", path);
+            loggerContext.putProperty("alarms.db.url", url);
+            loggerContext.putProperty("alarms.db.user", user);
+            loggerContext.putProperty("alarms.db.password", pass);
+            loggerContext.putProperty("alarms.db.config.path", properties);
+            loggerContext.putProperty("alarms.definitions.path",
+                            definitionsPath);
+            loggerContext.putProperty("alarms.log.root-level", level);
+
+            JoranConfigurator configurator = new JoranConfigurator();
+            configurator.setContext(loggerContext);
+
+            configurator.doConfigure(configFile);
+        } catch (JoranException je) {
+            LOGGER.error("Configuration error: {}; server will not be started.",
+                            je.getMessage());
+            return;
+        } catch (RuntimeException e) {
+            LOGGER.error("Alarm server failed to start, unexpected error; "
+                            + "this is probably a bug.", e);
+            return;
+        }
 
         server = new SimpleSocketServer(loggerContext, port);
         server.start();
