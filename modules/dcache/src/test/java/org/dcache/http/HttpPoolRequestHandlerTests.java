@@ -56,6 +56,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.Matchers.*;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.*;
 import static org.jboss.netty.handler.codec.http.HttpMethod.*;
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -152,7 +153,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=file"));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -175,7 +176,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=file"));
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
-        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -198,7 +199,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=\"file?here\""));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -222,7 +223,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename=\"file\\\\\\\"here\""));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -251,7 +252,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_DISPOSITION,
                 "attachment;filename*=UTF-8''%E1%9A%A0%E1%9B%87%E1%9A%BB"));
         assertThat(_response, not(hasHeader(DIGEST)));
-        assertThat(_response, not(hasHeader(ACCEPT_RANGES)));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
         assertThat(_additionalWrites, hasSize(1));
@@ -386,12 +387,16 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectHeadRequests()
+    public void shouldAcceptHeadRequests() throws URISyntaxException
     {
-        whenClientMakes(a(HEAD).forUri("/path/to/file"));
+        givenPoolHas(file("/path/to/file").withSize(1024));
+        givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
+        whenClientMakes(a(HEAD)
+                .forUri("/path/to/file?dcache-http-uuid=" + SOME_UUID));
 
-        assertThat(_response.getStatus(), is(NOT_IMPLEMENTED));
+        assertThat(_response.getStatus(), is(OK));
         assertThat(_response, hasHeader(CONTENT_LENGTH));
+        assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
     }
 
     @Test
