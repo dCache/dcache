@@ -4029,23 +4029,28 @@ public abstract class AbstractFtpDoorV1
             printFact(Fact.SIZE, attr.getSize());
         }
 
-        /** Writes a RFC 3659 size fact to a writer. */
+        /** Writes a RFC 3659 UNIX.Owner fact to a writer. */
         private void printOwnerFact(FileAttributes attr)
         {
             printFact(Fact.OWNER, attr.getOwner());
         }
 
-        /** Writes a RFC 3659 size fact to a writer. */
+        /** Writes a RFC 3659 UNIX.group fact to a writer. */
         private void printGroupFact(FileAttributes attr)
         {
             printFact(Fact.GROUP, attr.getGroup());
         }
 
-        /** Writes a RFC 3659 size fact to a writer. */
+        /** Writes a RFC 3659 UNIX.mode fact to a writer. */
         private void printModeFact(FileAttributes attr)
         {
+            /* ncftp client v3.2.5 requires that the mode fact starts with a '0'
+             * otherwise the value is interpreted as a base-10 value.
+             *
+             * This seems to be consistent with what Globus server does.
+             */
             printFact(Fact.MODE,
-                      Integer.toOctalString(attr.getMode() & MODE_MASK));
+                      "0" + Integer.toOctalString(attr.getMode() & MODE_MASK));
         }
 
         /** Writes a RFC 3659 type fact to a writer. */
