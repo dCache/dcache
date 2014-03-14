@@ -417,7 +417,7 @@ public class HsmStorageHandler2
         private void sendBillingInfo()
         {
             try {
-                _billingStub.send(_infoMsg);
+                _billingStub.notify(_infoMsg);
             } catch (NoRouteToCellException e) {
                 LOGGER.error("Failed to send message to billing: {}", e.getMessage());
             }
@@ -667,7 +667,7 @@ public class HsmStorageHandler2
         private void sendBillingInfo()
         {
             try {
-                _billingStub.send(_infoMsg);
+                _billingStub.notify(_infoMsg);
             } catch (NoRouteToCellException e) {
                 LOGGER.error("Failed to send message to billing: {}", e.getMessage());
             }

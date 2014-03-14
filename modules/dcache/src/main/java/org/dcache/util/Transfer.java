@@ -892,7 +892,7 @@ public class Transfer implements Comparable<Transfer>
             PoolMoverKillMessage message =
                 new PoolMoverKillMessage(pool, moverId);
             message.setReplyRequired(false);
-            _pool.send(new CellPath(poolAddress), message);
+            _pool.notify(new CellPath(poolAddress), message);
 
             /* To reduce the risk of orphans when using PNFS, we wait
              * for the transfer confirmation.
@@ -979,7 +979,7 @@ public class Transfer implements Comparable<Transfer>
             if (_fileAttributes.isDefined(STORAGEINFO)) {
                 msg.setStorageInfo(_fileAttributes.getStorageInfo());
             }
-            _billing.send(msg);
+            _billing.notify(msg);
 
             _isBillingNotified = true;
         } catch (NoRouteToCellException e) {

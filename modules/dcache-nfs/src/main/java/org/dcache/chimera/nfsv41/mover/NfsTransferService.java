@@ -101,7 +101,9 @@ public class NfsTransferService extends AbstractCellComponent
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
             final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateId, _bootVerifier));
+            _door.notify(directDoorPath,
+                         new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateId,
+                                                        _bootVerifier));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).

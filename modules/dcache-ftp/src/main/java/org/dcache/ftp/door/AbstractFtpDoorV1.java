@@ -4006,7 +4006,7 @@ public abstract class AbstractFtpDoorV1
             infoRemove.setPath(path);
             infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 
-            _billingStub.send(infoRemove);
+            _billingStub.notify(infoRemove);
         } catch (NoRouteToCellException e) {
             LOGGER.error("Can't send remove message to billing database: {}",
                     e.getMessage());

@@ -246,7 +246,7 @@ public class RequestTracker implements CellMessageReceiver
                 PoolRemoveFilesFromHSMMessage message =
                     new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
 
-                _poolStub.send(new CellPath(name), message);
+                _poolStub.notify(new CellPath(name), message);
 
                 Timeout timeout = new Timeout(hsm, name);
                 _timer.schedule(timeout, _timeout);

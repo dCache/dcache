@@ -96,7 +96,7 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
                 PoolMoverKillMessage message =
                         new PoolMoverKillMessage(pool, moverId);
                 message.setReplyRequired(false);
-                _pool.send(new CellPath(poolAddress), message);
+                _pool.notify(new CellPath(poolAddress), message);
             } catch (NoRouteToCellException e) {
                 _log.error("Failed to kill mover " + pool + "/" + moverId + ": " + e.getMessage());
             }

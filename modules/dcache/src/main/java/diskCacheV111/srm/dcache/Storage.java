@@ -1509,7 +1509,7 @@ public final class Storage
             infoMsg.setFileSize(msg.getFileAttributes().getSize());
             infoMsg.setStorageInfo(msg.getFileAttributes().getStorageInfo());
             infoMsg.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
-            _billingStub.send(infoMsg);
+            _billingStub.notify(infoMsg);
         } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException(e.getMessage(), e);
         } catch (PermissionDeniedCacheException e) {
@@ -1543,7 +1543,7 @@ public final class Storage
             infoMsg.setPnfsId(msg.getPnfsId());
             infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, reason);
             infoMsg.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
-            _billingStub.send(infoMsg);
+            _billingStub.notify(infoMsg);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
         } catch (CacheException e) {

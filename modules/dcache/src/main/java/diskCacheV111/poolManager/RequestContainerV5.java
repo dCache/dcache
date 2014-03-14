@@ -2183,7 +2183,7 @@ public class RequestContainerV5
         info.setStorageInfo(fileAttributes.getStorageInfo());
         info.setFileSize(fileAttributes.getSize());
         info.setPath(path);
-        _billing.send(info);
+        _billing.notify(info);
       } catch (NoRouteToCellException e) {
           _log.warn("Couldn't send WarningInfoMessage: {}", e.toString());
       }
@@ -2199,7 +2199,7 @@ public class RequestContainerV5
             msg.setStorageInfo(fileAttributes.getStorageInfo());
             msg.setFileSize(fileAttributes.getSize());
             msg.setProtocolInfo(protocolInfo);
-            _billing.send(msg);
+            _billing.notify(msg);
         } catch (NoRouteToCellException e) {
             _log.warn("Couldn't report hit info for {}: {}",
                       pnfsId, e.toString());

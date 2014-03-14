@@ -80,7 +80,7 @@ public class BroadcastRegistrationTask implements Runnable
                 new BroadcastRegisterMessage(_eventClass.getName(), _target);
             message.setExpires(_expires);
             message.setCancelOnFailure(_isCancelOnFailure);
-            _broadcast.send(message);
+            _broadcast.notify(message);
         } catch (NoRouteToCellException e) {
             LOGGER.error("Failed to register with broadcast cell: No route to cell {}", _broadcast.getDestinationPath());
         }
@@ -96,7 +96,7 @@ public class BroadcastRegistrationTask implements Runnable
         try {
             BroadcastUnregisterMessage message =
                 new BroadcastUnregisterMessage(_eventClass.getName(), _target);
-            _broadcast.send(message);
+            _broadcast.notify(message);
         } catch (NoRouteToCellException e) {
             LOGGER.info("Failed to unregister with broadcast cell: No route to cell {}", _broadcast.getDestinationPath());
         }

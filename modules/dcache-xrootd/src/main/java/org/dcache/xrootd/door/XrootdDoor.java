@@ -748,7 +748,7 @@ public class XrootdDoor
             PoolMoverKillMessage killMessage =
                 new PoolMoverKillMessage(pool, moverId);
             killMessage.setReplyRequired(false);
-            _poolStub.send(new CellPath(pool), killMessage);
+            _poolStub.notify(new CellPath(pool), killMessage);
         } catch (NoRouteToCellException e) {
             _log.error("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
         }

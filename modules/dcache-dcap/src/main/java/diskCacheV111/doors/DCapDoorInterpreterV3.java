@@ -1262,7 +1262,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 PinManagerPinMessage message =
                     new PinManagerPinMessage(_fileAttributes, protocolInfo,
                                              null, 0);
-                _pinManagerStub.send(message);
+                _pinManagerStub.notify(message);
                 sendReply("storageInfoAvailable", 0, "");
             } catch (NoRouteToCellException e) {
                 sendReply("storageInfoAvailable", 2,

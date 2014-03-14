@@ -158,7 +158,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setPath(mover.getPath());
 
         try {
-            _billing.send(info);
+            _billing.notify(info);
         } catch (NoRouteToCellException e) {
             LOGGER.error("Failed to register transfer in billing: {}", e.getMessage());
         }
@@ -179,7 +179,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         }
 
         try {
-            _door.send(mover.getPathToDoor(), finished);
+            _door.notify(mover.getPathToDoor(), finished);
         } catch (NoRouteToCellException e) {
             LOGGER.error("Failed to notify door about transfer termination: {}", e.getMessage());
         }

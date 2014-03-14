@@ -603,7 +603,7 @@ public class PoolV4
                         new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
                     msg.setFileSize(entry.getReplicaSize());
                     msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
-                    _billingStub.send(msg);
+                    _billingStub.notify(msg);
                 } catch (NoRouteToCellException e) {
                     _log.error("Failed to register removal in billing: {}", e.getMessage());
                 }

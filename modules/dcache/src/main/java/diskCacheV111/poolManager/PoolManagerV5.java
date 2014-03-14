@@ -416,7 +416,7 @@ public class PoolManagerV5
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
           _log.trace("sendPoolStatusRelay: {}", msg);
-          _broadcast.send(msg);
+          _broadcast.notify(msg);
        }catch(Exception ee ){
           _log.warn("Failed to send poolStatus changed message: {}", ee.toString());
        }

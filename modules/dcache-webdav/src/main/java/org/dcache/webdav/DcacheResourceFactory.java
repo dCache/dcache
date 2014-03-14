@@ -838,7 +838,7 @@ public class DcacheResourceFactory
             infoRemove.setSubject(subject);
             infoRemove.setPath(path);
             infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
-            _billingStub.send(infoRemove);
+            _billingStub.notify(infoRemove);
         } catch (NoRouteToCellException e) {
             _log.error("Cannot send remove message to billing: {}",
                        e.getMessage());

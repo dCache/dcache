@@ -474,20 +474,20 @@ public class CellStub
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
-    public void send(Serializable message)
+    public void notify(Serializable message)
         throws NoRouteToCellException
     {
         if (_destination == null) {
             throw new IllegalStateException("Destination must be specified");
         }
-        send(_destination, message);
+        notify(_destination, message);
     }
 
 
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
-    public void send(CellPath destination, Serializable message)
+    public void notify(CellPath destination, Serializable message)
         throws NoRouteToCellException
     {
         _rateLimiter.acquire();

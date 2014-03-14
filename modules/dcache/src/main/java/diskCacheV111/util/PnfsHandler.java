@@ -139,7 +139,7 @@ public class PnfsHandler
             msg.setSubject(_subject);
         }
 
-        _cellStub.send(msg);
+        _cellStub.notify(msg);
     }
 
     /**

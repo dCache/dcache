@@ -553,7 +553,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
              */
             msg.setReplyRequired(false);
 
-            _broadcasterStub.send( msg ) ;
+            _broadcasterStub.notify(msg) ;
             _log.debug("have broadcasted 'remove files' message to " +
                                 _broadcasterStub.getDestinationPath());
         } catch (NoRouteToCellException e) {
