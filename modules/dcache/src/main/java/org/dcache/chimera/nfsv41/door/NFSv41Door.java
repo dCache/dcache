@@ -428,7 +428,15 @@ public class NFSv41Door extends AbstractCellComponent implements
         } catch (FileInCacheException e) {
 	    _ioMessages.remove(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
-        } catch (InterruptedException | CacheException e) {
+        } catch (CacheException e) {
+	    _ioMessages.remove(stateid);
+            /*
+             * error 243: file is broken on tape.
+             * can't do a much. Tell it to client.
+             */
+            int status = e.getRc() == CacheException.BROKEN_ON_TAPE ? nfsstat.NFSERR_IO : nfsstat.NFSERR_LAYOUTTRYLATER;
+            throw new ChimeraNFSException(status, e.getMessage());
+        } catch (InterruptedException e) {
 	    _ioMessages.remove(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     e.getMessage());
