@@ -37,7 +37,6 @@ import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -1640,9 +1639,9 @@ public class PoolV4
 
     public static final String hh_pf = "<pnfsId>";
 
-    public FsPath ac_pf_$_1(Args args) throws CacheException, IllegalArgumentException
+    public String ac_pf_$_1(Args args) throws CacheException, IllegalArgumentException
     {
-        return _pnfs.getPathByPnfsId(new PnfsId(args.argv(0)));
+        return _pnfs.getPathByPnfsId(new PnfsId(args.argv(0))).toString();
     }
 
     public static final String hh_set_replication = "[-off] [<mgr> [<host>]]";
