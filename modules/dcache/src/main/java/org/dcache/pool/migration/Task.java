@@ -241,17 +241,16 @@ public class Task
     /** FSM Action */
     synchronized void queryLocations()
     {
-        _pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId()),
-                   PnfsGetCacheLocationsMessage.class,
-                   new Callback<PnfsGetCacheLocationsMessage>("query_")
-                   {
-                       @Override
-                       public void success(PnfsGetCacheLocationsMessage msg)
-                       {
-                           setLocations(msg.getCacheLocations());
-                           super.success(msg);
-                       }
-                   });
+        CellStub.addCallback(_pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId())),
+                             new Callback<PnfsGetCacheLocationsMessage>("query_")
+                             {
+                                 @Override
+                                 public void success(PnfsGetCacheLocationsMessage msg)
+                                 {
+                                     setLocations(msg.getCacheLocations());
+                                     super.success(msg);
+                                 }
+                             });
     }
 
     /**
@@ -313,27 +312,25 @@ public class Task
     {
         FileAttributes fileAttributes = _entry.getFileAttributes();
         _target = target;
-        _pool.send(_target,
-                   new PoolMigrationCopyReplicaMessage(_uuid,
-                                                       _source,
-                                                       fileAttributes,
-                                                       getTargetState(),
-                                                       getTargetStickyRecords(),
-                                                       _definition.computeChecksumOnUpdate,
-                                                       _definition.forceSourceMode),
-                   PoolMigrationCopyReplicaMessage.class,
-                   new Callback("copy_"));
+        CellStub.addCallback(_pool.send(_target,
+                                        new PoolMigrationCopyReplicaMessage(_uuid,
+                                                                            _source,
+                                                                            fileAttributes,
+                                                                            getTargetState(),
+                                                                            getTargetStickyRecords(),
+                                                                            _definition.computeChecksumOnUpdate,
+                                                                            _definition.forceSourceMode)),
+                             new Callback<PoolMigrationCopyReplicaMessage>("copy_"));
     }
 
     /** FSM Action */
     synchronized void cancelCopy()
     {
-        _pool.send(_target,
-                   new PoolMigrationCancelMessage(_uuid,
-                                                  _source,
-                                                  getPnfsId()),
-                   PoolMigrationCancelMessage.class,
-                   new Callback("cancel_"));
+        CellStub.addCallback(_pool.send(_target,
+                                        new PoolMigrationCancelMessage(_uuid,
+                                                                       _source,
+                                                                       getPnfsId())),
+                             new Callback<PoolMigrationCancelMessage>("cancel_"));
     }
 
     /** FSM Action */
@@ -353,9 +350,7 @@ public class Task
             String target = _target.getDestinationAddress().getCellName();
             PinManagerMovePinMessage message =
                 new PinManagerMovePinMessage(getPnfsId(), records, _source, target);
-            _pinManager.send(message,
-                             PinManagerMovePinMessage.class,
-                             callback);
+            CellStub.addCallback(_pinManager.send(message), callback);
         }
     }
 
@@ -441,11 +436,11 @@ public class Task
     /** FSM Action */
     synchronized void ping()
     {
-        _pool.send(_target,
-                   new PoolMigrationPingMessage(_uuid,
-                                                _source,
-                                                getPnfsId()),
-                   PoolMigrationPingMessage.class, new Callback("ping_"));
+        CellStub.addCallback(_pool.send(_target,
+                                        new PoolMigrationPingMessage(_uuid,
+                                                                     _source,
+                                                                     getPnfsId())),
+                             new Callback<PoolMigrationPingMessage>("ping_"));
     }
 
     /**
@@ -529,7 +524,7 @@ public class Task
         }
 
         @Override
-        public void timeout(CellPath path)
+        public void timeout(String error)
         {
             transition("timeout");
         }

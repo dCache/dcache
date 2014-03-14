@@ -1,7 +1,6 @@
 package org.dcache.pool.migration;
 
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 
 import org.dcache.cells.CellStub;
 
@@ -22,9 +21,7 @@ class PoolListByPoolGroup
     @Override
     public void refresh()
     {
-        _poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(_poolGroups),
-                          PoolManagerGetPoolsMessage.class,
-                          this);
+        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(_poolGroups)), this);
     }
 
     @Override

@@ -3,6 +3,8 @@ package org.dcache.webadmin.model.dataaccess.communication.collectors;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +26,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 
@@ -103,8 +104,8 @@ public class CellStatusCollector extends Collector {
         for (CellStatus status : _statusTargets.values()) {
             _log.debug("Sending query to : {}", status.getCellPath());
             CellInfoCallback callback = new CellInfoCallback(status, doneSignal);
-            _cellStub.send(status.getCellPath(), "xgetcellinfo",
-                    CellInfo.class, callback);
+            Futures.addCallback(_cellStub.send(status.getCellPath(), "xgetcellinfo", CellInfo.class),
+                                callback);
         }
         doneSignal.await(_cellStub.getTimeout(), _cellStub.getTimeoutUnit());
         _log.debug("Queries finished or timeouted");
@@ -172,8 +173,8 @@ public class CellStatusCollector extends Collector {
         _gPlazmaName = gPlazmaName;
     }
 
-    private class CellInfoCallback extends AbstractMessageCallback<CellInfo> {
-
+    private class CellInfoCallback implements FutureCallback<CellInfo>
+    {
         private CellStatus _cellStatus;
         private long _callbackCreationTime;
         private CountDownLatch _doneSignal;
@@ -185,7 +186,18 @@ public class CellStatusCollector extends Collector {
         }
 
         @Override
-        public void failure(int rc, Object error) {
+        public void onSuccess(CellInfo message)
+        {
+            _cellStatus.setCellInfo(message);
+            _cellStatus.updateLastAliveTime();
+            long now = System.currentTimeMillis();
+            _cellStatus.setPing(now - _callbackCreationTime);
+            _doneSignal.countDown();
+        }
+
+        @Override
+        public void onFailure(Throwable t)
+        {
             resetCellStatus();
             _doneSignal.countDown();
         }
@@ -194,15 +206,6 @@ public class CellStatusCollector extends Collector {
             _cellStatus.setPingUnreached();
             _cellStatus.setThreadCount(0);
             _cellStatus.setEventQueueSize(0);
-        }
-
-        @Override
-        public void success(CellInfo message) {
-            _cellStatus.setCellInfo(message);
-            _cellStatus.updateLastAliveTime();
-            long now = System.currentTimeMillis();
-            _cellStatus.setPing(now - _callbackCreationTime);
-            _doneSignal.countDown();
         }
     }
 

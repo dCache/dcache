@@ -1,7 +1,11 @@
 package diskCacheV111.services.web;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.PrintWriter;
 import java.util.Map;
@@ -125,28 +129,27 @@ public class PoolInfoObserverV3 extends AbstractCell
         final CountDownLatch latch = new CountDownLatch(pools.size());
         for (final CellAddressCore pool: pools) {
             final long start = System.currentTimeMillis();
-            _pool.send(new CellPath(pool), "xgetcellinfo", PoolCellInfo.class,
-                       new AbstractMessageCallback<PoolCellInfo>() {
-                @Override
-                public void success(PoolCellInfo info)
-                {
-                    long now = System.currentTimeMillis();
-                    long ping = now - start;
+            Futures.addCallback(_pool.send(new CellPath(pool), "xgetcellinfo", PoolCellInfo.class),
+                                new FutureCallback<PoolCellInfo>()
+                                {
+                                    @Override
+                                    public void onSuccess(PoolCellInfo info)
+                                    {
+                                        long now = System.currentTimeMillis();
+                                        long ping = now - start;
+                                        result.put(info.getCellName(),
+                                                   new PoolCellQueryInfo(info, ping, now));
+                                        container.addInfo(info.getCellName(), info);
+                                        latch.countDown();
+                                    }
 
-                    result.put(info.getCellName(),
-                               new PoolCellQueryInfo(info, ping, now));
-
-                    container.addInfo(info.getCellName(), info);
-                    latch.countDown();
-                }
-
-                @Override
-                public void failure(int rc, Object error)
-                {
-                    _log.warn("Failed to query {}: {}", pool, error);
-                    latch.countDown();
-                }
-            });
+                                    @Override
+                                    public void onFailure(Throwable t)
+                                    {
+                                        _log.warn("Failed to query {}: {}", pool, t.getMessage());
+                                        latch.countDown();
+                                    }
+                                });
         }
 
         latch.await();

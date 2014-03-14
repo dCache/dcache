@@ -263,51 +263,55 @@ public class PinRequestProcessor
         attributes.addAll(task.getFileAttributes().getDefinedAttributes());
         attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
 
-        _pnfsStub.send(new PnfsGetFileAttributes(task.getPnfsId(), attributes),
-                       PnfsGetFileAttributes.class,
-                       new AbstractMessageCallback<PnfsGetFileAttributes>()
-                       {
-                           @Override
-                           public void success(PnfsGetFileAttributes msg) {
-                               try {
-                                   task.setFileAttributes(msg.getFileAttributes());
+        CellStub.addCallback(
+                _pnfsStub.send(new PnfsGetFileAttributes(task.getPnfsId(), attributes)),
+                new AbstractMessageCallback<PnfsGetFileAttributes>()
+                {
+                    @Override
+                    public void success(PnfsGetFileAttributes msg)
+                    {
+                        try {
+                            task.setFileAttributes(msg.getFileAttributes());
 
-                                   /* Ensure that task is still valid
-                                    * and stays valid for the duration
-                                    * of the pool selection.
-                                    */
-                                   refreshTimeout(task, getExpirationTimeForPoolSelection());
-                                   selectReadPool(task);
-                               } catch (CacheException e) {
-                                   fail(task, e.getRc(), e.getMessage());
-                               } catch (RuntimeException e) {
-                                   fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
-                               }
-                           }
+                            /* Ensure that task is still valid
+                             * and stays valid for the duration
+                             * of the pool selection.
+                             */
+                            refreshTimeout(task, getExpirationTimeForPoolSelection());
+                            selectReadPool(task);
+                        } catch (CacheException e) {
+                            fail(task, e.getRc(), e.getMessage());
+                        } catch (RuntimeException e) {
+                            fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
+                        }
+                    }
 
-                           @Override
-                           public void failure(int rc, Object error) {
-                               fail(task, rc, error.toString());
-                           }
+                    @Override
+                    public void failure(int rc, Object error)
+                    {
+                        fail(task, rc, error.toString());
+                    }
 
-                           @Override
-                           public void noroute(CellPath path) {
-                               /* PnfsManager is unreachable. We
-                                * expect this to be a transient
-                                * problem and retry in a moment.
-                                */
-                               retry(task, RETRY_DELAY);
-                           }
+                    @Override
+                    public void noroute(CellPath path)
+                    {
+                        /* PnfsManager is unreachable. We
+                         * expect this to be a transient
+                         * problem and retry in a moment.
+                         */
+                        retry(task, RETRY_DELAY);
+                    }
 
-                           @Override
-                           public void timeout(CellPath path) {
-                               /* PnfsManager did not respond. We
-                                * expect this to be a transient
-                                * problem and retry in a moment.
-                                */
-                               retry(task, SMALL_DELAY);
-                           }
-                       });
+                    @Override
+                    public void timeout(String error)
+                    {
+                        /* PnfsManager did not respond. We
+                         * expect this to be a transient
+                         * problem and retry in a moment.
+                         */
+                        retry(task, SMALL_DELAY);
+                    }
+                });
     }
 
     private void selectReadPool(final PinTask task)
@@ -336,90 +340,89 @@ public class PinRequestProcessor
                                          checkStaging(task));
         msg.setSubject(task.getSubject());
         msg.setSkipCostUpdate(true);
-        _poolManagerStub.send(msg,
-                              PoolMgrSelectReadPoolMsg.class,
-                              new AbstractMessageCallback<PoolMgrSelectReadPoolMsg>()
-                              {
-                                  @Override
-                                  public void success(PoolMgrSelectReadPoolMsg msg)
-                                  {
-                                      try {
-                                          /* Pool manager expects us
-                                           * to keep some state
-                                           * between retries.
-                                           */
-                                          task.setReadPoolSelectionContext(msg.getContext());
+        CellStub.addCallback(_poolManagerStub.send(msg),
+                             new AbstractMessageCallback<PoolMgrSelectReadPoolMsg>()
+                             {
+                                 @Override
+                                 public void success(PoolMgrSelectReadPoolMsg msg)
+                                 {
+                                     try {
+                                         /* Pool manager expects us
+                                          * to keep some state
+                                          * between retries.
+                                          */
+                                         task.setReadPoolSelectionContext(msg.getContext());
 
-                                          /* Store the pool name in
-                                           * the DB so we know what to
-                                           * clean up if something
-                                           * fails.
-                                           */
-                                          String poolName = msg.getPoolName();
-                                          CellAddressCore poolAddress = msg.getPoolAddress();
-                                          task.getFileAttributes().getLocations().add(poolName);
-                                          setPool(task, poolName);
+                                         /* Store the pool name in
+                                          * the DB so we know what to
+                                          * clean up if something
+                                          * fails.
+                                          */
+                                         String poolName = msg.getPoolName();
+                                         CellAddressCore poolAddress = msg.getPoolAddress();
+                                         task.getFileAttributes().getLocations().add(poolName);
+                                         setPool(task, poolName);
 
-                                          setStickyFlag(task, poolName, poolAddress);
-                                      } catch (CacheException e) {
-                                          fail(task, e.getRc(), e.getMessage());
-                                      } catch (RuntimeException e) {
-                                          fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
-                                      }
-                                  }
+                                         setStickyFlag(task, poolName, poolAddress);
+                                     } catch (CacheException e) {
+                                         fail(task, e.getRc(), e.getMessage());
+                                     } catch (RuntimeException e) {
+                                         fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
+                                     }
+                                 }
 
-                                  @Override
-                                  public void failure(int rc, Object error)
-                                  {
-                                      /* Pool manager expects us to
-                                       * keep some state between
-                                       * retries.
-                                       */
-                                      task.setReadPoolSelectionContext(getReply().getContext());
-                                      switch (rc) {
-                                      case CacheException.OUT_OF_DATE:
-                                          /* Pool manager asked for a
-                                           * refresh of the request.
-                                           * Retry right away.
-                                           */
-                                          retry(task, 0);
-                                          break;
-                                      case CacheException.FILE_NOT_IN_REPOSITORY:
-                                      case CacheException.PERMISSION_DENIED:
-                                          fail(task, rc, error.toString());
-                                          break;
-                                      default:
-                                          /* Ideally we would delegate the retry to the door,
-                                           * but for the time being the retry is dealed with
-                                           * by pin manager.
-                                           */
-                                          retry(task, RETRY_DELAY);
-                                          break;
-                                      }
-                                  }
+                                 @Override
+                                 public void failure(int rc, Object error)
+                                 {
+                                     /* Pool manager expects us to
+                                      * keep some state between
+                                      * retries.
+                                      */
+                                     task.setReadPoolSelectionContext(getReply().getContext());
+                                     switch (rc) {
+                                     case CacheException.OUT_OF_DATE:
+                                         /* Pool manager asked for a
+                                          * refresh of the request.
+                                          * Retry right away.
+                                          */
+                                         retry(task, 0);
+                                         break;
+                                     case CacheException.FILE_NOT_IN_REPOSITORY:
+                                     case CacheException.PERMISSION_DENIED:
+                                         fail(task, rc, error.toString());
+                                         break;
+                                     default:
+                                         /* Ideally we would delegate the retry to the door,
+                                          * but for the time being the retry is dealed with
+                                          * by pin manager.
+                                          */
+                                         retry(task, RETRY_DELAY);
+                                         break;
+                                     }
+                                 }
 
-                                  @Override
-                                  public void noroute(CellPath path)
-                                  {
-                                      /* Pool manager is
-                                       * unreachable. We expect this
-                                       * to be transient and retry in
-                                       * a moment.
-                                       */
-                                      retry(task, RETRY_DELAY);
-                                  }
+                                 @Override
+                                 public void noroute(CellPath path)
+                                 {
+                                     /* Pool manager is
+                                      * unreachable. We expect this
+                                      * to be transient and retry in
+                                      * a moment.
+                                      */
+                                     retry(task, RETRY_DELAY);
+                                 }
 
-                                  @Override
-                                  public void timeout(CellPath path)
-                                  {
-                                      /* Pool manager did not
-                                       * respond. We expect this to be
-                                       * transient and retry in a
-                                       * moment.
-                                       */
-                                      retry(task, SMALL_DELAY);
-                                  }
-                              });
+                                 @Override
+                                 public void timeout(String message)
+                                 {
+                                     /* Pool manager did not
+                                      * respond. We expect this to be
+                                      * transient and retry in a
+                                      * moment.
+                                      */
+                                     retry(task, SMALL_DELAY);
+                                 }
+                             });
     }
 
     private void setStickyFlag(final PinTask task, final String poolName, CellAddressCore poolAddress)
@@ -442,65 +445,68 @@ public class PinRequestProcessor
                                      true,
                                      task.getSticky(),
                                      poolExpiration);
-        _poolStub.send(new CellPath(poolAddress), msg,
-                       PoolSetStickyMessage.class,
-                       new AbstractMessageCallback<PoolSetStickyMessage>() {
-                           @Override
-                           public void success(PoolSetStickyMessage msg) {
-                               try {
-                                   setToPinned(task);
-                                   task.success();
-                               } catch (CacheException e) {
-                                   fail(task, e.getRc(), e.getMessage());
-                               } catch (RuntimeException e) {
-                                   fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
-                               }
-                           }
+        CellStub.addCallback(_poolStub.send(new CellPath(poolAddress), msg),
+                             new AbstractMessageCallback<PoolSetStickyMessage>()
+                             {
+                                 @Override
+                                 public void success(PoolSetStickyMessage msg)
+                                 {
+                                     try {
+                                         setToPinned(task);
+                                         task.success();
+                                     } catch (CacheException e) {
+                                         fail(task, e.getRc(), e.getMessage());
+                                     } catch (RuntimeException e) {
+                                         fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
+                                     }
+                                 }
 
-                           @Override
-                           public void failure(int rc, Object error) {
-                               switch (rc) {
-                               case CacheException.POOL_DISABLED:
-                                   /* Pool manager had outdated
-                                    * information about the pool. Give
-                                    * it a chance to be updated and
-                                    * then retry.
-                                    */
-                                   retry(task, RETRY_DELAY);
-                                   break;
-                               case CacheException.FILE_NOT_IN_REPOSITORY:
-                                   /* Pnfs manager had stale location
-                                    * information. The pool clears
-                                    * this information as a result of
-                                    * this error, so we retry in a
-                                    * moment.
-                                    */
-                                   retry(task, SMALL_DELAY);
-                                   break;
-                               default:
-                                   fail(task, rc, error.toString());
-                                   break;
-                               }
-                           }
+                                 @Override
+                                 public void failure(int rc, Object error)
+                                 {
+                                     switch (rc) {
+                                     case CacheException.POOL_DISABLED:
+                                         /* Pool manager had outdated
+                                          * information about the pool. Give
+                                          * it a chance to be updated and
+                                          * then retry.
+                                          */
+                                         retry(task, RETRY_DELAY);
+                                         break;
+                                     case CacheException.FILE_NOT_IN_REPOSITORY:
+                                         /* Pnfs manager had stale location
+                                          * information. The pool clears
+                                          * this information as a result of
+                                          * this error, so we retry in a
+                                          * moment.
+                                          */
+                                         retry(task, SMALL_DELAY);
+                                         break;
+                                     default:
+                                         fail(task, rc, error.toString());
+                                         break;
+                                     }
+                                 }
 
-                           @Override
-                           public void noroute(CellPath path) {
-                               /* The pool must have gone down. Give
-                                * pool manager a moment to notice this
-                                * and then retry.
-                                */
-                               retry(task, RETRY_DELAY);
-                           }
+                                 @Override
+                                 public void noroute(CellPath path)
+                                 {
+                                     /* The pool must have gone down. Give
+                                      * pool manager a moment to notice this
+                                      * and then retry.
+                                      */
+                                     retry(task, RETRY_DELAY);
+                                 }
 
-                           @Override
-                           public void timeout(CellPath path) {
-                               /* No response from pool. Typically this is
-                                * because the pool is overloaded.
-                                */
-                               fail(task, CacheException.TIMEOUT,
-                                    "No reply from " + path);
-                           }
-                       });
+                                 @Override
+                                 public void timeout(String error)
+                                 {
+                                     /* No response from pool. Typically this is
+                                      * because the pool is overloaded.
+                                      */
+                                     fail(task, CacheException.TIMEOUT, error);
+                                 }
+                             });
     }
 
     private Date getExpirationTimeForNameSpaceLookup()

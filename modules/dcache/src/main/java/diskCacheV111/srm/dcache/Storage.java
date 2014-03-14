@@ -344,23 +344,23 @@ public final class Storage
                                 public ListenableFuture<Optional<Space>> reload(String token, Optional<Space> oldValue)
                                 {
                                     final SettableFuture<Optional<Space>> future = SettableFuture.create();
-                                    _spaceManagerStub.send(new GetSpaceMetaData(token), GetSpaceMetaData.class,
-                                                           new AbstractMessageCallback<GetSpaceMetaData>()
-                                                           {
-                                                               @Override
-                                                               public void success(GetSpaceMetaData message)
-                                                               {
-                                                                   future.set(Optional.fromNullable(message.getSpaces()[0]));
-                                                               }
+                                    CellStub.addCallback(
+                                            _spaceManagerStub.send(new GetSpaceMetaData(token)),
+                                            new AbstractMessageCallback<GetSpaceMetaData>()
+                                            {
+                                                @Override
+                                                public void success(GetSpaceMetaData message)
+                                                {
+                                                    future.set(Optional.fromNullable(message.getSpaces()[0]));
+                                                }
 
-                                                               @Override
-                                                               public void failure(int rc, Object error)
-                                                               {
-                                                                   CacheException exception =
-                                                                           CacheExceptionFactory.exceptionOf(rc, Objects.toString(error, null));
-                                                                   future.setException(exception);
-                                                               }
-                                                           });
+                                                public void failure(int rc, Object error)
+                                                {
+                                                    CacheException exception = CacheExceptionFactory.exceptionOf(
+                                                            rc, Objects.toString(error, null));
+                                                    future.setException(exception);
+                                                }
+                                            });
                                     return future;
                                 }
                             });
@@ -1445,36 +1445,36 @@ public final class Storage
                                              options);
 
             final SettableFuture<String> future = SettableFuture.create();
-            _pnfsStub.send(msg, PnfsCreateUploadPath.class,
-                           new AbstractMessageCallback<PnfsCreateUploadPath>()
-                           {
-                               @Override
-                               public void success(PnfsCreateUploadPath message)
-                               {
-                                   future.set(message.getUploadPath().toString());
-                               }
+            CellStub.addCallback(_pnfsStub.send(msg),
+                                 new AbstractMessageCallback<PnfsCreateUploadPath>()
+                                 {
+                                     @Override
+                                     public void success(PnfsCreateUploadPath message)
+                                     {
+                                         future.set(message.getUploadPath().toString());
+                                     }
 
-                               @Override
-                               public void failure(int rc, Object error)
-                               {
-                                   String msg = Objects.toString(error, "");
-                                   switch (rc) {
-                                   case CacheException.PERMISSION_DENIED:
-                                       future.setException(new SRMAuthorizationException(msg));
-                                       break;
-                                   case CacheException.FILE_EXISTS:
-                                       future.setException(new SRMDuplicationException(msg));
-                                       break;
-                                   case CacheException.FILE_NOT_FOUND:
-                                       future.setException(new SRMInvalidPathException(msg));
-                                       break;
-                                   case CacheException.TIMEOUT:
-                                   default:
-                                       future.setException(new SRMInternalErrorException(msg));
-                                       break;
-                                   }
-                               }
-                           });
+                                     @Override
+                                     public void failure(int rc, Object error)
+                                     {
+                                         String msg = Objects.toString(error, "");
+                                         switch (rc) {
+                                         case CacheException.PERMISSION_DENIED:
+                                             future.setException(new SRMAuthorizationException(msg));
+                                             break;
+                                         case CacheException.FILE_EXISTS:
+                                             future.setException(new SRMDuplicationException(msg));
+                                             break;
+                                         case CacheException.FILE_NOT_FOUND:
+                                             future.setException(new SRMInvalidPathException(msg));
+                                             break;
+                                         case CacheException.TIMEOUT:
+                                         default:
+                                             future.setException(new SRMInternalErrorException(msg));
+                                             break;
+                                         }
+                                     }
+                                 });
             return Futures.makeChecked(future, new ToSRMException());
         } catch (SRMInvalidPathException e) {
             return immediateFailedCheckedFuture(e);
@@ -2623,25 +2623,24 @@ public final class Storage
             throws InterruptedException
         {
             _available.acquire();
-            _spaceManagerStub.send(
-                 new GetFileSpaceTokensMessage(attributes.getPnfsId()),
-                 GetFileSpaceTokensMessage.class,
-                 new AbstractMessageCallback<GetFileSpaceTokensMessage>() {
-                      @Override
-                      public void success(GetFileSpaceTokensMessage message)
-                      {
-                           _available.release();
-                           fmd.spaceTokens = message.getSpaceTokens();
-                      }
+            CellStub.addCallback(_spaceManagerStub.send(new GetFileSpaceTokensMessage(attributes.getPnfsId())),
+                                 new AbstractMessageCallback<GetFileSpaceTokensMessage>()
+                                 {
+                                     @Override
+                                     public void success(GetFileSpaceTokensMessage message)
+                                     {
+                                         _available.release();
+                                         fmd.spaceTokens = message.getSpaceTokens();
+                                     }
 
-                      @Override
-                      public void failure(int rc, Object error)
-                      {
-                           _available.release();
-                           _log.error("Locality lookup failed: {} [{}]",
-                                      error, rc);
-                      }
-                 });
+                                     @Override
+                                     public void failure(int rc, Object error)
+                                     {
+                                         _available.release();
+                                         _log.error("Locality lookup failed: {} [{}]",
+                                                    error, rc);
+                                     }
+                                 });
         }
     }
 

@@ -165,8 +165,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PnfsGetFileAttributes(_path.toString(), attributes);
             msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
             msg.setSubject(_subject);
-            _pnfsStub.send(msg, PnfsGetFileAttributes.class,
-                           new ThreadManagerMessageCallback(this));
+            CellStub.addCallback(_pnfsStub.send(msg), new ThreadManagerMessageCallback<>(this));
         }
 
         private boolean isDirectory(FileAttributes attributes)
@@ -227,8 +226,8 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             msg.setSkipCostUpdate(true);
             msg.setSubject(_subject);
 
-            _poolManagerStub.send(msg, PoolMgrSelectReadPoolMsg.class,
-                                  new ThreadManagerMessageCallback<>(this));
+            CellStub.addCallback(_poolManagerStub.send(msg),
+                                 new ThreadManagerMessageCallback<>(this));
         }
 
         @Override
@@ -256,8 +255,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PinManagerPinMessage(_attributes, getProtocolInfo(),
                                          _requestToken, _pinLifetime);
             msg.setSubject(_subject);
-            _pinManagerStub.send(msg, PinManagerPinMessage.class,
-                                 new ThreadManagerMessageCallback<>(this));
+            CellStub.addCallback(_pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(this));
         }
 
         @Override

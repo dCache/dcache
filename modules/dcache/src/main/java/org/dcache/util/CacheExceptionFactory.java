@@ -1,5 +1,7 @@
 package org.dcache.util;
 
+import java.util.Objects;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -97,10 +99,10 @@ public class CacheExceptionFactory {
     public static CacheException exceptionOf(Message message)
     {
         Object error = message.getErrorObject();
-        if (error instanceof CacheException) {
+        if (error != null && error.getClass() == CacheException.class) {
             CacheException ce = (CacheException) error;
-            return exceptionOf(ce.getRc(), ce.getMessage());
+            return exceptionOf(ce.getRc(), ce.getMessage(), ce.getCause());
         }
-        return exceptionOf(message.getReturnCode(), String.valueOf(error));
+        return exceptionOf(message.getReturnCode(), Objects.toString(error, null));
     }
 }

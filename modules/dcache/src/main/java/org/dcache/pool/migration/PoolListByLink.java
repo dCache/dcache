@@ -20,9 +20,7 @@ class PoolListByLink
     @Override
     public void refresh()
     {
-        _poolManager.send(new PoolManagerGetPoolsByLinkMessage(_link),
-                          PoolManagerGetPoolsMessage.class,
-                          this);
+        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByLinkMessage(_link)), this);
     }
 
     @Override

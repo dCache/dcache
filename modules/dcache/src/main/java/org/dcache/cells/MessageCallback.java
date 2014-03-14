@@ -12,5 +12,5 @@ public interface MessageCallback<T>
     void success();
     void failure(int rc, Object error);
     void noroute(CellPath cell);
-    void timeout(CellPath cell);
+    void timeout(String error);
 }

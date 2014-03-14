@@ -126,9 +126,9 @@ public final class SrmReleaseSpaceCompanion
     }
 
     @Override
-    public void timeout(CellPath path)
+    public void timeout(String error)
     {
-        LOGGER.error("Timeout waiting for answer from SrmSpaceManager");
+        LOGGER.error(error);
         callback.internalError("Space manager timeout");
     }
 
@@ -146,8 +146,7 @@ public final class SrmReleaseSpaceCompanion
             SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(callback);
             Release release = new Release(token, spaceToReleaseInBytes);
             release.setSubject(subject);
-            spaceManagerStub.send(release, Release.class,
-                    new ThreadManagerMessageCallback<>(companion));
+            CellStub.addCallback(spaceManagerStub.send(release), new ThreadManagerMessageCallback<>(companion));
         } catch (NumberFormatException e) {
             callback.invalidRequest("No such space");
         }

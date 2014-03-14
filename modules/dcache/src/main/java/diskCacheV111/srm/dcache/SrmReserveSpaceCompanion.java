@@ -128,9 +128,9 @@ public final class SrmReserveSpaceCompanion
     }
 
     @Override
-    public void timeout(CellPath path)
+    public void timeout(String error)
     {
-        LOGGER.error("Timeout waiting for answer from SrmSpaceManager");
+        LOGGER.error(error);
         callback.internalError("Space manager timeout");
     }
 
@@ -177,8 +177,7 @@ public final class SrmReserveSpaceCompanion
                         spaceReservationLifetime,
                         description);
         reserve.setSubject(subject);
-        spaceManagerStub.send(reserve, Reserve.class,
-                new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(spaceManagerStub.send(reserve), new ThreadManagerMessageCallback<>(companion));
     }
 }
 

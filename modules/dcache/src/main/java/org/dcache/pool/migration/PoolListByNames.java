@@ -22,9 +22,7 @@ public class PoolListByNames
     @Override
     public void refresh()
     {
-        _poolManager.send(new PoolManagerGetPoolsByNameMessage(_names),
-                          PoolManagerGetPoolsMessage.class,
-                          this);
+        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByNameMessage(_names)), this);
     }
 
     @Override

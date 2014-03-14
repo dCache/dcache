@@ -477,7 +477,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
          * As a work around that we simulate synchronous behavior.
          */
         synchronized(callback) {
-            _poolStub.send(new CellPath(poolName), msg, PoolRemoveFilesMessage.class, callback);
+            CellStub.addCallback(_poolStub.send(new CellPath(poolName), msg), callback);
             callback.wait(_replyTimeoutUnit.toMillis(_replyTimeout));
         }
     }
@@ -906,7 +906,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
 
         @Override
-        public synchronized void timeout(CellPath path) {
+        public synchronized void timeout(String error) {
             try {
                 _log.warn("remove message to {} timed out.", _poolName);
                 _poolsBlackList.put(_poolName, System.currentTimeMillis());

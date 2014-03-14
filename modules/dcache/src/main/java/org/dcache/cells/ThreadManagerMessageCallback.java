@@ -62,13 +62,13 @@ public class ThreadManagerMessageCallback<T>
     }
 
     @Override
-    public void timeout(final CellPath path)
+    public void timeout(final String error)
     {
         ThreadManager.execute(new Runnable() {
                 @Override
                 public void run()
                 {
-                    _inner.timeout(path);
+                    _inner.timeout(error);
                 }
             });
     }

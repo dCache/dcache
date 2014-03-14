@@ -1,8 +1,13 @@
 package org.dcache.cells;
 
+import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +25,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.util.CacheExceptionFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -180,7 +186,7 @@ public class CellStub
     /**
      * Sets a limit on the request rate.
      *
-     * Places an uppper bound on the number of requests issues per second on this
+     * Places an upper bound on the number of requests issues per second on this
      * CellStub.
      *
      * In contrast to limiting the number of concurrent requests, the rate limiter
@@ -434,41 +440,33 @@ public class CellStub
         return (T)replyObject;
     }
 
-    /**
-     * Sends <code>message</code> asynchronously, expecting a result
-     * of type <code>type</code>. The result is delivered to
-     * <code>callback</code>.
-     */
-    public <T extends Serializable> void send(Serializable message,
-                                              Class<T> type,
-                                              MessageCallback<T> callback)
+    public <T extends Message> ListenableFuture<T> send(T message)
     {
-        if (_destination == null) {
-            throw new IllegalStateException("Destination must be specified");
-        }
-        send(_destination, message, type, callback);
+        return send(_destination, message);
     }
 
-    /**
-     * Sends <code>message</code> asynchronously to
-     * <code>destination</code>, expecting a result of type
-     * <code>type</code>. The result is delivered to
-     * <code>callback</code>.
-     */
-    public <T extends Serializable> void send(CellPath destination,
-                                              Serializable message,
-                                              Class<? extends T> type,
-                                              MessageCallback<T> callback)
+    @SuppressWarnings("unchecked")
+    public <T extends Message> ListenableFuture<T> send(CellPath destination, T message)
     {
-        if (message instanceof Message) {
-            ((Message) message).setReplyRequired(true);
-        }
+        message.setReplyRequired(true);
+        return send(destination, message, (Class<T>) message.getClass());
+    }
+
+    public <T extends Serializable> ListenableFuture<T> send(Serializable message, Class<T> type)
+    {
+        return send(_destination, message, type);
+    }
+
+    public <T extends Serializable> ListenableFuture<T> send(
+            CellPath destination, Serializable message, Class<T> type)
+    {
+        CellMessage envelope = new CellMessage(checkNotNull(destination), checkNotNull(message));
         Semaphore concurrency = _concurrency;
+        CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
-        _endpoint.sendMessage(new CellMessage(destination, message),
-                              new CellCallback<>(type, callback, concurrency),
-                              getTimeoutInMillis());
+        _endpoint.sendMessage(envelope, future, getTimeoutInMillis());
+        return future;
     }
 
     /**
@@ -483,7 +481,6 @@ public class CellStub
         notify(_destination, message);
     }
 
-
     /**
      * Sends <code>message</code> to <code>destination</code>.
      */
@@ -494,69 +491,106 @@ public class CellStub
         _endpoint.sendMessage(new CellMessage(destination, message));
     }
 
-    /**
-     * Adapter class to wrap MessageCallback in CellMessageAnswerable.
-     */
-    static class CellCallback<T> implements CellMessageAnswerable
+    public static <T extends Message> void addCallback(
+            final ListenableFuture<T> future, final MessageCallback<? super T> callback)
     {
-        private final MessageCallback<T> _callback;
+        addCallback(future, callback, MoreExecutors.sameThreadExecutor());
+    }
+
+    public static <T extends Message> void addCallback(
+            final ListenableFuture<T> future, final MessageCallback<? super T> callback, Executor executor)
+    {
+        future.addListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    T reply = getUninterruptibly(future);
+                    callback.setReply(reply);
+                    if (reply.getReturnCode() != 0) {
+                        callback.failure(reply.getReturnCode(), reply.getErrorObject());
+                    }
+                    callback.success();
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof TimeoutCacheException) {
+                        callback.timeout(cause.getMessage());
+                    } else if (cause instanceof CacheException) {
+                        CacheException cacheException = (CacheException) cause;
+                        callback.failure(cacheException.getRc(), cacheException.getMessage());
+                    } else if (cause instanceof NoRouteToCellException) {
+                        callback.noroute(((NoRouteToCellException) cause).getDestinationPath());
+                    } else {
+                        callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause);
+                    }
+                }
+            }
+        }, executor);
+    }
+
+    /**
+     * Adapter class to turn a CellMessageAnswerable callback into a ListenableFuture.
+     */
+    static class CallbackFuture<T> extends AbstractFuture<T> implements CellMessageAnswerable
+    {
         private final Class<? extends T> _type;
         private final Semaphore _concurrency;
 
-        CellCallback(Class<? extends T> type, MessageCallback<T> callback, Semaphore concurrency)
+        CallbackFuture(Class<? extends T> type, Semaphore concurrency)
         {
-            _callback = callback;
             _type = type;
             _concurrency = concurrency;
         }
 
         @Override
+        protected boolean set(T value)
+        {
+            boolean result = super.set(value);
+            if (result) {
+                _concurrency.release();
+            }
+            return result;
+        }
+
+        @Override
+        protected boolean setException(Throwable throwable)
+        {
+            boolean result = super.setException(throwable);
+            if (result) {
+                _concurrency.release();
+            }
+            return result;
+        }
+
+        @Override
         public void answerArrived(CellMessage request, CellMessage answer)
         {
-            _concurrency.release();
             Object o = answer.getMessageObject();
             if (_type.isInstance(o)) {
-                _callback.setReply(_type.cast(o));
-                if (o instanceof Message) {
-                    Message msg = (Message) o;
-                    int rc = msg.getReturnCode();
-                    if (rc == 0) {
-                        _callback.success();
-                    } else {
-                        _callback.failure(rc, msg.getErrorObject());
-                    }
-                } else {
-                    _callback.success();
-                }
+                set(_type.cast(o));
             } else if (o instanceof Exception) {
                 exceptionArrived(request, (Exception) o);
             } else {
-                _callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                  "Unexpected reply: " + o);
+                setException(new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                                "Unexpected reply: " + o));
             }
         }
 
         @Override
         public void answerTimedOut(CellMessage request)
         {
-            _concurrency.release();
-            _callback.timeout(request.getDestinationPath());
+            setException(new TimeoutCacheException("Request to " + request.getDestinationPath() + " timed out."));
         }
 
         @Override
         public void exceptionArrived(CellMessage request, Exception exception)
         {
-            _concurrency.release();
-            if (exception instanceof NoRouteToCellException) {
-                _callback.noroute(request.getDestinationPath());
-            } else if (exception instanceof CacheException) {
+            if (exception.getClass() == CacheException.class) {
                 CacheException e = (CacheException) exception;
-                _callback.failure(e.getRc(),
-                        CacheExceptionFactory.exceptionOf(e.getRc(), e.getMessage()));
-            } else {
-                _callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                  exception.toString());
+                exception = CacheExceptionFactory.exceptionOf(e.getRc(), e.getMessage(), e);
             }
+            setException(exception);
         }
     }
 

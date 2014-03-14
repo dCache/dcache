@@ -173,8 +173,7 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
-        pinManagerStub.send(msg, PinManagerUnpinMessage.class,
-                            new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(companion));
         return companion.future;
     }
 
@@ -189,8 +188,7 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(requestToken);
         msg.setSubject(subject);
-        pinManagerStub.send(msg, PinManagerUnpinMessage.class,
-                            new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(companion));
         return companion.future;
     }
 
@@ -203,8 +201,7 @@ public class UnpinCompanion
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
-        pinManagerStub.send(msg, PinManagerUnpinMessage.class,
-                            new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(companion));
         return companion.future;
     }
 }

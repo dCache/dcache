@@ -133,7 +133,7 @@ public class RemoveFileCompanion
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
-        pnfsStub.send(message, PnfsDeleteEntryMessage.class, companion);
+        CellStub.addCallback(pnfsStub.send(message), companion);
     }
 
     @Override

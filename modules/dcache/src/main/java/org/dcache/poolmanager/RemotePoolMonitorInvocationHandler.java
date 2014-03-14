@@ -147,8 +147,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
         @Override
         public void run()
         {
-            _poolManagerStub.send(new PoolManagerGetPoolMonitor(),
-                    PoolManagerGetPoolMonitor.class, this);
+            CellStub.addCallback(_poolManagerStub.send(new PoolManagerGetPoolMonitor()), this);
         }
 
         @Override

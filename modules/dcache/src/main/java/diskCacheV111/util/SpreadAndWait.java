@@ -1,6 +1,11 @@
 // $Id: SpreadAndWait.java,v 1.6 2007-07-08 17:02:48 tigran Exp $
 package diskCacheV111.util;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+
+import javax.annotation.Nullable;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -23,21 +28,21 @@ public class SpreadAndWait<T extends Serializable>
         }
 
 	public synchronized void send(final CellPath destination, Class<? extends T> type, Serializable msg)  {
-            _stub.send(destination, msg, type,
-                    new AbstractMessageCallback<T>()
-                    {
-                        @Override
-                        public void success(T answer)
-                        {
-                            SpreadAndWait.this.success(destination, answer);
-                        }
+            Futures.addCallback(_stub.send(destination, msg, type),
+                                new FutureCallback<T>()
+                                {
+                                    @Override
+                                    public void onSuccess(T answer)
+                                    {
+                                        SpreadAndWait.this.success(destination, answer);
+                                    }
 
-                        @Override
-                        public void failure(int rc, Object error)
-                        {
-                            SpreadAndWait.this.failure();
-                        }
-                    });
+                                    @Override
+                                    public void onFailure(Throwable t)
+                                    {
+                                        SpreadAndWait.this.failure();
+                                    }
+                                });
             _pending++;
 	}
 

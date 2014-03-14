@@ -38,8 +38,8 @@ public abstract class AbstractMessageCallback<T> implements MessageCallback<T>
     }
 
     @Override
-    public void timeout(CellPath path)
+    public void timeout(String message)
     {
-        failure(CacheException.TIMEOUT, "No reply from " + path);
+        failure(CacheException.TIMEOUT, message);
     }
 }

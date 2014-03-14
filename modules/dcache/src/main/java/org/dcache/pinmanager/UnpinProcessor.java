@@ -109,29 +109,29 @@ public class UnpinProcessor implements Runnable
                                      false,
                                      pin.getSticky(),
                                      0);
-        _poolStub.send(new CellPath(pool.getAddress()), msg,
-                       PoolSetStickyMessage.class,
-                       new AbstractMessageCallback<PoolSetStickyMessage>() {
-                           @Override
-                           public void success(PoolSetStickyMessage msg)
-                           {
-                               idle.release();
-                               _dao.deletePin(pin);
-                           }
+        CellStub.addCallback(_poolStub.send(new CellPath(pool.getAddress()), msg),
+                             new AbstractMessageCallback<PoolSetStickyMessage>()
+                             {
+                                 @Override
+                                 public void success(PoolSetStickyMessage msg)
+                                 {
+                                     idle.release();
+                                     _dao.deletePin(pin);
+                                 }
 
-                           @Override
-                           public void failure(int rc, Object error)
-                           {
-                               idle.release();
-                               switch (rc) {
-                               case CacheException.FILE_NOT_IN_REPOSITORY:
-                                   _dao.deletePin(pin);
-                                   break;
-                               default:
-                                   _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
-                                   break;
-                               }
-                           }
-                       });
+                                 @Override
+                                 public void failure(int rc, Object error)
+                                 {
+                                     idle.release();
+                                     switch (rc) {
+                                     case CacheException.FILE_NOT_IN_REPOSITORY:
+                                         _dao.deletePin(pin);
+                                         break;
+                                     default:
+                                         _logger.warn("Failed to clear sticky flag: {} [{}]", error, rc);
+                                         break;
+                                     }
+                                 }
+                             });
     }
 }

@@ -732,7 +732,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
          * Respond to client in the case of a timeout.
          */
         @Override
-        public void timeout(CellPath path) {
+        public void timeout(String error) {
             respond(_context, _event,
                     withError(_request,
                               kXR_ServerError,
