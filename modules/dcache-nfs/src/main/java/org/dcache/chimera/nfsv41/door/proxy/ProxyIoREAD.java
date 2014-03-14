@@ -144,7 +144,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                 throw (ChimeraNFSException)t;
             }
             int status = nfsstat.NFSERR_IO;
-            if (t instanceof CacheException ) {
+            if ((t instanceof CacheException) && ((CacheException)t).getRc() != CacheException.BROKEN_ON_TAPE) {
                 status = nfsstat.NFSERR_DELAY;
             }
             throw new ChimeraNFSException(status, t.getMessage());
