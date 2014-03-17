@@ -57,7 +57,6 @@ import diskCacheV111.vehicles.StorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Argument;
@@ -111,7 +110,7 @@ public class HsmStorageHandler2
     private HsmSet _hsmSet;
     private PnfsHandler _pnfs;
     private ChecksumModule _checksumModule;
-    private String _flushMessageTarget;
+    private CellStub _flushNotificationStub;
     private CellStub _billingStub;
 
     private abstract class Info implements Queable
@@ -216,9 +215,9 @@ public class HsmStorageHandler2
     }
 
     @Required
-    public void setFlushMessageTarget(String flushMessageTarget)
+    public void setFlushNotificationStub(CellStub stub)
     {
-        _flushMessageTarget = flushMessageTarget;
+        _flushNotificationStub = stub;
     }
 
     @PreDestroy
@@ -871,13 +870,10 @@ public class HsmStorageHandler2
                 PoolFileFlushedMessage poolFileFlushedMessage =
                     new PoolFileFlushedMessage(getCellName(), getPnfsId(), fileAttributes);
                 poolFileFlushedMessage.setReplyRequired(false);
-                CellMessage msg =
-                    new CellMessage(new CellPath(_flushMessageTarget),
-                                    poolFileFlushedMessage);
-                sendMessage(msg);
+                _flushNotificationStub.notify(poolFileFlushedMessage);
             } catch (NoRouteToCellException e) {
                 LOGGER.info("Failed to send message to {}: {}",
-                        _flushMessageTarget, e.getMessage());
+                            _flushNotificationStub, e.getMessage());
             }
         }
     }

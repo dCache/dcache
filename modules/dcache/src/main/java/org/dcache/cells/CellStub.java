@@ -491,6 +491,13 @@ public class CellStub
         _endpoint.sendMessage(new CellMessage(destination, message));
     }
 
+    @Override
+    public String toString()
+    {
+        CellPath path = getDestinationPath();
+        return (path != null) ? path.toString() : super.toString();
+    }
+
     public static <T extends Message> void addCallback(
             final ListenableFuture<T> future, final MessageCallback<? super T> callback)
     {

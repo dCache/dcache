@@ -2178,9 +2178,8 @@ public final class Storage
             TransferInfo info = callerIdToHandler.get(callerId);
             if (info != null) {
                 CancelTransferMessage cancel =
-                    new
-                    CancelTransferMessage(info.transferId, callerId);
-                sendMessage(new CellMessage(info.cellPath,cancel));
+                    new CancelTransferMessage(info.transferId, callerId);
+                _transferManagerStub.notify(cancel);
             }
         } catch (NoRouteToCellException e) {
             _log.error("Failed to kill remote transfer: " + e.getMessage());
@@ -2294,8 +2293,7 @@ public final class Storage
             _log.debug("received first RemoteGsiftpTransferManagerMessage "
                                + "reply from transfer manager, id =" + id);
             TransferInfo info =
-                new TransferInfo(id, callbacks,
-                                 _transferManagerStub.getDestinationPath());
+                new TransferInfo(id, callbacks);
             _log.debug("storing info for callerId = {}", id);
             callerIdToHandler.put(id, info);
             return String.valueOf(id);
@@ -2317,15 +2315,11 @@ public final class Storage
     {
         final long transferId;
         final CopyCallbacks callbacks;
-        final CellPath cellPath;
 
-        public TransferInfo(long transferId,
-                            CopyCallbacks callbacks,
-                            CellPath cellPath)
+        public TransferInfo(long transferId, CopyCallbacks callbacks)
         {
             this.transferId = transferId;
             this.callbacks = callbacks;
-            this.cellPath = cellPath;
         }
     }
 

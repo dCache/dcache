@@ -89,57 +89,9 @@ public class AbstractCellComponent
      */
     protected void sendMessage(CellMessage envelope)
         throws SerializationException,
-               NoRouteToCellException
+            NoRouteToCellException
     {
         _endpoint.sendMessage(envelope);
-    }
-
-    /**
-     * Sends <code>envelope</code>. The <code>callback</code> argument
-     * (which has to be non-null) allows to specify an object which is
-     * informed as soon as an has answer arrived or if the timeout has
-     * expired.
-     *
-     * @param envelope the cell message to be sent.
-     * @param callback specifies an object class which will be informed
-     *                 as soon as the message arrives.
-     * @param timeout  is the timeout in msec.
-     * @exception SerializationException if the payload object of this
-     *            message is not serializable.
-     */
-    protected void sendMessage(CellMessage envelope,
-                               CellMessageAnswerable callback,
-                               long timeout)
-        throws SerializationException
-    {
-        _endpoint.sendMessage(envelope, callback, timeout);
-    }
-
-    /**
-     * Sends <code>envelope</code> and waits <code>timeout</code>
-     * milliseconds for an answer to arrive.  The answer will bypass
-     * the ordinary queuing mechanism and will be delivered before any
-     * other asynchronous message.  The answer need to have the
-     * getLastUOID set to the UOID of the message send with
-     * sendAndWait. If the answer does not arrive withing the specified
-     * time interval, the method returns <code>null</code> and the
-     * answer will be handled as if it was an ordinary asynchronous
-     * message.
-     *
-     * @param envelope the cell message to be sent.
-     * @param timeout milliseconds to wait for an answer.
-     * @return the answer or null if the timeout was reached.
-     * @throws SerializationException if the payload object of this
-     *         message is not serializable.
-     * @throws NoRouteToCellException if the destination
-     *         couldnot be reached.
-     */
-    protected CellMessage sendAndWait(CellMessage envelope, long timeout)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException
-    {
-        return _endpoint.sendAndWait(envelope, timeout);
     }
 
     /**

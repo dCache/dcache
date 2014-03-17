@@ -42,7 +42,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerHandler;
@@ -136,6 +135,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * Cell communication helper.
      */
+    private CellStub _poolStub;
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
     private String _cellName;
@@ -194,6 +194,12 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void setIdMapper(StrategyIdMapper idMapper)    {
         _idMapper = idMapper;
     }
+
+    public void setPoolStub(CellStub stub)
+    {
+        _poolStub = stub;
+    }
+
     public void setPoolManagerStub(CellStub stub)
     {
         _poolManagerStub = stub;
@@ -568,9 +574,8 @@ public class NFSv41Door extends AbstractCellComponent implements
         String pool = args.argv(0);
 
         PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover);
-
         message.setReplyRequired(false);
-        sendMessage(new CellMessage(new CellPath(pool), message));
+        _poolStub.notify(new CellPath(pool), message);
         return "";
     }
 
