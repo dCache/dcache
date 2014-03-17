@@ -1,5 +1,6 @@
 package dmg.cells.nucleus;
 
+import com.google.common.collect.Queues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -11,6 +12,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -32,6 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholds;
 import dmg.util.logback.RootFilterThresholds;
+
+import static com.google.common.collect.Iterables.*;
 
 /**
  *
@@ -65,13 +70,14 @@ public class CellNucleus implements ThreadFactory
 
     private volatile ExecutorService _callbackExecutor;
     private volatile ExecutorService _messageExecutor;
-    private AtomicInteger _eventQueueSize = new AtomicInteger();
+    private final AtomicInteger _eventQueueSize = new AtomicInteger();
 
     private boolean _isPrivateCallbackExecutor = true;
     private boolean _isPrivateMessageExecutor = true;
 
     private Pinboard _pinboard;
     private FilterThresholds _loggingThresholds;
+    private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<Runnable>());
 
     public CellNucleus(Cell cell, String name) {
 
@@ -460,7 +466,7 @@ public class CellNucleus implements ThreadFactory
         return hash;
     }
 
-    public int updateWaitQueue()
+    public int executeMaintenanceTasks()
     {
         Collection<CellLock> expired = new ArrayList<>();
         long now  = System.currentTimeMillis();
@@ -494,6 +500,11 @@ public class CellNucleus implements ThreadFactory
                 Thread t = Thread.currentThread();
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             }
+        }
+
+        // Execute delayed operations
+        for (Runnable task : consumingIterable(_deferredTasks)) {
+            task.run();
         }
 
         return size;
@@ -708,6 +719,11 @@ public class CellNucleus implements ThreadFactory
     <T> Future<T> invokeOnMessageThread(Callable<T> task)
     {
         return _messageExecutor.submit(wrapLoggingContext(task));
+    }
+
+    void invokeLater(Runnable runnable)
+    {
+        _deferredTasks.add(runnable);
     }
 
     @Override @Nonnull

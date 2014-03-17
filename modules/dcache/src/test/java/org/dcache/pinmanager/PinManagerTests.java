@@ -620,7 +620,7 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
             Message msg = (Message)o;
 
             /* dCache vehicles can transport errors back to the
-             * requestor, so detect if this is an error reply.
+             * requester, so detect if this is an error reply.
              */
             if (result instanceof CacheException) {
                 CacheException e = (CacheException)result;
@@ -662,6 +662,13 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
         } else {
             callback.answerTimedOut(envelope);
         }
+    }
+
+    @Override
+    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
+                                                    long timeout) throws SerializationException
+    {
+        sendMessage(envelope, callback, timeout);
     }
 
     @Override

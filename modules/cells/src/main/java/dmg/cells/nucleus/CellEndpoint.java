@@ -33,7 +33,7 @@ public interface CellEndpoint
         throws SerializationException,
                NoRouteToCellException;
 
-   /**
+    /**
     * Sends <code>envelope</code>. The <code>callback</code> argument
     * (which has to be non-null) allows to specify an object which is
     * informed as soon as an has answer arrived or if the timeout has
@@ -51,7 +51,27 @@ public interface CellEndpoint
                      long timeout)
         throws SerializationException;
 
-   /**
+    /**
+     * Sends <code>envelope</code>. The <code>callback</code> argument
+     * (which must be non-null) specifies an object which is informed as
+     * soon as an has answer arrived or if the timeout has expired.
+     *
+     * In case of failure to deliver the message, delivery is transparently
+     * retried as long as the timeout has not expired.
+     *
+     * @param envelope the cell message to be sent.
+     * @param callback specifies an object class which will be informed
+     *                 as soon as the message arrives.
+     * @param timeout  is the timeout in msec.
+     * @exception SerializationException if the payload object of this
+     *            message is not serializable.
+     */
+    void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope,
+                                             CellMessageAnswerable callback,
+                                             long timeout)
+            throws SerializationException;
+
+    /**
     * Sends <code>envelope</code> and waits <code>timeout</code>
     * milliseconds for an answer to arrive.  The answer will bypass
     * the ordinary queuing mechanism and will be delivered before any

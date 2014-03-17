@@ -178,7 +178,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        @Override
        public void run() {
            while (true){
-               _nucleus.updateWaitQueue();
+               _nucleus.executeMaintenanceTasks();
                try {
                    Thread.currentThread().sleep( _TO_MessageQueueUpdate );
                } catch (InterruptedException e){

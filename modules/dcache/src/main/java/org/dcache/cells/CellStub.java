@@ -465,7 +465,11 @@ public class CellStub
         CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
-        _endpoint.sendMessage(envelope, future, getTimeoutInMillis());
+        if (_retryOnNoRouteToCell) {
+            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, getTimeoutInMillis());
+        } else {
+            _endpoint.sendMessage(envelope, future, getTimeoutInMillis());
+        }
         return future;
     }
 

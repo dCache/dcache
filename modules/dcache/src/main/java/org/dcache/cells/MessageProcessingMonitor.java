@@ -151,6 +151,13 @@ public class MessageProcessingMonitor
         }
 
         @Override
+        public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
+                                                        long timeout) throws SerializationException
+        {
+            throw new UnsupportedOperationException("Cannot use callback for reply");
+        }
+
+        @Override
         public CellMessage sendAndWait(CellMessage envelope, long timeout)
         {
             throw new UnsupportedOperationException("Cannot use blocking send for reply");
@@ -161,6 +168,7 @@ public class MessageProcessingMonitor
         {
             throw new UnsupportedOperationException("Cannot use blocking send for reply");
         }
+
 
         @Override
         public CellInfo getCellInfo()

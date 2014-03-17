@@ -80,6 +80,13 @@ public class CellEndpointHelper implements CellEndpoint
     }
 
     @Override
+    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
+                                                    long timeout) throws SerializationException
+    {
+        sendMessage(envelope, callback, timeout);
+    }
+
+    @Override
     public CellMessage sendAndWait(CellMessage envelope, long timeout)
             throws SerializationException, NoRouteToCellException, InterruptedException
     {

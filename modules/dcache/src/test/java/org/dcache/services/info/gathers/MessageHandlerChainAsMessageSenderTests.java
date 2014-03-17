@@ -106,6 +106,13 @@ public class MessageHandlerChainAsMessageSenderTests {
             _sendMessages.add( envelope);
         }
 
+        @Override
+        public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
+                                                        long timeout) throws SerializationException
+        {
+            _sendMessages.add(envelope);
+        }
+
         public List<CellMessage> getSentMessages() {
             return _sendMessages;
         }

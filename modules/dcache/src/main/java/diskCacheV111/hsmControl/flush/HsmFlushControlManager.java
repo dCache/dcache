@@ -193,7 +193,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                 }
              }
 
-             _nucleus.updateWaitQueue() ;
+             _nucleus.executeMaintenanceTasks() ;
 
           }
           _log.info( "QueueWatch stopped" ) ;

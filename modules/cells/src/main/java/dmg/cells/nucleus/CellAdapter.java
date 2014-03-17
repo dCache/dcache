@@ -475,6 +475,18 @@ public class   CellAdapter extends CommandInterpreter
         throws SerializationException {
         _nucleus.sendMessage(msg, locally, remotely, callback, timeout);
     }
+
+    @Override
+    public void sendMessageWithRetryOnNoRouteToCell(CellMessage msg,
+                                                    CellMessageAnswerable callback,
+                                                    long timeout)
+        throws SerializationException
+    {
+        CellMessageAnswerable retryingCallback =
+                new RetryingCellMessageAnswerable(msg, callback, timeout);
+        sendMessage(msg, retryingCallback, timeout);
+    }
+
     @Override
     public void sendMessage(CellMessage msg,
                             CellMessageAnswerable callback,
@@ -1171,5 +1183,53 @@ public class   CellAdapter extends CommandInterpreter
                     CommandAclException(user, acl);
         }
 
+    }
+
+    private class RetryingCellMessageAnswerable implements CellMessageAnswerable, Runnable
+    {
+        private final long deadline;
+        private final CellMessageAnswerable callback;
+        private final CellMessage msg;
+
+        public RetryingCellMessageAnswerable(CellMessage msg, CellMessageAnswerable callback, long timeout)
+        {
+            this.callback = callback;
+            this.msg = msg;
+            deadline = System.currentTimeMillis() + timeout;
+        }
+
+        @Override
+        public void answerArrived(CellMessage request, CellMessage answer)
+        {
+            callback.answerArrived(request, answer);
+        }
+
+        @Override
+        public void exceptionArrived(final CellMessage request, Exception exception)
+        {
+            if (!(exception instanceof NoRouteToCellException)) {
+                callback.exceptionArrived(request, exception);
+            } else if (deadline > System.currentTimeMillis()) {
+                _nucleus.invokeLater(this);
+            } else {
+                callback.answerTimedOut(request);
+            }
+        }
+
+        @Override
+        public void answerTimedOut(CellMessage request)
+        {
+            callback.answerTimedOut(request);
+        }
+
+        @Override
+        public void run() {
+            long timeout = deadline - System.currentTimeMillis();
+            if (timeout > 0) {
+                sendMessage(msg, this, timeout);
+            } else {
+                callback.answerTimedOut(msg);
+            }
+        }
     }
 }

@@ -216,7 +216,7 @@ public class CommandTaskCell extends CellAdapter {
       start() ;
    }
    private void doTiming(){
-      _nucleus.updateWaitQueue();
+      _nucleus.executeMaintenanceTasks();
        List<CellCommandTaskCore> cores = new ArrayList<>(_cores.values());
        for (CellCommandTaskCore core : cores) {
            try {
