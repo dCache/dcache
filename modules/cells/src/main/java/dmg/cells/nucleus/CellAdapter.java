@@ -69,11 +69,6 @@ public class   CellAdapter extends CommandInterpreter
     private final static Logger _log =
         LoggerFactory.getLogger(CellAdapter.class);
 
-    /**
-     * Retry period for cell communication failures.
-     */
-    private final static long RETRY_PERIOD = 30000; // 30 seconds
-
     private final CellVersion _version = new CellVersion(Version.of(this));
 
     private final static ThreadLocal<CellMessage> CURRENT_MESSAGE = new ThreadLocal<>();
@@ -576,36 +571,6 @@ public class   CellAdapter extends CommandInterpreter
     {
         return time - System.currentTimeMillis();
     }
-
-    /**
-     * @see CellEndpoint.sendAndWaitToPermanent
-     */
-    @Override
-    public CellMessage sendAndWaitToPermanent(CellMessage envelope,
-                                              long timeout)
-        throws SerializationException,
-               InterruptedException
-    {
-        long deadline = System.currentTimeMillis() + timeout;
-        try {
-            return sendAndWait(envelope, timeUntil(deadline));
-        } catch (NoRouteToCellException e) {
-            _log.warn("{}", e.toString());
-
-            while (timeUntil(deadline) > RETRY_PERIOD) {
-                if (_shutdownGate.await(RETRY_PERIOD)) {
-                    break;
-                }
-                try {
-                    return sendAndWait(envelope, timeUntil(deadline));
-                } catch (NoRouteToCellException ignored) {
-                }
-            }
-            return null;
-        }
-    }
-
-
 
     /**
      *  sends a <code>CellMessage</code> along the specified path.

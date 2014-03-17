@@ -241,7 +241,7 @@ public class CellStub
     public <T extends Message> T sendAndWait(T msg)
         throws CacheException, InterruptedException
     {
-        return sendAndWait(msg, getTimeoutInMillis());
+        return getMessage(send(msg));
     }
 
     /**
@@ -262,7 +262,7 @@ public class CellStub
     public <T extends Message> T sendAndWait(T msg, long timeout)
         throws CacheException, InterruptedException
     {
-        return sendAndWait(_destination, msg, timeout);
+        return getMessage(send(msg, timeout));
     }
 
     /**
@@ -283,15 +283,7 @@ public class CellStub
     public <T extends Message> T sendAndWait(CellPath path, T msg)
         throws CacheException, InterruptedException
     {
-        msg.setReplyRequired(true);
-
-        T reply = (T) sendAndWait(path, msg, msg.getClass());
-
-        if (reply.getReturnCode() != 0) {
-            throw CacheExceptionFactory.exceptionOf(reply);
-        }
-
-        return reply;
+        return getMessage(send(path, msg));
     }
 
     /**
@@ -311,7 +303,7 @@ public class CellStub
                       sendAndWait(Serializable msg, Class<T> type)
         throws CacheException, InterruptedException
     {
-        return sendAndWait(_destination, msg, type);
+        return get(send(msg, type));
     }
 
 
@@ -320,7 +312,7 @@ public class CellStub
                                                   Class<T> type)
        throws CacheException, InterruptedException
     {
-       return sendAndWait(path, msg, type, getTimeoutInMillis());
+       return get(send(path, msg, type));
     }
 
 
@@ -342,7 +334,7 @@ public class CellStub
                       sendAndWait(Serializable msg, Class<T> type, long timeout)
         throws CacheException, InterruptedException
     {
-        return sendAndWait(_destination, msg, type, timeout);
+        return get(send(msg, type, timeout));
     }
 
 
@@ -366,15 +358,7 @@ public class CellStub
     public <T extends Message> T sendAndWait(CellPath path, T msg, long timeout)
         throws CacheException, InterruptedException
     {
-        msg.setReplyRequired(true);
-
-        T reply = (T) sendAndWait(path, msg, msg.getClass(), timeout);
-
-        if (reply.getReturnCode() != 0) {
-            throw CacheExceptionFactory.exceptionOf(reply);
-        }
-
-        return reply;
+        return getMessage(send(path, msg, timeout));
     }
 
 
@@ -399,45 +383,7 @@ public class CellStub
                                                   long timeout)
         throws CacheException, InterruptedException
     {
-        Semaphore concurrency = _concurrency;
-        concurrency.acquire();
-        CellMessage replyMessage;
-        try {
-            _rateLimiter.acquire();
-            CellMessage envelope = new CellMessage(path, msg);
-            if (_retryOnNoRouteToCell) {
-                replyMessage =
-                    _endpoint.sendAndWaitToPermanent(envelope, timeout);
-            } else {
-                replyMessage =
-                    _endpoint.sendAndWait(envelope, timeout);
-            }
-        } catch (NoRouteToCellException e) {
-            /* From callers point of view a timeout due to a lost
-             * message or a missing route to the destination is pretty
-             * much the same, so we report this as a timeout. The
-             * error message gives the details.
-             */
-            throw new TimeoutCacheException(e.getMessage());
-        } finally {
-            concurrency.release();
-        }
-
-        if (replyMessage == null) {
-            String errmsg = String.format("Request to %s timed out.", path);
-            throw new TimeoutCacheException(errmsg);
-        }
-
-        Object replyObject = replyMessage.getMessageObject();
-        if (!(type.isInstance(replyObject))) {
-            String errmsg = "Got unexpected message of class " +
-                replyObject.getClass() + " from " +
-                replyMessage.getSourcePath();
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     errmsg);
-        }
-
-        return (T)replyObject;
+        return get(send(path, msg, type, timeout));
     }
 
     public <T extends Message> ListenableFuture<T> send(T message)
@@ -445,11 +391,21 @@ public class CellStub
         return send(_destination, message);
     }
 
-    @SuppressWarnings("unchecked")
+    public <T extends Message> ListenableFuture<T> send(T message, long timeout)
+    {
+        return send(_destination, message, timeout);
+    }
+
     public <T extends Message> ListenableFuture<T> send(CellPath destination, T message)
     {
+        return send(destination, message, getTimeoutInMillis());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Message> ListenableFuture<T> send(CellPath destination, T message, long timeout)
+    {
         message.setReplyRequired(true);
-        return send(destination, message, (Class<T>) message.getClass());
+        return send(destination, message, (Class<T>) message.getClass(), timeout);
     }
 
     public <T extends Serializable> ListenableFuture<T> send(Serializable message, Class<T> type)
@@ -460,13 +416,25 @@ public class CellStub
     public <T extends Serializable> ListenableFuture<T> send(
             CellPath destination, Serializable message, Class<T> type)
     {
+        return send(destination, message, type, getTimeoutInMillis());
+    }
+
+    public <T extends Serializable> ListenableFuture<T> send(
+            Serializable message, Class<T> type, long timeout)
+    {
+        return send(_destination, message, type, timeout);
+    }
+
+    public <T extends Serializable> ListenableFuture<T> send(
+            CellPath destination, Serializable message, Class<T> type, long timeout)
+    {
         CellMessage envelope = new CellMessage(checkNotNull(destination), checkNotNull(message));
         Semaphore concurrency = _concurrency;
         CallbackFuture<T> future = new CallbackFuture<>(type, concurrency);
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
         if (_retryOnNoRouteToCell) {
-            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, getTimeoutInMillis());
+            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, timeout);
         } else {
             _endpoint.sendMessage(envelope, future, getTimeoutInMillis());
         }
@@ -538,6 +506,33 @@ public class CellStub
                 }
             }
         }, executor);
+    }
+
+    public static <T extends Message> T getMessage(ListenableFuture<T> future)
+            throws CacheException, InterruptedException
+    {
+        T reply = get(future);
+        if (reply.getReturnCode() != 0) {
+            throw CacheExceptionFactory.exceptionOf(reply);
+        }
+        return reply;
+    }
+
+    public static <T extends Serializable> T get(ListenableFuture<T> future)
+            throws CacheException, InterruptedException
+    {
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof CacheException) {
+                throw (CacheException) cause;
+            } else if (cause instanceof NoRouteToCellException) {
+                throw new TimeoutCacheException(cause.getMessage());
+            } else {
+                throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.getMessage(), cause);
+            }
+        }
     }
 
     /**

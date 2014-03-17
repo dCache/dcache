@@ -830,21 +830,16 @@ public class RemoteNameSpaceProviderTests
 
     private void givenResponse(final Modifier... modifiers)
     {
-        try {
-            given(_endpoint.sendAndWait(any(CellMessage.class), anyLong())).
-                    willAnswer(new Answer() {
-
-                @Override
-                public Object answer(InvocationOnMock invocation) throws Throwable
-                {
-                    CellMessage request = (CellMessage) invocation.getArguments() [0];
-                    return buildReply(request, modifiers);
-                }
-
-            });
-        } catch (InterruptedException | NoRouteToCellException | SerializationException e) {
-            throw new RuntimeException(e);
-        }
+        willAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable
+            {
+                CellMessage request = (CellMessage) invocation.getArguments()[0];
+                CellMessageAnswerable callback = (CellMessageAnswerable) invocation.getArguments()[1];
+                callback.answerArrived(request, buildReply(request, modifiers));
+                return null;
+            }
+        }).given(_endpoint).sendMessage(any(CellMessage.class), any(CellMessageAnswerable.class), anyLong());
     }
 
 
@@ -897,15 +892,10 @@ public class RemoteNameSpaceProviderTests
                 ArgumentCaptor.forClass(CellMessage.class);
 
         try {
-            verify(_endpoint).sendAndWait(argument.capture(), anyLong());
+            verify(_endpoint).sendMessage(argument.capture(), any(CellMessageAnswerable.class), anyLong());
 
-            verify(_endpoint, never()).
-                    sendAndWaitToPermanent(any(CellMessage.class), anyLong());
             verify(_endpoint, never()).sendMessage(any(CellMessage.class));
-            verify(_endpoint, never()).
-                    sendMessage(any(CellMessage.class),
-                    any(CellMessageAnswerable.class), anyLong());
-        } catch (NoRouteToCellException | InterruptedException e) {
+        } catch (NoRouteToCellException e) {
             throw new RuntimeException(e);
         }
 
@@ -928,8 +918,6 @@ public class RemoteNameSpaceProviderTests
 
             verify(_endpoint, never()).
                     sendAndWait(any(CellMessage.class), anyLong());
-            verify(_endpoint, never()).
-                    sendAndWaitToPermanent(any(CellMessage.class), anyLong());
             verify(_endpoint, never()).
                     sendMessage(any(CellMessage.class),
                     any(CellMessageAnswerable.class), anyLong());

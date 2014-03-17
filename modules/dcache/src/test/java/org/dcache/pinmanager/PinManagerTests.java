@@ -681,14 +681,6 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     }
 
     @Override
-    public CellMessage sendAndWaitToPermanent(CellMessage envelope, long timeout)
-        throws SerializationException,
-               InterruptedException
-    {
-        return process(envelope);
-    }
-
-    @Override
     public CellInfo getCellInfo()
     {
         throw new UnsupportedOperationException();
