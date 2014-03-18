@@ -33,6 +33,8 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
@@ -42,6 +44,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CellCron;
 
+import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 
 /**
@@ -118,8 +121,11 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
     private final static Logger _log =
         LoggerFactory.getLogger(PoolStatisticsV0.class);
+    private final CellStub _poolManager;
+    private final CellStub _billing;
+    private final CellStub _poolStub;
 
-   private CellNucleus      _nucleus;
+    private CellNucleus      _nucleus;
    private Args             _args;
 
    /*
@@ -176,6 +182,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
       super( name , args , false ) ;
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
+      _poolManager = new CellStub(this, new CellPath("PoolManager"), 20000);
+      _billing = new CellStub(this, new CellPath("billing"), 20000);
+      _poolStub = new CellStub(this, null, 20000);
 
       try{
 
@@ -1351,48 +1360,26 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private Map<String,Map<String,long[]>> getPoolRepositoryStatistics()
            throws InterruptedException ,
                   NoRouteToCellException,
-                  IOException {
-
-       Map<String, Map<String, long[]>> map = new HashMap<>() ;
-
-       CellMessage m =
-           new CellMessage( new CellPath("PoolManager") , GET_CELL_INFO ) ;
-
+                  IOException
+   {
        _log.info("getPoolRepositoryStatistics : asking PoolManager for cell info");
-       m = _nucleus.sendAndWait( m , 20000 ) ;
-       if( m == null ) {
-           throw new
-                   IOException("xgetcellinfo timed out");
+
+       PoolManagerCellInfo info;
+       try {
+           info = _poolManager.sendAndWait(GET_CELL_INFO, PoolManagerCellInfo.class);
+       } catch (CacheException e) {
+           throw new IOException(e.getMessage(), e);
        }
 
-       Object o = m.getMessageObject() ;
-
-       if( ! ( o instanceof PoolManagerCellInfo ) ) {
-           throw new
-                   IOException("Illegal Reply from PoolManager : " + o
-                   .getClass().getName());
-       }
-
-       PoolManagerCellInfo info = (PoolManagerCellInfo)o ;
        _log.info("getPoolRepositoryStatistics :  PoolManager replied : {}", info);
 
+       Map<String, Map<String, long[]>> map = new HashMap<>();
        for (Map.Entry<String,CellAddressCore> pool : info.getPoolMap().entrySet()) {
            CellAddressCore address = pool.getValue();
-           m = new CellMessage(new CellPath(address), GET_REP_STATISTICS);
            try {
-
                _log.info("getPoolRepositoryStatistics : asking {} for statistics", address);
-               m = _nucleus.sendAndWait(m, 20000);
-
-               if (m == null) {
-                   _log.warn("getPoolRepositoryStatistics : timeout {}", address);
-                   continue;
-               }
-
-               _log.info("getPoolRepositoryStatistics : {} replied : {}", address, m);
-
-               Object[] result = (Object[]) m.getMessageObject();
-
+               Object[] result =
+                       _poolStub.sendAndWait(new CellPath(address), GET_REP_STATISTICS, Object[].class);
                Map<String, long[]> classMap = new HashMap<>();
                for (Object entry : result) {
                    Object[] e = (Object[]) entry;
@@ -1404,8 +1391,8 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
            } catch (InterruptedException ie) {
                _log.warn("getPoolRepositoryStatistics : sendAndWait interrupted");
                throw ie;
-           } catch (NoRouteToCellException eee) {
-               _log.warn("getPoolRepositoryStatistics : {} : {}", address, eee);
+           } catch (CacheException e) {
+               _log.warn("getPoolRepositoryStatistics : {} : {}", address, e.getMessage());
            }
        }
 
@@ -1445,60 +1432,35 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    //
    private Map<String,Map<String,long[]>> getBillingStatistics()
            throws InterruptedException ,
-                  NoRouteToCellException,
-                  IOException {
+                  IOException
+   {
+       _log.info("getBillingStatistics : asking billing for generic pool statistics");
+       Map<String,Map<String,long[]>> generic;
+       try {
+           generic = _billing.sendAndWait(GET_POOL_STATISTICS, Map.class);
+       } catch (CacheException e) {
+           throw new IOException(e.getMessage(), e);
+       }
+       _log.info("getBillingStatistics :  billing replied with {}", generic);
 
        Map<String, Map<String, long[]>> map = new HashMap<>() ;
-
-       CellMessage m =
-           new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS ) ;
-
-       _log.info("getBillingStatistics : asking billing for generic pool statistics");
-       m = _nucleus.sendAndWait( m , 20000 ) ;
-       if( m == null ) {
-           throw new
-                   IOException("'get pool statistics' timed out");
-       }
-
-       Object o = m.getMessageObject() ;
-
-       if( ! ( o instanceof Map ) ) {
-           throw new
-                   IOException("Illegal Reply from billing : " + o.getClass()
-                   .getName());
-       }
-
-       Map<String,Map<String,long[]>> generic = (Map<String,Map<String,long[]>>) o;
-       _log.info("getBillingStatistics :  billing replied with "+generic);
-
        for (String poolName: generic.keySet()) {
+          try {
+             _log.info("getBillingStatistics : asking billing for [{}] statistics", poolName);
+              Map<String,long[]> result =
+                      _billing.sendAndWait(GET_POOL_STATISTICS + " " + poolName, Map.class);
+             _log.info("getBillingStatistics : billing replied with {}", result);
 
-          m = new CellMessage( new CellPath("billing") , GET_POOL_STATISTICS+" "+poolName ) ;
-          try{
-
-             _log.info("getBillingStatistics : asking billing for ["+poolName+"] statistics");
-             m = _nucleus.sendAndWait( m , 20000 ) ;
-
-             if( m == null ){
-                _log.warn("'get pool statistics' : timed out for "+poolName ) ;
-                continue ;
-             }
-
-             Map<String,long[]> result = (Map<String,long[]>) m.getMessageObject() ;
-             _log.info("getBillingStatistics :  billing replied with "+result);
-
-             map.put( poolName , result ) ;
-
+             map.put(poolName, result);
           }catch(InterruptedException ie ){
              _log.warn("'get pool statistics' : sendAndWait interrupted") ;
              throw ie ;
-          }catch(NoRouteToCellException eee ){
-             _log.warn("'get pool statistics' : "+poolName+" : "+eee ) ;
+          } catch (CacheException e) {
+              _log.warn("'get pool statistics' : {} : {}", poolName, e.getMessage());
           }
        }
 
-       return map ;
-
+       return map;
    }
    //
    // HTML stuff
