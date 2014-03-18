@@ -1,6 +1,0 @@
-#
-#
-create dmg.cells.services.login.LoginManager xlm \
-       "22125 dmg.cells.services.login.LoginCell \
-        -prot=telnet \
-        dmg.util.GateKeeperTest"

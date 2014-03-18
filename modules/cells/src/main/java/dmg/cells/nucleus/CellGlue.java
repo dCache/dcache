@@ -82,7 +82,6 @@ class CellGlue {
                       new LinkedBlockingQueue<Runnable>(),
                       killerThreadFactory);
       _emergencyKillerExecutor.prestartCoreThread();
-      new CellUrl( this ) ;
    }
    ThreadGroup getMasterThreadGroup(){return _masterThreadGroup ; }
 
