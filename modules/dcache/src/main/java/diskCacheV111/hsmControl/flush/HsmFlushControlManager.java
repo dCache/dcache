@@ -2,14 +2,19 @@
 
 package diskCacheV111.hsmControl.flush ;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +43,11 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.AbstractMessageCallback;
+import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HsmFlushControlManager  extends CellAdapter {
 
@@ -64,6 +73,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     private Map<String,Object>    _properties        = new HashMap<>() ;
     private final Object _propertyLock      = new Object() ;
     private long   _propertiesUpdated;
+    private final CellStub _poolManager;
 
     /**
       *   Usage : ... [options] <pgroup0> [<pgroup1>[...]]
@@ -79,6 +89,7 @@ public class HsmFlushControlManager  extends CellAdapter {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
+       _poolManager = new CellStub(this, new CellPath("PoolManager"), 30, SECONDS);
        try{
           if( _args.argc() < 1 ) {
               throw new
@@ -428,8 +439,8 @@ public class HsmFlushControlManager  extends CellAdapter {
            _log.warn("queryPoolMode : couldn't sent message to PoolManager"+ee);
        }
     }
-    private class PoolCollector implements CellMessageAnswerable {
-
+    private class PoolCollector implements FutureCallback<Object[]>
+    {
        private boolean _active;
        private int     _waitingFor;
        private HashMap<String, Object[]> _poolGroupHash      = new HashMap<>() ;
@@ -484,14 +495,8 @@ public class HsmFlushControlManager  extends CellAdapter {
                if (_logEnabled) {
                    _log.info("runCollector sending : " + command + " to " + path);
                }
-               try {
-
-                   sendMessage(new CellMessage(path, command),
-                           true, true, this, 30000L);
-                   _waitingFor++;
-               } catch (Exception ee) {
-                   _log.warn("Coudn't send <" + command + "> to " + path + " " + ee);
-               }
+               Futures.addCallback(_poolManager.send(command, Object[].class), this);
+               _waitingFor++;
            }
        }
        private synchronized void answer(){
@@ -545,44 +550,33 @@ public class HsmFlushControlManager  extends CellAdapter {
        public synchronized HFCPool getPoolByName( String poolName ){
           return _configuredPoolList.get(poolName);
        }
-       @Override
-       public void answerArrived( CellMessage request ,
-                                  CellMessage answer    ){
 
-          if(_logEnabled) {
-              _log.info("answer Arrived : " + answer);
-          }
-          Object reply =  answer.getMessageObject() ;
-          if( ( reply instanceof Object []    ) &&
-              ( ((Object [])reply).length >= 3             ) &&
-              ( ((Object [])reply)[0] instanceof String    ) &&
-              ( ((Object [])reply)[1] instanceof Object [] )     ){
+        @Override
+        public void onSuccess(Object[] reply)
+        {
+            if(_logEnabled) {
+                _log.info("answer Arrived: {}", Arrays.toString(reply));
+            }
+            if (reply.length >= 3 && reply[0] instanceof String && reply[1] instanceof Object []) {
+                String poolGroupName = (String) reply[0] ;
+                _poolGroupHash.put( poolGroupName , (Object[]) reply[1]);
+                if(_logEnabled) {
+                    _log.info("PoolCollector : " + ((Object[]) reply[1]).length + " pools arrived for " + poolGroupName);
+                }
+            }else{
+                _log.warn("PoolCollector : invalid reply arrived");
+            }
+            answer();
+        }
 
-             Object [] r = (Object [])reply ;
-             String poolGroupName = (String)r[0] ;
-             _poolGroupHash.put( poolGroupName , (Object[]) r[1] ) ;
-             if(_logEnabled) {
-                 _log.info("PoolCollector : " + ((Object[]) r[1]).length + " pools arrived for " + poolGroupName);
-             }
-
-          }else{
-             _log.warn("PoolCollector : invalid reply arrived");
-          }
-          answer() ;
-       }
-       @Override
-       public void exceptionArrived( CellMessage request ,
-                                     Exception   exception ){
-          _log.warn("PoolCollector : exceptionArrived : "+exception);
-          answer() ;
-       }
-       @Override
-       public void answerTimedOut( CellMessage request ){
-          _log.warn("PoolCollector : answerTimedOut ");
-          answer() ;
-       }
-
+        @Override
+        public void onFailure(Throwable t)
+        {
+            _log.warn("PoolCollector : onFailure : {}", t.toString());
+            answer() ;
+        }
     }
+
     public static final String hh_pgroup_add = "<pGroup0> [<pgroup1> [...]]" ;
     public String ac_pgroup_add_$_1_99( Args args ){
         for( int i = 0 ; i < args.argc() ; i++ ){

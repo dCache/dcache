@@ -437,38 +437,9 @@ public class   CellAdapter extends CommandInterpreter
      */
     @Override
     public void sendMessage(CellMessage msg)
-        throws SerializationException,
-               NoRouteToCellException    {
+        throws SerializationException, NoRouteToCellException
+    {
         _nucleus.sendMessage(msg);
-    }
-    /**
-     *  sends a <code>CellMessage</code> along the specified path.
-     *  Two additional boolean arguments allow to specify whether
-     *  the message should only be delivered locally, remotely or
-     *  both. The callback arguments (which has to be non-null
-     *  allows to specify a Class which is informed as soon as
-     *  an answer arrived or if the timeout has expired.
-     *
-     * @param msg the message to be sent.
-     * @param locally if set to 'false' the message is not delivered
-     *                locally.
-     * @param remotely if set to 'false' the message is not delivered
-     *                 remotely.
-     * @param callback specifies a class which will be informed as
-     *                 soon as the message arrives.
-     * @param timeout  is the timeout interval in msec.
-     *
-     * @exception SerializationException if the payload object of this
-     *            message is not Serializable.
-     *
-     */
-    public void sendMessage(CellMessage msg,
-                            boolean locally,
-                            boolean remotely,
-                            CellMessageAnswerable callback,
-                            long    timeout)
-        throws SerializationException {
-        _nucleus.sendMessage(msg, locally, remotely, callback, timeout);
     }
 
     @Override
@@ -485,64 +456,12 @@ public class   CellAdapter extends CommandInterpreter
     @Override
     public void sendMessage(CellMessage msg,
                             CellMessageAnswerable callback,
-                            long    timeout)
-        throws SerializationException {
+                            long timeout)
+        throws SerializationException
+    {
         _nucleus.sendMessage(msg, true, true, callback, timeout);
     }
-    /**
-     *  sends a <code>CellMessage</code> along the specified path.
-     *  Two additional boolean arguments allow to specify whether
-     *  the message should only be delivered locally, remotely or
-     *  both.
-     *
-     * @param msg the message to be sent.
-     * @param locally if set to 'false' the message is not delivered
-     *                locally.
-     * @param remotely if set to 'false' the message is not delivered
-     *                 remotely.
-     * @exception SerializationException if the payload object of this
-     *            message is not Serializable.
-     * @exception NoRouteToCellException if the destination <code>CellPath</code>
-     *            couldn't be reached.
-     *
-     */
-    public void sendMessage(CellMessage msg, boolean locally,
-                            boolean remotely)
-        throws SerializationException,
-               NoRouteToCellException    {
-        _nucleus.sendMessage(msg, locally, remotely);
-    }
-    /**
-     *  sends a <code>CellMessage</code> along the specified path,
-     *  and waits <code>millisecs</code> for an answer to arrive.
-     *  The answer will bypass the ordinary queuing mechanism and
-     *  will be delivered before any other asynchronous message.
-     *  The answer need to have the getLastUOID set to the
-     *  UOID of the message send with sendAndWait. If the answer
-     *  doesn't arrive withing the specified time intervall,
-     *  the method returns 'null' and the answer will be handled
-     *  as if it was an ordinary asynchronous message.
-     *
-     * @param msg the message to be sent.
-     * @param local if 'false' the destination is not looked up locally.
-     * @param remote if 'false' the destination is not looked up remotely.
-     * @param millisecs milliseconds to wait for an answer.
-     * @return the answer CellMessage or 'null' if intervall timed out.
-     * @exception SerializationException if the payload object of this
-     *            message is not Serializable.
-     * @exception NoRouteToCellException if the destination <code>CellPath</code>
-     *            couldn't be reached.
-     *
-     */
-    public CellMessage sendAndWait(CellMessage msg,
-                                   boolean local,
-                                   boolean remote,
-                                   long millisecs)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException        {
-        return _nucleus.sendAndWait(msg, local, remote, millisecs);
-    }
+
     /**
      *
      * convenience method : identical to <br>
@@ -556,40 +475,15 @@ public class   CellAdapter extends CommandInterpreter
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
      *
-     * @see CellNucleus#sendAndWait(CellMessage,long,boolean,boolean)
+     * @see CellNucleus#sendAndWait(CellMessage,boolean,boolean,long)
      */
     @Override
-    public CellMessage sendAndWait(CellMessage msg,
-                                   long millisecs)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException        {
+    public CellMessage sendAndWait(CellMessage msg, long millisecs)
+            throws SerializationException, NoRouteToCellException, InterruptedException
+    {
         return _nucleus.sendAndWait(msg, true, true, millisecs);
     }
 
-    private long timeUntil(long time)
-    {
-        return time - System.currentTimeMillis();
-    }
-
-    /**
-     *  sends a <code>CellMessage</code> along the specified path.
-     *  <strong>resendMessage does not resolve the local cell
-     *  Namespace, only the routes are inspected.</strong>
-     *
-     *
-     * @param msg the message to be sent.
-     * @exception SerializationException if the payload object of this
-     *            message is not Serializable.
-     * @exception NoRouteToCellException if the destination <code>CellPath</code>
-     *            couldn't be reached.
-     *
-     */
-    public void resendMessage(CellMessage msg)
-        throws SerializationException,
-               NoRouteToCellException    {
-        _nucleus.resendMessage(msg);
-    }
     /**
      *  Returns the message object which caused a
      *  Command Interpreter client method to trigger.
@@ -614,8 +508,8 @@ public class   CellAdapter extends CommandInterpreter
      * should be overwrite to provide more specific
      * information about this cell.
      *
-     * @param printWrite the printWrite which has to be used to
-     *                   write the information to.
+     * @param printWriter the printWriter which has to be used to
+     *                    write the information to.
      *
      */
     public void getInfo(PrintWriter printWriter) {

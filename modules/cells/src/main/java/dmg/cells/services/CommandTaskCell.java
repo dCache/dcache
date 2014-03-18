@@ -70,11 +70,11 @@ public class CommandTaskCell extends CellAdapter {
       public CellAdapter getParentCell(){ return CommandTaskCell.this ; }
       public void sendMessage( CellMessage message )
       {
-          CommandTaskCell.this.sendMessage( message , true , true , _task , 999999999L) ;
+          CommandTaskCell.this.sendMessage(message, _task, 999999999L);
       }
       public void sendMessage( CellMessage message , long timeout )
       {
-          CommandTaskCell.this.sendMessage( message , true , true , _task , timeout) ;
+          CommandTaskCell.this.sendMessage(message, _task, timeout);
       }
       public String getModuleName(){
          return _moduleInfo.getName() ;

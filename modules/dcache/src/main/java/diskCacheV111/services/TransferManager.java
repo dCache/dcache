@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.MessageEventTimer;
 import diskCacheV111.util.Pgpass;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -41,10 +42,14 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractCell;
+import org.dcache.cells.CellStub;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.util.Args;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Base class for services that transfer files on behalf of SRM. Used to
@@ -62,15 +67,13 @@ public abstract class TransferManager extends AbstractCell
             new ConcurrentHashMap<>();
     private int _maxTransfers;
     private int _numTransfers;
-    private long _poolTimeout;
-    private long _poolManagerTimeout;
-    private long _pnfsManagerTimeout;
     private long _moverTimeout;
     protected static long nextMessageID;
     private String _tLogRoot;
-    protected String _poolManager;
-    protected String _pnfsManager;
-    private CellPath _poolMgrPath;
+    private final CellStub _pnfsManager;
+    private final CellStub _poolManager;
+    private final CellStub _poolStub;
+    private final CellStub _billingStub;
     private boolean _overwrite;
     private boolean _doDatabaseLogging;
     private int _maxNumberOfDeleteRetries;
@@ -92,6 +95,10 @@ public abstract class TransferManager extends AbstractCell
             throws InterruptedException, ExecutionException
     {
         super(cellName, args);
+        _poolManager = new CellStub(this);
+        _pnfsManager = new CellStub(this);
+        _poolStub = new CellStub(this);
+        _billingStub = new CellStub(this, new CellPath("billing"));
         doInit();
     }
 
@@ -145,22 +152,22 @@ public abstract class TransferManager extends AbstractCell
 
         _tLogRoot = Strings.emptyToNull(args.getOpt("tlog"));
         _maxNumberOfDeleteRetries = args.getIntOption("maxNumberOfDeleteRetries");
-        _poolManagerTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("pool_manager_timeout"),
-                TimeUnit.valueOf(args.getOpt("pool_manager_timeout_unit")));
-        _pnfsManagerTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("pnfs_timeout"),
-                TimeUnit.valueOf(args.getOpt("pnfs_timeout_unit")));
-        _poolTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("pool_timeout"),
-                TimeUnit.valueOf(args.getOpt("pool_timeout_unit")));
+        _poolStub.setTimeout(args.getIntOption("pool_timeout"));
+        _poolStub.setTimeoutUnit(TimeUnit.valueOf(args.getOpt("pool_timeout_unit")));
         _maxTransfers = args.getIntOption("max_transfers");
         _overwrite = Strings.nullToEmpty(args.getOpt("overwrite")).equalsIgnoreCase("true");
-        _poolManager = args.getOpt("poolManager");
-        _pnfsManager = args.getOpt("pnfsManager");
-        _moverTimeout = TimeUnit.MILLISECONDS.convert(args.getIntOption("mover_timeout"),
-                TimeUnit.valueOf(args.getOpt("mover_timeout_unit")));
+        _poolManager.setDestination(args.getOpt("poolManager"));
+        _poolManager.setTimeout(args.getIntOption("pool_manager_timeout"));
+        _poolManager.setTimeoutUnit(TimeUnit.valueOf(args.getOpt("pool_manager_timeout_unit")));
+        _pnfsManager.setDestination(args.getOpt("pnfsManager"));
+        _pnfsManager.setTimeout(args.getIntOption("pnfs_timeout"));
+        _pnfsManager.setTimeoutUnit(TimeUnit.valueOf(args.getOpt("pnfs_timeout_unit")));
+
+        _moverTimeout = MILLISECONDS.convert(args.getIntOption("mover_timeout"),
+                                             TimeUnit.valueOf(args.getOpt("mover_timeout_unit")));
         _ioQueueName = Strings.emptyToNull(args.getOpt("io-queue"));
         _poolProxy = args.getOpt("poolProxy");
         log.debug("Pool Proxy " + (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
-        _poolMgrPath = new CellPath(_poolManager);
     }
 
     @Override
@@ -211,9 +218,9 @@ public abstract class TransferManager extends AbstractCell
         pw.printf("number of active transfers : %d\n", _numTransfers);
         pw.printf("max number of active transfers  : %d\n", getMaxTransfers());
         pw.printf("PoolManager  : %s\n", _poolManager);
-        pw.printf("PoolManager timeout : %d seconds\n", _poolManagerTimeout);
-        pw.printf("PnfsManager timeout : %d seconds\n", _pnfsManagerTimeout);
-        pw.printf("Pool timeout  : %d seconds\n", _poolTimeout);
+        pw.printf("PoolManager timeout : %d seconds\n", MILLISECONDS.toSeconds(_poolManager.getTimeoutInMillis()));
+        pw.printf("PnfsManager timeout : %d seconds\n", MILLISECONDS.toSeconds(_pnfsManager.getTimeoutInMillis()));
+        pw.printf("Pool timeout  : %d seconds\n", MILLISECONDS.toSeconds(_poolStub.getTimeoutInMillis()));
         pw.printf("next id  : %d seconds\n", nextMessageID);
         pw.printf("io-queue  : %s\n", _ioQueueName);
         pw.printf("maxNumberofDeleteRetries  : %d\n", _maxNumberOfDeleteRetries);
@@ -350,7 +357,8 @@ public abstract class TransferManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, pool timeout should be greater then 0 ";
         }
-        _poolTimeout = timeout;
+        _poolStub.setTimeout(timeout);
+        _poolStub.setTimeoutUnit(SECONDS);
         return "set pool timeout to " + timeout + " seconds";
     }
 
@@ -362,7 +370,8 @@ public abstract class TransferManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, pool manger timeout should be greater then 0 ";
         }
-        _poolManagerTimeout = timeout;
+        _poolManager.setTimeout(timeout);
+        _poolManager.setTimeoutUnit(SECONDS);
         return "set pool manager timeout to " + timeout + " seconds";
     }
 
@@ -374,7 +383,8 @@ public abstract class TransferManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, pnfs manger timeout should be greater then 0 ";
         }
-        _pnfsManagerTimeout = timeout;
+        _pnfsManager.setTimeout(timeout);
+        _pnfsManager.setTimeoutUnit(SECONDS);
         return "set pnfs manager timeout to " + timeout + " seconds";
     }
 
@@ -656,29 +666,9 @@ public abstract class TransferManager extends AbstractCell
         }
     }
 
-    public int getNumberOfTranfers()
+    public CellStub getPoolStub()
     {
-        return _numTransfers;
-    }
-
-    public long getPoolTimeout()
-    {
-        return _poolTimeout;
-    }
-
-    public long getPoolManagerTimeout()
-    {
-        return _poolManagerTimeout;
-    }
-
-    public long getPnfsManagerTimeout()
-    {
-        return _pnfsManagerTimeout;
-    }
-
-    public long getMoverTimeout()
-    {
-        return _moverTimeout;
+        return _poolStub;
     }
 
     public String getLogRootName()
@@ -691,29 +681,24 @@ public abstract class TransferManager extends AbstractCell
         return _overwrite;
     }
 
-    public CellPath getPoolManagerPath()
-    {
-        return _poolMgrPath;
-    }
-
-    public String getPoolManagerName()
+    public CellStub getPoolManagerStub()
     {
         return _poolManager;
     }
 
-    public String getPnfsManagerName()
+    public CellStub getPnfsManagerStub()
     {
         return _pnfsManager;
+    }
+
+    public CellStub getBillingStub()
+    {
+        return _billingStub;
     }
 
     public String getIoQueueName()
     {
         return _ioQueueName;
-    }
-
-    public synchronized PersistenceManager getPersistenceManager()
-    {
-        return _pm;
     }
 
     public static void rollbackIfActive(Transaction tx)
@@ -731,11 +716,6 @@ public abstract class TransferManager extends AbstractCell
     public void setDbLogging(boolean yes)
     {
         _doDatabaseLogging = yes;
-    }
-
-    public void setMaxNumberOfDeleteRetries(int nretries)
-    {
-        _maxNumberOfDeleteRetries = nretries;
     }
 
     public int getMaxNumberOfDeleteRetries()
@@ -769,10 +749,5 @@ public abstract class TransferManager extends AbstractCell
     public String getPoolProxy()
     {
         return _poolProxy;
-    }
-
-    public void setPoolProxy(String poolProxy)
-    {
-        _poolProxy = poolProxy;
     }
 }
