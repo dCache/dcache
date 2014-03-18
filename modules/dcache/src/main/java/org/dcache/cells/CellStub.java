@@ -299,17 +299,14 @@ public class CellStub
      *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
-    public <T extends Serializable> T
-                      sendAndWait(Serializable msg, Class<T> type)
+    public <T> T sendAndWait(Serializable msg, Class<T> type)
         throws CacheException, InterruptedException
     {
         return get(send(msg, type));
     }
 
 
-    public <T extends Serializable> T sendAndWait(CellPath path,
-                                                  Serializable msg,
-                                                  Class<T> type)
+    public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type)
        throws CacheException, InterruptedException
     {
        return get(send(path, msg, type));
@@ -330,8 +327,7 @@ public class CellStub
      *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
-    public <T extends Serializable> T
-                      sendAndWait(Serializable msg, Class<T> type, long timeout)
+    public <T> T sendAndWait(Serializable msg, Class<T> type, long timeout)
         throws CacheException, InterruptedException
     {
         return get(send(msg, type, timeout));
@@ -377,10 +373,7 @@ public class CellStub
      *       timeout occurred, or the object in the reply was of the
      *       wrong type.
      */
-    public <T extends Serializable> T sendAndWait(CellPath path,
-                                                  Serializable msg,
-                                                  Class<T> type,
-                                                  long timeout)
+    public <T> T sendAndWait(CellPath path, Serializable msg, Class<T> type, long timeout)
         throws CacheException, InterruptedException
     {
         return get(send(path, msg, type, timeout));
@@ -408,24 +401,24 @@ public class CellStub
         return send(destination, message, (Class<T>) message.getClass(), timeout);
     }
 
-    public <T extends Serializable> ListenableFuture<T> send(Serializable message, Class<T> type)
+    public <T> ListenableFuture<T> send(Serializable message, Class<T> type)
     {
         return send(_destination, message, type);
     }
 
-    public <T extends Serializable> ListenableFuture<T> send(
+    public <T> ListenableFuture<T> send(
             CellPath destination, Serializable message, Class<T> type)
     {
         return send(destination, message, type, getTimeoutInMillis());
     }
 
-    public <T extends Serializable> ListenableFuture<T> send(
+    public <T> ListenableFuture<T> send(
             Serializable message, Class<T> type, long timeout)
     {
         return send(_destination, message, type, timeout);
     }
 
-    public <T extends Serializable> ListenableFuture<T> send(
+    public <T> ListenableFuture<T> send(
             CellPath destination, Serializable message, Class<T> type, long timeout)
     {
         CellMessage envelope = new CellMessage(checkNotNull(destination), checkNotNull(message));
@@ -518,7 +511,7 @@ public class CellStub
         return reply;
     }
 
-    public static <T extends Serializable> T get(ListenableFuture<T> future)
+    public static <T> T get(ListenableFuture<T> future)
             throws CacheException, InterruptedException
     {
         try {

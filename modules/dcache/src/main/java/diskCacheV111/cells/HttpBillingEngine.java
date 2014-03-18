@@ -1,27 +1,32 @@
-// $Id: HttpBillingEngine.java,v 1.12 2007-08-16 20:20:54 behrmann Exp $
-package diskCacheV111.cells ;
+package diskCacheV111.cells;
 
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HTMLWriter;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
+import org.dcache.cells.CellStub;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 public class HttpBillingEngine implements HttpResponseEngine
 {
     private final CellEndpoint _endpoint;
+    private final CellStub _billing;
 
     public HttpBillingEngine(CellEndpoint endpoint, String [] args)
     {
         _endpoint = endpoint;
+        _billing = new CellStub(_endpoint, new CellPath("billing"), 5, SECONDS);
     }
 
     @Override
@@ -57,7 +62,7 @@ public class HttpBillingEngine implements HttpResponseEngine
         out.endTable();
     }
 
-    private void printPoolStatistics(HTMLWriter out, HashMap<String, long[]> map, String pool)
+    private void printPoolStatistics(HTMLWriter out, Map<String, long[]> map, String pool)
     {
         boolean perPool = pool != null ;
 
@@ -124,21 +129,11 @@ public class HttpBillingEngine implements HttpResponseEngine
         HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
         try {
             html.addHeader("/styles/billing.css", "dCache Billing");
-
-            CellMessage result =
-                _endpoint.sendAndWait(new CellMessage(new CellPath("billing"),
-                                                     "get pool statistics "
-                                                     + pool),
-                                     5000);
-            if (result == null) {
-                throw new HttpException(500, "Request Timed Out");
-            }
-
-            HashMap<String,long[]> map = (HashMap<String,long[]>) result.getMessageObject();
-
+            Map<String, long[]> map = _billing.sendAndWait("get pool statistics " + pool, Map.class);
             printPoolStatistics(html, map, pool);
-        } catch (Exception e) {
-            html.println("<p class=\"error\">This 'billingCell' doesn't support:  'get pool statistics &lt;poolName&gt;'</p>");
+        } catch (TimeoutCacheException e) {
+            html.print("<blockquote><pre>Request Timed Out</pre></blockquote>");
+        } catch (InterruptedException | CacheException e) {
             html.print("<blockquote><pre>" + e + "</pre></blockquote>");
         } finally {
             html.addFooter(getClass().getName() + " [$Revision: 1.12 $]");
@@ -148,45 +143,24 @@ public class HttpBillingEngine implements HttpResponseEngine
     private void printMainStatisticsPage(OutputStream out)
         throws HttpException
     {
-        CellMessage result;
-        try {
-            result =
-                _endpoint.sendAndWait(new CellMessage(new CellPath("billing"),
-                                                     "get billing info"),
-                                     5000);
-        } catch (Exception e) {
-            throw new
-                HttpException(500, "Problem : " + e.getMessage());
-        }
-
-        if (result == null) {
-            throw new HttpException(500, "Request Timed Out");
-        }
-
         HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
         try {
-            Object [][] x = (Object [][])result.getMessageObject() ;
-
+            Object[][] x = _billing.sendAndWait("get billing info", Object[][].class);
             html.addHeader("/styles/billing.css", "dCache Billing");
             printTotalStatistics(html, x);
-
             try {
-                result =
-                    _endpoint.sendAndWait(new CellMessage(new CellPath("billing"),
-                                                         "get pool statistics"),
-                                         5000);
-                if (result == null) {
-                    throw new HttpException(500, "Request Timed Out");
-                }
-
-                HashMap<String,long[]> map = (HashMap<String,long[]>) result.getMessageObject();
+                Map<String, long[]> map = _billing.sendAndWait("get pool statistics", Map.class);
                 printPoolStatistics(html, map, null);
-            } catch (Exception e) {
+            } catch (InterruptedException | TimeoutCacheException e) {
+                throw e;
+            } catch (CacheException e) {
                 html.print("<p class=\"error\">This 'billingCell' doesn't support: 'get pool statistics':");
                 html.print("<blockquote><pre>" + e + "</pre></blockquote>");
             }
-        } catch (Exception e) {
-            throw new HttpException(500, "Problem: " + e.getMessage());
+        } catch (TimeoutCacheException e) {
+            throw new HttpException(500, "Request Timed Out");
+        } catch (InterruptedException | CacheException e) {
+            throw new HttpException(500, "Problem : " + e.getMessage());
         } finally {
             html.addFooter(getClass().getName() + " [$Revision: 1.12 $]");
         }

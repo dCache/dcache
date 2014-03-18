@@ -1,10 +1,10 @@
- // $Id: HttpHsmFlushMgrEngineV1.java,v 1.3 2006-05-20 10:40:02 patrick Exp $
-package diskCacheV111.hsmControl.flush ;
+package diskCacheV111.hsmControl.flush;
 
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
  import java.io.PrintWriter;
+ import java.io.Serializable;
  import java.text.SimpleDateFormat;
  import java.util.ArrayList;
  import java.util.Collections;
@@ -15,10 +15,13 @@ package diskCacheV111.hsmControl.flush ;
  import java.util.Map;
  import java.util.NoSuchElementException;
  import java.util.StringTokenizer;
+ import java.util.concurrent.TimeUnit;
 
  import diskCacheV111.pools.PoolCellInfo;
  import diskCacheV111.pools.PoolCostInfo;
  import diskCacheV111.pools.StorageClassFlushInfo;
+ import diskCacheV111.util.CacheException;
+ import diskCacheV111.util.TimeoutCacheException;
 
  import dmg.cells.nucleus.CellEndpoint;
  import dmg.cells.nucleus.CellMessage;
@@ -27,22 +30,24 @@ package diskCacheV111.hsmControl.flush ;
  import dmg.util.HttpRequest;
  import dmg.util.HttpResponseEngine;
 
-public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
+ import org.dcache.cells.CellStub;
+
+ import static java.util.concurrent.TimeUnit.SECONDS;
+
+ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
    private final static Logger _log =
        LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
-   private CellEndpoint _endpoint;
+   private final CellEndpoint _endpoint;
    private long        _errorCounter;
    private long        _requestCounter;
-   private Object      _updateLock       = new Object() ;
-   private String      _flushManagerName = "FlushManager" ;
    private String      _cssFile          = "/flushManager/css/default.css" ;
-   private List<String> _managerList      = new ArrayList<>() ;
-   private SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
+   private final List<String> _managerList      = new ArrayList<>() ;
+   private final SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
 
-   private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
-   private HttpFlushManagerHelper.FlushEntryComparator _flushCompare;
+   private final HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
+   private final HttpFlushManagerHelper.FlushEntryComparator _flushCompare;
 
    public HttpHsmFlushMgrEngineV1(CellEndpoint endpoint, String [] argsString ){
        _endpoint = endpoint ;
@@ -123,6 +128,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                  optionsMap = createMap(urlItems[3]);
              }
 
+             CellStub flushManager = new CellStub(_endpoint, new CellPath(flushManagerName), 20, SECONDS);
+
              _log.info("MAP -> "+optionsMap);
 
              printFlushHeader( pw ,  "Flush Info");
@@ -131,7 +138,7 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
              if( !  flushManagerName.equals("*") ){
 
                 StringBuffer result = new StringBuffer() ;
-                doActionsIfNecessary( flushManagerName , optionsMap , result ) ;
+                doActionsIfNecessary(flushManager, optionsMap, result);
 
                 String errorString = result.toString() ;
                 if( errorString.length() > 0 ){
@@ -144,8 +151,8 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
                 }
                 try{
                    printUpdateThis( pw , flushManagerName ) ;
-                   printCellInfo( pw , flushManagerName ) ;
-                   printFlushManagerList( pw , flushManagerName , optionsMap ) ;
+                   printCellInfo(pw, flushManager);
+                   printFlushManagerList(pw, flushManager, optionsMap);
                 }catch(Exception ee ){
                    pw.println("<center><h2>Flush Manager "+flushManagerName+" seems not to be present</h2>");
                 }
@@ -216,30 +223,16 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
       return map ;
 
    }
-   private void printCellInfo( PrintWriter pw , String flushManagerName ) throws Exception {
-
-      CellMessage reply =
-               _endpoint.sendAndWait(
-                   new CellMessage(
-                       new CellPath( flushManagerName ) ,
-                          "xgetcellinfo"
-                                  ) ,
-                               20000 ) ;
-
-      if( reply == null ){ showTimeout(pw) ; return ; }
-
-      Object o = reply.getMessageObject() ;
-
-      if( o instanceof Exception ){
-         showProblem( pw , flushManagerName+" seems not to be present" ) ;
-      }else if( o instanceof String ){
-         showProblem( pw , o.toString() ) ;
-      }else if( o instanceof FlushControlCellInfo ){
-         prepareCellInfo( pw, flushManagerName ,  (FlushControlCellInfo)o ) ;
-      }else{
-         showProblem( pw , "Something really weird arrived : "+o.getClass().getName()) ;
-      }
-
+   private void printCellInfo( PrintWriter pw , CellStub flushManager) throws Exception
+   {
+       try {
+           FlushControlCellInfo info = flushManager.sendAndWait("xgetcellinfo", FlushControlCellInfo.class);
+           prepareCellInfo(pw, flushManager.getDestinationPath().toString(), info);
+       } catch (TimeoutCacheException e) {
+           showTimeout(pw) ;
+       } catch (CacheException e) {
+           showProblem(pw, e.getMessage());
+       }
    }
    private void prepareCellInfo( PrintWriter pw , String flushManagerName , FlushControlCellInfo info ){
       pw.println("<h2 class=\"s-table\">Manager : "+flushManagerName+"</h2>");
@@ -271,34 +264,20 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
 
       pw.println("<hr>");
    }
-   private void printFlushManagerList( PrintWriter pw , String flushManagerName ,  Map<?,?> options ) throws Exception {
 
-
-      CellMessage reply =
-               _endpoint.sendAndWait(
-                   new CellMessage(
-                       new CellPath( flushManagerName ) ,
-                          "ls pool -l -binary"
-                                  ) ,
-                               20000 ) ;
-
-      if( reply == null ){ showTimeout(pw) ; return ; }
-
-      Object o = reply.getMessageObject() ;
-
-      if( o instanceof Exception ){
-         showProblem( pw , flushManagerName+" seems not to be present" ) ;
-      }else if( o instanceof String ){
-         showProblem( pw , o.toString() ) ;
-      }else if( o instanceof List ){
-         preparePoolList( pw, flushManagerName ,  options , (List<HsmFlushControlCore.PoolDetails>)o ) ;
-      }else{
-         showProblem( pw , "Something really weird arrived : "+o.getClass().getName()) ;
-      }
-
-
+   private void printFlushManagerList(PrintWriter pw, CellStub flushManager, Map<?,?> options) throws Exception
+   {
+       try {
+           List<HsmFlushControlCore.PoolDetails> list =
+                   flushManager.sendAndWait("ls pool -l -binary", List.class);
+           preparePoolList(pw, flushManager.getDestinationPath().toString(),  options, list);
+       } catch (TimeoutCacheException e) {
+           showTimeout(pw);
+       } catch (CacheException e) {
+           showProblem(pw, e.getMessage());
+       }
    }
-   private void  doActionsIfNecessary( String flushManagerName , Map options , StringBuffer output ){
+   private void  doActionsIfNecessary(CellStub flushManager, Map<?,?> options , StringBuffer output ){
 
        if( ( options == null ) || ( options.size() == 1 ) ) {
            return;
@@ -313,11 +292,9 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
        if( command.startsWith("Control") ){
 
           boolean  central = command.contains("Centrally");
-          CellPath path    = new CellPath( flushManagerName ) ;
           String   remote  = "set control "+( central ? "on" : "off" ) ;
 
-          sendCommand( path , remote , output ) ;
-
+          sendCommand(flushManager , remote , output ) ;
        }else if( command.equals("Flush") ){
 
            Object o = options.get("storageclass") ;
@@ -330,14 +307,13 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
            else {
                return;
            }
-           CellPath path = new CellPath( flushManagerName ) ;
            for (Object element : list) {
                StringTokenizer st = new StringTokenizer(element.toString(), "$");
                String poolName = st.nextToken();
                String storageClass = st.nextToken();
                String remote = "flush pool " + poolName + " " + storageClass;
 
-               sendCommand(path, remote, output);
+               sendCommand(flushManager, remote, output);
            }
 
        }else if( command.startsWith( "Set" ) || command.startsWith( "Query" ) ){
@@ -354,42 +330,30 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
            else {
                return;
            }
-           CellPath path = new CellPath( flushManagerName ) ;
            for (Object element : list) {
                String poolName = element.toString();
                String remote = query ? ("query pool mode " + poolName) :
                        "set pool " + poolName + " " + (rdOnly ? "rdonly" : "rw");
 
-               sendCommand(path, remote, output);
-
+               sendCommand(flushManager, remote, output);
            }
        }
-
    }
-   private void sendCommand( CellPath path , String command , StringBuffer output ){
+
+   private void sendCommand(CellStub stub, String command, StringBuffer output)
+   {
       try{
-          CellMessage result =
-             _endpoint.sendAndWait(
-
-               new CellMessage( path , command) ,
-                      20000L
-                      ) ;
-          if( result == null ){
-             output.append("Command timed out : ").append(command).append("\n") ;
-             return ;
-          }
-          Object oo = result.getMessageObject() ;
-          if( oo instanceof Exception ) {
-              throw (Exception) oo;
-          }
-
-      }catch(Exception ee ){
+          stub.sendAndWait(command, Serializable.class);
+      } catch (TimeoutCacheException e) {
+          output.append("Command timed out : ").append(command).append("\n");
+      } catch(InterruptedException | CacheException e) {
           output.append("Exception in command : ").append(command).append("\n") ;
-          output.append("     ").append(ee.getClass().getName()).
-             append(" -> ").append( ee.getMessage() ).append("\n") ;
-          _log.warn(ee.toString());
+          output.append("     ").append(e.getClass().getName()).
+             append(" -> ").append( e.getMessage() ).append("\n") ;
+          _log.warn(e.toString());
       }
    }
+
    private void preparePoolList( PrintWriter pw , String flushManagerName ,  Map<?,?> options , List<HsmFlushControlCore.PoolDetails> list ){
 
       List<HttpFlushManagerHelper.PoolEntry> pools  = new ArrayList<>() ;

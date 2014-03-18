@@ -61,6 +61,8 @@ import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 /**
   *  Basic cell for performing central monitoring and
   *  file replica manipulation operations.
@@ -121,15 +123,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private static final long _TO_MessageQueueUpdate   =     15 * 1000L; // 15 seconds
    private static final long _TO_GetStorageInfo       = _timeout;
    private static final long _TO_GetCacheLocationList = _timeout;
-   private static final long _TO_GetPoolGroup         = 2*60 * 1000L;
-   private static final long _TO_GetPoolList          = 2*60 * 1000L;
-   private static final long _TO_GetFreeSpace         = 2*60 * 1000L;
-   private static final long _TO_SendObject           = 2*60 * 1000L;
 
    private boolean     _dcccDebug;
 
    private final BlockingQueue<CellMessage> _msgFifo ;
    private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList<>();
+   private final CellStub _poolManager;
+   private final CellStub _pnfsManager;
+   private final CellStub _poolStub;
 
    private static CostModulePoolInfoTable _costTable;
    private static final Object _costTableLock = new Object();
@@ -152,6 +153,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
       _msgFifo = new LinkedBlockingQueue<>() ;
+      _poolManager = new CellStub(this, new CellPath("PoolManager"), 2, MINUTES);
+      _pnfsManager = new CellStub(this, new CellPath("PnfsManager"), 2, MINUTES);
+      _poolStub = new CellStub(this, null, 2, MINUTES);
 
       useInterpreter( true ) ;
 
@@ -848,7 +852,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         String host;
 
         synchronized (_costTableLock) {
-            getCostTable(this);
+            getCostTable();
 
             if ( _costTable == null ) {
                 throw new IllegalArgumentException( "CostTable is not defined (null pointer)");
@@ -1096,42 +1100,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      return task;
    }
 
-   private void getCostTable(CellAdapter cell)
-           throws InterruptedException,
-           NoRouteToCellException {
-
+   private void getCostTable() throws CacheException, InterruptedException
+   {
        synchronized (_costTableLock) {
-
            if (_costTable == null ||
                System.currentTimeMillis() > _costTable.getTimestamp() + 240 * 1000) {
-
-               String command = "xcm ls";
-
-               CellMessage cellMessage = new CellMessage(
-                       new CellPath("PoolManager"), command);
-               CellMessage reply;
-
-               _log.debug("getCostTable(): sendMessage, " + " command=[" + command +
-                    "]\n" + "message=" + cellMessage);
-
-               reply = cell.sendAndWait(cellMessage, _TO_GetFreeSpace);
-
-               _log.debug("DEBUG: Cost table reply arrived");
-
-               if (reply == null ||
-                   !(reply.getMessageObject() instanceof CostModulePoolInfoTable)) {
-
-                   throw new IllegalArgumentException(
-                           "received null pointer or wrong object type from PoolManager in getCostTable");
-               }
-
-               Object obj = reply.getMessageObject();
-               if ( obj == null ) {
-                   throw new IllegalArgumentException(
-                           "received null pointer from getCostTable from PoolManager");
-               } else {
-                   _costTable = (CostModulePoolInfoTable) obj;
-               }
+               _costTable = _poolManager.sendAndWait("xcm ls", CostModulePoolInfoTable.class);
            }
        }
    }
@@ -1517,44 +1491,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                   NoRouteToCellException,
                   InterruptedException
      {
-
-       PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsId, Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
-
-       CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
-       CellMessage answer;
-
-//       _log.debug("getFileAttributes: sendAndWait, pnfsId=" +pnfsId );
-       answer = sendAndWait( cellMessage , _TO_GetStorageInfo ) ;
-
-       if( answer == null ) {
-           throw new
-                   MissingResourceException(
-                   "Timeout " + _TO_GetStorageInfo,
-                   "PnfsManager",
-                   "PnfsGetStorageInfoMessage");
-       }
-
-       msg = (PnfsGetFileAttributes) answer.getMessageObject() ;
-
-       if( msg.getReturnCode() != 0 ) {
-         _log.debug("getFileAttributes() PnfsGetStorageInfoMessage answer error: err="
-              +msg.getReturnCode()
-              + ", message='" + msg + "'" );
-
-         if( msg.getReturnCode() == CacheException.FILE_NOT_FOUND ) {
-           throw new
-               MissingResourceException(
-                   "Pnfs File not found : " + msg.getErrorObject().toString() ,
-                   "PnfsManager",
-                   "PnfsGetStorageInfoMessage" ) ;
+         try {
+             PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsId, Pool2PoolTransferMsg.NEEDED_ATTRIBUTES);
+             return _pnfsManager.sendAndWait(msg).getFileAttributes();
+         } catch (CacheException e) {
+             throw new
+                     MissingResourceException(
+                     e.getMessage(),
+                     "PnfsManager",
+                     "PnfsGetFileAttrobutes");
          }
-         throw new
-             MissingResourceException(
-                 msg.getErrorObject().toString(),
-                 "PnfsManager",
-                 "PnfsGetStorageInfoMessage");
-       }
-       return msg.getFileAttributes();
      }
 
    protected void removeCopy( PnfsId pnfsId , String poolName , boolean force )
@@ -1587,45 +1533,17 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    protected List<String> getCacheLocationList(PnfsId pnfsId, boolean checked)
            throws MissingResourceException,
                   NoRouteToCellException,
-                  InterruptedException                {
+                  InterruptedException
+   {
+       PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(pnfsId);
 
-       PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(pnfsId) ;
-
-       CellMessage cellMessage = new CellMessage( new CellPath( "PnfsManager" ) , msg ) ;
-       CellMessage answer;
-
-//       _log.debug("getCacheLocationList: sendAndWait, pnfsId=" +pnfsId );
-       answer = sendAndWait( cellMessage , _TO_GetCacheLocationList ) ;
-       if( answer == null ) {
-           throw new
-                   MissingResourceException(
-                   "Timeout " + _TO_GetCacheLocationList,
+       try {
+           msg = _pnfsManager.sendAndWait(msg);
+       } catch (CacheException e) {
+           throw new MissingResourceException(
+                   e.getMessage(),
                    "PnfsManager",
                    "PnfsGetCacheLocation");
-       }
-
-       msg = (PnfsGetCacheLocationsMessage) answer.getMessageObject() ;
-       if( msg.getReturnCode() != 0 ) {
-         _log.debug("getCacheLocationList(...) PnfsGetCacheLocationsMessage answer error: err="
-              +msg.getReturnCode()
-              + ", message='" + msg + "'" );
-         if( msg.getReturnCode() == CacheException.FILE_NOT_FOUND ) {
-           /** @todo
-            *  throw error code
-            */
-
-           throw new
-               MissingResourceException(
-                   "Pnfs File not found : " + msg.getErrorObject().toString() ,
-                   "PnfsManager",
-                   "PnfsGetCacheLocationsMessage" ) ;
-         } else {
-           throw new
-               MissingResourceException(
-                   msg.getErrorObject().toString() ,
-                   "PnfsManager",
-                   "PnfsGetCacheLocationsMessage" ) ;
-         }
        }
 
        if( ! checked ) {
@@ -1727,63 +1645,34 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @return list of pool names (Strings)
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
-     *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      */
    protected List<String> getPoolList()
            throws MissingResourceException,
-                  NoRouteToCellException,
-                  InterruptedException                {
-
-       PoolManagerGetPoolListMessage msg = new PoolManagerGetPoolListMessage() ;
-
-       CellMessage cellMessage = new CellMessage( new CellPath( "PoolManager" ) , msg ) ;
-       CellMessage answer;
-
-//       _log.debug("getPoolList: sendAndWait" );
-       answer = sendAndWait( cellMessage , _TO_GetPoolList ) ;
-       if( answer == null ) {
+                  InterruptedException
+   {
+       try {
+           return _poolManager.sendAndWait(new PoolManagerGetPoolListMessage()).getPoolList();
+       } catch (CacheException e) {
            throw new
                    MissingResourceException(
-                   "Timeout : " + _TO_GetPoolList,
+                   e.getMessage(),
                    "PoolManager",
                    "PoolManagerGetPoolListMessage");
        }
-
-
-       msg = (PoolManagerGetPoolListMessage) answer.getMessageObject() ;
-       if( msg.getReturnCode() != 0 ) {
-           throw new
-                   MissingResourceException(
-                   msg.getErrorObject().toString(),
-                   "PoolManager",
-                   "PoolManagerGetPoolListMessage");
-       }
-
-       return  msg.getPoolList() ;
    }
 
    protected List<String> getPoolGroup(String pGroup)
        throws InterruptedException,
        NoRouteToCellException {
 
-     String command = "psux ls pgroup " + pGroup;
-     CellMessage cellMessage = new CellMessage(
-        new CellPath("PoolManager" ),
-        command ) ;
-     CellMessage reply;
-
-     _log.debug("getPoolGroup: sendMessage, command=["+command+"]\n"
-          + "message=" +cellMessage );
-
-     reply = sendAndWait( cellMessage , _TO_GetPoolGroup ) ;
-
-     if ( reply == null || ! (reply.getMessageObject() instanceof Object [] ) ) {
-       reportProblemGPG( reply );
+     Object[] r;
+     try {
+       r = _poolManager.sendAndWait("psux ls pgroup " + pGroup, Object[].class);
+     } catch (CacheException e) {
+       _log.info( "GetPoolGroup: {}", e.getMessage());
        return null;
      }
-
-     Object [] r = (Object []) reply.getMessageObject();
 
      if ( r.length != 3 ) {
        _log.info("getPoolGroup: The length of reply=" + r.length +" != 3");
@@ -1808,65 +1697,23 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      }
    }
 
-   private void reportProblemGPG( CellMessage msg ) {
-     if( msg == null ) {
-       _log.info("Request Timed out");
-       return;
-     }
-
-     Object o = msg.getMessageObject() ;
-     if( o instanceof Exception ){
-       _log.info( "GetPoolGroup: got exception" +((Exception)o).getMessage() ) ;
-     }else if( o instanceof String ){
-       _log.info( "GetPoolGroup: got error '" +o.toString() + "'" ) ;
-     }else{
-       _log.info( "GetPoolGroup: Unexpected class arrived : "+o.getClass().getName() ) ;
-     }
-   }
-
-   protected String getPoolHost( String poolName )
-           throws InterruptedException, NoRouteToCellException {
-
-       CellMessage      cellMessage = new CellMessage( new CellPath(poolName) , "xgetcellinfo" ) ;
-
-       CellMessage answer;
-       String poolHost;
-
-       _log.debug("getHostPool: send xgetcellinfo message to pool " + poolName );
-
-       answer = sendAndWait( cellMessage , _TO_GetPoolTags ) ;
-
-       if (answer == null) {
+   protected String getPoolHost(String poolName)
+           throws InterruptedException, NoRouteToCellException
+   {
+       PoolCellInfo msg;
+       try {
+           msg = _poolStub.sendAndWait(new CellPath(poolName), "xgetcellinfo", PoolCellInfo.class);
+       } catch (CacheException e) {
            throw new MissingResourceException(
-                   "Timeout : " + _TO_GetPoolTags, poolName,
-                   "xgetcellinfo");
+                   e.getMessage(), poolName, "xgetcellinfo");
        }
 
-       if ( ! (answer.getMessageObject() instanceof PoolCellInfo) ) {
-           throw new IllegalArgumentException ( "getPoolHost() received wrong object type from Pool "
-                 + poolName + ", obj=" + answer.getMessageObject() );
-       }
+       Map<String, String> map = msg.getTagMap();
 
-       PoolCellInfo msgAnswer = (PoolCellInfo) answer.getMessageObject() ;
+       _log.debug("getHostPool: msgAnswer={}", msg);
+       _log.debug("getHostPool: tag map={}", map);
 
-       if( msgAnswer.getErrorCode() != 0 ) {
-           throw new
-                   MissingResourceException("getPoolHost(): received error from pool=" + poolName
-                   + ", error=" + msgAnswer.getErrorCode() + ", error message='"
-                   + msgAnswer.getErrorMessage() + "'",
-                   " pool ", poolName);
-       }
-
-       Map<String, String> map = msgAnswer.getTagMap();
-       poolHost =
-            (map == null)
-            ? null
-            : map.get("hostname");
-
-       _log.debug("getHostPool: msgAnswer=" + msgAnswer );
-       _log.debug("getHostPool: tag map=" + map );
-
-       return poolHost;
+       return (map == null) ? null : map.get("hostname");
    }
 
    /**
@@ -1885,63 +1732,33 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           throws MissingResourceException ,
                  ConcurrentModificationException ,
                  NoRouteToCellException ,
-                 InterruptedException                {
+                 InterruptedException
+   {
+       List<CacheRepositoryEntryInfo> list = new ArrayList<>();
 
-
-       List<CacheRepositoryEntryInfo> list = new ArrayList<>() ;
-
-       for(
-            IteratorCookie cookie = new IteratorCookie() ;
-            ! cookie.done() ;
-          ){
-
-           PoolQueryRepositoryMsg msg = new PoolQueryRepositoryMsg(poolName,cookie) ;
-
-           CellMessage cellMessage = new CellMessage( new CellPath( poolName ) , msg ) ;
-           CellMessage answer;
-
-//           _log.debug("getPoolRepository: sendAndWait" );
-           answer = sendAndWait( cellMessage , _TO_GetPoolRepository ) ;
-
-           if( answer == null ) {
-               throw new
-                       MissingResourceException(
-                       "PoolQueryRepositoryMsg timed out",
-                       poolName,
-                       " " + _TO_GetPoolRepository);
+       IteratorCookie cookie = new IteratorCookie();
+       while (!cookie.done()) {
+           PoolQueryRepositoryMsg msg;
+           try {
+               msg = _poolStub.sendAndWait(new CellPath(poolName),
+                                           new PoolQueryRepositoryMsg(poolName, cookie));
+           } catch (CacheException e) {
+               throw new MissingResourceException( e.getMessage(), poolName, "PoolQueryRepositoryMsg");
            }
 
-           msg = (PoolQueryRepositoryMsg) answer.getMessageObject() ;
-
-           cookie = msg.getCookie() ;
-           if( cookie.invalidated() ) {
-               throw new
-                       ConcurrentModificationException("Pool file list of " + poolName + " was invalidated");
+           cookie = msg.getCookie();
+           if (cookie.invalidated()) {
+               throw new ConcurrentModificationException("Pool file list of " + poolName + " was invalidated");
            }
 
-           list.addAll( msg.getInfos()) ;
-
+           list.addAll(msg.getInfos());
        }
-
-       return list ;
+       return list;
    }
 
-   //---------------
-   protected Object sendObject(String cellPath, Serializable object)
-       throws Exception {
-     return sendObject(new CellPath(cellPath), object);
+   protected Object sendObject(String poolName, Serializable object)
+       throws Exception
+   {
+       return _poolStub.sendAndWait(new CellPath(poolName), object, Object.class);
    }
-
-   protected Object sendObject(CellPath cellPath, Serializable object)
-       throws Exception {
-
-     CellMessage res = sendAndWait( new CellMessage(cellPath, object), _TO_SendObject );
-
-     if (res == null) {
-         throw new Exception("Request timed out");
-     }
-
-     return res.getMessageObject();
-   }
-
 }

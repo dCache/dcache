@@ -26,8 +26,11 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  *
@@ -40,17 +43,17 @@ public class CopyManager extends CellAdapter {
        LoggerFactory.getLogger(CopyManager.class);
 
    private final Object     _processLock = new Object() ;
+   private final CellStub _poolStub;
    private boolean    _isActive;
    private Thread     _worker;
    private CopyWorker _copy;
    private String    _status      = "IDLE" ;
-   private Parameter      _parameter      = new Parameter() ;
+   private final Parameter      _parameter      = new Parameter();
    private PoolRepository _poolRepository;
-   private long        _repositoryTimeout = 10L * 60L * 1000L ;
-   private String _source;
+    private String _source;
    private String [] _destination;
    private boolean _precious;
-   private class Parameter {
+   private static class Parameter {
        private PoolCellInfo   _sourceInfo;
        private PoolCellInfo  []  _destinationInfo;
        private long   _started;
@@ -84,9 +87,8 @@ public class CopyManager extends CellAdapter {
 
    public CopyManager( String cellName , String args )
    {
-
       super( cellName , args ) ;
-
+      _poolStub = new CellStub(this, null, 10, MINUTES);
       start() ;
    }
 
@@ -330,7 +332,7 @@ public class CopyManager extends CellAdapter {
 //               setStatus("Waiting for destination pool infos");
 //               getDestinationPoolInfos();
                setStatus("Waiting for pool repository of "+_source);
-               PoolRepository rep = getExtendedPoolRepository( _source , _repositoryTimeout ) ;
+               PoolRepository rep = getExtendedPoolRepository(_source);
                synchronized( _processLock ){
                    _poolRepository = rep ;
                }
@@ -424,54 +426,7 @@ public class CopyManager extends CellAdapter {
         }
 
    }
-   private PoolCellInfo getPoolInfo( String poolName ) throws Exception {
-       CellMessage msg = new CellMessage( new CellPath(poolName) , "rep ls -l" ) ;
-       msg = sendAndWait( msg , _repositoryTimeout ) ;
-       if( msg == null ) {
-           throw new
-                   Exception("Request to " + poolName + " timed out ");
-       }
 
-       Object obj = msg.getMessageObject() ;
-       if( ( obj == null ) || ! ( obj instanceof PoolCellInfo ) ) {
-           throw new
-                   IllegalArgumentException("Answer empty or invalid");
-       }
-
-
-       return (PoolCellInfo) obj ;
-   }
-   private void getSourcePoolInfos()throws Exception {
-       _parameter._sourceInfo = getPoolInfo( _source ) ;
-   }
-   private void getDestinationPoolInfos()throws Exception {
-       _parameter._destinationInfo = new PoolCellInfo[_destination.length] ;
-       for( int i = 0 ; i < _destination.length ; i++ ) {
-           _parameter._destinationInfo[i] = getPoolInfo(_destination[i]);
-       }
-   }
-   private boolean checkFileInPool( PnfsId pnfsId , String poolName  )throws InterruptedException{
-       try{
-           PoolCheckFileMessage msg = new PoolCheckFileMessage( poolName , pnfsId ) ;
-           CellMessage carrier = new CellMessage( new CellPath(poolName) , msg ) ;
-           carrier = sendAndWait( carrier , _repositoryTimeout ) ;
-           if( carrier == null ) {
-               throw new
-                       Exception("Request to " + poolName + " timed out");
-           }
-
-           msg = (PoolCheckFileMessage)carrier.getMessageObject() ;
-
-           return msg.getHave() ;
-
-       }catch(Exception e ){
-           _log.warn("Problem checking file : "+pnfsId+" on pool "+poolName+" : "+e );
-           if( e instanceof InterruptedException ) {
-               throw (InterruptedException) e;
-           }
-           return false ;
-       }
-   }
    private void sendQuery( PoolFileEntry entry ){
 
        synchronized( _processLock ){
@@ -660,22 +615,10 @@ public void messageArrived( CellMessage message ){
            _log.warn("Unexpected message arrived : "+message);
        }
    }
-   public PoolRepository getExtendedPoolRepository( String poolName , long timeout ) throws Exception {
-       CellMessage msg = new CellMessage( new CellPath(poolName) , "rep ls -l" ) ;
-       msg = sendAndWait( msg , timeout ) ;
-       if( msg == null ) {
-           throw new
-                   Exception("Request to " + poolName + " timed out ");
-       }
-
-       Object obj = msg.getMessageObject() ;
-       if( ( obj == null ) || ! ( obj instanceof String ) ) {
-           throw new
-                   Exception("Answer empty or invalid");
-       }
-
+   public PoolRepository getExtendedPoolRepository(String poolName) throws Exception {
+       String obj = _poolStub.sendAndWait(new CellPath(poolName), "rep ls -l", String.class);
        Map<String, PoolFileEntry> map = new HashMap<>() ;
-       StringTokenizer st = new StringTokenizer( (String)obj , "\n" ) ;
+       StringTokenizer st = new StringTokenizer(obj , "\n" ) ;
        long total = 0L ;
        int  counter = 0;
        while( st.hasMoreTokens() ){

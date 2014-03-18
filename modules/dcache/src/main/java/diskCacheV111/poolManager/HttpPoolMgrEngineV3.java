@@ -1,5 +1,4 @@
-// $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $
-package diskCacheV111.poolManager ;
+package diskCacheV111.poolManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HTMLWriter;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
@@ -27,7 +28,6 @@ import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.AgingHash;
@@ -35,11 +35,14 @@ import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
+import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.poolmanager.Partition;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
         CellInfoProvider
@@ -58,12 +61,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private final static long TIMEOUT = 20000;
 
     private final Thread _restoreCollector;
+    private final CellStub _poolManager;
+    private final CellStub _pnfsManager;
+    private final CellStub _hsmController;
 
-    private CellEndpoint _endpoint;
-    private AgingHash   _pnfsPathMap     = new AgingHash(500);
-    private AgingHash _fileAttributesMap = new AgingHash(500);
-    private boolean     _takeAll         = true;
-    private SimpleDateFormat _formatter  = new SimpleDateFormat ("MM.dd HH:mm:ss");
+    private final CellEndpoint _endpoint;
+    private final AgingHash   _pnfsPathMap     = new AgingHash(500);
+    private final AgingHash _fileAttributesMap = new AgingHash(500);
+    private final boolean     _takeAll         = true;
+    private final SimpleDateFormat _formatter  = new SimpleDateFormat ("MM.dd HH:mm:ss");
     private volatile List<Object[]> _lazyRestoreList =
         new ArrayList<>();
     private long        _collectorUpdate = 60000L;
@@ -72,13 +78,16 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private final Object      _updateLock      = new Object();
     private boolean     _addStorageInfo;
     private boolean     _addHsmInfo;
-    private String      _hsmController   = "HsmManager";
     private String[]    _siDetails;
     private String      _cssFile         = "/poolInfo/css/default.css";
 
     public HttpPoolMgrEngineV3(CellEndpoint endpoint, String[] argsString)
     {
         _endpoint = endpoint;
+        // FIXME: Do not hardcode cell addresses
+        _poolManager = new CellStub(endpoint, new CellPath("PoolManager"), TIMEOUT, SECONDS);
+        _pnfsManager = new CellStub(endpoint, new CellPath("PnfsManager"), TIMEOUT, SECONDS);
+        _hsmController = new CellStub(endpoint, new CellPath("HsmManager"), TIMEOUT, SECONDS);
 
         for (int i = 0; i < argsString.length; i++) {
             _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
@@ -188,24 +197,17 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private void runRestoreCollector()
         throws NoRouteToCellException, InterruptedException
     {
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "xrc ls"),
-                                 TIMEOUT);
-
-        if (reply == null) {
-            _log.warn("runRestoreCollector : no reply from PoolManager");
+        RestoreHandlerInfo[] infos;
+        try {
+            infos = _poolManager.sendAndWait("xrc ls", RestoreHandlerInfo[].class);
+        } catch (CacheException e) {
+            _log.warn("runRestoreCollector : failure reply from PoolManager : " + e.getMessage());
             return;
         }
 
-        Object o = reply.getMessageObject();
-        if (!(o instanceof RestoreHandlerInfo[])) {
-            _log.warn("runRestoreCollector : illegal reply from PoolManager : "+o.getClass());
-            return;
-        }
         List<Object[]> agedList = new ArrayList<>();
         long      cut      = System.currentTimeMillis() - (1000L * 60L * 2L);
-        for (RestoreHandlerInfo info : (RestoreHandlerInfo[])o) {
+        for (RestoreHandlerInfo info : infos) {
             if (_takeAll || (info.getStartTime() < cut)) {
                 try {
                     Object[] a = new Object[3];
@@ -266,23 +268,10 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private StorageInfo getHsmInfoByStorageInfo(String pnfsId, StorageInfo storageInfo)
     {
         try {
-            HsmControlGetBfDetailsMsg hsmMsg =
+            HsmControlGetBfDetailsMsg msg =
                 new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId),storageInfo,"default");
-
-            CellMessage msg = new CellMessage(new CellPath(_hsmController), hsmMsg);
-            msg = _endpoint.sendAndWait(msg, TIMEOUT);
-            if (msg == null) {
-                return null;
-            }
-            Object reply = msg.getMessageObject();
-            if ((reply == null) || !(reply instanceof HsmControlGetBfDetailsMsg)) {
-                _log.info("Invalid or missing reply from "+_hsmController);
-                return null;
-            }
-            hsmMsg = (HsmControlGetBfDetailsMsg)msg.getMessageObject();
-            return hsmMsg.getStorageInfo();
-
-        } catch (Exception e) {
+            return _hsmController.sendAndWait(msg).getStorageInfo();
+        } catch (InterruptedException | CacheException e) {
             _log.warn(e.toString(), e);
             return null;
         }
@@ -291,39 +280,24 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private String getPathByPnfsId(String pnfsId)
     {
         try {
-            PnfsMapPathMessage pnfsMsg = new PnfsMapPathMessage(new PnfsId(pnfsId));
-            CellMessage msg = new CellMessage(new CellPath("PnfsManager"), pnfsMsg);
-            msg = _endpoint.sendAndWait(msg, TIMEOUT);
-            if (msg == null) {
-                return null;
-            }
-            pnfsMsg = (PnfsMapPathMessage)msg.getMessageObject();
-            return pnfsMsg.getGlobalPath();
-
-        } catch (Exception e) {
-            _log.warn(e.toString(), e);
+            PnfsMapPathMessage msg = new PnfsMapPathMessage(new PnfsId(pnfsId));
+            return _pnfsManager.sendAndWait(msg).getGlobalPath();
+        } catch (InterruptedException | CacheException e) {
+            _log.warn(e.toString());
             return null;
         }
-
     }
 
     private FileAttributes getFileAttributesByPnfsId(String pnfsId)
     {
         try {
-            PnfsGetFileAttributes pnfsMsg = new PnfsGetFileAttributes(new PnfsId(pnfsId), EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
-            CellMessage msg = new CellMessage(new CellPath("PnfsManager"), pnfsMsg);
-            msg = _endpoint.sendAndWait(msg, TIMEOUT);
-            if (msg == null) {
-                return null;
-            }
-            pnfsMsg = (PnfsGetFileAttributes) msg.getMessageObject();
-            return pnfsMsg.getFileAttributes();
-
-        } catch (Exception e) {
-            _log.warn(e.toString(), e);
+            PnfsGetFileAttributes msg =
+                    new PnfsGetFileAttributes(new PnfsId(pnfsId), EnumSet.of(FileAttribute.SIZE, FileAttribute.STORAGEINFO));
+            return _pnfsManager.sendAndWait(msg).getFileAttributes();
+        } catch (InterruptedException | CacheException e) {
+            _log.warn(e.toString());
             return null;
         }
-
     }
 
     private void printMenu(PrintWriter pw, String sort, String grep)
@@ -595,34 +569,20 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             printConfigurationHeader(pw);
             printPoolManagerHeader(pw, "Partition Manager");
             showDirectory(pw, 0);
-            CellMessage reply =
-                _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                     "pmx get map"),
-                                     TIMEOUT);
-            if (reply == null) { showTimeout(pw); return; }
-            Object o = reply.getMessageObject();
-            if (o instanceof Exception) {
-                showProblem(pw, ((Exception)o).getMessage());
-            } else if (o instanceof String) {
-                showProblem(pw, o.toString());
-            } else if (!(o instanceof Map)) {
-                showProblem(pw, "Unexpected class arrived : "+o.getClass().getName());
-            } else {
-                Map<String,Partition> parameterMap = (Map<String,Partition>) o;
-                if (key.equals("section")) {
-                    printParameterInSections(pw, parameterMap);
-                } else if (key.equals("matrix")) {
-                    printParameterInMatrix(pw, parameterMap);
-                }
+            Map<String,Partition> parameterMap = _poolManager.sendAndWait("pmx get map", Map.class);
+            if (key.equals("section")) {
+                printParameterInSections(pw, parameterMap);
+            } else if (key.equals("matrix")) {
+                printParameterInMatrix(pw, parameterMap);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException | InterruptedException e) {
             showProblem(pw, e.getMessage());
         }
 
         pw.println("<hr><address>Created "+(new Date())+" $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $");
         pw.println("</body></html>");
-
     }
 
     private void printParameterInMatrix(PrintWriter pw, Map<String,Partition> parameterMap)
@@ -788,44 +748,27 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
                        "dCache Dataset Restore Monitor");
 
         try {
-            CellMessage reply =
-                _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                     "xrc ls"),
-                                     TIMEOUT);
-            if (reply == null) {
-                showTimeout(html);
-                return;
-            }
-            Object o = reply.getMessageObject();
+            RestoreHandlerInfo[] list = _poolManager.sendAndWait("xrc ls", RestoreHandlerInfo[].class);
+            Arrays.sort(list, new OurComparator(sorting));
 
-            if (o instanceof Exception) {
-                showProblem(html, ((Exception)o).getMessage());
-            } else if (o instanceof String) {
-                showProblem(html, o.toString());
-            } else if (!(o instanceof Object[])) {
-                showProblem(html, "Unexpected class arrived : "
-                            + o.getClass().getName());
-            } else {
-                RestoreHandlerInfo[] list = (RestoreHandlerInfo[])o;
-                Arrays.sort(list, new OurComparator(sorting));
+            html.beginTable("sortable",
+                            "pnfs",      "PnfsId",
+                            "subnet",    "Subnet",
+                            "candidate", "PoolCandidate",
+                            "started",   "Started",
+                            "clients",   "Clients",
+                            "retries",   "Retries",
+                            "status",    "Status");
 
-                html.beginTable("sortable",
-                                "pnfs",      "PnfsId",
-                                "subnet",    "Subnet",
-                                "candidate", "PoolCandidate",
-                                "started",   "Started",
-                                "clients",   "Clients",
-                                "retries",   "Retries",
-                                "status",    "Status");
-
-                for (RestoreHandlerInfo info : list) {
-                    if ((grep == null) || grepOk(grep, info)) {
-                        showRestoreInfo(html, info);
-                    }
+            for (RestoreHandlerInfo info : list) {
+                if ((grep == null) || grepOk(grep, info)) {
+                    showRestoreInfo(html, info);
                 }
-                html.endTable();
             }
-        } catch (Exception e) {
+            html.endTable();
+        } catch (TimeoutCacheException e) {
+            showTimeout(html);
+        } catch (InterruptedException | CacheException e) {
             showProblem(html, e.getMessage());
         }
 
@@ -1097,7 +1040,6 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private void showMatch(PrintWriter pw, HttpRequest request)
         throws NoRouteToCellException, InterruptedException
     {
-
         String type   = request.getParameter(PARAMETER_TYPE);
         String store  = request.getParameter(PARAMETER_STORE);
         String dcache = request.getParameter(PARAMETER_DCACHE);
@@ -1117,35 +1059,25 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             showQueryForm(pw, linkGroup, type, store, dcache, net, prot);
             pw.println("<p><hr><p>");
 
-            CellMessage reply =
-                _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"), "psux match " + type + " "
-                                                     + store + " " + dcache + " " + net + " " + prot
-                                                     + (linkGroup.equals("none") ? "" : " -linkGroup="+linkGroup)),
-                                     TIMEOUT);
-
-            if (reply == null) { showTimeout(pw); return; }
-
-            Object o = reply.getMessageObject();
-            if (o instanceof Exception) {
-                showProblem(pw, ((Exception)o).getMessage());
-                return;
-            } else if (o instanceof String) {
-                showProblem(pw, o.toString());
-                return;
-            } else if (!(o instanceof PoolPreferenceLevel[])) {
-                showProblem(pw, "Unexpected class arrived : "+o.getClass().getName());
-                return;
-            }
-            PoolPreferenceLevel[] result = (PoolPreferenceLevel[])o;
-
-            for (int i = 0; i < result.length; i++) {
-                pw.print("<p><h2>Selected Pools with attraction "+i);
-                String tag = result[i].getTag();
-                if (tag != null) {
-                    pw.print(" (dCache subsection=" + tag + ")");
+            try {
+                PoolPreferenceLevel[] result =
+                        _poolManager.sendAndWait("psux match " + type + " "
+                                                         + store + " " + dcache + " " + net + " " + prot
+                                                         + (linkGroup.equals("none") ? "" : " -linkGroup="+linkGroup),
+                                                 PoolPreferenceLevel[].class);
+                for (int i = 0; i < result.length; i++) {
+                    pw.print("<p><h2>Selected Pools with attraction "+i);
+                    String tag = result[i].getTag();
+                    if (tag != null) {
+                        pw.print(" (dCache subsection=" + tag + ")");
+                    }
+                    pw.println("</h2>");
+                    showList(pw, result[i].getPoolList().toArray(), 8, "/poolInfo/pools/");
                 }
-                pw.println("</h2>");
-                showList(pw, result[i].getPoolList().toArray(), 8, "/poolInfo/pools/");
+            } catch (TimeoutCacheException e) {
+                showTimeout(pw);
+            } catch (CacheException e) {
+                showProblem(pw, e.getMessage());
             }
         }
         pw.println("</center>");
@@ -1249,16 +1181,16 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private void queryAll(PrintWriter pw, String request, String type)
         throws NoRouteToCellException, InterruptedException
     {
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 request),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
-
-        Object[] o = (Object[])reply.getMessageObject();
-        pw.println("<center><h1>"+type+"</h1>");
-        showList(pw, o, 8);
-        pw.println("</center>");
+        try {
+            Object[] o = _poolManager.sendAndWait(request, Object[].class);
+            pw.println("<center><h1>"+type+"</h1>");
+            showList(pw, o, 8);
+            pw.println("</center>");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
+        }
     }
 
     private void queryAllPools(PrintWriter pw)
@@ -1298,42 +1230,34 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             queryAllPools(pw);
             return;
         }
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "psux ls pool "+poolName),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
-
         pw.println("<center>");
         pw.println("<h1>Report for Pool <font color=red>"+poolName+"</font></h1>");
-        Object answer = reply.getMessageObject();
-        if (answer instanceof Exception) {
-            showProblem(pw, ((Exception)answer).getMessage());
-            return;
-        } else if (!(answer instanceof Object[])) {
-            showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
-            return;
+        try {
+            Object[] o = _poolManager.sendAndWait("psux ls pool " + poolName, Object[].class);
+            Object[] groupList = (Object[])o[1];
+            Object[] linkList  = (Object[])o[2];
+            boolean   enabled   = (Boolean)o[3];
+            boolean   rdOnly    = (Boolean)o[5];
+            long      active    = (Long)o[4];
+            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.print("<tr><th align=right>Enabled : </th><td align=left>");
+            pw.print(enabled ? "Yes" : "No");
+            pw.println("</td></tr>");
+            pw.print("<tr><th align=right>Mode : </th><td align=left>");
+            pw.print(rdOnly ? "Read Only" : "Read/Write");
+            pw.println("</td></tr>");
+            pw.print("<tr><th align=right>Active : </th><td align=left>");
+            pw.print((active < (60 * 1000)) ? "Yes" : "No");
+            pw.println("</td></tr></table>");
+            pw.println("<h3>We are member of the following pool groups</h3>");
+            showList(pw, groupList, 8, "/poolInfo/pgroups/");
+            pw.println("<h3>We are pointing to the following Links</h3>");
+            showList(pw, linkList, 8, "/poolInfo/links/");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
         }
-        Object[] o = (Object[])answer;
-        Object[] groupList = (Object[])o[1];
-        Object[] linkList  = (Object[])o[2];
-        boolean   enabled   = (Boolean)o[3];
-        boolean   rdOnly    = (Boolean)o[5];
-        long      active    = (Long)o[4];
-        pw.println("<table border=0 cellspacing=4 cellpadding=4>");
-        pw.print("<tr><th align=right>Enabled : </th><td align=left>");
-        pw.print(enabled ? "Yes" : "No");
-        pw.println("</td></tr>");
-        pw.print("<tr><th align=right>Mode : </th><td align=left>");
-        pw.print(rdOnly ? "Read Only" : "Read/Write");
-        pw.println("</td></tr>");
-        pw.print("<tr><th align=right>Active : </th><td align=left>");
-        pw.print((active < (60*1000)) ? "Yes" : "No");
-        pw.println("</td></tr></table>");
-        pw.println("<h3>We are member of the following pool groups</h3>");
-        showList(pw, groupList, 8, "/poolInfo/pgroups/");
-        pw.println("<h3>We are pointing to the following Links</h3>");
-        showList(pw, linkList, 8, "/poolInfo/links/");
         pw.println("</center>");
     }
 
@@ -1344,36 +1268,29 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             queryAllUnits(pw);
             return;
         }
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "psux ls unit "+unitName),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
-
         pw.println("<center>");
         pw.println("<h1>Report for Unit <font color=red>"+unitName+"</font></h1>");
-        Object answer = reply.getMessageObject();
-        if (answer instanceof Exception) {
-            showProblem(pw, ((Exception)answer).getMessage());
-            return;
-        } else if (!(answer instanceof Object[])) {
-            showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
-            return;
-        }
-        Object[] o = (Object[])answer;
-        String   type       = o[1].toString();
-        Object[] groupList = (Object[])o[2];
+        try {
+            Object[] o = _poolManager.sendAndWait("psux ls unit "+unitName, Object[].class);
 
-        pw.println("<table border=0 cellspacing=4 cellpadding=4>");
-        pw.print("<tr><th align=right>Selection Unit : </th><td align=left>");
-        pw.print(unitName);
-        pw.println("</td></tr>");
-        pw.print("<tr><th align=right>Selection Type : </th><td align=left>");
-        pw.print(type);
-        pw.println("</td></tr>");
-        pw.print("</table>");
-        pw.println("<h3>We are member of the following Selection Unit Groups</h3>");
-        showList(pw, groupList, 8, "/poolInfo/ugroups/");
+            String   type       = o[1].toString();
+            Object[] groupList = (Object[])o[2];
+
+            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.print("<tr><th align=right>Selection Unit : </th><td align=left>");
+            pw.print(unitName);
+            pw.println("</td></tr>");
+            pw.print("<tr><th align=right>Selection Type : </th><td align=left>");
+            pw.print(type);
+            pw.println("</td></tr>");
+            pw.print("</table>");
+            pw.println("<h3>We are member of the following Selection Unit Groups</h3>");
+            showList(pw, groupList, 8, "/poolInfo/ugroups/");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
+        }
         pw.println("</center>");
     }
 
@@ -1427,51 +1344,44 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private void queryLinkList(PrintWriter pw)
         throws NoRouteToCellException, InterruptedException
     {
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "psux ls link -x"),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
 
-        Object answer = reply.getMessageObject();
-        if (answer instanceof Exception) {
-            showProblem(pw, ((Exception)answer).getMessage());
-            return;
-        } else if (!(answer instanceof List)) {
-            showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
-            return;
-        }
-        List<LinkProperties> list = new ArrayList<>();
-        for (Object[] o : (List<Object[]>)answer) {
-            list.add(new LinkProperties(o));
-        }
+        try {
+            List<Object[]> answer = _poolManager.sendAndWait("psux ls link -x", List.class);
+            List<LinkProperties> list = new ArrayList<>();
+            for (Object[] o : answer) {
+                list.add(new LinkProperties(o));
+            }
+            Collections.sort(list);
 
-        Collections.sort(list);
-
-        pw.println("<center><table class=\"s-table\">");
-        pw.println("<tr  class=\"s-table\">");
-        pw.print("<th rowspan=2 class=\"s-table\">Name</th>");
-        pw.print("<th rowspan=2 class=\"s-table\">Partition</th>");
-        pw.print("<th colspan=4 class=\"s-table\">Preferences</th>");
-        pw.print("<th colspan=4 rowspan=2 class=\"s-table\">Unit Groups</th>");
-        pw.print("<th rowspan=2 class=\"s-table\">Pool Groups</th>");
-        pw.print("<th rowspan=2 class=\"s-table\">Pools</th>");
-        pw.println("</tr>");
-        pw.println("<tr class=\"s-table\">");
-        pw.print("<th class=\"s-table\">Read</th><th class=\"s-table\">Write</font></th>");
-        pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</font></th>");
-        pw.println("</tr>");
-        int row = 0;
-        String[] rowColor = { "s-table-a", "s-table-b" };
-
-        for (LinkProperties lp : list) {
-            pw.println("<tr class=\""+rowColor[row%rowColor.length]+"\">");
-            printLinkPropertyRow(pw, lp);
+            pw.println("<center><table class=\"s-table\">");
+            pw.println("<tr  class=\"s-table\">");
+            pw.print("<th rowspan=2 class=\"s-table\">Name</th>");
+            pw.print("<th rowspan=2 class=\"s-table\">Partition</th>");
+            pw.print("<th colspan=4 class=\"s-table\">Preferences</th>");
+            pw.print("<th colspan=4 rowspan=2 class=\"s-table\">Unit Groups</th>");
+            pw.print("<th rowspan=2 class=\"s-table\">Pool Groups</th>");
+            pw.print("<th rowspan=2 class=\"s-table\">Pools</th>");
             pw.println("</tr>");
-            row++;
-        }
+            pw.println("<tr class=\"s-table\">");
+            pw.print("<th class=\"s-table\">Read</th><th class=\"s-table\">Write</font></th>");
+            pw.print("<th class=\"s-table\">Cache</th><th class=\"s-table\">P2p</font></th>");
+            pw.println("</tr>");
+            int row = 0;
+            String[] rowColor = { "s-table-a", "s-table-b" };
 
-        pw.println("</table></center>");
+            for (LinkProperties lp : list) {
+                pw.println("<tr class=\""+rowColor[row%rowColor.length]+"\">");
+                printLinkPropertyRow(pw, lp);
+                pw.println("</tr>");
+                row++;
+            }
+
+            pw.println("</table></center>");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
+        }
     }
 
     private void printLinkPropertyRow(PrintWriter pw, LinkProperties lp)
@@ -1533,62 +1443,59 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             queryAllLinks(pw);
             return;
         }
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "psux ls link "+linkName),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
+        try {
+            Object[] answer = _poolManager.sendAndWait("psux ls link " + linkName, Object[].class);
+            LinkProperties lp = new LinkProperties(answer);
 
-        Object answer = reply.getMessageObject();
-        if (answer instanceof Exception) {
-            showProblem(pw, ((Exception)answer).getMessage());
-            return;
-        } else if (!(answer instanceof Object[])) {
-            showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
-            return;
+            pw.println("<center>");
+            pw.println("<h1>Report for Link <font color=red>"+linkName+"</font></h1>");
+            pw.println("<h3>Link Properties</h3>");
+
+            pw.println("<table class=\"s-table\" id=\"linkproperties\">");
+            pw.println("<tr class=\"s-table\">");
+            pw.println("<th class=\"s-table\" colspan=4>Preferences</td>");
+            pw.println("<th rowspan=2 align=center class=\"s-table\">dCache Partition</td></tr>");
+            pw.println("<tr class=\"s-table\">");
+            pw.println("<th class=\"s-table\">Read</th>");
+            pw.println("<th class=\"s-table\">Write</th>");
+            pw.println("<th class=\"s-table\">Restore</th>");
+            pw.println("<th class=\"s-table\">Pool to Pool</th>");
+            pw.println("</tr>");
+            pw.print("<tr  class=\"s-table-b\">");
+            pw.print("<td class=\"s-table\"><span class=\"s-table\">");
+            pw.print(lp.readPref);
+            pw.println("</span></td>");
+            pw.print("<td class=\"s-table\"><span class=\"s-table\">");
+            pw.print(lp.writePref);
+            pw.println("</span></td>");
+            pw.print("<td class=\"s-table\"><span class=\"s-table\">");
+            pw.print(lp.cachePref);
+            pw.println("</span></td>");
+            pw.print("<td class=\"s-table\"><span class=\"s-table\">");
+            pw.print(lp.p2pPref);
+            pw.println("</span></td>");
+            pw.print("<td class=\"s-table\"><span class=\"s-table\">");
+            pw.print(lp.tag);
+            pw.println("</span></td>");
+            pw.print("<tr>");
+
+            pw.println("</table>");
+
+
+            if (lp.poolList.length > 0) {
+                pw.println("<h3>We point the following Pools</h3>");
+                showList(pw, lp.poolList, 8, "/poolInfo/pools/");
+            }
+            pw.println("<h3>We point to the following Pool Groups</h3>");
+            showList(pw, lp.pGroupList, 8, "/poolInfo/pgroups/");
+            pw.println("<h3>We point to the following Selection Unit Groups</h3>");
+            showList(pw, lp.groupList, 8, "/poolInfo/ugroups/");
+            pw.println("</center>");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
         }
-
-        LinkProperties lp = new LinkProperties((Object[])answer);
-
-        pw.println("<center>");
-        pw.println("<h1>Report for Link <font color=red>"+linkName+"</font></h1>");
-        pw.println("<h3>Link Properties</h3>");
-
-        pw.println("<table class=\"s-table\" id=\"linkproperties\">");
-        pw.println("<tr class=\"s-table\">");
-        pw.println("<th class=\"s-table\" colspan=4>Preferences</td>");
-        pw.println("<th rowspan=2 align=center class=\"s-table\">dCache Partition</td></tr>");
-        pw.println("<tr class=\"s-table\">");
-        pw.println("<th class=\"s-table\">Read</th>");
-        pw.println("<th class=\"s-table\">Write</th>");
-        pw.println("<th class=\"s-table\">Restore</th>");
-        pw.println("<th class=\"s-table\">Pool to Pool</th>");
-        pw.println("</tr>");
-        pw.print("<tr  class=\"s-table-b\">");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
-        pw.print(lp.readPref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
-        pw.print(lp.writePref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
-        pw.print(lp.cachePref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
-        pw.print(lp.p2pPref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
-        pw.print(lp.tag); pw.println("</span></td>");
-        pw.print("<tr>");
-
-        pw.println("</table>");
-
-
-        if (lp.poolList.length > 0) {
-            pw.println("<h3>We point the following Pools</h3>");
-            showList(pw, lp.poolList, 8, "/poolInfo/pools/");
-        }
-        pw.println("<h3>We point to the following Pool Groups</h3>");
-        showList(pw, lp.pGroupList, 8, "/poolInfo/pgroups/");
-        pw.println("<h3>We point to the following Selection Unit Groups</h3>");
-        showList(pw, lp.groupList, 8, "/poolInfo/ugroups/");
-        pw.println("</center>");
     }
 
     private void queryUnitGroup(PrintWriter pw, String groupName)
@@ -1598,37 +1505,29 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             queryAllUGroups(pw);
             return;
         }
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "psux ls ugroup "+groupName),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
-
         pw.println("<center>");
         pw.println("<h1>Report for Unit Group <font color=red>"+groupName+"</font></h1>");
-        Object answer = reply.getMessageObject();
-        if (answer instanceof Exception) {
-            showProblem(pw, ((Exception)answer).getMessage());
-            return;
-        } else if (!(answer instanceof Object[])) {
-            showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
-            return;
+        try {
+            Object[] o = _poolManager.sendAndWait("psux ls ugroup "+groupName, Object[].class);
+            Object[] unitList   = (Object[])o[1];
+            Object[] linkList   = (Object[])o[2];
+
+            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.print("<tr><th align=right>Unit Group : </th><td align=left>");
+            pw.print(groupName);
+            pw.println("</td></tr>");
+            pw.print("</table>");
+
+            pw.println("<h3>We have the following Members</h3>");
+            showList(pw, unitList, 8, "/poolInfo/units/");
+
+            pw.println("<h3>We are pointing to the following links</h3>");
+            showList(pw, linkList, 8, "/poolInfo/links/");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
         }
-        Object[] o = (Object[])answer;
-        Object[] unitList   = (Object[])o[1];
-        Object[] linkList   = (Object[])o[2];
-
-        pw.println("<table border=0 cellspacing=4 cellpadding=4>");
-        pw.print("<tr><th align=right>Unit Group : </th><td align=left>");
-        pw.print(groupName);
-        pw.println("</td></tr>");
-        pw.print("</table>");
-
-        pw.println("<h3>We have the following Members</h3>");
-        showList(pw, unitList, 8, "/poolInfo/units/");
-
-        pw.println("<h3>We are pointing to the following links</h3>");
-        showList(pw, linkList, 8, "/poolInfo/links/");
         pw.println("</center>");
     }
 
@@ -1639,37 +1538,29 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
             queryAllPGroups(pw);
             return;
         }
-        CellMessage reply =
-            _endpoint.sendAndWait(new CellMessage(new CellPath("PoolManager"),
-                                                 "psux ls pgroup "+groupName),
-                                 TIMEOUT);
-        if (reply == null) { showTimeout(pw); return; }
-
         pw.println("<center>");
         pw.println("<h1>Report for Pool Group <font color=red>"+groupName+"</font></h1>");
-        Object answer = reply.getMessageObject();
-        if (answer instanceof Exception) {
-            showProblem(pw, ((Exception)answer).getMessage());
-            return;
-        } else if (!(answer instanceof Object[])) {
-            showProblem(pw, "Unexpected reply : class="+answer.getClass().getName());
-            return;
+        try {
+            Object[] o = _poolManager.sendAndWait("psux ls pgroup "+groupName, Object[].class);
+            Object[] poolList   = (Object[])o[1];
+            Object[] linkList   = (Object[])o[2];
+
+            pw.println("<table border=0 cellspacing=4 cellpadding=4>");
+            pw.print("<tr><th align=right>Pool Group : </th><td align=left>");
+            pw.print(groupName);
+            pw.println("</td></tr>");
+            pw.print("</table>");
+
+            pw.println("<h3>We have the following Members</h3>");
+            showList(pw, poolList, 8, "/poolInfo/pools/");
+
+            pw.println("<h3>We are pointing to the following links</h3>");
+            showList(pw, linkList, 8, "/poolInfo/links/");
+        } catch (TimeoutCacheException e) {
+            showTimeout(pw);
+        } catch (CacheException e) {
+            showProblem(pw, e.getMessage());
         }
-        Object[] o = (Object[])answer;
-        Object[] poolList   = (Object[])o[1];
-        Object[] linkList   = (Object[])o[2];
-
-        pw.println("<table border=0 cellspacing=4 cellpadding=4>");
-        pw.print("<tr><th align=right>Pool Group : </th><td align=left>");
-        pw.print(groupName);
-        pw.println("</td></tr>");
-        pw.print("</table>");
-
-        pw.println("<h3>We have the following Members</h3>");
-        showList(pw, poolList, 8, "/poolInfo/pools/");
-
-        pw.println("<h3>We are pointing to the following links</h3>");
-        showList(pw, linkList, 8, "/poolInfo/links/");
         pw.println("</center>");
     }
 

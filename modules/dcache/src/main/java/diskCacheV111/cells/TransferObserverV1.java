@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -30,13 +29,15 @@ import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
+import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class TransferObserverV1
     extends CellAdapter
@@ -46,10 +47,10 @@ public class TransferObserverV1
         LoggerFactory.getLogger(TransferObserverV1.class);
 
     private final CellNucleus   _nucleus;
+    private final CellStub      _cellStub;
     private final Args          _args;
     private final DoorHandler   _doors;
     private final String        _loginBroker;
-    private       long          _timeout        = 30000L;
     private       List<IoEntry> _ioList;
     private       long          _update         = 120000L;
     private       long          _timeUsed;
@@ -253,6 +254,7 @@ public class TransferObserverV1
         super(name, TransferObserverV1.class.getName(), args, false);
 
         _nucleus = getNucleus();
+        _cellStub = new CellStub(this, null, 30, SECONDS);
         _args    = getArgs();
         _doors   = new DoorHandler();
 
@@ -546,19 +548,6 @@ public class TransferObserverV1
         }
     }
 
-    private Object request(CellAddressCore address, Serializable message)
-        throws Exception
-    {
-        CellMessage request = new CellMessage(new CellPath(address), message);
-
-        request = sendAndWait(request, _timeout);
-        if (request == null) {
-            throw new Exception(address + " reply timed out");
-        }
-
-        return request.getMessageObject();
-    }
-
     private void getBrokerInfo()
     {
         //
@@ -572,7 +561,8 @@ public class TransferObserverV1
                 try {
                     CellAddressCore brokerAddress = new CellAddressCore(loginBroker);
                     LoginBrokerInfo [] infos =
-                        (LoginBrokerInfo [])request(brokerAddress, "ls -binary -all");
+                            _cellStub.sendAndWait(new CellPath(brokerAddress), "ls -binary -all",
+                                                  LoginBrokerInfo[].class);
 
                     StringBuilder sb = new StringBuilder();
                     sb.append("LoginBroker (").append(loginBroker)
@@ -603,8 +593,9 @@ public class TransferObserverV1
         for (CellAddressCore doorAddress : _doors.doors()) {
             _log.info("Requesting client list from : {}", doorAddress);
             try {
-                LoginManagerChildrenInfo info = (LoginManagerChildrenInfo)
-                    request(doorAddress, "get children -binary");
+                LoginManagerChildrenInfo info =
+                        _cellStub.sendAndWait(new CellPath(doorAddress), "get children -binary",
+                                              LoginManagerChildrenInfo.class);
                 _log.info(doorAddress + " reported about {} children", info.getChildrenCount());
                 _doors.setDoorInfo(info);
             } catch (Exception e) {
@@ -629,8 +620,8 @@ public class TransferObserverV1
 
                 _log.info("Requesting client info from: {}", childDoor);
                 try {
-                    IoDoorInfo ioDoorInfo = (IoDoorInfo)
-                        request(childDoor,"get door info -binary");
+                    IoDoorInfo ioDoorInfo =
+                            _cellStub.sendAndWait(new CellPath(childDoor), "get door info -binary", IoDoorInfo.class);
 
                     _log.info(childDoor + " reply ok");
 
@@ -659,8 +650,9 @@ public class TransferObserverV1
         for (String poolName : poolHash) {
             _log.info("Asking pool: {}", poolName);
             try {
-                IoJobInfo [] infos = (IoJobInfo [])
-                    request(new CellAddressCore(poolName), "mover ls -binary");
+                IoJobInfo[] infos =
+                        _cellStub.sendAndWait(new CellPath(new CellAddressCore(poolName)), "mover ls -binary",
+                                              IoJobInfo[].class);
 
                 _log.info("{} reply ok", poolName);
 

@@ -158,7 +158,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private final CellStub _gPlazmaStub;
     private CellStub _pinManagerStub;
-    private CellPath _poolMgrPath;
+    private CellStub _poolMgrStub;
 
     /**
      * The client PID set through the hello command. Only used for
@@ -280,7 +280,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         _isRetentionPolicyOverwriteAllowed = _args.hasOption("allow-retention-policy-overwrite");
         _log.debug("Allowed to overwrite RetentionPolicy: {}", _isRetentionPolicyOverwriteAllowed);
 
-        _poolMgrPath     = new CellPath( _poolManagerName ) ;
+        _poolMgrStub = new CellStub(cell, new CellPath(_poolManagerName), 20000);
         _pinManagerStub = new CellStub(cell, new CellPath(_args.getOpt("pinManager")));
         _gPlazmaStub = new CellStub(_cell, new CellPath(_args.getOpt("gplazma")), 30000);
         _billingCellPath = new CellPath(_args.getOpt("billing"));
@@ -1732,29 +1732,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // we are not called if the pnfs request failed.
                 //
+                setStatus("Waiting for reply from PoolManager");
                 PoolMgrQueryPoolsMsg query =
                   new PoolMgrQueryPoolsMsg(DirectionType.READ,
                                            _protocolName ,
                                            _destination ,
                                            _fileAttributes);
-
-                CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
-                setStatus("Waiting for reply from PoolManager");
-
-                checkMessage = _cell.sendAndWait(  checkMessage , 20000 ) ;
-                query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
-
-                if( query.getReturnCode() != 0 ) {
-                    throw new
-                            CacheException(query.getReturnCode(),
-                            query.getErrorObject() == null ? "?" :
-                                    query.getErrorObject().toString());
-                }
-                        //
-                        //
-                        Set<String>   assumedHash = new HashSet<>( _assumedLocations ) ;
-                        List<String> []   lists       = query.getPools() ;
-                        List<String> result      = new ArrayList<>() ;
+                List<String>[] lists = _poolMgrStub.sendAndWait(query).getPools();
+                Set<String> assumedHash = new HashSet<>(_assumedLocations);
+                List<String> result = new ArrayList<>();
 
                 for (List<String> pools : lists) {
                     for (String pool : pools) {
