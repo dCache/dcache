@@ -213,16 +213,22 @@ public final class Scheduler
         addScheduler(id, this);
     }
 
-    public synchronized void start() throws IllegalStateException
+    public void start() throws IllegalStateException
     {
-        checkState(!running, "Scheduler is running.");
-        running = true;
+        synchronized (this) {
+            checkState(!running, "Scheduler is running.");
+            running = true;
+        }
         workSupplyService.startAsync().awaitRunning();
     }
 
-    public synchronized void stop()
+    public void stop()
     {
-        running = false;
+        synchronized (this) {
+            checkState(running, "Scheduler is not running.");
+            running = false;
+        }
+
         workSupplyService.stopAsync().awaitTerminated();
         retryTimer.cancel();
         pooledExecutor.shutdownNow();
