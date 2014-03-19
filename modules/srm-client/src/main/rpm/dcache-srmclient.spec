@@ -42,6 +42,7 @@ This package contains the client components.
 %files
 %defattr(-,root,root)
 %attr(0755,root,root) /usr/bin/adler32
+%attr(0755,root,root) /usr/bin/delegation
 %attr(0755,root,root) /usr/bin/srm-get-request-status
 %attr(0755,root,root) /usr/bin/srm-get-request-tokens
 %attr(0755,root,root) /usr/bin/srm-get-request-summary
