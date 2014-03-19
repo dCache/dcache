@@ -417,28 +417,35 @@ public class NFSv41Door extends AbstractCellComponent implements
                  */
                 deviceid = MDS_ID;
             } else {
+
                 final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
                 final PnfsId pnfsId = new PnfsId(inode.toString());
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid));
 
                 Transfer.initSession();
-                final NfsTransfer transfer = new NfsTransfer(_pnfsHandler,
-                        context.getRpcCall().getCredential().getSubject());
+                NfsTransfer transfer = _ioMessages.get(stateid);
+                if (transfer == null) {
+                    transfer = new NfsTransfer(_pnfsHandler,
+                            context.getRpcCall().getCredential().getSubject());
 
-                transfer.setProtocolInfo(protocolInfo);
-                transfer.setCellName(this.getCellName());
-                transfer.setDomainName(this.getCellDomainName());
-                transfer.setBillingStub(_billingStub);
-                transfer.setPoolStub(_poolManagerStub);
-                transfer.setPoolManagerStub(_poolManagerStub);
-                transfer.setPnfsId(pnfsId);
-                transfer.setClientAddress(remote);
-                transfer.readNameSpaceEntry();
+                    transfer.setProtocolInfo(protocolInfo);
+                    transfer.setCellName(this.getCellName());
+                    transfer.setDomainName(this.getCellDomainName());
+                    transfer.setBillingStub(_billingStub);
+                    transfer.setPoolStub(_poolManagerStub);
+                    transfer.setPoolManagerStub(_poolManagerStub);
+                    transfer.setPnfsId(pnfsId);
+                    transfer.setClientAddress(remote);
+                    transfer.readNameSpaceEntry();
 
-                _ioMessages.put(stateid, transfer);
+                    _ioMessages.put(stateid, transfer);
 
-                PoolDS ds = getPool(transfer, protocolInfo, ioMode);
-                deviceid = ds.getDeviceId();
+                    PoolDS ds = getPool(transfer, protocolInfo, ioMode);
+                    deviceid = ds.getDeviceId();
+                } else {
+                    PoolDS ds = transfer.waitForRedirect(NFS_RETRY_PERIOD);
+                    deviceid = ds.getDeviceId();
+                }
             }
 
             nfs_fh4 fh = new nfs_fh4(nfsInode.toNfsHandle());
@@ -450,10 +457,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             return new Layout(true, stateid, new layout4[]{layout});
 
         } catch (FileInCacheException e) {
-	    _ioMessages.remove(stateid);
+	    cleanStateAndKillMover(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
         } catch (CacheException e) {
-	    _ioMessages.remove(stateid);
+	   cleanStateAndKillMover(stateid);
             /*
              * error 243: file is broken on tape.
              * can't do a much. Tell it to client.
@@ -461,11 +468,18 @@ public class NFSv41Door extends AbstractCellComponent implements
             int status = e.getRc() == CacheException.BROKEN_ON_TAPE ? nfsstat.NFSERR_IO : nfsstat.NFSERR_LAYOUTTRYLATER;
             throw new ChimeraNFSException(status, e.getMessage());
         } catch (InterruptedException e) {
-	    _ioMessages.remove(stateid);
+	    cleanStateAndKillMover(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     e.getMessage());
         }
 
+    }
+
+    private void cleanStateAndKillMover(stateid4 stateid) {
+        Transfer t = _ioMessages.remove(stateid);
+        if (t != null) {
+            t.killMover(0);
+        }
     }
 
     private PoolDS getPool(NfsTransfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
