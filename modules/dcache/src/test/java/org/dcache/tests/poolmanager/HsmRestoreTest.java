@@ -38,8 +38,8 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
-import org.dcache.tests.cells.GenericMockCellHelper;
-import org.dcache.tests.cells.GenericMockCellHelper.MessageAction;
+import org.dcache.tests.cells.MockCellEndpoint;
+import org.dcache.tests.cells.MockCellEndpoint.MessageAction;
 import org.dcache.tests.util.CurrentThreadExceutorHelper;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
@@ -54,7 +54,7 @@ public class HsmRestoreTest {
 //    retry intervall of RequestContainer for test purposes lowered
     private static final int RETRY_INTERVAL = 5;
 
-    private GenericMockCellHelper _cell;
+    private MockCellEndpoint _cell;
     private PoolMonitorV5 _poolMonitor;
     private CostModuleV1 _costModule ;
     private PoolSelectionUnit _selectionUnit;
@@ -72,8 +72,7 @@ public class HsmRestoreTest {
     @Before
     public void setUp() throws Exception {
         _counter = _counter + 1;
-        _cell= new GenericMockCellHelper("HsmRestoreTest" + _counter, "-threadPool=org.dcache.tests.util.CurrentThreadExceutorHelper");
-
+        _cell= new MockCellEndpoint("HsmRestoreTest" + _counter, "");
 
          _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
             new InetSocketAddress("127.0.0.1", 17));
@@ -99,7 +98,7 @@ public class HsmRestoreTest {
         _rc.setPnfsHandler(_pnfsHandler);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
-        _rc.setThreadPool(new CurrentThreadExceutorHelper(_cell));
+        _rc.setThreadPool(new CurrentThreadExceutorHelper());
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);
@@ -138,8 +137,7 @@ public class HsmRestoreTest {
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
-                                             fileAttributesMessage, true);
+        _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
 
         /*
@@ -172,8 +170,8 @@ public class HsmRestoreTest {
 
         MessageAction messageAction = new StageMessageAction(stageRequests);
 
-        GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction );
-        GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction );
+        _cell.registerAction("pool1", PoolFetchFileMessage.class, messageAction);
+        _cell.registerAction("pool2", PoolFetchFileMessage.class, messageAction);
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
@@ -216,7 +214,7 @@ public class HsmRestoreTest {
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
+        _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
 
 
@@ -253,9 +251,9 @@ public class HsmRestoreTest {
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
         MessageAction messageAction2 = new StageMessageAction(stageRequests2);
         MessageAction messageAction3 = new StageMessageAction(replyRequest);
-        GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
-        GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
-        GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
+        _cell.registerAction("pool1", PoolFetchFileMessage.class, messageAction1);
+        _cell.registerAction("pool2", PoolFetchFileMessage.class, messageAction2);
+        _cell.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
@@ -316,8 +314,7 @@ public class HsmRestoreTest {
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
-                                             fileAttributesMessage, true);
+        _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
 
 
@@ -352,8 +349,8 @@ public class HsmRestoreTest {
 
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
         MessageAction messageAction2 = new StageMessageAction(replyRequest);
-        GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
-        GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction2);
+        _cell.registerAction("pool1", PoolFetchFileMessage.class, messageAction1);
+        _cell.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction2);
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
@@ -416,8 +413,7 @@ public class HsmRestoreTest {
         attributes.setAccessLatency(StorageInfo.DEFAULT_ACCESS_LATENCY);
         attributes.setRetentionPolicy(StorageInfo.DEFAULT_RETENTION_POLICY);
         fileAttributesMessage.setFileAttributes(attributes);
-        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"),
-                                             fileAttributesMessage, true);
+        _cell.prepareMessage(new CellPath("PnfsManager"), fileAttributesMessage, true);
 
 
 
@@ -454,9 +450,9 @@ public class HsmRestoreTest {
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
         MessageAction messageAction2 = new StageMessageAction(stageRequests2);
         MessageAction messageAction3 = new StageMessageAction(replyRequest);
-        GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
-        GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
-        GenericMockCellHelper.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
+        _cell.registerAction("pool1", PoolFetchFileMessage.class, messageAction1);
+        _cell.registerAction("pool2", PoolFetchFileMessage.class, messageAction2);
+        _cell.registerAction("door", PoolMgrSelectReadPoolMsg.class, messageAction3);
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
@@ -516,7 +512,6 @@ public class HsmRestoreTest {
     @After
     public void clear() {
         _rc.shutdown();
-        GenericMockCellHelper.clean();
     }
 
     private class StageMessageAction implements MessageAction {
@@ -528,7 +523,7 @@ public class HsmRestoreTest {
         }
 
         @Override
-        public void messageArraved(CellMessage message) {
+        public void messageArrived(CellMessage message) {
             _count.incrementAndGet();
             __messages.add(message);
         }
