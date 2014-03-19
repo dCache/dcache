@@ -98,7 +98,7 @@ public class MessageEventTimer {
       synchronized( _lock ){
          try{
 
-             _nucleus.sendMessage( message ) ;
+             _nucleus.sendMessage(message, true, true);
              scheduleEvent( event , message , TIMEOUT_EXPIRED , timeout ) ;
 
          }catch(Exception ee ){

@@ -116,7 +116,7 @@ public class MulticastCommander extends CellAdapter {
       thisMsg.getDestinationPath().add( _path ) ;
       thisMsg.nextDestination() ;
       thisMsg.setMessageObject( open ) ;
-      CellMessage reply = sendAndWait( thisMsg  , 5000 ) ;
+       CellMessage reply = getNucleus().sendAndWait(thisMsg, (long) 5000);
       if( reply == null ){
           return "Reply timed out" ;
       }else{

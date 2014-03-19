@@ -136,7 +136,7 @@ public class LocationMgrTunnel
                 CellPath retAddr = msg.getSourcePath().revert();
                 CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
                 ret.setLastUOID(msg.getUOID());
-                _nucleus.sendMessage(ret);
+                _nucleus.sendMessage(ret, true, true);
             }
         } catch (NoRouteToCellException f) {
             _log.warn("Unable to deliver message and unable to return it to sender: " + msg);

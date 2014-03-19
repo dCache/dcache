@@ -7,10 +7,12 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 
 import dmg.util.ClassDataProvider;
 
@@ -222,15 +224,11 @@ class ClassDataProvider0 implements ClassDataProvider {
         _log.info( "getClassData("+className+") send to classProvider" ) ;
         CellMessage answer;
         try{
-            answer = _nucleus.sendAndWait(
-                                          new CellMessage( _cellPath ,
-                                                           "get class "+className
-                                                           ) ,
-                                          4000
-                                          ) ;
-        }catch( InterruptedException | NoRouteToCellException e ){
-            _log.info( "getClassData Exception : "+e ) ;
-            throw new IOException( e.toString() ) ;
+            answer = _nucleus.sendAndWait(new CellMessage(_cellPath, "get class "+className), 4000);
+        } catch (InterruptedException e) {
+            throw new InterruptedIOException(e.toString());
+        } catch (ExecutionException | NoRouteToCellException e){
+            throw new IOException(e.toString(), e);
         }
         if( answer == null ){
             _log.info( "getClassData sendAndWait timed out" ) ;

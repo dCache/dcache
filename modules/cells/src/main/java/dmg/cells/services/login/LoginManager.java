@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -368,7 +369,7 @@ public class LoginManager
                 LOGGER.info("Sending ({}) 'listening on {} {}'", i, getCellName(), listenPort);
 
                 try {
-                    if (sendAndWait(msg, 5000) != null) {
+                    if (getNucleus().sendAndWait(msg, 5000) != null) {
                         LOGGER.info("Portnumber successfully sent to {}", dest);
                         _sending = false;
                         break;
@@ -928,7 +929,7 @@ public class LoginManager
 
         try {
             CellMessage msg = new CellMessage(_authenticator, request);
-            msg = sendAndWait(msg, 10000);
+            msg = getNucleus().sendAndWait(msg, (long) 10000);
             if (msg == null) {
                 LOGGER.warn("Pam request timed out {}", Thread.currentThread().getStackTrace());
                 return false;
@@ -943,6 +944,9 @@ public class LoginManager
             return false;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return false;
+        } catch (ExecutionException e) {
+            LOGGER.warn(e.getCause().getMessage());
             return false;
         }
     }

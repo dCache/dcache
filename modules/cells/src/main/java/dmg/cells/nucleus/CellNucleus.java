@@ -1,6 +1,8 @@
 package dmg.cells.nucleus;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -361,26 +364,12 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    public void   sendMessage(CellMessage msg)
+    public void  sendMessage(CellMessage msg,
+                             boolean locally,
+                             boolean remotely)
         throws SerializationException,
-               NoRouteToCellException    {
-
-        sendMessage(msg, true, true);
-
-    }
-    public void   resendMessage(CellMessage msg)
-        throws SerializationException,
-               NoRouteToCellException    {
-
-        sendMessage(msg, false, true);
-
-    }
-    public void   sendMessage(CellMessage msg,
-                              boolean locally,
-                              boolean remotely)
-        throws SerializationException,
-               NoRouteToCellException    {
-
+               NoRouteToCellException
+    {
         if (!msg.isStreamMode()) {
             msg.touch();
         }
@@ -392,91 +381,82 @@ public class CellNucleus implements ThreadFactory
             EventLogger.sendEnd(msg);
         }
     }
-    public CellMessage   sendAndWait(CellMessage msg, long timeout)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException      {
-        return sendAndWait(msg, true, true, timeout);
-    }
 
-    public CellMessage sendAndWait(CellMessage msg,
-                                   boolean local,
-                                   boolean remote,
-                                   long    timeout)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException
+    /**
+     * Sends <code>envelope</code> and waits <code>timeout</code>
+     * milliseconds for an answer to arrive.  The answer will bypass
+     * the ordinary queuing mechanism and will be delivered before any
+     * other asynchronous message.  The answer need to have the
+     * getLastUOID set to the UOID of the message send with
+     * sendAndWait. If the answer does not arrive withing the specified
+     * time interval, the method returns <code>null</code> and the
+     * answer will be handled as if it was an ordinary asynchronous
+     * message.
+     *
+     * This method mostly exists for backwards compatibility. dCache code
+     * should use CellStub or CellEndpoint.
+     *
+     * @param envelope the cell message to be sent.
+     * @param timeout milliseconds to wait for an answer.
+     * @return the answer or null if the timeout was reached.
+     * @throws SerializationException if the payload object of this
+     *         message is not serializable.
+     * @throws NoRouteToCellException if the destination
+     *         could not be reached.
+     * @throws ExecutionException if an exception was returned.
+     */
+    public CellMessage sendAndWait(CellMessage envelope, long timeout)
+            throws SerializationException, NoRouteToCellException, InterruptedException, ExecutionException
     {
-        if (!msg.isStreamMode()) {
-            msg.touch();
-        }
+        final SettableFuture<CellMessage> future = SettableFuture.create();
+        sendMessage(envelope, true, true,
+                    new CellMessageAnswerable()
+                    {
+                        @Override
+                        public void answerArrived(CellMessage request, CellMessage answer)
+                        {
+                            future.set(answer);
+                        }
 
-        msg.setTtl(timeout);
+                        @Override
+                        public void exceptionArrived(CellMessage request, Exception exception)
+                        {
+                            future.setException(exception);
+                        }
 
-        EventLogger.sendBegin(this, msg, "blocking");
-        UOID uoid = msg.getUOID();
+                        @Override
+                        public void answerTimedOut(CellMessage request)
+                        {
+                            future.set(null);
+                        }
+                    }, timeout);
         try {
-            CellLock lock = new CellLock();
-            synchronized (_waitHash) {
-                _waitHash.put(uoid, lock);
-            }
-            LOGGER.trace("sendAndWait : adding to hash : {}", uoid);
-
-            __cellGlue.sendMessage(this, msg, local, remote);
-
-            //
-            // because of a linux native thread problem with
-            // wait(n > 0), we have to use a interruptedFlag
-            // and the time messurement.
-            //
-            synchronized (lock) {
-                long start = System.currentTimeMillis();
-                while (lock.getObject() == null && timeout > 0) {
-                    lock.wait(timeout);
-                    timeout -= (System.currentTimeMillis() - start);
-                }
-            }
-            CellMessage answer = (CellMessage)lock.getObject();
-            if (answer == null) {
-                return null;
-            }
-            answer = answer.decode();
-
-            Object obj = answer.getMessageObject();
-            if (obj instanceof NoRouteToCellException) {
-                throw (NoRouteToCellException) obj;
-            } else if (obj instanceof SerializationException) {
-                throw (SerializationException) obj;
-            }
-            return answer;
-        } finally {
-            synchronized (_waitHash) {
-                _waitHash.remove(uoid);
-            }
-            EventLogger.sendEnd(msg);
+            return future.get();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
+            Throwables.propagateIfInstanceOf(e.getCause(), SerializationException.class);
+            throw e;
         }
     }
 
-    public Map<UOID,CellLock > getWaitQueue() {
-
-        Map<UOID,CellLock > hash = new HashMap<>();
+    public Map<UOID,CellLock > getWaitQueue()
+    {
         synchronized (_waitHash) {
-            hash.putAll(_waitHash);
+            return new HashMap<>(_waitHash);
         }
-        return hash;
     }
 
     public int executeMaintenanceTasks()
     {
         Collection<CellLock> expired = new ArrayList<>();
-        long now  = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         int size;
 
         synchronized (_waitHash) {
             Iterator<CellLock> i = _waitHash.values().iterator();
             while (i.hasNext()) {
                 CellLock lock =  i.next();
-                if (lock != null && !lock.isSync() && lock.getTimeout() < now) {
+                if (lock.getTimeout() < now) {
                     expired.add(lock);
                     i.remove();
                 }
@@ -790,10 +770,9 @@ public class CellNucleus implements ThreadFactory
 
         try {
             //
-            // we have to cover 3 cases :
+            // we have to cover 2 cases :
             //   - absolutely asynchronous request
             //   - asynchronous, but we have a callback to call
-            //   - synchronous
             //
             final CellMessage msg = ce.getMessage();
             if (msg != null) {
@@ -809,26 +788,16 @@ public class CellNucleus implements ThreadFactory
                     // we were waiting for you (sync or async)
                     //
                     LOGGER.trace("addToEventQueue : lock found for : {}", msg);
-                    if (lock.isSync()) {
-                        LOGGER.trace("addToEventQueue : is synchronous : {}", msg);
-                        synchronized (lock) {
-                            lock.setObject(msg);
-                            lock.notifyAll();
+                    try {
+                        _callbackExecutor.execute(new CallbackTask(lock, msg));
+                    } catch (RejectedExecutionException e) {
+                        /* Put it back; the timeout handler
+                         * will eventually take care of it.
+                         */
+                        synchronized (_waitHash) {
+                            _waitHash.put(msg.getLastUOID(), lock);
                         }
-                        LOGGER.trace("addToEventQueue : dest. was triggered : {}", msg);
-                    } else {
-                        LOGGER.trace("addToEventQueue : is asynchronous : {}", msg);
-                        try {
-                            _callbackExecutor.execute(new CallbackTask(lock, msg));
-                        } catch (RejectedExecutionException e) {
-                            /* Put it back; the timeout handler
-                             * will eventually take care of it.
-                             */
-                            synchronized (_waitHash) {
-                                _waitHash.put(msg.getLastUOID(), lock);
-                            }
-                            throw e;
-                        }
+                        throw e;
                     }
                     return;
                 }
@@ -1090,7 +1059,7 @@ public class CellNucleus implements ThreadFactory
                         try {
                             msg.revertDirection();
                             msg.setMessageObject(e);
-                            sendMessage(msg);
+                            sendMessage(msg, true, true);
                         } catch (NoRouteToCellException f) {
                             LOGGER.error("PANIC : Problem returning answer: {}", f);
                         }

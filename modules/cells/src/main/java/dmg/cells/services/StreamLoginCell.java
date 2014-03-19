@@ -171,7 +171,7 @@ public class      StreamLoginCell
                                      new CellPath( _destination ) ,
                                      command ) ;
              if( _syncMode ){
-                 if( ( msg = sendAndWait( msg , 1000*_syncTimeout ) ) == null ){
+                 if( ( msg = getNucleus().sendAndWait(msg, (long) (1000 * _syncTimeout))) == null ){
                     print( "Timeout ... \n" ) ;
                     return 0;
                  }

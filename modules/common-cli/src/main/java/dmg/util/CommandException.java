@@ -18,6 +18,11 @@ public class CommandException extends Exception {
         this(0, str);
     }
 
+    public CommandException(String str, Throwable cause)
+    {
+        this(0, str, cause);
+    }
+
     public CommandException(int rc, String str)
     {
         this(rc, str, null);

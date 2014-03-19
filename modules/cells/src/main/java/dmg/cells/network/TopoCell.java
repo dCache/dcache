@@ -173,7 +173,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
                                 new CellPath(cellPath) ,
                                 "getcelltunnelinfos"      ) ;
 
-      msg = sendAndWait( msg , _waitTime ) ;
+       msg = getNucleus().sendAndWait(msg, _waitTime);
       if( msg == null ){
          setStatus( "Timeout from : "+cellPath ) ;
          return null ;

@@ -87,8 +87,8 @@ public class BootstrapStore implements Cell {
                  }
                  msg.setMessageObject( answer ) ;
                  msg.revertDirection() ;
-                 _nucleus.sendMessage( msg ) ;
-                 _answeredRequests ++ ;
+                  _nucleus.sendMessage(msg, true, true);
+                  _answeredRequests ++ ;
               }catch(Exception mse ){
                  _log.info( "messageArrived : Problem with "+
                                args.argv(1)+" -> "+mse ) ;

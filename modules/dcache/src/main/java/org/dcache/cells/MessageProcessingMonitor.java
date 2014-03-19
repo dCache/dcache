@@ -158,12 +158,6 @@ public class MessageProcessingMonitor
         }
 
         @Override
-        public CellMessage sendAndWait(CellMessage envelope, long timeout)
-        {
-            throw new UnsupportedOperationException("Cannot use blocking send for reply");
-        }
-
-        @Override
         public CellInfo getCellInfo()
         {
             return _endpoint.getCellInfo();

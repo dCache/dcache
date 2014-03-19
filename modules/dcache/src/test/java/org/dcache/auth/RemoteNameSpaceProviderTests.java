@@ -16,6 +16,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -910,22 +911,14 @@ public class RemoteNameSpaceProviderTests
      */
     private <T extends PnfsMessage> T getSingleSentMessage(Class<T> type)
     {
-        ArgumentCaptor<CellMessage> argument =
-                ArgumentCaptor.forClass(CellMessage.class);
-
         try {
+            ArgumentCaptor<CellMessage> argument =
+                    ArgumentCaptor.forClass(CellMessage.class);
             verify(_endpoint).sendMessage(argument.capture());
-
-            verify(_endpoint, never()).
-                    sendAndWait(any(CellMessage.class), anyLong());
-            verify(_endpoint, never()).
-                    sendMessage(any(CellMessage.class),
-                    any(CellMessageAnswerable.class), anyLong());
-        } catch (NoRouteToCellException | InterruptedException e) {
+            return type.cast(argument.getValue().getMessageObject());
+        } catch (NoRouteToCellException e) {
             throw new RuntimeException(e);
         }
-
-        return type.cast(argument.getValue().getMessageObject());
     }
 
 

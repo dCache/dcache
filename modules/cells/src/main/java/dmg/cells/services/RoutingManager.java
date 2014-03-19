@@ -158,7 +158,9 @@ public class RoutingManager
         try {
             CellPath path = new CellPath(destinationManager);
             String[] arr = all.toArray(new String[all.size()]);
-            _nucleus.resendMessage(new CellMessage(path, arr));
+
+            _nucleus.sendMessage(new CellMessage(path, arr), false, true);
+
         } catch (NoRouteToCellException e) {
             /* This normally happens when there is no default route.
              */

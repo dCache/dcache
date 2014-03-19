@@ -78,14 +78,6 @@ public class MessageHandlerChainAsMessageSenderTests {
         }
 
         @Override
-        public CellMessage sendAndWait( CellMessage envelope, long timeout)
-                throws SerializationException, NoRouteToCellException,
-                InterruptedException {
-            fail( "call to sendAndWait");
-            return null;
-        }
-
-        @Override
         public void sendMessage( CellMessage envelope)
                 throws SerializationException, NoRouteToCellException {
             _sendMessages.add( envelope);

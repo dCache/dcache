@@ -32,6 +32,8 @@ import java.util.SortedSet;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.network.PingMessage;
 import dmg.util.BufferedLineWriter;
@@ -52,6 +54,9 @@ import dmg.util.Replaceable;
 import dmg.util.ReplaceableBackedProperties;
 import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.util.Args;
 
@@ -492,17 +497,17 @@ public class CellShell extends CommandInterpreter
       Object o;
       boolean noRoute;
       while( true ){
-         try{
-            noRoute = false ;
-            answer = null ;
+          noRoute = false ;
+          answer = null ;
+          try{
             _log.warn( "waitForCell : Sending request" ) ;
-            answer = _nucleus.sendAndWait( request , ((long)check)*1000 ) ;
+            answer = _nucleus.sendAndWait( request , ((long) check) * 1000);
             _log.warn( "waitForCell : got "+answer ) ;
-         }catch( NoRouteToCellException nrtce ){
+         } catch (NoRouteToCellException e) {
             noRoute = true ;
-         }catch( InterruptedException e ){
-            throw new
-            CommandException( 66 , "sendAndWait problem : "+e.toString() ) ;
+         } catch (ExecutionException ignored) {
+         } catch (InterruptedException e) {
+            throw new CommandException(66, "sendAndWait problem : " + e.toString(), e);
          }
          if( ( answer != null ) &&
              ( ( o = answer.getMessageObject() ) != null ) &&
@@ -560,7 +565,7 @@ public class CellShell extends CommandInterpreter
    public String ac_route_delete_$_1_2(Args args)
        throws IllegalArgumentException
    {
-       _nucleus.routeDelete( new CellRoute( args ) );
+       _nucleus.routeDelete(new CellRoute(args));
        return "Done\n" ;
    }
    public static final String hh_route_find = "<address>" ;
@@ -699,59 +704,61 @@ public class CellShell extends CommandInterpreter
 
        return future;
    }
-   ////////////////////////////////////////////////////////////
-   //
-   //   send [-w] <cellAddress> <message>
-   //
-   public static final String hh_send = "[-w] <cellAddress> <message>" ;
-   public static final String fh_send =
-          "  Syntax : send [options] <cellAddress> <message>\n"+
-          "           Sends the message <message> to the specified\n"+
-          "           <cellAddress>.\n"+
-          "           -w        :  wait 10 second for the answer to arrive\n"+
-          "           -nolocal  :  don't deliver locally\n"+
-          "           -noremote :  don't deliver remotely\n" ;
-   public String ac_send_$_2( Args args )
-       throws IllegalArgumentException,
-              InterruptedException,
-              NoRouteToCellException
-   {
-      CellMessage msg = new CellMessage(
-                                new CellPath( args.argv(0) ) ,
-                                args.argv(1) ) ;
-      boolean wait     = false ;
-      boolean locally  = true ;
-      boolean remotely = true ;
-      for( int i = 0 ; i < args.optc() ; i++ ){
-          if( args.optv(i).equals("-w" ) ) {
-              wait = true;
-          } else if( args .optv(i).equals("-nolocal" ) ) {
-              locally = false;
-          } else if( args .optv(i).equals("-noremote" ) ) {
-              remotely = false;
-          }
-      }
-      if( wait ){
-          msg = _nucleus.sendAndWait( msg , locally , remotely , 10000 )  ;
-          if( msg == null ) {
-              return "Timeout ... \n";
-          }
-          Object obj = msg.getMessageObject() ;
-          if( obj == null ) {
-              return msg.toString() + "\n";
-          }
-          String output = obj.toString() ;
-          if( output.charAt(output.length()-1) == '\n' ) {
-              return output;
-          } else {
-              return output + "\n";
-          }
-      }else{
-          _nucleus.sendMessage( msg , locally , remotely )  ;
-          return "Msg UOID ="+msg.getUOID().toString()+"\n" ;
-      }
 
+   @Command(name = "send", hint = "send message to cell",
+            description = "Sends MESSAGE to ADDRESS.")
+   class SendCommand extends DelayedReply implements Callable<Serializable>, CellMessageAnswerable
+   {
+       @Option(name = "w", usage = "wait 10 seconds for answer to arrive")
+       boolean wait;
+
+       @Option(name = "nolocal", usage = "don't deliver locally")
+       boolean nolocal;
+
+       @Option(name = "noremote", usage = "don't deliver remotely")
+       boolean noremote;
+
+       @Argument(index = 0, metaVar = "address",
+                 usage = "Colon separated path of cell addresses.")
+       CellPath address;
+
+       @Argument(index = 1, metaVar = "message")
+       String message;
+
+       @Override
+       public Serializable call() throws Exception
+       {
+           CellMessage msg = new CellMessage(address, message);
+           if (wait) {
+               _nucleus.sendMessage(msg, !nolocal, !noremote, this, 10000);
+               return this;
+           } else {
+               _nucleus.sendMessage(msg, !nolocal, !noremote);
+               return "UOID = " + msg.getUOID();
+           }
+       }
+
+       @Override
+       public void answerArrived(CellMessage request, CellMessage answer)
+       {
+           Serializable obj = answer.getMessageObject();
+           reply(obj == null ? answer : obj);
+       }
+
+       @Override
+       public void exceptionArrived(CellMessage request, Exception exception)
+       {
+           reply(exception);
+       }
+
+       @Override
+       public void answerTimedOut(CellMessage request)
+       {
+           reply("Timeout... ");
+       }
    }
+
+
    ////////////////////////////////////////////////////////////
    //
    //   sleep
@@ -786,7 +793,7 @@ public class CellShell extends CommandInterpreter
       }
       CellPath path = new CellPath( args.argv(0) ) ;
       for( int i = 0 ; i < count ; i ++ ) {
-          _nucleus.sendMessage(new CellMessage(path, new PingMessage(size)));
+          _nucleus.sendMessage(new CellMessage(path, new PingMessage(size)), true, true);
       }
 //      return "Msg UOID ="+msg.getUOID().toString()+"\n" ;
       return "Done\n" ;
@@ -961,10 +968,7 @@ public class CellShell extends CommandInterpreter
                                ) ,
                            4000
                        ) ;
-      }catch( InterruptedException e ){
-         _log.info( "getClassData Exception : "+e ) ;
-         return null ;
-      }catch( NoRouteToCellException e ){
+      }catch( ExecutionException | InterruptedException | NoRouteToCellException e ){
          _log.info( "getClassData Exception : "+e ) ;
          return null ;
       }
@@ -1339,10 +1343,10 @@ public class CellShell extends CommandInterpreter
       return show_dict( args , _environment ) ;
    }
    public String ac_test_context_$_0_1( Args args ) throws CommandException {
-      return test_dict( args , _nucleus.getDomainContext() ) ;
+      return test_dict(args, _nucleus.getDomainContext()) ;
    }
    public String ac_test_env_$_0_1( Args args ) throws CommandException {
-      return test_dict( args , _environment ) ;
+      return test_dict(args, _environment) ;
    }
     private String test_dict(Args args, Map<String,Object> dict)
         throws CommandException
@@ -2003,16 +2007,14 @@ public class CellShell extends CommandInterpreter
     {
         try {
             CellMessage answer =
-                _nucleus.sendAndWait(new CellMessage(new CellPath(path),
-                                                     command),
-                                     timeout);
+                _nucleus.sendAndWait(new CellMessage(new CellPath(path), command), timeout);
             if (answer == null) {
                 throw new IOException("Request timed out");
             }
             return answer.getMessageObject();
         } catch (InterruptedException e) {
             throw new InterruptedIOException(e.toString());
-        } catch (NoRouteToCellException e){
+        } catch (ExecutionException | NoRouteToCellException e){
             throw new IOException("sendAndWait : " + e);
         }
     }

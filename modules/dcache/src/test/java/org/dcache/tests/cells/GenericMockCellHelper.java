@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.vehicles.Message;
 
@@ -42,74 +43,6 @@ public class GenericMockCellHelper extends CellAdapterHelper {
     public GenericMockCellHelper(String name, String args) {
         super(name, args);
         _nucleus = new NucleusHelper(this, name + "-fake");
-    }
-
-    @Override
-    public CellMessage sendAndWait(CellMessage msg, long millisecs) throws NoRouteToCellException, InterruptedException {
-
-        Object messageObject = msg.getMessageObject();
-
-        if (messageObject instanceof Message) {
-
-
-            CellPath destinationPath = msg.getDestinationPath();
-
-            Map<String, List<MessageEnvelope>> messagesByType = _messageQueue.get(destinationPath);
-            if (messagesByType == null) {
-                return null;
-            }
-
-            String messageType = messageObject.getClass().getName();
-            List<MessageEnvelope> messages = messagesByType.get(messageType);
-
-            if (messages == null || messages.isEmpty()) {
-                return null;
-            }
-
-            MessageEnvelope messageEnvelope = messages.get(0);
-            if (!messageEnvelope.isPersistent()) {
-                messages.remove(0);
-            }
-
-            sendMessage(msg);
-
-            Message message = messageEnvelope.getMessage();
-            message.setReply();
-            msg.setMessageObject(message);
-
-            return msg;
-        }
-
-        return null;
-    }
-
-    @Override
-    public void sendMessage(CellMessage msg, CellMessageAnswerable callback, long timeout) throws SerializationException {
-
-        Map<String, List<MessageEnvelope>> messages = _messageQueue.get(msg.getDestinationPath());
-        List<MessageEnvelope> envelopes = messages.get(msg.getMessageObject().getClass().getName());
-        MessageEnvelope m = envelopes.get(0);
-        if(!m.isPersistent()) {
-            envelopes.remove(0);
-        }
-        callback.answerArrived(msg, new CellMessage(msg.getDestinationPath(), m.getMessage()));
-    }
-
-    @Override
-    public void sendMessage(CellMessage msg) throws NoRouteToCellException {
-
-        String destinations = msg.getDestinationPath().getCellName();
-
-        Map<Class<?>, MessageAction> actions = _messageActions.get(destinations);
-        if (actions != null) {
-            // there is something pre-defined
-            MessageAction action = actions.get(msg.getMessageObject().getClass());
-            if (action != null) {
-                msg.revertDirection();
-                action.messageArraved(msg);
-            }
-        }
-
     }
 
     /**
@@ -169,20 +102,33 @@ public class GenericMockCellHelper extends CellAdapterHelper {
         }
 
         @Override
-        public void sendMessage(CellMessage msg, boolean local, boolean remote,
-                CellMessageAnswerable callback, long timeout) {
-
-            CellMessage reply;
-            try {
-                reply = _cell.sendAndWait(msg, timeout);
-                if (reply != null) {
-                    callback.answerArrived(msg, reply);
-                }
-            } catch (NoRouteToCellException | InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+        public void sendMessage(CellMessage msg, boolean local, boolean remote, CellMessageAnswerable callback, long timeout)
+                throws SerializationException
+        {
+            Map<String, List<MessageEnvelope>> messages = _messageQueue.get(msg.getDestinationPath());
+            List<MessageEnvelope> envelopes = messages.get(msg.getMessageObject().getClass().getName());
+            MessageEnvelope m = envelopes.get(0);
+            if(!m.isPersistent()) {
+                envelopes.remove(0);
             }
+            callback.answerArrived(msg, new CellMessage(msg.getDestinationPath(), m.getMessage()));
+        }
 
+        @Override
+        public void sendMessage(CellMessage msg, boolean local, boolean remote)
+                throws NoRouteToCellException
+        {
+            String destinations = msg.getDestinationPath().getCellName();
+
+            Map<Class<?>, MessageAction> actions = _messageActions.get(destinations);
+            if (actions != null) {
+                // there is something pre-defined
+                MessageAction action = actions.get(msg.getMessageObject().getClass());
+                if (action != null) {
+                    msg.revertDirection();
+                    action.messageArraved(msg);
+                }
+            }
         }
     }
 

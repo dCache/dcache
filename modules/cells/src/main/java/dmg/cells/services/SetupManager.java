@@ -153,10 +153,8 @@ public class SetupManager extends CellAdapter {
       SetupInfoMessage info =
             new SetupInfoMessage( name , className ) ;
 
-      CellMessage reply = sendAndWait(
-                  new CellMessage( new CellPath("setupManager") ,
-                                   info ) ,
-                  10000 ) ;
+       CellMessage reply = getNucleus().sendAndWait(new CellMessage(new CellPath("setupManager"),
+                                                                    info), (long) 10000);
 
       if( reply == null ) {
           throw new

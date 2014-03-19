@@ -87,13 +87,6 @@ public class CellEndpointHelper implements CellEndpoint
     }
 
     @Override
-    public CellMessage sendAndWait(CellMessage envelope, long timeout)
-            throws SerializationException, NoRouteToCellException, InterruptedException
-    {
-        return currentTest().messageArrived(envelope);
-    }
-
-    @Override
     public CellInfo getCellInfo()
     {
         CellInfo info = new CellInfo();

@@ -82,10 +82,6 @@ public class      TelnetSAuth_A
 
        Object answer = answerMsg.getMessageObject() ;
 
-       if( answer instanceof Exception ) {
-           throw (Exception) answer;
-       }
-
        if( ( ! ( answer instanceof Object [] )  ) ||
            (   ((Object[])answer).length < 6    ) ||
            ( ! (((Object[])answer)[5] instanceof Boolean ) ) ) {

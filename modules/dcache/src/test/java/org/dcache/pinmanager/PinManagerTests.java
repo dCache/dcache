@@ -672,15 +672,6 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
     }
 
     @Override
-    public CellMessage sendAndWait(CellMessage envelope, long timeout)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException
-    {
-        return process(envelope);
-    }
-
-    @Override
     public CellInfo getCellInfo()
     {
         throw new UnsupportedOperationException();

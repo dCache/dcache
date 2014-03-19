@@ -65,7 +65,7 @@ public class ReflectionTunnel implements Cell,
         CellMessage msg = me.getMessage() ;
         _log.info( "messageArrived : queuing "+msg ) ;
         try{
-           _nucleus.sendMessage( msg ) ;
+            _nucleus.sendMessage(msg, true, true);
         }catch( Exception eee ){
            _log.info( "Problem sending :" + eee ) ;
         }

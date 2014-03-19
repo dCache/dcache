@@ -27,10 +27,10 @@ public class OptionShell {
     }
 
     public String ac_xxx( Args args )throws Exception {
-       _nucleus.sendMessage( new CellMessage(
-                             new CellPath( _nucleus.getCellName() ) ,
-                             new Vehicle( "hallo" , 4 ) ) ) ;
-       return "Done" ;
+        _nucleus.sendMessage(new CellMessage(
+                new CellPath(_nucleus.getCellName()),
+                new Vehicle("hallo", 4)), true, true);
+        return "Done" ;
     }
 
     public String ac_show_options(Args args)

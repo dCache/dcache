@@ -13,6 +13,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import dmg.cells.network.PingMessage;
@@ -439,7 +440,7 @@ public class   CellAdapter extends CommandInterpreter
     public void sendMessage(CellMessage msg)
         throws SerializationException, NoRouteToCellException
     {
-        _nucleus.sendMessage(msg);
+        getNucleus().sendMessage(msg, true, true);
     }
 
     @Override
@@ -459,29 +460,7 @@ public class   CellAdapter extends CommandInterpreter
                             long timeout)
         throws SerializationException
     {
-        _nucleus.sendMessage(msg, true, true, callback, timeout);
-    }
-
-    /**
-     *
-     * convenience method : identical to <br>
-     *  sendAndWait(msg, millisecs, true, true);
-     *
-     * @param msg the message to be sent.
-     * @param millisecs milliseconds to wait.
-     * @return the answer CellMessage or 'null' if intervall timed out.
-     * @exception SerializationException if the payload object of this
-     *            message is not Serializable.
-     * @exception NoRouteToCellException if the destination <code>CellPath</code>
-     *            couldn't be reached.
-     *
-     * @see CellNucleus#sendAndWait(CellMessage,boolean,boolean,long)
-     */
-    @Override
-    public CellMessage sendAndWait(CellMessage msg, long millisecs)
-            throws SerializationException, NoRouteToCellException, InterruptedException
-    {
-        return _nucleus.sendAndWait(msg, true, true, millisecs);
+        getNucleus().sendMessage(msg, true, true, callback, timeout);
     }
 
     /**
@@ -562,7 +541,7 @@ public class   CellAdapter extends CommandInterpreter
     public void messageToForward(CellMessage msg) {
         msg.nextDestination();
         try {
-            _nucleus.sendMessage(msg);
+            _nucleus.sendMessage(msg, true, true);
         } catch (NoRouteToCellException nrtc) {
             _log.warn("CellAdapter : NoRouteToCell in messageToForward : "+nrtc);
         } catch (Exception eee) {
@@ -858,7 +837,7 @@ public class   CellAdapter extends CommandInterpreter
                             reply.deliver(this, msg);
                         } else {
                             msg.setMessageObject(o);
-                            _nucleus.sendMessage(msg);
+                            _nucleus.sendMessage(msg, true, true);
                         }
                     } catch (NoRouteToCellException e) {
                         _log.warn("PANIC : Problem returning answer : " + e);
@@ -872,7 +851,7 @@ public class   CellAdapter extends CommandInterpreter
                     ping.setWayBack();
                     msg.revertDirection();
                     try {
-                        _nucleus.sendMessage(msg);
+                        _nucleus.sendMessage(msg, true, true);
                     } catch (NoRouteToCellException ee) {
                         _log.warn("Couldn't revert PingMessage : "+ee);
                     }
@@ -888,7 +867,7 @@ public class   CellAdapter extends CommandInterpreter
             } else if (obj instanceof PingMessage) {
                 msg.nextDestination();
                 try {
-                    _nucleus.sendMessage(msg);
+                    _nucleus.sendMessage(msg, true, true);
                 } catch (NoRouteToCellException ee) {
                     _log.warn("Couldn't forward PingMessage : " + ee);
                 }
@@ -1014,18 +993,13 @@ public class   CellAdapter extends CommandInterpreter
         CellMessage reply;
 
         try {
-            reply = _nucleus.sendAndWait(
-                                         new CellMessage(_aclPath, request),
-                                         _aclTimeout);
-
+            reply = _nucleus.sendAndWait(new CellMessage(_aclPath, request), _aclTimeout);
             if (reply == null) {
-                throw new
-                        CommandException("Error in acl handling : Acl Request timed out (" + _aclPath + ")");
+                throw new CommandException("Error in acl handling : Acl Request timed out (" + _aclPath + ")");
             }
 
-        } catch (NoRouteToCellException | SerializationException | InterruptedException ee) {
-            throw new
-                CommandException("Error in acl handling : "+ee.getMessage());
+        } catch (NoRouteToCellException | ExecutionException | InterruptedException e) {
+            throw new CommandException("Error in acl handling: " + e.getMessage(), e);
         }
 
         Object r = reply.getMessageObject();
@@ -1033,15 +1007,12 @@ public class   CellAdapter extends CommandInterpreter
             (! (r instanceof Object [])) ||
             (((Object [])r).length < 6) ||
             (! (((Object [])r)[5] instanceof Boolean))) {
-            throw new
-                    CommandException("Error in acl handling : illegal reply arrived");
+            throw new CommandException("Error in acl handling: illegal reply arrived");
         }
 
         if (! ((Boolean) ((Object[]) r)[5])) {
-            throw new
-                    CommandAclException(user, acl);
+            throw new CommandAclException(user, acl);
         }
-
     }
 
     private class RetryingCellMessageAnswerable implements CellMessageAnswerable, Runnable

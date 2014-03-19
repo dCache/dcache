@@ -1,6 +1,7 @@
 package dmg.cells.nucleus;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.dcache.util.Args;
 
@@ -70,30 +71,6 @@ public interface CellEndpoint
                                              CellMessageAnswerable callback,
                                              long timeout)
             throws SerializationException;
-
-    /**
-    * Sends <code>envelope</code> and waits <code>timeout</code>
-    * milliseconds for an answer to arrive.  The answer will bypass
-    * the ordinary queuing mechanism and will be delivered before any
-    * other asynchronous message.  The answer need to have the
-    * getLastUOID set to the UOID of the message send with
-    * sendAndWait. If the answer does not arrive withing the specified
-    * time interval, the method returns <code>null</code> and the
-    * answer will be handled as if it was an ordinary asynchronous
-    * message.
-    *
-    * @param envelope the cell message to be sent.
-    * @param timeout milliseconds to wait for an answer.
-    * @return the answer or null if the timeout was reached.
-    * @throws SerializationException if the payload object of this
-    *         message is not serializable.
-    * @throws NoRouteToCellException if the destination
-    *         couldnot be reached.
-    */
-    CellMessage sendAndWait(CellMessage envelope, long timeout)
-        throws SerializationException,
-               NoRouteToCellException,
-               InterruptedException;
 
     /**
      * Provides information about the host cell.

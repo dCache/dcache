@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
@@ -1404,7 +1403,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        CellMessage m =
            new CellMessage( new CellPath("billing") , RESET_POOL_STATISTICS ) ;
        try{
-           _nucleus.sendMessage( m ) ;
+           _nucleus.sendMessage(m, true, true);
        }catch(NoRouteToCellException ee ){
            _log.warn("Couldn't reset pool statistics : "+ee);
        }

@@ -29,9 +29,7 @@ public class RemotePermission implements PermissionCheckable {
         request[4] = aclName ;
         CellMessage reply;
         try{
-           reply = _cell.sendAndWait(
-                        new CellMessage( _path , request ) ,
-                        _timeout    ) ;
+            reply = _cell.getNucleus().sendAndWait(new CellMessage(_path, request), _timeout);
            if( reply == null ) {
                throw new
                        AclException("Request timed out (" + _path + ")");

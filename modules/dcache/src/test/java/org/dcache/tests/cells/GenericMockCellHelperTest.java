@@ -41,7 +41,7 @@ public class GenericMockCellHelperTest {
 
         CellMessage msg = new CellMessage( pnfsManagerPath , messageToAsk);
 
-        CellMessage reply = _cell.sendAndWait(msg, 0);
+        CellMessage reply = _cell.getNucleus().sendAndWait(msg, 0);
 
         assertNotNull("no message received", reply);
 
