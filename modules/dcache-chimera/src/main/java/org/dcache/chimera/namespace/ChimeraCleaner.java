@@ -33,21 +33,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.util.Args;
 import org.dcache.cells.AbstractCell;
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
 import org.dcache.cells.Option;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
+import org.dcache.util.Args;
 import org.dcache.util.BroadcastRegistrationTask;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -248,10 +247,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         addMessageListener(_pools);
         addCommandListener(_pools);
 
-        _poolStub = new CellStub();
-        _poolStub.setCellEndpoint(this);
-        _poolStub.setTimeout(_replyTimeout);
-        _poolStub.setTimeoutUnit(_replyTimeoutUnit);
+        _poolStub = new CellStub(this, null, _replyTimeout, _replyTimeoutUnit);
 
         _broadcastRegistration = new BroadcastRegistrationTask();
         _broadcastRegistration.setTarget(new CellPath(getCellName(), getCellDomainName()));
@@ -457,28 +453,28 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      * @throws InterruptedException
      */
 
-    private void sendRemoveToPoolCleaner(String poolName,
-            List<String> removeList) throws InterruptedException {
+    private void sendRemoveToPoolCleaner(String poolName, List<String> removeList)
+            throws InterruptedException
+    {
+        _log.debug("sendRemoveToPoolCleaner: poolName={}", poolName);
+        _log.debug("sendRemoveToPoolCleaner: removeList={}", removeList);
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("sendRemoveToPoolCleaner: poolName="+ poolName);
-            _log.debug("sendRemoveToPoolCleaner: removeList="+ removeList);
-        }
-        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(poolName, removeList);
-
-        MessageCallback<PoolRemoveFilesMessage> callback =
-                new RemoveMessageCallback(poolName, removeList);
-
-        /*
-         * we may use sendAndWait here. Unfortunately, PoolRemoveFilesMessage
-         * returns an array of not removed files as a error object.
-         * SendAndWait will convert it into exception.
-         *
-         * As a work around that we simulate synchronous behavior.
-         */
-        synchronized(callback) {
-            CellStub.addCallback(_poolStub.send(new CellPath(poolName), msg), callback);
-            callback.wait(_replyTimeoutUnit.toMillis(_replyTimeout));
+        try {
+            PoolRemoveFilesMessage msg =
+                    CellStub.get(_poolStub.send(new CellPath(poolName),
+                                                new PoolRemoveFilesMessage(poolName, removeList)));
+            if (msg.getReturnCode() == 0) {
+                removeFiles(poolName, removeList);
+            } else {
+                Set<String> notRemoved =
+                        new HashSet<>(Arrays.asList((String[]) msg.getErrorObject()));
+                List<String> removed = new ArrayList<>(removeList);
+                removed.removeAll(notRemoved);
+                removeFiles(poolName, removed);
+            }
+        } catch (CacheException e) {
+            _log.warn("Failed to remove files from {}: {}", poolName, e.getMessage());
+            _poolsBlackList.put(poolName, System.currentTimeMillis());
         }
     }
 
@@ -671,14 +667,15 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     {
         final String pnfsid = args.argv(0);
         _db.query(sqlGetPoolsForFile,
-                  new Object[] { pnfsid },
-                  new RowCallbackHandler() {
+                  new Object[]{pnfsid},
+                  new RowCallbackHandler()
+                  {
                       List<String> removeFile =
-                          Collections.singletonList(pnfsid);
+                              Collections.singletonList(pnfsid);
 
                       @Override
                       public void processRow(ResultSet rs)
-                          throws SQLException
+                              throws SQLException
                       {
                           try {
                               String pool = rs.getString("ilocation");
@@ -858,61 +855,5 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     protected void onFailure(URI uri)
     {
         _log.info("Failed to delete a file {} from HSM. Will try again later.", uri);
-    }
-
-    private class RemoveMessageCallback
-        extends AbstractMessageCallback<PoolRemoveFilesMessage>
-    {
-        private final String _poolName;
-        private final List<String> _filesToRemove;
-
-        RemoveMessageCallback(String poolName, List<String> filesToRemove) {
-            _poolName = poolName;
-            _filesToRemove = filesToRemove;
-        }
-
-        @Override
-        public synchronized void success(PoolRemoveFilesMessage message) {
-            try {
-                removeFiles(_poolName, _filesToRemove );
-            }finally{
-                notifyAll();
-            }
-        }
-
-        @Override
-        public synchronized void failure(int rc, Object o) {
-            try {
-                if( o instanceof String[] ) {
-                    Set<String> notRemoved =
-                        new HashSet<>(Arrays.asList((String[]) o));
-                    List<String> removed = new ArrayList<>(_filesToRemove);
-                    removed.removeAll(notRemoved);
-                    removeFiles(_poolName, removed);
-                }
-            } finally {
-                notifyAll();
-            }
-        }
-
-        @Override
-        public synchronized void noroute(CellPath path) {
-            try {
-                _log.warn("Pool {} is down.", _poolName);
-                _poolsBlackList.put(_poolName, System.currentTimeMillis());
-            } finally {
-                notifyAll();
-            }
-        }
-
-        @Override
-        public synchronized void timeout(String error) {
-            try {
-                _log.warn("remove message to {} timed out.", _poolName);
-                _poolsBlackList.put(_poolName, System.currentTimeMillis());
-            } finally {
-                notifyAll();
-            }
-        }
     }
 }

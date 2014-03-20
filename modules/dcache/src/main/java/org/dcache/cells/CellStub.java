@@ -501,6 +501,15 @@ public class CellStub
         }, executor);
     }
 
+    /**
+     * Returns the result of {@link java.util.concurrent.Future#get()}, converting most exceptions
+     * and error conditions to a CacheException.
+     *
+     * Like CellStub#get, but also checks the return code of the Message reply. If non-zero, it
+     * is rethrown as a CacheException matching the return code.
+     *
+     * @see CellStub#get
+     */
     public static <T extends Message> T getMessage(ListenableFuture<T> future)
             throws CacheException, InterruptedException
     {
@@ -511,6 +520,20 @@ public class CellStub
         return reply;
     }
 
+    /**
+     * Returns the result of {@link java.util.concurrent.Future#get()}, converting most exceptions
+     * to a CacheException.
+     *
+     * <p>Exceptions from {@code Future.get} are treated as follows:
+     * <ul>
+     * <li>Any {@link ExecutionException} has its <i>cause</i> unwrapped. Any CacheException is
+     *     propagated untouched. A NoRouteToCellException is wrapped in a TimeoutCacheException.
+     *     Other exceptions are wrapped in a CachException with error code UNEXPECTED_SYSTEM_EXCEPTION.
+     * <li>Any {@link InterruptedException} is propagated untouched.
+     * <li>Any {@link java.util.concurrent.CancellationException} is propagated untouched, as is any
+     *     other {@link RuntimeException}.
+     * </ul>
+     */
     public static <T> T get(ListenableFuture<T> future)
             throws CacheException, InterruptedException
     {
@@ -521,7 +544,7 @@ public class CellStub
             if (cause instanceof CacheException) {
                 throw (CacheException) cause;
             } else if (cause instanceof NoRouteToCellException) {
-                throw new TimeoutCacheException(cause.getMessage());
+                throw new TimeoutCacheException(cause.getMessage(), cause);
             } else {
                 throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.getMessage(), cause);
             }
