@@ -155,7 +155,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
          super(user ,
          requestCredentalId,
          max_number_of_retries,
-         max_update_period,
          lifetime,
          description,
          client_host);
@@ -325,22 +324,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         return getSummaryReturnStatus(hasFailure, hasSuccess);
     }
 
-    /**
-     *
-     * we need this methid to send notifications to the concrete instances of
-     *  ContainerRequest that the client creating this request is still alive
-     *  and if the request was in the RESTORED state, this will cause the
-     * scheduling of the request
-     */
-
-    private void getRequestStatusCalled() {
-        scheduleIfRestored();
-        for (R fr: fileRequests) {
-            fr.scheduleIfRestored();
-        }
-        updateRetryDeltaTime();
-    }
-
     public final RequestStatus getRequestStatus() {
         // we used to synchronize on this container request here, but
         // it does not make sence as the file requests are being processed
@@ -350,7 +333,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         // we can rely on the fact that
         // once file request reach their final state, this state does not change
         // so the combined logic
-        getRequestStatusCalled();
         RequestStatus rs = new RequestStatus();
         rs.requestId = getRequestNum();
         rs.errorMessage = getLastJobChange().getDescription();

@@ -596,7 +596,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         switch (getState()) {
         case PENDING:
         case RQUEUED:
-        case RESTORED:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:
         case TRANSFERRING:

@@ -531,7 +531,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
         switch (getState()) {
         case PENDING:
-        case RESTORED:
         case RQUEUED:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:

@@ -131,7 +131,6 @@ public final class ReserveSpaceRequest extends Request {
               super(user,
               requestCredentalId,
               maxNumberOfRetries,
-              0,
               lifetime,
               description,
               clienthost);

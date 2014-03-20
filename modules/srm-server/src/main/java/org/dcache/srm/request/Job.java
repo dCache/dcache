@@ -356,18 +356,15 @@ public abstract class Job  {
                     || newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.RUNNING
-                    || newState == State.TQUEUED
-                    || newState == State.RESTORED;
+                    || newState == State.TQUEUED;
         case TQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.RUNNING
-                    || newState == State.RESTORED;
+                    || newState == State.RUNNING;
         case PRIORITYTQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.RUNNING
-                    || newState == State.RESTORED;
+                    || newState == State.RUNNING;
         case RUNNING:
             return newState == State.CANCELED
                     || newState == State.FAILED
@@ -376,38 +373,32 @@ public abstract class Job  {
                     || newState == State.RQUEUED
                     || newState == State.READY
                     || newState == State.DONE
-                    || newState == State.RUNNINGWITHOUTTHREAD
-                    || newState == State.RESTORED;
+                    || newState == State.RUNNINGWITHOUTTHREAD;
         case ASYNCWAIT:
             return newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.RUNNING
                     || newState == State.PRIORITYTQUEUED
                     || newState == State.DONE
-                    || newState == State.RETRYWAIT
-                    || newState == State.RESTORED;
+                    || newState == State.RETRYWAIT;
         case RETRYWAIT:
             return newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.RUNNING
-                    || newState == State.PRIORITYTQUEUED
-                    || newState == State.RESTORED;
+                    || newState == State.PRIORITYTQUEUED;
         case RQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.READY
-                    || newState == State.RESTORED;
+                    || newState == State.READY;
         case READY:
             return newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.TRANSFERRING
-                    || newState == State.DONE
-                    || newState == State.RESTORED;
+                    || newState == State.DONE;
         case TRANSFERRING:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.DONE
-                    || newState == State.RESTORED;
+                    || newState == State.DONE;
         case FAILED:
         case DONE:
         case CANCELED:
@@ -861,38 +852,6 @@ public abstract class Job  {
             runlock();
         }
     }
-
-    /**
-     * if the job that has been scheduled for execution at some point in the past\
-     * and then was restored and put in the restored state
-     * then this method will triger rescheduling of this job
-     *
-     * This is needed for the types of the jobs that do not need to be resheduled
-     * unless something else triggers the rescheduling (like clients updating the status
-     * of the job, thus confirming their existance).
-     */
-    public void scheduleIfRestored() {
-        wlock();
-        try {
-         if(getState() == State.RESTORED) {
-                if(schedulerId != null) {
-                    Scheduler scheduler = Scheduler.getScheduler(schedulerId);
-                    if(scheduler != null) {
-                        try
-                        {
-                            scheduler.schedule(this);
-                        }
-                        catch(Exception ie) {
-                            ie.printStackTrace();
-                        }
-                    }
-                }
-            }
-        } finally {
-            wunlock();
-        }
-    }
-
 
     public long getLastStateTransitionTime(){
         rlock();

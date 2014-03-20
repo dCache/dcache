@@ -146,10 +146,6 @@ public final class Scheduler
     private final CountByCreator retryWaitJobsNum =
             new CountByCreator();
 
-    // retry wait state related variables
-    private final CountByCreator restoredJobsNum =
-            new CountByCreator();
-
 
     private final String id;
     private volatile boolean running;
@@ -245,8 +241,6 @@ public final class Scheduler
             switch (job.getState()) {
             case PENDING:
                 job.setScheduler(this.id, timeStamp);
-                // fall through
-            case RESTORED:
                 if (getTotalTQueued() >= getMaxThreadQueueSize()) {
                     job.setState(State.FAILED, "Too many jobs in the queue.");
                     return;
@@ -413,26 +407,6 @@ public final class Scheduler
     public int getTotalReady()
     {
         return readyJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfRestored(Job job)
-    {
-        restoredJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfRestored(Job job)
-    {
-        restoredJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getRestoredByCreator(Job job)
-    {
-        return restoredJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalRestored()
-    {
-        return restoredJobsNum.getTotal();
     }
 
     private void increaseNumberOfAsyncWait(Job job)
@@ -1016,9 +990,6 @@ public final class Scheduler
         }
 
         switch (oldState) {
-        case RESTORED:
-            decreaseNumberOfRestored(job);
-            break;
         case TQUEUED:
             threadQueue.remove(job);
             decreaseNumberOfTQueued(job);
@@ -1264,8 +1235,6 @@ public final class Scheduler
                 .append('\n');
         sb.append("          maxNumberOfRetries=").append(maxNumberOfRetries)
                 .append('\n');
-        sb.append("          number of restored but not scheduled=").
-                append(getTotalRestored()).append('\n');
         sb.append("          restorePolicy");
         switch (restorePolicy) {
         case ON_RESTART_FAIL_REQUEST: {
