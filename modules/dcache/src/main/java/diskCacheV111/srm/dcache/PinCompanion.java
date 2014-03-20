@@ -68,8 +68,6 @@ package diskCacheV111.srm.dcache;
 
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.CheckedFuture;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +88,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.pinmanager.PinManagerPinMessage;
@@ -165,7 +162,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PnfsGetFileAttributes(_path.toString(), attributes);
             msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
             msg.setSubject(_subject);
-            CellStub.addCallback(_pnfsStub.send(msg), new ThreadManagerMessageCallback<>(this));
+            CellStub.addCallback(_pnfsStub.send(msg), this);
         }
 
         private boolean isDirectory(FileAttributes attributes)
@@ -226,8 +223,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             msg.setSkipCostUpdate(true);
             msg.setSubject(_subject);
 
-            CellStub.addCallback(_poolManagerStub.send(msg),
-                                 new ThreadManagerMessageCallback<>(this));
+            CellStub.addCallback(_poolManagerStub.send(msg), this);
         }
 
         @Override
@@ -255,7 +251,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PinManagerPinMessage(_attributes, getProtocolInfo(),
                                          _requestToken, _pinLifetime);
             msg.setSubject(_subject);
-            CellStub.addCallback(_pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(this));
+            CellStub.addCallback(_pinManagerStub.send(msg), this);
         }
 
         @Override

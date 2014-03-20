@@ -1,27 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.7  2006/07/04 22:23:37  timur
-// Use Credential Id to reffer to the remote credential in delegation step, reformated some classes
-//
-// Revision 1.6  2005/03/11 21:17:28  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.5  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.4  2004/11/08 23:02:40  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.3  2004/08/26 21:22:30  timur
-// scheduler bug (not setting job value to null) in a loop serching for the next job to execute
-//
-// Revision 1.2  2004/08/06 19:35:23  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.2  2004/06/15 22:15:42  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -88,12 +64,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * StageAndPinCompanion.java
- *
- * Created on January 2, 2003, 2:08 PM
- */
-
 package diskCacheV111.srm.dcache;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -107,24 +77,19 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.ThreadManagerMessageCallback;
 import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 
 import static diskCacheV111.util.CacheException.TIMEOUT;
 
-/**
- *
- * @author  timur
- */
 public class UnpinCompanion
     extends AbstractMessageCallback<PinManagerUnpinMessage>
 {
     private static final Logger _log =
         LoggerFactory.getLogger(UnpinCompanion.class);
 
-    private PnfsId pnfsId;
+    private final PnfsId pnfsId;
     private final SettableFuture<String> future = SettableFuture.create();
 
     /** Creates a new instance of StageAndPinCompanion */
@@ -173,7 +138,7 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(pinManagerStub.send(msg), companion);
         return companion.future;
     }
 
@@ -188,7 +153,7 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(requestToken);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(pinManagerStub.send(msg), companion);
         return companion.future;
     }
 
@@ -201,7 +166,7 @@ public class UnpinCompanion
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), new ThreadManagerMessageCallback<>(companion));
+        CellStub.addCallback(pinManagerStub.send(msg), companion);
         return companion.future;
     }
 }

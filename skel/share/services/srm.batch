@@ -6,6 +6,12 @@ onerror shutdown
 
 check -strong srm.cell.name
 check -strong srm.cell.export
+check -strong srm.cell.limits.message.threads.min
+check -strong srm.cell.limits.message.threads.max
+check -strong srm.cell.limits.message.threads.max-idle-time
+check -strong srm.cell.limits.message.threads.max-idle-time.unit
+check -strong srm.cell.limits.message.queue.max
+
 check -strong srm.net.port
 check -strong srm.net.ssl-port
 check -strong srm.net.host
@@ -250,8 +256,8 @@ eval ${dcache.enable.space-reservation} true ==
 exec env srmSpaceManagerOff.exe -ifnotok
 onerror shutdown
 
-
-exec file:${dcache.paths.share}/cells/threadmanager.fragment
-
 create org.dcache.cells.UniversalSpringCell ${srm.cell.name} \
-   "classpath:diskCacheV111/srm/srm.xml -export=${srm.cell.export}"
+   "classpath:diskCacheV111/srm/srm.xml -export=${srm.cell.export} \
+       -callbackExecutor=messageExecutor \
+       -messageExecutor=messageExecutor \
+   "

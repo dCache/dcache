@@ -1,5 +1,3 @@
-// $Id$
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -155,7 +153,6 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.ThreadManager;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.CopyManagerMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
@@ -175,9 +172,7 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerHandler;
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -247,9 +242,7 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.net.InetAddresses.isInetAddress;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -967,18 +960,43 @@ public final class Storage
                    srm.getAbstractStorageElementGauges().toString();
       }
 
-
-    /**
-     * Starts new threads for processing TransferManagerMessage.
-     */
     public void messageArrived(final TransferManagerMessage msg)
     {
-        ThreadManager.execute(new Runnable() {
-                @Override
-                public void run() {
-                    handleTransferManagerMessage(msg);
-                }
-            });
+        Long callerId = msg.getId();
+        _log.debug("handleTransferManagerMessage for callerId="+callerId);
+
+        TransferInfo info = callerIdToHandler.get(callerId);
+        if (info == null) {
+            _log.error("TransferInfo for callerId="+callerId+"not found");
+            return;
+        }
+
+        if (msg instanceof TransferCompleteMessage ) {
+            info.callbacks.copyComplete();
+            _log.debug("removing TransferInfo for callerId="+callerId);
+            callerIdToHandler.remove(callerId);
+        } else if (msg instanceof TransferFailedMessage) {
+            Object error =  msg.getErrorObject();
+            if (error instanceof CacheException) {
+                error = ((CacheException) error).getMessage();
+            }
+            SRMException e;
+            switch (msg.getReturnCode()) {
+            case CacheException.PERMISSION_DENIED:
+                e = new SRMAuthorizationException(String.format("Access denied: %s", error));
+                break;
+            case CacheException.FILE_NOT_FOUND:
+                e = new SRMInvalidPathException(String.valueOf(error));
+                break;
+            default:
+                e = new SRMException(String.format("Transfer failed: %s [%d]",
+                                                   error, msg.getReturnCode()));
+            }
+            info.callbacks.copyFailed(e);
+
+            _log.debug("removing TransferInfo for callerId="+callerId);
+            callerIdToHandler.remove(callerId);
+        }
     }
 
     @Override
@@ -2300,44 +2318,6 @@ public final class Storage
         {
             this.transferId = transferId;
             this.callbacks = callbacks;
-        }
-    }
-
-    private void handleTransferManagerMessage(TransferManagerMessage message) {
-        Long callerId = message.getId();
-        _log.debug("handleTransferManagerMessage for callerId="+callerId);
-
-        TransferInfo info = callerIdToHandler.get(callerId);
-        if (info == null) {
-            _log.error("TransferInfo for callerId="+callerId+"not found");
-            return;
-        }
-
-        if (message instanceof TransferCompleteMessage ) {
-            info.callbacks.copyComplete();
-            _log.debug("removing TransferInfo for callerId="+callerId);
-            callerIdToHandler.remove(callerId);
-        } else if (message instanceof TransferFailedMessage) {
-            Object error =  message.getErrorObject();
-            if (error instanceof CacheException) {
-                error = ((CacheException) error).getMessage();
-            }
-            SRMException e;
-            switch (message.getReturnCode()) {
-            case CacheException.PERMISSION_DENIED:
-                e = new SRMAuthorizationException(String.format("Access denied: %s", error));
-                break;
-            case CacheException.FILE_NOT_FOUND:
-                e = new SRMInvalidPathException(String.valueOf(error));
-                break;
-            default:
-                e = new SRMException(String.format("Transfer failed: %s [%d]",
-                                                   error, message.getReturnCode()));
-            }
-            info.callbacks.copyFailed(e);
-
-            _log.debug("removing TransferInfo for callerId="+callerId);
-            callerIdToHandler.remove(callerId);
         }
     }
 
