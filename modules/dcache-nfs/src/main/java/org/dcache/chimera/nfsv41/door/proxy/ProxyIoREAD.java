@@ -41,6 +41,12 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     private final static stateid4 ZERO_STATEID
 	    = new stateid4(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0);
 
+    private final static stateid4 ONE_STATEID
+            = new stateid4(new byte[]{
+                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
+                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
+                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff}, 0xffffff);
+
     public ProxyIoREAD(nfs_argop4 args, DcapProxyIoFactory proxyIoFactory) {
         super(args, nfs_opnum4.OP_READ);
         this.proxyIoFactory = proxyIoFactory;
@@ -86,6 +92,15 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 		    bytesReaded = oneUseProxyIoAdapter.read(bb, offset);
 		}
 	    } else {
+                if (context.getMinorversion() == 0) {
+                    /*
+                     *  The NFSv4.0 spec requires to update lease time as long as client
+                     * needs the file. This is done through READ, WRITE and RENEW
+                     * opertations. With introduction of sessions in v4.1 update of the
+                     * lease time done through SEQUENCE operation.
+                     */
+                    context.getStateHandler().updateClientLeaseTime(_args.opread.stateid);
+                }
 		proxyIoAdapter = getOrCreateProxy(inode, stateid, context);
 		bytesReaded = proxyIoAdapter.read(bb, offset);
 	    }
@@ -156,8 +171,10 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 	 * As stateid4#equals() does not check seqid,
 	 * we need a special equality check
 	 */
-	return stateid.seqid.value == ZERO_STATEID.seqid.value  &&
-		Arrays.equals(stateid.other, ZERO_STATEID.other);
+	return (stateid.seqid.value == ZERO_STATEID.seqid.value  &&
+		Arrays.equals(stateid.other, ZERO_STATEID.other)) ||
+                (stateid.seqid.value == ONE_STATEID.seqid.value
+                && Arrays.equals(stateid.other, ONE_STATEID.other)) ;
     }
 
     private ProxyIoAdapter createIoAdapter(final Inode inode, final CompoundContext context)
