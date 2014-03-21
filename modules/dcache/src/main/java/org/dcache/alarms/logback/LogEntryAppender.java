@@ -72,13 +72,13 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.log4j.MDC;
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.slf4j.Marker;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
