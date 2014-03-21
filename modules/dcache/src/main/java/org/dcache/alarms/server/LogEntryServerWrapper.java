@@ -104,27 +104,27 @@ public class LogEntryServerWrapper {
     private SimpleSocketServer server;
 
     public void setBaseDir(String baseDir) {
-        this.baseDir = baseDir;
+        this.baseDir = Strings.emptyToNull(baseDir);
     }
 
     public void setConfigFile(String configFile) {
-        this.configFile = configFile;
+        this.configFile = Strings.emptyToNull(configFile);
     }
 
     public void setDefinitions(String definitionsPath) {
-        this.definitionsPath = definitionsPath;
+        this.definitionsPath = Strings.emptyToNull(definitionsPath);
     }
 
     public void setLevel(String level) {
-        this.level = level;
+        this.level = Strings.emptyToNull(level);
     }
 
     public void setPass(String pass) {
-        this.pass = pass;
+        this.pass = Strings.emptyToNull(pass);
     }
 
     public void setPath(String path) {
-        this.path = path;
+        this.path = Strings.emptyToNull(path);
     }
 
     public void setPort(Integer port) {
@@ -132,19 +132,15 @@ public class LogEntryServerWrapper {
     }
 
     public void setProperties(String properties) {
-        this.properties = properties;
-    }
-
-    public void setServer(SimpleSocketServer server) {
-        this.server = server;
+        this.properties = Strings.emptyToNull(properties);
     }
 
     public void setUrl(String url) {
-        this.url = url;
+        this.url = Strings.emptyToNull(url);
     }
 
     public void setUser(String user) {
-        this.user = user;
+        this.user = Strings.emptyToNull(user);
     }
 
     public void shutDown() {
@@ -156,7 +152,7 @@ public class LogEntryServerWrapper {
     public void startUp() {
         if (Strings.isNullOrEmpty(url)) {
             LOGGER.warn("Alarms database type is OFF; server will not be started.");
-            return;
+            System.exit(0);
         }
 
         File alarmsDirectory;
@@ -171,6 +167,13 @@ public class LogEntryServerWrapper {
         } catch (IllegalArgumentException ie) {
             LOGGER.error("Configuration precondition failure: {}; "
                             + "server will not be started.", ie.getMessage());
+            System.exit(-1);
+            /*
+             * This is really stupid, but Eclipse doesn't
+             * understand that System.exit() is equivalent to
+             * return insofar as preventing the alarmsDirectory
+             * reference below from being uninitialized.
+             */
             return;
         }
 
@@ -180,15 +183,13 @@ public class LogEntryServerWrapper {
         try {
             loggerContext.reset();
 
-            loggerContext.putProperty("alarms.dir",
-                            alarmsDirectory.getAbsolutePath());
+            loggerContext.putProperty("alarms.dir", alarmsDirectory.getAbsolutePath());
             loggerContext.putProperty("alarms.db.xml.path", path);
             loggerContext.putProperty("alarms.db.url", url);
             loggerContext.putProperty("alarms.db.user", user);
             loggerContext.putProperty("alarms.db.password", pass);
             loggerContext.putProperty("alarms.db.config.path", properties);
-            loggerContext.putProperty("alarms.definitions.path",
-                            definitionsPath);
+            loggerContext.putProperty("alarms.definitions.path", definitionsPath);
             loggerContext.putProperty("alarms.log.root-level", level);
 
             JoranConfigurator configurator = new JoranConfigurator();
@@ -196,13 +197,24 @@ public class LogEntryServerWrapper {
 
             configurator.doConfigure(configFile);
         } catch (JoranException je) {
-            LOGGER.error("Configuration error: {}; server will not be started.",
-                            je.getMessage());
-            return;
+            /*
+             * Using the logger here is problematic because the exception
+             * may actually have affected the logging system.
+             */
+            System.err.println("Configuration error: server will not be started. "
+                            + je.getMessage());
+
+            System.exit(-2);
         } catch (RuntimeException e) {
-            LOGGER.error("Alarm server failed to start, unexpected error; "
-                            + "this is probably a bug.", e);
-            return;
+            /*
+             * Using the logger here is problematic because the exception
+             * may actually have affected the logging system.
+             */
+            System.err.println("Alarm server failed to start, unexpected error; "
+                            + "this is probably a bug.");
+            e.printStackTrace();
+
+            System.exit(-3);
         }
 
         server = new SimpleSocketServer(loggerContext, port);
