@@ -5,7 +5,6 @@ onerror shutdown
 check -strong poolmanager.cell.name
 check -strong poolmanager.cell.export
 check -strong poolmanager.plugins.selection-unit
-check -strong poolmanager.plugins.thread-pool
 check -strong poolmanager.plugins.quota-manager
 check -strong poolmanager.service.broadcast
 check -strong poolmanager.service.pnfsmanager

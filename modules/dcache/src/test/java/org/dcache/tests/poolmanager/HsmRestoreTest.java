@@ -1,5 +1,6 @@
 package org.dcache.tests.poolmanager;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,6 @@ import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.tests.cells.MockCellEndpoint;
 import org.dcache.tests.cells.MockCellEndpoint.MessageAction;
-import org.dcache.tests.util.CurrentThreadExceutorHelper;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -98,7 +98,7 @@ public class HsmRestoreTest {
         _rc.setPnfsHandler(_pnfsHandler);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
-        _rc.setThreadPool(new CurrentThreadExceutorHelper());
+        _rc.setExecutor(MoreExecutors.sameThreadExecutor());
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);

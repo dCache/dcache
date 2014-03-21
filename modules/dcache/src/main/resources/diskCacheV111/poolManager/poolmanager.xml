@@ -64,15 +64,19 @@
       <property name="destination" value="${poolmanager.service.broadcast}"/>
   </bean>
 
+  <bean id="rc-pool" class="org.dcache.util.CDCExecutorServiceDecorator">
+      <constructor-arg>
+          <bean class="diskCacheV111.poolManager.RequestContainerExecutor"/>
+      </constructor-arg>
+  </bean>
+
   <bean id="rc" class="diskCacheV111.poolManager.RequestContainerV5"
         destroy-method="shutdown">
     <description>Request container</description>
     <property name="poolSelectionUnit" ref="psu"/>
     <property name="poolMonitor" ref="poolMonitor"/>
     <property name="partitionManager" ref="pm"/>
-    <property name="threadPool">
-      <bean class="${poolmanager.plugins.thread-pool}"/>
-    </property>
+    <property name="executor" ref="rc-pool"/>
     <property name="stageConfigurationFile" value="${poolmanager.authz.staging}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="hitInfoMessages" value="${poolmanager.enable.cache-hit-message}"/>
