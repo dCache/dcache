@@ -2405,10 +2405,10 @@ public abstract class AbstractFtpDoorV1
 
         FileAttributes updates = new FileAttributes();
         updates.setModificationTime(when);
-        updateAttributesFromPath(pathname, updates);
+        FileAttributes updated = updateAttributesFromPath(pathname, updates);
 
         String updatedTimeval =
-                TIMESTAMP_FORMAT.format(new Date(updates.getModificationTime()));
+                TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime()));
 
         reply("213 Modify=" + updatedTimeval + "; " + pathname);
     }
@@ -2431,10 +2431,10 @@ public abstract class AbstractFtpDoorV1
 
         FileAttributes updates = new FileAttributes();
         updates.setCreationTime(when);
-        updateAttributesFromPath(pathname, updates);
+        FileAttributes updated = updateAttributesFromPath(pathname, updates);
 
         String updatedTimeval =
-                TIMESTAMP_FORMAT.format(new Date(updates.getCreationTime()));
+                TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime()));
 
         reply("213 Create=" + updatedTimeval + "; " + pathname);
     }
@@ -2480,13 +2480,17 @@ public abstract class AbstractFtpDoorV1
                 updates.setCreationTime(parseTimeval(change.getValue(),
                         " for CREATE"));
                 break;
+            case ACCESS:
+                updates.setAccessTime(parseTimeval(change.getValue(),
+                        " for UNIX.atime"));
+                break;
             default:
                 reply("504 Unmodifable fact " + change.getKey());
                 return;
             }
         }
 
-        updateAttributesFromPath(pathname, updates);
+        FileAttributes updated = updateAttributesFromPath(pathname, updates);
 
         StringBuilder sb = new StringBuilder("213 ");
         for (Map.Entry<String,String> change : changes.entrySet()) {
@@ -2494,13 +2498,16 @@ public abstract class AbstractFtpDoorV1
             sb.append(fact.getName()).append('=');
             switch (fact) {
             case MODE:
-                sb.append(Integer.toOctalString(updates.getMode() & 0777));
+                sb.append(Integer.toOctalString(updated.getMode() & 0777));
                 break;
             case MODIFY:
-                sb.append(TIMESTAMP_FORMAT.format(new Date(updates.getModificationTime())));
+                sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getModificationTime())));
                 break;
             case CREATE:
-                sb.append(TIMESTAMP_FORMAT.format(new Date(updates.getCreationTime())));
+                sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getCreationTime())));
+                break;
+            case ACCESS:
+                sb.append(TIMESTAMP_FORMAT.format(new Date(updated.getAccessTime())));
                 break;
             }
             sb.append(';');
@@ -2509,12 +2516,13 @@ public abstract class AbstractFtpDoorV1
     }
 
 
-    private void updateAttributesFromPath(String path, FileAttributes updates)
+    private FileAttributes updateAttributesFromPath(String path, FileAttributes updates)
             throws FTPCommandException
     {
+        FsPath absolutePath = absolutePath(path);
         try {
-            _pnfs.setFileAttributes(absolutePath(path), updates);
-
+            return _pnfs.setFileAttributes(absolutePath, updates,
+                    updates.getDefinedAttributes());
         } catch (FileNotFoundCacheException e) {
             throw new FTPCommandException(550, "file not found");
         } catch (CacheException e) {

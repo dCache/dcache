@@ -673,7 +673,7 @@ public class RemoteNameSpaceProviderTests
         givenSuccessfulResponse();
 
         _namespace.setFileAttributes(ROOT, A_PNFSID,
-                attributes().size(1000).build());
+                attributes().size(1000).build(), EnumSet.noneOf(FileAttribute.class));
 
         PnfsSetFileAttributes sent =
                 getSingleSendAndWaitMessage(PnfsSetFileAttributes.class);
@@ -692,7 +692,7 @@ public class RemoteNameSpaceProviderTests
         givenFailureResponse(FILE_NOT_FOUND);
 
         _namespace.setFileAttributes(ROOT, A_PNFSID,
-                attributes().size(1000).build());
+                attributes().size(1000).build(), EnumSet.noneOf(FileAttribute.class));
     }
 
     /*

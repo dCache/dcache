@@ -130,8 +130,8 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
-        throws CacheException
+    public FileAttributes setFileAttributes(Subject subject, PnfsId pnfsId,
+            FileAttributes attr, Set<FileAttribute> acquire) throws CacheException
     {
         throw new UnsupportedOperationException();
     }

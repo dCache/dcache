@@ -509,6 +509,12 @@ public class PnfsHandler
         return pnfsRequest(new PnfsGetFileAttributes(path, attr)).getFileAttributes();
     }
 
+    public FileAttributes getFileAttributes(FsPath path, Set<FileAttribute> attr)
+        throws CacheException
+    {
+        return getFileAttributes(path.toString(), attr);
+    }
+
     /**
      * Get file attributes. The PnfsManager is free to return less attributes
      * than requested. If <code>attr</code> is an empty array, file existence
@@ -531,15 +537,54 @@ public class PnfsHandler
 
     /**
      * Set file attributes. If <code>attr</code> is an empty array,
+     * file existence if checked.  The updated FileAttribute values in
+     * acquire are returned.
+     *
+     * In principal, the NameSpaceProvider can adjust or ignore updated
+     * FileAttribute values.  For Chimera, only updates to ACCESS_TIME and
+     * CHANGE_TIME might not be honoured.
+     *
+     * @param pnfsid
+     * @param attr array of requested attributes.
+     * @param acquire set of updated FileAttributes to return.
+     * @return The updated values requested via acquire
+     */
+    public FileAttributes setFileAttributes(PnfsId pnfsid, FileAttributes attr,
+            Set<FileAttribute> acquire) throws CacheException
+    {
+        return pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr, acquire)).getFileAttributes();
+    }
+
+    /**
+     * Set file attributes. If <code>attr</code> is an empty array,
      * file existence if checked.
      *
      * @param pnfsid
      * @param attr array of requested attributes.
      */
-    public void setFileAttributes(PnfsId pnfsid, FileAttributes attr)
-        throws CacheException
+    public void setFileAttributes(PnfsId pnfsid, FileAttributes attr) throws CacheException
     {
         pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr));
+    }
+
+    /**
+     * Set file attributes by path. If <code>attr</code> is an empty array,
+     * file existence if checked.  The updated FileAttribute values requested
+     * by the acquire argument are returned.
+     *
+     * In principal, the NameSpaceProvider can adjust or ignore updated
+     * FileAttribute values.  For Chimera, only updates to ACCESS_TIME and
+     * CHANGE_TIME might not be honoured.
+     *
+     * @param path location of file or directory to modify
+     * @param attr array of requested attributes.
+     * @param acquire set of updated FileAttributes to return.
+     * @return The updated values requested via acquire
+     */
+    public FileAttributes setFileAttributes(FsPath path, FileAttributes attr,
+            Set<FileAttribute> acquire) throws CacheException
+    {
+        return pnfsRequest(new PnfsSetFileAttributes(path.toString(), attr, acquire)).getFileAttributes();
     }
 
     /**
@@ -549,10 +594,9 @@ public class PnfsHandler
      * @param path location of file or directory to modify
      * @param attr array of requested attributes.
      */
-    public void setFileAttributes(FsPath path, FileAttributes attr)
-        throws CacheException
+    public void setFileAttributes(FsPath path, FileAttributes attr) throws CacheException
     {
-        pnfsRequest(new PnfsSetFileAttributes(path.toString(), attr));
+        pnfsRequest(new PnfsSetFileAttributes(path.toString(), attr, EnumSet.noneOf(FileAttribute.class)));
     }
 
     public void setChecksum(PnfsId pnfsId, Checksum checksum)

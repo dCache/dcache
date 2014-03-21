@@ -175,12 +175,17 @@ public interface NameSpaceProvider
     /**
      * Set files attributes defined by <code>attr</code>.
      *
+     * A NameSpaceProvider may choose to adjust or ignore requests to set
+     * a FileAttribute.  This must be reflected in the returned value.
+     *
      * @param subject Subject of user who invoked this method.
      * @param pnfsId of the file
      * @param attr array of requested attributes
+     * @param acquire attributes to query after the update, if any.
+     * @return the updated attributes selected by acquire
      */
-    void setFileAttributes(Subject subject, PnfsId pnfsId, FileAttributes attr)
-        throws CacheException;
+    FileAttributes setFileAttributes(Subject subject, PnfsId pnfsId,
+            FileAttributes attr, Set<FileAttribute> fetch) throws CacheException;
 
     /**
      * Lists the content of a directory. The content is returned as a

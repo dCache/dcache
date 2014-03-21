@@ -811,8 +811,8 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void setFileAttributes(Subject subject, PnfsId pnfsId,
-                                  FileAttributes attr)
+    public FileAttributes setFileAttributes(Subject subject, PnfsId pnfsId,
+                                  FileAttributes attr, Set<FileAttribute> acquire)
         throws CacheException
     {
         _log.debug("File attributes update: {}", attr.getDefinedAttributes());
@@ -951,6 +951,8 @@ public class ChimeraNameSpaceProvider
             if (stat != null) {
                 inode.setStat(stat);
             }
+
+            return getFileAttributes(inode, acquire);
 
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);

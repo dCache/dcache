@@ -456,7 +456,8 @@ public class PnfsManagerV3
             attributes.setGroup(Integer.parseInt(args.argv(2)));
             attributes.setMode(Integer.parseInt(args.argv(3), 8));
 
-            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+                    EnumSet.noneOf(FileAttribute.class));
 
             return "Ok";
         }catch(Exception e) {
@@ -603,7 +604,8 @@ public class PnfsManagerV3
 
         FileAttributes attributes = new FileAttributes();
         attributes.setFlags(flags);
-        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
+        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+                EnumSet.noneOf(FileAttribute.class));
 
         return "" ;
     }
@@ -669,7 +671,8 @@ public class PnfsManagerV3
         FileAttributes attributes = new FileAttributes();
         attributes.setSize(Long.valueOf(args.argv(1)));
 
-        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
+        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+                EnumSet.noneOf(FileAttribute.class));
 
         return "";
     }
@@ -725,7 +728,8 @@ public class PnfsManagerV3
         Checksum checksum = new Checksum(type, args.argv(2));
         FileAttributes attributes = new FileAttributes();
         attributes.setChecksums(Collections.singleton(checksum));
-        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes);
+        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+                EnumSet.noneOf(FileAttribute.class));
         return "";
     }
 
@@ -837,7 +841,7 @@ public class PnfsManagerV3
             FileAttributes attributes = new FileAttributes();
             attributes.setChecksums(Collections.singleton(checksum));
             _nameSpaceProvider.setFileAttributes(msg.getSubject(), pnfsId,
-                                                 attributes);
+                    attributes, EnumSet.noneOf(FileAttribute.class));
         }catch(FileNotFoundCacheException e) {
             msg.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage() );
         }catch( CacheException e ){
@@ -889,7 +893,8 @@ public class PnfsManagerV3
             _log.info("flags set " + pnfsId + " " + flagName + "=" + value);
             attributes = new FileAttributes();
             attributes.setFlags(Collections.singletonMap(flagName, value));
-            _nameSpaceProvider.setFileAttributes(subject, pnfsId, attributes);
+            _nameSpaceProvider.setFileAttributes(subject, pnfsId, attributes,
+                    EnumSet.noneOf(FileAttribute.class));
             break;
         case SETNOOVERWRITE:
             _log.info("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
@@ -1739,7 +1744,9 @@ public class PnfsManagerV3
         try {
             FileAttributes attributesToUpdate = new FileAttributes();
             attributesToUpdate.setStorageInfo(pnfsMessage.getFileAttributes().getStorageInfo());
-            _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(), pnfsMessage.getPnfsId(), attributesToUpdate);
+            _nameSpaceProvider.setFileAttributes(pnfsMessage.getSubject(),
+                    pnfsMessage.getPnfsId(), attributesToUpdate,
+                    EnumSet.noneOf(FileAttribute.class));
         } catch (CacheException e) {
             pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
@@ -1968,9 +1975,13 @@ public class PnfsManagerV3
                 }
             }
 
-            _nameSpaceProvider.setFileAttributes(message.getSubject(),
-                                                 pnfsId,
-                                                 attr);
+            FileAttributes updated = _nameSpaceProvider.
+                    setFileAttributes(message.getSubject(),
+                                      pnfsId,
+                                      attr,
+                                      message.getAcquire());
+
+            message.setFileAttributes(updated);
             message.setSucceeded();
         }catch(FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);

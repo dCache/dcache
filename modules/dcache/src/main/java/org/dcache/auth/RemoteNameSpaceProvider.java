@@ -183,11 +183,11 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public void setFileAttributes(Subject subject, PnfsId id,
-            FileAttributes attr) throws CacheException
+    public FileAttributes setFileAttributes(Subject subject, PnfsId id,
+            FileAttributes attr, Set<FileAttribute> acquire) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        pnfs.setFileAttributes(id, attr);
+        return pnfs.setFileAttributes(id, attr, acquire);
     }
 
     @Override

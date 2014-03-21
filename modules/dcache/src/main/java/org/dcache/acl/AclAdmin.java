@@ -240,7 +240,8 @@ public class AclAdmin
 
         FileAttributes attributes = new FileAttributes();
         attributes.setAcl(new ACL(rsType, aces));
-        _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, attributes);
+        _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, attributes,
+                EnumSet.noneOf(FileAttribute.class));
         return "Done";
     }
 
