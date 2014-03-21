@@ -19,6 +19,7 @@ package org.dcache.tests.cells;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
@@ -67,7 +68,7 @@ public class CellEndpointHelper implements CellEndpoint
     }
 
     @Override
-    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, long timeout)
+    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
             throws SerializationException
     {
         CellMessage answer = currentTest().messageArrived(envelope);
@@ -81,9 +82,10 @@ public class CellEndpointHelper implements CellEndpoint
 
     @Override
     public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                    long timeout) throws SerializationException
+                                                    Executor executor, long timeout)
+            throws SerializationException
     {
-        sendMessage(envelope, callback, timeout);
+        sendMessage(envelope, callback, executor, timeout);
     }
 
     @Override

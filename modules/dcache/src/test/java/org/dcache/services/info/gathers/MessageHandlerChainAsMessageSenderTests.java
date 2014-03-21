@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.vehicles.Message;
 
@@ -84,15 +85,17 @@ public class MessageHandlerChainAsMessageSenderTests {
         }
 
         @Override
-        public void sendMessage( CellMessage envelope,
-                                 CellMessageAnswerable callback, long timeout)
-                throws SerializationException {
+        public void sendMessage(CellMessage envelope, CellMessageAnswerable callback,
+                                Executor executor, long timeout)
+                throws SerializationException
+        {
             _sendMessages.add( envelope);
         }
 
         @Override
         public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                        long timeout) throws SerializationException
+                                                        Executor executor, long timeout)
+                throws SerializationException
         {
             _sendMessages.add(envelope);
         }

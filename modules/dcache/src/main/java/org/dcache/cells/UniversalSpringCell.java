@@ -223,8 +223,7 @@ public class UniversalSpringCell
          * beans in the Spring file, however the names of the beans
          * are provided as cell arguments.
          */
-        setupCellExecutors(args.getOpt("callbackExecutor"),
-                           args.getOpt("messageExecutor"));
+        setupCellExecutors(args.getOpt("messageExecutor"));
 
         /* This is a NOP except if somebody subclassed
          * UniversalSpringCell.
@@ -273,15 +272,8 @@ public class UniversalSpringCell
         _lifeCycleAware.clear();
     }
 
-    private void setupCellExecutors(String callbackExecutor, String messageExecutor)
+    private void setupCellExecutors(String messageExecutor)
     {
-        if (callbackExecutor != null) {
-            Object executor = getBean(callbackExecutor);
-            checkState(executor instanceof ThreadPoolExecutor,
-                    "No such bean: " + callbackExecutor);
-            getNucleus().setCallbackExecutor((ThreadPoolExecutor) executor);
-        }
-
         if (messageExecutor != null) {
             Object executor = getBean(messageExecutor);
             checkState(executor instanceof ThreadPoolExecutor,

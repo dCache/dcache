@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import dmg.cells.network.PingMessage;
@@ -142,25 +143,6 @@ public class   CellAdapter extends CommandInterpreter
             export();
         }
 
-        String async = _args.getOpt("callback");
-        if (async == null) {
-            async = (String) _nucleus.getDomainContext("callback");
-        }
-        if (async != null) {
-            switch (async) {
-            case "async":
-                setAsyncCallback(true);
-                _log.info("Callback set to async");
-                break;
-            case "sync":
-                setAsyncCallback(false);
-                _log.info("Callback set to sync");
-                break;
-            default:
-                _log.warn("Illegal value for 'callback' option : " + async);
-                break;
-            }
-        }
         if (_args.hasOption("replyObject") && _args.getOpt("replyObject").equals("false")) {
             setCommandExceptionEnabled(false);
         }
@@ -235,10 +217,6 @@ public class   CellAdapter extends CommandInterpreter
                 _log.warn(e.getMessage());
             }
         }
-    }
-
-    public void setAsyncCallback(boolean async) {
-        _nucleus.setAsyncCallback(async);
     }
 
     /**
@@ -446,21 +424,23 @@ public class   CellAdapter extends CommandInterpreter
     @Override
     public void sendMessageWithRetryOnNoRouteToCell(CellMessage msg,
                                                     CellMessageAnswerable callback,
+                                                    Executor executor,
                                                     long timeout)
         throws SerializationException
     {
         CellMessageAnswerable retryingCallback =
-                new RetryingCellMessageAnswerable(msg, callback, timeout);
-        sendMessage(msg, retryingCallback, timeout);
+                new RetryingCellMessageAnswerable(msg, callback, executor, timeout);
+        sendMessage(msg, retryingCallback, executor, timeout);
     }
 
     @Override
     public void sendMessage(CellMessage msg,
                             CellMessageAnswerable callback,
+                            Executor executor,
                             long timeout)
         throws SerializationException
     {
-        getNucleus().sendMessage(msg, true, true, callback, timeout);
+        getNucleus().sendMessage(msg, true, true, callback, executor, timeout);
     }
 
     /**
@@ -521,8 +501,6 @@ public class   CellAdapter extends CommandInterpreter
      * Other messages are delivered throu <code>messageToForward</code>.
      *
      * @param msg the reference to message arrived.
-     * @see CellAdapter#commandArrived(CellMessage)
-     *
      */
     public void messageArrived(CellMessage msg) {
         _log.info(" CellMessage From   : " + msg.getSourcePath());
@@ -1020,11 +998,13 @@ public class   CellAdapter extends CommandInterpreter
         private final long deadline;
         private final CellMessageAnswerable callback;
         private final CellMessage msg;
+        private final Executor executor;
 
-        public RetryingCellMessageAnswerable(CellMessage msg, CellMessageAnswerable callback, long timeout)
+        public RetryingCellMessageAnswerable(CellMessage msg, CellMessageAnswerable callback, Executor executor, long timeout)
         {
             this.callback = callback;
             this.msg = msg;
+            this.executor = executor;
             deadline = System.currentTimeMillis() + timeout;
         }
 
@@ -1056,7 +1036,7 @@ public class   CellAdapter extends CommandInterpreter
         public void run() {
             long timeout = deadline - System.currentTimeMillis();
             if (timeout > 0) {
-                sendMessage(msg, this, timeout);
+                sendMessage(msg, this, executor, timeout);
             } else {
                 callback.answerTimedOut(msg);
             }

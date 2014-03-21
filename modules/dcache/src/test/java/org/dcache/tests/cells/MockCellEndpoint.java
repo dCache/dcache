@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.vehicles.Message;
 
@@ -85,7 +86,7 @@ public class MockCellEndpoint implements CellEndpoint
     }
 
     @Override
-    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, long timeout)
+    public void sendMessage(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
             throws SerializationException
     {
         Map<String, List<MessageEnvelope>> messages = messageQueue.get(envelope.getDestinationPath());
@@ -115,10 +116,10 @@ public class MockCellEndpoint implements CellEndpoint
     }
 
     @Override
-    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback, long timeout)
+    public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback, Executor executor, long timeout)
             throws SerializationException
     {
-        sendMessage(envelope, callback, timeout);
+        sendMessage(envelope, callback, executor, timeout);
     }
 
     @Override

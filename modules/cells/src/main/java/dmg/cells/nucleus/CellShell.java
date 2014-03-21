@@ -1,5 +1,6 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -730,7 +731,7 @@ public class CellShell extends CommandInterpreter
        {
            CellMessage msg = new CellMessage(address, message);
            if (wait) {
-               _nucleus.sendMessage(msg, !nolocal, !noremote, this, 10000);
+               _nucleus.sendMessage(msg, !nolocal, !noremote, this, MoreExecutors.sameThreadExecutor(), 10000);
                return this;
            } else {
                _nucleus.sendMessage(msg, !nolocal, !noremote);

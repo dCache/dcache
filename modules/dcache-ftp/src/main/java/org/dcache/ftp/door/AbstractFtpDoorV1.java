@@ -119,6 +119,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -276,6 +277,7 @@ public abstract class AbstractFtpDoorV1
     protected InetSocketAddress _remoteAddress;
     protected CellAddressCore _cellAddress;
     protected CellEndpoint _cellEndpoint;
+    protected Executor _executor;
 
     /**
      * Enumeration type for representing the connection mode.
@@ -1238,6 +1240,12 @@ public abstract class AbstractFtpDoorV1
     public void setLocalAddress(InetSocketAddress localAddress)
     {
         _localAddress = localAddress;
+    }
+
+    @Override
+    public void setExecutor(Executor executor)
+    {
+        _executor = executor;
     }
 
     @Override
@@ -3730,7 +3738,7 @@ public abstract class AbstractFtpDoorV1
                 CellMessage msg =
                         new CellMessage(new CellPath(_pool),
                                 "mover ls -binary " + _moverId);
-                _cellEndpoint.sendMessage(msg, this, _timeout);
+                _cellEndpoint.sendMessage(msg, this, _executor, _timeout);
             }
         }
 

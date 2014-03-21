@@ -87,6 +87,7 @@ import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
@@ -355,7 +356,7 @@ public final class Storage
                                                             rc, Objects.toString(error, null));
                                                     future.setException(exception);
                                                 }
-                                            });
+                                            }, MoreExecutors.sameThreadExecutor());
                                     return future;
                                 }
                             });
@@ -1472,7 +1473,7 @@ public final class Storage
                                              break;
                                          }
                                      }
-                                 });
+                                 }, MoreExecutors.sameThreadExecutor());
             return Futures.makeChecked(future, new ToSRMException());
         } catch (SRMInvalidPathException e) {
             return immediateFailedCheckedFuture(e);
@@ -2594,7 +2595,7 @@ public final class Storage
                                          _log.error("Locality lookup failed: {} [{}]",
                                                     error, rc);
                                      }
-                                 });
+                                 }, MoreExecutors.sameThreadExecutor());
         }
     }
 

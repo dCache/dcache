@@ -258,6 +258,5 @@ onerror shutdown
 
 create org.dcache.cells.UniversalSpringCell ${srm.cell.name} \
    "classpath:diskCacheV111/srm/srm.xml -export=${srm.cell.export} \
-       -callbackExecutor=messageExecutor \
        -messageExecutor=messageExecutor \
    "

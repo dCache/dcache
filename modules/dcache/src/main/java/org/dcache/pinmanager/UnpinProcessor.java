@@ -8,6 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.jdo.JDOException;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import diskCacheV111.poolManager.PoolSelectionUnit;
@@ -50,9 +53,10 @@ public class UnpinProcessor implements Runnable
     @Override
     public void run()
     {
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             Semaphore idle = new Semaphore(MAX_RUNNING);
-            unpin(idle);
+            unpin(idle, executor);
             idle.acquire(MAX_RUNNING);
         } catch (InterruptedException e) {
             _logger.debug(e.toString());
@@ -61,11 +65,13 @@ public class UnpinProcessor implements Runnable
                           e.getMessage());
         } catch (RuntimeException e) {
             _logger.error("Unexpected failure while unpinning", e);
+        } finally {
+            executor.shutdown();
         }
     }
 
     @Transactional
-    protected void unpin(final Semaphore idle)
+    protected void unpin(final Semaphore idle, final Executor executor)
     {
         _dao.all(Pin.State.UNPINNING, new Predicate<Pin>() {
                 @Override
@@ -82,7 +88,7 @@ public class UnpinProcessor implements Runnable
                         if (pin.getPool() == null || _dao.hasSharedSticky(pin)) {
                             _dao.deletePin(pin);
                         } else {
-                            clearStickyFlag(idle, pin);
+                            clearStickyFlag(idle, pin, executor);
                         }
 
                         return true;
@@ -93,7 +99,7 @@ public class UnpinProcessor implements Runnable
             });
     }
 
-    private void clearStickyFlag(final Semaphore idle, final Pin pin)
+    private void clearStickyFlag(final Semaphore idle, final Pin pin, Executor executor)
         throws InterruptedException
     {
         PoolSelectionUnit.SelectionPool pool = _poolMonitor.getPoolSelectionUnit().getPool(pin.getPool());
@@ -132,6 +138,6 @@ public class UnpinProcessor implements Runnable
                                          break;
                                      }
                                  }
-                             });
+                             }, executor);
     }
 }

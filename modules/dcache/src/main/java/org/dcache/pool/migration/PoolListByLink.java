@@ -1,7 +1,8 @@
 package org.dcache.pool.migration;
 
+import com.google.common.util.concurrent.MoreExecutors;
+
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 
 import org.dcache.cells.CellStub;
 
@@ -20,7 +21,8 @@ class PoolListByLink
     @Override
     public void refresh()
     {
-        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByLinkMessage(_link)), this);
+        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByLinkMessage(_link)),
+                             this, MoreExecutors.sameThreadExecutor());
     }
 
     @Override

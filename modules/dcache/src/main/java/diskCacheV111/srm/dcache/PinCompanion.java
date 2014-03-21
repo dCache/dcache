@@ -69,6 +69,7 @@ package diskCacheV111.srm.dcache;
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,7 +163,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PnfsGetFileAttributes(_path.toString(), attributes);
             msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
             msg.setSubject(_subject);
-            CellStub.addCallback(_pnfsStub.send(msg), this);
+            CellStub.addCallback(_pnfsStub.send(msg), this, MoreExecutors.sameThreadExecutor());
         }
 
         private boolean isDirectory(FileAttributes attributes)
@@ -223,7 +224,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             msg.setSkipCostUpdate(true);
             msg.setSubject(_subject);
 
-            CellStub.addCallback(_poolManagerStub.send(msg), this);
+            CellStub.addCallback(_poolManagerStub.send(msg), this, MoreExecutors.sameThreadExecutor());
         }
 
         @Override
@@ -251,7 +252,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PinManagerPinMessage(_attributes, getProtocolInfo(),
                                          _requestToken, _pinLifetime);
             msg.setSubject(_subject);
-            CellStub.addCallback(_pinManagerStub.send(msg), this);
+            CellStub.addCallback(_pinManagerStub.send(msg), this, MoreExecutors.sameThreadExecutor());
         }
 
         @Override

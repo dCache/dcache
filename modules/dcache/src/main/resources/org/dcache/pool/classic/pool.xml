@@ -247,21 +247,6 @@
     </constructor-arg>
   </bean>
 
-  <bean id="callbackThreadPool"
-        class="java.util.concurrent.ThreadPoolExecutor"
-        destroy-method="shutdown">
-    <description>Thread pool for message callbacks</description>
-    <constructor-arg value="${pool.cell.limits.callback.threads.min}"/>
-    <constructor-arg value="${pool.cell.limits.callback.threads.max}"/>
-    <constructor-arg value="${pool.cell.limits.callback.threads.max-idle-time}"/>
-    <constructor-arg value="${pool.cell.limits.callback.threads.max-idle-time.unit}"/>
-    <constructor-arg>
-      <bean class="java.util.concurrent.ArrayBlockingQueue">
-        <constructor-arg value="${pool.cell.limits.callback.queue.max}"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
   <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
     <description>Pin manager cell stub</description>
       <property name="destination" value="${pool.service.pinmanager}"/>

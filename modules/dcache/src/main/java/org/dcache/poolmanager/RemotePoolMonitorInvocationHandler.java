@@ -1,5 +1,6 @@
 package org.dcache.poolmanager;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,7 +148,8 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
         @Override
         public void run()
         {
-            CellStub.addCallback(_poolManagerStub.send(new PoolManagerGetPoolMonitor()), this);
+            CellStub.addCallback(_poolManagerStub.send(new PoolManagerGetPoolMonitor()), this,
+                                 MoreExecutors.sameThreadExecutor());
         }
 
         @Override

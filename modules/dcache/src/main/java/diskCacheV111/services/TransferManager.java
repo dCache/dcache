@@ -25,6 +25,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,6 +50,7 @@ import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.util.Args;
+import org.dcache.util.CDCExecutorServiceDecorator;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -87,6 +91,8 @@ public abstract class TransferManager extends AbstractCell
     private JobIdGenerator idGenerator;
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
+    private ExecutorService executor =
+            new CDCExecutorServiceDecorator(Executors.newCachedThreadPool());
 
     /**
      * Creates a new instance of Class
@@ -177,6 +183,7 @@ public abstract class TransferManager extends AbstractCell
         if (ds != null) {
             ds.shutdown();
         }
+        executor.shutdown();
     }
 
     private void initIdGenerator()
@@ -512,7 +519,7 @@ public abstract class TransferManager extends AbstractCell
         if (!newTransfer()) {
             throw new CacheException(TransferManagerMessage.TOO_MANY_TRANSFERS, "too many transfers!");
         }
-        new TransferManagerHandler(this, message, envelope.getSourcePath()).handle();
+        new TransferManagerHandler(this, message, envelope.getSourcePath(), executor).handle();
         return message;
     }
 

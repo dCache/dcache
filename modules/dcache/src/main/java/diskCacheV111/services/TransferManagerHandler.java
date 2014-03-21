@@ -1,12 +1,3 @@
-/* -*- c-basic-offset: 8; indent-tabs-mode: nil -*- */
-//______________________________________________________________________________
-//
-// $id: TransferManagerHandler.java,v 1.4 2006/05/18 20:16:09 litvinse Exp $
-// $Author: behrmann $
-//
-// created 05/06 by Dmitry Litvintsev (litvinse@fnal.gov)
-//
-//______________________________________________________________________________
 package diskCacheV111.services;
 
 import org.slf4j.Logger;
@@ -19,6 +10,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
@@ -107,14 +99,17 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     private transient int _replyCode;
     private transient Serializable _errorObject;
     private transient boolean _cancelTimer;
-    private DoorRequestInfoMessage info;
-    private PermissionHandler permissionHandler;
-    private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
+    private final transient DoorRequestInfoMessage info;
+    private final transient PermissionHandler permissionHandler;
+    private transient PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
+    private final transient Executor executor;
 
     public TransferManagerHandler(TransferManager tManager,
-            TransferManagerMessage message,
-            CellPath sourcePath)
+                                  TransferManagerMessage message,
+                                  CellPath sourcePath,
+                                  Executor executor)
     {
+        this.executor = executor;
         numberOfRetries = 0;
         creationTime = System.currentTimeMillis();
         manager = tManager;
@@ -187,7 +182,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             setState(WAITING_FOR_PNFS_INFO_STATE);
         }
         manager.persist(this);
-        CellStub.addCallback(manager.getPnfsManagerStub().send(message), this);
+        CellStub.addCallback(manager.getPnfsManagerStub().send(message), this, executor);
     }
 
     @Override
@@ -335,7 +330,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         }
 
         log.debug("storageInfoArrived(uid={} gid={} pnfsid={} fileAttributes={}", info.getUid(), info.getGid(),
-                pnfsId, fileAttributes);
+                  pnfsId, fileAttributes);
         selectPool();
     }
 
@@ -350,7 +345,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         log.debug("PoolMgrSelectPoolMsg: " + request);
         setState(WAITING_FOR_POOL_INFO_STATE);
         manager.persist(this);
-        CellStub.addCallback(manager.getPoolManagerStub().send(request), this);
+        CellStub.addCallback(manager.getPoolManagerStub().send(request), this, executor);
     }
 
     public void poolInfoArrived(PoolMgrSelectPoolMsg pool_info)
@@ -369,7 +364,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
         if (pool_info.getReturnCode() != 0) {
             sendErrorReply(5, new CacheException("Pool manager error: "
-                    + pool_info.getErrorObject()));
+                                                         + pool_info.getErrorObject()));
             return;
         }
         setPool(pool_info.getPoolName());
@@ -409,7 +404,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             poolCellPath.add(poolAddress);
         }
 
-        CellStub.addCallback(manager.getPoolStub().send(poolCellPath, poolMessage), this);
+        CellStub.addCallback(manager.getPoolStub().send(poolCellPath, poolMessage), this, executor);
     }
 
     public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)
@@ -437,7 +432,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 setState(WAITING_FOR_PNFS_ENTRY_DELETE);
                 manager.persist(this);
                 pnfsMsg.setReplyRequired(true);
-                CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this);
+                CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this, executor);
             } else {
                 log.error("Failed to remove PNFS entry after " + numberOfRetries);
                 sendErrorReply();
@@ -445,7 +440,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         } else {
             PnfsMapPathMessage message = new PnfsMapPathMessage(pnfsPath);
             setState(WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE);
-            CellStub.addCallback(manager.getPnfsManagerStub().send(message), this);
+            CellStub.addCallback(manager.getPnfsManagerStub().send(message), this, executor);
         }
     }
 
@@ -492,8 +487,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
         if (tlog != null) {
             tlog.error("getFromRemoteGsiftpUrl failed: state = " + state
-                    + " replyCode=" + replyCode + " errorObject="
-                    + errorObject);
+                               + " replyCode=" + replyCode + " errorObject="
+                               + errorObject);
         }
         if (info.getTimeQueued() < 0) {
             info.setTimeQueued(info.getTimeQueued() + System
@@ -540,7 +535,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         Serializable errorObject = _errorObject;
         boolean cancelTimer = _cancelTimer;
 
-        log.error("sending error reply, reply code=" + replyCode + " errorObject=" + errorObject + " for " + toString(true));
+        log.error("sending error reply, reply code=" + replyCode + " errorObject=" + errorObject + " for " + toString(
+                true));
 
         if (tlog != null) {
             tlog.error("getFromRemoteGsiftpUrl failed: state = " + state
@@ -748,11 +744,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public void setMoverId(Integer moverid)
     {
         moverId = moverid;
-    }
-
-    public static final void main(String[] args)
-    {
-        System.out.println("This is a main in handler");
     }
 
     public String getPnfsPath()

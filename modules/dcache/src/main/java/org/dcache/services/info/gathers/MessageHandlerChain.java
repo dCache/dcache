@@ -1,5 +1,6 @@
 package org.dcache.services.info.gathers;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +125,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
 	@Override
     public void sendMessage( long ttl, CellMessageAnswerable handler, CellMessage envelope) throws SerializationException {
         putMetricTTL( envelope.getUOID(), ttl);
-        _endpoint.sendMessage( envelope, handler != null ? handler : this, STANDARD_TIMEOUT);
+        _endpoint.sendMessage( envelope, handler != null ? handler : this, MoreExecutors.sameThreadExecutor(), STANDARD_TIMEOUT);
 	}
 
 

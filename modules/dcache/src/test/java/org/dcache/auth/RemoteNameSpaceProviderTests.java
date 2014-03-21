@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -840,7 +841,7 @@ public class RemoteNameSpaceProviderTests
                 callback.answerArrived(request, buildReply(request, modifiers));
                 return null;
             }
-        }).given(_endpoint).sendMessage(any(CellMessage.class), any(CellMessageAnswerable.class), anyLong());
+        }).given(_endpoint).sendMessage(any(CellMessage.class), any(CellMessageAnswerable.class), any(Executor.class), anyLong());
     }
 
 
@@ -893,7 +894,7 @@ public class RemoteNameSpaceProviderTests
                 ArgumentCaptor.forClass(CellMessage.class);
 
         try {
-            verify(_endpoint).sendMessage(argument.capture(), any(CellMessageAnswerable.class), anyLong());
+            verify(_endpoint).sendMessage(argument.capture(), any(CellMessageAnswerable.class), any(Executor.class), anyLong());
 
             verify(_endpoint, never()).sendMessage(any(CellMessage.class));
         } catch (NoRouteToCellException e) {

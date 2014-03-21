@@ -66,6 +66,7 @@ documents or software obtained from this server.
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,7 +146,7 @@ public final class SrmReleaseSpaceCompanion
             SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(callback);
             Release release = new Release(token, spaceToReleaseInBytes);
             release.setSubject(subject);
-            CellStub.addCallback(spaceManagerStub.send(release), companion);
+            CellStub.addCallback(spaceManagerStub.send(release), companion, MoreExecutors.sameThreadExecutor());
         } catch (NumberFormatException e) {
             callback.invalidRequest("No such space");
         }

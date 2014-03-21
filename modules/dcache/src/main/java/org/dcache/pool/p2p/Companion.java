@@ -2,6 +2,7 @@ package org.dcache.pool.p2p;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -401,7 +402,7 @@ class Companion
                                      setFileAttributes(message.getFileAttributes());
                                      super.success(message);
                                  }
-                             });
+                             }, _executor);
     }
 
     synchronized void setFileAttributes(FileAttributes fileAttributes)
@@ -472,7 +473,7 @@ class Companion
                                      setMoverId(message.getMoverId());
                                      super.success(message);
                                  }
-                             });
+                             }, _executor);
     }
 
     private String getInitiator()
@@ -495,24 +496,36 @@ class Companion
                                 @Override
                                 public void onSuccess(IoJobInfo result)
                                 {
-                                    synchronized (Companion.this) {
-                                        _fsm.success();
+                                    try {
+                                        synchronized (Companion.this) {
+                                            _fsm.success();
+                                        }
+                                    } catch (Throwable e) {
+                                        Thread thisThread = Thread.currentThread();
+                                        Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                                        ueh.uncaughtException( thisThread, e);
                                     }
                                 }
 
                                 @Override
                                 public void onFailure(Throwable t)
                                 {
-                                    synchronized (Companion.this) {
-                                        if (t instanceof NoRouteToCellException) {
-                                            _fsm.noroute();
-                                        } else if (t instanceof TimeoutCacheException) {
-                                            _fsm.timeout();
-                                        } else if (t instanceof CacheException) {
-                                            _fsm.failure(((CacheException) t).getRc(), t.getMessage());
-                                        } else {
-                                            _fsm.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, t);
+                                    try {
+                                        synchronized (Companion.this) {
+                                            if (t instanceof NoRouteToCellException) {
+                                                _fsm.noroute();
+                                            } else if (t instanceof TimeoutCacheException) {
+                                                _fsm.timeout();
+                                            } else if (t instanceof CacheException) {
+                                                _fsm.failure(((CacheException) t).getRc(), t.getMessage());
+                                            } else {
+                                                _fsm.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, t);
+                                            }
                                         }
+                                    } catch (Throwable e) {
+                                        Thread thisThread = Thread.currentThread();
+                                        Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                                        ueh.uncaughtException( thisThread, e);
                                     }
                                 }
                             }, _executor);
@@ -597,53 +610,57 @@ class Companion
         @Override
         public void success(T message)
         {
-            _executor.execute(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (Companion.this) {
-                            _fsm.success();
-                        }
-                    }
-                }));
+            try {
+                synchronized (Companion.this) {
+                    _fsm.success();
+                }
+            } catch (Throwable e) {
+                Thread thisThread = Thread.currentThread();
+                Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException( thisThread, e);
+            }
         }
 
         @Override
         public void failure(final int rc, final Object cause)
         {
-            _executor.execute(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (Companion.this) {
-                            _fsm.failure(rc, cause);
-                        }
-                    }
-                }));
+            try {
+                synchronized (Companion.this) {
+                    _fsm.failure(rc, cause);
+                }
+            } catch (Throwable e) {
+                Thread thisThread = Thread.currentThread();
+                Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException( thisThread, e);
+            }
         }
 
         @Override
         public void timeout(String error)
         {
-            _executor.execute(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (Companion.this) {
-                            _fsm.timeout();
-                        }
-                    }
-                }));
+            try {
+                synchronized (Companion.this) {
+                    _fsm.timeout();
+                }
+            } catch (Throwable e) {
+                Thread thisThread = Thread.currentThread();
+                Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException( thisThread, e);
+            }
         }
 
         @Override
         public void noroute(CellPath path)
         {
-            _executor.execute(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (Companion.this) {
-                            _fsm.noroute();
-                        }
-                    }
-                }));
+            try {
+                synchronized (Companion.this) {
+                    _fsm.noroute();
+                }
+            } catch (Throwable e) {
+                Thread thisThread = Thread.currentThread();
+                Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException( thisThread, e);
+            }
         }
     }
 }

@@ -65,7 +65,6 @@ public class LineBasedDoor
     {
         super(cellName, args);
 
-        getNucleus().setCallbackExecutor(executor);
         getNucleus().setMessageExecutor(new SequentialExecutor(executor));
         this.interpreterClass = interpreterClass;
         this.engine = engine;
@@ -97,6 +96,7 @@ public class LineBasedDoor
         interpreter.setWriter(engine.getWriter());
         interpreter.setRemoteAddress((InetSocketAddress) engine.getSocket().getRemoteSocketAddress());
         interpreter.setLocalAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
+        interpreter.setExecutor(executor);
         if (interpreter instanceof CellMessageSender) {
             ((CellMessageSender) interpreter).setCellEndpoint(this);
         }
@@ -253,6 +253,7 @@ public class LineBasedDoor
         void shutdown();
         void setRemoteAddress(InetSocketAddress remoteAddress);
         void setLocalAddress(InetSocketAddress localAddress);
+        void setExecutor(Executor executor);
     }
 
     private class Command implements Runnable

@@ -3,6 +3,7 @@ package org.dcache.cells;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.vehicles.Message;
 
@@ -143,16 +144,16 @@ public class MessageProcessingMonitor
         }
 
         @Override
-        public void sendMessage(CellMessage envelope,
-                                CellMessageAnswerable callback,
-                                long timeout)
+        public void sendMessage(CellMessage envelope, CellMessageAnswerable callback,
+                                Executor executor, long timeout)
         {
             throw new UnsupportedOperationException("Cannot use callback for reply");
         }
 
         @Override
         public void sendMessageWithRetryOnNoRouteToCell(CellMessage envelope, CellMessageAnswerable callback,
-                                                        long timeout) throws SerializationException
+                                                        Executor executor, long timeout)
+                throws SerializationException
         {
             throw new UnsupportedOperationException("Cannot use callback for reply");
         }

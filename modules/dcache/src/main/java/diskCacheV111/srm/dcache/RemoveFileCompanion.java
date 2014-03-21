@@ -73,6 +73,7 @@
 
 package diskCacheV111.srm.dcache;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +134,7 @@ public class RemoveFileCompanion
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
-        CellStub.addCallback(pnfsStub.send(message), companion);
+        CellStub.addCallback(pnfsStub.send(message), companion, MoreExecutors.sameThreadExecutor());
     }
 
     @Override

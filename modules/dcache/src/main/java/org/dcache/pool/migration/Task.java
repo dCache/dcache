@@ -250,7 +250,7 @@ public class Task
                                      setLocations(msg.getCacheLocations());
                                      super.success(msg);
                                  }
-                             });
+                             }, _executor);
     }
 
     /**
@@ -320,7 +320,7 @@ public class Task
                                                                             getTargetStickyRecords(),
                                                                             _definition.computeChecksumOnUpdate,
                                                                             _definition.forceSourceMode)),
-                             new Callback<PoolMigrationCopyReplicaMessage>("copy_"));
+                             new Callback<PoolMigrationCopyReplicaMessage>("copy_"), _executor);
     }
 
     /** FSM Action */
@@ -330,7 +330,7 @@ public class Task
                                         new PoolMigrationCancelMessage(_uuid,
                                                                        _source,
                                                                        getPnfsId())),
-                             new Callback<PoolMigrationCancelMessage>("cancel_"));
+                             new Callback<PoolMigrationCancelMessage>("cancel_"), _executor);
     }
 
     /** FSM Action */
@@ -350,7 +350,7 @@ public class Task
             String target = _target.getDestinationAddress().getCellName();
             PinManagerMovePinMessage message =
                 new PinManagerMovePinMessage(getPnfsId(), records, _source, target);
-            CellStub.addCallback(_pinManager.send(message), callback);
+            CellStub.addCallback(_pinManager.send(message), callback, _executor);
         }
     }
 
@@ -440,7 +440,8 @@ public class Task
                                         new PoolMigrationPingMessage(_uuid,
                                                                      _source,
                                                                      getPnfsId())),
-                             new Callback<PoolMigrationPingMessage>("ping_"));
+                             new Callback<PoolMigrationPingMessage>("ping_"),
+                             _executor);
     }
 
     /**
@@ -483,31 +484,32 @@ public class Task
 
         protected void transition(String name, final Object... arguments)
         {
-            Class<?>[] parameterTypes = new Class[arguments.length];
-            for (int i = 0; i < arguments.length; i++) {
-                parameterTypes[i] = arguments[i].getClass();
-            }
-            final Method m =
-                ReflectionUtils.resolve(_fsm.getClass(), _prefix + name,
-                                        parameterTypes);
-            if (m != null) {
-                _executor.execute(new FireAndForgetTask(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                synchronized (Task.this) {
-                                    m.invoke(_fsm, arguments);
-                                }
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                /* We are not allowed to call this
-                                 * method. Better escalate it.
-                                 */
-                                throw new RuntimeException("Bug detected", e);
-                            } catch (TransitionUndefinedException e) {
-                                throw new RuntimeException("State machine is incomplete", e);
-                            }
+            try {
+                Class<?>[] parameterTypes = new Class[arguments.length];
+                for (int i = 0; i < arguments.length; i++) {
+                    parameterTypes[i] = arguments[i].getClass();
+                }
+                final Method m =
+                    ReflectionUtils.resolve(_fsm.getClass(), _prefix + name,
+                                            parameterTypes);
+                if (m != null) {
+                    try {
+                        synchronized (Task.this) {
+                            m.invoke(_fsm, arguments);
                         }
-                    }));
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        /* We are not allowed to call this
+                         * method. Better escalate it.
+                         */
+                        throw new RuntimeException("Bug detected", e);
+                    } catch (TransitionUndefinedException e) {
+                        throw new RuntimeException("State machine is incomplete", e);
+                    }
+                }
+            } catch (Throwable e) {
+                Thread thisThread = Thread.currentThread();
+                Thread.UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                ueh.uncaughtException( thisThread, e);
             }
         }
 

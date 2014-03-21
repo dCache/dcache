@@ -1,9 +1,10 @@
 package org.dcache.pool.migration;
 
+import com.google.common.util.concurrent.MoreExecutors;
+
 import java.util.Collection;
 
 import diskCacheV111.vehicles.PoolManagerGetPoolsByNameMessage;
-import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 
 import org.dcache.cells.CellStub;
 
@@ -22,7 +23,8 @@ public class PoolListByNames
     @Override
     public void refresh()
     {
-        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByNameMessage(_names)), this);
+        CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByNameMessage(_names)),
+                             this, MoreExecutors.sameThreadExecutor());
     }
 
     @Override

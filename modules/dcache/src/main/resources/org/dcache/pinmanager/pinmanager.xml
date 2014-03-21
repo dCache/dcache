@@ -25,11 +25,15 @@
   </bean>
 
   <bean id="scheduled-executor"
-        class="java.util.concurrent.Executors"
-        factory-method="newScheduledThreadPool"
-        destroy-method="shutdown">
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
       <description>Task scheduler</description>
-      <constructor-arg value="2"/>
+      <constructor-arg>
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newScheduledThreadPool"
+                destroy-method="shutdown">
+              <constructor-arg value="2"/>
+          </bean>
+      </constructor-arg>
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
@@ -74,7 +78,13 @@
       <property name="poolStub" ref="pool-stub"/>
       <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="dao" ref="dao"/>
-      <property name="executor" ref="scheduled-executor"/>
+      <property name="scheduledExecutor" ref="scheduled-executor"/>
+      <property name="executor">
+          <bean id="workerThreadPool"
+                class="org.dcache.util.CDCExecutorServiceDecorator">
+              <constructor-arg ref="message-thread-pool"/>
+          </bean>
+      </property>
       <property name="stagePermission" ref="stage-permission"/>
       <property name="maxLifetime" value="${pinmanager.limits.pin-duration}"/>
       <property name="maxLifetimeUnit" value="${pinmanager.limits.pin-duration.unit}"/>

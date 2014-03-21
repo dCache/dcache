@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,7 +139,7 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), companion);
+        CellStub.addCallback(pinManagerStub.send(msg), companion, MoreExecutors.sameThreadExecutor());
         return companion.future;
     }
 
@@ -153,7 +154,7 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(requestToken);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), companion);
+        CellStub.addCallback(pinManagerStub.send(msg), companion, MoreExecutors.sameThreadExecutor());
         return companion.future;
     }
 
@@ -166,7 +167,7 @@ public class UnpinCompanion
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), companion);
+        CellStub.addCallback(pinManagerStub.send(msg), companion, MoreExecutors.sameThreadExecutor());
         return companion.future;
     }
 }

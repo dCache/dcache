@@ -427,9 +427,9 @@ public class CellStub
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
         if (_retryOnNoRouteToCell) {
-            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, timeout);
+            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, MoreExecutors.sameThreadExecutor(), timeout);
         } else {
-            _endpoint.sendMessage(envelope, future, getTimeoutInMillis());
+            _endpoint.sendMessage(envelope, future, MoreExecutors.sameThreadExecutor(), getTimeoutInMillis());
         }
         return future;
     }
@@ -463,12 +463,33 @@ public class CellStub
         return (path != null) ? path.toString() : super.toString();
     }
 
-    public static <T extends Message> void addCallback(
-            final ListenableFuture<T> future, final MessageCallback<? super T> callback)
-    {
-        addCallback(future, callback, MoreExecutors.sameThreadExecutor());
-    }
-
+    /**
+     * Registers a callback to be run when the {@code Future}'s computation is
+     * {@linkplain java.util.concurrent.Future#isDone() complete} or, if the
+     * computation is already complete, immediately.
+     *
+     * <p>There is no guaranteed ordering of execution of callbacks, but any
+     * callback added through this method is guaranteed to be called once the
+     * computation is complete.
+     *
+     * <p>Note: For fast, lightweight listeners that would be safe to execute in
+     * any thread, consider {@link MoreExecutors#sameThreadExecutor}. For heavier
+     * listeners, {@code sameThreadExecutor()} carries some caveats. See {@link
+     * ListenableFuture#addListener} for details.
+     *
+     * <p>In is important the the executor isn't blocked by tasks waiting for
+     * the callback; such tasks could lead to a deadlock.
+     *
+     * <p>If not using {@code sameThreadExecutor()}, it is advisable to use a
+     * CDC preserving executor.
+     *
+     * @param future The future attach the callback to.
+     * @param callback The callback to invoke when {@code future} is completed.
+     * @param executor The executor to run {@code callback} when the future
+     *    completes.
+     * @see com.google.common.util.concurrent.Futures#addCallback
+     * @see ListenableFuture#addListener
+     */
     public static <T extends Message> void addCallback(
             final ListenableFuture<T> future, final MessageCallback<? super T> callback, Executor executor)
     {

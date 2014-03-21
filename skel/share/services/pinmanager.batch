@@ -30,6 +30,5 @@ exec file:${dcache.paths.share}/cells/stage.fragment pinmanager doors
 create org.dcache.cells.UniversalSpringCell ${pinmanager.cell.name} \
        "classpath:org/dcache/pinmanager/pinmanager.xml \
         -export=${pinmanager.cell.export} \
-        -callbackExecutor=message-thread-pool \
         -messageExecutor=message-thread-pool \
        "

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -39,7 +40,8 @@ import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholds;
 import dmg.util.logback.RootFilterThresholds;
 
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.consumingIterable;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
  *
@@ -71,11 +73,9 @@ public class CellNucleus implements ThreadFactory
     private final  Map<UOID, CellLock> _waitHash = new HashMap<>();
     private String _cellClass;
 
-    private volatile ExecutorService _callbackExecutor;
     private volatile ExecutorService _messageExecutor;
     private final AtomicInteger _eventQueueSize = new AtomicInteger();
 
-    private boolean _isPrivateCallbackExecutor = true;
     private boolean _isPrivateMessageExecutor = true;
 
     private Pinboard _pinboard;
@@ -150,11 +150,6 @@ public class CellNucleus implements ThreadFactory
 
         _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
-        _callbackExecutor =
-                new ThreadPoolExecutor(1, 1,
-                        0L, TimeUnit.MILLISECONDS,
-                        new LinkedBlockingQueue<Runnable>(),
-                        this);
         _messageExecutor =
                 new ThreadPoolExecutor(1, 1,
                         0L, TimeUnit.MILLISECONDS,
@@ -305,39 +300,6 @@ public class CellNucleus implements ThreadFactory
         return _pinboard;
     }
 
-    public synchronized void setAsyncCallback(boolean asyncCallback)
-    {
-        if (asyncCallback) {
-            setCallbackExecutor(
-                    new ThreadPoolExecutor(1, Integer.MAX_VALUE,
-                            60L, TimeUnit.SECONDS,
-                            new SynchronousQueue<Runnable>(),
-                            this));
-        } else {
-            setCallbackExecutor(
-                    new ThreadPoolExecutor(1, 1,
-                            0L, TimeUnit.MILLISECONDS,
-                            new LinkedBlockingQueue<Runnable>(),
-                            this));
-        }
-        _isPrivateCallbackExecutor = true;
-    }
-
-    /**
-     * Executor used for message callbacks.
-     */
-    public synchronized void setCallbackExecutor(ExecutorService executor)
-    {
-        if (executor == null) {
-            throw new IllegalArgumentException("null is not allowed");
-        }
-        if (_isPrivateCallbackExecutor) {
-            _callbackExecutor.shutdown();
-        }
-        _callbackExecutor = executor;
-        _isPrivateCallbackExecutor = false;
-    }
-
     /**
      * Executor used for incoming message delivery.
      */
@@ -356,9 +318,6 @@ public class CellNucleus implements ThreadFactory
 
     private synchronized void shutdownPrivateExecutors()
     {
-        if (_isPrivateCallbackExecutor) {
-            _callbackExecutor.shutdown();
-        }
         if (_isPrivateMessageExecutor) {
             _messageExecutor.shutdown();
         }
@@ -429,7 +388,7 @@ public class CellNucleus implements ThreadFactory
                         {
                             future.set(null);
                         }
-                    }, timeout);
+                    }, sameThreadExecutor(), timeout);
         try {
             return future.get();
         } catch (ExecutionException e) {
@@ -490,10 +449,34 @@ public class CellNucleus implements ThreadFactory
         return size;
     }
 
+    /**
+     * Sends <code>msg</code>.
+     *
+     * The <code>callback</code> argument specifies an object which is informed
+     * as soon as an has answer arrived or if the timeout has expired.
+     *
+     * The callback is run in the supplied executor. The executor may
+     * execute the callback inline, but such an executor must only be
+     * used if the callback is non-blocking, and the callback should
+     * refrain from CPU heavy operations. Care should be taken that
+     * the executor isn't blocked by tasks waiting for the callback;
+     * such tasks could lead to a deadlock.
+     *
+     * @param msg the cell message to be sent.
+     * @param local whether to attempt delivery to cells in the same domain
+     * @param remote whether to attempt delivery to cells in other domains
+     * @param callback specifies an object class which will be informed
+     *                 as soon as the message arrives.
+     * @param executor the executor to run the callback in
+     * @param timeout  is the timeout in msec.
+     * @exception SerializationException if the payload object of this
+     *            message is not serializable.
+     */
     public void sendMessage(CellMessage msg,
                             boolean local,
                             boolean remote,
                             CellMessageAnswerable callback,
+                            Executor executor,
                             long timeout)
         throws SerializationException
     {
@@ -507,7 +490,7 @@ public class CellNucleus implements ThreadFactory
         UOID uoid = msg.getUOID();
         boolean success = false;
         try {
-            CellLock lock = new CellLock(msg, callback, timeout);
+            CellLock lock = new CellLock(msg, callback, executor, timeout);
             synchronized (_waitHash) {
                 _waitHash.put(uoid, lock);
             }
@@ -789,7 +772,7 @@ public class CellNucleus implements ThreadFactory
                     //
                     LOGGER.trace("addToEventQueue : lock found for : {}", msg);
                     try {
-                        _callbackExecutor.execute(new CallbackTask(lock, msg));
+                        lock.getExecutor().execute(new CallbackTask(lock, msg));
                     } catch (RejectedExecutionException e) {
                         /* Put it back; the timeout handler
                          * will eventually take care of it.

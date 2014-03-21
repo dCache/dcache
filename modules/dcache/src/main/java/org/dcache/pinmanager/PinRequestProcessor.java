@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
@@ -94,7 +95,8 @@ public class PinRequestProcessor
     private final static Set<FileAttribute> REQUIRED_ATTRIBUTES =
         PoolMgrSelectReadPoolMsg.getRequiredAttributes();
 
-    private ScheduledExecutorService _executor;
+    private ScheduledExecutorService _scheduledExecutor;
+    private Executor _executor;
     private PinDao _dao;
     private CellStub _poolStub;
     private CellStub _pnfsStub;
@@ -106,7 +108,13 @@ public class PinRequestProcessor
     private PoolMonitor _poolMonitor;
 
     @Required
-    public void setExecutor(ScheduledExecutorService executor)
+    public void setScheduledExecutor(ScheduledExecutorService executor)
+    {
+        _scheduledExecutor = executor;
+    }
+
+    @Required
+    public void setExecutor(Executor executor)
     {
         _executor = executor;
     }
@@ -223,18 +231,20 @@ public class PinRequestProcessor
         if (!task.isValidIn(delay)) {
             fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded");
         } else {
-            _executor.schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            rereadNameSpaceEntry(task);
-                        } catch (CacheException e) {
-                            fail(task, e.getRc(), e.getMessage());
-                        } catch (RuntimeException e) {
-                            fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
-                        }
+            _scheduledExecutor.schedule(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try {
+                        rereadNameSpaceEntry(task);
+                    } catch (CacheException e) {
+                        fail(task, e.getRc(), e.getMessage());
+                    } catch (RuntimeException e) {
+                        fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
                     }
-                }, delay, MILLISECONDS);
+                }
+            }, delay, MILLISECONDS);
         }
     }
 
@@ -311,7 +321,7 @@ public class PinRequestProcessor
                          */
                         retry(task, SMALL_DELAY);
                     }
-                });
+                }, _executor);
     }
 
     private void selectReadPool(final PinTask task)
@@ -422,7 +432,7 @@ public class PinRequestProcessor
                                       */
                                      retry(task, SMALL_DELAY);
                                  }
-                             });
+                             }, _executor);
     }
 
     private void setStickyFlag(final PinTask task, final String poolName, CellAddressCore poolAddress)
@@ -506,7 +516,7 @@ public class PinRequestProcessor
                                       */
                                      fail(task, CacheException.TIMEOUT, error);
                                  }
-                             });
+                             }, _executor);
     }
 
     private Date getExpirationTimeForNameSpaceLookup()
