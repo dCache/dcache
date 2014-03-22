@@ -121,7 +121,8 @@
   </bean>
 
   <bean id="channel-factory"
-        class="org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory">
+        class="org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory"
+        destroy-method="releaseExternalResources">
     <description>Creates Netty channels</description>
     <constructor-arg ref="accept-thread-pool"/>
     <constructor-arg ref="io-thread-pool"/>
