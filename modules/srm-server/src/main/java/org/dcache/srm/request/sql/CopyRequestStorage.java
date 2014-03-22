@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.CopyFileRequest;
@@ -166,10 +167,10 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
     }
 
     /** Creates a new instance of GetRequestStorage */
-     public CopyRequestStorage(Configuration.DatabaseParameters configuration)
+     public CopyRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
              throws IOException, DataAccessException
      {
-         super(configuration);
+         super(configuration, executor);
      }
 
     @Override

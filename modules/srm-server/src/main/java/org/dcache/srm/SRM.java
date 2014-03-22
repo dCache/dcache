@@ -314,6 +314,11 @@ public class SRM {
         databaseFactory.restoreJobsOnSrmStart(schedulers);
     }
 
+    public void stop() throws InterruptedException
+    {
+        databaseFactory.shutdown();
+    }
+
     /**
      * @return this host InetAddress
      */

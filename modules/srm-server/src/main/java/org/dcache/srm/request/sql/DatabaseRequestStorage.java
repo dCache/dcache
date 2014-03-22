@@ -14,6 +14,7 @@ import org.springframework.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMUserPersistenceManager;
@@ -30,10 +31,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class DatabaseRequestStorage<R extends Request> extends DatabaseJobStorage<R> {
     SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
-    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration)
+    public DatabaseRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
         srmUserPersistenceManager = checkNotNull(configuration.getSrmUserPersistenceManager());
     }
 

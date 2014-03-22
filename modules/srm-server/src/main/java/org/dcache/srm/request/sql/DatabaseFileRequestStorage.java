@@ -11,6 +11,7 @@ import org.springframework.dao.DataAccessException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
@@ -22,10 +23,10 @@ import org.dcache.srm.util.Configuration;
 public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> extends DatabaseJobStorage<F>  {
 
     /** Creates a new instance of FileRequestStorage */
-    public DatabaseFileRequestStorage(Configuration.DatabaseParameters configuration)
+    public DatabaseFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
     @Override

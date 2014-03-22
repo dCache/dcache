@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
@@ -38,10 +39,10 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
     final Class<F> fileRequestType = (Class<F>) new TypeToken<F>(getClass()) {}.getRawType();
 
     /** Creates a new instance of DatabaseContainerRequestStorage */
-    public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration)
+    public DatabaseContainerRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
    public abstract String getFileRequestsTableName();

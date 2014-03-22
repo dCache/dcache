@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.Job;
@@ -46,10 +47,10 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
 
 
     /** Creates a new instance of BringOnlineFileRequestStorage */
-    public BringOnlineFileRequestStorage(Configuration.DatabaseParameters configuration)
+    public BringOnlineFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
 

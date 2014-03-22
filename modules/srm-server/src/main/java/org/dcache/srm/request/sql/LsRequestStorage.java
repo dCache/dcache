@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.Job;
@@ -141,10 +142,10 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
 
         private static int ADDITIONAL_FIELDS = 5;
 
-        public LsRequestStorage(Configuration.DatabaseParameters configuration)
+        public LsRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
                 throws IOException, DataAccessException
         {
-                super(configuration);
+                super(configuration, executor);
         }
 
         @Override

@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
@@ -159,10 +160,10 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
     }
 
    /** Creates a new instance of PutFileRequestStorage */
-    public PutFileRequestStorage(Configuration.DatabaseParameters configuration)
+    public PutFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
     @Override

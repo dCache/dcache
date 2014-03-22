@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.LsFileRequest;
@@ -26,10 +27,10 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         "LASTSTATETRANSITIONTIME=? ";//10
 
         private static int ADDITIONAL_FIELDS = 1;
-        public LsFileRequestStorage(Configuration.DatabaseParameters configuration)
+        public LsFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
                 throws DataAccessException
         {
-                super(configuration);
+                super(configuration, executor);
         }
 
         @Override

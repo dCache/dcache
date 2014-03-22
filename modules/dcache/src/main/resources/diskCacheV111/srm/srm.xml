@@ -650,7 +650,7 @@
 
 
   <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
-	init-method="start" depends-on="config">
+	init-method="start" destroy-method="stop" depends-on="config">
     <description>SRM engine</description>
 
     <constructor-arg ref="config"/>

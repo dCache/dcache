@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.GetFileRequest;
@@ -138,10 +139,10 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
 
 
     /** Creates a new instance of GetRequestStorage */
-    public GetRequestStorage(Configuration.DatabaseParameters configuration)
+    public GetRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException, IOException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
     private String getProtocolsTableName() {

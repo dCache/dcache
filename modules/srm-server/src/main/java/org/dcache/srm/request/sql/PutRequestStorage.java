@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.Job;
@@ -140,10 +141,10 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
 
 
     /** Creates a new instance of GetRequestStorage */
-    public PutRequestStorage(Configuration.DatabaseParameters configuration)
+    public PutRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws IOException, DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
     private String getProtocolsTableName() {

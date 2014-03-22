@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.Job;
@@ -138,10 +139,10 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
     }
 
     /** Creates a new instance of GetFileRequestStorage */
-    public GetFileRequestStorage(Configuration.DatabaseParameters configuration)
+    public GetFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
-        super(configuration);
+        super(configuration, executor);
     }
 
     @Override
