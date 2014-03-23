@@ -19,6 +19,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,7 +31,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
 
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
@@ -55,24 +55,22 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     /**
      * Shared thread pool accepting TCP connections.
      */
-    private final Executor _acceptExecutor;
+    private final ExecutorService _acceptExecutor;
 
     /**
      * Shared thread pool performing non-blocking socket IO.
      */
-    private final Executor _socketExecutor;
+    private final ExecutorService _socketExecutor;
 
     /**
      * Shared thread pool performing blocking disk IO.
      */
-    private final Executor _diskExecutor;
+    private final ExecutorService _diskExecutor;
 
     /**
      * Manages connection timeouts.
      */
-    private static final ScheduledExecutorService _timeoutScheduler =
-            Executors.newSingleThreadScheduledExecutor(
-                    new ThreadFactoryBuilder().setNameFormat("netty-mover-connect-timeout").setDaemon(true).build());
+    private final ScheduledExecutorService _timeoutScheduler;
 
     /**
      * Number of threads accepting connections.
@@ -117,17 +115,17 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
             int maxMemory,
             int socketThreads)
     {
-        CDCThreadFactory factory = new CDCThreadFactory(
-                Executors.defaultThreadFactory(), CDC.getCellName(), CDC.getDomainName());
-
+        _timeoutScheduler =
+                Executors.newSingleThreadScheduledExecutor(
+                        new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());
         _diskExecutor =
             new OrderedMemoryAwareThreadPoolExecutor(
                     threadPoolSize, memoryPerConnection, maxMemory, 30, TimeUnit.SECONDS,
-                    new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-disk-%d").setThreadFactory(factory).build());
+                    new ThreadFactoryBuilder().setNameFormat(name + "-disk-%d").build());
         _acceptExecutor =
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-listen-%d").setThreadFactory(factory).build());
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build());
         _socketExecutor =
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setDaemon(true).setNameFormat(name + "-net-%d").setThreadFactory(factory).build());
+                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat(name + "-net-%d").build());
         _socketThreads = socketThreads;
     }
 
@@ -171,6 +169,30 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
             _logger.debug("Stopping {} on {}", getClass().getSimpleName(), _lastServerAddress);
             _serverChannel.close();
             _serverChannel = null;
+        }
+    }
+
+    public synchronized void shutdown()
+    {
+        stopServer();
+        if (_channelFactory != null) {
+            _timeoutScheduler.shutdown();
+            _channelFactory.releaseExternalResources();
+            _channelFactory = null;
+            _acceptExecutor.shutdown();
+            _socketExecutor.shutdown();
+            _diskExecutor.shutdown();
+            try {
+                if (_timeoutScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
+                    if (_acceptExecutor.awaitTermination(3, TimeUnit.SECONDS)) {
+                        if (_socketExecutor.awaitTermination(3, TimeUnit.SECONDS)) {
+                            _diskExecutor.awaitTermination(3, TimeUnit.SECONDS);
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

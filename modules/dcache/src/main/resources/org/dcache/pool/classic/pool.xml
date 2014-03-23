@@ -299,7 +299,7 @@
   </bean>
 
   <bean id="io-queue-manager" class="org.dcache.pool.classic.IoQueueManager"
-          destroy-method="shutdown">
+          destroy-method="shutdown" depends-on="transfer-services">
     <description>Requests IO manager</description>
     <constructor-arg ref="jtm" />
     <constructor-arg value="p2p,${pool.queues}" />
@@ -321,7 +321,8 @@
       <property name="faultListener" ref="pool"/>
   </bean>
 
-  <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService">
+  <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"
+          depends-on="rep">
       <description>Xrootd transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="faultListener" ref="pool"/>
@@ -339,7 +340,8 @@
       </property>
   </bean>
 
-  <bean id="http-transfer-service" class="org.dcache.http.HttpTransferService">
+  <bean id="http-transfer-service" class="org.dcache.http.HttpTransferService"
+          depends-on="rep">
       <description>HTTP transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
@@ -356,7 +358,7 @@
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
-        init-method="init" destroy-method="shutdown">
+        init-method="init" destroy-method="shutdown" depends-on="rep">
       <description>Post processing execution service</description>
       <property name="billingStub" ref="billing-stub"/>
       <property name="poolName" value="${pool.name}"/>

@@ -90,7 +90,7 @@ public class XrootdPoolNettyServer
 
     public void shutdown()
     {
-        stopServer();
+        super.shutdown();
         _timer.stop();
     }
 

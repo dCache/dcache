@@ -1,6 +1,7 @@
 package org.dcache.pool.repository.v5;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Uninterruptibles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -142,5 +144,10 @@ class StateChangeListeners
     public void stop()
     {
         _executorService.shutdown();
+        try {
+            _executorService.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

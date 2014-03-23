@@ -77,7 +77,7 @@ public class HttpPoolNettyServer
 
     public void shutdown()
     {
-        stopServer();
+        super.shutdown();
         _timer.stop();
     }
 
