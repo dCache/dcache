@@ -315,7 +315,10 @@ public abstract class AbstractFtpDoorV1
         PERM("Perm"),
         OWNER("UNIX.owner"),
         GROUP("UNIX.group"),
-        MODE("UNIX.mode");
+        MODE("UNIX.mode"),
+        // See http://www.iana.org/assignments/os-specific-parameters
+        CHANGE("UNIX.ctime"),
+        ACCESS("UNIX.atime");
 
         private final String _name;
 
@@ -3901,6 +3904,14 @@ public abstract class AbstractFtpDoorV1
                     attributes.add(MODIFICATION_TIME);
                     attributes.addAll(_pdp.getRequiredAttributes());
                     break;
+                case CHANGE:
+                    attributes.add(CHANGE_TIME);
+                    attributes.addAll(_pdp.getRequiredAttributes());
+                    break;
+                case ACCESS:
+                    attributes.add(ACCESS_TIME);
+                    attributes.addAll(_pdp.getRequiredAttributes());
+                    break;
                 case TYPE:
                     attributes.add(SIMPLE_TYPE);
                     attributes.addAll(_pdp.getRequiredAttributes());
@@ -3954,6 +3965,22 @@ public abstract class AbstractFtpDoorV1
                                                   EnumSet.of(MODIFICATION_TIME));
                         if (access == AccessType.ACCESS_ALLOWED) {
                             printModifyFact(attr);
+                        }
+                        break;
+                    case CHANGE:
+                        access =
+                            _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                                  EnumSet.of(CHANGE_TIME));
+                        if (access == AccessType.ACCESS_ALLOWED) {
+                            printChangeFact(attr);
+                        }
+                        break;
+                    case ACCESS:
+                        access =
+                            _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                                  EnumSet.of(ACCESS_TIME));
+                        if (access == AccessType.ACCESS_ALLOWED) {
+                            printAccessFact(attr);
                         }
                         break;
                     case TYPE:
@@ -4021,6 +4048,20 @@ public abstract class AbstractFtpDoorV1
         {
             long time = attr.getModificationTime();
             printFact(Fact.MODIFY, TIMESTAMP_FORMAT.format(new Date(time)));
+        }
+
+        /** Writes UNIX.ctime fact to a writer. */
+        private void printChangeFact(FileAttributes attr)
+        {
+            long time = attr.getChangeTime();
+            printFact(Fact.CHANGE, TIMESTAMP_FORMAT.format(new Date(time)));
+        }
+
+        /** Writes UNIX.atime fact to a writer. */
+        private void printAccessFact(FileAttributes attr)
+        {
+            long time = attr.getAccessTime();
+            printFact(Fact.ACCESS, TIMESTAMP_FORMAT.format(new Date(time)));
         }
 
         /** Writes a RFC 3659 size fact to a writer. */
