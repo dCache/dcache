@@ -89,6 +89,8 @@ public enum State {
     DONE           ("Done"           ,9, true),
     CANCELED       ("Canceled"       ,10, true),
     FAILED         ("Failed"         ,11, true),
+    @Deprecated // Kept for compatibility with old databases
+    RESTORED       ("Restored"       ,12),
     RUNNINGWITHOUTTHREAD("RunningWithoutThread"       ,13);
 
     private final String name;

@@ -199,7 +199,7 @@ public final class AccessLatency implements Serializable {
             return NEARLINE;
         }
 
-        throw new IllegalArgumentException("Unknown State Id");
+        throw new IllegalArgumentException("Unknown AccessLatency Id");
     }
 
     public boolean equals(Object obj) {
