@@ -159,7 +159,7 @@ public class SRM {
     private RrdRequestExecutionTimeGauges<?> rrdSrmServerV1Gauges;
     private RrdRequestExecutionTimeGauges<?> rrdAstractStorageElementGauges;
     private SchedulerContainer schedulers;
-    private final DatabaseJobStorageFactory databaseFactory;
+    private DatabaseJobStorageFactory databaseFactory;
 
     private static SRM srm;
 
@@ -261,10 +261,6 @@ public class SRM {
         requestCredentialStorage = new DatabaseRequestCredentialStorage(config);
         RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
 
-        databaseFactory = new DatabaseJobStorageFactory(configuration);
-        JobStorageFactory.initJobStorageFactory(databaseFactory);
-        databaseFactory.init();
-
         host = InetAddress.getLocalHost();
 
         configuration.addSrmHost(host.getCanonicalHostName());
@@ -308,10 +304,22 @@ public class SRM {
         return srm;
     }
 
-    public void start() throws IllegalStateException
+    public void start() throws IllegalStateException, IOException
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
-        databaseFactory.restoreJobsOnSrmStart(schedulers);
+        databaseFactory = new DatabaseJobStorageFactory(configuration);
+        try {
+            JobStorageFactory.initJobStorageFactory(databaseFactory);
+            databaseFactory.init();
+            databaseFactory.restoreJobsOnSrmStart(schedulers);
+        } catch (RuntimeException e) {
+            try {
+                databaseFactory.shutdown();
+            } catch (Exception suppressed) {
+                e.addSuppressed(suppressed);
+            }
+            throw e;
+        }
     }
 
     public void stop() throws InterruptedException

@@ -130,7 +130,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         }
     }
 
-    public void init() throws InterruptedException, DataAccessException
+    public void init() throws DataAccessException
     {
         for (JobStorage<?> jobStorage : jobStorageMap.values()) {
             jobStorage.init();
@@ -145,12 +145,17 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         }
     }
 
-    public void shutdown() throws InterruptedException
+    public void shutdown()
     {
         scheduledExecutor.shutdown();
         executor.shutdown();
-        scheduledExecutor.awaitTermination(3, TimeUnit.SECONDS);
-        executor.awaitTermination(3, TimeUnit.SECONDS);
+        try {
+            if (scheduledExecutor.awaitTermination(3, TimeUnit.SECONDS)) {
+                executor.awaitTermination(3, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
