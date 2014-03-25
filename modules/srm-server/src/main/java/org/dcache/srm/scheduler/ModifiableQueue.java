@@ -82,8 +82,6 @@ import java.util.List;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
  *
  * @author  timur
@@ -180,7 +178,7 @@ public class ModifiableQueue  {
 
 
     public void put(Job job) throws InterruptedException {
-        checkArgument(type.isInstance(job));
+        checkJobType(job);
         long id = job.getId();
         while (true) {
             synchronized (queue) {
@@ -200,7 +198,7 @@ public class ModifiableQueue  {
     }
 
     public boolean offer(Job job) {
-        checkArgument(type.isInstance(job));
+        checkJobType(job);
         long id = job.getId();
 
         synchronized (queue) {
@@ -214,7 +212,7 @@ public class ModifiableQueue  {
     }
 
     public boolean offer(Job job, long msecs) throws InterruptedException {
-        checkArgument(type.isInstance(job));
+        checkJobType(job);
         long waitTime = msecs;
         long start = (msecs <= 0)? 0: System.currentTimeMillis();
         long id = job.getId();
@@ -346,5 +344,12 @@ public class ModifiableQueue  {
     public Class<? extends Job> getType()
     {
         return type;
+    }
+
+    private void checkJobType(Job job)
+    {
+        if (!type.isInstance(job)) {
+            throw new IllegalArgumentException("Scheduler " + scheduler_name + " doesn't accept " + job.getClass() + '.');
+        }
     }
 }
