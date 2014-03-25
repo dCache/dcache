@@ -164,6 +164,12 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         @Override
+        public void onSrmRestart(Scheduler scheduler)
+        {
+            // Nothing to do.
+        }
+
+        @Override
         public String getMethod() {
                 return "Ls";
         }

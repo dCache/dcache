@@ -234,11 +234,10 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     @Override
     public void onSrmRestart(Scheduler scheduler)
     {
-        // no need to do anything in the container, the individual FileRequests
-        // will re-pin files as necessary.
+        // Nothing to do.
     }
 
-     public String[] getProtocols() {
+    public String[] getProtocols() {
         if(protocols == null) {
             return null;
         }

@@ -239,6 +239,12 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         }
     }
 
+    @Override
+    public void onSrmRestart(Scheduler scheduler)
+    {
+        // Nothing to do.
+    }
+
     /**
      * this callbacks are given to storage.prepareToPut
      * storage.prepareToPut calls methods of callbacks to indicate progress

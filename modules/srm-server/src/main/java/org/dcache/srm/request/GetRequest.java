@@ -222,6 +222,12 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         }
     }
 
+    @Override
+    public void onSrmRestart(Scheduler scheduler)
+    {
+        // Nothing to do.
+    }
+
     /**
      * storage.PrepareToGet() is given this callbacks
      * implementation

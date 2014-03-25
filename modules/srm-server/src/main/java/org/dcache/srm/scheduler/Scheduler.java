@@ -90,7 +90,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public final class Scheduler
+public final class Scheduler <T extends Job>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(Scheduler.class);
@@ -188,7 +188,7 @@ public final class Scheduler
                 .build();
     }
 
-    public Scheduler(String id, Class<? extends Job> type)
+    public Scheduler(String id, Class<T> type)
     {
         this.id = checkNotNull(id);
         checkArgument(!id.isEmpty(), "need non-empty string as an id");
@@ -1319,9 +1319,9 @@ public final class Scheduler
         return priorityPolicyPlugin;
     }
 
-    public Class<? extends Job> getType()
+    public Class<T> getType()
     {
-        return threadQueue.getType();
+        return (Class<T>) threadQueue.getType();
     }
 }
 
