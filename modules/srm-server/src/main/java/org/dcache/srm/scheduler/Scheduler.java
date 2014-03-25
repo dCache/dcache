@@ -251,6 +251,7 @@ public final class Scheduler <T extends Job>
                     job.setState(State.FAILED, "Site busy: too many queued requests.");
                 }
                 break;
+            case RESTORED:
             case ASYNCWAIT:
             case RETRYWAIT:
             case RUNNINGWITHOUTTHREAD:

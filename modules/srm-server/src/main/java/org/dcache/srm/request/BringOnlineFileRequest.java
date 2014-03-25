@@ -383,9 +383,28 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     protected void onSrmRestartForActiveJob(Scheduler scheduler)
             throws IllegalStateTransition
     {
-        // Simply reschedule it (FIXME: this doesn't always work due to
-        // illegal state transitions)
-        scheduler.schedule(this);
+        State state = getState();
+
+        switch (state) {
+        case ASYNCWAIT:
+        case RETRYWAIT:
+            // FIXME: we should log the SRM restart in the job's history.
+            scheduler.schedule(this);
+            break;
+
+        case PRIORITYTQUEUED:
+        case TQUEUED:
+        case RUNNING:
+            setState(State.RESTORED, "Rescheduled after SRM service restart");
+            scheduler.schedule(this);
+            break;
+
+        // All other states are invalid.
+        default:
+            setState(State.FAILED, "Invalid state (" + state + ") detected " +
+                    "after SRM service restart");
+            break;
+        }
     }
 
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {

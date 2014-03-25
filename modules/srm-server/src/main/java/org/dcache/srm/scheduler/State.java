@@ -112,7 +112,6 @@ public enum State {
 
     /** A resource limitation or some failure prevented job from completing successfully. */
     FAILED         ("Failed"         ,11, true),
-    @Deprecated // Kept for compatibility with old databases
     RESTORED       ("Restored"       ,12),
 
     /** Job has triggered a third-party copy. */
