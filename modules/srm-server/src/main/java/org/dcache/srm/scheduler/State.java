@@ -77,20 +77,45 @@ package org.dcache.srm.scheduler;
  * @author  timur
  */
 public enum State {
+    /** Initial state: no processing has happened for job. */
     PENDING        ("Pending",        0),
+
+    /** Job requires further activity and is waiting in scheduler. */
     PRIORITYTQUEUED("PriorityTQueued",1),
+
+    /** Job is waiting in scheduler for initial activity. */
     TQUEUED        ("TQueued"        ,2),
+
+    /** Job is being processed. */
     RUNNING        ("Running"        ,3),
+
+    /** Job in timed wait. */
     RETRYWAIT      ("RetryWait"      ,4),
+
+    /** Job waiting for backend activity to complete. */
     ASYNCWAIT      ("AsyncWait"      ,5),
+
+    /** Job is successful and waits client requesting its status when the Ready queue isn't full. */
     RQUEUED        ("RQueued"        ,6),
+
+    /** Job is successful, this is known to client and further client interaction is expected. */
     READY          ("Ready"          ,7),
+
+    /** Client has called SRMv1 setFileStatus("Running"). */
     TRANSFERRING   ("Transferring"   ,8),
+
+    /** Job is successful and no further client interaction is possible. */
     DONE           ("Done"           ,9, true),
+
+    /** Client interaction prevented job from completing successfully. */
     CANCELED       ("Canceled"       ,10, true),
+
+    /** A resource limitation or some failure prevented job from completing successfully. */
     FAILED         ("Failed"         ,11, true),
     @Deprecated // Kept for compatibility with old databases
     RESTORED       ("Restored"       ,12),
+
+    /** Job has triggered a third-party copy. */
     RUNNINGWITHOUTTHREAD("RunningWithoutThread"       ,13);
 
     private final String name;
