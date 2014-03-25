@@ -1,3 +1,5 @@
+// $Id: RequestContainerV5.java,v 1.62 2007-09-02 17:51:31 tigran Exp $
+
 package diskCacheV111.poolManager ;
 
 import com.google.common.collect.ImmutableMap;
@@ -20,8 +22,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -36,6 +36,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SourceCostException;
+import diskCacheV111.util.ThreadPool;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.Message;
@@ -65,8 +66,6 @@ import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.util.Args;
-import org.dcache.util.CDCExecutorServiceDecorator;
-import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 
 public class RequestContainerV5
@@ -118,7 +117,7 @@ public class RequestContainerV5
     private PoolMonitorV5      _poolMonitor;
     private PnfsHandler        _pnfsHandler;
     private final SimpleDateFormat   _formatter        = new SimpleDateFormat ("MM.dd HH:mm:ss");
-    private Executor _executor;
+    private ThreadPool         _threadPool ;
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<>() ;
     private PartitionManager   _partitionManager ;
     private long               _checkFilePingTimer = 10 * 60 * 1000 ;
@@ -179,9 +178,9 @@ public class RequestContainerV5
     }
 
     @Required
-    public void setExecutor(Executor executor)
+    public void setThreadPool(ThreadPool threadPool)
     {
-        _executor = executor;
+        _threadPool = threadPool;
     }
 
     public void setHitInfoMessages(boolean sendHitInfo)
@@ -286,8 +285,9 @@ public class RequestContainerV5
     {
        Partition def = _partitionManager.getDefaultPartition();
 
+       pw.println("Restore Controller [$Revision$]\n") ;
        pw.println( "      Retry Timeout : "+(_retryTimer/1000)+" seconds" ) ;
-       pw.println( "  Thread Controller : "+_executor ) ;
+       pw.println( "  Thread Controller : "+_threadPool ) ;
        pw.println( "    Maximum Retries : "+_maxRetries ) ;
        pw.println( "    Pool Ping Timer : "+(_checkFilePingTimer/1000) + " seconds" ) ;
        pw.println( "           On Error : "+_onError ) ;
@@ -309,12 +309,22 @@ public class RequestContainerV5
     @Override
     public void printSetup(PrintWriter pw)
     {
+        pw.append("#\n# Submodule [rc] : ").append(this.getClass().toString()).append("\n#\n");
         pw.append("rc onerror ").println(_onError);
         pw.append("rc set max retries ").println(_maxRetries);
         pw.append("rc set retry ").println(_retryTimer/1000);
         pw.append("rc set poolpingtimer ").println(_checkFilePingTimer/1000);
         pw.append("rc set max restore ")
             .println(_maxRestore<0?"unlimited":(""+_maxRestore));
+        pw.append("rc set max threads ")
+            .println(_threadPool.getMaxThreadCount());
+    }
+
+    public static final String hh_rc_set_max_threads = "<threadCount> # 0 : no limits" ;
+    public String ac_rc_set_max_threads_$_1( Args args ){
+       int n = Integer.parseInt(args.argv(0));
+       _threadPool.setMaxThreadCount(n);
+       return "New max thread count : "+n;
     }
 
     public final static String hh_rc_set_sameHostCopy =
@@ -1216,6 +1226,7 @@ public class RequestContainerV5
            }
         }
         private void add( Object obj ){
+
            synchronized( _fifo ){
                _log.info( "Adding Object : "+obj ) ;
                _fifo.addFirst(obj) ;
@@ -1225,7 +1236,7 @@ public class RequestContainerV5
                _log.info( "Starting Engine" ) ;
                _stateEngineActive = true ;
                try {
-                   _executor.execute(new FireAndForgetTask(new RunEngine()));
+                   _threadPool.invokeLater(new RunEngine(), "Read-"+_pnfsId);
                } catch (RuntimeException e) {
                    _stateEngineActive = false;
                    throw e;
