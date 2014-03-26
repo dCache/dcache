@@ -20,6 +20,12 @@ public class DcapChannelImpl implements ProxyIoAdapter {
     private static final int SEEK_AND_WRITE = 12;
 
     /**
+     * Protocol constants
+     */
+    private static final int DATA = 8;
+    private static final int EOD = -1;
+
+    /**
      * DCAP SEEK whence
      */
     private static final int SEEK_SET = 0;
@@ -53,7 +59,13 @@ public class DcapChannelImpl implements ProxyIoAdapter {
 
     @Override
     public synchronized int write(ByteBuffer src, long position) throws IOException {
-        throw new IOException("write is not allowed");
+        ByteBuffer command = new DcapCommandBuilder()
+                .withSeekAndWrite(position, src.remaining())
+                .build();
+
+        writeFully(_channel, command);
+        getAck();
+        return sendData(src);
     }
 
     @Override
@@ -97,6 +109,25 @@ public class DcapChannelImpl implements ProxyIoAdapter {
             total += n;
         }
         return total;
+    }
+
+    private int sendData(ByteBuffer b) throws IOException {
+        int nbytes = b.remaining();
+        ByteBuffer dataBlock = ByteBuffer.allocate(12);
+        dataBlock.order(ByteOrder.BIG_ENDIAN);
+        dataBlock.putInt(4);
+        dataBlock.putInt(DATA);
+        dataBlock.putInt(nbytes);
+        dataBlock.flip();
+
+        writeFully(_channel, dataBlock);
+        writeFully(_channel, b);
+        dataBlock.clear();
+        dataBlock.putInt(EOD);
+        dataBlock.flip();
+        writeFully(_channel, dataBlock);
+        getAck();
+        return nbytes;
     }
 
     private void getAck() throws IOException {
