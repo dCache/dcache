@@ -1104,15 +1104,57 @@ public abstract class Job  {
     {
         wlock();
         try {
-            if (state == State.PENDING && getRemainingLifetime() > 0) {
+            if (state.isFinal()) {
+                return;
+            }
+
+            if (getRemainingLifetime() == 0) {
+                setState(State.FAILED, "Expired during SRM service restart");
+                return;
+            }
+
+            switch (state) {
+            // Pending jobs were never worked on before the SRM restart; we
+            // simply schedule them now.
+            case PENDING:
                 scheduler.schedule(this);
-            } else {
-                setState(State.FAILED, "Aborted due to SRM service restart");
+                break;
+
+            // Jobs in RQUEUED or READY states require no further processing.
+            // We can leave them for the client to discover the TURL or place
+            // the job into the DONE state, respectively.
+            case READY:
+            case RQUEUED:
+                scheduler.add(this);
+                break;
+
+            // Other job states need request-specific recovery process.
+            default:
+                onSrmRestartForActiveJob(scheduler);
+                break;
             }
         } catch (IllegalStateTransition e) {
             logger.error("Failed to restore job: " + e.getMessage());
         } finally {
             wunlock();
         }
+    }
+
+    /**
+     * Provide request-specific recovery for jobs that were being processed
+     * when SRM was restarted.  This corresponds to jobs in states:
+     *
+     *     PRIORITYTQUEUED, TQUEUED, RUNNING, RETRYWAIT, ASYNCWAIT,
+     *     TRANSFERRING, RESTORED, RUNNINGWITHOUTTHREAD.
+     *
+     * In general, such jobs require some request-specific procedure.
+     * Subclasses are expected to override this method to provide this
+     * procedure.
+     */
+    protected void onSrmRestartForActiveJob(Scheduler scheduler)
+            throws IllegalStateTransition
+    {
+        // By default, simply fail such requests.
+        setState(State.FAILED, "Aborted due to SRM service restart");
     }
 }

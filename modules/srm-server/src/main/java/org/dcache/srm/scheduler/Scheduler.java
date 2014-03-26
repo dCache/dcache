@@ -269,6 +269,41 @@ public final class Scheduler <T extends Job>
         }
     }
 
+    /**
+     * Add a job that requires no scheduling.  This is called during SRM
+     * restart.
+     *
+     * REVISIT: should this be merged with schedule or non-scheduled job handling
+     * moved outside of Scheduler.
+     */
+    public void add(Job job) throws IllegalStateException
+    {
+        job.wlock();
+        try {
+            switch (job.getState()) {
+            case RQUEUED:
+                increaseNumberOfReadyQueued(job);
+                break;
+
+            case READY:
+                // NB. this may increase number of READY jobs beyond the
+                // accepted limit (i.e., the limit was decreased during SRM
+                // restart); however, there's not much we can do about this
+                // as the client already knows about this TURL, so we cannot
+                // reduce the number of active TURLs.
+                increaseNumberOfReady(job);
+                break;
+
+            default:
+                throw new IllegalStateException("cannot accept job in state " +
+                        job.getState());
+            }
+        } finally {
+            job.wunlock();
+        }
+    }
+
+
     private void increaseNumberOfRunningState(Job job)
     {
         runningStateJobsNum.increment(job.getSubmitterId());
@@ -448,7 +483,6 @@ public final class Scheduler <T extends Job>
     {
         return retryWaitJobsNum.getTotal();
     }
-
 
     public void tryToReadyJob(Job job)
     {

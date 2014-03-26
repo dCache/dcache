@@ -380,18 +380,12 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
 
     @Override
-    public void onSrmRestart(Scheduler scheduler)
+    protected void onSrmRestartForActiveJob(Scheduler scheduler)
+            throws IllegalStateTransition
     {
-        try {
-            if (getRemainingLifetime() > 0) {
-                scheduler.schedule(this);
-            } else {
-                super.onSrmRestart(scheduler);
-            }
-        } catch (IllegalStateException | IllegalStateTransition e) {
-            logger.error("Failed to restore BringOnlineFileRequest {}: {}",
-                    getId(), e.getMessage());
-        }
+        // Simply reschedule it (FIXME: this doesn't always work due to
+        // illegal state transitions)
+        scheduler.schedule(this);
     }
 
     public void askFileId() throws NonFatalJobFailure, FatalJobFailure {
