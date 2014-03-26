@@ -1040,7 +1040,7 @@ public class ChimeraNameSpaceProvider
             FileAttributes attributesOfParent
                     = getFileAttributesForPermissionHandler(parent);
             if (_permissionHandler.canCreateSubDir(subject, attributesOfParent) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + parent.getPath() + "/" + name);
+                throw new PermissionDeniedCacheException("Access denied: " + new FsPath(parent.getPath(), name));
             }
         }
         if (uid == DEFAULT) {

@@ -560,9 +560,12 @@ class FsSqlDriver {
      */
     String inode2path(Connection dbConnection, FsInode inode, FsInode startFrom, boolean inclusive) throws SQLException {
 
+        if (inode.equals(startFrom)) {
+            return "/";
+        }
+
         String path = null;
         PreparedStatement ps = null;
-
         try {
 
             List<String> pList = new ArrayList<>();
