@@ -10,8 +10,11 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.request.Job;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Canonicalizing and caching job storage decorator suitable for Terracotta.
@@ -73,7 +76,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
         for (J job : storage.getActiveJobs()) {
             canonicalize(job);
         }
-        timer.schedule(new ExpirationTask(), 10, 60);
+        timer.schedule(new ExpirationTask(), SECONDS.toMillis(10), SECONDS.toMillis(60));
     }
 
     @Override
