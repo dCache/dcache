@@ -1,16 +1,11 @@
 package org.dcache.chimera.nfsv41.door.proxy;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import diskCacheV111.util.CacheException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CDC;
 
@@ -19,9 +14,7 @@ import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
-import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.OperationREAD;
-import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.xdr.READ4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
@@ -30,11 +23,10 @@ import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
-import org.dcache.xdr.RpcCall;
 
 public class ProxyIoREAD extends AbstractNFSv4Operation {
 
-    private static final Logger _log = LoggerFactory.getLogger(ProxyIoREAD.class.getName());
+    private static final Logger _log = LoggerFactory.getLogger(ProxyIoREAD.class);
     private final DcapProxyIoFactory proxyIoFactory;
 
     // FIXME: this should be imported form org.dcache.nfs.v4.Stateids
@@ -87,7 +79,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 		/*
 		 * use try-with-resource as wee need to close adapter on each request
 		 */
-		try (ProxyIoAdapter oneUseProxyIoAdapter = createIoAdapter(inode, context)) {
+		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, context, false)) {
 		    proxyIoAdapter = oneUseProxyIoAdapter;
 		    bytesReaded = oneUseProxyIoAdapter.read(bb, offset);
 		}
@@ -99,9 +91,9 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                      * opertations. With introduction of sessions in v4.1 update of the
                      * lease time done through SEQUENCE operation.
                      */
-                    context.getStateHandler().updateClientLeaseTime(_args.opread.stateid);
+                    context.getStateHandler().updateClientLeaseTime(stateid);
                 }
-		proxyIoAdapter = getOrCreateProxy(inode, stateid, context);
+		proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid, context, false);
 		bytesReaded = proxyIoAdapter.read(bb, offset);
 	    }
 
@@ -127,45 +119,6 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
         }
     }
 
-    private ProxyIoAdapter getOrCreateProxy(final Inode inode, final stateid4 stateid, final CompoundContext context) throws ChimeraNFSException {
-
-        try {
-            ProxyIoAdapter adapter = _prioxyIO.get(stateid,
-                    new Callable<ProxyIoAdapter>() {
-
-                        @Override
-                        public ProxyIoAdapter call() throws Exception {
-                            final NFS4State state = context.getStateHandler().getClientIdByStateId(stateid).state(stateid);
-                            final ProxyIoAdapter adapter = createIoAdapter(inode, context);
-
-                            state.addDisposeListener( new StateDisposeListener() {
-
-                                @Override
-                                public void notifyDisposed(NFS4State state) {
-				    tryToClose(adapter);
-                                    _prioxyIO.invalidate(state.stateid());
-                                }
-                            });
-
-                            return adapter;
-                        }
-                    });
-
-            return adapter;
-        } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-            _log.error("failed to create IO adapter: {}", t.getMessage());
-            if (t instanceof ChimeraNFSException) {
-                throw (ChimeraNFSException)t;
-            }
-            int status = nfsstat.NFSERR_IO;
-            if ((t instanceof CacheException) && ((CacheException)t).getRc() != CacheException.BROKEN_ON_TAPE) {
-                status = nfsstat.NFSERR_DELAY;
-            }
-            throw new ChimeraNFSException(status, t.getMessage());
-        }
-    }
-
     private boolean isStateLess(stateid4 stateid) {
 	/*
 	 * As stateid4#equals() does not check seqid,
@@ -176,25 +129,5 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                 (stateid.seqid.value == ONE_STATEID.seqid.value
                 && Arrays.equals(stateid.other, ONE_STATEID.other)) ;
     }
-
-    private ProxyIoAdapter createIoAdapter(final Inode inode, final CompoundContext context)
-	    throws CacheException, InterruptedException, IOException {
-
-	RpcCall call = context.getRpcCall();
-	return proxyIoFactory.getAdapter(inode, call.getCredential().getSubject(),
-		call.getTransport().getRemoteSocketAddress());
-    }
-
-    private static void tryToClose(ProxyIoAdapter adapter) {
-	try {
-	    adapter.close();
-	} catch (IOException e) {
-	    _log.error("failed fo close io adapter: ", e.getMessage());
-	}
-    }
-
-    private static final Cache<stateid4, ProxyIoAdapter> _prioxyIO=
-            CacheBuilder.newBuilder()
-            .build();
 
 }
