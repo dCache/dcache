@@ -1,6 +1,6 @@
 package org.dcache.srm.qos;
 
-import org.dcache.srm.util.Configuration;
+import org.dcache.srm.SRM;
 
 public interface QOSPlugin {
 	QOSTicket createTicket(
@@ -15,7 +15,7 @@ public interface QOSPlugin {
 	        int dstPortMax,
 	        String dstProtocol);
 
-	void setSrmConfiguration(Configuration configuration);
+	void setSrm(SRM srm);
 	
 	void addTicket(QOSTicket qosTicket);
 	

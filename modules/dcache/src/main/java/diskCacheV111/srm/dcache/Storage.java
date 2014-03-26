@@ -63,9 +63,6 @@ COPYRIGHT STATUS:
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
-
-
-
 package diskCacheV111.srm.dcache;
 
 import com.google.common.base.Function;
@@ -77,7 +74,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -96,7 +92,6 @@ import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nonnull;
 import javax.naming.NamingEnumeration;
@@ -107,8 +102,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.Subject;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -132,16 +125,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.namespace.NameSpaceProvider;
-import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolMonitorV5;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
-import diskCacheV111.srm.StorageElementInfo;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -161,7 +151,6 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
-import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
@@ -172,10 +161,8 @@ import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
-import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.LoginBrokerHandler;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.acl.enums.AccessMask;
@@ -183,7 +170,6 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.commons.util.Strings;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.CreateOption;
@@ -213,9 +199,7 @@ import org.dcache.srm.SRMSpaceLifetimeExpiredException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.srm.SrmReserveSpaceCallback;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.util.Tools;
@@ -225,10 +209,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
-import dmg.cells.services.login.LoginBrokerHandler;
-
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -254,8 +235,7 @@ import static org.dcache.namespace.FileAttribute.*;
  */
 public final class Storage
     extends AbstractCellComponent
-    implements AbstractStorageElement, Runnable,
-               CellCommandListener, CellMessageReceiver
+    implements AbstractStorageElement, CellMessageReceiver
 {
     private final static Logger _log = LoggerFactory.getLogger(Storage.class);
 
@@ -270,13 +250,6 @@ public final class Storage
 
     private final static String SFN_STRING = "SFN=";
 
-    /**
-     * The delay we use after transient failures that should be
-     * retried immediately. The small delay prevents tight retry
-     * loops.
-     */
-    private final static long TRANSIENT_FAILURE_DELAY =
-        MILLISECONDS.toMillis(10);
     private static final Version VERSION = Version.of(Storage.class);
 
     private CellStub _pnfsStub;
@@ -298,7 +271,6 @@ public final class Storage
 
     private SRM srm;
     private Configuration config;
-    private Thread storageInfoUpdateThread;
     private boolean customGetHostByAddr; //falseByDefault
 
     private DirectoryListSource _listSource;
@@ -398,6 +370,12 @@ public final class Storage
     }
 
     @Required
+    public void setPoolMonitor(PoolMonitor poolMonitor)
+    {
+        _poolMonitor = poolMonitor;
+    }
+
+    @Required
     public void setTransferManagerStub(CellStub transferManagerStub)
     {
         _transferManagerStub = transferManagerStub;
@@ -431,12 +409,6 @@ public final class Storage
     public void setConfiguration(Configuration config)
     {
         this.config = config;
-    }
-
-    @Required
-    public void setSrm(SRM srm)
-    {
-        this.srm = srm;
     }
 
     public String[] getSrmPutNotSupportedProtocols()
@@ -494,472 +466,11 @@ public final class Storage
         customGetHostByAddr = value;
     }
 
-    public void start() throws CacheException, IOException,
-            InterruptedException, IllegalStateTransition
-    {
-        _log.info("Starting SRM");
-
-        while (_poolMonitor == null) {
-            try {
-                _poolMonitor =
-                    _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
-            } catch (CacheException e) {
-                _log.error(e.toString());
-                Thread.sleep(TRANSIENT_FAILURE_DELAY);
-            }
-        }
-
-        storageInfoUpdateThread = new Thread(this);
-        storageInfoUpdateThread.start();
-    }
-
-    public void stop()
-    {
-        storageInfoUpdateThread.interrupt();
-    }
-
     @Required
     public void setDirectoryListSource(DirectoryListSource source)
     {
         _listSource = source;
     }
-
-    @Required
-    public void setLoginBrokerHandler(LoginBrokerHandler handler)
-        throws UnknownHostException
-    {
-        handler.setAddresses(asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
-        handler.setLoad(new LoginBrokerHandler.LoadProvider() {
-                @Override
-                public double getLoad() {
-                    return (srm == null) ? 0 : srm.getLoad();
-                }
-            });
-    }
-
-    @Override
-    public void getInfo(PrintWriter pw)
-    {
-        StorageElementInfo info = getStorageElementInfo();
-        if (info != null) {
-            pw.println(info);
-        }
-        pw.println(config);
-        pw.println(srm.getSchedulerInfo());
-    }
-
-    public final static String hh_set_switch_to_async_mode_delay_get =
-        "<milliseconds>";
-    public final static String fh_set_switch_to_async_mode_delay_get =
-        "Sets the time after which get requests are processed asynchronously.\n" +
-        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
-        "always use asynchronous replies.";
-    public String ac_set_switch_to_async_mode_delay_get_$_1(Args args)
-    {
-        config.setGetSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
-        return "";
-    }
-
-    public final static String hh_set_switch_to_async_mode_delay_put =
-        "<milliseconds>";
-    public final static String fh_set_switch_to_async_mode_delay_put =
-        "Sets the time after which put requests are processed asynchronously.\n" +
-        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
-        "always use asynchronous replies.";
-    public String ac_set_switch_to_async_mode_delay_put_$_1(Args args)
-    {
-        config.setPutSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
-        return "";
-    }
-
-    public final static String hh_set_switch_to_async_mode_delay_ls =
-        "<milliseconds>";
-    public final static String fh_set_switch_to_async_mode_delay_ls =
-        "Sets the time after which ls requests are processed asynchronously.\n" +
-        "Use 'infinity' to always use synchronous replies and use 0 to\n" +
-        "always use asynchronous replies.";
-    public String ac_set_switch_to_async_mode_delay_ls_$_1(Args args)
-    {
-        config.setLsSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
-        return "";
-    }
-
-    public final static String hh_set_switch_to_async_mode_delay_bring_online =
-        "<milliseconds>";
-    public final static String fh_set_switch_to_async_mode_delay_bring_online =
-        "Sets the time after which bring online requests are processed\n" +
-        "asynchronously. Use 'infinity' to always use synchronous replies\n" +
-        "and use 0 to always use asynchronous replies.";
-    public String ac_set_switch_to_async_mode_delay_bring_online_$_1(Args args)
-    {
-        config.setBringOnlineSwitchToAsynchronousModeDelay(Strings.parseTime(args.argv(0), TimeUnit.MILLISECONDS));
-        return "";
-    }
-
-    private static final ImmutableMap<String,String> OPTION_TO_PARAMETER_SET =
-        new ImmutableMap.Builder<String,String>()
-        .put("get", Configuration.GET_PARAMETERS)
-        .put("put", Configuration.PUT_PARAMETERS)
-        .put("ls", Configuration.LS_PARAMETERS)
-        .put("bringonline", Configuration.BRINGONLINE_PARAMETERS)
-        .put("reserve", Configuration.RESERVE_PARAMETERS)
-        .build();
-
-    public final static String fh_db_history_log= " Syntax: db history log [on|off] "+
-        "# show status or enable db history log ";
-    public final static String hh_db_history_log= "[-get] [-put] [-bringonline] [-ls] [-copy] [-reserve] [on|off] " +
-        "# show status or enable db history log ";
-    public String ac_db_history_log_$_0_1(Args args)
-    {
-        Collection<String> sets = new ArrayList<>();
-        for (Map.Entry<String,String> e: OPTION_TO_PARAMETER_SET.entrySet()) {
-            if (args.hasOption(e.getKey())) {
-                sets.add(e.getValue());
-            }
-        }
-
-        if (sets.isEmpty()) {
-            sets = OPTION_TO_PARAMETER_SET.values();
-        }
-
-        if (args.argc() > 0) {
-            String arg = args.argv(0);
-            if (!arg.equals("on") && !arg.equals("off")){
-                return "syntax error";
-            }
-            for (String set: sets) {
-                config.getDatabaseParameters(set).setRequestHistoryDatabaseEnabled(arg.equals("on"));
-            }
-        }
-
-        StringBuilder s = new StringBuilder();
-        for (String set: sets) {
-            Configuration.DatabaseParameters parameters = config.getDatabaseParameters(set);
-            s.append("db history logging for ").append(set).append(" is ")
-                .append((parameters.isRequestHistoryDatabaseEnabled()
-                         ? "enabled"
-                         : "disabled")).append("\n");
-        }
-        return s.toString();
-    }
-
-    public final static String fh_cancel= " Syntax: cancel <id> ";
-    public final static String hh_cancel= " <id> ";
-    public String ac_cancel_$_1(Args args) {
-        try {
-            Long id = Long.valueOf(args.argv(0));
-            StringBuilder sb = new StringBuilder();
-            srm.cancelRequest(sb, id);
-            return sb.toString();
-        } catch (SRMInvalidRequestException ire) {
-            return "Invalid request: "+ire.getMessage();
-        } catch (NumberFormatException e) {
-            return e.toString();
-        }
-    }
-
-    public final static String fh_cancelall= " Syntax: cancel [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
-    public final static String hh_cancelall= " [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
-    public String ac_cancelall_$_1(Args args) {
-        try {
-            boolean get=args.hasOption("get");
-            boolean put=args.hasOption("put");
-            boolean copy=args.hasOption("copy");
-            boolean bring=args.hasOption("bring");
-            boolean reserve=args.hasOption("reserve");
-            boolean ls=args.hasOption("ls");
-            if( !get && !put && !copy && !bring && !reserve && !ls ) {
-                get=true;
-                put=true;
-                copy=true;
-                bring=true;
-                reserve=true;
-                ls=true;
-            }
-            String pattern = args.argv(0);
-            StringBuilder sb = new StringBuilder();
-            if(get) {
-                _log.debug("calling srm.cancelAllGetRequest(\""+pattern+"\")");
-                srm.cancelAllGetRequest(sb, pattern);
-            }
-            if(bring) {
-                _log.debug("calling srm.cancelAllBringOnlineRequest(\""+pattern+"\")");
-                srm.cancelAllBringOnlineRequest(sb, pattern);
-            }
-            if(put) {
-                _log.debug("calling srm.cancelAllPutRequest(\""+pattern+"\")");
-                srm.cancelAllPutRequest(sb, pattern);
-            }
-            if(copy) {
-                _log.debug("calling srm.cancelAllCopyRequest(\""+pattern+"\")");
-                srm.cancelAllCopyRequest(sb, pattern);
-            }
-            if(reserve) {
-                _log.debug("calling srm.cancelAllReserveSpaceRequest(\""+pattern+"\")");
-                srm.cancelAllReserveSpaceRequest(sb, pattern);
-            }
-            if(ls) {
-                _log.debug("calling srm.cancelAllLsRequests(\""+pattern+"\")");
-                srm.cancelAllLsRequests(sb, pattern);
-            }
-            return sb.toString();
-        } catch (DataAccessException | SRMException e) {
-            _log.warn("Failure in cancelall: " + e.getMessage());
-            return e.toString();
-        }
-    }
-    public final static String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] "+
-            "#will list all requests";
-    public final static String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
-    public String ac_ls_$_0_1(Args args) throws SRMInvalidRequestException, DataAccessException
-    {
-        boolean get=args.hasOption("get");
-        boolean put=args.hasOption("put");
-        boolean copy=args.hasOption("copy");
-        boolean bring=args.hasOption("bring");
-        boolean reserve=args.hasOption("reserve");
-        boolean ls=args.hasOption("ls");
-        boolean longformat = args.hasOption("l");
-        StringBuilder sb = new StringBuilder();
-        if(args.argc() == 1) {
-            try {
-                Long reqId = Long.valueOf(args.argv(0));
-                srm.listRequest(sb, reqId, longformat);
-            } catch( NumberFormatException nfe) {
-                return "id must be an integer, you gave id="+args.argv(0);
-            }
-        } else {
-            if( !get && !put && !copy && !bring && !reserve && !ls) {
-                get=true;
-                put=true;
-                copy=true;
-                bring=true;
-                reserve=true;
-                ls=true;
-            }
-            if(get) {
-                sb.append("Get Requests:\n");
-                srm.listGetRequests(sb);
-            }
-            if(put) {
-                sb.append("Put Requests:\n");
-                srm.listPutRequests(sb);
-            }
-            if(copy) {
-                sb.append("Copy Requests:\n");
-                srm.listCopyRequests(sb);
-            }
-            if(bring) {
-                sb.append("Bring Online Requests:\n");
-                srm.listBringOnlineRequests(sb);
-            }
-            if(reserve) {
-                sb.append("Reserve Space Requests:\n");
-                srm.listReserveSpaceRequests(sb);
-            }
-            if(ls) {
-                sb.append("Ls Requests:\n");
-                srm.listLsRequests(sb);
-            }
-        }
-        return sb.toString();
-    }
-    public final static String fh_ls_queues= " Syntax: ls queues " +
-        "[-get] [-put] [-copy] [-bring] [-ls] [-l]  "+
-            "#will list schedule queues";
-    public final static String hh_ls_queues= " [-get] [-put] [-copy] [-bring] [-ls] [-l] ";
-    public String ac_ls_queues_$_0(Args args) {
-        boolean get=args.hasOption("get");
-        boolean put=args.hasOption("put");
-        boolean ls=args.hasOption("ls");
-        boolean copy=args.hasOption("copy");
-        boolean bring=args.hasOption("bring");
-        StringBuilder sb = new StringBuilder();
-
-        if( !get && !put && !copy && !bring && !ls ) {
-            get=true;
-            put=true;
-            copy=true;
-            bring=true;
-            ls=true;
-        }
-        if(get) {
-            sb.append("Get Request Scheduler:\n");
-            sb.append(srm.getGetSchedulerInfo());
-            sb.append('\n');
-        }
-        if(put) {
-            sb.append("Put Request Scheduler:\n");
-            sb.append(srm.getPutSchedulerInfo());
-            sb.append('\n');
-        }
-        if(copy) {
-            sb.append("Copy Request Scheduler:\n");
-            sb.append(srm.getCopySchedulerInfo());
-            sb.append('\n');
-        }
-        if(bring) {
-            sb.append("Bring Online Request Scheduler:\n");
-            sb.append(srm.getBringOnlineSchedulerInfo());
-            sb.append('\n');
-        }
-        if(ls) {
-            sb.append("Ls Request Scheduler:\n");
-            sb.append(srm.getLsSchedulerInfo());
-            sb.append('\n');
-        }
-        return sb.toString();
-    }
-
-    public final static String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
-        " [-copy] [max_count]"+
-            " #will list completed (done, failed or canceled) requests, " +
-        "if max_count is not specified, it is set to 50";
-    public final static String hh_ls_completed= " [-get] [-put] [-copy] [max_count]";
-    public String ac_ls_completed_$_0_1(Args args) throws DataAccessException
-    {
-        boolean get=args.hasOption("get");
-        boolean put=args.hasOption("put");
-        boolean copy=args.hasOption("copy");
-        int max_count=50;
-        if(args.argc() == 1) {
-            max_count = Integer.parseInt(args.argv(0));
-        }
-
-        if( !get && !put && !copy ) {
-            get=true;
-            put=true;
-            copy=true;
-
-        }
-        StringBuilder sb = new StringBuilder();
-        if(get) {
-            sb.append("Get Requests:\n");
-            srm.listLatestCompletedGetRequests(sb, max_count);
-            sb.append('\n');
-        }
-        if(put) {
-            sb.append("Put Requests:\n");
-            srm.listLatestCompletedPutRequests(sb, max_count);
-            sb.append('\n');
-        }
-        if(copy) {
-            sb.append("Copy Requests:\n");
-            srm.listLatestCompletedCopyRequests(sb, max_count);
-            sb.append('\n');
-        }
-        return sb.toString();
-    }
-
-    public final static String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
-            "will set priority for the requestid";
-    public final static String hh_set_job_priority=" <requestId> <priority>";
-
-    public String ac_set_job_priority_$_2(Args args) {
-        String s1 = args.argv(0);
-        String s2 = args.argv(1);
-        long requestId;
-        int priority;
-        try {
-            requestId = Integer.parseInt(s1);
-        } catch (NumberFormatException e) {
-            return "Failed to parse request id: " + s1;
-        }
-        try {
-            priority = Integer.parseInt(s2);
-        } catch (Exception e) {
-            return "Failed to parse priority: "+s2;
-        }
-        try {
-            Job job = Job.getJob(requestId, Job.class);
-            job.setPriority(priority);
-            job.setPriority(priority);
-            StringBuilder sb = new StringBuilder();
-            srm.listRequest(sb, requestId, true);
-            return sb.toString();
-        } catch (SRMInvalidRequestException e) {
-            return e.getMessage() + "\n";
-        } catch (DataAccessException e) {
-            _log.warn("Failure in set job priority: " + e.getMessage());
-            return e.toString();
-        }
-    }
-
-
-    public final static String fh_set_max_ready_put= " Syntax: set max ready put <count>"+
-            " #will set a maximum number of put requests in the ready state";
-    public final static String hh_set_max_ready_put= " <count>";
-    public String ac_set_max_ready_put_$_1(Args args) throws Exception{
-        if(args.argc() != 1) {
-            throw new IllegalArgumentException("count is not specified");
-        }
-        int value = Integer.parseInt(args.argv(0));
-        srm.setPutMaxReadyJobs(value);
-        _log.info("put-req-max-ready-requests="+value);
-        return "put-req-max-ready-requests="+value;
-    }
-
-    public final static String fh_set_max_ready_get= " Syntax: set max ready get <count>"+
-            " #will set a maximum number of get requests in the ready state";
-    public final static String hh_set_max_ready_get= " <count>";
-    public String ac_set_max_ready_get_$_1(Args args) throws Exception{
-        if(args.argc() != 1) {
-            throw new IllegalArgumentException("count is not specified");
-        }
-        int value = Integer.parseInt(args.argv(0));
-        srm.setGetMaxReadyJobs(value);
-        _log.info("get-req-max-ready-requests="+value);
-        return "get-req-max-ready-requests="+value;
-    }
-
-    public final static String fh_set_max_ready_bring_online= " Syntax: set max ready bring online <count>"+
-            " #will set a maximum number of bring online requests in the ready state";
-    public final static String hh_set_max_ready_bring_online= " <count>";
-    public String ac_set_max_ready_bring_online_$_1(Args args) throws Exception{
-        if(args.argc() != 1) {
-            throw new IllegalArgumentException("count is not specified");
-        }
-        int value = Integer.parseInt(args.argv(0));
-        srm.setBringOnlineMaxReadyJobs(value);
-        _log.info("bring-online-req-max-ready-requests="+value);
-        return "bring-online-req-max-ready-requests="+value;
-    }
-
-    public final static String fh_set_max_read_ls_= " Syntax: set max read ls <count>\n"+
-            " #will set a maximum number of ls requests in the ready state\n"+
-            " #\"set max read ls\" is an alias for \"set max ready ls\" preserved for compatibility ";
-    public final static String hh_set_max_read_ls= " <count>";
-    public String ac_set_read_ls_$_1(Args args) throws Exception{
-        return ac_set_max_ready_ls_$_1(args);
-    }
-
-    public final static String fh_set_max_ready_ls= " Syntax: set max ready ls <count>\n"+
-            " #will set a maximum number of ls requests in the ready state";
-    public final static String hh_set_max_ready_ls= " <count>";
-    public String ac_set_max_ready_ls_$_1(Args args) throws Exception{
-        if(args.argc() != 1) {
-            throw new IllegalArgumentException("count is not specified");
-        }
-        int value = Integer.parseInt(args.argv(0));
-        srm.setLsMaxReadyJobs(value);
-        _log.info("ls-request-max-ready-requests="+value);
-        return "ls-request-max-ready-requests="+value;
-    }
-
-      public final static String hh_print_srm_counters= "# prints the counters for all srm operations";
-      public String ac_print_srm_counters_$_0(Args args) {
-            return srm.getSrmServerV1Counters().toString()+
-                    '\n'+
-                   srm.getSrmServerV2Counters().toString()+
-                   '\n'+
-                   srm.getAbstractStorageElementCounters().toString()+
-                   '\n'+
-                   srm.getSrmServerV1Gauges().toString()+
-                   '\n'+
-                   srm.getSrmServerV2Gauges().toString()+
-                   '\n'+
-                   srm.getAbstractStorageElementGauges().toString();
-      }
 
     public void messageArrived(final TransferManagerMessage msg)
     {
@@ -2322,78 +1833,6 @@ public final class Storage
         }
     }
 
-
-    private volatile StorageElementInfo storageElementInfo =
-        new StorageElementInfo();
-
-    @Override
-    public StorageElementInfo getStorageElementInfo(SRMUser user)
-    {
-        return storageElementInfo;
-    }
-
-    private StorageElementInfo getStorageElementInfo()
-    {
-        return storageElementInfo;
-    }
-
-    private void updateStorageElementInfo()
-        throws CacheException, InterruptedException
-    {
-        _poolMonitor =
-            _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor();
-
-        String[] pools =
-            _poolMonitor.getPoolSelectionUnit().getActivePools();
-        if (pools.length == 0) {
-            _log.debug("Pool manager provided empty list of pools; assuming pool manager was restarted");
-            return;
-        }
-
-        CostModule cm = _poolMonitor.getCostModule();
-        StorageElementInfo info = new StorageElementInfo();
-        for (String pool: pools) {
-            PoolCostInfo.PoolSpaceInfo poolInfo =
-                cm.getPoolCostInfo(pool).getSpaceInfo();
-
-            if (poolInfo != null) {
-                /* FIXME: Removable space is added to both used and
-                 * available. The logic is copied from the old code.
-                 * It also seems like we don't account for CACHED +
-                 * STICKY files.
-                 */
-                info.availableSpace += poolInfo.getFreeSpace();
-                info.availableSpace += poolInfo.getRemovableSpace();
-                info.totalSpace += poolInfo.getTotalSpace();
-                info.usedSpace += poolInfo.getPreciousSpace();
-                info.usedSpace += poolInfo.getRemovableSpace();
-            }
-        }
-
-        storageElementInfo = info;
-    }
-
-    /**
-     * we use run method to update the storage info structure periodically
-     */
-    @Override
-    public void run()
-    {
-        try {
-            while (true) {
-                try {
-                    updateStorageElementInfo();
-                } catch (CacheException e) {
-                    _log.error("Pool monitor update failed: {} [{}]",
-                               e.getMessage(), e.getRc());
-                }
-                Thread.sleep(config.getStorage_info_update_period());
-            }
-        } catch (InterruptedException e) {
-            _log.debug("Storage info update thread shut down");
-        }
-    }
-
     @Override
     public List<URI> listDirectory(SRMUser user, URI surl,
                                    FileMetaData fileMetaData)
@@ -2756,33 +2195,6 @@ public final class Storage
             _log.trace("srmGetSpaceTokens returns: {}", Arrays.toString(tokenStrings));
         }
         return tokenStrings;
-    }
-
-    @Override @Nonnull
-    public String[] srmGetRequestTokens(SRMUser user,String description)
-        throws SRMException {
-        try {
-            Set<Long> tokens = srm.getBringOnlineRequestIds(user,
-                    description);
-            tokens.addAll(srm.getGetRequestIds(user,
-                    description));
-            tokens.addAll(srm.getPutRequestIds(user,
-                    description));
-            tokens.addAll(srm.getCopyRequestIds(user,
-                    description));
-            tokens.addAll(srm.getLsRequestIds(user,
-                    description));
-            Long[] tokenLongs = tokens
-                    .toArray(new Long[tokens.size()]);
-            String[] tokenStrings = new String[tokenLongs.length];
-            for (int i = 0; i < tokenLongs.length; ++i) {
-                tokenStrings[i] = tokenLongs[i].toString();
-            }
-            return tokenStrings;
-        } catch (DataAccessException e) {
-            _log.error("srmGetRequestTokens failed: {}", e.getMessage());
-            throw new SRMInternalErrorException("Database failure", e);
-        }
     }
 
     /**

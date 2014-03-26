@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Properties;
 
 import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
 import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSTicket;
 import org.dcache.srm.util.Configuration;
@@ -28,9 +29,9 @@ public class LambdaStationPlugin implements QOSPlugin {
 	public LambdaStationPlugin(){}
 
 	@Override
-        public void setSrmConfiguration(Configuration configuration) {
-		lambdaStationConf = configuration.getQosConfigFile();
-                storage = configuration.getStorage();
+    public void setSrm(SRM srm) {
+        lambdaStationConf = srm.getConfiguration().getQosConfigFile();
+        storage = srm.getStorage();
 		Properties properties = new Properties();
 
         FileInputStream fis;

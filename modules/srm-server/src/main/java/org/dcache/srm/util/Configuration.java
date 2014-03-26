@@ -100,7 +100,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
@@ -159,7 +158,6 @@ public class Configuration {
      *
      */
     private final Set<String> localSrmHosts=new HashSet<>();
-    private AbstractStorageElement storage;
     private SRMAuthorization authorization;
 
     // scheduler parameters
@@ -985,20 +983,6 @@ public class Configuration {
             localSrmHosts.clear();
             localSrmHosts.addAll(Arrays.asList(hosts));
         }
-    }
-
-    /** Getter for property storage.
-     * @return Value of property storage.
-     */
-    public AbstractStorageElement getStorage() {
-        return storage;
-    }
-
-    /** Setter for property storage.
-     * @param storage New value of property storage.
-     */
-    public void setStorage(AbstractStorageElement storage) {
-        this.storage = storage;
     }
 
     /** Getter for property authorization.

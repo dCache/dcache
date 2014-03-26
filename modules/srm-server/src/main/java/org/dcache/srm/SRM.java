@@ -94,7 +94,6 @@ import java.util.regex.Pattern;
 
 import diskCacheV111.srm.FileMetaData;
 import diskCacheV111.srm.RequestStatus;
-import diskCacheV111.srm.StorageElementInfo;
 
 import org.dcache.commons.stats.MonitoringProxy;
 import org.dcache.commons.stats.RequestCounters;
@@ -171,25 +170,23 @@ public class SRM {
      * @throws InterruptedException
      * @throws DataAccessException
      */
-    private SRM(Configuration config) throws IOException, InterruptedException,
+    public SRM(Configuration config, AbstractStorageElement storage) throws IOException, InterruptedException,
             DataAccessException
     {
         this.configuration = config;
         //First of all decorate the storage with counters and
         // gauges to measure the performance of storage operations
-        this.storage = config.getStorage();
         abstractStorageElementCounters=
                 new RequestCounters<>(
-                        this.storage.getClass().getName());
+                        storage.getClass().getName());
         abstractStorageElementGauges =
                 new RequestExecutionTimeGauges<>(
-                        this.storage.getClass().getName());
+                        storage.getClass().getName());
         this.storage = MonitoringProxy.decorateWithMonitoringProxy(
                 new Class[]{AbstractStorageElement.class},
-                this.storage,
+                storage,
                 abstractStorageElementCounters,
                 abstractStorageElementGauges);
-        config.setStorage(this.storage);
 
         srmServerV2Counters = new RequestCounters<>("SRMServerV2");
         srmServerV1Counters = new RequestCounters<>("SRMServerV1");
@@ -272,41 +269,28 @@ public class SRM {
         this.schedulers = checkNotNull(schedulers);
     }
 
-    /**
-     * SRM is now a singleton, this will return an instance of
-     * will create a new SRM if it does not exist
-     * @param configuration
-     * @param name
-     * @return SRM
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws IllegalStateTransition
-     * @throws DataAccessException
-     */
-    public static final synchronized SRM getSRM(Configuration configuration)
-            throws IOException,
-                   InterruptedException,
-                   IllegalStateTransition,
-                   DataAccessException
+    public static final synchronized void setSRM(SRM srm)
     {
-        if (srm == null) {
-            srm = new SRM(configuration);
-            SRM.class.notifyAll();
-        }
-        return srm;
+        SRM.srm = srm;
+        SRM.class.notifyAll();
     }
 
-    /**
-     *
-     * @return instance of SRM if it was created or null if it was not
-     */
-    public static synchronized final SRM getSRM() {
+    public static final synchronized SRM getSRM()
+    {
+        while (srm == null) {
+            try {
+                SRM.class.wait();
+            } catch (InterruptedException e) {
+                throw new IllegalStateException("SRM has not been instantiated yet.");
+            }
+        }
         return srm;
     }
 
     public void start() throws IllegalStateException, IOException
     {
         checkState(schedulers != null, "Cannot start SRM with no schedulers");
+        setSRM(this);
         databaseFactory = new DatabaseJobStorageFactory(configuration);
         try {
             JobStorageFactory.initJobStorageFactory(databaseFactory);
@@ -1012,12 +996,6 @@ public class SRM {
         rs.errorMessage = error;
         rs.state = "Failed";
         return rs;
-    }
-
-    public StorageElementInfo getStorageElementInfo(
-            SRMUser user,
-            RequestCredential credential) throws SRMException {
-        return storage.getStorageElementInfo(user);
     }
 
     public void listGetRequests(StringBuilder sb) throws DataAccessException {

@@ -220,7 +220,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
         setFileRequests(requests);
         this.callerSrmProtocol = callerSrmProtocol;
         if (getConfiguration().getQosPluginClass()!=null) {
-            this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
+            this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         }
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
@@ -297,7 +297,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest> impleme
 
         protocols = prot_list.toArray(new String[prot_list.size()]);
         if (getConfiguration().getQosPluginClass()!=null) {
-            this.qosPlugin = QOSPluginFactory.createInstance(getConfiguration());
+            this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         }
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;

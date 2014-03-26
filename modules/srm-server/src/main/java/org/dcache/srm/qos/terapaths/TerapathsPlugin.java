@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.Properties;
 
 import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRM;
 import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSTicket;
 import org.dcache.srm.util.Configuration;
@@ -48,9 +49,9 @@ public class TerapathsPlugin implements QOSPlugin {
 	public TerapathsPlugin(){}
 
 	@Override
-        public void setSrmConfiguration(Configuration configuration) {
-		this.propFile = configuration.getQosConfigFile();
-		this.storage = configuration.getStorage();
+    public void setSrm(SRM srm) {
+		this.propFile = srm.getConfiguration().getQosConfigFile();
+		this.storage = srm.getStorage();
 	}
 
 	@Override

@@ -35,8 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import diskCacheV111.srm.StorageElementInfo;
-
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.CopyCallbacks;
@@ -484,19 +482,6 @@ public class Storage
     return new File(fileId);
   }
 
-
-
-
-  /** */
-  @Override
-  public StorageElementInfo getStorageElementInfo(SRMUser user)
-      throws SRMException {
-    /**@todo # Implement getStorageElementInfo() method */
-    SRMException srmEx = new SRMException(
-        "Method getStorageElementInfo() not yet implemented.");
-    logger.error(srmEx.toString());
-    throw srmEx;
-  }
 
   //-------------- Async methods ----------------
 
@@ -953,12 +938,6 @@ public class Storage
     @Override @Nonnull
     public String[] srmGetSpaceTokens(SRMUser user,String description)
         throws SRMException {
-        return new String[0];
-    }
-
-    @Override @Nonnull
-    public String[] srmGetRequestTokens(SRMUser user,String description)
-        throws SRMException{
         return new String[0];
     }
 

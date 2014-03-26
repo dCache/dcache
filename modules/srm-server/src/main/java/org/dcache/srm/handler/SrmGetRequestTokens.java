@@ -2,6 +2,11 @@ package org.dcache.srm.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+
+import javax.annotation.Nonnull;
+
+import java.util.Set;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
@@ -24,7 +29,7 @@ public class SrmGetRequestTokens
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmGetRequestTokens.class);
 
-    private final AbstractStorageElement storage;
+    private final SRM srm;
     private final SrmGetRequestTokensRequest request;
     private final SRMUser user;
     private SrmGetRequestTokensResponse response;
@@ -38,7 +43,7 @@ public class SrmGetRequestTokens
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
-        this.storage = checkNotNull(storage);
+        this.srm = checkNotNull(srm);
     }
 
     public SrmGetRequestTokensResponse getResponse()
@@ -58,11 +63,37 @@ public class SrmGetRequestTokens
         return response;
     }
 
+    private String[] getRequestTokens(SRMUser user,String description)
+            throws SRMException
+    {
+        try {
+            Set<Long> tokens = srm.getBringOnlineRequestIds(user,
+                                                            description);
+            tokens.addAll(srm.getGetRequestIds(user,
+                                               description));
+            tokens.addAll(srm.getPutRequestIds(user,
+                                               description));
+            tokens.addAll(srm.getCopyRequestIds(user,
+                                                description));
+            tokens.addAll(srm.getLsRequestIds(user,
+                                              description));
+            Long[] tokenLongs = tokens
+                    .toArray(new Long[tokens.size()]);
+            String[] tokenStrings = new String[tokenLongs.length];
+            for (int i = 0; i < tokenLongs.length; ++i) {
+                tokenStrings[i] = tokenLongs[i].toString();
+            }
+            return tokenStrings;
+        } catch (DataAccessException e) {
+            throw new SRMInternalErrorException("Database failure", e);
+        }
+    }
+
     private SrmGetRequestTokensResponse srmGetRequestTokens()
             throws SRMException
     {
         String description = request.getUserRequestDescription();
-        String[] requestTokens = storage.srmGetRequestTokens(user, description);
+        String[] requestTokens = getRequestTokens(user, description);
         if (requestTokens.length == 0) {
             throw new SRMInvalidRequestException("No such requests");
         }

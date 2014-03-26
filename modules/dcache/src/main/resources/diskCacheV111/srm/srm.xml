@@ -13,40 +13,6 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
-  <!--
-    Note that we have a three-node circular dependency with the
-    following beans referencing each other:
-
-        config   references  storage,
-        storage  references  srm,
-        srm      references  config.
-
-    However, the "srm" bean's requirement on "config" is stronger: not
-    only must "config" exists, but also that it has been configured
-    with the "storage" bean.  This is because the SRM will fetch the
-    AbstractStorageElement object from Configuration, decorate it and
-    replace Configuration with the decorated object.
-
-    Therefore, we must ensure that the following events happen in this
-    order:
-
-        1. "storage" bean is created,
-        2. "config" bean is created,
-        3. "config" bean is configured with the "storage" bean,
-        4. "srm" bean is created.
-
-    Spring does not complain about this circular dependency.  It will
-    create objects and initialise them in an undocumented ordering,
-    which seems to depend on where within the XML file the bean is
-    described.
-
-    To avoid this abitrary behaviour, the Spring 'depends-on'
-    attribute is used to make the ordering explicit:
-
-        srm     depends-on  config,
-        config  depends-on  storage.
-  -->
-
   <!-- Convert properties with multiple values separated by comma into an array of strings:
        key=value1,value2,value3 : String[] {value1, value2, value3}
     -->
@@ -146,7 +112,7 @@
       </constructor-arg>
   </bean>
 
-  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler"
+  <bean id="lb" class="diskCacheV111.srm.dcache.SrmLoginBrokerHandler"
         init-method="start"
         destroy-method="stop">
     <description>Registers the door with a LoginBroker</description>
@@ -167,6 +133,7 @@
     <property name="port" value="${srm.net.port}"/>
     <property name="loginBrokers" value="${srm.service.loginbroker}"/>
     <property name="root" value="${srm.root}"/>
+    <property name="srm" ref="srm"/>
   </bean>
 
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
@@ -201,15 +168,27 @@
     <constructor-arg ref="auth-persistence-manager"/>
   </bean>
 
-  <bean id="storage" class="diskCacheV111.srm.dcache.Storage"
-        init-method="start" destroy-method="stop">
+    <bean id="scheduled-executor"
+          class="java.util.concurrent.Executors"
+          factory-method="newSingleThreadScheduledExecutor"
+          destroy-method="shutdown">
+        <description>Task scheduler</description>
+    </bean>
+
+    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean" init-method="init">
+        <description>Maintains runtime information about all pools</description>
+        <property name="poolManagerStub" ref="pool-manager-stub"/>
+        <property name="executor" ref="scheduled-executor"/>
+    </bean>
+
+  <bean id="storage" class="diskCacheV111.srm.dcache.Storage">
     <description>dCache plugin for SRM</description>
     <property name="directoryListSource" ref="list-handler"/>
-    <property name="loginBrokerHandler" ref="lb"/>
     <property name="loginBrokerStub" ref="login-broker-stub"/>
     <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <property name="poolMonitor" ref="pool-monitor"/>
     <property name="spaceManagerStub" ref="space-manager-stub"/>
     <property name="transferManagerStub" ref="transfer-manager-stub"/>
     <property name="copyManagerStub" ref="copy-manager-stub"/>
@@ -230,10 +209,9 @@
     <property name="srmPutNotSupportedProtocols" value="${srm.protocols.disallowed.put}"/>
     <property name="srmGetNotSupportedProtocols" value="${srm.protocols.disallowed.get}"/>
     <property name="srmPreferredProtocols" value="${srm.protocols.preferred}"/>
-    <property name="srm" ref="srm"/>
   </bean>
 
-  <bean id="config" class="org.dcache.srm.util.Configuration" depends-on="storage">
+  <bean id="config" class="org.dcache.srm.util.Configuration">
     <description>SRM configuration</description>
     <property name="port" value="${srm.net.port}"/>
     <property name="timeout"
@@ -387,7 +365,6 @@
     <property name="qosPluginClass" value="${srm.plugins.qos.class}"/>
     <property name="qosConfigFile" value="${srm.plugins.qos.config.file}"/>
 
-    <property name="storage" ref="storage"/>
     <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
     <property name="authorization" ref="authorization"/>
     <property name="dataSource" ref="data-source"/>
@@ -663,16 +640,17 @@
       </property>
   </bean>
 
-
-  <bean id="srm" class="org.dcache.srm.SRM" factory-method="getSRM"
-	init-method="start" destroy-method="stop" depends-on="config">
+  <bean id="srm" class="org.dcache.srm.SRM" init-method="start" destroy-method="stop">
     <description>SRM engine</description>
-
     <constructor-arg ref="config"/>
-
+    <constructor-arg ref="storage"/>
     <property name="schedulers" ref="schedulers"/>
   </bean>
 
+  <bean id="srm-cli" class="diskCacheV111.srm.dcache.SrmCommandLineInterface">
+    <property name="configuration" ref="config"/>
+    <property name="srm" ref="srm"/>
+  </bean>
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
         init-method="start" destroy-method="stop">

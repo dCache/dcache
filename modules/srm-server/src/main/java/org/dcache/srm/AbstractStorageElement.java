@@ -74,8 +74,6 @@ import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.List;
 
-import diskCacheV111.srm.StorageElementInfo;
-
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 
@@ -460,14 +458,6 @@ public interface AbstractStorageElement {
      * various actions performed to reserve space in the storage
      */
 
-
-    /** This method returns the information about the Storage Element
-     * @param user User ID
-     * @throws SRMException
-     * @return StorageElementInfo object contained information about the Storage Element
-     */
-    public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException;
-
     /**
      *
      * @param user
@@ -571,15 +561,6 @@ public interface AbstractStorageElement {
 
     public long srmExtendReservationLifetime(SRMUser user, String spaceToken, long newReservationLifetime)
     throws SRMException ;
-   /**
-     *
-     * @param description
-     * @throws SRMException
-     * @return
-     */
-    @Nonnull
-    public String[] srmGetRequestTokens(SRMUser user,String description)
-        throws SRMException;
 
     /**
      *

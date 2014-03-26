@@ -74,10 +74,8 @@ public class Main extends CommandInterpreter implements  Runnable {
         config.setAuthorization(authorization);
         Storage storage =
             new Storage(gridftphost,gridftpport,config,stat,chown,out,err);
-        config.setStorage(storage);
 
-        srm = SRM.getSRM(config);
-
+        srm = new SRM(config, storage);
         srm.setSchedulers(new SchedulerContainer(
                 buildRunningScheduler("get_" + name, GetFileRequest.class, "Get"),
                 buildRunningScheduler("ls_" + name, GetFileRequest.class, "Ls"),
@@ -88,6 +86,7 @@ public class Main extends CommandInterpreter implements  Runnable {
                         ReserveSpaceRequest.class, "ReserveSpace"),
                 // COPY must be the last in the list
                 buildRunningScheduler("copy_" + name, Job.class, "Copy")));
+        srm.start();
 
         new Thread(this).start();
     }
