@@ -960,12 +960,7 @@ public abstract class Job  {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("JobHistory[");
-            sb.append(new Date(transitionTime)).append(',');
-            sb.append(state).append(',');
-            sb.append(description).append(']');
-            return sb.toString();
+            return "JobHistory[" + new Date(transitionTime) + ',' + state + ',' + description + ']';
         }
 
         public synchronized boolean isSaved() {
