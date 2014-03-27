@@ -10,14 +10,6 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
-  <bean id="scheduled-executor"
-        class="java.util.concurrent.Executors"
-        factory-method="newScheduledThreadPool"
-        destroy-method="shutdown">
-    <description>Task scheduler</description>
-    <constructor-arg value="1"/>
-  </bean>
-
   <bean id="executor"
       class="java.util.concurrent.ThreadPoolExecutor"
       destroy-method="shutdown">
@@ -38,10 +30,9 @@
     <property name="timeoutUnit" value="${srm.service.poolmanager.timeout.unit}"/>
   </bean>
 
-  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean" init-method="init">
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
     <description>Maintains runtime information about all pools</description>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
-    <property name="executor" ref="scheduled-executor"/>
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">

@@ -47,10 +47,9 @@
     <property name="timeoutUnit" value="${xrootd.service.gplazma.timeout.unit}"/>
   </bean>
 
-  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean" init-method="init">
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
     <description>Maintains runtime information about all pools</description>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
-    <property name="executor" ref="scheduled-thread-pool"/>
   </bean>
 
   <bean id="scheduled-thread-pool"

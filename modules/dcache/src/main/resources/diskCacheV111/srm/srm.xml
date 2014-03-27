@@ -30,6 +30,7 @@
     <property name="destination" value="${srm.service.poolmanager}"/>
     <property name="timeout" value="${srm.service.poolmanager.timeout}"/>
     <property name="timeoutUnit" value="${srm.service.poolmanager.timeout.unit}"/>
+    <property name="retryOnNoRouteToCell" value="true"/>
   </bean>
 
   <bean id="gplazma-stub" class="org.dcache.cells.CellStub">
@@ -168,17 +169,9 @@
     <constructor-arg ref="auth-persistence-manager"/>
   </bean>
 
-    <bean id="scheduled-executor"
-          class="java.util.concurrent.Executors"
-          factory-method="newSingleThreadScheduledExecutor"
-          destroy-method="shutdown">
-        <description>Task scheduler</description>
-    </bean>
-
-    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean" init-method="init">
+    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
         <description>Maintains runtime information about all pools</description>
         <property name="poolManagerStub" ref="pool-manager-stub"/>
-        <property name="executor" ref="scheduled-executor"/>
     </bean>
 
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage">
