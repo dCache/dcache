@@ -85,6 +85,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidPathException;
