@@ -230,7 +230,7 @@ public final class Scheduler <T extends Job>
 
 
     public void schedule(Job job)
-            throws IllegalStateException,
+            throws IllegalStateException, IllegalArgumentException,
                    IllegalStateTransition
     {
         checkState(running, "scheduler is not running");
@@ -254,6 +254,8 @@ public final class Scheduler <T extends Job>
             case ASYNCWAIT:
             case RETRYWAIT:
             case RUNNINGWITHOUTTHREAD:
+                checkArgument(id.equals(job.getSchedulerId()),
+                        "job assigned to wrong scheduler");
                 LOGGER.trace("putting job in a priority thread queue, job#{}", job.getId());
                 job.setState(State.PRIORITYTQUEUED, "queued for execution");
                 if (!priorityQueue(job)) {

@@ -66,6 +66,7 @@ public class SchedulerContainer
     }
 
     private Scheduler getScheduler(Scheduler suggestion, Class<? extends Job> type)
+            throws UnsupportedOperationException
     {
         if (suggestion == null || !suggestion.getType().isAssignableFrom(type)) {
             for (Entry<Class<? extends Job>, Scheduler> entry : schedulers.entrySet()) {
@@ -112,7 +113,9 @@ public class SchedulerContainer
 
         for (Job job : activeJobs) {
             scheduler = getScheduler(scheduler, job.getSchedulerType());
-            job.onSrmRestart(scheduler);
+            if (scheduler.getId().equals(job.getSchedulerId())) {
+                job.onSrmRestart(scheduler);
+            } // else another SRM instance is handling this job
         }
     }
 }
