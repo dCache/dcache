@@ -101,8 +101,7 @@ public class CDCExecutorServiceDecorator extends ForwardingExecutorService
             @Override
             public void run()
             {
-                cdc.restore();
-                try {
+                try (CDC ignored = cdc.restore()) {
                     task.run();
                 } finally {
                     CDC.clear();
@@ -118,11 +117,8 @@ public class CDCExecutorServiceDecorator extends ForwardingExecutorService
             @Override
             public T call() throws Exception
             {
-                cdc.restore();
-                try {
+                try (CDC ignored = cdc.restore()) {
                     return task.call();
-                } finally {
-                    cdc.clear();
                 }
             }
         };
