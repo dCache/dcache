@@ -24,6 +24,8 @@ import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
 
+import static org.dcache.srm.scheduler.State.ASYNCWAIT;
+import static org.dcache.srm.scheduler.State.PENDING;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.*;
@@ -43,29 +45,38 @@ public class SchedulerContainerTests
     Scheduler reserveSpaceScheduler;
     Scheduler genericScheduler;
 
-    private Scheduler mockScheduler(Class<? extends Job> type)
+    private Scheduler mockScheduler(Class<? extends Job> type, String id)
     {
         Scheduler scheduler = PowerMockito.mock(Scheduler.class);
         given(scheduler.getType()).willReturn(type);
+        given(scheduler.getId()).willReturn(id);
         return scheduler;
     }
 
     private <T extends Job> T mockJob(Class<T> type)
     {
+        return mockJob(type, PENDING, null);
+    }
+
+    private <T extends Job> T mockJob(Class<T> type, State state, String schedulerId)
+    {
         T job = PowerMockito.mock(type);
         given(job.getSchedulerType()).willCallRealMethod();
+        given(job.getState()).willReturn(state);
+        given(job.getSchedulerId()).willReturn(schedulerId);
+
         return job;
     }
 
     @Before
     public void setup()
     {
-        getScheduler = mockScheduler(GetFileRequest.class);
-        lsScheduler = mockScheduler(LsFileRequest.class);
-        putScheduler = mockScheduler(PutFileRequest.class);
-        bringOnlineScheduler = mockScheduler(BringOnlineFileRequest.class);
-        reserveSpaceScheduler = mockScheduler(ReserveSpaceRequest.class);
-        genericScheduler = mockScheduler(Job.class);
+        getScheduler = mockScheduler(GetFileRequest.class, "get_localhost");
+        lsScheduler = mockScheduler(LsFileRequest.class, "ls_localhost");
+        putScheduler = mockScheduler(PutFileRequest.class, "put_localhost");
+        bringOnlineScheduler = mockScheduler(BringOnlineFileRequest.class, "bring_online_localhost");
+        reserveSpaceScheduler = mockScheduler(ReserveSpaceRequest.class, "reserve_space_localhost");
+        genericScheduler = mockScheduler(Job.class, "copy_localhost");
 
         container = new SchedulerContainer();
         List<Scheduler> schedulers = Lists.newArrayList(getScheduler,
@@ -218,7 +229,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredLsFileRequests() throws Exception
     {
-        LsFileRequest job = mockJob(LsFileRequest.class);
+        LsFileRequest job = mockJob(LsFileRequest.class, ASYNCWAIT, "ls_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
@@ -230,7 +241,8 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredBringOnlineFileRequests() throws Exception
     {
-        BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class);
+        BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class,
+                ASYNCWAIT, "bring_online_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
@@ -242,7 +254,8 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredGetFileRequests() throws Exception
     {
-        GetFileRequest job = mockJob(GetFileRequest.class);
+        GetFileRequest job = mockJob(GetFileRequest.class, ASYNCWAIT,
+                "get_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
@@ -254,7 +267,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredCopyRequests() throws Exception
     {
-        CopyRequest job = mockJob(CopyRequest.class);
+        CopyRequest job = mockJob(CopyRequest.class, ASYNCWAIT, "copy_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
@@ -266,7 +279,8 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredCopyFileRequests() throws Exception
     {
-        CopyFileRequest job = mockJob(CopyFileRequest.class);
+        CopyFileRequest job = mockJob(CopyFileRequest.class, ASYNCWAIT,
+                "copy_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
@@ -278,7 +292,8 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredPutFileRequests() throws Exception
     {
-        PutFileRequest job = mockJob(PutFileRequest.class);
+        PutFileRequest job = mockJob(PutFileRequest.class, ASYNCWAIT,
+                "put_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
@@ -290,7 +305,8 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredReserveSpaceRequests() throws Exception
     {
-        ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class);
+        ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class, ASYNCWAIT,
+                "reserve_space_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job));
 
