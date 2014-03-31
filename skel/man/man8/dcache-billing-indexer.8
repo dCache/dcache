@@ -46,10 +46,17 @@ Compress \fBFILE\fR.
 Decompress \fBFILE\fR.
 
 .TP
-\fB-find [-files] [-dir=BASE] SEARCHTERM\fR
+\fB-find [-files] [-dir=BASE] SEARCHTERM...\fR
 Output billing entries that contain \fBSEARCHTERM\fR. Valid search terms are
 path, pnfsid, dn and path prefixes of those. Optionally output names
 of billing files that might contain the search term.
+
+.TP
+\fB-find [-files] [-dir=BASE] -f=FILE\fR
+Read one or more newline separated search terms from FILE. Output billing entries
+that contain any of the search terms. Valid search terms are path, pnfsid, dn and
+path prefixes of those. Optionally output names of billing files that might
+contain the search term.
 
 .TP
 \fB-index [-fpp=PROP] FILE...\fR

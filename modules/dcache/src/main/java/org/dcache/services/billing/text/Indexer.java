@@ -4,6 +4,8 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeTraverser;
@@ -42,8 +44,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -62,6 +64,7 @@ import org.dcache.util.ConfigurationProperties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.Files.isFile;
+import static java.util.Arrays.asList;
 
 public class Indexer
 {
@@ -84,7 +87,7 @@ public class Indexer
             if (file.isDirectory()) {
                 File[] files = file.listFiles();
                 if (files != null) {
-                    return Ordering.natural().sortedCopy(Arrays.asList(files));
+                    return Ordering.natural().sortedCopy(asList(files));
                 }
             }
 
@@ -111,15 +114,20 @@ public class Indexer
 
         if (args.hasOption("find")) {
             boolean shouldOutputFilesNames = args.hasOption("files");
-            String searchTerm = args.argv(0);
+            Collection<String> searchTerms;
+            if (args.hasOption("f")) {
+                searchTerms = Files.readLines(new File(args.getOption("f")), Charsets.UTF_8);
+            } else {
+                searchTerms = args.getArguments();
+            }
             FluentIterable<File> filesWithPossibleMatch =
-                    SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isBillingFileAndMightContain(searchTerm));
+                    SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isBillingFileAndMightContain(searchTerms));
             if (shouldOutputFilesNames) {
                 for (File file : filesWithPossibleMatch) {
                     System.out.println(file);
                 }
             } else {
-                find(searchTerm, filesWithPossibleMatch, System.out);
+                find(searchTerms, filesWithPossibleMatch, System.out);
             }
         } else if (args.hasOption("all")) {
             for (File file : SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isFile())) {
@@ -170,7 +178,8 @@ public class Indexer
     /**
      * Searches for searchTerm in files and writes any matching lines to out.
      */
-    private void find(final String searchTerm, FluentIterable<File> files, PrintStream out) throws IOException
+    private void find(final Collection<String> searchTerms, FluentIterable<File> files, PrintStream out)
+            throws IOException
     {
         int threads = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -187,7 +196,7 @@ public class Indexer
                         {
                             try {
                                 Date date = fileNameFormat.parse(matcher.group(1));
-                                grep(searchTerm, file, DateFormat.getDateInstance().format(date) + ": ", new PrintWriter(writer));
+                                grep(searchTerms, file, DateFormat.getDateInstance().format(date) + ": ", new PrintWriter(writer));
                             } finally {
                                 writer.close();
                             }
@@ -205,15 +214,19 @@ public class Indexer
         }
     }
 
-    private void grep(final String searchTerm, File file, final String prefix, final PrintWriter out) throws IOException
+    private void grep(final Collection<String> searchTerms, File file, final String prefix, final PrintWriter out)
+            throws IOException
     {
         CharStreams.readLines(newReaderSupplier(file, Charsets.UTF_8), new LineProcessor<Void>()
         {
             @Override
             public boolean processLine(String line) throws IOException
             {
-                if (line.contains(searchTerm)) {
-                    out.append(prefix).println(line);
+                for (String term : searchTerms) {
+                    if (line.contains(term)) {
+                        out.append(prefix).println(line);
+                        break;
+                    }
                 }
                 return true;
             }
@@ -259,10 +272,13 @@ public class Indexer
         out.println("          Compress FILE.");
         out.println("   -decompress FILE...");
         out.println("          Decompress FILE.");
-        out.println("   -find [-files] [-dir=BASE] SEARCHTERM");
+        out.println("   -find [-files] [-dir=BASE] SEARCHTERM...");
         out.println("          Output billing entries that contain SEARCHTERM. Valid search terms are");
         out.println("          path, pnfsid, dn and path prefixes of those. Optionally output names");
         out.println("          of billing files that might contain the search term.");
+        out.println("   -find [-files] [-dir=BASE] -f=FILE");
+        out.println("          Like above, but read search terms from FILE. Each line of the file is");
+        out.println("          treated as a separate seach term.");
         out.println("   -index [-fpp=PROP] FILE...");
         out.println("          Create index for FILE.");
         out.println("   -yesterday [-compress] [-fpp=PROP] [-dir=BASE] [-flat=BOOL]");
@@ -368,12 +384,10 @@ public class Indexer
         }
     }
 
-    private Predicate<File> isBillingFileAndMightContain(String str)
+    private Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
     {
-        if (str.endsWith("/")) {
-            str = str.substring(0, str.length() - 1);
-        }
-        final String searchTerm = str;
+        final List<String> searchTerms =
+                Lists.newArrayList(Iterables.transform(terms, new TrimTrailingSlash()));
         return new Predicate<File>()
         {
             @Override
@@ -394,8 +408,16 @@ public class Indexer
             private boolean mightContain(File index)
                     throws IOException, ClassNotFoundException
             {
-                return searchTerm.isEmpty() || !index.exists() ||
-                        ((BloomFilter<CharSequence>) readFromFile(index)).mightContain(searchTerm);
+                if (!index.exists()) {
+                    return true;
+                }
+                BloomFilter<CharSequence> filter = (BloomFilter<CharSequence>) readFromFile(index);
+                for (String term : searchTerms) {
+                    if (filter.mightContain(term)) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }
@@ -515,6 +537,18 @@ public class Indexer
         } catch (IOException | URISyntaxException | ClassNotFoundException e) {
             System.err.println(e);
             System.exit(2);
+        }
+    }
+
+    private static class TrimTrailingSlash implements Function<String, String>
+    {
+        @Override
+        public String apply(String str)
+        {
+            if (str.endsWith("/")) {
+                str = str.substring(0, str.length() - 1);
+            }
+            return str;
         }
     }
 }

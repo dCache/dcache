@@ -313,11 +313,19 @@ xml file.  The path for the latter is determined from alarms.definitions.path.
 .SH MISCELLANEOUS COMMANDS
 
 .TP
-.B billing [-files] PATH|PNFSID|DN
+.B billing [-files] PATH|PNFSID|DN...
 Searches local billing files for entries for the particular path, PNFS
 ID or DN. Complete prefixes of paths and DNs can be searched too. If
 the \fB-files\fR option is given, a list of billing files that are
 likely to contain the search term is printed instead.
+
+.TP
+.B billing [-files] -f=FILE
+Read one or more newline separated search terms from FILE. Searches local
+billing files for entries for the particular path, PNFS ID or DN. Complete
+prefixes of paths and DNs can be searched too. If the \fB-files\fR option
+is given, a list of billing files that are likely to contain the search
+term is printed instead.
 
 .TP
 .B kpwd COMMAND [-debug] [ARGUMENT]...
