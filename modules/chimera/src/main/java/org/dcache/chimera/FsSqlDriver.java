@@ -189,7 +189,6 @@ class FsSqlDriver {
         createInode(dbConnection, inode, type, owner, group, mode, 1);
         createEntryInParent(dbConnection, parent, name, inode);
         incNlink(dbConnection, parent);
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
 
         return inode;
     }
@@ -291,7 +290,6 @@ class FsSqlDriver {
 
         removeEntryInParent(dbConnection, parent, name);
         decNlink(dbConnection, parent);
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
 
         removeInode(dbConnection, inode);
     }
@@ -313,7 +311,6 @@ class FsSqlDriver {
          * in which the directory inode is locked by the database.
          */
         decNlink(dbConnection, parent);
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
     }
 
     void remove(Connection dbConnection, FsInode parent, FsInode inode) throws ChimeraFsException, SQLException {
@@ -769,13 +766,13 @@ class FsSqlDriver {
     void incNlink(Connection dbConnection, FsInode inode, int delta) throws SQLException {
 
         PreparedStatement stIncNlinkCount = null; // increase nlink count of the inode
-
+        Timestamp now = new Timestamp(System.currentTimeMillis());
         try {
             stIncNlinkCount = dbConnection.prepareStatement(sqlIncNlink);
 
             stIncNlinkCount.setInt(1, delta);
-            stIncNlinkCount.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            stIncNlinkCount.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stIncNlinkCount.setTimestamp(2, now);
+            stIncNlinkCount.setTimestamp(3, now);
             stIncNlinkCount.setString(4, inode.toString());
 
             stIncNlinkCount.executeUpdate();
@@ -810,13 +807,13 @@ class FsSqlDriver {
     void decNlink(Connection dbConnection, FsInode inode, int delta) throws SQLException {
 
         PreparedStatement stDecNlinkCount = null; // decrease nlink count of the inode
-
+        Timestamp now = new Timestamp(System.currentTimeMillis());
         try {
 
             stDecNlinkCount = dbConnection.prepareStatement(sqlDecNlink);
             stDecNlinkCount.setInt(1, delta);
-            stDecNlinkCount.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            stDecNlinkCount.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            stDecNlinkCount.setTimestamp(2, now);
+            stDecNlinkCount.setTimestamp(3, now);
             stDecNlinkCount.setString(4, inode.toString());
 
             stDecNlinkCount.executeUpdate();
