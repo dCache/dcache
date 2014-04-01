@@ -503,8 +503,9 @@ public class CellStub
                     callback.setReply(reply);
                     if (reply.getReturnCode() != 0) {
                         callback.failure(reply.getReturnCode(), reply.getErrorObject());
+                    } else {
+                        callback.success();
                     }
-                    callback.success();
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause();
                     if (cause instanceof TimeoutCacheException) {
