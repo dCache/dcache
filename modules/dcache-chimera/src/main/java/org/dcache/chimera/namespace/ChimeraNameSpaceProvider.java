@@ -1177,8 +1177,7 @@ public class ChimeraNameSpaceProvider
              * except target file specific properties are stored as tags local to
              * the upload directory.
              */
-            ImmutableMap.Builder<String, byte[]> tags = ImmutableMap.builder();
-            tags.putAll(parentOfPath.getTags());
+            Map<String, byte[]> tags = Maps.newHashMap(parentOfPath.getTags());
             if (al != null) {
                 tags.put(TAG_ACCESS_LATENCY, al.toString().getBytes(Charsets.UTF_8));
             }
@@ -1196,7 +1195,7 @@ public class ChimeraNameSpaceProvider
             /* Use cryptographically strong pseudo random UUID to create temporary upload directory.
              */
             UUID uuid = UUID.randomUUID();
-            _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, tags.build());
+            _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, tags);
 
             return new FsPath(_uploadDirectory, uuid.toString(), path.getName());
         } catch (IOException e) {
