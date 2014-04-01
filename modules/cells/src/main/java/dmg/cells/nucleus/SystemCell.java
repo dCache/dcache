@@ -260,11 +260,15 @@ public class      SystemCell
 
         if(obj instanceof String) {
            String command = (String) obj;
-           if(command.length() < 1) {
+           if (command.isEmpty()) {
                return;
            }
-           _log.info( "Command : "+command ) ;
-           reply = _cellShell.objectCommand2( command ) ;
+           _log.info("Command: {}", command);
+           if (command.equals("xyzzy")) {
+               reply = "Nothing happens.";
+           } else {
+               reply = _cellShell.objectCommand2(command);
+           }
            processed = true;
         }else if( obj instanceof AuthorizedString ){
            AuthorizedString as = (AuthorizedString)obj ;

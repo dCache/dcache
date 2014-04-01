@@ -1282,8 +1282,11 @@ public class UserAdminShell
     private void checkCellExists( CellPath remoteCell) {
         try {
             _cellStub.sendAndWait(remoteCell, ADMIN_COMMAND_NOOP, Object.class, CD_PROBE_MESSAGE_TIMEOUT_MS);
+        } catch (TimeoutCacheException e) {
+            throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist.");
         } catch (CacheException e) {
-            throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist");
+            // Some other failure, but apparently the cell exists
+            _log.info("Cell probe failed: {}", e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
