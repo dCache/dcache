@@ -110,8 +110,8 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
                             new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
                 }
             } catch (NamingException e) {
-                _log.warn("Faild to get mapping: {}", e.toString());
-                 throw new AuthenticationException("no mapping: "+ e.getMessage(), e);
+                _log.debug("Failed to get mapping: {}", e.toString());
+                throw new AuthenticationException("no mapping: "+ e.getMessage(), e);
             }
         }
     }
@@ -130,7 +130,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
             }
 
         } catch (NamingException e) {
-            _log.warn("Faild to get mapping: {}", e.toString());
+            _log.debug("Failed to get mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
@@ -165,7 +165,7 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
             }
             return principals;
         } catch (NamingException e) {
-            _log.warn("Faild to get reverse mapping: {}", e.toString());
+            _log.debug("Failed to get reverse mapping: {}", e.toString());
         }
         throw new NoSuchPrincipalException(principal);
     }
