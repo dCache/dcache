@@ -10,15 +10,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
 
-import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
@@ -149,19 +146,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
     protected String _cellClass;
 
     /**
-     * Timer for periodic low-priority maintenance tasks. Shared among
-     * all AbstractCell instances. Since a Timer is single-threaded,
-     * it is important that the timer is not used for long-running or
-     * blocking tasks, nor for time critical tasks.
-     */
-    protected final static Timer _timer = new Timer("Cell timer", true);
-
-    /**
-     * Task for calling the Cell nucleus message timeout mechanism.
-     */
-    private TimerTask _timeoutTask;
-
-    /**
      * Helper object used to dispatch messages to message listeners.
      */
     protected final CellMessageDispatcher _messageDispatcher =
@@ -243,17 +227,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
         _definedSetup = getDefinedSetup(arguments);
     }
 
-    @Override
-    public void cleanUp()
-    {
-        super.cleanUp();
-
-        if (_timeoutTask != null) {
-            _timeoutTask.cancel();
-        }
-    }
-
-
     /**
      * Performs cell initialisation and starts cell message delivery.
      *
@@ -325,37 +298,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
     {
         executeDefinedSetup();
         init();
-        startTimeoutTask();
-    }
-
-
-    /**
-     * Start the timeout task.
-     *
-     * Cells relies on periodic calls to updateWaitQueue to implement
-     * message timeouts. This method starts a task which calls
-     * updateWaitQueue every 30 seconds.
-     */
-    protected void startTimeoutTask()
-    {
-        if (_timeoutTask != null) {
-            throw new IllegalStateException("Timeout task is already running");
-        }
-
-        final CDC cdc = new CDC();
-        _timeoutTask = new TimerTask() {
-                @Override
-                public void run()
-                {
-                    try (CDC ignored = cdc.restore()) {
-                        getNucleus().executeMaintenanceTasks();
-                    } catch (Throwable e) {
-                        Thread t = Thread.currentThread();
-                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                    }
-                }
-            };
-        _timer.schedule(_timeoutTask, 30000, 30000);
     }
 
     /**

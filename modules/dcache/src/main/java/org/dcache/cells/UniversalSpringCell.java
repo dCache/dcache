@@ -230,11 +230,6 @@ public class UniversalSpringCell
          */
         init();
 
-        /* The timeout task is essential to handle cell message
-         * timeouts.
-         */
-        startTimeoutTask();
-
         /* The setup may be provided as static configuration in the
          * domain context, as a setup file on disk or through a setup
          * controller cell.

@@ -159,7 +159,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       useInterpreter( true ) ;
 
-      new MessageTimeoutThread();
       new MessageProcessThread();
 
       _nucleus.export() ;
@@ -170,29 +169,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    abstract protected
            List<String> getPoolListResilient ()
            throws Exception;
-
-   // Helper thread to expire timeouts in message queue
-   // Required for SpreadAndWait( nucleus, timeout ) to operate
-
-   private class MessageTimeoutThread implements Runnable {
-     private String _threadName = "DCacheCoreController-MessageTimeout";
-       public MessageTimeoutThread(){
-           _nucleus.newThread( this , _threadName ).start() ;
-       }
-       @Override
-       public void run() {
-           while (true){
-               _nucleus.executeMaintenanceTasks();
-               try {
-                   Thread.currentThread().sleep( _TO_MessageQueueUpdate );
-               } catch (InterruptedException e){
-                   _log.info( _threadName + " thread interrupted" ) ;
-                   break ;
-               }
-           }
-           _log.info( _threadName + " thread finished" ) ;
-       }
-   }
 
    // Thread to re-queue messages queue
 

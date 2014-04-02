@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -30,10 +32,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.util.Pinboard;
@@ -75,6 +77,19 @@ public class CellNucleus implements ThreadFactory
 
     private volatile ExecutorService _messageExecutor;
     private final AtomicInteger _eventQueueSize = new AtomicInteger();
+
+    /**
+     * Timer for periodic low-priority maintenance tasks. Shared among
+     * all cell instances. Since a Timer is single-threaded,
+     * it is important that the timer is not used for long-running or
+     * blocking tasks, nor for time critical tasks.
+     */
+    private static final Timer _timer = new Timer("Cell maintenance task timer", true);
+
+    /**
+     * Task for calling the Cell nucleus message timeout mechanism.
+     */
+    private TimerTask _timeoutTask;
 
     private boolean _isPrivateMessageExecutor = true;
 
@@ -163,7 +178,36 @@ public class CellNucleus implements ThreadFactory
         //
         __cellGlue.addCell(_cellName, this);
 
+        startTimeoutTask();
+
         LOGGER.info("Created {}", name);
+    }
+
+    /**
+     * Start the timeout task.
+     *
+     * Cells rely on periodic calls to executeMaintenanceTasks to implement
+     * message timeouts. This method starts a task which calls
+     * executeMaintenanceTasks every 20 seconds.
+     */
+    private void startTimeoutTask()
+    {
+        if (_timeoutTask != null) {
+            throw new IllegalStateException("Timeout task is already running");
+        }
+        _timeoutTask = new TimerTask() {
+            @Override
+            public void run()
+            {
+                try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                    executeMaintenanceTasks();
+                } catch (Throwable e) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                }
+            }
+        };
+        _timer.schedule(_timeoutTask, 20000, 20000);
     }
 
     /**
@@ -390,7 +434,9 @@ public class CellNucleus implements ThreadFactory
                         }
                     }, sameThreadExecutor(), timeout);
         try {
-            return future.get();
+            return future.get(timeout, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            return null;
         } catch (ExecutionException e) {
             Throwables.propagateIfInstanceOf(e.getCause(), NoRouteToCellException.class);
             Throwables.propagateIfInstanceOf(e.getCause(), SerializationException.class);
@@ -405,7 +451,7 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    public int executeMaintenanceTasks()
+    private int executeMaintenanceTasks()
     {
         Collection<CellLock> expired = new ArrayList<>();
         long now = System.currentTimeMillis();
@@ -825,6 +871,11 @@ public class CellNucleus implements ThreadFactory
             } catch (InterruptedException e) {
                 LOGGER.warn("Interrupted while waiting for threads");
             }
+
+            if (_timeoutTask != null) {
+                _timeoutTask.cancel();
+            }
+
             __cellGlue.destroy(CellNucleus.this);
             _state = DEAD;
         }

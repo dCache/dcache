@@ -203,9 +203,6 @@ public class HsmFlushControlManager  extends CellAdapter {
                    next_timerEvent = now + _timerInterval ;
                 }
              }
-
-             _nucleus.executeMaintenanceTasks() ;
-
           }
           _log.info( "QueueWatch stopped" ) ;
        }
