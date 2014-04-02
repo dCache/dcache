@@ -1,12 +1,9 @@
 #!/bin/sh
 
-BINDIR=$1
-BUILDDIR=$2
-DISTDIR=$3
-VERSION=$4
-NAME=$5
-
-cd ${BINDIR}
+BUILDDIR=$1
+DISTDIR=$2
+VERSION=$3
+NAME=$4
 
 echo 'i pkginfo' > prototype
 find . | grep -v '^./prototype$' | grep -v '^./pkginfo$' | pkgproto \
