@@ -519,7 +519,7 @@ public abstract class TransferManager extends AbstractCell
         if (!newTransfer()) {
             throw new CacheException(TransferManagerMessage.TOO_MANY_TRANSFERS, "too many transfers!");
         }
-        new TransferManagerHandler(this, message, envelope.getSourcePath(), executor).handle();
+        new TransferManagerHandler(this, message, envelope.getSourcePath().revert(), executor).handle();
         return message;
     }
 

@@ -58,7 +58,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             LoggerFactory.getLogger(TransferManagerHandler.class);
     private final TransferManager manager;
     private TransferManagerMessage transferRequest;
-    private CellPath sourcePath;
+    private CellPath requestor;
     private String pnfsPath;
     private transient String parentDir;
     boolean store;
@@ -106,7 +106,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public TransferManagerHandler(TransferManager tManager,
                                   TransferManagerMessage message,
-                                  CellPath sourcePath,
+                                  CellPath requestor,
                                   Executor executor)
     {
         this.executor = executor;
@@ -129,7 +129,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         info.setSubject(subject);
         info.setPath(pnfsPath);
         info.setTimeQueued(-System.currentTimeMillis());
-        this.sourcePath = sourcePath;
+        this.requestor = requestor;
         try {
             info.setClient(new URI(transferRequest.getRemoteURL()).getHost());
         } catch (Exception e) {
@@ -518,7 +518,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         manager.finishTransfer();
         try {
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode, errorObject);
-            manager.sendMessage(new CellMessage(sourcePath, errorReply));
+            manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (Exception e) {
             log.error(e.toString());
             //can not do much more here!!!
@@ -569,7 +569,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         manager.finishTransfer();
         try {
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode, errorObject);
-            manager.sendMessage(new CellMessage(sourcePath, errorReply));
+            manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (Exception e) {
             log.error(e.toString());
             //can not do much more here!!!
@@ -607,7 +607,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         }
         try {
             TransferCompleteMessage errorReply = new TransferCompleteMessage(transferRequest);
-            manager.sendMessage(new CellMessage(sourcePath, errorReply));
+            manager.sendMessage(new CellMessage(requestor, errorReply));
         } catch (Exception e) {
             log.error(e.toString());
             //can not do much more here!!!
