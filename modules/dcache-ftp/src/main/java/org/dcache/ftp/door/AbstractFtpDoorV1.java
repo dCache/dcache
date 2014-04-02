@@ -1482,6 +1482,13 @@ public abstract class AbstractFtpDoorV1
         }
 
         closePassiveModeServerSocket();
+
+        if (ACCESS_LOGGER.isInfoEnabled()) {
+            NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
+            log.add("host.remote", _remoteAddress);
+            log.add("session", CDC.getSession());
+            log.toLogger(ACCESS_LOGGER);
+        }
     }
 
     protected void println(String str)
