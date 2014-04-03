@@ -656,36 +656,6 @@ public class UniversalSpringCell
         return o;
     }
 
-    private CharSequence valueToString(Object value)
-    {
-        if (value == null) {
-            return "";
-        } else if (value.getClass().isArray()) {
-            Class<?> componentType = value.getClass().getComponentType();
-            if (componentType == Boolean.TYPE) {
-                return Arrays.toString((boolean[]) value);
-            } else if (componentType == Byte.TYPE) {
-                return Arrays.toString((byte[]) value);
-            } else if (componentType == Character.TYPE) {
-                return Arrays.toString((char[]) value);
-            } else if (componentType == Double.TYPE) {
-                return Arrays.toString((double[]) value);
-            } else if (componentType == Float.TYPE) {
-                return Arrays.toString((float[]) value);
-            } else if (componentType == Integer.TYPE) {
-                return Arrays.toString((int[]) value);
-            } else if (componentType == Long.TYPE) {
-                return Arrays.toString((long[]) value);
-            } else if (componentType == Short.TYPE) {
-                return Arrays.toString((short[]) value);
-            } else {
-                return Arrays.deepToString((Object[]) value);
-            }
-        } else {
-            return value.toString();
-        }
-    }
-
     @Command(name = "bean properties", hint = "show properties of a bean",
              description = "Shows the properties of a bean and their values. Each bean exposes " +
                      "some properties that can be read with this command.")
@@ -706,7 +676,7 @@ public class UniversalSpringCell
                         String property = p.getName();
                         if (bean.isReadableProperty(property)) {
                             Object value = bean.getPropertyValue(property);
-                            s.append(property).append('=').append(valueToString(value));
+                            s.append(property).append('=').append(org.dcache.commons.util.Strings.toString(value));
                             if (!bean.isWritableProperty(property)) {
                                 s.append(" [read-only]");
                             }
@@ -730,7 +700,7 @@ public class UniversalSpringCell
         public String call()
         {
             Object o = getBeanProperty(name);
-            return (o != null) ? String.valueOf(valueToString(o)) : ("No such property: " + name);
+            return (o != null) ? org.dcache.commons.util.Strings.toMultilineString(o) : ("No such property: " + name);
         }
     }
 

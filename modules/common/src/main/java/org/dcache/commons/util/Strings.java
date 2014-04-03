@@ -7,13 +7,14 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.Iterators.forArray;
-import static com.google.common.collect.Iterators.transform;
+import static com.google.common.collect.Iterables.transform;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -184,7 +185,7 @@ public final class Strings {
         StringBuilder sb = new StringBuilder();
         sb.append(m.getName());
         sb.append("(");
-        sb.append(Joiner.on(c).join(transform(forArray(m.getParameterTypes()), GET_SIMPLE_NAME)));
+        sb.append(Joiner.on(c).join(transform(asList(m.getParameterTypes()), GET_SIMPLE_NAME)));
         sb.append(')');
         return sb.toString();
     }
@@ -215,6 +216,86 @@ public final class Strings {
     {
         return s.equals(INFINITY) ? Long.MAX_VALUE : MILLISECONDS.convert(Long.parseLong(s), unit);
     }
+
+    /**
+     * Returns a string representation of the specified object or the empty string
+     * for a null argument. In contrast to Object#toString, this method recognizes
+     * array arguments and returns a suitable string form.
+     */
+    public static String toString(Object value)
+    {
+        if (value == null) {
+            return "";
+        } else if (value.getClass().isArray()) {
+            Class<?> componentType = value.getClass().getComponentType();
+            if (componentType == Boolean.TYPE) {
+                return Arrays.toString((boolean[]) value);
+            } else if (componentType == Byte.TYPE) {
+                return Arrays.toString((byte[]) value);
+            } else if (componentType == Character.TYPE) {
+                return Arrays.toString((char[]) value);
+            } else if (componentType == Double.TYPE) {
+                return Arrays.toString((double[]) value);
+            } else if (componentType == Float.TYPE) {
+                return Arrays.toString((float[]) value);
+            } else if (componentType == Integer.TYPE) {
+                return Arrays.toString((int[]) value);
+            } else if (componentType == Long.TYPE) {
+                return Arrays.toString((long[]) value);
+            } else if (componentType == Short.TYPE) {
+                return Arrays.toString((short[]) value);
+            } else {
+                return Arrays.deepToString((Object[]) value);
+            }
+        } else {
+            return value.toString();
+        }
+    }
+
+    /**
+     * Returns a string representation of the specified object or the empty string
+     * for a null argument. In contrast to Object#toString, this method recognizes
+     * array arguments and returns a suitable string form. In contrast to Strings#toString,
+     * the object arrays are split over multiple lines.
+     */
+    public static String toMultilineString(Object value)
+    {
+        if (value == null) {
+            return "";
+        } else if (value.getClass().isArray()) {
+            Class<?> componentType = value.getClass().getComponentType();
+            if (componentType == Boolean.TYPE) {
+                return Arrays.toString((boolean[]) value);
+            } else if (componentType == Byte.TYPE) {
+                return Arrays.toString((byte[]) value);
+            } else if (componentType == Character.TYPE) {
+                return Arrays.toString((char[]) value);
+            } else if (componentType == Double.TYPE) {
+                return Arrays.toString((double[]) value);
+            } else if (componentType == Float.TYPE) {
+                return Arrays.toString((float[]) value);
+            } else if (componentType == Integer.TYPE) {
+                return Arrays.toString((int[]) value);
+            } else if (componentType == Long.TYPE) {
+                return Arrays.toString((long[]) value);
+            } else if (componentType == Short.TYPE) {
+                return Arrays.toString((short[]) value);
+            } else {
+                return Joiner.on('\n').join(transform(asList((Object[]) value), TO_STRING));
+            }
+        } else {
+            return value.toString();
+        }
+    }
+
+    public static final Function<Object, Object> TO_STRING = new Function<Object, Object>()
+    {
+        @Override
+        public Object apply(Object input)
+        {
+            return Strings.toString(input);
+        }
+    };
 
     private static final Function<Class<?>, String> GET_SIMPLE_NAME = new Function<Class<?>, String>() {
         @Override
