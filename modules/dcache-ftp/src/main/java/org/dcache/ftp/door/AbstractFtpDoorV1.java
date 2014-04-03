@@ -2632,15 +2632,15 @@ public abstract class AbstractFtpDoorV1
     {
         checkLoggedIn();
 
-        String[] st = arg.split("\\s+");
-        if (st.length != 4) {
+        List<String> st = Splitter.on(' ').limit(4).splitToList(arg);
+        if (st.size() != 4) {
             reply("500 Unsupported CKSM command operands");
             return;
         }
-        String algo = st[0];
-        String offset = st[1];
-        String length = st[2];
-        String path = st[3];
+        String algo = st.get(0);
+        String offset = st.get(1);
+        String length = st.get(2);
+        String path = st.get(3);
 
         long offsetL;
         long lengthL;
