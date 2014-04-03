@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package org.dcache.ftp.door;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -2621,6 +2622,12 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             doChmod(args[1], args[2]);
+        } else if (args[0].equalsIgnoreCase("CLIENTINFO")) {
+            if (args.length < 2) {
+                reply("500 command must be in the form 'SITE CLIENTINFO <info>'");
+                return;
+            }
+            doClientinfo(arg.substring(11));
         } else {
             reply("500 Unknown SITE command");
         }
@@ -2761,6 +2768,35 @@ public abstract class AbstractFtpDoorV1
         } catch (CacheException ce) {
             reply("550 Permission denied, reason: " + ce);
         }
+    }
+
+
+    public void doClientinfo(String description)
+    {
+        LOGGER.debug("client-info: {}", description);
+        Map<String,String> items = Splitter.on(';').omitEmptyStrings().
+                withKeyValueSeparator(Splitter.on('=').trimResults(CharMatcher.is('\"'))).
+                split(description);
+        String appname = items.get("appname");
+        if (appname != null && appname.equals("globusonline-fxp")) {
+            /* GlobusOnline transfer client expects an upload to have a
+             * MD5 checksum available, without explicitly saying this, see:
+             *
+             *     https://support.globus.org/entries/23563241
+             *
+             * As a work-around, we do the equivalent to the 'OPTS CKSM MD5'
+             * command.  Note that this requires on-transfer=yes on the
+             * target pool as on-write will ignore this setting.
+             */
+            try {
+                _optCheckSumFactory =
+                        ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e.getMessage(), e);
+            }
+        }
+
+        reply("250 OK");
     }
 
     @Help("SBUF <SP> <size> - Set buffer size.")
