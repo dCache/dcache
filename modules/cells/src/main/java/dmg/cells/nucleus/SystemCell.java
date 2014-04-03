@@ -64,6 +64,7 @@ public class      SystemCell
        _cellShell.addCommandListener(this);
        _cellShell.addCommandListener(new LogbackShell());
        _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
+       _cellShell.addCommandListener(_cellShell.new HelpCommands());
        useInterpreter( false ) ;
 
        _runtime.addShutdownHook( new TheKiller() ) ;
