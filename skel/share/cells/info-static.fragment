@@ -5,30 +5,6 @@
 #  the lifetime of the domain.
 
 
-#
-#  The following looks for the file /etc/emi-version.  If this file is present
-#  then its contents is included in 'info.static'
-#
-onerror continue
-test -f /etc/emi-version
-set env have_emi_version ${rc}
-onerror shutdown
-
-define env defn_emi_version.exe enddefine
-load context emi-version /etc/emi-version
-set env emi-declaration "S,environment.distribution.emi-version,${emi-version}"
-unset context emi-version
-enddefine
-
-define env defn_no_emi_version.exe enddefine
-set env emi-declaration ""
-enddefine
-
-exec env defn_emi_version.exe -ifok=have_emi_version
-exec env defn_no_emi_version.exe -ifnotok=have_emi_version
-
-
-
 #  The 'info.static' context declares static information for the info service
 #  for this domain.  Each line is either a declaration or an empty line.
 #
@@ -54,6 +30,5 @@ exec env defn_no_emi_version.exe -ifnotok=have_emi_version
 #  domains.<domain-name>.static and PATH
 #
 define context info.static enddefine
-${emi-declaration}
 enddefine
 
