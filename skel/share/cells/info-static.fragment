@@ -30,5 +30,25 @@
 #  domains.<domain-name>.static and PATH
 #
 define context info.static enddefine
+S,user.name,${user.name}
+S,user.language,${user.language}
+S,user.timezone,${user.timezone}
+S,user.country,${user.country}
+
+S,os.version,${os.version}
+S,os.name,${os.name}
+S,os.arch,${os.arch}
+
+S,java.version,${java.version}
+S,java.vendor,${java.vendor}
+S,java.class-version,${java.class.version}
+S,java.runtime-version,${java.runtime.version}
+S,java.specification-version,${java.specification.version}
+
+S,java.vm.version,${java.vm.version}
+S,java.vm.vendor,${java.vm.vendor}
+S,java.vm.name,${java.vm.name}
+S,java.vm.specification-version,${java.vm.specification.version}
+S,java.vm.info,${java.vm.info}
 enddefine
 
