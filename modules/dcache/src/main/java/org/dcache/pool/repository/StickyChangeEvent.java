@@ -8,9 +8,9 @@ public class StickyChangeEvent extends EntryChangeEvent
 {
     private final StickyRecord _sticky;
 
-    public StickyChangeEvent(CacheEntry entry, StickyRecord sticky)
+    public StickyChangeEvent(CacheEntry oldEntry, CacheEntry newEntry, StickyRecord sticky)
     {
-        super(entry);
+        super(oldEntry, newEntry);
         _sticky = sticky;
     }
 

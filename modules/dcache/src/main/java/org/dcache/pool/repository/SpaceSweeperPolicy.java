@@ -10,7 +10,7 @@ public interface SpaceSweeperPolicy
      * Returns true if this file is removable, that is, garbage
      * collected by the sweeper.
      */
-    boolean isRemovable(MetaDataRecord entry);
+    boolean isRemovable(CacheEntry entry);
 
     /**
      * Returns the last access time of the least recently used

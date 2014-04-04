@@ -10,7 +10,6 @@ import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -48,7 +47,7 @@ public class NoCachedFilesSpaceSweeper
      * circumstances implies that it is ready and not precious).
      */
     @Override
-    public boolean isRemovable(MetaDataRecord entry)
+    public boolean isRemovable(CacheEntry entry)
     {
         return false;
     }
@@ -65,7 +64,7 @@ public class NoCachedFilesSpaceSweeper
         try {
             if (event.getNewState() == EntryState.CACHED) {
                 PnfsId id = event.getPnfsId();
-                CacheEntry entry = event.getEntry();
+                CacheEntry entry = event.getNewEntry();
                 if (!entry.isSticky()) {
                     _repository.setState(id, EntryState.REMOVED);
                     _log.debug(entry.getPnfsId() + " : removed.");

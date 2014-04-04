@@ -8,21 +8,28 @@ import diskCacheV111.util.PnfsId;
  */
 public class EntryChangeEvent
 {
-    protected CacheEntry _entry;
+    protected final CacheEntry oldEntry;
+    protected final CacheEntry newEntry;
 
-    public EntryChangeEvent(CacheEntry entry)
+    public EntryChangeEvent(CacheEntry oldEntry, CacheEntry newEntry)
     {
-        _entry = entry;
+        this.oldEntry = oldEntry;
+        this.newEntry = newEntry;
     }
 
     public PnfsId getPnfsId()
     {
-        return _entry.getPnfsId();
+        return newEntry.getPnfsId();
     }
 
-    public CacheEntry getEntry()
+    public CacheEntry getOldEntry()
     {
-        return _entry;
+        return oldEntry;
+    }
+
+    public CacheEntry getNewEntry()
+    {
+        return newEntry;
     }
 
     public String toString()

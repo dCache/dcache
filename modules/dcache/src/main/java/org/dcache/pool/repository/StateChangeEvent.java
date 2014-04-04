@@ -9,9 +9,9 @@ public class StateChangeEvent extends EntryChangeEvent
     private final EntryState _oldState;
     private final EntryState _newState;
 
-    public StateChangeEvent(CacheEntry entry, EntryState oldState, EntryState newState)
+    public StateChangeEvent(CacheEntry oldEntry, CacheEntry newEntry, EntryState oldState, EntryState newState)
     {
-        super(entry);
+        super(oldEntry, newEntry);
         _oldState = oldState;
         _newState = newState;
     }

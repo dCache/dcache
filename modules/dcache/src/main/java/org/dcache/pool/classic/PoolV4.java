@@ -598,7 +598,7 @@ public class PoolV4
         {
             if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
                 try {
-                    CacheEntry entry = event.getEntry();
+                    CacheEntry entry = event.getNewEntry();
                     RemoveFileInfoMessage msg =
                         new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
                     msg.setFileSize(entry.getReplicaSize());

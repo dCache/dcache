@@ -27,7 +27,6 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.SpaceSweeperPolicy;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -73,17 +72,7 @@ public class SpaceSweeper2
      * circumstances implies that it is ready and not precious).
      */
     @Override
-    public boolean isRemovable(MetaDataRecord entry)
-    {
-        return entry.getState() == EntryState.CACHED && !entry.isSticky();
-    }
-
-    /**
-     * Returns true if this file is removable. This is the case if the
-     * file is not sticky and is cached (which under normal
-     * circumstances implies that it is ready and not precious).
-     */
-    private boolean isRemovable(CacheEntry entry)
+    public boolean isRemovable(CacheEntry entry)
     {
         return entry.getState() == EntryState.CACHED && !entry.isSticky();
     }
@@ -160,7 +149,7 @@ public class SpaceSweeper2
     @Override
     public void stateChanged(StateChangeEvent event)
     {
-        CacheEntry entry = event.getEntry();
+        CacheEntry entry = event.getNewEntry();
         switch (event.getNewState()) {
         case REMOVED:
         case DESTROYED:
@@ -180,7 +169,7 @@ public class SpaceSweeper2
     @Override
     public void stickyChanged(StickyChangeEvent event)
     {
-        CacheEntry entry = event.getEntry();
+        CacheEntry entry = event.getNewEntry();
         if (isRemovable(entry)) {
             add(entry);
         } else {
@@ -191,7 +180,7 @@ public class SpaceSweeper2
     @Override
     public void accessTimeChanged(EntryChangeEvent event)
     {
-        CacheEntry entry = event.getEntry();
+        CacheEntry entry = event.getNewEntry();
         if (remove(entry)) {
             add(entry);
         }

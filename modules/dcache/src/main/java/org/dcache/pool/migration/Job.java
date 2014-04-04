@@ -28,10 +28,12 @@ import dmg.cells.nucleus.DelayedReply;
 
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.expression.Expression;
@@ -547,7 +549,10 @@ public class Job
         if (event.getNewState() == EntryState.REMOVED) {
             remove(pnfsId);
         } else {
-            CacheEntry entry = event.getEntry();
+            // We don't call entryChanged because during repository
+            // initialization stateChanged is called and we want to
+            // add the file to the job even if the state didn't change.
+            CacheEntry entry = event.getNewEntry();
             if (!accept(entry)) {
                 synchronized (this) {
                     if (!_running.containsKey(pnfsId)) {
@@ -557,6 +562,33 @@ public class Job
             } else if (_definition.isPermanent) {
                 add(entry);
             }
+        }
+    }
+
+    @Override
+    public void accessTimeChanged(EntryChangeEvent event)
+    {
+        entryChanged(event);
+    }
+
+    @Override
+    public void stickyChanged(StickyChangeEvent event)
+    {
+        entryChanged(event);
+    }
+
+    private void entryChanged(EntryChangeEvent event)
+    {
+        PnfsId pnfsId = event.getPnfsId();
+        CacheEntry entry = event.getNewEntry();
+        if (!accept(entry)) {
+            synchronized (this) {
+                if (!_running.containsKey(pnfsId)) {
+                    remove(pnfsId);
+                }
+            }
+        } else if (_definition.isPermanent && !accept(event.getOldEntry())) {
+            add(entry);
         }
     }
 
