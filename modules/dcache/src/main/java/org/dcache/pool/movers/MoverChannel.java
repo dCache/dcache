@@ -80,9 +80,9 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
 
     /**
      * The number of bytes reserved in the space allocator. Only
-     * accessed while the monitor lock is held.
+     * updated while the monitor lock is held.
      */
-    private long _reserved;
+    private volatile long _reserved;
 
     public MoverChannel(Mover<T> mover, RepositoryChannel channel)
     {
@@ -162,7 +162,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
     }
 
     @Override
-    public synchronized int read(ByteBuffer buffer, long position) throws IOException {
+    public int read(ByteBuffer buffer, long position) throws IOException {
         try {
             int bytes = _channel.read(buffer, position);
             _bytesTransferred.getAndAdd(bytes);
@@ -301,7 +301,7 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         return _lastTransferred.get();
     }
 
-    public synchronized long getAllocated() {
+    public long getAllocated() {
         return _reserved;
     }
 
