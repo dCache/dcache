@@ -69,6 +69,8 @@ COPYRIGHT STATUS:
 package diskCacheV111.doors;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ranges;
 
 import javax.security.auth.Subject;
@@ -92,12 +94,14 @@ import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -2235,7 +2239,7 @@ public abstract class AbstractFtpDoorV1
     {
         checkLoggedIn();
 
-        List<String> st = Splitter.on(' ').limit(4).splitToList(arg);
+        List<String> st = Lists.newArrayList(Splitter.on(' ').limit(4).split(arg));
         if (st.size() != 4) {
             reply("500 Unsupported CKSM command operands");
             return;
