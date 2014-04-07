@@ -124,6 +124,11 @@ public class XrootdPoolNettyServer
         public ChannelPipeline getPipeline() throws Exception {
             ChannelPipeline pipeline = pipeline();
 
+            /* The disk executor is an OrderedMemoryAwareThreadPoolExecutor.  It only
+             * knows how to estimate the size of ChannelBuffer, so we cannot place
+             * decoded messages on the queue.
+             */
+            pipeline.addLast("executor", new ExecutionHandler(getDiskExecutor()));
             pipeline.addLast("encoder", new XrootdEncoder());
             pipeline.addLast("decoder", new XrootdDecoder());
             if (_logger.isDebugEnabled()) {
@@ -132,7 +137,6 @@ public class XrootdPoolNettyServer
             }
             pipeline.addLast("handshake",
                              new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
-            pipeline.addLast("executor", new ExecutionHandler(getDiskExecutor()));
             for (ChannelHandlerFactory plugin: _plugins) {
                 pipeline.addLast("plugin:" + plugin.getName(),
                         plugin.createHandler());
