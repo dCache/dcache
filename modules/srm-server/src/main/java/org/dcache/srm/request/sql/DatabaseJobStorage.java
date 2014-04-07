@@ -530,7 +530,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                     TRANSITIONTIME);
             jh.setSaved();
             l.add(jh);
-            logger.debug("found JobHistory: {}", jh.toString());
+            logger.debug("found JobHistory: {}", jh);
 
         } while (set.next());
         statement.close();
@@ -603,8 +603,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             public J mapRow(ResultSet rs, int rowNum) throws SQLException
             {
                 J job = getJob(rs.getStatement().getConnection(), rs);
-                logger.debug("==========> deserialization from database of job id {}", job.getId());
-                logger.debug("==========> jobs submitter id is {}", job.getSubmitterId());
+                logger.debug("==========> deserialized job with id {}", job.getId());
                 return job;
             }
         }));
