@@ -272,7 +272,7 @@ public class BillingParserBuilder
         if (pos < format.length()) {
             regex.append(Pattern.quote(format.substring(pos)));
         }
-        return Pattern.compile(regex.toString());
+        return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE);
     }
 
     /**
