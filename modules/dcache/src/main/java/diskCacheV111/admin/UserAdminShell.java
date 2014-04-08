@@ -1,5 +1,7 @@
 package diskCacheV111.admin ;
 
+import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import jline.Completor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -53,7 +56,6 @@ import dmg.util.CommandInterpreter;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-import dmg.util.RequestTimeOutException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -503,10 +505,9 @@ public class UserAdminShell
 
     public static final String hh_repinfoof = "<pnfsId> | <globalPath>";
 
-    public String ac_repinfoof_$_1(Args args) throws CacheException,
-                                                     SerializationException, NoRouteToCellException,
-            InterruptedException, RequestTimeOutException {
-
+    public String ac_repinfoof_$_1(Args args)
+            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException
+    {
         StringBuilder sb = new StringBuilder();
         String fileIdentifier = args.argv(0);
 
@@ -528,10 +529,8 @@ public class UserAdminShell
     }
 
     private FileAttributes getFileLocations(String fileIdentifier)
-            throws CacheException,
-                   SerializationException, NoRouteToCellException,
-            InterruptedException, RequestTimeOutException {
-
+            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException
+    {
         Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);
         PnfsGetFileAttributes msg;
 
@@ -579,7 +578,7 @@ public class UserAdminShell
                StringBuffer sb )
             throws Exception {
 
-       if( ( target == null ) || ( target.equals("") ) ) {
+       if (Strings.isNullOrEmpty(target)) {
            target = "*";
        }
 
@@ -1374,27 +1373,25 @@ public class UserAdminShell
 
     }
     private Object sendObject(String cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, RequestTimeOutException
+            throws NoRouteToCellException, InterruptedException, CacheException, CommandException
     {
         return sendObject(new CellPath(cellPath), object);
     }
 
     private Object sendObject(CellPath cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, RequestTimeOutException
-   {
+            throws NoRouteToCellException, InterruptedException, CacheException, CommandException
+    {
        try {
-           Object obj = _cellStub.sendAndWait(cellPath, object, Object.class);
-           if (obj instanceof Throwable && _fullException) {
-               return getStackTrace((Throwable) obj);
-           }
-           return obj;
-       } catch (TimeoutCacheException e) {
-           throw new RequestTimeOutException(_timeout, cellPath);
-       } catch (CacheException e) {
+           return _cellStub.send(cellPath, object, Object.class).get();
+       } catch (ExecutionException e) {
+           Throwable cause = e.getCause();
            if (_fullException) {
-               return getStackTrace(e);
+               return getStackTrace(cause);
            }
-           return e;
+           Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
+           Throwables.propagateIfInstanceOf(cause, CacheException.class);
+           Throwables.propagateIfInstanceOf(cause, CommandException.class);
+           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.getMessage(), cause);
        }
     }
 

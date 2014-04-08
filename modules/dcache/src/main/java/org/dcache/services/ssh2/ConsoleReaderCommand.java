@@ -186,8 +186,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 }
                 result = _userAdminShell.executeCommand(str);
             } catch (CommandSyntaxException e) {
-                result = e.getMessage()
-                + " Please enter \'help\' to see all commands that can be used.";
+                result = e;
             } catch (IllegalArgumentException e) {
                 result = e.getMessage()
                 + " (Please check the spelling of your command or your config file(s)!)";
