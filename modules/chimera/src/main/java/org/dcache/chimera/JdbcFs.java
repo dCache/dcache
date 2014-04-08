@@ -290,6 +290,12 @@ public class JdbcFs implements FileSystemProvider {
             } catch (SQLException e1) {
                 _log.error("create hlink rollback ", e);
             }
+
+            String sqlState = e.getSQLState();
+            if(_sqlDriver.isDuplicatedKeyError(sqlState)) {
+                throw new FileExistsChimeraFsException();
+            }
+            throw new IOHimeraFsException(e.getMessage());
         } finally {
             tryToClose(dbConnection);
         }

@@ -59,6 +59,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
                 _rootInode.stat().getNlink(), stat.getNlink() + 1);
         assertTrue("mkdir have to update parent's mtime", _rootInode.stat().getMTime() > stat.getMTime());
         assertEquals("new dir should have link count equal to two", newDir.stat().getNlink(), 2);
+        assertTrue("change count is not updated", stat.getGeneration() != _rootInode.stat().getGeneration());
     }
 
     @Test
@@ -93,6 +94,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
                 base.stat().getNlink(), stat.getNlink() + 1);
         assertTrue("file creation has to update parent's mtime", base.stat().getMTime() > stat.getMTime());
         assertEquals("new file should have link count equal to one", newFile.stat().getNlink(), 1);
+        assertTrue("change count is not updated", stat.getGeneration() != base.stat().getGeneration());
     }
 
     @Test
@@ -770,30 +772,36 @@ public class BasicTest extends ChimeraTestCaseHelper {
     public void testUpdateCtimeOnSetGroup() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         long oldCtime = dirInode.stat().getCTime();
+        long oldChage = dirInode.stat().getGeneration();
 
         TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setGID(3750);
         assertTrue("The ctime is not updated", dirInode.stat().getCTime() > oldCtime);
+        assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
     }
 
     @Test
     public void testUpdateCtimeOnSetMode() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         long oldCtime = dirInode.stat().getCTime();
+        long oldChage = dirInode.stat().getGeneration();
 
         TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setMode(0700);
         assertTrue("The ctime is not updated", dirInode.stat().getCTime() > oldCtime);
+        assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
     }
 
     @Test
     public void testUpdateMtimeOnSetSize() throws Exception {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         long oldMtime = dirInode.stat().getMTime();
+        long oldChage = dirInode.stat().getGeneration();
 
         TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setSize(17);
         assertTrue("The mtime is not updated", dirInode.stat().getMTime() > oldMtime);
+        assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
     }
 
     @Test
