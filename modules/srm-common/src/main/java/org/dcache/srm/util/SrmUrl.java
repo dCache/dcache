@@ -7,10 +7,16 @@ package org.dcache.srm.util;
 import org.globus.util.GlobusURL;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 
-public class SrmUrl  extends GlobusURL {
+public class SrmUrl extends GlobusURL {
 
         private int defaultPort=8443;
+
+        public SrmUrl(URI location) throws MalformedURLException {
+            super(location.toString());
+        }
+
         public SrmUrl(String url)
                 throws MalformedURLException {
                 super(url);
@@ -52,5 +58,9 @@ public class SrmUrl  extends GlobusURL {
                         return defaultPort;
                 }
                 return p;
+        }
+
+        public URI getURI() {
+            return URI.create(getURL());
         }
 }

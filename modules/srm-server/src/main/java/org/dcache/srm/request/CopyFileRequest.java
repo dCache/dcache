@@ -112,19 +112,20 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-public final class CopyFileRequest extends FileRequest<CopyRequest> {
+public final class CopyFileRequest extends FileRequest<CopyRequest>
+{
+    private static final Logger LOG = LoggerFactory.getLogger(CopyFileRequest.class);
 
-    private static final Logger logger =
-            LoggerFactory.getLogger(CopyFileRequest.class);
-    private static final String SFN_STRING="?SFN=";
-    private final URI from_surl;
-    private final URI to_surl;
-    private URI from_turl;
-    private URI to_turl;
-    private String local_from_path;
-    private String local_to_path;
+    private static long lastTime;
+
+    private final URI sourceSurl;
+    private final URI destinationSurl;
+    private URI sourceTurl;
+    private URI destinationTurl;
+    private String localSourcePath;
+    private String localDestinationPath;
     private long size;
-    private String toFileId;
+    private String destinationFileId;
     private String remoteRequestId;
     private String remoteFileId;
     private String transferId;
@@ -134,29 +135,26 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     private final String spaceReservationId;
 
     public CopyFileRequest(long requestId,
-                           Long  requestCredentalId,
-                           URI from_surl,
-                           URI to_surl,
+                           Long requestCredentalId,
+                           URI sourceSurl,
+                           URI destinationSurl,
                            String spaceToken,
                            long lifetime,
-                           int max_number_of_retries) {
-        super(requestId,
-              requestCredentalId,
-              lifetime, max_number_of_retries);
-        logger.debug("CopyFileRequest");
-        this.from_surl = from_surl;
-        this.to_surl = to_surl;
+                           int maxNumberOfRetries)
+    {
+        super(requestId, requestCredentalId, lifetime, maxNumberOfRetries);
+        LOG.debug("CopyFileRequest");
+        this.sourceSurl = sourceSurl;
+        this.destinationSurl = destinationSurl;
         this.spaceReservationId = spaceToken;
-        logger.debug("constructor from_url=" +from_surl+" to_url="+to_surl);
+        LOG.debug("constructor from={} to={}", sourceSurl, destinationSurl);
     }
 
     /**
      * restore constructore, used for restoring the existing
      * file request from the database
      */
-
-    public CopyFileRequest(
-            long id,
+    public CopyFileRequest(long id,
             Long nextJobId,
             JobStorage<CopyFileRequest> jobStorage,
             long creationTime,
@@ -172,169 +170,126 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
             long requestId,
             Long requestCredentalId,
             String statusCodeString,
-            String FROMURL,
-            String TOURL,
-            String FROMTURL,
-            String TOTURL,
-            String FROMLOCALPATH,
-            String TOLOCALPATH,
+            String sourceSurl,
+            String destinationSurl,
+            String sourceTurl,
+            String destinationTurl,
+            String localSourcePath,
+            String localDestinationPath,
             long size,
             String fromFileId,
             String toFileId,
-            String REMOTEREQUESTID,
-            String REMOTEFILEID,
+            String remoteRequestId,
+            String remoteFileId,
             String spaceReservationId,
-            String transferId
-    ) {
-        super(id,
-              nextJobId,
-              creationTime,
-              lifetime,
-              stateId,
-              errorMessage,
-              scheduelerId,
-              schedulerTimeStamp,
-              numberOfRetries,
-              maxNumberOfRetries,
-              lastStateTransitionTime,
-              jobHistoryArray,
-              requestId,
-              requestCredentalId,
-              statusCodeString);
-        this.from_surl = URI.create(FROMURL);
-        this.to_surl = URI.create(TOURL);
-        if(FROMTURL != null && !FROMTURL.equalsIgnoreCase("null")) {
-            this.from_turl = URI.create(FROMTURL);
+            String transferId)
+    {
+        super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
+              scheduelerId, schedulerTimeStamp, numberOfRetries,
+              maxNumberOfRetries, lastStateTransitionTime, jobHistoryArray,
+              requestId, requestCredentalId, statusCodeString);
+        this.sourceSurl = URI.create(sourceSurl);
+        this.destinationSurl = URI.create(destinationSurl);
+        if (sourceTurl != null && !sourceTurl.equalsIgnoreCase("null")) {
+            this.sourceTurl = URI.create(sourceTurl);
         }
-        if(TOTURL != null && !TOTURL.equalsIgnoreCase("null")) {
-            this.to_turl = URI.create(TOTURL);
+        if (destinationTurl != null && !destinationTurl.equalsIgnoreCase("null")) {
+            this.destinationTurl = URI.create(destinationTurl);
         }
-        this.local_from_path = FROMLOCALPATH;
-        this.local_to_path = TOLOCALPATH;
+        this.localSourcePath = localSourcePath;
+        this.localDestinationPath = localDestinationPath;
         this.size = size;
-        this.toFileId = toFileId;
-        if(REMOTEREQUESTID != null && (!REMOTEREQUESTID.equalsIgnoreCase("null"))) {
-            this.remoteRequestId = REMOTEREQUESTID;
+        this.destinationFileId = toFileId;
+        if (remoteRequestId != null && (!remoteRequestId.equalsIgnoreCase("null"))) {
+            this.remoteRequestId = remoteRequestId;
         }
-        if(REMOTEFILEID != null && (!REMOTEFILEID.equalsIgnoreCase("null"))) {
-            this.remoteFileId = REMOTEFILEID;
+        if (remoteFileId != null && (!remoteFileId.equalsIgnoreCase("null"))) {
+            this.remoteFileId = remoteFileId;
         }
         this.spaceReservationId = spaceReservationId;
         this.transferId = transferId;
     }
 
-    public void done() {
-        logger.debug("done()");
+    public void done()
+    {
+        LOG.debug("done");
     }
 
-    public void error() {
+    public void error()
+    {
         done();
     }
 
     @Override
-    public RequestFileStatus getRequestFileStatus() {
+    public RequestFileStatus getRequestFileStatus()
+    {
         RequestFileStatus rfs = new RequestFileStatus();
         rfs.fileId = (int) getId();
-        rfs.SURL = getFrom_surl().toString();
+        rfs.SURL = getSourceSurl().toString();
         rfs.size = 0;
-        rfs.TURL = getTo_surl().toString();
+        rfs.TURL = getDestinationSurl().toString();
         State state = getState();
-        if(state == State.DONE) {
+        if (state == State.DONE) {
             rfs.state = "Done";
-        }
-        else if(state == State.READY) {
+        } else if (state == State.READY) {
             rfs.state = "Ready";
-        }
-        else if(state == State.TRANSFERRING) {
+        } else if (state == State.TRANSFERRING) {
             rfs.state = "Running";
-        }
-        else if(state == State.FAILED
-                || state == State.CANCELED ) {
+        } else if (state == State.FAILED || state == State.CANCELED) {
             rfs.state = "Failed";
-        }
-        else {
+        } else {
             rfs.state = "Pending";
         }
         return rfs;
     }
 
-    public String getToURL() {
-        return getTo_surl().toString();
-    }
-
-    public String getFromURL() {
-        return getFrom_surl().toString();
-    }
-
-    public String getFromPath() {
-        String path = getFrom_surl().getPath();
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-            path=path.substring(indx+SFN_STRING.length());
-        }
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        logger.debug("getFromPath() returns "+path);
-        return path;
-    }
-
-    public String getToPath() {
-        String path = getTo_surl().getPath();
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-            path=path.substring(indx+SFN_STRING.length());
-        }
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        logger.debug("getToPath() returns "+path);
-        return path;
-    }
-
-    /** Getter for property from_turl.
-     * @return Value of property from_turl.
+    /**
+     * The source location if remote, null otherwise.
      */
-    public URI getFrom_turl() {
+    public URI getSourceTurl()
+    {
         rlock();
         try {
-            return from_turl;
+            return sourceTurl;
         } finally {
             runlock();
         }
     }
 
-    /** Setter for property from_turl.
-     * @param from_turl New value of property from_turl.
+    /**
+     * Set the source location; implies the source is remote.
      */
-    public void setFrom_turl(URI from_turl) {
+    public void setSourceTurl(URI location)
+    {
         wlock();
         try {
-            this.from_turl = from_turl;
+            this.sourceTurl = location;
         } finally {
             wunlock();
         }
     }
 
-    /** Getter for property to_turl.
-     * @return Value of property to_turl.
+    /**
+     * The destination location if remote, null otherwise.
      */
-    public URI getTo_turl() {
+    public URI getDestinationTurl()
+    {
         rlock();
         try {
-            return to_turl;
+            return destinationTurl;
         } finally {
             runlock();
         }
     }
 
-    /** Setter for property to_turl.
-     * @param to_turl New value of property to_turl.
+    /**
+     * Set the destination location; implies the source is remote.
      */
-    public void setTo_turl(URI to_turl) {
+    public void setDestinationTurl(URI location)
+    {
         wlock();
         try {
-            this.to_turl = to_turl;
+            this.destinationTurl = location;
         } finally {
             wunlock();
         }
@@ -343,7 +298,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     /** Getter for property size.
      * @return Value of property size.
      */
-    public long getSize() {
+    public long getSize()
+    {
         rlock();
         try {
             return size;
@@ -355,7 +311,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     /** Setter for property size.
      * @param size New value of property size.
      */
-    public void setSize(long size) {
+    public void setSize(long size)
+    {
         rlock();
         try {
             this.size = size;
@@ -363,8 +320,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
             runlock();
         }
     }
+
     @Override
-    public void toString(StringBuilder sb, boolean longformat) {
+    public void toString(StringBuilder sb, boolean longformat)
+    {
         sb.append(" CopyFileRequest ");
         sb.append(" id:").append(getId());
         sb.append(" priority:").append(getPriority());
@@ -375,11 +334,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
             sb.append("Unknown");
         }
         sb.append(" state:").append(getState());
-        if(longformat) {
-            sb.append(" fromSurl:").append(getFrom_surl());
-            sb.append(" fromTurl:").append(getFrom_turl()==null?"null":getFrom_turl());
-            sb.append(" toSurl:").append(getTo_surl());
-            sb.append(" toTurl:").append(getTo_turl()==null?"null":getTo_turl());
+        if (longformat) {
+            sb.append(" fromSurl:").append(getSourceSurl());
+            sb.append(" fromTurl:").append(getSourceTurl()==null?"null":getSourceTurl());
+            sb.append(" toSurl:").append(getDestinationSurl());
+            sb.append(" toTurl:").append(getDestinationTurl()==null?"null":getDestinationTurl());
             sb.append('\n').append("   status code:").append(getStatusCode());
             sb.append('\n').append("   error message:").append(getErrorMessage());
             sb.append('\n').append("   History of State Transitions: \n");
@@ -387,49 +346,53 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
         }
     }
 
-    /** Getter for property absolute_local_from_path.
-     * @return Value of property absolute_local_from_path.
+    /**
+     * The absolute path of the source if local, or null if remote.
      */
-    public String getLocal_from_path() {
+    public String getLocalSourcePath()
+    {
         rlock();
         try {
-            return local_from_path;
+            return localSourcePath;
         } finally {
             runlock();
         }
     }
 
-    /** Setter for property absolute_local_from_path.
-     * @param local_from_path New value of property absolute_local_from_path.
+    /**
+     * Set the absolute path of source; implies the source is local.
      */
-    public void setLocal_from_path(String local_from_path) {
+    public void setLocalSourcePath(String path)
+    {
         wlock();
         try {
-            this.local_from_path = local_from_path;
+            this.localSourcePath = path;
         } finally {
             wunlock();
         }
     }
 
-    /** Getter for property absolute_local_to_path.
-     * @return Value of property absolute_local_to_path.
+    /**
+     * The absolute path of the destination if local, or null.
      */
-    public String getLocal_to_path() {
+    public String getLocalDestinationPath()
+    {
         rlock();
         try {
-            return local_to_path;
+            return localDestinationPath;
         } finally {
             runlock();
         }
     }
 
-    /** Setter for property absolute_local_to_path.
-     * @param local_to_path New value of property absolute_local_to_path.
+    /**
+     * Set the absolute path of destination; implies the destination is local.
      */
-    public void setLocal_to_path( String local_to_path) {
+    public void setLocalDestinationPath(String path)
+    {
         wlock();
         try {
-            this.local_to_path = local_to_path;
+            this.localDestinationPath = path;
         } finally {
             wunlock();
         }
@@ -439,23 +402,25 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * @return Value of property toFileId.
      *
      */
-    public String getToFileId() {
+    public String getDestinationFileId()
+    {
         rlock();
         try {
-            return toFileId;
+            return destinationFileId;
         } finally {
             runlock();
         }
     }
 
     /** Setter for property toFileId.
-     * @param toFileId New value of property toFileId.
+     * @param id New value of property toFileId.
      *
      */
-    public void setToFileId(String toFileId) {
+    public void setDestinationFileId(String id)
+    {
         wlock();
         try {
-            this.toFileId = toFileId;
+            destinationFileId = id;
         } finally {
             wunlock();
         }
@@ -464,103 +429,96 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     private void runScriptCopy() throws SRMException, IOException,
             GSSException, DataAccessException
     {
-        URI from =getFrom_turl();
-        URI to = getTo_turl();
-        if(from == null && getLocal_from_path() != null ) {
-            if(to.getScheme().equalsIgnoreCase("gsiftp") ||
+        URI from = getSourceTurl();
+        URI to = getDestinationTurl();
+        if (from == null && getLocalSourcePath() != null) {
+            if (to.getScheme().equalsIgnoreCase("gsiftp") ||
                     to.getScheme().equalsIgnoreCase("http") ||
                     to.getScheme().equalsIgnoreCase("ftp") ||
                     to.getScheme().equalsIgnoreCase("dcap")) {
                 //need to add support for getting
-                from =
-                        getStorage().getGetTurl(getUser(),
-                                                getFrom_surl(),
-                                                new String[] {"gsiftp","http","ftp"},
-                                                null);
+                from = getStorage().getGetTurl(getUser(), getSourceSurl(),
+                        new String[] {"gsiftp","http","ftp"}, null);
             }
         }
         String fileId = null;
-        if(to == null && getLocal_to_path() != null) {
-            if(from.getScheme().equalsIgnoreCase("gsiftp") ||
+        if (to == null && getLocalDestinationPath() != null) {
+            if (from.getScheme().equalsIgnoreCase("gsiftp") ||
                     from.getScheme().equalsIgnoreCase("http") ||
                     from.getScheme().equalsIgnoreCase("ftp") ||
                     from.getScheme().equalsIgnoreCase("dcap")) {
-                fileId =
-                        getStorage()
-                                .prepareToPut(getUser(),
-                                              getTo_surl(),
+                fileId = getStorage().prepareToPut(getUser(),
+                                              getDestinationSurl(),
                                               null,
                                               Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
                                               Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
                                               getSpaceReservationId(),
                                               getContainerRequest().isOverwrite())
                                 .checkedGet();
-                to =
-                        getStorage().getPutTurl(getUser(),
-                                                fileId,
-                                                new String[] {"gsiftp","http","ftp"},
-                                                null);
+                to = getStorage().getPutTurl(getUser(), fileId,
+                        new String[] {"gsiftp","http","ftp"}, null);
             }
         }
-        if(from ==null || to == null) {
+        if (from == null || to == null) {
             String error = "could not resolve either source or destination"+
                     " from = "+from+" to = "+to;
-            logger.error(error);
+            LOG.error(error);
             throw new SRMException(error);
         }
-        logger.debug("calling scriptCopy({},{})", from, to);
+        LOG.debug("calling scriptCopy({},{})", from, to);
         RequestCredential credential = getCredential();
         scriptCopy(new GlobusURL(from.toString()),
                    new GlobusURL(to.toString()),
                    credential.getDelegatedCredential());
         if (fileId != null) {
-            getStorage().putDone(getUser(), fileId, getTo_surl(), getConfiguration().isOverwrite());
+            getStorage().putDone(getUser(), fileId, getDestinationSurl(), getConfiguration().isOverwrite());
         }
         setStateToDone();
     }
 
-    private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException {
-        logger.debug("copying from local to local ");
+    private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException
+    {
+        LOG.debug("copying from local to local");
         FileMetaData fmd ;
         try {
-            fmd = getStorage().getFileMetaData(getUser(), getFrom_surl(),true);
+            fmd = getStorage().getFileMetaData(getUser(), getSourceSurl(), true);
         } catch (SRMException srme) {
             try {
                 setStateAndStatusCode(State.FAILED,
                                       srme.getMessage(),
                                       TStatusCode.SRM_INVALID_PATH);
             } catch (IllegalStateTransition ist) {
-                logger.error("Illegal State Transition : " +ist.getMessage());
+                LOG.error("Illegal State Transition : " +ist.getMessage());
             }
             return;
-
         }
         size = fmd.size;
 
-        if(getToFileId() == null) {
+        if (getDestinationFileId() == null) {
             setState(State.ASYNCWAIT, "Doing name space lookup.");
-            logger.debug("calling storage.prepareToPut("+getLocal_to_path()+")");
+            LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
                             getUser(),
-                            getTo_surl(),
+                            getDestinationSurl(),
                             size,
                             Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
                             Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
                             getSpaceReservationId(),
                             getContainerRequest().isOverwrite());
             future.addListener(new PutCallbacks(getId(), future), sameThreadExecutor());
-            logger.debug("callbacks.waitResult()");
+            LOG.debug("callbacks.waitResult()");
             return;
         }
-        logger.debug("known source size is "+size);
+
+        LOG.debug("known source size is {}", size);
 
         try {
-            getStorage().localCopy(getUser(), getFrom_surl(), getToFileId());
-            getStorage().putDone(getUser(), getToFileId(), getTo_surl(), getContainerRequest().isOverwrite());
+            getStorage().localCopy(getUser(), getSourceSurl(), getDestinationFileId());
+            getStorage().putDone(getUser(), getDestinationFileId(), getDestinationSurl(), getContainerRequest().isOverwrite());
             setStateToDone();
         } catch (SRMException e) {
-            getStorage().abortPut(getUser(), getToFileId(), getTo_surl(), e.getMessage());
+            getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(), e.getMessage());
             throw e;
         }
     }
@@ -568,26 +526,26 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     private void runRemoteToLocalCopy() throws IllegalStateTransition,
             SRMException, NonFatalJobFailure
     {
-        logger.debug("copying from remote to local ");
+        LOG.debug("copying from remote to local");
         RequestCredential credential = getCredential();
-        if (getToFileId() == null) {
+        if (getDestinationFileId() == null) {
             setState(State.ASYNCWAIT, "Doing name space lookup.");
-            logger.debug("calling storage.prepareToPut("+getLocal_to_path()+")");
+            LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
-                            getUser(), getTo_surl(), size,
+                            getUser(), getDestinationSurl(), size,
                             Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
                             Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
                             getSpaceReservationId(),
                             getContainerRequest().isOverwrite());
             future.addListener(new PutCallbacks(getId(), future), sameThreadExecutor());
-            logger.debug("callbacks.waitResult()");
+            LOG.debug("callbacks.waitResult");
             return;
         }
-        logger.debug("known source size is "+size);
+        LOG.debug("known source size is {}", size);
 
-        if(getTransferId() == null) {
-            setState(State.RUNNINGWITHOUTTHREAD,"started remote transfer, waiting completion");
+        if (getTransferId() == null) {
+            setState(State.RUNNINGWITHOUTTHREAD, "started remote transfer, waiting completion");
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId()) {
                 @Override
                 public void copyComplete()
@@ -595,8 +553,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                     try {
                         getStorage().putDone(
                                 getUser(),
-                                getToFileId(),
-                                getTo_surl(),
+                                getDestinationFileId(),
+                                getDestinationSurl(),
                                 getContainerRequest().isOverwrite());
                         super.copyComplete();
                     } catch (SRMException e) {
@@ -604,59 +562,58 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                     }
                 }
             };
-            setTransferId(getStorage().getFromRemoteTURL(getUser(), getFrom_turl(), getToFileId(), getUser(), credential.getId(), copycallbacks));
+            setTransferId(getStorage().getFromRemoteTURL(getUser(), getSourceTurl(), getDestinationFileId(), getUser(), credential.getId(), copycallbacks));
             saveJob();
-        }
-        // transfer id is not null and we are scheduled
-        // there was some kind of error during the transfer
-        else {
+        } else {
+            // transfer id is not null and we are scheduled
+            // there was some kind of error during the transfer
+
             getStorage().killRemoteTransfer(getTransferId());
             Exception transferError = getTransferError();
-            getStorage().abortPut(getUser(), getToFileId(), getTo_surl(),
+            getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(),
                                   (transferError == null) ? null : transferError.getMessage());
             setTransferId(null);
             throw new NonFatalJobFailure(transferError);
         }
     }
 
-    private void setStateToDone(){
+    private void setStateToDone()
+    {
         try {
             setState(State.DONE, "setStateToDone called");
             try {
                 getContainerRequest().fileRequestCompleted();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOG.error(ire.toString());
             }
-        }
-        catch(IllegalStateTransition ist) {
-            logger.error("setStateToDone: Illegal State Transition : " +ist.getMessage());
+        } catch (IllegalStateTransition ist) {
+            LOG.error("setStateToDone: Illegal State Transition : " +ist.getMessage());
         }
     }
 
-    private void setStateToFailed(String error) throws SRMInvalidRequestException {
+    private void setStateToFailed(String error) throws SRMInvalidRequestException
+    {
         try {
             setState(State.FAILED, error);
-        }
-        catch(IllegalStateTransition ist) {
-            logger.error("setStateToFailed: Illegal State Transition : " +ist.getMessage());
+        } catch (IllegalStateTransition ist) {
+            LOG.error("setStateToFailed: Illegal State Transition : " +ist.getMessage());
         }
         getContainerRequest().fileRequestCompleted();
     }
 
-    private void runLocalToRemoteCopy() throws SRMException,
-            IllegalStateTransition, NonFatalJobFailure
+    private void runLocalToRemoteCopy() throws SRMException, NonFatalJobFailure,
+            IllegalStateTransition
     {
-        if(getTransferId() == null) {
-            logger.debug("copying using storage.putToRemoteTURL");
+        if (getTransferId() == null) {
+            LOG.debug("copying using storage.putToRemoteTURL");
             RequestCredential credential = getCredential();
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
-            setTransferId(getStorage().putToRemoteTURL(getUser(), getFrom_surl(), getTo_turl(), getUser(), credential.getId(), copycallbacks));
+            setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), copycallbacks));
             setState(State.RUNNINGWITHOUTTHREAD, "Transferring file.");
             saveJob();
-        }
-        // transfer id is not null and we are scheduled
-        // there was some kind of error durign the transfer
-        else {
+        } else {
+            // transfer id is not null and we are scheduled
+            // there was some kind of error durign the transfer
             getStorage().killRemoteTransfer(getTransferId());
             setTransferId(null);
             throw new NonFatalJobFailure(getTransferError());
@@ -664,41 +621,35 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     }
 
     @Override
-    public void run() throws NonFatalJobFailure, FatalJobFailure {
-        logger.debug("copying " );
+    public void run() throws NonFatalJobFailure, FatalJobFailure
+    {
+        LOG.debug("copying");
         try {
-            if(getFrom_turl() != null && getFrom_turl().getScheme().equalsIgnoreCase("dcap")  ||
-                    getTo_turl() != null && getTo_turl().getScheme().equalsIgnoreCase("dcap") ||
+            if (getSourceTurl() != null && getSourceTurl().getScheme().equalsIgnoreCase("dcap")  ||
+                    getDestinationTurl() != null && getDestinationTurl().getScheme().equalsIgnoreCase("dcap") ||
                     getConfiguration().isUseUrlcopyScript()) {
                 try {
                     runScriptCopy();
                     return;
-                } catch(SRMException | IOException | GSSException e) {
-                    logger.warn("script failed: {}",
+                } catch (SRMException | IOException | GSSException e) {
+                    LOG.warn("script failed: {}",
                                 e.toString());
                     // fall-through to try other methods
                 }
             }
-            if(getLocal_to_path() != null && getLocal_from_path() != null) {
+            if (getLocalDestinationPath() != null && getLocalSourcePath() != null) {
                 runLocalToLocalCopy();
-                return;
-            }
-            if(getLocal_to_path() != null && getFrom_turl() != null) {
+            } else if (getLocalDestinationPath() != null && getSourceTurl() != null) {
                 runRemoteToLocalCopy();
-                return;
-            }
-            if(getTo_turl() != null && getLocal_from_path() != null) {
+            } else if (getDestinationTurl() != null && getLocalSourcePath() != null) {
                 runLocalToRemoteCopy();
-                return;
-            }
-            if(getFrom_turl() != null && getTo_turl() != null) {
-                javaUrlCopy(getFrom_turl().toURL(),
-                            getTo_turl().toURL());
-                logger.debug("copy succeeded");
+            } else if (getSourceTurl() != null && getDestinationTurl() != null) {
+                javaUrlCopy(getSourceTurl().toURL(),
+                            getDestinationTurl().toURL());
+                LOG.debug("copy succeeded");
                 setStateToDone();
-            }
-            else {
-                logger.error("Unknown combination of to/from ursl");
+            } else {
+                LOG.error("Unknown combination of to/from ursl");
                 setStateToFailed("Unknown combination of to/from ursl");
             }
         } catch (IllegalStateTransition | IOException | SRMException | DataAccessException e) {
@@ -706,196 +657,172 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
         }
     }
 
-    private static long last_time;
-
-    public synchronized static long unique_current_time() {
-        long time =  System.currentTimeMillis();
-        last_time = last_time < time ? time : last_time+1;
-        return last_time;
+    public synchronized static long uniqueCurrentTime()
+    {
+        long time = System.currentTimeMillis();
+        lastTime = lastTime < time ? time : lastTime + 1;
+        return lastTime;
     }
 
-    public void scriptCopy(GlobusURL from, GlobusURL to, GSSCredential credential)
-            throws IOException, GSSException
+    public void scriptCopy(GlobusURL source, GlobusURL destination,
+            GSSCredential credential) throws IOException, GSSException
     {
-        String proxy_file = null;
+        String proxyFile = null;
         try {
             String command = getConfiguration().getTimeout_script();
-            command=command+" "+getConfiguration().getTimeout();
-            command=command+" "+getConfiguration().getUrlcopy();
-            //command=command+" -username "+ user.getName();
-            command = command+" -debug "+getConfiguration().isDebug();
-            if(credential != null) {
+            command = command + " " + getConfiguration().getTimeout();
+            command = command + " " + getConfiguration().getUrlcopy();
+            command = command + " -debug " + getConfiguration().isDebug();
+            if (credential != null) {
                 try {
                     byte [] data = ((ExtendedGSSCredential)(credential)).export(
                             ExtendedGSSCredential.IMPEXP_OPAQUE);
-                    proxy_file = getConfiguration().getProxies_directory()+
-                            "/proxy_"+credential.hashCode()+"_at_"+unique_current_time();
-                    logger.debug("saving credential "+credential.getName().toString()+
-                                         " in proxy_file "+proxy_file);
-                    FileOutputStream out = new FileOutputStream(proxy_file);
+                    proxyFile = getConfiguration().getProxies_directory()+
+                            "/proxy_"+credential.hashCode()+"_at_"+uniqueCurrentTime();
+                    LOG.debug("saving credential {} in proxy_file {}",
+                            credential.getName(), proxyFile);
+                    FileOutputStream out = new FileOutputStream(proxyFile);
                     out.write(data);
                     out.close();
-                    logger.debug("save succeeded ");
+                    LOG.debug("save succeeded ");
+                } catch (IOException ioe) {
+                    LOG.error("saving credentials to "+proxyFile+" failed");
+                    LOG.error(ioe.toString());
+                    proxyFile = null;
                 }
-                catch(IOException ioe) {
-                    logger.error("saving credentials to "+proxy_file+" failed");
-                    logger.error(ioe.toString());
-                    proxy_file = null;
-                }
             }
-            if(proxy_file != null) {
-                command = command+" -x509_user_proxy "+proxy_file;
-                command = command+" -x509_user_key "+proxy_file;
-                command = command+" -x509_user_cert "+proxy_file;
+            if (proxyFile != null) {
+                command = command+" -x509_user_proxy " + proxyFile;
+                command = command+" -x509_user_key " + proxyFile;
+                command = command+" -x509_user_cert " + proxyFile;
             }
-            int tcp_buffer_size = getConfiguration().getTcp_buffer_size();
-            if(tcp_buffer_size > 0) {
-                command = command+" -tcp_buffer_size "+tcp_buffer_size;
+            int tcpBufferSize = getConfiguration().getTcp_buffer_size();
+            if (tcpBufferSize > 0) {
+                command = command + " -tcp_buffer_size " + tcpBufferSize;
             }
-            int buffer_size = getConfiguration().getBuffer_size();
-            if(buffer_size > 0) {
-                command = command+" -buffer_size "+buffer_size;
+            int bufferSize = getConfiguration().getBuffer_size();
+            if (bufferSize > 0) {
+                command = command + " -buffer_size " + bufferSize;
             }
-            int parallel_streams = getConfiguration().getParallel_streams();
-            if(parallel_streams > 0) {
-                command = command+" -parallel_streams "+parallel_streams;
+            int parallelStreams = getConfiguration().getParallel_streams();
+            if (parallelStreams > 0) {
+                command = command + " -parallel_streams " + parallelStreams;
             }
-            command = command+
-                    " -src-protocol "+from.getProtocol();
-            if(from.getProtocol().equals("file")) {
-                command = command+" -src-host-port localhost";
+            command = command + " -src-protocol " + source.getProtocol();
+            if (source.getProtocol().equals("file")) {
+                command = command + " -src-host-port localhost";
+            } else {
+                command = command + " -src-host-port " + source.getHost() + ":"
+                        + source.getPort();
             }
-            else {
-                command = command+
-                        " -src-host-port "+from.getHost()+":"+from.getPort();
+            command = command + " -src-path " + source.getPath() +
+                    " -dst-protocol " + destination.getProtocol();
+            if (destination.getProtocol().equals("file")) {
+                command = command + " -dst-host-port localhost";
+            } else {
+                command = command + " -dst-host-port " + destination.getHost() +
+                        ":" + destination.getPort();
             }
-            command = command+
-                    " -src-path "+from.getPath()+
-                    " -dst-protocol "+to.getProtocol();
-            if(to.getProtocol().equals("file")) {
-                command = command+" -dst-host-port localhost";
+            command = command + " -dst-path " + destination.getPath();
+            String sourceUsername = source.getUser();
+            if (sourceUsername != null) {
+                command = command + " -src_username " + sourceUsername;
             }
-            else {
-                command = command+
-                        " -dst-host-port "+to.getHost()+":"+to.getPort();
+            String sourcePassword = source.getPwd();
+            if (sourcePassword != null) {
+                command = command + " -src_userpasswd " + sourcePassword;
             }
-            command = command+
-                    " -dst-path "+to.getPath();
-            String from_username = from.getUser();
-            if(from_username != null) {
-                command = command +
-                        " -src_username "+from_username;
+            String destinationUser = destination.getUser();
+            if (destinationUser != null) {
+                command = command + " -dst_username " + destinationUser;
             }
-            String from_pwd = from.getPwd();
-            if(from_pwd != null) {
-                command = command +
-                        " -src_userpasswd "+from_pwd;
-            }
-            String to_username = to.getUser();
-            if(to_username != null) {
-                command = command +
-                        " -dst_username "+to_username;
-            }
-            String to_pwd = to.getPwd();
-            if(to_pwd != null) {
-                command = command +
-                        " -dst_userpasswd "+to_pwd;
+            String destinationPassword = destination.getPwd();
+            if (destinationPassword != null) {
+                command = command + " -dst_userpasswd " + destinationPassword;
             }
             String gsiftpclient = getConfiguration().getGsiftpclinet();
-            if(gsiftpclient != null) {
-                command = command +
-                        " -use-kftp "+
+            if (gsiftpclient != null) {
+                command = command + " -use-kftp " +
                         (gsiftpclient.toLowerCase().contains("kftp"));
             }
             int rc = ShellCommandExecuter.execute(command);
-            if(rc == 0) {
-                logger.debug("return code = 0, success");
-            }
-            else {
-                logger.debug("return code = "+rc+", failure");
+            LOG.debug("return code = {}", rc);
+            if (rc != 0) {
                 throw new IOException("return code = "+rc+", failure");
             }
-        }
-        finally {
-            if(proxy_file != null) {
+        } finally {
+            if (proxyFile != null) {
                 try {
-                    logger.debug(" deleting proxy file"+proxy_file);
-                    File f = new File(proxy_file);
-                    if(!f.delete() ) {
-                        logger.error("error deleting proxy cash "+proxy_file);
+                    LOG.debug("deleting proxy file {}", proxyFile);
+                    File f = new File(proxyFile);
+                    if (!f.delete()) {
+                        LOG.error("error deleting proxy cache {}", proxyFile);
                     }
-                }
-                catch(Exception e) {
-                    logger.error("error deleting proxy cash "+proxy_file);
-                    logger.error(e.toString());
+                } catch (Exception e) {
+                    LOG.error("error deleting proxy cache {}: {}", proxyFile,
+                            e.toString());
                 }
             }
         }
     }
 
-    public void javaUrlCopy(URL from, URL to) throws IOException
+    public void javaUrlCopy(URL source, URL destination) throws IOException
     {
         InputStream in;
-        if(from.getProtocol().equals("file")) {
-            in = new FileInputStream(from.getPath());
-        }
-        else {
-            in = from.openConnection().getInputStream();
+        if (source.getProtocol().equals("file")) {
+            in = new FileInputStream(source.getPath());
+        } else {
+            in = source.openConnection().getInputStream();
         }
         OutputStream out;
-        if(to.getProtocol().equals("file")) {
-            out = new FileOutputStream(to.getPath());
-        }
-        else {
-            URLConnection to_connect = to.openConnection();
+        if (destination.getProtocol().equals("file")) {
+            out = new FileOutputStream(destination.getPath());
+        } else {
+            URLConnection to_connect = destination.openConnection();
             to_connect.setDoInput(false);
             to_connect.setDoOutput(true);
             out = to_connect.getOutputStream();
         }
         try {
-            int buffer_size = 0;//configuration.getBuffer_size();
-            if(buffer_size <=0) {
-                buffer_size = 4096;
-            }
-            byte[] bytes = new byte[buffer_size];
+            int bufferSize = 4096;
+            byte[] bytes = new byte[bufferSize];
             long total = 0;
             int l;
-            while( (l = in.read(bytes)) != -1) {
+            while ((l = in.read(bytes)) != -1) {
                 total += l;
-                out.write(bytes,0,l);
+                out.write(bytes, 0, l);
             }
-            logger.debug("done, copied "+total +" bytes");
-        }
-        finally {
+            LOG.debug("done, copied {} bytes", total);
+        } finally {
             in.close();
             out.close();
         }
     }
 
     @Override
-    protected void stateChanged(State oldState) {
+    protected void stateChanged(State oldState)
+    {
         State state = getState();
-        if(state.isFinal()) {
+        if (state.isFinal()) {
             if (getTransferId() != null && state != State.DONE) {
                 getStorage().killRemoteTransfer(getTransferId());
-                String toFileId = getToFileId();
+                String toFileId = getDestinationFileId();
                 if (toFileId != null) {
                     try {
                         Exception transferError = getTransferError();
-                        getStorage().abortPut(getUser(), toFileId, getTo_surl(),
+                        getStorage().abortPut(getUser(), toFileId, getDestinationSurl(),
                                               (transferError == null) ? null : transferError.getMessage());
                     } catch (SRMException e) {
-                        logger.error("Failed to abort copy: {}", e.getMessage());
+                        LOG.error("Failed to abort copy: {}", e.getMessage());
                     }
                 }
             }
             String remoteRequestId = getRemoteRequestId();
             if (remoteRequestId != null) {
-                if (getLocal_from_path() != null) {
-                    remoteFileRequestDone(getTo_surl(), remoteRequestId, getRemoteFileId());
-                }
-                else {
-                    remoteFileRequestDone(getFrom_surl(), remoteRequestId, getRemoteFileId());
+                if (getLocalSourcePath() != null) {
+                    remoteFileRequestDone(getDestinationSurl(), remoteRequestId, getRemoteFileId());
+                } else {
+                    remoteFileRequestDone(getSourceSurl(), remoteRequestId, getRemoteFileId());
                 }
             }
         }
@@ -904,26 +831,29 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     @Override
     public boolean isTouchingSurl(URI surl)
     {
-        return surl.equals(getFrom_surl()) || surl.equals(getTo_surl());
+        return surl.equals(getSourceSurl()) || surl.equals(getDestinationSurl());
     }
 
-    public void remoteFileRequestDone(URI SURL,String remoteRequestId,String remoteFileId) {
+    public void remoteFileRequestDone(URI SURL,String remoteRequestId,String remoteFileId)
+    {
         try {
-            logger.debug("setting remote file status to Done, SURL="+SURL+" remoteRequestId="+remoteRequestId+
-                                 " remoteFileId="+remoteFileId);
-            getContainerRequest().remoteFileRequestDone(SURL
-                                                                .toString(), remoteRequestId, remoteFileId);
-        }
-        catch(Exception e) {
-            logger.error("set remote file status to done failed, surl = "+SURL+
-                                 " requestId = " +remoteRequestId+ " fileId = " +remoteFileId);
+            LOG.debug("setting remote file status to Done, SURL={} " +
+                    "remoteRequestId={} remoteFileId={}", SURL,
+                    remoteRequestId, remoteFileId);
+            getContainerRequest().remoteFileRequestDone(SURL.toString(),
+                    remoteRequestId, remoteFileId);
+        } catch (Exception e) {
+            LOG.error("set remote file status to done failed, surl={}, " +
+                    "requestId={}, fileId={}", SURL, remoteRequestId, remoteFileId);
         }
     }
+
     /** Getter for property remoteFileId.
      * @return Value of property remoteFileId.
      *
      */
-    public String getRemoteFileId() {
+    public String getRemoteFileId()
+    {
         rlock();
         try {
             return remoteFileId;
@@ -931,11 +861,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
             runlock();
         }
     }
+
     /** Getter for property remoteRequestId.
      * @return Value of property remoteRequestId.
      *
      */
-    public String getRemoteRequestId() {
+    public String getRemoteRequestId()
+    {
         rlock();
         try {
             return remoteRequestId;
@@ -947,10 +879,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * Getter for property from_surl.
      * @return Value of property from_surl.
      */
-    public URI getFrom_surl() {
+    public URI getSourceSurl()
+    {
         rlock();
         try {
-            return from_surl;
+            return sourceSurl;
         } finally {
             runlock();
         }
@@ -959,10 +892,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * Getter for property to_surl.
      * @return Value of property to_surl.
      */
-    public URI getTo_surl() {
+    public URI getDestinationSurl()
+    {
         rlock();
         try {
-            return to_surl;
+            return destinationSurl;
         } finally {
             runlock();
         }
@@ -971,7 +905,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * Setter for property remoteRequestId.
      * @param remoteRequestId New value of property remoteRequestId.
      */
-    public void setRemoteRequestId(String remoteRequestId) {
+    public void setRemoteRequestId(String remoteRequestId)
+    {
         wlock();
         try {
             this.remoteRequestId = remoteRequestId;
@@ -983,7 +918,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * Setter for property remoteFileId.
      * @param remoteFileId New value of property remoteFileId.
      */
-    public void setRemoteFileId(String remoteFileId) {
+    public void setRemoteFileId(String remoteFileId)
+    {
         wlock();
         try {
             this.remoteFileId = remoteFileId;
@@ -995,7 +931,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * Getter for property spaceReservationId.
      * @return Value of property spaceReservationId.
      */
-    public String getSpaceReservationId() {
+    public String getSpaceReservationId()
+    {
         rlock();
         try {
             return spaceReservationId;
@@ -1007,7 +944,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     /**
      * @param transferId the transferId to set
      */
-    private void setTransferId(String transferId) {
+    private void setTransferId(String transferId)
+    {
         wlock();
         try {
             this.transferId = transferId;
@@ -1019,7 +957,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     /**
      * @return the transferError
      */
-    private Exception getTransferError() {
+    private Exception getTransferError()
+    {
         rlock();
         try {
             return transferError;
@@ -1031,7 +970,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     /**
      * @param transferError the transferError to set
      */
-    private void setTransferError(Exception transferError) {
+    private void setTransferError(Exception transferError)
+    {
         wlock();
         try {
             this.transferError = transferError;
@@ -1060,13 +1000,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                     String fileId = future.checkedGet();
                     State state = fr.getState();
                     if (state == State.ASYNCWAIT) {
-                        logger.debug("PutCallbacks success for file {}", fr.getTo_surl());
-                        fr.setToFileId(fileId);
+                        LOG.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
+                        fr.setDestinationFileId(fileId);
                         Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                         try {
                             scheduler.schedule(fr);
-                        } catch(Exception ie) {
-                            logger.error(ie.toString());
+                        } catch (Exception ie) {
+                            LOG.error(ie.toString());
                         }
                     }
                 } catch (SRMException e) {
@@ -1075,85 +1015,89 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
                             e.getMessage(),
                             e.getStatusCode());
                 }
-            } catch(IllegalStateTransition e) {
-                logger.error("Illegal State Transition: {}", e.getMessage());
-            } catch(SRMInvalidRequestException e) {
-                logger.error(e.getMessage());
+            } catch (IllegalStateTransition e) {
+                LOG.error("Illegal State Transition: {}", e.getMessage());
+            } catch (SRMInvalidRequestException e) {
+                LOG.error(e.getMessage());
             }
         }
     }
 
-    private static class TheCopyCallbacks implements CopyCallbacks {
+    private static class TheCopyCallbacks implements CopyCallbacks
+    {
         private final long fileRequestJobId;
 
-        public TheCopyCallbacks(long fileRequestJobId) {
+        public TheCopyCallbacks(long fileRequestJobId)
+        {
             this.fileRequestJobId = fileRequestJobId;
         }
 
         private CopyFileRequest getCopyFileRequest()
-                throws SRMInvalidRequestException{
+                throws SRMInvalidRequestException
+        {
             return Job.getJob(fileRequestJobId, CopyFileRequest.class);
         }
 
         @Override
-        public void copyComplete() {
+        public void copyComplete()
+        {
             try {
-                CopyFileRequest  copyFileRequest = getCopyFileRequest();
-                logger.debug("copy succeeded");
+                CopyFileRequest copyFileRequest = getCopyFileRequest();
+                LOG.debug("copy succeeded");
                 copyFileRequest.setStateToDone();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOG.error(ire.toString());
             }
         }
 
         @Override
-        public void copyFailed(SRMException e) {
-            CopyFileRequest  copyFileRequest ;
+        public void copyFailed(SRMException e)
+        {
+            CopyFileRequest copyFileRequest;
             try {
                 copyFileRequest = getCopyFileRequest();
             } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
+                LOG.error(ire.toString());
                 return;
             }
             copyFileRequest.setTransferError(e);
-            logger.error("copy failed:");
-            logger.error(e.toString());
-            State state =  copyFileRequest.getState();
+            LOG.error("copy failed: {}", e.toString());
+            State state = copyFileRequest.getState();
             Scheduler scheduler = Scheduler.getScheduler(copyFileRequest.getSchedulerId());
-            if(!state.isFinal() && scheduler != null) {
+            if (!state.isFinal() && scheduler != null) {
                 try {
                     scheduler.schedule(copyFileRequest);
                 } catch (IllegalStateTransition ie) {
-                    logger.error(ie.toString());
+                    LOG.error(ie.toString());
                 }
             }
         }
     }
 
-    public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws SRMInvalidRequestException {
+    public TCopyRequestFileStatus getTCopyRequestFileStatus() throws SRMInvalidRequestException
+    {
         TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
         copyRequestFileStatus.setFileSize(new UnsignedLong(size));
         copyRequestFileStatus.setEstimatedWaitTime((int) (getRemainingLifetime() / 1000));
         copyRequestFileStatus.setRemainingFileLifetime((int) (getRemainingLifetime() / 1000));
-        org.apache.axis.types.URI to_surl;
-        org.apache.axis.types.URI from_surl;
-        try { to_surl= new org.apache.axis.types.URI(getTo_surl().toASCIIString());
-        }
-        catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
-            throw new SRMInvalidRequestException("wrong surl format");
+        org.apache.axis.types.URI sourceSurl;
+        org.apache.axis.types.URI destinationSurl;
+        try {
+            sourceSurl = new org.apache.axis.types.URI(getDestinationSurl().toASCIIString());
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
+            LOG.error(e.toString());
+            throw new SRMInvalidRequestException("wrong SURL format: " + getDestinationSurl());
         }
         try {
-            from_surl=new org.apache.axis.types.URI(getFrom_surl().toASCIIString());
+            destinationSurl = new org.apache.axis.types.URI(getSourceSurl().toASCIIString());
+        } catch (org.apache.axis.types.URI.MalformedURIException e) {
+            LOG.error(e.toString());
+            throw new SRMInvalidRequestException("wrong SURL format: " + getSourceSurl());
         }
-        catch (org.apache.axis.types.URI.MalformedURIException e) {
-            logger.error(e.toString());
-            throw new SRMInvalidRequestException("wrong surl format");
-        }
-        copyRequestFileStatus.setSourceSURL(from_surl);
-        copyRequestFileStatus.setTargetSURL(to_surl);
+        copyRequestFileStatus.setSourceSURL(destinationSurl);
+        copyRequestFileStatus.setTargetSURL(sourceSurl);
         TReturnStatus returnStatus = getReturnStatus();
-        if(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
+        if (TStatusCode.SRM_SPACE_LIFETIME_EXPIRED.equals(returnStatus.getStatusCode())) {
             returnStatus = new TReturnStatus(TStatusCode.SRM_FAILURE, null);
         }
         copyRequestFileStatus.setStatus(returnStatus);
@@ -1161,7 +1105,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
     }
 
     @Override
-    public TReturnStatus getReturnStatus() {
+    public TReturnStatus getReturnStatus()
+    {
         String description = getLastJobChange().getDescription();
         TStatusCode statusCode = getStatusCode();
         if (statusCode != null) {
@@ -1193,7 +1138,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      * Getter for property transferId.
      * @return Value of property transferId.
      */
-    public String getTransferId() {
+    public String getTransferId()
+    {
         return transferId;
     }
 
@@ -1206,16 +1152,17 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
      *  -1 stands for infinite lifetime
      */
     @Override
-    public long extendLifetime(long newLifetime) throws SRMException {
+    public long extendLifetime(long newLifetime) throws SRMException
+    {
         long remainingLifetime = getRemainingLifetime();
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         long requestLifetime = getContainerRequest().extendLifetimeMillis(newLifetime);
-        if(requestLifetime <newLifetime) {
+        if (requestLifetime <newLifetime) {
             newLifetime = requestLifetime;
         }
-        if(remainingLifetime >= newLifetime) {
+        if (remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         return extendLifetimeMillis(newLifetime);

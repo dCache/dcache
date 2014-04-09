@@ -60,12 +60,12 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getRequestId(),
                                   request.getCredentialId(),
                                   request.getStatusCodeString(),
-                                  request.getFromURL(),
-                                  request.getToURL(),
-                                  (request.getFrom_turl()!=null?request.getFrom_turl().toString():null),
-                                  (request.getTo_turl()!=null?request.getTo_turl().toString():null),
-                                  request.getLocal_from_path(),
-                                  request.getLocal_to_path(),
+                                  request.getSourceSurl().toString(),
+                                  request.getDestinationSurl().toString(),
+                                  (request.getSourceTurl()!=null?request.getSourceTurl().toString():null),
+                                  (request.getDestinationTurl()!=null?request.getDestinationTurl().toString():null),
+                                  request.getLocalSourcePath(),
+                                  request.getLocalDestinationPath(),
                                   request.getSize(),//20
                                   null, // FromFileId (unused)
                                   null, // ToFileId (unused)
@@ -162,12 +162,12 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getRequestId(),
                                   request.getCredentialId(),
                                   request.getStatusCodeString(),
-                                  request.getFromURL(),
-                                  request.getToURL(),
-                                  (request.getFrom_turl()!=null?request.getFrom_turl().toString():null),
-                                  (request.getTo_turl()!=null?request.getTo_turl().toString():null),
-                                  request.getLocal_from_path(),
-                                  request.getLocal_to_path(),
+                                  request.getSourceSurl().toString(),
+                                  request.getDestinationSurl().toString(),
+                                  (request.getSourceTurl()!=null?request.getSourceTurl().toString():null),
+                                  (request.getDestinationTurl()!=null?request.getDestinationTurl().toString():null),
+                                  request.getLocalSourcePath(),
+                                  request.getLocalDestinationPath(),
                                   request.getSize(),
                                   null, // FromFileId (unused)
                                   null, // ToFileId (unused)
