@@ -41,9 +41,8 @@ import scala.collection.convert.WrapAsJava
  *
  * Corresponding configuration in <b>dcache.conf</b>
  * <pre>
- * gplazma.ldap.server = ldap.example.com
- * gplazma.ldap.port = 389
- * gplazma.ldap.organization = o=SITE,c=CONTRY
+ * gplazma.ldap.url = ldap://example.org:389/
+ * gplazma.ldap.organization = o=SITE,c=COUNTRY
  * gplazma.ldap.tree.people = People
  * gplazma.ldap.tree.groups = Groups
  * </pre>
@@ -58,8 +57,7 @@ object Ldap {
   val COMMON_NAME_ATTRIBUTE = "cn"
   val USER_ID_ATTRIBUTE = "uid"
   val MEMBER_UID_ATTRIBUTE = "memberUid"
-  val LDAP_SERVER = "gplazma.ldap.server"
-  val LDAP_PORT = "gplazma.ldap.port"
+  val LDAP_URL = "gplazma.ldap.url"
   val LDAP_ORG = "gplazma.ldap.organization"
   val LDAP_PEOPLE_TREE = "gplazma.ldap.tree.people"
   val LDAP_GROUP_TREE = "gplazma.ldap.tree.groups"
@@ -71,11 +69,10 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   private val log = LoggerFactory.getLogger(Ldap.getClass)
 
   private def newContext = {
-    val server = properties.getProperty(Ldap.LDAP_SERVER)
-    val port = properties.getProperty(Ldap.LDAP_PORT)
+    val url = properties.getProperty(Ldap.LDAP_URL)
     val env: Properties = new Properties
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
-    env.put(Context.PROVIDER_URL, "ldap://" + server + ":" + port)
+    env.put(Context.PROVIDER_URL, url)
     new InitialLdapContext(env, null)
   }
 
