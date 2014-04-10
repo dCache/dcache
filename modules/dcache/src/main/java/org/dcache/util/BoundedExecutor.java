@@ -29,6 +29,7 @@ public class BoundedExecutor extends AbstractExecutorService
 {
     private final Queue<Runnable> workQueue = new ArrayDeque<>();
     private final Executor executor;
+    private final List<Thread> workers;
     private int maxThreads;
     private int threads;
 
@@ -48,6 +49,7 @@ public class BoundedExecutor extends AbstractExecutorService
     {
         this.executor = executor;
         this.maxThreads = maxThreads;
+        this.workers = new ArrayList<>(maxThreads);
     }
 
     @Override
@@ -70,7 +72,9 @@ public class BoundedExecutor extends AbstractExecutorService
             List<Runnable> unexecutedTasks = new ArrayList<>();
             unexecutedTasks.addAll(workQueue);
             workQueue.clear();
-            // TODO: Interrupt running tasks
+            for (Thread thread : workers) {
+                thread.interrupt();
+            }
             return unexecutedTasks;
         } finally {
             monitor.leave();
@@ -159,27 +163,44 @@ public class BoundedExecutor extends AbstractExecutorService
         }
     }
 
-    private Runnable getTask()
-    {
-        monitor.enter();
-        try {
-            if (workQueue.isEmpty()) {
-                threads--;
-                return null;
-            } else {
-                return workQueue.remove();
-            }
-        } finally {
-            monitor.leave();
-        }
-    }
-
     private class Worker implements Runnable
     {
+        private Runnable getFirstTask()
+        {
+            monitor.enter();
+            try {
+                if (workQueue.isEmpty()) {
+                    threads--;
+                    return null;
+                } else {
+                    workers.add(Thread.currentThread());
+                    return workQueue.remove();
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        private Runnable getNextTask()
+        {
+            monitor.enter();
+            try {
+                if (workQueue.isEmpty()) {
+                    threads--;
+                    workers.remove(Thread.currentThread());
+                    return null;
+                } else {
+                    return workQueue.remove();
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
         @Override
         public void run()
         {
-            Runnable task = getTask();
+            Runnable task = getFirstTask();
             while (task != null) {
                 try {
                     task.run();
@@ -187,7 +208,7 @@ public class BoundedExecutor extends AbstractExecutorService
                     Thread thread = Thread.currentThread();
                     thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
                 }
-                task = getTask();
+                task = getNextTask();
             }
         }
     }
