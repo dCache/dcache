@@ -37,6 +37,7 @@ public class Stat {
     private int _gid; //
     private int _rdev; //
     private long _size; //
+    private long _generation; //
 
     /*
      * Opposite to classic Unix, all times in milliseconds
@@ -205,17 +206,26 @@ public class Stat {
 
     }
 
+    public long getGeneration() {
+        return _generation;
+    }
+
+    public void setGeneration(long change) {
+        _generation = change;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format(
-                    "%s %8d %6d %6d %6d %s %s",
+                    "%s %8d %6d %6d %6d %6d %s %s",
                     new UnixPermission(this.getMode()),
                     this.getNlink(),
                     this.getUid(),
                     this.getGid(),
                     this.getSize(),
+                    this.getGeneration(),
                     new Date(this.getMTime()),
                     new Time(this.getMTime()));
             formatter.flush();
@@ -239,6 +249,7 @@ public class Stat {
         hash = 79 * hash + (int) (this._mtime ^ (this._mtime >>> 32));
         hash = 79 * hash + (int) (this._ctime ^ (this._ctime >>> 32));
         hash = 79 * hash + (int) (this._crtime ^ (this._crtime >>> 32));
+        hash = 79 * hash + (int) (this._generation ^ (this._generation >>> 32));
         hash = 79 * hash + this._blksize;
         return hash;
     }

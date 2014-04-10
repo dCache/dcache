@@ -1,4 +1,5 @@
---- org/dcache/delegation/gridsite2/DelegationException.java	2013-04-25 10:28:35.000000000 +0200
+diff -ur org/dcache/delegation/gridsite2/DelegationException.java.orig org/dcache/delegation/gridsite2/DelegationException.java
+--- org/dcache/delegation/gridsite2/DelegationException.java.orig	2013-04-25 10:28:35.000000000 +0200
 +++ org/dcache/delegation/gridsite2/DelegationException.java	2013-04-25 10:29:11.000000000 +0200
 @@ -16,6 +16,7 @@
  
@@ -8,7 +9,8 @@
          this.msg = msg;
      }
  
---- org/dcache/delegation/gridsite1/DelegationExceptionType.java	2014-02-22 15:25:32.000000000 +0100
+diff -ur org/dcache/delegation/gridsite1/DelegationExceptionType.java.orig org/dcache/delegation/gridsite1/DelegationExceptionType.java
+--- org/dcache/delegation/gridsite1/DelegationExceptionType.java.orig	2014-02-22 15:25:32.000000000 +0100
 +++ org/dcache/delegation/gridsite1/DelegationExceptionType.java	2014-02-22 15:25:48.000000000 +0100
 @@ -16,6 +16,7 @@
  

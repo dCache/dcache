@@ -124,4 +124,12 @@
        </createProcedure>
        <rollback/>
     </changeSet>
+
+    <changeSet author="tigran" id="19">
+        <addColumn tableName="t_inodes">
+            <column name="igeneration" type="BIGINT" defaultValueNumeric="0" remarks="file/directory change indicator">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

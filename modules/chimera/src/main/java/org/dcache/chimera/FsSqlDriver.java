@@ -351,7 +351,7 @@ class FsSqlDriver {
     public Stat stat(Connection dbConnection, FsInode inode) throws SQLException {
         return stat(dbConnection, inode, 0);
     }
-    private static final String sqlStat = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime,icrtime FROM t_inodes WHERE ipnfsid=?";
+    private static final String sqlStat = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime,icrtime,igeneration FROM t_inodes WHERE ipnfsid=?";
 
     public Stat stat(Connection dbConnection, FsInode inode, int level) throws SQLException {
 
@@ -377,9 +377,11 @@ class FsSqlDriver {
                 if (level == 0) {
                     inodeType = statResult.getInt("itype");
                     ret.setCrTime(statResult.getTimestamp("icrtime").getTime());
+                    ret.setGeneration(statResult.getLong("igeneration"));
                 } else {
                     inodeType = UnixPermission.S_IFREG;
                     ret.setCrTime(statResult.getTimestamp("imtime").getTime());
+                    ret.setGeneration(0);
                 }
 
                 ret.setSize(statResult.getLong("isize"));
@@ -617,7 +619,7 @@ class FsSqlDriver {
 
         return path;
     }
-    private static final String sqlCreateInode = "INSERT INTO t_inodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+    private static final String sqlCreateInode = "INSERT INTO t_inodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     /**
      *
@@ -657,6 +659,7 @@ class FsSqlDriver {
             stCreateInode.setTimestamp(10, now);
             stCreateInode.setTimestamp(11, now);
             stCreateInode.setTimestamp(12, now);
+            stCreateInode.setLong(13, 0);
 
             stCreateInode.executeUpdate();
 
@@ -753,7 +756,7 @@ class FsSqlDriver {
     void incNlink(Connection dbConnection, FsInode inode) throws SQLException {
         incNlink(dbConnection, inode, 1);
     }
-    private static final String sqlIncNlink = "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=? WHERE ipnfsid=?";
+    private static final String sqlIncNlink = "UPDATE t_inodes SET inlink=inlink +?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     /**
      * increases the reference count of the inode by delta
@@ -794,7 +797,7 @@ class FsSqlDriver {
     void decNlink(Connection dbConnection, FsInode inode) throws SQLException {
         decNlink(dbConnection, inode, 1);
     }
-    private static final String sqlDecNlink = "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=? WHERE ipnfsid=?";
+    private static final String sqlDecNlink = "UPDATE t_inodes SET inlink=inlink -?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     /**
      * decreases inode reference count by delta
@@ -991,7 +994,7 @@ class FsSqlDriver {
 
         return name;
     }
-    private static final String sqlSetFileSize = "UPDATE t_inodes SET isize=?,imtime=?,ictime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileSize = "UPDATE t_inodes SET isize=?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileSize(Connection dbConnection, FsInode inode, long newSize) throws SQLException {
 
@@ -1011,7 +1014,7 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlSetFileOwner = "UPDATE t_inodes SET iuid=?,ictime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileOwner = "UPDATE t_inodes SET iuid=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileOwner(Connection dbConnection, FsInode inode, int level, int newOwner) throws SQLException {
 
@@ -1057,7 +1060,7 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlSetInodeAttributes = "UPDATE t_inodes SET iatime=?, imtime=?, ictime=?, icrtime=?, isize=?, iuid=?, igid=?, imode=?, itype=? WHERE ipnfsid=?";
+    private static final String sqlSetInodeAttributes = "UPDATE t_inodes SET iatime=?, imtime=?, ictime=?, icrtime=?, isize=?, iuid=?, igid=?, imode=?, itype=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setInodeAttributes(Connection dbConnection, FsInode inode, int level, Stat stat) throws SQLException {
 
@@ -1103,7 +1106,7 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlSetFileATime = "UPDATE t_inodes SET iatime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileATime = "UPDATE t_inodes SET iatime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileATime(Connection dbConnection, FsInode inode, int level, long atime) throws SQLException {
 
@@ -1126,7 +1129,7 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlSetFileCTime = "UPDATE t_inodes SET ictime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileCTime = "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileCTime(Connection dbConnection, FsInode inode, int level, long ctime) throws SQLException {
 
@@ -1150,7 +1153,7 @@ class FsSqlDriver {
         }
 
     }
-    private static final String sqlSetFileMTime = "UPDATE t_inodes SET imtime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileMTime = "UPDATE t_inodes SET imtime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileMTime(Connection dbConnection, FsInode inode, int level, long mtime) throws SQLException {
 
@@ -1173,7 +1176,7 @@ class FsSqlDriver {
         }
 
     }
-    private static final String sqlSetFileGroup = "UPDATE t_inodes SET igid=?,ictime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileGroup = "UPDATE t_inodes SET igid=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileGroup(Connection dbConnection, FsInode inode, int level, int newGroup) throws SQLException {
 
@@ -1196,7 +1199,7 @@ class FsSqlDriver {
         }
 
     }
-    private static final String sqlSetFileMode = "UPDATE t_inodes SET imode=?,ictime=? WHERE ipnfsid=?";
+    private static final String sqlSetFileMode = "UPDATE t_inodes SET imode=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setFileMode(Connection dbConnection, FsInode inode, int level, int newMode) throws SQLException {
 
