@@ -1,5 +1,6 @@
 package org.dcache.ftp.door;
 
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -9,13 +10,16 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
 import java.net.UnknownHostException;
 import java.util.EnumSet;
+import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -64,6 +68,13 @@ public class AbstractFtpDoorV1Test {
     @After
     public void tearDown() {
         door = null;
+    }
+
+    private InterfaceAddress mockInterfaceAddress(String address)
+    {
+        InterfaceAddress mock = mock(InterfaceAddress.class);
+        Mockito.when(mock.getAddress()).thenReturn(forString(address));
+        return mock;
     }
 
     public static class ExpectedFtpCommandException implements TestRule {
@@ -365,6 +376,9 @@ public class AbstractFtpDoorV1Test {
             throws Exception {
         doCallRealMethod().when(door).ftp_epsv(anyString());
         doCallRealMethod().when(door).setPassive();
+        List<InterfaceAddress> addresses = Lists.newArrayList(
+                mockInterfaceAddress("::1"), mockInterfaceAddress("127.0.0.1"));
+        when(door.getLocalAddressInterfaces()).thenReturn(addresses);
         door._localAddress = new InetSocketAddress(forString("::1"), 21);
         door._passiveModePortRange = new PortRange(0);
 

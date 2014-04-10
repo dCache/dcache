@@ -97,6 +97,7 @@ import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
@@ -2033,7 +2034,7 @@ public abstract class AbstractFtpDoorV1
             if (_passiveModeServerSocket == null) {
                 LOGGER.info("Opening server socket for passive mode");
                 if (!Protocol.fromAddress(_localAddress.getAddress()).equals(_preferredProtocol)) {
-                    List<InterfaceAddress> addresses = NetworkInterface.getByInetAddress(_localAddress.getAddress()).getInterfaceAddresses();
+                    Iterable<InterfaceAddress> addresses = getLocalAddressInterfaces();
                     int port = _localAddress.getPort();
                     InterfaceAddress newAddress = Iterables.find(addresses, new Predicate<InterfaceAddress>() {
                         @Override
@@ -2057,6 +2058,24 @@ public abstract class AbstractFtpDoorV1
             closePassiveModeServerSocket();
             throw new FTPCommandException(500, "Cannot enter passive mode: " + e);
         }
+    }
+
+    /**
+     * Provides the addresses of (logical) interfaces that share the same
+     * network interface (often a physical NIC socket) as the (logical)
+     * interface to which the client connected.  The order of the addresses is
+     * not guaranteed.  Typically a "single stack" machine will return a single
+     * address (either IPv4 or IPv6 address) and a "dual stack" machine will
+     * return both an IPv4 and an IPv6 address.
+     *
+     * This method exists to allow a mock of this class to isolate itself
+     * from the testing machine's network configuration.
+     */
+    protected Iterable<InterfaceAddress> getLocalAddressInterfaces()
+            throws SocketException
+    {
+        return NetworkInterface.getByInetAddress(_localAddress.getAddress())
+                .getInterfaceAddresses();
     }
 
     public void ftp_port(String arg)
