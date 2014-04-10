@@ -36,6 +36,7 @@ usage()
     echo "   condrestart [<domain>]..."
     echo "   database ls"
     echo "   database update [<cell>@<domain>]..."
+    echo "   database showUpdateSQL [<cell>@<domain>]..."
     echo "   database tag <tag> [<cell>@<domain>]..."
     echo "   database rollback <tag> [<cell>@<domain>]..."
     echo "   database rollbackToDate <date/time> [<cell>@<domain>]..."
@@ -964,13 +965,13 @@ case "$1" in
                 ) | column
                 ;;
 
-            update)
+            update|showUpdateSQL)
                 for domain in $(getProperty dcache.domains); do
                     for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: \n" "$cell@$domain"
-                                liquibase "$domain" "$cell" update
+                                liquibase "$domain" "$cell" ${command/showU/u}
                             fi
                         fi
                     done
