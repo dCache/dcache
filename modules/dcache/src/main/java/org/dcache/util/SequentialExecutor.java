@@ -33,6 +33,7 @@ public class SequentialExecutor extends AbstractExecutorService
     };
 
     private final Worker worker = new Worker();
+    private Thread thread;
     private boolean isShutdown;
     private boolean isRunning;
 
@@ -61,9 +62,9 @@ public class SequentialExecutor extends AbstractExecutorService
             List<Runnable> unexecutedTasks = new ArrayList<>();
             unexecutedTasks.addAll(tasks);
             tasks.clear();
-
-            // Kill runnable
-
+            if (thread != null) {
+                thread.interrupt();
+            }
             return unexecutedTasks;
         } finally {
             monitor.leave();
@@ -131,27 +132,44 @@ public class SequentialExecutor extends AbstractExecutorService
         }
     }
 
-    private Runnable getTask()
-    {
-        monitor.enter();
-        try {
-            if (tasks.isEmpty()) {
-                isRunning = false;
-                return null;
-            } else {
-                return tasks.remove();
-            }
-        } finally {
-            monitor.leave();
-        }
-    }
-
     private class Worker implements Runnable
     {
+        private Runnable getFirstTask()
+        {
+            monitor.enter();
+            try {
+                if (tasks.isEmpty()) {
+                    isRunning = false;
+                    return null;
+                } else {
+                    thread = Thread.currentThread();
+                    return tasks.remove();
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        private Runnable getNextTask()
+        {
+            monitor.enter();
+            try {
+                if (tasks.isEmpty()) {
+                    isRunning = false;
+                    thread = null;
+                    return null;
+                } else {
+                    return tasks.remove();
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
         @Override
         public void run()
         {
-            Runnable task = getTask();
+            Runnable task = getFirstTask();
             while (task != null) {
                 try {
                     task.run();
@@ -159,7 +177,7 @@ public class SequentialExecutor extends AbstractExecutorService
                     Thread thread = Thread.currentThread();
                     thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
                 }
-                task = getTask();
+                task = getNextTask();
             }
         }
     }
