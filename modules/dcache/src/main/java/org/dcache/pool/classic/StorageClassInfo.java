@@ -5,6 +5,7 @@ import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,31 +18,37 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.transform;
 
 /**
  * Holds the files to flush for a particular storage class.
  */
-public class StorageClassInfo implements CacheFileAvailable
+public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(StorageClassInfo.class);
 
     private static class Entry implements Comparable<Entry>
     {
-        final PnfsId pnfsId;
+        final FileAttributes fileAttributes;
         final long timeStamp;
         final long size;
 
         Entry(CacheEntry entry)
         {
-            pnfsId = entry.getPnfsId();
+            fileAttributes = entry.getFileAttributes();
             timeStamp = entry.getCreationTime();
             size = entry.getReplicaSize();
+        }
+
+        public PnfsId pnfsId()
+        {
+            return fileAttributes.getPnfsId();
         }
 
         @Override
@@ -49,7 +56,7 @@ public class StorageClassInfo implements CacheFileAvailable
         {
             try {
                 return (timeStamp > entry.timeStamp) ? 1 :
-                        (timeStamp == entry.timeStamp) ? pnfsId.compareTo(entry.pnfsId) : -1;
+                        (timeStamp == entry.timeStamp) ? pnfsId().compareTo(entry.pnfsId()) : -1;
             } catch (Exception e) {
                 return -1;
             }
@@ -60,6 +67,7 @@ public class StorageClassInfo implements CacheFileAvailable
     private final Map<PnfsId, Entry> _failedRequests = new HashMap<>();
     private final String _storageClass;
     private final String _hsmName;
+    private final NearlineStorageHandler _storageHandler;
     private final Executor _callbackExecutor = Executors.newSingleThreadExecutor();
 
     private boolean _defined;
@@ -77,8 +85,9 @@ public class StorageClassInfo implements CacheFileAvailable
     private int _requestsSubmitted;
     private StorageClassInfoFlushable _flushCallback;
 
-    public StorageClassInfo(String hsmName, String storageClass)
+    public StorageClassInfo(NearlineStorageHandler storageHandler, String hsmName, String storageClass)
     {
+        _storageHandler = storageHandler;
         _storageClass = storageClass;
         _hsmName = hsmName.toLowerCase();
     }
@@ -107,33 +116,39 @@ public class StorageClassInfo implements CacheFileAvailable
         return info;
     }
 
-    /**
-     * Callback from HSM storage handler.
-     */
     @Override
-    public synchronized void cacheFileAvailable(PnfsId pnfsId, Throwable error)
+    public void completed(Void nil, PnfsId attachment)
     {
-        if (error != null) {
+        StorageClassInfoFlushable callback = null;
+        synchronized (this) {
+            _activeCounter--;
+            if (_activeCounter <= 0) {
+                _activeCounter = 0;
+                callback = _flushCallback;
+            }
+        }
+        if (callback != null) {
+            _callbackExecutor.execute(new CallbackTask(this, callback));
+        }
+    }
+
+    @Override
+    public void failed(Throwable exc, PnfsId pnfsId)
+    {
+        synchronized (this) {
             _errorCounter++;
-            if (error instanceof CacheException) {
-                CacheException cce = (CacheException) error;
-                if (cce.getRc() >= 30 && cce.getRc() < 40) {
+            if (exc instanceof CacheException) {
+                CacheException ce = (CacheException) exc;
+                if (ce.getRc() >= 30 && ce.getRc() < 40) {
                     Entry entry = removeRequest(pnfsId);
                     if (entry != null) {
-                        _failedRequests.put(entry.pnfsId, entry);
+                        _failedRequests.put(entry.pnfsId(), entry);
                     }
                     _errorCounter--;
                 }
             }
         }
-
-        _activeCounter--;
-        if (_activeCounter <= 0) {
-            _activeCounter = 0;
-            if (_flushCallback != null) {
-                _callbackExecutor.execute(new CallbackTask(this, _flushCallback));
-            }
-        }
+        completed(null, pnfsId);
     }
 
     private static class CallbackTask implements Runnable
@@ -161,20 +176,21 @@ public class StorageClassInfo implements CacheFileAvailable
             try {
                 _callback.storageClassInfoFlushed(_hsm, _storageClass, _flushId, _requests, _flushErrorCounter);
             } catch (Throwable t) {
-                LOGGER.error("Problem in running storageClassInfoFlushed callback : {}", t.toString());
+                LOGGER.error("Problem in running storageClassInfoFlushed callback: {}", t.toString());
             }
         }
     }
 
-    public synchronized long submit(HsmStorageHandler2 storageHandler, int maxCount,
-                                    final StorageClassInfoFlushable flushCallback)
+    public synchronized long flush(int maxCount, final StorageClassInfoFlushable flushCallback)
     {
+        LOGGER.info("Flushing {}", this);
+
         if (_activeCounter > 0) {
-            throw new IllegalArgumentException("Is already active");
+            throw new IllegalArgumentException("Is already active.");
         }
 
         List<Entry> entries = Ordering.natural().sortedCopy(_requests.values());
-        maxCount = (maxCount <= 0) ? entries.size() : Math.min(entries.size(), maxCount);
+        maxCount = Math.min(entries.size(), maxCount);
 
         _errorCounter = 0;
         _requestsSubmitted = maxCount;
@@ -185,17 +201,16 @@ public class StorageClassInfo implements CacheFileAvailable
         if (maxCount == 0) {
             _callbackExecutor.execute(new CallbackTask(this, flushCallback));
         } else {
-            storageHandler.store(
+            _storageHandler.flush(_hsmName,
                     transform(entries.subList(0, maxCount),
                             new Function<Entry, PnfsId>()
                             {
                                 @Override
                                 public PnfsId apply(Entry entry)
                                 {
-                                    return entry.pnfsId;
+                                    return entry.pnfsId();
                                 }
-                            }),
-                    this);
+                            }), this);
         }
 
         return _recentFlushId;
@@ -234,7 +249,7 @@ public class StorageClassInfo implements CacheFileAvailable
 
     private synchronized void addRequest(Entry entry)
     {
-        _requests.put(entry.pnfsId, entry);
+        _requests.put(entry.pnfsId(), entry);
         if (_time == 0L || entry.timeStamp < _time) {
             _time = entry.timeStamp;
         }

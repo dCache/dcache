@@ -3,8 +3,10 @@ package org.dcache.pool.classic;
 import com.google.common.base.Function;
 
 import java.io.PrintWriter;
+import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -24,6 +26,8 @@ import dmg.util.command.Option;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
+
+import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
 
@@ -33,9 +37,11 @@ import static com.google.common.collect.Iterables.transform;
 /**
  * Manages tape flush queues.
  *
- * A flush queue is created for each storage class and HSM tuple. Queues can be explicitly
+ * A flush queue is created for each storage class and HSM pair. Queues can be explicitly
  * defined or created implicitly when a tape file for a particular storage class is first
  * encountered.
+ *
+ * Each queue is represented by a StorageClassInfo object.
  */
 public class StorageClassContainer
     extends AbstractCellComponent
@@ -43,12 +49,14 @@ public class StorageClassContainer
 {
     private final Map<String, StorageClassInfo> _storageClasses = new HashMap<>();
     private final Map<PnfsId, StorageClassInfo> _pnfsIds = new HashMap<>();
-    private Repository _repository;
+    private final Repository _repository;
+    private final NearlineStorageHandler _storageHandler;
     private boolean  _poolStatusInfoChanged = true;
 
-    public StorageClassContainer(Repository repository)
+    public StorageClassContainer(Repository repository, NearlineStorageHandler storageHandler)
     {
         _repository = repository;
+        _storageHandler = storageHandler;
     }
 
     public synchronized Collection<StorageClassInfo> getStorageClassInfos()
@@ -103,7 +111,7 @@ public class StorageClassContainer
         StorageClassInfo info =
                 getStorageClassInfo(hsmName, storageClass);
         if (info == null) {
-            info = new StorageClassInfo(hsmName, storageClass);
+            info = new StorageClassInfo(_storageHandler, hsmName, storageClass);
         }
         info.setDefined(true);
         _storageClasses.put(info.getFullName(), info);
@@ -173,7 +181,7 @@ public class StorageClassContainer
         StorageClassInfo classInfo = _storageClasses.get(composedName);
 
         if (classInfo == null) {
-            classInfo = new StorageClassInfo(hsmName, storageClass);
+            classInfo = new StorageClassInfo(_storageHandler, hsmName, storageClass);
             //
             // in case we find a template, we take the
             // 'pending', 'expire' and 'total' parameter from it.
@@ -191,6 +199,32 @@ public class StorageClassContainer
         classInfo.add(entry);
         _pnfsIds.put(entry.getPnfsId(), classInfo);
         return classInfo.size() >= classInfo.getPending();
+    }
+
+    public void flush(PnfsId pnfsId, CompletionHandler<Void,PnfsId> callback)
+            throws CacheException, InterruptedException
+    {
+        CacheEntry entry = _repository.getEntry(pnfsId);
+        StorageInfo storageInfo = entry.getFileAttributes().getStorageInfo();
+        String hsm = storageInfo.getHsm().toLowerCase();
+        _storageHandler.flush(hsm, Collections.singleton(pnfsId), callback);
+    }
+
+    public void flushAll(int maxActive, long retryDelayOnError)
+    {
+        long now = System.currentTimeMillis();
+        int active = 0;
+        for (StorageClassInfo info: getStorageClassInfos()) {
+            if (active >= maxActive) {
+                break;
+            }
+            if (info.getActiveCount() > 0) {
+                active++;
+            } else if (info.isTriggered() && ((now - info.getLastSubmitted()) > retryDelayOnError)) {
+                info.flush(Integer.MAX_VALUE, null);
+                active++;
+            }
+        }
     }
 
     @Override

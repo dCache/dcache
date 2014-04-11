@@ -8,7 +8,7 @@ package diskCacheV111.vehicles;
 //  Flush Control
 //
 
-public class PoolFlushControlInfoMessage extends PoolFlushControlMessage {
+public abstract class PoolFlushControlInfoMessage extends PoolFlushControlMessage {
 
     private static final long serialVersionUID = 2092239799456859611L;
 

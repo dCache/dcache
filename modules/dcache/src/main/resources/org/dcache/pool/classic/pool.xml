@@ -156,22 +156,33 @@
   </bean>
 
   <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
-    <description>HSM flush queue manager</description>
-    <constructor-arg ref="rep"/>
+      <description>HSM flush queue manager</description>
+      <constructor-arg ref="rep"/>
+      <constructor-arg ref="storagehandler"/>
   </bean>
 
-  <bean id="hsmset" class="diskCacheV111.util.HsmSet">
+  <bean id="storagehandler" class="org.dcache.pool.nearline.NearlineStorageHandler">
+      <description>Nearline storage manager</description>
+      <property name="scheduledExecutor" ref="workerThreadPool"/>
+      <property name="executor">
+          <bean class="org.dcache.util.CDCListeningExecutorServiceDecorator"
+                destroy-method="shutdown">
+              <constructor-arg>
+                  <bean class="java.util.concurrent.Executors"
+                        factory-method="newCachedThreadPool"/>
+              </constructor-arg>
+          </bean>
+      </property>
+      <property name="repository" ref="rep"/>
+      <property name="checksumModule" ref="csm"/>
+      <property name="pnfsHandler" ref="pnfs"/>
+      <property name="flushMessageTarget" ref="flush-notification-stub"/>
+      <property name="billingStub" ref="billing-stub"/>
+      <property name="hsmSet" ref="hsmset"/>
+  </bean>
+
+  <bean id="hsmset" class="org.dcache.pool.nearline.HsmSet">
     <description>HSM backend manager</description>
-  </bean>
-
-  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
-    <description>HSM integration module</description>
-    <property name="repository" ref="rep"/>
-    <property name="pnfsHandler" ref="pnfs"/>
-    <property name="hsms" ref="hsmset"/>
-    <property name="checksumModule" ref="csm"/>
-    <property name="flushNotificationStub" ref="flush-notification-stub"/>
-    <property name="billingStub" ref="billing-stub"/>
   </bean>
 
   <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager"
@@ -182,7 +193,6 @@
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
     <description>Controller for centralising flushing</description>
     <constructor-arg ref="queue"/>
-    <constructor-arg ref="storagehandler"/>
   </bean>
 
   <bean id="flush-notification-stub" class="org.dcache.cells.CellStub">

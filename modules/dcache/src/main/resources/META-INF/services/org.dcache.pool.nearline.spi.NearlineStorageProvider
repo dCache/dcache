@@ -1,0 +1,4 @@
+org.dcache.pool.nearline.script.ScriptNearlineStorageProvider
+org.dcache.pool.nearline.filesystem.CopyNearlineStorageProvider
+org.dcache.pool.nearline.filesystem.LinkNearlineStorageProvider
+org.dcache.pool.nearline.tar.TarNearlineStorageProvider
