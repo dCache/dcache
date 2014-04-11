@@ -136,7 +136,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
     public SimpleJobScheduler(String name) {
         _name = name;
-        _jobExecutor = new CDCExecutorServiceDecorator(Executors.newCachedThreadPool(
+        _jobExecutor = new CDCExecutorServiceDecorator<>(Executors.newCachedThreadPool(
                 new ThreadFactoryBuilder().setNameFormat(_name + "-worker-%d").build()));
         _worker = new Thread(this);
         _worker.setName(_name);

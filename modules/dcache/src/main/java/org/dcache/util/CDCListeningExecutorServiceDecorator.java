@@ -6,12 +6,14 @@ import com.google.common.util.concurrent.ForwardingListenableFuture;
 import com.google.common.util.concurrent.ForwardingListeningExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,6 +38,12 @@ public class CDCListeningExecutorServiceDecorator extends ForwardingListeningExe
             ListeningExecutorService delegate)
     {
         this._delegate = delegate;
+    }
+
+    public CDCListeningExecutorServiceDecorator(
+            ExecutorService delegate)
+    {
+        this(MoreExecutors.listeningDecorator(delegate));
     }
 
     @Override

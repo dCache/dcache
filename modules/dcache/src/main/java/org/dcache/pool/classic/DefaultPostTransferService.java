@@ -52,7 +52,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPostTransferService.class);
 
     private final ExecutorService _executor =
-            new CDCExecutorServiceDecorator(
+            new CDCExecutorServiceDecorator<>(
                     Executors.newCachedThreadPool(
                             new ThreadFactoryBuilder().setNameFormat("post-transfer-%d").build()));
     private CellStub _billing;

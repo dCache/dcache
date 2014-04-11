@@ -68,7 +68,7 @@ public class LineBasedDoor
         getNucleus().setMessageExecutor(new SequentialExecutor(executor));
         this.interpreterClass = interpreterClass;
         this.engine = engine;
-        this.executor = new CDCExecutorServiceDecorator(executor);
+        this.executor = new CDCExecutorServiceDecorator<>(executor);
 
         try {
             doInit();

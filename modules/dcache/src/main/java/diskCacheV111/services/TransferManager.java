@@ -92,7 +92,7 @@ public abstract class TransferManager extends AbstractCell
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
     private ExecutorService executor =
-            new CDCExecutorServiceDecorator(Executors.newCachedThreadPool());
+            new CDCExecutorServiceDecorator<>(Executors.newCachedThreadPool());
 
     /**
      * Creates a new instance of Class

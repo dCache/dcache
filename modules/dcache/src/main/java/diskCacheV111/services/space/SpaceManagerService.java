@@ -191,7 +191,7 @@ public final class SpaceManagerService
         @Required
         public void setExecutor(ExecutorService executor)
         {
-            this.executor = new CDCExecutorServiceDecorator(executor);
+            this.executor = new CDCExecutorServiceDecorator<>(executor);
         }
 
         @Required

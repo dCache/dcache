@@ -22,19 +22,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class CDCScheduledExecutorServiceDecorator
-        extends CDCExecutorServiceDecorator
+public class CDCScheduledExecutorServiceDecorator<E extends ScheduledExecutorService>
+        extends CDCExecutorServiceDecorator<E>
         implements ScheduledExecutorService
 {
-    public CDCScheduledExecutorServiceDecorator(ScheduledExecutorService delegate)
+    public CDCScheduledExecutorServiceDecorator(E delegate)
     {
         super(delegate);
-    }
-
-    @Override
-    protected ScheduledExecutorService delegate()
-    {
-        return (ScheduledExecutorService) super.delegate();
     }
 
     @Override

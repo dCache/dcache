@@ -23,18 +23,17 @@ import static com.google.common.collect.Iterables.transform;
  * The CDC of a task submitted to the ExecutorService will be initialized to
  * the CDC of the thread that submitted the task.
  */
-public class CDCExecutorServiceDecorator extends ForwardingExecutorService
+public class CDCExecutorServiceDecorator<E extends ExecutorService> extends ForwardingExecutorService
 {
-    private final ExecutorService _delegate;
+    private final E _delegate;
 
-    public CDCExecutorServiceDecorator(
-            ExecutorService delegate)
+    public CDCExecutorServiceDecorator(E delegate)
     {
         this._delegate = delegate;
     }
 
     @Override
-    protected ExecutorService delegate()
+    public E delegate()
     {
         return _delegate;
     }

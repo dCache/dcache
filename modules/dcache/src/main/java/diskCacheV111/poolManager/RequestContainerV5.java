@@ -65,7 +65,6 @@ import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.util.Args;
-import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 

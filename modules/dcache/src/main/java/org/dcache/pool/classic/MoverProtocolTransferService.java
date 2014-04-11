@@ -49,7 +49,7 @@ public class MoverProtocolTransferService extends AbstractCellComponent
         MoverProtocolTransferService.class.getSimpleName();
 
     private final ExecutorService _executor =
-            new CDCExecutorServiceDecorator(
+            new CDCExecutorServiceDecorator<>(
                     Executors.newCachedThreadPool(
                             new ThreadFactoryBuilder().setNameFormat(_name + "transfer-service-%d").build()));
     private final ConcurrentMap<String, Class<? extends MoverProtocol>> _movermap = new ConcurrentHashMap<>();
