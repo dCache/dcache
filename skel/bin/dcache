@@ -965,13 +965,26 @@ case "$1" in
                 ) | column
                 ;;
 
-            update|showUpdateSQL)
+            update)
                 for domain in $(getProperty dcache.domains); do
                     for cell in $(getProperty dcache.domain.cells "$domain"); do
                         if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
                             if hasManagedDatabase "$domain" "$cell"; then
                                 printf "%s: \n" "$cell@$domain"
-                                liquibase "$domain" "$cell" ${command/showU/u}
+                                liquibase "$domain" "$cell" update
+                            fi
+                        fi
+                    done
+                done
+                ;;
+
+            showUpdateSQL)
+                for domain in $(getProperty dcache.domains); do
+                    for cell in $(getProperty dcache.domain.cells "$domain"); do
+                        if [ $# -eq 0 ] || matchesAny "$cell@$domain" "$@"; then
+                            if hasManagedDatabase "$domain" "$cell"; then
+                                printf "%s: \n" "$cell@$domain"
+                                liquibase "$domain" "$cell" updateSQL
                             fi
                         fi
                     done
