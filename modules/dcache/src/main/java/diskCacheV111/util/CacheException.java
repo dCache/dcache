@@ -9,6 +9,9 @@ public class CacheException extends Exception
 {
     private static final long serialVersionUID = 3219663683702355240L;
 
+    /** Transfer between pool and remote site failed. */
+    public final static int THIRD_PARTY_TRANSFER_FAILED = 8;
+
     /** Requested operation is disabled in pool. */
     public final static int POOL_DISABLED = 104;
 

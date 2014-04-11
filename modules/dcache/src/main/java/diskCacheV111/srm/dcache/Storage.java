@@ -500,6 +500,9 @@ public final class Storage
             case CacheException.FILE_NOT_FOUND:
                 e = new SRMInvalidPathException(String.valueOf(error));
                 break;
+            case CacheException.THIRD_PARTY_TRANSFER_FAILED:
+                e = new SRMException("Transfer failed: " + error);
+                break;
             default:
                 e = new SRMException(String.format("Transfer failed: %s [%d]",
                                                    error, msg.getReturnCode()));

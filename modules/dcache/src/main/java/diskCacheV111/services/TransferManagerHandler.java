@@ -448,7 +448,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     {
         log.debug("poolDoorMessageArrived, doorMessage.getReturnCode()=" + doorMessage.getReturnCode());
         if (doorMessage.getReturnCode() != 0) {
-            sendErrorReply(8, "tranfer failed :" + doorMessage.getErrorObject());
+            sendErrorReply(CacheException.THIRD_PARTY_TRANSFER_FAILED,
+                    doorMessage.getErrorObject());
             return;
         }
 
@@ -474,11 +475,14 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         _errorObject = errorObject;
         _cancelTimer = cancelTimer;
 
-        log.error("sending error reply, reply code=" + replyCode + " errorObject=" + errorObject + " for " + toString(true));
+        if (log.isDebugEnabled()) {
+            log.debug("sending error reply {}:{} for {}", replyCode,
+                    errorObject, toString(true));
+        }
 
         if (store && created) {// Timur: I think this check  is not needed, we might not ever get storage info and pnfs id: && pnfsId != null && aMetadata != null && aMetadata.getFileSize() == 0) {
             if (state != WAITING_FOR_PNFS_ENTRY_DELETE && state != RECEIVED_PNFS_ENTRY_DELETE) {
-                log.error(" we created the pnfs entry and the store failed: deleting " + pnfsPath);
+                log.debug("deleting pnfs entry we created: {}", pnfsPath);
                 deletePnfsEntry();
                 return;
             }
@@ -535,8 +539,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         Serializable errorObject = _errorObject;
         boolean cancelTimer = _cancelTimer;
 
-        log.error("sending error reply, reply code=" + replyCode + " errorObject=" + errorObject + " for " + toString(
-                true));
+        if (log.isDebugEnabled()) {
+            log.debug("sending error reply {}:{} for {}", replyCode,
+                    errorObject, toString(true));
+        }
 
         if (tlog != null) {
             tlog.error("getFromRemoteGsiftpUrl failed: state = " + state
