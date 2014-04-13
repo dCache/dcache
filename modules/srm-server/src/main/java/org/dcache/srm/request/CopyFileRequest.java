@@ -1061,7 +1061,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                 return;
             }
             copyFileRequest.setTransferError(e);
-            LOG.error("copy failed: {}", e.toString());
+            LOG.error("copy failed: {}", e.getMessage());
             State state = copyFileRequest.getState();
             Scheduler scheduler = Scheduler.getScheduler(copyFileRequest.getSchedulerId());
             if (!state.isFinal() && scheduler != null) {
