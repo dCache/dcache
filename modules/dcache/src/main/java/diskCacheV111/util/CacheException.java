@@ -9,9 +9,6 @@ public class CacheException extends Exception
 {
     private static final long serialVersionUID = 3219663683702355240L;
 
-    /** Transfer between pool and remote site failed. */
-    public final static int THIRD_PARTY_TRANSFER_FAILED = 8;
-
     /** Requested operation is disabled in pool. */
     public final static int POOL_DISABLED = 104;
 
@@ -116,6 +113,13 @@ public class CacheException extends Exception
 
     public static final int NO_POOL_CONFIGURED = 10024;
     public static final int NO_POOL_ONLINE = 10025;
+
+    /** Selected pool failed for third-party copy. */
+    public final static int SELECTED_POOL_FAILED = 10026;
+
+    /** Transfer between pool and remote site failed. */
+    public final static int THIRD_PARTY_TRANSFER_FAILED = 10027;
+
 
     /**
      * default error code. <b>It's recommended to use more specific error

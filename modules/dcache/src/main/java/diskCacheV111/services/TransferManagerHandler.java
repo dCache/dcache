@@ -211,18 +211,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             } else if (message instanceof PnfsMapPathMessage) {
                 PnfsMapPathMessage mapMessage = (PnfsMapPathMessage) message;
                 if (state == WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE) {
-                    if (mapMessage.getReturnCode() != 0) {
-                        log.error("We were about to delete entry that does not exist : " + mapMessage.toString()
-                                + " PnfsMapPathMessage return code=" + mapMessage.getReturnCode()
-                                + " reason : " + mapMessage.getErrorObject());
-                        sendErrorReply();
-                        return;
-                    } else {
-                        state = RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE;
-                        deletePnfsEntry();
-                        return;
-                    }
-
+                    state = RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE;
+                    deletePnfsEntry();
+                    return;
                 } else {
                     log.error(this.toString() + " got unexpected PnfsMapPathMessage "
                             + " : " + mapMessage + " ; Ignoring");
@@ -251,18 +242,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 PnfsDeleteEntryMessage deleteReply = (PnfsDeleteEntryMessage) message;
                 if (state == WAITING_FOR_PNFS_ENTRY_DELETE) {
                     setState(RECEIVED_PNFS_ENTRY_DELETE);
-                    if (deleteReply.getReturnCode() != 0) {
-                        log.error("Delete failed : " + deleteReply.getPath()
-                                + " PnfsDeleteEntryMessage return code=" + deleteReply.getReturnCode()
-                                + " reason : " + deleteReply.getErrorObject());
-                        numberOfRetries++;
-                        int numberOfRemainingRetries = manager.getMaxNumberOfDeleteRetries() - numberOfRetries;
-                        log.error("Will retry : " + numberOfRemainingRetries + " times");
-                        deletePnfsEntry();
-                    } else {
-                        log.debug("Received PnfsDeleteEntryMessage, Deleted  : " + deleteReply.getPath());
-                        sendErrorReply();
-                    }
+                    log.debug("Received PnfsDeleteEntryMessage, Deleted  : {}",
+                            deleteReply.getPath());
+                    sendErrorReply();
                 }
             }
         manager.persist(this);
@@ -271,17 +253,59 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     @Override
     public void failure(int rc, Object error)
     {
+        switch (state) {
+        case WAITING_FOR_PNFS_INFO_STATE:
+            sendErrorReply(rc, "Failed to lookup file: " + error);
+            break;
 
+        case WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE:
+            sendErrorReply(rc, "Failed to create namespace entry: " + error);
+            break;
+
+        case WAITING_FIRST_POOL_REPLY_STATE:
+            // FIXME: in the case of an attempted read (pool pushing the file
+            //        to some remote site), we can ask PoolManager for another
+            //        pool.  For an attempted write (pool pulling the file)
+            //        we must fail the transfer as we don't know if a mover
+            //        was started.
+            sendErrorReply(CacheException.SELECTED_POOL_FAILED,
+                    "Failed while waiting for mover to start: " + error);
+            break;
+
+        case WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE:
+            sendErrorReply(rc, "Pre-delete check failed: " + error);
+            break;
+
+        case WAITING_FOR_POOL_INFO_STATE:
+            if (rc == CacheException.OUT_OF_DATE) {
+                handle();
+            } else {
+                sendErrorReply(rc, "Failed to select pool: " + error);
+            }
+            break;
+
+        case WAITING_FOR_PNFS_ENTRY_DELETE:
+            log.warn("Delete attempt ({} of {}) failed: {}", numberOfRetries + 1,
+                    manager.getMaxNumberOfDeleteRetries(), error);
+            numberOfRetries++;
+            if (numberOfRetries < manager.getMaxNumberOfDeleteRetries()) {
+                deletePnfsEntry();
+            } else {
+                sendErrorReply(_replyCode, "Failed to delete file " +
+                        "(" + error + "), triggered by: " + _errorObject);
+            }
+            break;
+
+        default:
+            /* The code should never get here, but we try to recover from bugs. */
+            sendErrorReply(rc, "Failed in state " + state + ": " + error +
+                    " [" + rc + "]");
+            break;
+        }
     }
 
     public void createEntryResponseArrived(PnfsCreateEntryMessage create)
     {
-        if (create.getReturnCode() != 0) {
-            sendErrorReply(create.getReturnCode(),
-                    create.getErrorObject());
-            return;
-        }
-
         created = true;
         manager.persist(this);
 
@@ -295,11 +319,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
 
     public void storageInfoArrived(PnfsGetFileAttributes msg)
     {
-        if (msg.getReturnCode() != 0) {
-            sendErrorReply(msg.getReturnCode(),
-                    msg.getErrorObject());
-            return;
-        }
         if (!store && tlog != null) {
             tlog.middle(msg.getFileAttributes().getSize());
         }
@@ -357,16 +376,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                     ((PoolMgrSelectReadPoolMsg) pool_info).getContext();
         }
 
-        if (pool_info.getReturnCode() == CacheException.OUT_OF_DATE) {
-            handle();
-            return;
-        }
-
-        if (pool_info.getReturnCode() != 0) {
-            sendErrorReply(5, new CacheException("Pool manager error: "
-                                                         + pool_info.getErrorObject()));
-            return;
-        }
         setPool(pool_info.getPoolName());
         setPoolAddress(pool_info.getPoolAddress());
         fileAttributes = pool_info.getFileAttributes();
@@ -411,11 +420,6 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     {
         log.debug("poolReply = " + poolMessage);
         info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
-        if (poolMessage.getReturnCode() != 0) {
-            sendErrorReply(5, new CacheException("Pool error: "
-                    + poolMessage.getErrorObject()));
-            return;
-        }
         log.debug("Pool " + pool + " will deliver file " + pnfsId + " mover id is " + poolMessage.getMoverId());
         log.debug("Starting moverTimeout timer");
         manager.startTimer(id);
@@ -427,16 +431,11 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
     public void deletePnfsEntry()
     {
         if (state == RECEIVED_PNFS_CHECK_BEFORE_DELETE_STATE) {
-            if (numberOfRetries < manager.getMaxNumberOfDeleteRetries()) {
-                PnfsDeleteEntryMessage pnfsMsg = new PnfsDeleteEntryMessage(pnfsPath);
-                setState(WAITING_FOR_PNFS_ENTRY_DELETE);
-                manager.persist(this);
-                pnfsMsg.setReplyRequired(true);
-                CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this, executor);
-            } else {
-                log.error("Failed to remove PNFS entry after " + numberOfRetries);
-                sendErrorReply();
-            }
+            PnfsDeleteEntryMessage pnfsMsg = new PnfsDeleteEntryMessage(pnfsPath);
+            setState(WAITING_FOR_PNFS_ENTRY_DELETE);
+            manager.persist(this);
+            pnfsMsg.setReplyRequired(true);
+            CellStub.addCallback(manager.getPnfsManagerStub().send(pnfsMsg), this, executor);
         } else {
             PnfsMapPathMessage message = new PnfsMapPathMessage(pnfsPath);
             setState(WAITING_FOR_PNFS_CHECK_BEFORE_DELETE_STATE);
