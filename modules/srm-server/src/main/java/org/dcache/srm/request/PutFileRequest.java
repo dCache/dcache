@@ -310,31 +310,33 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public void toString(StringBuilder sb, boolean longformat) {
-        sb.append(" PutFileRequest ");
-        sb.append(" id:").append(getId());
-        sb.append(" priority:").append(getPriority());
-        sb.append(" creator priority:");
-        try {
-            sb.append(getUser().getPriority());
-        } catch (SRMInvalidRequestException ire) {
-            sb.append("Unknown");
+    public void toString(StringBuilder sb, String padding, boolean longformat) {
+        sb.append(padding);
+        if (padding.isEmpty()) {
+            sb.append("Put ");
+        }
+        sb.append("file id:").append(getId());
+        if (getPriority() != 0) {
+            sb.append(" priority:").append(getPriority());
         }
         State state = getState();
         sb.append(" state:").append(state);
         if(longformat) {
-            sb.append('\n').append("   SURL: ").append(getSurlString());
-            sb.append('\n').append("   TURL: ").append(getTurlString());
+            sb.append('\n');
+            sb.append(padding).append("   SURL: ").append(getSurlString()).append('\n');
+            sb.append(padding).append("   TURL: ").append(getTurlString()).append('\n');
             if (getSize() != null) {
-                sb.append('\n').append("   size: ").append(getSize());
+                sb.append(padding).append("   Size: ").append(getSize()).append('\n');
             }
-            sb.append('\n').append("   AccessLatency: ").append(getAccessLatency());
-            sb.append('\n').append("   RetentionPolicy: ").append(getRetentionPolicy());
-            sb.append('\n').append("   spaceReservation: ").append(getSpaceReservationId());
-            sb.append('\n').append("   status code:").append(getStatusCode());
-            sb.append('\n').append("   error message:").append(getErrorMessage());
-            sb.append('\n').append("   History of State Transitions: \n");
-            sb.append(getHistory());
+            sb.append(padding).append("   AccessLatency: ").append(getAccessLatency()).append('\n');
+            sb.append(padding).append("   RetentionPolicy: ").append(getRetentionPolicy()).append('\n');
+            sb.append(padding).append("   spaceReservation: ").append(getSpaceReservationId()).append('\n');
+            TStatusCode status = getStatusCode();
+            if (status != null) {
+                sb.append(padding).append("   Status:").append(status).append('\n');
+            }
+            sb.append(padding).append("   History of State Transitions:\n");
+            sb.append(getHistory(padding + "   "));
         }
     }
 

@@ -486,4 +486,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         return desiredOnlineLifetimeInSeconds;
     }
 
+    @Override
+    public String getNameForRequestType() {
+        return "Bring online";
+    }
 }

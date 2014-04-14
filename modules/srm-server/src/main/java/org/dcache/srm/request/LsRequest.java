@@ -557,4 +557,8 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         return longFormat;
     }
 
+    @Override
+    public String getNameForRequestType() {
+        return "Ls";
+    }
 }

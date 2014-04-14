@@ -118,7 +118,7 @@ public abstract class Job  {
 
     private static final Logger logger = LoggerFactory.getLogger(Job.class);
 
-    private static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
+    protected static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
 
     //this is used to build the queue of jobs.
     protected Long nextJobId;
@@ -487,17 +487,22 @@ public abstract class Job  {
         }
 
     }
+
      public String getHistory() {
+         return getHistory("");
+     }
+
+     public String getHistory(String padding) {
         StringBuilder historyStringBuillder = new StringBuilder();
         rlock();
         try {
             SimpleDateFormat format = new SimpleDateFormat(ISO8601_FORMAT);
             for( JobHistory nextHistoryElement: jobHistory ) {
-                 historyStringBuillder.append(" at ");
-                 historyStringBuillder.append(format
+                 historyStringBuillder.append(padding);
+                 historyStringBuillder.append("   ").append(format
                          .format(new Date(nextHistoryElement.getTransitionTime())));
-                 historyStringBuillder.append(" state ").append(nextHistoryElement.getState());
-                 historyStringBuillder.append(" : ");
+                 historyStringBuillder.append(" ").append(nextHistoryElement.getState());
+                 historyStringBuillder.append(": ");
                  historyStringBuillder.append(nextHistoryElement.getDescription());
                  historyStringBuillder.append('\n');
             }

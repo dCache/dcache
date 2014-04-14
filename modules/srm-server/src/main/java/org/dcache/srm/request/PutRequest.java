@@ -543,4 +543,9 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             wunlock();
         }
     }
+
+    @Override
+    public String getNameForRequestType() {
+        return "Put";
+    }
 }

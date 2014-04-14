@@ -583,25 +583,26 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         }
 
         @Override
-        public void toString(StringBuilder sb, boolean longformat) {
-                sb.append(" LsFileRequest ");
-                sb.append(" id:").append(getId());
-                sb.append(" priority:").append(getPriority());
-                sb.append(" creator priority:");
-                try {
-                        sb.append(getUser().getPriority());
+        public void toString(StringBuilder sb, String padding, boolean longformat) {
+                sb.append(padding);
+                if (padding.isEmpty()) {
+                    sb.append("Ls ");
                 }
-                catch (SRMInvalidRequestException ire) {
-                        sb.append("Unknown");
+                sb.append("file id:").append(getId());
+                if (getPriority() != 0) {
+                    sb.append(" priority:").append(getPriority());
                 }
                 State state = getState();
                 sb.append(" state:").append(state);
                 if(longformat) {
-                        sb.append('\n').append("   SURL: ").append(getSurl());
-                        sb.append('\n').append("   status code:").append(getStatusCode());
-                        sb.append('\n').append("   error message:").append(getErrorMessage());
-                        sb.append('\n').append("   History of State Transitions: \n");
-                        sb.append(getHistory());
+                        sb.append('\n');
+                        sb.append(padding).append("   SURL: ").append(getSurl()).append('\n');
+                        TStatusCode status = getStatusCode();
+                        if (status != null) {
+                            sb.append(padding).append("   Status:").append(status).append('\n');
+                        }
+                        sb.append(padding).append("   History of State Transitions:\n");
+                        sb.append(getHistory(padding + "   "));
                 }
         }
 

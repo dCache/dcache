@@ -638,30 +638,36 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         return (int) (getId() ^ getId() >> 32);
     }
 
+
+    /**
+     * Provide a simple human-friendly name for requests of this type.
+     */
+    abstract String getNameForRequestType();
+
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
+        sb.append(getNameForRequestType()).append(" id:").append(getId());
+        sb.append(" files:").append(fileRequests.size());
+        sb.append(" state:").append(getState());
+        TStatusCode code = getStatusCode();
+        if (code != null) {
+            sb.append(" status:").append(code);
+        }
+        sb.append(" by:").append(getUser());
         if (longformat) {
-            sb.append(getMethod()).append("\n");
-            sb.append("id: ").append(getId()).append("\n");
-            sb.append("owner: ").append(getUser()).append("\n");
-            sb.append("state: ").append(getState()).append("\n");
-            sb.append("credential: \"").append(getCredential()).append("\"\n");
-            sb.append("submitted: ").append(new Date(getCreationTime())).append("\n");
-            sb.append("expires: ").append(new Date(getCreationTime() + getLifetime())).append("\n");
-            sb.append("status code: ").append(getStatusCode()).append("\n");
-            sb.append("error message: ").append(getErrorMessage()).append("\n");
-            sb.append("History of State Transitions: \n");
-            sb.append(getHistory());
+            sb.append('\n');
+            sb.append("   Submitted:").append(describe(new Date(getCreationTime()))).append('\n');
+            sb.append("   Expires:").append(describe(new Date(getCreationTime() + getLifetime()))).append('\n');
+            RequestCredential credential = getCredential();
+            if (credential != null) {
+                sb.append("   Credential: \"").append(getCredential()).append("\"\n");
+            }
+            sb.append("   History of State Transitions:\n");
+            sb.append(getHistory("   "));
             for (R fr:fileRequests) {
                 sb.append("\n");
-                fr.toString(sb, longformat);
+                fr.toString(sb, "   ", longformat);
             }
-        } else {
-            sb.append(getMethod());
-            sb.append(" id: ").append(getId());
-            sb.append(" owner: ").append(getUser());
-            sb.append(" state: ").append(getState());
-            sb.append(" number of files:").append(fileRequests.size());
         }
     }
 

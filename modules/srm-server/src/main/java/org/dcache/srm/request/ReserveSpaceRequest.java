@@ -201,26 +201,27 @@ public final class ReserveSpaceRequest extends Request {
 
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
-        sb.append(" ReserveSpaceRequest ");
-        sb.append(" id =").append(getId());
-        sb.append(" created: ").append(getUser());
-        sb.append(" spaceToken: ").append(getSpaceToken());
-        sb.append(" state=").append(getState());
+        sb.append("Reserve space id:").append(getId());
+        sb.append(" spaceToken:").append(getSpaceToken());
+        sb.append(" state:").append(getState());
+        sb.append(" by:").append(getUser());
         if(longformat) {
-            sb.append("\ncredential: \"").append(getCredential()).
+            sb.append('\n');
+            RequestCredential credential = getCredential();
+            if (credential != null) {
+                sb.append("   Credential: \"").append(getCredential()).
                 append("\"\n");
-            sb.append("\nsubmitted: ").
-                append(new Date(getCreationTime()));
-            sb.append("\nexpires: ").
-                append(new Date(
-                    getCreationTime() +getLifetime()));
-            sb.append("\nstatus code: ").append(getStatusCode());
-            sb.append("\nerror message: ").append(getErrorMessage());
-            sb.append('\n').append("   lifetime: ").append(getSpaceReservationLifetime());
-            sb.append('\n').append("   AccessLatency: ").append(getAccessLatency());
-            sb.append('\n').append("   RetentionPolicy: ").append(getRetentionPolicy());
-            sb.append('\n').append("History of State Transitions: \n");
-            sb.append(getHistory());
+            }
+            sb.append("   Submitted: ").
+                append(describe(new Date(getCreationTime()))).append('\n');
+            sb.append("   Expires: ").
+                append(describe(new Date(getCreationTime() +getLifetime()))).append('\n');
+            sb.append("   Status: ").append(getStatusCode()).append('\n');
+            sb.append("   lifetime: ").append(getSpaceReservationLifetime()).append('\n');
+            sb.append("   AccessLatency: ").append(getAccessLatency()).append('\n');
+            sb.append("   RetentionPolicy: ").append(getRetentionPolicy()).append('\n');
+            sb.append("   History of State Transitions:\n");
+            sb.append(getHistory("   "));
         }
     }
 

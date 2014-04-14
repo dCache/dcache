@@ -345,30 +345,32 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     @Override
-    public void toString(StringBuilder sb, boolean longformat) {
-        sb.append(" GetFileRequest ");
-        sb.append(" id:").append(getId());
-        sb.append(" priority:").append(getPriority());
-        sb.append(" creator priority:");
-        try {
-            sb.append(getUser().getPriority());
-        } catch (SRMInvalidRequestException ire) {
-            sb.append("Unknown");
+    public void toString(StringBuilder sb, String padding, boolean longformat) {
+        sb.append(padding);
+        if (padding.isEmpty()) {
+            sb.append("Get ");
+        }
+        sb.append("file id:").append(getId());
+        if (getPriority() != 0) {
+            sb.append(" priority:").append(getPriority());
         }
         State state = getState();
         sb.append(" state:").append(state);
         if(longformat) {
-            sb.append('\n').append("   SURL: ").append(getSurlString());
-            sb.append('\n').append("   pinned: ").append(isPinned());
+            sb.append('\n');
+            sb.append(padding).append("   SURL: ").append(getSurlString()).append('\n');
+            sb.append(padding).append("   Pinned: ").append(isPinned()).append('\n');
             String thePinId = getPinId();
             if(thePinId != null) {
-                sb.append('\n').append("   pinid: ").append(thePinId);
+                sb.append(padding).append("   Pin id: ").append(thePinId).append('\n');
             }
-            sb.append('\n').append("   TURL: ").append(getTurlString());
-            sb.append('\n').append("   status code:").append(getStatusCode());
-            sb.append('\n').append("   error message:").append(getErrorMessage());
-            sb.append('\n').append("   History of State Transitions: \n");
-            sb.append(getHistory());
+            sb.append(padding).append("   TURL: ").append(getTurlString()).append('\n');
+            TStatusCode status = getStatusCode();
+            if (status != null) {
+                sb.append(padding).append("   Status:").append(status).append('\n');
+            }
+            sb.append(padding).append("   History of State Transitions:\n");
+            sb.append(getHistory(padding + "   "));
         }
     }
 

@@ -466,4 +466,9 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
 
         return surlReturnStatuses;
     }
+
+    @Override
+    public String getNameForRequestType() {
+        return "Get";
+    }
 }

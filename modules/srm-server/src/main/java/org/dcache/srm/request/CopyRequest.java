@@ -1337,4 +1337,9 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
         return path;
     }
+
+    @Override
+    public String getNameForRequestType() {
+        return "Copy";
+    }
 }

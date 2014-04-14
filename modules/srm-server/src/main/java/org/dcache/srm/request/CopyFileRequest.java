@@ -322,27 +322,48 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
     }
 
     @Override
-    public void toString(StringBuilder sb, boolean longformat)
+    public void toString(StringBuilder sb, String padding, boolean longformat)
     {
-        sb.append(" CopyFileRequest ");
-        sb.append(" id:").append(getId());
-        sb.append(" priority:").append(getPriority());
-        sb.append(" creator priority:");
-        try {
-            sb.append(getUser().getPriority());
-        } catch (SRMInvalidRequestException ire) {
-            sb.append("Unknown");
+        sb.append(padding);
+        if (padding.isEmpty()) {
+            sb.append("Copy ");
+        }
+        sb.append("file id:").append(getId());
+        if (getPriority() != 0) {
+            sb.append(" priority:").append(getPriority());
         }
         sb.append(" state:").append(getState());
         if (longformat) {
-            sb.append(" fromSurl:").append(getSourceSurl());
-            sb.append(" fromTurl:").append(getSourceTurl()==null?"null":getSourceTurl());
-            sb.append(" toSurl:").append(getDestinationSurl());
-            sb.append(" toTurl:").append(getDestinationTurl()==null?"null":getDestinationTurl());
-            sb.append('\n').append("   status code:").append(getStatusCode());
-            sb.append('\n').append("   error message:").append(getErrorMessage());
-            sb.append('\n').append("   History of State Transitions: \n");
-            sb.append(getHistory());
+            sb.append(" source=");
+            appendPathSurlAndTurl(sb, getLocalSourcePath(), getSourceSurl(),
+                    getSourceTurl());
+            sb.append(" destination=");
+            appendPathSurlAndTurl(sb, getLocalDestinationPath(),
+                    getDestinationSurl(), getDestinationTurl());
+            sb.append('\n');
+            TStatusCode status = getStatusCode();
+            if (status != null) {
+                sb.append(padding).append("   Status:").append(status).append('\n');
+            }
+            sb.append(padding).append("   History of State Transitions:\n");
+            sb.append(getHistory(padding + "   "));
+        }
+    }
+
+    private static void appendPathSurlAndTurl(StringBuilder sb,
+            String path, URI surl, URI turl)
+    {
+        if (path != null) {
+            sb.append(path);
+        } else {
+            if (surl.getScheme().equalsIgnoreCase("srm")) {
+                sb.append(surl);
+                if (turl != null) {
+                    sb.append(" --> ").append(turl);
+                }
+            } else {
+                sb.append(turl);
+            }
         }
     }
 

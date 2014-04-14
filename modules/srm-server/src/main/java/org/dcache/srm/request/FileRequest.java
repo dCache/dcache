@@ -431,4 +431,11 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     {
         return any(asList(protocols), in(asList(getStorage().supportedGetProtocols())));
     }
+
+    @Override
+    public void toString(StringBuilder sb, boolean longformat) {
+        toString(sb, "", longformat);
+    }
+
+    abstract void toString(StringBuilder sb, String padding, boolean longformat);
 }
