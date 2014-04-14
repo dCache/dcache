@@ -731,7 +731,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.7.4</version>
+            <version>0.7.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
