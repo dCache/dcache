@@ -1289,7 +1289,8 @@
     </map>
 
     <map name="door-family-to-ctrl-proto-type">
-      <sub match="srm_v2" replace-with="SRM"/>
+      <!-- The ControlProtocolType must be upper-case -->
+      <sub match="srm" replace-with="SRM"/>
     </map>
 
 
