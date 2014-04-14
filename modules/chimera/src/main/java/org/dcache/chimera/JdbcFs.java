@@ -353,7 +353,11 @@ public class JdbcFs implements FileSystemProvider {
                 }
 
                 if (name.startsWith(".(pset)(") || name.startsWith(".(fset)(")) {
-                    throw new ChimeraFsException("Not supported");
+                    /**
+                     * This is not 100% correct, as we throw exist even if
+                     * someone tries to set attribute for a file which does not exist.
+                     */
+                    throw new FileExistsChimeraFsException(name);
                 }
 
                 if (name.startsWith(".(use)(") && (cmd.length == 3)) {
