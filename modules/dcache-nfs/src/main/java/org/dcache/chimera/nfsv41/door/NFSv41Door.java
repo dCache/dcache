@@ -86,6 +86,8 @@ import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.ChimeraVfs;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.VfsCache;
+import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
@@ -187,6 +189,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final StripingPattern<InetSocketAddress[]> _stripingPattern =
             new RoundRobinStripingPattern<>();
 
+    private VfsCacheConfig _vfsCacheConfig;
+
     public void setEnableRpcsecGss(boolean enable) {
         _enableRpcsecGss = enable;
     }
@@ -236,6 +240,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         _loginBrokerHandler = loginBrokerHandler;
     }
 
+    @Required
+    public void setVfsCacheConfig(VfsCacheConfig vfsCacheConfig) {
+        _vfsCacheConfig = vfsCacheConfig;
+    }
+
     public void init() throws Exception {
 
         _cellName = getCellName();
@@ -250,7 +259,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             _rpcService.setGssSessionManager(new GssSessionManager(_idMapper));
         }
 
-        _vfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
+        _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
 
         MountServer ms = new MountServer(_exportFile, _vfs);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);

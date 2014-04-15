@@ -168,6 +168,13 @@
         <property name="versions" value="${nfs.version}" />
         <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}" />
         <property name="loginBrokerHandler" ref="lb" />
+        <property name="vfsCacheConfig" ref="cache-config" />
+    </bean>
+
+    <bean id="cache-config" class="org.dcache.nfs.vfs.VfsCacheConfig">
+        <property name="maxEntries" value="${nfs.namespace-cache.size}" />
+        <property name="lifeTime" value="${nfs.namespace-cache.time}" />
+        <property name="timeUnit" value="${nfs.namespace-cache.unit}" />
     </bean>
 
     <beans  profile="portmap-true">
