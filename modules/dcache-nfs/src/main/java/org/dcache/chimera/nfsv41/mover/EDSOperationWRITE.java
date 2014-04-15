@@ -19,7 +19,6 @@ import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stable_how4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.xdr.uint32_t;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -54,7 +53,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
                 throw new ChimeraNFSException(nfsstat.NFSERR_PERM, "an attempt to write without IO mode enabled");
             }
 
-            long offset = _args.opwrite.offset.value.value;
+            long offset = _args.opwrite.offset.value;
 
             RepositoryChannel fc = mover.getMoverChannel();
 
@@ -63,7 +62,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
-            res.resok4.count = new count4( new uint32_t(bytesWritten) );
+            res.resok4.count = new count4(bytesWritten);
             res.resok4.committed = stable_how4.FILE_SYNC4;
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];

@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import dmg.cells.nucleus.CDC;
 
@@ -15,6 +14,7 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.OperationWRITE;
+import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.WRITE4res;
 import org.dcache.nfs.v4.xdr.WRITE4resok;
 import org.dcache.nfs.v4.xdr.count4;
@@ -24,7 +24,6 @@ import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stable_how4;;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.xdr.uint32_t;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.Inode;
 
@@ -32,16 +31,6 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(ProxyIoWRITE.class);
     private final DcapProxyIoFactory proxyIoFactory;
-
-    // FIXME: this should be imported form org.dcache.nfs.v4.Stateids
-    private final static stateid4 ZERO_STATEID
-	    = new stateid4(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0);
-
-    private final static stateid4 ONE_STATEID
-            = new stateid4(new byte[]{
-                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
-                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
-                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff}, 0xffffff);
 
     public ProxyIoWRITE(nfs_argop4 args, DcapProxyIoFactory proxyIoFactory) {
         super(args, nfs_opnum4.OP_WRITE);
@@ -66,13 +55,12 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
                 return;
             }
 
-            long offset = _args.opwrite.offset.value.value;
+            long offset = _args.opwrite.offset.value;
             ByteBuffer data = _args.opwrite.data;
             stateid4 stateid = _args.opwrite.stateid;
 
 	    int bytesWritten;
-	    boolean stateLess = isStateLess(stateid);
-	    if (stateLess) {
+	    if (Stateids.isStateLess(stateid)) {
 
 		/*
 		 * As there was no open, we have to check  permissions.
@@ -110,7 +98,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
-            res.resok4.count = new count4(new uint32_t(bytesWritten));
+            res.resok4.count = new count4(bytesWritten);
             res.resok4.committed = stable_how4.FILE_SYNC4;
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
@@ -128,16 +116,4 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }
     }
-
-    private boolean isStateLess(stateid4 stateid) {
-	/*
-	 * As stateid4#equals() does not check seqid,
-	 * we need a special equality check
-	 */
-	return (stateid.seqid.value == ZERO_STATEID.seqid.value  &&
-		Arrays.equals(stateid.other, ZERO_STATEID.other)) ||
-                (stateid.seqid.value == ONE_STATEID.seqid.value
-                && Arrays.equals(stateid.other, ONE_STATEID.other)) ;
-    }
-
 }

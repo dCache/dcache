@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import dmg.cells.nucleus.CDC;
 
@@ -15,6 +14,7 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.OperationREAD;
+import org.dcache.nfs.v4.Stateids;
 import org.dcache.nfs.v4.xdr.READ4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
@@ -28,16 +28,6 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(ProxyIoREAD.class);
     private final DcapProxyIoFactory proxyIoFactory;
-
-    // FIXME: this should be imported form org.dcache.nfs.v4.Stateids
-    private final static stateid4 ZERO_STATEID
-	    = new stateid4(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0);
-
-    private final static stateid4 ONE_STATEID
-            = new stateid4(new byte[]{
-                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
-                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
-                (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff}, 0xffffff);
 
     public ProxyIoREAD(nfs_argop4 args, DcapProxyIoFactory proxyIoFactory) {
         super(args, nfs_opnum4.OP_READ);
@@ -59,15 +49,14 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                 return;
             }
 
-            long offset = _args.opread.offset.value.value;
-            int count = _args.opread.count.value.value;
+            long offset = _args.opread.offset.value;
+            int count = _args.opread.count.value;
             stateid4 stateid = _args.opread.stateid;
 
 	    int bytesReaded;
-	    boolean stateLess = isStateLess(stateid);
 	    ProxyIoAdapter proxyIoAdapter;
 	    ByteBuffer bb = ByteBuffer.allocate(count);
-	    if (stateLess) {
+	    if (Stateids.isStateLess(stateid)) {
 
 		/*
 		 * As there was no open, we have to check  permissions.
@@ -105,7 +94,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                 res.resok4.eof = true;
             }
 
-            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value.value);
+            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value);
 
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();
@@ -118,16 +107,4 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }
     }
-
-    private boolean isStateLess(stateid4 stateid) {
-	/*
-	 * As stateid4#equals() does not check seqid,
-	 * we need a special equality check
-	 */
-	return (stateid.seqid.value == ZERO_STATEID.seqid.value  &&
-		Arrays.equals(stateid.other, ZERO_STATEID.other)) ||
-                (stateid.seqid.value == ONE_STATEID.seqid.value
-                && Arrays.equals(stateid.other, ONE_STATEID.other)) ;
-    }
-
 }

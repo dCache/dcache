@@ -36,6 +36,7 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfsace4;
 import org.dcache.nfs.v4.xdr.stateid4;
+import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.nfs.vfs.DirectoryEntry;
 import org.dcache.nfs.vfs.FsStat;
 import org.dcache.nfs.vfs.Inode;
@@ -104,7 +105,7 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public void move(Inode src, String oldName, Inode dest, String newName) throws IOException {
+        public boolean move(Inode src, String oldName, Inode dest, String newName) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -161,6 +162,11 @@ public class NFSv4MoverHandler {
         @Override
         public boolean hasIOLayout(Inode inode) throws IOException {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public AclCheckable getAclCheckable() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     };
 

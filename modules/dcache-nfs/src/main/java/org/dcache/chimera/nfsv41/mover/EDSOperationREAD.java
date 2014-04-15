@@ -36,8 +36,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
         try {
 
-            long offset = _args.opread.offset.value.value;
-            int count = _args.opread.count.value.value;
+            long offset = _args.opread.offset.value;
+            int count = _args.opread.count.value;
 
             NfsMover mover = _activeIO.get(_args.opread.stateid);
             if(mover == null) {
@@ -60,7 +60,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
                 res.resok4.eof = true;
             }
 
-            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value.value);
+            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value);
 
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();
