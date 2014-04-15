@@ -84,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.dcache.srm.SRMAbortedException;
@@ -100,6 +101,10 @@ import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.JDC;
+import org.dcache.util.TimeUtils;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 
 /**
@@ -111,7 +116,7 @@ public abstract class Job  {
 
     private static final Logger logger = LoggerFactory.getLogger(Job.class);
 
-    protected static final String ISO8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXX";
+    protected static final String TIMESTAMP_FORMAT = "yyyy-MM-dd' 'HH:mm:ss.SSS";
 
     //this is used to build the queue of jobs.
     protected Long nextJobId;
@@ -470,28 +475,50 @@ public abstract class Job  {
 
     }
 
-     public String getHistory() {
+     public CharSequence getHistory() {
          return getHistory("");
      }
 
-     public String getHistory(String padding) {
+     public CharSequence getHistory(String padding) {
         StringBuilder historyStringBuillder = new StringBuilder();
+        long previousTransitionTime = 0;
+        State previousTransitionState = State.PENDING;
         rlock();
         try {
-            SimpleDateFormat format = new SimpleDateFormat(ISO8601_FORMAT);
+            SimpleDateFormat format = new SimpleDateFormat(TimeUtils.TIMESTAMP_FORMAT);
             for( JobHistory nextHistoryElement: jobHistory ) {
+                 if (historyStringBuillder.length() != 0) {
+                     appendDuration(historyStringBuillder, nextHistoryElement.getTransitionTime() -
+                             previousTransitionTime, "").append('\n');
+                 }
+                 previousTransitionTime = nextHistoryElement.getTransitionTime();
                  historyStringBuillder.append(padding);
                  historyStringBuillder.append("   ").append(format
                          .format(new Date(nextHistoryElement.getTransitionTime())));
                  historyStringBuillder.append(" ").append(nextHistoryElement.getState());
                  historyStringBuillder.append(": ");
                  historyStringBuillder.append(nextHistoryElement.getDescription());
-                 historyStringBuillder.append('\n');
+                 previousTransitionState = nextHistoryElement.getState();
             }
         } finally {
             runlock();
         }
-       return historyStringBuillder.toString();
+        if (historyStringBuillder.length() != 0) {
+            if (!previousTransitionState.isFinal()) {
+                long duration = System.currentTimeMillis() - previousTransitionTime;
+                appendDuration(historyStringBuillder, duration, ", so far");
+            }
+            historyStringBuillder.append('\n');
+        }
+       return historyStringBuillder;
+    }
+
+    private StringBuilder appendDuration(StringBuilder sb, long duration, String extra)
+    {
+        sb.append(" (").append(TimeUtils.duration(duration, MILLISECONDS, TimeUnitFormat.SHORT));
+        sb.append(extra);
+        sb.append(")");
+        return sb;
     }
 
      public List<JobHistory> getJobHistory() {

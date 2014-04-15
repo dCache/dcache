@@ -364,7 +364,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             if (status != null) {
                 sb.append(padding).append("   Status:").append(status).append('\n');
             }
-            sb.append(padding).append("   History of State Transitions:\n");
+            sb.append(padding).append("   History:\n");
             sb.append(getHistory(padding + "   "));
         }
     }

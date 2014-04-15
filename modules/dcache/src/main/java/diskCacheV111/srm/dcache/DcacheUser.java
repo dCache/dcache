@@ -21,6 +21,7 @@ import javax.security.auth.Subject;
 
 import diskCacheV111.util.FsPath;
 
+import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
 
 /**
@@ -74,5 +75,11 @@ public class DcacheUser implements SRMUser
     {
         return subject.getPrincipals() + " " +
                 (isReadOnly() ? "read-only" : "read-write") + " " + root;
+    }
+
+    @Override
+    public String getDisplayName()
+    {
+        return Subjects.getDisplayName(subject);
     }
 }

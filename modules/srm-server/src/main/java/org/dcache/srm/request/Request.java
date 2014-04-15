@@ -79,10 +79,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -94,7 +93,7 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static org.dcache.srm.request.Job.ISO8601_FORMAT;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A Request object represents an individual SOAP operation, as defined by the
@@ -111,7 +110,7 @@ public abstract class Request extends Job {
     private final String client_host;
     private final SRMUser user;
 
-    public Request(SRMUser user,
+    public Request(@Nonnull SRMUser user,
     Long requestCredentalId,
     int max_number_of_retries,
     long lifetime,
@@ -122,7 +121,7 @@ public abstract class Request extends Job {
         this.credentialId = requestCredentalId;
         this.description = description;
         this.client_host = client_host;
-        this.user = user;
+        this.user = checkNotNull(user);
     }
 
    /**
@@ -447,26 +446,5 @@ public abstract class Request extends Job {
         } catch (SRMInvalidRequestException | NumberFormatException e) {
             throw new SRMInvalidRequestException("No such request: " + requestToken);
         }
-    }
-
-    protected String describe(Date when)
-    {
-        StringBuilder sb = new StringBuilder();
-        SimpleDateFormat iso8601 = new SimpleDateFormat(ISO8601_FORMAT);
-        sb.append(iso8601.format(when));
-        sb.append(" (");
-        long diff = Math.abs(when.getTime() - System.currentTimeMillis());
-        if (diff < 2*60*1000) {
-            sb.append(diff/1000).append(" seconds ");
-        } else if (diff < 2*60*60*1000) {
-            sb.append(diff/1000/60).append(" minutes ");
-        } else if (diff < 2*24*60*60*1000) {
-            sb.append(diff/1000/60/60).append(" hours ");
-        } else {
-            sb.append(diff/1000/60/60/24).append(" days ");
-        }
-        sb.append(when.getTime() < System.currentTimeMillis() ? "ago" : "in the future");
-        sb.append(')');
-        return sb.toString();
     }
 }

@@ -62,6 +62,11 @@ public class UnixfsUser implements SRMUser
         ", gid=" + gid + ", root=" + root + "]";
   }
 
+  @Override
+  public String getDisplayName() {
+      return Integer.toString(uid);
+  }
+
   /** */
   public boolean equals(Object o) {
     if( ! (o instanceof UnixfsUser)) {

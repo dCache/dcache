@@ -77,6 +77,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
@@ -92,6 +93,15 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.util.TimeUtils.*;
+
+import org.dcache.util.TimeUtils;
+import org.dcache.util.TimeUtils.TimeUnitFormat;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * File request is an abstract "SRM file request"
@@ -202,9 +212,15 @@ public final class ReserveSpaceRequest extends Request {
     @Override
     public void toString(StringBuilder sb, boolean longformat) {
         sb.append("Reserve space id:").append(getId());
-        sb.append(" spaceToken:").append(getSpaceToken());
         sb.append(" state:").append(getState());
-        sb.append(" by:").append(getUser());
+        TStatusCode code = getStatusCode();
+        if (code != null) {
+            sb.append(" status:").append(code);
+        }
+        if (!longformat) {
+            sb.append("   description:").append(getSpaceToken());
+        }
+        sb.append(" by:").append(getUser().getDisplayName());
         if(longformat) {
             sb.append('\n');
             RequestCredential credential = getCredential();
@@ -212,16 +228,27 @@ public final class ReserveSpaceRequest extends Request {
                 sb.append("   Credential: \"").append(getCredential()).
                 append("\"\n");
             }
+            sb.append("   Description: ").append(getSpaceToken()).append('\n');
+            long now = System.currentTimeMillis();
             sb.append("   Submitted: ").
-                append(describe(new Date(getCreationTime()))).append('\n');
+                append(relativeTimestamp(getCreationTime(), now)).append('\n');
             sb.append("   Expires: ").
-                append(describe(new Date(getCreationTime() +getLifetime()))).append('\n');
-            sb.append("   Status: ").append(getStatusCode()).append('\n');
-            sb.append("   lifetime: ").append(getSpaceReservationLifetime()).append('\n');
+                append(relativeTimestamp(getCreationTime()+getLifetime(), now)).append('\n');
+            sb.append("   Reservation lifetime: ").append(describeReservationLifetime()).append('\n');
             sb.append("   AccessLatency: ").append(getAccessLatency()).append('\n');
             sb.append("   RetentionPolicy: ").append(getRetentionPolicy()).append('\n');
-            sb.append("   History of State Transitions:\n");
+            sb.append("   History:\n");
             sb.append(getHistory("   "));
+        }
+    }
+
+    private CharSequence describeReservationLifetime()
+    {
+        long lifetime = getSpaceReservationLifetime();
+        if (lifetime == -1) {
+            return "(unlimited)";
+        } else {
+            return duration(lifetime, MILLISECONDS, TimeUnitFormat.SHORT);
         }
     }
 

@@ -99,8 +99,20 @@ import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.TimeUtils;
 
-import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
+import static org.dcache.srm.handler.ReturnStatuses.*;
+
+import org.dcache.srm.scheduler.IllegalStateTransition;
+import org.dcache.srm.scheduler.State;
+import org.dcache.srm.util.RequestStatusTool;
+import org.dcache.srm.v2_2.TRequestSummary;
+import org.dcache.srm.v2_2.TRequestType;
+import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.util.TimeUtils;
+
+import static org.dcache.util.TimeUtils.relativeTimestamp;
 
 /**
  * This abstract class represents an "SRM request"
@@ -666,16 +678,17 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         if (code != null) {
             sb.append(" status:").append(code);
         }
-        sb.append(" by:").append(getUser());
+        sb.append(" by:").append(getUser().getDisplayName());
         if (longformat) {
             sb.append('\n');
-            sb.append("   Submitted:").append(describe(new Date(getCreationTime()))).append('\n');
-            sb.append("   Expires:").append(describe(new Date(getCreationTime() + getLifetime()))).append('\n');
+            long now = System.currentTimeMillis();
+            sb.append("   Submitted: ").append(relativeTimestamp(getCreationTime(), now)).append('\n');
+            sb.append("   Expires: ").append(relativeTimestamp(getCreationTime() + getLifetime(), now)).append('\n');
             RequestCredential credential = getCredential();
             if (credential != null) {
-                sb.append("   Credential: \"").append(getCredential()).append("\"\n");
+                sb.append("   Credential: ").append(credential.getCredentialName()).append('\n');
             }
-            sb.append("   History of State Transitions:\n");
+            sb.append("   History:\n");
             sb.append(getHistory("   "));
             for (R fr:fileRequests) {
                 sb.append("\n");

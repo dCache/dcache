@@ -318,14 +318,14 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             if (getSize() != null) {
                 sb.append(padding).append("   Size: ").append(getSize()).append('\n');
             }
-            sb.append(padding).append("   AccessLatency: ").append(getAccessLatency()).append('\n');
-            sb.append(padding).append("   RetentionPolicy: ").append(getRetentionPolicy()).append('\n');
-            sb.append(padding).append("   spaceReservation: ").append(getSpaceReservationId()).append('\n');
+            sb.append(padding).append("   Access latency: ").append(getAccessLatency()).append('\n');
+            sb.append(padding).append("   Retention policy: ").append(getRetentionPolicy()).append('\n');
+            sb.append(padding).append("   Space reservation: ").append(getSpaceReservationId()).append('\n');
             TStatusCode status = getStatusCode();
             if (status != null) {
                 sb.append(padding).append("   Status:").append(status).append('\n');
             }
-            sb.append(padding).append("   History of State Transitions:\n");
+            sb.append(padding).append("   History:\n");
             sb.append(getHistory(padding + "   "));
         }
     }

@@ -602,7 +602,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         if (status != null) {
                             sb.append(padding).append("   Status:").append(status).append('\n');
                         }
-                        sb.append(padding).append("   History of State Transitions:\n");
+                        sb.append(padding).append("   History:\n");
                         sb.append(getHistory(padding + "   "));
                 }
         }

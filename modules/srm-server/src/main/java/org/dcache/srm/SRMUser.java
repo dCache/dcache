@@ -77,4 +77,9 @@ public interface SRMUser
     int getPriority();
     long getId();
     boolean isReadOnly();
+
+    /**
+     * Provide a terse description of this user.
+     */
+    String getDisplayName();
 }
