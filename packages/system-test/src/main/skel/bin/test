@@ -205,13 +205,35 @@ def OptionParser.parse(args)
   options.includes = []
   options.excludes = []
   options.tests = {
+<<<<<<< HEAD:packages/system-test/src/main/skel/bin/test
     :gridftp => [ [ :gridftp ],
                   [ :gridftp, '-p 1' ],
                   [ :gridftp, '-p 10' ],
                   [ :gridftp, '-p 100' ],
+=======
+    :gridftp => [ # Regular GridFTP
+                  [ :gridftp, '-no-g2' ],
+                  [ :gridftp, '-no-g2 -p 1' ],
+                  [ :gridftp, '-no-g2 -p 10' ],
+                  # Regular GridFTP but with EPSV and EPRT
+                  [ :gridftp, '-no-g2 -ipv6' ],
+                  [ :gridftp, '-no-g2 -ipv6 -p 1' ],
+                  [ :gridftp, '-no-g2 -ipv6 -p 10' ],
+                  # GridFTP with delayed passive
+                  [ :gridftp, '-no-g2 -dp' ],
+                  [ :gridftp, '-no-g2 -dp -p 1' ],
+                  [ :gridftp, '-no-g2 -dp -p 10' ],
+                  # GridFTP with delayed passive and EPSV and EPRT
+                  [ :gridftp, '-no-g2 -dp -ipv6' ],
+                  [ :gridftp, '-no-g2 -dp -ipv6 -p 1' ],
+                  [ :gridftp, '-no-g2 -dp -ipv6 -p 10' ],
+                  # GridFTP using GET/PUT
+>>>>>>> b72f2b5... ftp: Implement delayed passive and enable redirect FTP for IPv6:packages/system-test/src/main/bin/test
                   [ :gridftp, '-g2' ],
                   [ :gridftp, '-g2', '-p 1' ],
                   [ :gridftp, '-g2', '-p 10' ],
+                  # Stress the data channel handling
+                  [ :gridftp, '-no-g2', '-p -100' ],
                   [ :gridftp, '-g2', '-p -100' ] ],
     :xrootd => [ [ :xrootd ] ],
     :dcap => [ [ :dcap ] ],

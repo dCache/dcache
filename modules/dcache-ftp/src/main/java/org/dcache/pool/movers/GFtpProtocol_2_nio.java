@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.UnresolvedAddressException;
@@ -432,6 +433,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         long   offset      = gftpProtocolInfo.getOffset();
         long   size        = gftpProtocolInfo.getSize();
         boolean passive    = gftpProtocolInfo.getPassive() && _allowPassivePool;
+        ProtocolFamily protocolFamily = gftpProtocolInfo.getProtocolFamily();
 
         say(MessageFormat.format
                 ("version={0}, role={1}, mode={2}, host={3}:{4,number,#}, buffer={5}, passive={6}, parallelism={7}",
@@ -473,18 +475,24 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          * transfer the data.
          */
         if (version == 2) {
-            GFtpTransferStartedMessage message;
-
+            /* When in passive mode, the door passes us the host
+             * from which the control channel was created. It
+             * seems like a safe assumption that the data channel
+             * will be established from the same network.
+             */
+            InetAddress localAddress = null;
             if (passive) {
-                /* When in passive mode, the door passes us the host
-                 * from which the control channel was created. It
-                 * seems like a safe assumption that the data channel
-                 * will be established from the same network.
-                 */
                 InetAddress clientAddress =
                         InetAddress.getByName(gftpProtocolInfo.getClientAddress());
-                InetAddress localAddress =
-                        NetworkUtils.getLocalAddress(clientAddress);
+                localAddress = NetworkUtils.getLocalAddress(clientAddress, protocolFamily);
+                if (localAddress == null) {
+                    passive = false;
+                }
+            }
+
+            GFtpTransferStartedMessage message;
+            if (passive) {
+                assert localAddress != null;
 
                 /* When using true passive mode, we open a server
                  * socket and send a message containing the port

@@ -100,8 +100,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.ProtocolFamily;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
@@ -194,6 +196,8 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Math.min;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.dcache.namespace.FileAttribute.*;
@@ -351,13 +355,17 @@ public abstract class AbstractFtpDoorV1
      */
     protected enum Protocol {
 
-        IPV4(Inet4Address.class),
-        IPV6(Inet6Address.class);
+        IPV4(Inet4Address.class, 1, StandardProtocolFamily.INET),
+        IPV6(Inet6Address.class, 2, StandardProtocolFamily.INET6);
 
         private Class<? extends InetAddress> _class;
+        private int _code;
+        private ProtocolFamily _protocolFamily;
 
-        Protocol(Class<? extends InetAddress> addressClass) {
-           _class = addressClass;
+        Protocol(Class<? extends InetAddress> addressClass, int code, ProtocolFamily protocolFamily) {
+            _class = addressClass;
+            _code = code;
+            _protocolFamily = protocolFamily;
         }
 
         public static Protocol fromAddress(InetAddress c) {
@@ -390,6 +398,14 @@ public abstract class AbstractFtpDoorV1
         public Class<? extends InetAddress> getAddressClass() {
             return _class;
         }
+
+        public int getCode() {
+            return _code;
+        }
+
+        public ProtocolFamily getProtocolFamily() {
+            return _protocolFamily;
+        }
     }
 
     /**
@@ -400,7 +416,8 @@ public abstract class AbstractFtpDoorV1
         "EOF", "PARALLEL", "MODE-E-PERF", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT", "MDTM",
         "CKSUM " + buildChecksumList(),  "MODEX",
-        "TVFS"
+        "TVFS",
+        "PASV AllowDelayed"
         /*
          * do not publish DCAU as supported feature. This will force
          * some clients to always encrypt data channel
@@ -722,6 +739,14 @@ public abstract class AbstractFtpDoorV1
      */
     protected boolean _sessionAllPassive = false;
 
+    private enum DelayedPassiveReply
+    {
+        NONE, PASV, EPSV
+    }
+
+    private boolean _allowDelayed;
+    private DelayedPassiveReply _delayedPassive = DelayedPassiveReply.NONE;
+
     //These are the number of parallel streams to have
     //when doing mode e transfers
     protected int _parallel;
@@ -748,7 +773,8 @@ public abstract class AbstractFtpDoorV1
         private final int _parallel;
         private final InetSocketAddress _client;
         private final int _bufSize;
-        private final boolean _reply127;
+        private final DelayedPassiveReply _delayedPassive;
+        private final ProtocolFamily _protocolFamily;
         private final int _version;
 
         private long _offset;
@@ -775,7 +801,8 @@ public abstract class AbstractFtpDoorV1
                            int parallel,
                            InetSocketAddress client,
                            int bufSize,
-                           boolean reply127,
+                           DelayedPassiveReply delayedPassive,
+                           ProtocolFamily protocolFamily,
                            int version)
         {
             super(AbstractFtpDoorV1.this._pnfs,
@@ -798,7 +825,8 @@ public abstract class AbstractFtpDoorV1
             _parallel = parallel;
             _client = client;
             _bufSize = bufSize;
-            _reply127 = reply127;
+            _delayedPassive = delayedPassive;
+            _protocolFamily = protocolFamily;
             _version = version;
 
             setTransfer(this);
@@ -896,7 +924,7 @@ public abstract class AbstractFtpDoorV1
              * enabled and if we can provide the address to the client
              * using a 127 response.
              */
-            boolean usePassivePool = !_isProxyRequiredOnPassive && _reply127;
+            boolean usePassivePool = !_isProxyRequiredOnPassive && _delayedPassive != DelayedPassiveReply.NONE;
 
             /* Construct protocol info. For backward compatibility, when
              * an adapter could be used we put the adapter address into
@@ -932,6 +960,7 @@ public abstract class AbstractFtpDoorV1
             protocolInfo.setClientAddress(_client.getAddress().getHostAddress());
             protocolInfo.setPassive(usePassivePool);
             protocolInfo.setMode(_xferMode);
+            protocolInfo.setProtocolFamily(_protocolFamily);
 
             if (_optCheckSumFactory != null) {
                 protocolInfo.setChecksumType(_optCheckSumFactory.getType().getName());
@@ -1008,7 +1037,7 @@ public abstract class AbstractFtpDoorV1
                         throw new FTPCommandException(451, "Transient internal failure");
                     }
 
-                    if (redirect.getPassive() && !_reply127) {
+                    if (redirect.getPassive() && _delayedPassive == DelayedPassiveReply.NONE) {
                         LOGGER.error("Pool unexpectedly volunteered to be passive");
                         throw new FTPCommandException(451, "Transient internal failure");
                     }
@@ -1027,17 +1056,19 @@ public abstract class AbstractFtpDoorV1
                      * adapter). Otherwise this is the address of the adapter.
                      */
                     if (redirect.getPassive()) {
-                        assert _reply127;
+                        assert _delayedPassive != DelayedPassiveReply.NONE;
+                        assert _mode == Mode.PASSIVE;
                         assert _adapter != null;
 
-                        reply127PORT(redirect.getPoolAddress());
+                        replyDelayedPassive(_delayedPassive, redirect.getPoolAddress());
 
                         LOGGER.info("Closing adapter");
                         _adapter.close();
                         _adapter = null;
-                    } else if (_reply127) {
-                        reply127PORT(new InetSocketAddress(_localAddress.getAddress(),
-                                _adapter.getClientListenerPort()));
+                    } else if (_mode == Mode.PASSIVE) {
+                        replyDelayedPassive(_delayedPassive,
+                                            new InetSocketAddress(_localAddress.getAddress(),
+                                                                  _adapter.getClientListenerPort()));
                     }
                 }
 
@@ -1060,6 +1091,7 @@ public abstract class AbstractFtpDoorV1
             } catch (FTPCommandException e) {
                 abort(e.getCode(), e.getReply());
             } catch (RuntimeException e) {
+                _log.error("Possible bug detected.", e);
                 abort(451, "Transient internal error", e);
             }
         }
@@ -1102,6 +1134,7 @@ public abstract class AbstractFtpDoorV1
             } catch (InterruptedException e) {
                 abort(451, "FTP proxy was interrupted", e);
             } catch (RuntimeException e) {
+                _log.error("Possible bug detected.", e);
                 abort(451, "Transient internal error", e);
             }
         }
@@ -1684,6 +1717,20 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    public void opts_pasv(String s)
+    {
+        Map<String, String> options = Splitter.on(';').omitEmptyStrings().withKeyValueSeparator('=').split(s);
+        for (Map.Entry<String, String> option : options.entrySet()) {
+            if (option.getKey().equalsIgnoreCase("AllowDelayed")) {
+                _allowDelayed = option.getValue().equals("1");
+            } else {
+                reply("501 Unrecognized option: " + option.getKey() + " (" + option.getValue() + ')');
+                return;
+            }
+        }
+        reply("200 OK");
+    }
+
     @Help("OPTS <SP> <feat> [<SP> <arg>] - Select desired behaviour for a feature.")
     public void ftp_opts(String arg)
     {
@@ -1698,6 +1745,8 @@ public abstract class AbstractFtpDoorV1
             opts_mlst("");
         } else if (st.length == 2 && st[0].equalsIgnoreCase("MLST")) {
             opts_mlst(st[1]);
+        } else if (st.length == 2 && st[0].equalsIgnoreCase("PASV")) {
+            opts_pasv(st[1]);
         } else {
             reply("501 Unrecognized option: " + st[0] + " (" + arg + ")");
         }
@@ -2154,7 +2203,7 @@ public abstract class AbstractFtpDoorV1
                 _passiveModePortRange.bind(_passiveModeServerSocket.socket(), _localAddress.getAddress());
                 _mode = Mode.PASSIVE;
             }
-            return (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress();
+            return (InetSocketAddress) _passiveModeServerSocket.getLocalAddress();
         } catch (NoSuchElementException e) {
             _mode = Mode.ACTIVE;
             closePassiveModeServerSocket();
@@ -2197,7 +2246,8 @@ public abstract class AbstractFtpDoorV1
         }
 
         setActive(getAddressOf(st));
-
+        _allowDelayed = false;
+        _delayedPassive = DelayedPassiveReply.NONE;
         reply(ok("PORT"));
     }
 
@@ -2210,6 +2260,10 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(503, "PASV not allowed after EPSV ALL");
         }
 
+        /* PASV can only return IPv4 addresses.
+         */
+        _preferredProtocol = Protocol.IPV4;
+
         /* If already in passive mode then we close the previous
          * socket and allocate a new one. This is a defensive move to
          * recover from the server socket having been closed by some
@@ -2217,19 +2271,26 @@ public abstract class AbstractFtpDoorV1
          */
         closePassiveModeServerSocket();
         InetSocketAddress address = setPassive();
-        int port = address.getPort();
-        byte[] hostb = address.getAddress().getAddress();
-        int[] host = new int[4];
-        for (int i = 0; i < 4; i++) {
-            host[i] = hostb[i] & 0377;
+
+        if (_allowDelayed) {
+            _delayedPassive = DelayedPassiveReply.PASV;
+            reply("200 Passive delayed.");
+        } else {
+            _delayedPassive = DelayedPassiveReply.NONE;
+            int port = address.getPort();
+            byte[] hostb = address.getAddress().getAddress();
+            int[] host = new int[4];
+            for (int i = 0; i < 4; i++) {
+                host[i] = hostb[i] & 0_377;
+            }
+            reply("227 OK (" +
+                          host[0] + ',' +
+                          host[1] + ',' +
+                          host[2] + ',' +
+                          host[3] + ',' +
+                          port / 256 + ',' +
+                          port % 256 + ')');
         }
-        reply("227 OK (" +
-              host[0] + "," +
-              host[1] + "," +
-              host[2] + "," +
-              host[3] + "," +
-              port/256 + "," +
-              port % 256 + ")");
     }
 
     @Help("EPRT <SP> <target> - The extended address and port to which the server should connect.")
@@ -2240,7 +2301,8 @@ public abstract class AbstractFtpDoorV1
         checkLoggedIn();
 
         setActive(getExtendedAddressOf(arg));
-
+        _allowDelayed = false;
+        _delayedPassive = DelayedPassiveReply.NONE;
         reply(ok("EPRT"));
     }
 
@@ -2264,7 +2326,13 @@ public abstract class AbstractFtpDoorV1
              */
             closePassiveModeServerSocket();
             InetSocketAddress address = setPassive();
-            reply("229 Entering Extended Passive Mode (|||"+address.getPort()+"|)");
+            if (_allowDelayed) {
+                _delayedPassive = DelayedPassiveReply.EPSV;
+                reply("200 Passive delayed.");
+            } else {
+                _delayedPassive = DelayedPassiveReply.NONE;
+                reply("229 Entering Extended Passive Mode (|||" + address.getPort() + "|)");
+            }
         } else {
             try {
                 _preferredProtocol = Protocol.find(arg);
@@ -2522,7 +2590,7 @@ public abstract class AbstractFtpDoorV1
         reply("200 bufsize set to " + arg);
     }
 
-    @Help("ERET <SP> <mode> <SP> <path> - Extended file retreval.")
+    @Help("ERET <SP> <mode> <SP> <path> - Extended file retrieval.")
     public void ftp_eret(String arg)
     {
         String[] st = arg.split("\\s+");
@@ -2667,8 +2735,9 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             retrieve(arg, prm_offset, prm_size, _mode,
-                     _xferMode, _parallel, _clientDataAddress,
-                     _bufSize, false, 1);
+                     _xferMode, _parallel, _clientDataAddress, _bufSize,
+                     _delayedPassive, _preferredProtocol.getProtocolFamily(),
+                     _delayedPassive == DelayedPassiveReply.NONE ? 1 : 2);
         } finally {
             prm_offset=-1;
             prm_size=-1;
@@ -2708,22 +2777,23 @@ public abstract class AbstractFtpDoorV1
      * @param client        address of the client (for active servers)
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
-     * @param reply127      GridFTP v2 127 reply is generated when true
-     *                      and client is active.
+     * @param delayedPassive whether to generate delayed passive reply in passive mode
+     * @param protocolFamily Protocol family to use for passive mode
      * @param version       The mover version to use for the transfer
      */
     private void retrieve(String file, long offset, long size,
                           Mode mode, String xferMode,
                           int parallel,
                           InetSocketAddress client, int bufSize,
-                          boolean reply127, int version)
+                          DelayedPassiveReply delayedPassive,
+                          ProtocolFamily protocolFamily, int version)
         throws FTPCommandException
     {
         /* Check preconditions.
          */
         checkLoggedIn();
 
-        if (file.equals("")) {
+        if (file.isEmpty()) {
             throw new FTPCommandException(501, "Missing path");
         }
         if (xferMode.equals("E") && mode == Mode.PASSIVE) {
@@ -2744,7 +2814,8 @@ public abstract class AbstractFtpDoorV1
                             parallel,
                             client,
                             bufSize,
-                            reply127,
+                            delayedPassive,
+                            protocolFamily,
                             version);
         try {
             LOGGER.info("retrieve user={}", getUser());
@@ -2814,8 +2885,9 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        store(arg, _mode, _xferMode, _parallel, _clientDataAddress,
-              _bufSize, false, 1);
+        store(arg, _mode, _xferMode, _parallel, _clientDataAddress, _bufSize,
+              _delayedPassive, _preferredProtocol.getProtocolFamily(),
+              _delayedPassive == DelayedPassiveReply.NONE ? 1 : 2);
     }
 
     /**
@@ -2829,14 +2901,15 @@ public abstract class AbstractFtpDoorV1
      * @param client        address of the client (for active servers)
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
-     * @param reply127      GridFTP v2 127 reply is generated when true
-     *                      and client is active.
+     * @param delayedPassive whether to generate delayed passive reply in passive mode
+     * @param protocolFamily Protocol family to use for passive mode
      * @param version       The mover version to use for the transfer
      */
     private void store(String file, Mode mode, String xferMode,
                        int parallel,
                        InetSocketAddress client, int bufSize,
-                       boolean reply127, int version)
+                       DelayedPassiveReply delayedPassive,
+                       ProtocolFamily protocolFamily, int version)
         throws FTPCommandException
     {
         checkLoggedIn();
@@ -2860,7 +2933,8 @@ public abstract class AbstractFtpDoorV1
                             parallel,
                             client,
                             bufSize,
-                            reply127,
+                            delayedPassive,
+                            protocolFamily,
                             version);
         try {
             LOGGER.info("store receiving with mode {}", xferMode);
@@ -2985,6 +3059,8 @@ public abstract class AbstractFtpDoorV1
          * we establish the data connection to the client.
          */
         if (_mode == Mode.PASSIVE) {
+            replyDelayedPassive(_delayedPassive, (InetSocketAddress) _passiveModeServerSocket.getLocalAddress());
+            reply("150 Openening ASCII mode data connection", false);
             _dataSocket = _passiveModeServerSocket.accept().socket();
         } else {
             _dataSocket = new Socket();
@@ -3024,7 +3100,6 @@ public abstract class AbstractFtpDoorV1
         FsPath path = absolutePath(arg);
 
         try {
-            reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
             } catch (IOException e) {
@@ -3109,7 +3184,6 @@ public abstract class AbstractFtpDoorV1
             if ( !pathIsPattern ) {
                 checkIsDirectory(path);
             }
-            reply("150 Opening ASCII data connection for file list", false);
             try {
                 openDataSocket();
             } catch (IOException e) {
@@ -3210,7 +3284,6 @@ public abstract class AbstractFtpDoorV1
              */
             checkIsDirectory(path);
 
-            reply("150 Openening ASCII mode data connection for MLSD", false);
             try {
                 openDataSocket();
             } catch (IOException e) {
@@ -3643,19 +3716,32 @@ public abstract class AbstractFtpDoorV1
      * after consultation with the authors of GFD.47, it was decided
      * to use the typical '(a,b,c,d,e,f)' format instead.
      *
-     * @param address the address and port on which we listen
+     * @param socketAddress the address and port on which we listen
      */
-    protected void reply127PORT(InetSocketAddress address)
+    protected void replyDelayedPassive(DelayedPassiveReply format, InetSocketAddress socketAddress)
     {
-        int port = address.getPort();
-        byte host[] = address.getAddress().getAddress();
-        reply(String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
-                            (host[0] & 0377),
-                            (host[1] & 0377),
-                            (host[2] & 0377),
-                            (host[3] & 0377),
-                            (port / 256),
-                            (port % 256)), false);
+        InetAddress address = socketAddress.getAddress();
+        Protocol protocol = Protocol.fromAddress(address);
+        switch (format) {
+        case NONE:
+            break;
+        case PASV:
+            checkArgument(protocol == Protocol.IPV4, "PASV required IPv4 data channel.");
+            int port = socketAddress.getPort();
+            byte[] host = address.getAddress();
+            reply(String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
+                                (host[0] & 0377),
+                                (host[1] & 0377),
+                                (host[2] & 0377),
+                                (host[3] & 0377),
+                                (port / 256),
+                                (port % 256)), false);
+            break;
+        case EPSV:
+            reply(String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
+                                protocol.getCode(), InetAddresses.toAddrString(address), socketAddress.getPort()));
+            break;
+        }
     }
 
     /**
@@ -3667,8 +3753,6 @@ public abstract class AbstractFtpDoorV1
     public void ftp_get(String arg)
     {
         try {
-            boolean reply127 = false;
-
             if (_skipBytes > 0){
                 throw new FTPCommandException(501, "RESTART not implemented");
             }
@@ -3688,21 +3772,23 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (parameters.containsKey("pasv")) {
-                reply127 = true;
+                _preferredProtocol = Protocol.IPV4;
+                _delayedPassive = DelayedPassiveReply.PASV;
                 setPassive();
             }
 
             if (parameters.containsKey("port")) {
+                _delayedPassive = DelayedPassiveReply.NONE;
                 setActive(getAddressOf(parameters.get("port").split(",")));
             }
 
             /* Now do the transfer...
              */
             retrieve(parameters.get("path"), prm_offset, prm_size, _mode,
-                     _xferMode, _parallel, _clientDataAddress,
-                     _bufSize, reply127, 2);
+                     _xferMode, _parallel, _clientDataAddress, _bufSize,
+                     _delayedPassive, _preferredProtocol.getProtocolFamily(), 2);
         } catch (FTPCommandException e) {
-            reply(String.valueOf(e.getCode()) + " " + e.getReply());
+            reply(String.valueOf(e.getCode()) + ' ' + e.getReply());
         } finally {
             prm_offset=-1;
             prm_size=-1;
@@ -3717,7 +3803,6 @@ public abstract class AbstractFtpDoorV1
     @Help("PUT <SP> <args> - Flexible transfer of data to server.")
     public void ftp_put(String arg)
     {
-        boolean reply127 = false;
         try {
             Map<String,String> parameters = parseGetPutParameters(arg);
 
@@ -3735,20 +3820,22 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (parameters.containsKey("pasv")) {
-                reply127 = true;
+                _preferredProtocol = Protocol.IPV4;
+                _delayedPassive = DelayedPassiveReply.PASV;
                 setPassive();
             }
 
             if (parameters.containsKey("port")) {
+                _delayedPassive = DelayedPassiveReply.NONE;
                 setActive(getAddressOf(parameters.get("port").split(",")));
             }
 
             /* Now do the transfer...
              */
-            store(parameters.get("path"), _mode, _xferMode,
-                  _parallel, _clientDataAddress, _bufSize, reply127, 2);
+            store(parameters.get("path"), _mode, _xferMode, _parallel,  _clientDataAddress,
+                  _bufSize, _delayedPassive, _preferredProtocol.getProtocolFamily(), 2);
         } catch (FTPCommandException e) {
-            reply(String.valueOf(e.getCode()) + " " + e.getReply());
+            reply(String.valueOf(e.getCode()) + ' ' + e.getReply());
         }
     }
 

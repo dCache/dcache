@@ -66,7 +66,11 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.vehicles ;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
+import java.net.StandardProtocolFamily;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
@@ -109,9 +113,24 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     /**
      * Whether the pool is requested to be passive.
      *
-     * Added for GFtp/2. We rely on default initialisation to false.
+     * Kept for backwards compatibility with 2.8 and before.
      */
+    @Deprecated
     private boolean _passive;
+
+    /**
+     * Whether the pool is requested to be passive.
+     *
+     * Added for GFtp/2. We rely on default initialisation to false. Like _passive,
+     * but while _passive is only used for IPv4, this field is used for both IPv4
+     * and IPv6.
+     */
+    private boolean _extendedPassive;
+
+    /**
+     * Protocol family for passive transfers.
+     */
+    private ProtocolFamily _protocolFamily;
 
     private static final long serialVersionUID = 5591743387114320262L;
 
@@ -158,7 +177,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     }
 
     public void setBufferSize( int bufferSize ) {
-	_bufferSize = bufferSize;
+        _bufferSize = bufferSize;
     }
 
     public int getBufferSize() { return _bufferSize; }
@@ -237,7 +256,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
      */
     public boolean getPassive()
     {
-        return _passive;
+        return _extendedPassive;
     }
 
     /**
@@ -245,7 +264,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
      */
     public void setPassive(boolean passive)
     {
-        _passive = passive;
+        _extendedPassive = passive;
     }
 
     public void setChecksumType(String f){
@@ -263,5 +282,25 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     @Override
     public InetSocketAddress getSocketAddress() {
         return _addr;
+    }
+
+    public void setProtocolFamily(ProtocolFamily protocolFamily)
+    {
+        _protocolFamily = protocolFamily;
+    }
+
+    public ProtocolFamily getProtocolFamily()
+    {
+        return _protocolFamily;
+    }
+
+    /**
+     * Ensures compatibility with pools from 2.8 and older. For old pools, passive mode
+     * is only requested for IPv4.
+     */
+    private void writeObject (ObjectOutputStream out) throws IOException
+    {
+        _passive = _extendedPassive && _protocolFamily == StandardProtocolFamily.INET;
+        out.defaultWriteObject();
     }
 }
