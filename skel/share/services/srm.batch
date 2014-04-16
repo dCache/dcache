@@ -18,6 +18,7 @@ check -strong srm.net.host
 check -strong srm.net.local-hosts
 check srm.net.listen
 
+check -strong srm.authn.vomsdir
 check -strong srm.authn.capath
 check -strong srm.authn.capath.refresh
 check -strong srm.authn.capath.refresh.unit

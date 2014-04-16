@@ -75,27 +75,20 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
-import org.glite.voms.PKIVerifier;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
-import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
-import java.util.Collection;
 import java.util.Set;
 
-import org.dcache.auth.util.GSSUtils;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.AbstractStorageElement;
@@ -214,6 +207,8 @@ public class SRMServerV2 implements ISRM  {
     private final SRM srm;
     private final RequestLogger[] loggers =
             { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
+    private final String caDir;
+    private final String vomsDir;
 
     public SRMServerV2()
     {
@@ -225,6 +220,8 @@ public class SRMServerV2 implements ISRM  {
                 config.isClientDNSLookup());
         srmServerCounters = srm.getSrmServerV2Counters();
         srmServerGauges = srm.getSrmServerV2Gauges();
+        caDir = config.getCaCertificatePath();
+        vomsDir = config.getVomsdir();
     }
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
@@ -260,7 +257,7 @@ public class SRMServerV2 implements ISRM  {
             RequestCredential requestCredential;
             try {
                 userCred          = srmAuth.getUserCredentials();
-                Iterable<String> roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);
+                Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
                 String role = Iterables.getFirst(roles, null);
                 LOGGER.debug("role is {}", role);
                 requestCredential = srmAuth.getRequestCredential(userCred,role);

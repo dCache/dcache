@@ -40,8 +40,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
         checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(vomsDir != null, "Undefined property: " + CADIR);
 
-        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir,
-                        MDC.getCopyOfContextMap());
+        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir);
     }
 
     @Override

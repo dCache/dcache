@@ -1,12 +1,3 @@
-/**
- * SrmAuthorizer.java
- *
- * Authors:  LH - Leo Heska
- *
- * History:
- *    2005/07/22 LH Extracted from SrmSoapBindingImpl.java
- */
-
 /*
 COPYRIGHT STATUS:
 Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -74,7 +65,6 @@ exporting documents or software obtained from this server.
 package org.dcache.srm.server;
 
 import org.apache.axis.MessageContext;
-import org.glite.voms.PKIVerifier;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;
@@ -87,7 +77,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
 
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.srm.SRMAuthorization;
@@ -238,11 +227,11 @@ public class SrmAuthorizer
         }
     }
 
-    static Iterable<String> getFQANsFromContext(ExtendedGSSContext gssContext)
+    static Iterable<String> getFQANsFromContext(String vomsDir, String caDir, ExtendedGSSContext gssContext)
             throws SRMAuthorizationException
     {
         try {
-            return GSSUtils.getFQANsFromGSSContext(gssContext);
+            return GSSUtils.getFQANsFromGSSContext(vomsDir, caDir, gssContext);
         } catch (AuthorizationException ae) {
             log.error("Could not extract FQANs from context",ae);
             throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
