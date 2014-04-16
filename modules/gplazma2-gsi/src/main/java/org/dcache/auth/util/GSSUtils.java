@@ -1,5 +1,6 @@
 package org.dcache.auth.util;
 
+import com.google.common.base.Objects;
 import org.glite.voms.PKIStore;
 import org.glite.voms.PKIVerifier;
 import org.glite.voms.VOMSAttribute;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Extraction and conversion methods useful when dealing with GSS/VOMS
  * certificates and proxies.<br>
@@ -48,8 +51,7 @@ public class GSSUtils {
      * errors).  The map allows for multiple instances mapped to different
      * certificate directories.
      */
-    private static final Map<PKIKey, PKIVerifier> verifiers
-        = new HashMap<PKIKey, PKIVerifier>();
+    private static final Map<PKIKey, PKIVerifier> verifiers = new HashMap<>();
 
     /**
      * For storing the verifier.  Key is concatenation of two directory paths.
@@ -57,44 +59,45 @@ public class GSSUtils {
      * @author arossi
      */
     private static class PKIKey {
-        private String vomsDir;
-        private String caDir;
+        private final String vomsDir;
+        private final String caDir;
 
-        private PKIKey(String vomsDir, String caDir) {
-            this.vomsDir = vomsDir;
-
-            if (this.vomsDir == null) {
-                this.vomsDir = System.getProperty(SYS_VOMSDIR);
+        private PKIKey(String vomsDir, String caDir)
+        {
+            if (vomsDir == null) {
+                vomsDir = System.getProperty(SYS_VOMSDIR);
             }
-
-            if (this.vomsDir == null) {
-                this.vomsDir = PKIStore.DEFAULT_VOMSDIR;
+            if (vomsDir == null) {
+                vomsDir = PKIStore.DEFAULT_VOMSDIR;
             }
+            this.vomsDir = checkNotNull(vomsDir);
 
-            this.caDir = caDir;
-
-            if (this.caDir == null) {
-                this.caDir = System.getProperty(SYS_CADIR);
+            if (caDir == null) {
+                caDir = System.getProperty(SYS_CADIR);
             }
-
-            if (this.caDir == null) {
-                this.caDir = PKIStore.DEFAULT_CADIR;
+            if (caDir == null) {
+                caDir = PKIStore.DEFAULT_CADIR;
             }
+            this.caDir = checkNotNull(caDir);
         }
 
         public String toString() {
-            return String.valueOf(vomsDir) + String.valueOf(caDir);
+            return Objects.toStringHelper(PKIKey.class)
+                    .add("vomsDir", vomsDir)
+                    .add("caDir", caDir)
+                    .toString();
         }
 
         public boolean equals(Object object) {
             if (!(object instanceof PKIKey)) {
                 return false;
             }
-            return toString().equals(object.toString());
+            PKIKey other = (PKIKey) object;
+            return vomsDir.equals(other.vomsDir) && caDir.equals(other.caDir);
         }
 
         public int hashCode() {
-            return toString().hashCode();
+            return (33 * vomsDir.hashCode()) ^ caDir.hashCode();
         }
     }
 
@@ -106,7 +109,7 @@ public class GSSUtils {
      * VOMSValidator.
      */
     @SuppressWarnings("deprecation")
-    public static Iterable<String> getFQANsFromGSSContext(ExtendedGSSContext gssContext)
+    public static Iterable<String> getFQANsFromGSSContext(String vomsDir, String caDir, ExtendedGSSContext gssContext)
                     throws AuthorizationException {
         X509Certificate[] chain;
 
@@ -119,14 +122,14 @@ public class GSSUtils {
                                             + gsse.getCause());
         }
 
-        return extractFQANs(chain);
+        return extractFQANs(vomsDir, caDir, chain);
     }
 
     /**
      * Return some iterable of FQANs for this credential.  If the credential
      * type is unknown or has not FQANs then an empty iterable is returned.
      */
-    public static Iterable<String> getFQANsFromGSSCredential(GSSCredential credential)
+    public static Iterable<String> getFQANsFromGSSCredential(String vomsDir, String caDir, GSSCredential credential)
             throws GSSException, AuthorizationException
     {
         X509Certificate[] chain = null;
@@ -135,16 +138,15 @@ public class GSSUtils {
             chain = (X509Certificate[]) ((ExtendedGSSCredential)credential).inquireByOid(GSSConstants.X509_CERT_CHAIN);
         }
 
-        return (chain == null) ? Collections.<String>emptyList() : extractFQANs(chain);
+        return (chain == null) ? Collections.<String>emptyList() : extractFQANs(vomsDir, caDir, chain);
     }
 
-    public static Iterable<String> extractFQANs(X509Certificate[] chain)
+    public static Iterable<String> extractFQANs(String vomsDir, String caDir, X509Certificate[] chain)
             throws AuthorizationException
     {
         try {
             VOMSValidator validator = new VOMSValidator(null,
-                    new ACValidator(getPkiVerifier(null, null,
-                    MDC.getCopyOfContextMap())));
+                    new ACValidator(getPkiVerifier(vomsDir, caDir)));
             validator.setClientChain(chain).parse();
             List<VOMSAttribute> listOfAttributes = validator.getVOMSAttributes();
             return getFQANSfromVOMSAttributes(listOfAttributes);
@@ -182,16 +184,16 @@ public class GSSUtils {
 
     /**
      * The verifier is used in validating and extracting the VOMS attributes and
-     * extensions. We now delegate to the Guava cache for re-use of verifiers.
+     * extensions.
      *
      * @param vomsDir
      *            a specialized non-default location
      * @param caDir
      *            a specialized non-default location
      */
-    public static synchronized PKIVerifier getPkiVerifier(String vomsDir,
-                    String caDir, Map<?, ?> mdcContext) throws IOException,
-                    CertificateException, CRLException {
+    public static synchronized PKIVerifier getPkiVerifier(String vomsDir, String caDir)
+            throws IOException, CertificateException, CRLException
+    {
         PKIKey key = new PKIKey(vomsDir, caDir);
         PKIVerifier verifier = verifiers.get(key);
         if (verifier == null) {
@@ -202,9 +204,7 @@ public class GSSUtils {
              */
             Map<?, ?> map = MDC.getCopyOfContextMap();
             try {
-                if (mdcContext != null) {
-                    MDC.setContextMap(mdcContext);
-                }
+                MDC.clear();
 
                 PKIStore vomsStore = null;
                 File actualDir = new File(key.vomsDir);

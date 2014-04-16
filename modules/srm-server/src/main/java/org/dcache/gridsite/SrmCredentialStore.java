@@ -42,6 +42,20 @@ import static org.dcache.gridsite.Utilities.assertThat;
 public class SrmCredentialStore implements CredentialStore
 {
     private RequestCredentialStorage _store;
+    private String caDir;
+    private String vomsDir;
+
+    @Required
+    public void setCaCertificatePath(String caDir)
+    {
+        this.caDir = caDir;
+    }
+
+    @Required
+    public void setVomsdir(String vomsDir)
+    {
+        this.vomsDir = vomsDir;
+    }
 
     @Required
     public void setRequestCredentialStorage(RequestCredentialStorage store)
@@ -63,7 +77,7 @@ public class SrmCredentialStore implements CredentialStore
             throws DelegationException
     {
         try {
-            Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(credential);
+            Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(vomsDir, caDir, credential);
             String primaryFqan = Iterables.getFirst(fqans, null);
 
             RequestCredential srmCredential = new RequestCredential(nameFromId(id),
