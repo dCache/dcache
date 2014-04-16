@@ -6,10 +6,13 @@ import com.google.common.net.InetAddresses;
 
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
+import java.net.ProtocolFamily;
 import java.net.SocketException;
+import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -124,6 +127,23 @@ public abstract class NetworkUtils {
     }
 
     /**
+     * Like URI.toURL, but translates exceptions to URISyntaxException
+     * with a descriptive error message.
+     */
+    public static URL toURL(URI uri)
+        throws URISyntaxException
+    {
+        try {
+            return uri.toURL();
+        } catch (IllegalArgumentException | MalformedURLException e) {
+            URISyntaxException exception =
+                new URISyntaxException(uri.toString(), e.getMessage());
+            exception.initCause(e);
+            throw exception;
+        }
+    }
+
+    /**
      * Return the local address via which the given destination
      * address is reachable.
      *
@@ -131,10 +151,25 @@ public abstract class NetworkUtils {
      * this workaround.
      */
     public static InetAddress getLocalAddress(InetAddress intendedDestination)
-            throws SocketException {
+            throws SocketException
+    {
+        return getLocalAddress(intendedDestination, getProtocolFamily(intendedDestination));
+    }
 
+    /**
+     * Like getLocalAddress(InetAddress), but return an addresses from the given protocolFamily on
+     * the network interface that would be used to reach the destination.
+     */
+    public static InetAddress getLocalAddress(InetAddress intendedDestination, ProtocolFamily protocolFamily)
+            throws SocketException
+    {
         if (FAKED_ADDRESS) {
-            return LOCAL_INET_ADDRESSES.get(0);
+            for (InetAddress address : LOCAL_INET_ADDRESSES) {
+                if (getProtocolFamily(address) == protocolFamily) {
+                    return address;
+                }
+            }
+            return null;
         }
 
         try (DatagramSocket socket = new DatagramSocket()) {
@@ -154,24 +189,32 @@ public abstract class NetworkUtils {
                     }
                 }
             }
+            if (getProtocolFamily(localAddress) != protocolFamily) {
+                Enumeration<InetAddress> addresses =
+                        NetworkInterface.getByInetAddress(localAddress).getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress address = addresses.nextElement();
+                    if (getProtocolFamily(address) == protocolFamily && !address.isMulticastAddress() &&
+                            (!address.isLoopbackAddress() || intendedDestination.isLoopbackAddress()) &&
+                            (!address.isSiteLocalAddress() || intendedDestination.isSiteLocalAddress()) &&
+                            (!address.isLinkLocalAddress() || intendedDestination.isLinkLocalAddress())) {
+                        localAddress = address;
+                        break;
+                    }
+                }
+            }
             return localAddress;
         }
     }
 
-    /**
-     * Like URI.toURL, but translates exceptions to URISyntaxException
-     * with a descriptive error message.
-     */
-    public static URL toURL(URI uri)
-        throws URISyntaxException
+    private static ProtocolFamily getProtocolFamily(InetAddress address)
     {
-        try {
-            return uri.toURL();
-        } catch (IllegalArgumentException | MalformedURLException e) {
-            URISyntaxException exception =
-                new URISyntaxException(uri.toString(), e.getMessage());
-            exception.initCause(e);
-            throw exception;
+        if (address instanceof Inet4Address) {
+            return StandardProtocolFamily.INET;
         }
+        if (address instanceof Inet6Address) {
+            return StandardProtocolFamily.INET6;
+        }
+        throw new IllegalArgumentException("Unknown protocol family: " + address);
     }
 }

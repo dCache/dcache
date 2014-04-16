@@ -205,13 +205,28 @@ def OptionParser.parse(args)
   options.includes = []
   options.excludes = []
   options.tests = {
-    :gridftp => [ [ :gridftp, '-no-g2' ],
+    :gridftp => [ # Regular GridFTP
+                  [ :gridftp, '-no-g2' ],
                   [ :gridftp, '-no-g2 -p 1' ],
                   [ :gridftp, '-no-g2 -p 10' ],
-                  [ :gridftp, '-no-g2 -p 100' ],
+                  # Regular GridFTP but with EPSV and EPRT
+                  [ :gridftp, '-no-g2 -ipv6' ],
+                  [ :gridftp, '-no-g2 -ipv6 -p 1' ],
+                  [ :gridftp, '-no-g2 -ipv6 -p 10' ],
+                  # GridFTP with delayed passive
+                  [ :gridftp, '-no-g2 -dp' ],
+                  [ :gridftp, '-no-g2 -dp -p 1' ],
+                  [ :gridftp, '-no-g2 -dp -p 10' ],
+                  # GridFTP with delayed passive and EPSV and EPRT
+                  [ :gridftp, '-no-g2 -dp -ipv6' ],
+                  [ :gridftp, '-no-g2 -dp -ipv6 -p 1' ],
+                  [ :gridftp, '-no-g2 -dp -ipv6 -p 10' ],
+                  # GridFTP using GET/PUT
                   [ :gridftp, '-g2' ],
                   [ :gridftp, '-g2', '-p 1' ],
                   [ :gridftp, '-g2', '-p 10' ],
+                  # Stress the data channel handling
+                  [ :gridftp, '-no-g2', '-p -100' ],
                   [ :gridftp, '-g2', '-p -100' ] ],
     :xrootd => [ [ :xrootd ] ],
     :dcap => [ [ :dcap ] ],
