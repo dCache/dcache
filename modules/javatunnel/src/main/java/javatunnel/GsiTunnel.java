@@ -1,11 +1,6 @@
-/*
- * $Id: GsiTunnel.java,v 1.6 2006-10-11 09:49:58 tigran Exp $
- */
-
 package javatunnel;
 
 import org.glite.voms.FQAN;
-import org.glite.voms.PKIVerifier;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -20,7 +15,6 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import javax.security.auth.Subject;
 
@@ -28,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.cert.X509Certificate;
-import java.util.Iterator;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
@@ -37,12 +30,12 @@ import org.dcache.util.Crypto;
 
 import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
-//jgss
-// globus gsi
 
 class GsiTunnel extends GssTunnel  {
 
     private static final Logger _log = LoggerFactory.getLogger(GsiTunnel.class);
+    private final String caDir;
+    private final String vomsDir;
 
     private ExtendedGSSContext _e_context;
 
@@ -55,49 +48,43 @@ class GsiTunnel extends GssTunnel  {
     private final Args _arguments;
     private Subject _subject = new Subject();
 
-    // Creates a new instance of GssTunnel
-    public GsiTunnel(String args) throws GSSException, IOException {
-        this(args, true);
-    }
-
-    public GsiTunnel(String args, boolean init)
-            throws GSSException, IOException {
+    public GsiTunnel(String args)
+            throws GSSException, IOException
+    {
         _arguments = new Args(args);
 
-        if( init ) {
-            X509Credential serviceCredential;
-            String service_key = _arguments.getOption(SERVICE_KEY);
-            String service_cert = _arguments.getOption(SERVICE_CERT);
-            String service_trusted_certs = _arguments.getOption(SERVICE_TRUSTED_CERTS);
-            String service_voms_dir = _arguments.getOption(SERVICE_VOMS_DIR);
+        X509Credential serviceCredential;
+        String service_key = _arguments.getOption(SERVICE_KEY);
+        String service_cert = _arguments.getOption(SERVICE_CERT);
+        caDir = _arguments.getOption(SERVICE_TRUSTED_CERTS);
+        vomsDir = _arguments.getOption(SERVICE_VOMS_DIR);
 
-            /* Unfortunately, we can't rely on GlobusCredential to provide
-             * meaningful error messages so we catch some obvious problems
-             * early.
-             */
-            checkFile(service_key);
-            checkFile(service_cert);
-            checkDirectory(service_trusted_certs);
+        /* Unfortunately, we can't rely on GlobusCredential to provide
+         * meaningful error messages so we catch some obvious problems
+         * early.
+         */
+        checkFile(service_key);
+        checkFile(service_cert);
+        checkDirectory(caDir);
 
-            try {
-                serviceCredential = new X509Credential(service_cert, service_key);
-            } catch (CredentialException e) {
-                throw new GSSException(GSSException.NO_CRED, 0, e.getMessage());
-            } catch(IOException ioe) {
-                throw new GSSException(GSSException.NO_CRED, 0,
-                                       "could not load host globus credentials "+ioe.toString());
-            }
-
-            GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential, GSSCredential.ACCEPT_ONLY);
-            GSSManager manager = ExtendedGSSManager.getInstance();
-            _e_context = (ExtendedGSSContext) manager.createContext(cred);
-            _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
-            _e_context.setBannedCiphers(
-                    Crypto.getBannedCipherSuitesFromConfigurationValue(_arguments.getOption(CIPHER_FLAGS)));
-            _context = _e_context;
-            // do not use channel binding with GSIGSS
-            super.useChannelBinding(false);
+        try {
+            serviceCredential = new X509Credential(service_cert, service_key);
+        } catch (CredentialException e) {
+            throw new GSSException(GSSException.NO_CRED, 0, e.getMessage());
+        } catch(IOException ioe) {
+            throw new GSSException(GSSException.NO_CRED, 0,
+                                   "could not load host globus credentials "+ioe.toString());
         }
+
+        GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential, GSSCredential.ACCEPT_ONLY);
+        GSSManager manager = ExtendedGSSManager.getInstance();
+        _e_context = (ExtendedGSSContext) manager.createContext(cred);
+        _e_context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
+        _e_context.setBannedCiphers(
+                Crypto.getBannedCipherSuitesFromConfigurationValue(_arguments.getOption(CIPHER_FLAGS)));
+        _context = _e_context;
+        // do not use channel binding with GSIGSS
+        super.useChannelBinding(false);
     }
 
     @Override
@@ -121,7 +108,7 @@ class GsiTunnel extends GssTunnel  {
     @Override
     public Convertable makeCopy() throws IOException {
         try {
-            return new GsiTunnel(_arguments.toString(), true);
+            return new GsiTunnel(_arguments.toString());
         } catch (GSSException e) {
             throw new IOException(e);
         }
@@ -132,7 +119,7 @@ class GsiTunnel extends GssTunnel  {
         try {
             boolean primary = true;
 
-            for (String fqanValue : GSSUtils.getFQANsFromGSSContext(gssContext)) {
+            for (String fqanValue : GSSUtils.getFQANsFromGSSContext(vomsDir, caDir, gssContext)) {
                 FQAN fqan = new FQAN(fqanValue);
                 String group = fqan.getGroup();
                 String role = fqan.getRole();

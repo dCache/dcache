@@ -210,6 +210,8 @@ public class Configuration {
 
     private Map<String,DatabaseParameters> databaseParameters =
         new HashMap<>();
+    private String caCertificatePath;
+    private String vomsdir;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1206,6 +1208,26 @@ public class Configuration {
 
     public DatabaseParameters getDatabaseParameters(String name) {
         return databaseParameters.get(name);
+    }
+
+    public void setCaCertificatePath(String caCertificatePath)
+    {
+        this.caCertificatePath = caCertificatePath;
+    }
+
+    public String getCaCertificatePath()
+    {
+        return caCertificatePath;
+    }
+
+    public void setVomsdir(String vomsdir)
+    {
+        this.vomsdir = vomsdir;
+    }
+
+    public String getVomsdir()
+    {
+        return vomsdir;
     }
 
     public class DatabaseParameters

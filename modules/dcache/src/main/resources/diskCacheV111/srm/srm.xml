@@ -222,6 +222,8 @@
                      '${srm.limits.external-copy-script.timeout.unit}')}" />
     <property name="srmHost" value="${srm.net.host}"/>
     <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
+    <property name="caCertificatePath" value="${srm.authn.capath}"/>
+    <property name="vomsdir" value="${srm.authn.vomsdir}"/>
     <property name="sizeOfSingleRemoveBatch"
               value="${srm.limits.remove-batch-size}"/>
     <property name="maxNumberOfLsEntries"
@@ -648,11 +650,13 @@
   </bean>
 
   <bean id="gridsite-credential-store"
-	class="org.dcache.gridsite.SrmCredentialStore">
+        class="org.dcache.gridsite.SrmCredentialStore">
       <description>Bridge between GridSite- and SRM- credential storage</description>
 
       <property name="requestCredentialStorage"
               ref="srm-credential-store"/>
+      <property name="caCertificatePath" value="${srm.authn.capath}"/>
+      <property name="vomsdir" value="${srm.authn.vomsdir}"/>
   </bean>
 
   <bean id="gridsite-credential-delegation-factory"
