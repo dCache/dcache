@@ -1,5 +1,3 @@
-// $Id: SpaceSweeper2.java,v 1.2 2007-10-08 08:00:29 behrmann Exp $
-
 package org.dcache.pool.classic;
 
 import org.slf4j.Logger;
@@ -44,7 +42,7 @@ public class SpaceSweeper2
     private final SimpleDateFormat __format =
         new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-    private final Set<PnfsId> _list  = new LinkedHashSet();
+    private final Set<PnfsId> _list  = new LinkedHashSet<>();
 
     private Repository _repository;
 
@@ -82,7 +80,7 @@ public class SpaceSweeper2
      */
     private synchronized PnfsId getEldest()
     {
-        if (_list.size() == 0) {
+        if (_list.isEmpty()) {
             return null;
         }
         return _list.iterator().next();
@@ -101,9 +99,7 @@ public class SpaceSweeper2
             }
 
             return _repository.getEntry(id).getLastAccessTime();
-        } catch (InterruptedException e) {
-            return 0L;
-        } catch (CacheException e) {
+        } catch (InterruptedException | CacheException e) {
             return 0L;
         }
     }
@@ -121,10 +117,7 @@ public class SpaceSweeper2
 
         PnfsId id = entry.getPnfsId();
         if (_list.add(id)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Added " + id + " to sweeper");
-            }
-
+            _log.debug("Added {} to sweeper", id);
             /* The sweeper thread may be waiting for more files to
              * delete.
              */
@@ -138,9 +131,7 @@ public class SpaceSweeper2
     {
         PnfsId id = entry.getPnfsId();
         if (_list.remove(id)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Removed " + id + " from sweeper");
-            }
+            _log.debug("Removed {} from sweeper", id);
             return true;
         }
         return false;
@@ -296,9 +287,9 @@ public class SpaceSweeper2
     private long reclaim(long amount)
         throws InterruptedException
     {
-        List<CacheEntry> tmpList = new ArrayList();
+        List<CacheEntry> tmpList = new ArrayList<>();
 
-        _log.info(String.format("Sweeper trying to reclaim %d bytes", amount));
+        _log.info("Sweeper trying to reclaim {} bytes", amount);
 
         /* We copy the entries into a tmp list to avoid
          * ConcurrentModificationException.
@@ -317,18 +308,17 @@ public class SpaceSweeper2
                     //  file if it is still in use.
                     //
                     if (entry.getLinkCount() > 0) {
-                        _log.warn("file skipped by sweeeper (in use): " + entry);
+                        _log.warn("file skipped by sweeeper (in use): {}", entry);
                         continue;
                     }
                     if (!isRemovable(entry)) {
-                        _log.error("file skipped by sweeper (not removable): " + entry);
+                        _log.error("file skipped by sweeper (not removable): {}", entry);
                         continue;
                     }
                     long size = entry.getReplicaSize();
                     tmpList.add(entry);
                     minSpaceNeeded -= size;
-                    _log.debug("adds to remove list : " + entry.getPnfsId()
-                               + " " + size);
+                    _log.debug("adds to remove list : {} {}", entry.getPnfsId(), size);
                 } catch (FileNotInCacheException e) {
                     /* Normal if file got removed just as we wanted to
                      * remove it ourselves.
@@ -346,7 +336,7 @@ public class SpaceSweeper2
             try {
                 PnfsId id = entry.getPnfsId();
                 long size = entry.getReplicaSize();
-                _log.info("trying to remove " + id);
+                _log.info("trying to remove {}", id);
                 _repository.setState(id, EntryState.REMOVED);
                 deleted += size;
             } catch (CacheException e) {
