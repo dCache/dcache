@@ -193,6 +193,44 @@ class WriteHandleImpl implements ReplicaDescriptor
     }
 
     /**
+     * Allocate space if available. A non blocking version of {@link Allocator#allocate(long)}
+     *
+     * @param size in bytes
+     * @throws InterruptedException if thread is interrupted
+     * @throws IllegalStateException if handle is closed
+     * @throws IllegalArgumentException if <i>size</i> &lt; 0
+     * @return true if and only if the request space was allocated
+     */
+    @Override
+    public boolean allocateNow(long size)
+            throws IllegalStateException, IllegalArgumentException, InterruptedException {
+        if (size < 0) {
+            throw new IllegalArgumentException("Size is negative");
+        }
+
+        boolean isAllocated;
+        setAllocationThread();
+        try {
+            isAllocated = _allocator.allocateNow(size);
+        } catch (InterruptedException e) {
+            if (!isOpen()) {
+                throw new IllegalStateException("Handle is closed");
+            }
+            throw e;
+        } finally {
+            clearAllocationThread();
+        }
+
+        if (isAllocated) {
+            synchronized (this) {
+                _allocated += size;
+                _entry.setSize(_allocated);
+            }
+        }
+        return  isAllocated;
+    }
+
+    /**
      * Freeing space through a write handle is not supported. This
      * method always throws IllegalStateException.
      */

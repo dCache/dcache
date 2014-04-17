@@ -77,6 +77,24 @@ public class FairQueueAllocation
     }
 
     @Override
+    public boolean allocateNow(long space)
+        throws InterruptedException
+    {
+        if (space < 0) {
+            throw new IllegalArgumentException("Cannot allocate negative space");
+        }
+
+        final Thread self = Thread.currentThread();
+        enqueue(self);
+        try {
+            waitForTurn(self);
+            return _account.allocateNow(space);
+        } finally {
+            dequeue(self);
+        }
+    }
+
+    @Override
     public void free(long space)
     {
         _account.free(space);
