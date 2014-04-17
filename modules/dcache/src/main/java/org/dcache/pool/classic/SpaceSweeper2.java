@@ -391,7 +391,12 @@ public class SpaceSweeper2
                      * excessive CPU consumption we sleep for 10
                      * seconds after each iteration.
                      */
-                    Thread.currentThread().sleep(10000);
+                    synchronized(this) {
+                        /*
+                         * will be waked up if new entry added into list
+                         */
+                        wait(10000);
+                    }
                 }
             }
         } catch (InterruptedException e) {
