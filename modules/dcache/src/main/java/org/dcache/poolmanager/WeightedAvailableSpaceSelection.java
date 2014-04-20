@@ -10,6 +10,52 @@ import diskCacheV111.pools.PoolCostInfo;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 
+/**
+ * Pool selection algorithm using Weighted Available Space Selection (WASS).
+ *
+ * The weighted available space is defined as:
+ *
+ *                  scf
+ *        available
+ *     ----------------------
+ *          (pcf writers)
+ *        2
+ *
+ * where available is the unweighted available space, writers the
+ * current number of write movers, pcf is the performance cost
+ * factor, and scf is the space cost factor.
+ *
+ * The space cost factor adjusts the preference for using pools by
+ * available space. A space cost factor of 0 means that the
+ * selection is independent of available space. A value of 1 means
+ * that the preference of a pool is proportional to the amount of
+ * available space. The higher the value the more the selection is
+ * skewed to pools with lots of free space (negative values mean
+ * the selection is more skewed towards pools with little free
+ * space; that's unlikely to be useful).
+ *
+ * A selection purely guided by space risks accumulating writers
+ * on a pool, eventually causing pools to become overloaded.  To
+ * add a feedback from write activity we reduce the available
+ * space exponentially with the number of writers.
+ *
+ * Intuitively the reciprocal of pcf is the number of writers it
+ * takes to half the weighted available space.
+ *
+ * Setting pcf to 0 means the available space will be unweighted, ie
+ * load does not affect pool selection. A value of 1 would mean
+ * that every write half the available space. The useful range of
+ * pcg is probably 0 to 1.
+ *
+ * The performance cost factor used in the expression is the
+ * product of a per pool value and the performance cost factor of
+ * the partition. A per pool value makes it possible to specify
+ * how quickly a pool degrades with load.
+ *
+ * Note that setting both factors to zero causes pool selection to
+ * become random. This it the same behaviour as with the classic
+ * partition.
+ */
 public class WeightedAvailableSpaceSelection implements Serializable
 {
     /* SecureRandom is a higher quality source for randomness than
@@ -173,57 +219,14 @@ public class WeightedAvailableSpaceSelection implements Serializable
         return writers;
     }
 
-    /**
-     * Returns the available space of a pool weighted by load.
-     *
-     * The weighted available space is defined as:
-     *
-     *                  scf
-     *        available
-     *     ----------------------
-     *          (pcf writers)
-     *        2
-     *
-     * where available is the unweighted available space, writers the
-     * current number of write movers, pcf is the performance cost
-     * factor, and scf is the space cost factor.
-     *
-     * The space cost factor adjusts the preference for using pools by
-     * available space. A space cost factor of 0 means that the
-     * selection is independent of available space. A value of 1 means
-     * that the preference of a pool is proportional to the amount of
-     * available space. The higher the value the more the selection is
-     * skewed to pools with lots of free space (negative values mean
-     * the selection is more skewed towards pools with little free
-     * space; that's unlikely to be useful).
-     *
-     * A selection purely guided by space risks accumulating writers
-     * on a pool, eventually causing pools to become overloaded.  To
-     * add a feedback from write activity we reduce the available
-     * space exponentially with the number of writers.
-     *
-     * Intuitively the reciprocal of pcf is the number of writers it
-     * takes to half the weighted available space.
-     *
-     * Setting pcf to 0 means the available space will be unweighted, ie
-     * load does not affect pool selection. A value of 1 would mean
-     * that every write half the available space. The useful range of
-     * pcg is probably 0 to 1.
-     *
-     * The performance cost factor used in the expression is the
-     * product of a per pool value and the performance cost factor of
-     * the partition. A per pool value makes it possible to specify
-     * how quickly a pool degrades with load.
-     *
-     * Note that setting both factors to zero causes pool selection to
-     * become random. This it the same behaviour as with the classic
-     * partition.
-     */
-    protected double getWeightedAvailable(PoolCostInfo info, long filesize)
+    protected double getWeightedAvailable(PoolCostInfo info, double available, double load)
     {
-        double available = getAvailable(info.getSpaceInfo(), filesize);
-        double load = performanceCostFactor * info.getMoverCostFactor() * getWriters(info);
-        return Math.pow(available, spaceCostFactor) / Math.pow(2.0, load);
+        return (available == 0) ? 0 : (Math.pow(available, spaceCostFactor) / Math.pow(2.0, load));
+    }
+
+    private double getLoad(PoolCostInfo info)
+    {
+        return performanceCostFactor * info.getMoverCostFactor() * getWriters(info);
     }
 
     /**
@@ -231,26 +234,50 @@ public class WeightedAvailableSpaceSelection implements Serializable
      * <p/>
      * Returns null if all pools are full.
      */
-    public <P> P selectByAvailableSpace(List<P> pools, long size,
+    public <P> P selectByAvailableSpace(List<P> pools, long filesize,
                                         Function<P, PoolCostInfo> getCost)
     {
-        double[] available = new double[pools.size()];
-        double sum = 0.0;
+        int length = pools.size();
+        double[] available = new double[length];
 
-        for (int i = 0; i < available.length; i++) {
-            sum += getWeightedAvailable(getCost.apply(pools.get(i)), size);
+        /* Calculate available space adjusted by space cost factor. Determine the smallest
+         * load of all pools able to hold the file.
+         */
+        double minLoad = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < length; i++) {
+            PoolCostInfo info = getCost.apply(pools.get(i));
+            double free = getAvailable(info.getSpaceInfo(), filesize);
+            if (free > 0) {
+                available[i] = free;
+                minLoad = Math.min(minLoad, getLoad(info));
+            }
+        }
+
+        if (minLoad == Double.POSITIVE_INFINITY) {
+            return null;
+        }
+
+        /* Weight available space by normalized load. Load is normalized to ensure that at least
+         * for one pool we maintain enough precision to not reduce available space to zero.
+         */
+        double sum = 0.0;
+        for (int i = 0; i < length; i++) {
+            PoolCostInfo info = getCost.apply(pools.get(i));
+            double normalizedLoad = getLoad(info) - minLoad;
+            double weightedAvailable = getWeightedAvailable(info, available[i], normalizedLoad);
+            sum += weightedAvailable;
             available[i] = sum;
         }
 
+        /* Randomly choose one of the pools.
+         */
         double threshold = random() * sum;
-
-        for (int i = 0; i < available.length; i++) {
+        for (int i = 0; i < length; i++) {
             if (threshold < available[i]) {
                 return pools.get(i);
             }
         }
 
-        return null;
+        throw new RuntimeException("Unreachable statement");
     }
-
 }
