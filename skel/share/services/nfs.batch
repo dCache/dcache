@@ -38,6 +38,9 @@ check -strong nfs.db.schema.changelog
 check -strong nfs.db.schema.auto
 check -strong nfs.db.connections.min
 check -strong nfs.db.connections.max
+check -strong nfs.namespace-cache.time
+check -strong nfs.namespace-cache.time.unit
+check -strong nfs.namespace-cache.size
 check nfs.db.password
 check nfs.db.password.file
 check nfs.domain
