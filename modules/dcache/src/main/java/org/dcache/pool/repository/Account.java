@@ -80,16 +80,25 @@ public class Account
      * @return true if and only if the request was served
      */
     public synchronized boolean allocateNow(long request)
+             throws InterruptedException
     {
         if (request < 0) {
             throw new IllegalArgumentException("Cannot allocate negative space");
         }
-        if (request > getFree()) {
-            return false;
+        _requested += request;
+        try {
+            while (request > getFree() && request <= getFree() + getRemovable()) {
+                notifyAll();
+                wait();
+            }
+            if (request > getFree()) {
+                return false;
+            }
+            _used += request;
+            notifyAll();
+        } finally {
+            _requested -= request;
         }
-
-        notifyAll();
-        _used += request;
         return true;
     }
 
