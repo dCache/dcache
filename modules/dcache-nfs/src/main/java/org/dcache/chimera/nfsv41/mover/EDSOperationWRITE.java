@@ -21,6 +21,7 @@ import org.dcache.nfs.v4.xdr.stable_how4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 
 
@@ -72,6 +73,9 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
         }catch(ChimeraNFSException he) {
             _log.debug(he.getMessage());
             res.status = he.getStatus();
+        }catch (OutOfDiskException e) {
+            _log.error("DSWRITE: no allocatable space left on the pool");
+            res.status = nfsstat.NFSERR_NOSPC;
         }catch(IOException ioe) {
             _log.error("DSWRITE: ", ioe);
             res.status = nfsstat.NFSERR_IO;

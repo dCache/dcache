@@ -35,6 +35,7 @@ import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.uint32_t;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
+import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
@@ -50,7 +51,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
             NfsTransferService nfsTransferService,
             PostTransferService postTransferService) {
-        super(handle, message, pathToDoor, nfsTransferService, postTransferService);
+        super(handle, message, pathToDoor, nfsTransferService, postTransferService, MoverChannel.AllocatorMode.SOFT);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         _state = new MoverState();
     }

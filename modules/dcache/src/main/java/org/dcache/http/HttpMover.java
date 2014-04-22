@@ -34,6 +34,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -51,7 +52,7 @@ public class HttpMover extends MoverChannelMover<HttpProtocolInfo, HttpMover>
                      PostTransferService postTransferService,
                      ChecksumFactory checksumFactory)
     {
-        super(handle, message, pathToDoor, httpTransferService, postTransferService);
+        super(handle, message, pathToDoor, httpTransferService, postTransferService, MoverChannel.AllocatorMode.HARD);
         this.checksumFactory = checksumFactory;
     }
 

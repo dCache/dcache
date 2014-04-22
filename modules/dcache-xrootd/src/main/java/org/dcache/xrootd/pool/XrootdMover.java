@@ -28,6 +28,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.PostTransferService;
+import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
@@ -46,7 +47,7 @@ public class XrootdMover extends MoverChannelMover<XrootdProtocolInfo, XrootdMov
                        XrootdTransferService xrootdTransferService,
                        PostTransferService postTransferService)
     {
-        super(handle, message, pathToDoor, xrootdTransferService, postTransferService);
+        super(handle, message, pathToDoor, xrootdTransferService, postTransferService, MoverChannel.AllocatorMode.HARD);
     }
 
     @Override

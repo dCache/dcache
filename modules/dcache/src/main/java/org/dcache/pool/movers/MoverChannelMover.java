@@ -37,13 +37,16 @@ import static com.google.common.base.Preconditions.checkState;
 public abstract class MoverChannelMover<P extends ProtocolInfo, M extends Mover<P>> extends AbstractMover<P, M>
 {
     private volatile MoverChannel<P> _wrappedChannel;
+    private final MoverChannel.AllocatorMode _allocatorMode;
 
     public MoverChannelMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                              CellPath pathToDoor,
                              TransferService<M> transferService,
-                             PostTransferService postTransferService)
+                             PostTransferService postTransferService,
+                             MoverChannel.AllocatorMode allocatorMode)
     {
         super(handle, message, pathToDoor, transferService, postTransferService);
+        _allocatorMode = allocatorMode;
     }
 
     @Override
@@ -82,7 +85,7 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends Mover<
     public synchronized MoverChannel<P> open() throws DiskErrorCacheException
     {
         checkState(_wrappedChannel == null);
-        _wrappedChannel = new MoverChannel<>(this, openChannel());
+        _wrappedChannel = new MoverChannel<>(this, openChannel(), _allocatorMode);
         return _wrappedChannel;
     }
 

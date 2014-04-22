@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.vehicles.FileAttributes;
 
@@ -29,6 +30,10 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
         LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                                 MoverChannel.class.getName());
 
+    public enum AllocatorMode {
+        SOFT,
+        HARD
+    }
     /**
      * The minimum number of bytes to increment the space
      * allocation.
@@ -84,19 +89,25 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
      */
     private volatile long _reserved;
 
-    public MoverChannel(Mover<T> mover, RepositoryChannel channel)
+    /**
+     * Tells, should allocator block for available space or not.
+     */
+    private final AllocatorMode _allocatorMode;
+
+    public MoverChannel(Mover<T> mover, RepositoryChannel channel, AllocatorMode allocatorMode)
     {
-        this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel, mover.getIoHandle());
+        this(mover.getIoMode(), mover.getFileAttributes(), mover.getProtocolInfo(), channel, mover.getIoHandle(), allocatorMode);
     }
 
     public MoverChannel(IoMode mode, FileAttributes attributes, T protocolInfo,
-            RepositoryChannel channel, Allocator allocator)
+            RepositoryChannel channel, Allocator allocator, AllocatorMode allocatorMode)
     {
         _mode = mode;
         _protocolInfo = protocolInfo;
         _channel = channel;
         _allocator = allocator;
         _fileAttributes = attributes;
+        _allocatorMode = allocatorMode;
     }
 
     @Override
@@ -314,7 +325,11 @@ public class MoverChannel<T extends ProtocolInfo> implements RepositoryChannel
             if (pos > _reserved) {
                 long delta = Math.max(pos - _reserved, SPACE_INC);
                 _logSpaceAllocation.trace("preallocate: {}", delta);
-                _allocator.allocate(delta);
+                if (_allocatorMode == AllocatorMode.HARD) {
+                    _allocator.allocate(delta);
+                } else if (!_allocator.allocateNow(delta)) {
+                    throw new OutOfDiskException();
+                }
                 _reserved += delta;
             }
         } catch (InterruptedException e) {
