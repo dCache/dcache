@@ -115,7 +115,11 @@ public class LruPartition extends Partition
                     oldest = pool;
                 }
             }
-        } while (!lastAccessed.replace(oldest.getName(), current, next()));
+            /* Repeat until we manage update the entry without concurrent
+             * modification.
+             */
+        } while (current < 0 && lastAccessed.putIfAbsent(oldest.getName(), next()) != null ||
+                current >= 0 && !lastAccessed.replace(oldest.getName(), current, next()));
         return oldest;
     }
 
