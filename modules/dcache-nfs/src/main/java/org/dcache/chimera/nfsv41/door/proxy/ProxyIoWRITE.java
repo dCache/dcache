@@ -41,7 +41,8 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final WRITE4res res = result.opwrite;
 
-        try (CDC ignored = new CDC()) {
+        CDC cdc = CDC.reset(proxyIoFactory.getCellName(), proxyIoFactory.getCellDomainName());
+        try {
 	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
             /**
@@ -114,6 +115,8 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
         }catch(Exception e) {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
+        } finally {
+            cdc.close();
         }
     }
 }
