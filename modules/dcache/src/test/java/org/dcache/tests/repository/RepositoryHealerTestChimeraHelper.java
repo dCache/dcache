@@ -128,7 +128,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     public static HikariDataSource getDataSource(String url, String user, String pass) {
         HikariConfig config = new HikariConfig();
         config.setDataSource(new DriverManagerDataSource(url, user, pass));
-        config.setMinimumPoolSize(1);
+        config.setMinimumIdle(0);
         config.setMaximumPoolSize(3);
         return new HikariDataSource(config);
     }

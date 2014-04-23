@@ -41,7 +41,7 @@
               <bean class="com.zaxxer.hikari.HikariConfig">
                   <constructor-arg type="java.util.Properties">
                       <value>
-                          minimumPoolSize = ${billing.db.connections.min}
+                          minimumIdle = ${billing.db.connections.idle}
                           maximumPoolSize = ${billing.db.connections.max}
                           autoCommit = true
                           transactionIsolation = TRANSACTION_READ_COMMITTED

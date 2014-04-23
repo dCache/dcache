@@ -1158,7 +1158,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public final static void setup(String connectURI, String user, String password) {
         HikariConfig config = new HikariConfig();
         config.setDataSource(new DriverManagerDataSource(connectURI, user, password));
-        config.setMinimumPoolSize(1);
+        config.setMinimumIdle(1);
         config.setMaximumPoolSize(30);
         final HikariDataSource ds = new HikariDataSource(config);
 
