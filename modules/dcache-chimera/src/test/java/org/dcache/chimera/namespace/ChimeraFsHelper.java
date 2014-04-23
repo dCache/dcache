@@ -15,7 +15,7 @@ public class ChimeraFsHelper {
     {
         HikariConfig config = new HikariConfig();
         config.setDataSource(new DriverManagerDataSource(url, user, pass));
-        config.setMinimumPoolSize(1);
+        config.setMinimumIdle(1);
         config.setMaximumPoolSize(2);
         return new JdbcFs(new HikariDataSource(config), dialect);
     }

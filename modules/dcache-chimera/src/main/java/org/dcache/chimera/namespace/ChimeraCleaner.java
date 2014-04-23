@@ -273,7 +273,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         HikariConfig config = new HikariConfig();
         config.setDataSource(new DriverManagerDataSource(jdbcUrl, user, pass));
-        config.setMinimumPoolSize(1);
+        config.setMinimumIdle(1);
         config.setMaximumPoolSize(10);
 
         _dataSource = new HikariDataSource(config);
