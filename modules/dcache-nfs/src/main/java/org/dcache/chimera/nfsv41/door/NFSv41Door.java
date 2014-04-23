@@ -416,7 +416,8 @@ public class NFSv41Door extends AbstractCellComponent implements
             throws IOException {
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
-        try(CDC cdc = CDC.reset(_cellName, _domainName)) {
+        CDC cdc = CDC.reset(_cellName, _domainName);
+        try {
             NDC.push(inode.toString());
             NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             deviceid4 deviceid;
@@ -480,6 +481,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 	    cleanStateAndKillMover(stateid);
             throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
                     e.getMessage());
+        } finally {
+            cdc.close();
         }
 
     }
