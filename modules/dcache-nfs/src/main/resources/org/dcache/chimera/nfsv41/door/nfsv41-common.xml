@@ -60,7 +60,7 @@
             <bean class="com.zaxxer.hikari.HikariConfig">
                 <constructor-arg type="java.util.Properties">
                     <value>
-                        minimumPoolSize = ${nfs.db.connections.min}
+                        minimumIdle = ${nfs.db.connections.idle}
                         maximumPoolSize = ${nfs.db.connections.max}
                         autoCommit = true
                         transactionIsolation = TRANSACTION_READ_COMMITTED

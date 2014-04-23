@@ -10,7 +10,7 @@ check -strong spacemanager.cell.export
 check -strong spacemanager.db.url
 check -strong spacemanager.db.user
 check -strong spacemanager.db.password
-check -strong spacemanager.db.connections.min
+check -strong spacemanager.db.connections.idle
 check -strong spacemanager.db.connections.max
 check -strong spacemanager.limits.threads
 check -strong spacemanager.default-access-latency

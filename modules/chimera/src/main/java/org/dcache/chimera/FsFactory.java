@@ -47,7 +47,7 @@ public class FsFactory
         HikariConfig config = new HikariConfig();
         config.setDataSource(new DriverManagerDataSource(url, user, pass));
         config.setMaximumPoolSize(3);
-        config.setMinimumPoolSize(1);
+        config.setMinimumIdle(0);
         return new JdbcFs(new HikariDataSource(config), dialect);
     }
 

@@ -192,7 +192,7 @@ public abstract class TransferManager extends AbstractCell
             HikariConfig config = new HikariConfig();
             config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
             config.setMaximumPoolSize(50);
-            config.setMinimumPoolSize(1);
+            config.setMinimumIdle(1);
             ds = new HikariDataSource(config);
 
             RequestsPropertyStorage.initPropertyStorage(
