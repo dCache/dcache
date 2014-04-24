@@ -16,7 +16,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
@@ -756,8 +755,8 @@ public class RemoteNameSpaceProviderTests
 
         for(int i = 0; i < replies.length; i++) {
             Collection<DirectoryEntry> entries = replies [i];
-            boolean isLast = i == replies.length -1;
-            CellMessage reply = buildListReply(request, entries, isLast);
+            boolean isLast = i == (replies.length - 1);
+            CellMessage reply = buildListReply(request, entries, isLast, replies.length);
 
             messages.add((PnfsListDirectoryMessage) reply.getMessageObject());
         }
@@ -767,14 +766,16 @@ public class RemoteNameSpaceProviderTests
 
 
     private static CellMessage buildListReply(CellMessage request,
-            final Collection<DirectoryEntry> entries, final boolean isLast)
+            final Collection<DirectoryEntry> entries, final boolean isLast, final int cnt)
     {
         return buildReply(request, new Modifier<PnfsListDirectoryMessage>(){
             @Override
             public void modify(PnfsListDirectoryMessage reply)
             {
                 reply.setEntries(entries);
-                reply.setFinal(isLast);
+                if (isLast) {
+                    reply.setSucceeded(cnt);
+                }
             }
         }, SUCCESSFUL);
     }
