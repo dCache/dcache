@@ -28,6 +28,7 @@ import org.dcache.gplazma.NoSuchPrincipalException;
 
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.find;
+import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
  * gPlazma plug-in which uses NIS (YP) server to provide requested information.
@@ -95,25 +96,29 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
 
     @Override
     public void map(Set<Principal> principals) throws AuthenticationException {
+        boolean mapped;
         Principal principal =
                 find(principals, instanceOf(UserNamePrincipal.class), null);
-        if (principal != null) {
-            try {
-                Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
-                principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
-                principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
-                NamingEnumeration<SearchResult> groupResult =_ctx.search(NISMAP_GROUP_BY_NAME,
-                        new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
-                while (groupResult.hasMore()) {
-                    SearchResult result = groupResult.next();
-                    principals.add(
-                            new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
-                }
-            } catch (NamingException e) {
-                _log.debug("Failed to get mapping: {}", e.toString());
-                throw new AuthenticationException("no mapping: "+ e.getMessage(), e);
+
+        checkAuthentication(principal != null, "no username principal");
+
+        try {
+            Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
+            principals.add(new UidPrincipal((String) userAttr.get(UID_NUMBER_ATTRIBUTE).get()));
+            principals.add(new GidPrincipal((String) userAttr.get(GID_NUMBER_ATTRIBUTE).get(), true));
+            NamingEnumeration<SearchResult> groupResult = _ctx.search(NISMAP_GROUP_BY_NAME,
+                    new BasicAttributes(MEMBER_UID_ATTRIBUTE, principal.getName()));
+            mapped = true;
+            while (groupResult.hasMore()) {
+                SearchResult result = groupResult.next();
+                principals.add(
+                        new GidPrincipal((String) result.getAttributes().get(GID_NUMBER_ATTRIBUTE).get(), false));
             }
+        } catch (NamingException e) {
+            _log.debug("Failed to get mapping: {}", e.toString());
+            throw new AuthenticationException("no mapping: " + e.getMessage(), e);
         }
+        checkAuthentication(mapped, "no matching principal");
     }
 
     @Override
@@ -174,16 +179,16 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
     public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         Principal principal =
             find(authorizedPrincipals, instanceOf(UserNamePrincipal.class), null);
-        if(principal != null) {
-            try {
-                Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
-                attrib.add(new HomeDirectory((String)userAttr.get(HOME_DIR_ATTRIBUTE).get()));
-                attrib.add(new RootDirectory("/"));
-                attrib.add(new ReadOnly(false));
-            }catch(NamingException e) {
-                throw new AuthenticationException("no mapping: " +
-                        e.getMessage(), e);
-            }
+        checkAuthentication(principal != null, "no username principal");
+
+        try {
+            Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
+            attrib.add(new HomeDirectory((String) userAttr.get(HOME_DIR_ATTRIBUTE).get()));
+            attrib.add(new RootDirectory("/"));
+            attrib.add(new ReadOnly(false));
+        } catch (NamingException e) {
+            throw new AuthenticationException("no mapping: "
+                    + e.getMessage(), e);
         }
     }
 }
