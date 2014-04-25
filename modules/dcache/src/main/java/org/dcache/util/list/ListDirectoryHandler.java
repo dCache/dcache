@@ -20,10 +20,10 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
 
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CollectionFactory;
 
-import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Glob;
@@ -164,12 +164,7 @@ public class ListDirectoryHandler
         if (reply.isReply()) {
             try {
                 UUID uuid = reply.getUUID();
-                Stream stream;
-                if (reply.isFinal()) {
-                    stream = _replies.remove(uuid);
-                } else {
-                    stream = _replies.get(uuid);
-                }
+                Stream stream = _replies.get(uuid);
                 if (stream != null) {
                     stream.put(reply);
                 } else {
@@ -198,6 +193,8 @@ public class ListDirectoryHandler
         private final String _path;
         private boolean _isFinal;
         private Iterator<DirectoryEntry> _iterator;
+        private int _count;
+        private int _total;
 
         public Stream(String path, UUID uuid)
         {
@@ -229,10 +226,16 @@ public class ListDirectoryHandler
                 _queue.poll(_pnfs.getPnfsTimeout(), TimeUnit.MILLISECONDS);
             if (msg == null) {
                 throw new CacheException(CacheException.TIMEOUT,
-                                         "Timeout during directory list");
+                                         "Timeout during directory listing.");
             }
 
-            _isFinal = msg.isFinal();
+            if (msg.isFinal()) {
+                _total = msg.getMessageCount();
+            }
+            _count++;
+            if (_count == _total) {
+                _isFinal = true;
+            }
 
             if (msg.getReturnCode() != 0) {
                 throw CacheExceptionFactory.exceptionOf(msg);
@@ -293,4 +296,5 @@ public class ListDirectoryHandler
             throw new UnsupportedOperationException();
         }
     }
+
 }

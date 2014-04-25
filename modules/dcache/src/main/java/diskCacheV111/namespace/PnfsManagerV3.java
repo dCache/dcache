@@ -1393,6 +1393,7 @@ public class PnfsManagerV3
         private final long _delay;
         private final UOID _uoid;
         private long _deadline;
+        private int _messageCount;
 
         public ListHandlerImpl(CellPath requestor, UOID uoid,
                                PnfsListDirectoryMessage msg,
@@ -1410,13 +1411,13 @@ public class PnfsManagerV3
 
         private void sendPartialReply()
         {
-            _msg.setFinal(false);
             _msg.setReply();
 
             try {
                 CellMessage envelope = new CellMessage(_requestor, _msg);
                 envelope.setLastUOID(_uoid);
                 sendMessage(envelope);
+                _messageCount++;
             } catch (NoRouteToCellException e){
                 /* We cannot cancel, so log and ignore.
                  */
@@ -1438,6 +1439,11 @@ public class PnfsManagerV3
                     (_delay == Long.MAX_VALUE) ? Long.MAX_VALUE : now + _delay;
             }
         }
+
+        public int getMessageCount()
+        {
+            return _messageCount;
+        }
     }
 
     private void listDirectory(CellMessage envelope, PnfsListDirectoryMessage msg)
@@ -1457,7 +1463,7 @@ public class PnfsManagerV3
                 ? Long.MAX_VALUE
                 : delay - envelope.getLocalAge();
             CellPath source = envelope.getSourcePath().revert();
-            ListHandler handler =
+            ListHandlerImpl handler =
                 new ListHandlerImpl(source, envelope.getUOID(),
                                     msg, initialDelay, delay);
             _nameSpaceProvider.list(msg.getSubject(), path,
@@ -1465,8 +1471,7 @@ public class PnfsManagerV3
                                     msg.getRange(),
                                     msg.getRequestedAttributes(),
                                     handler);
-            msg.setFinal(true);
-            msg.setSucceeded();
+            msg.setSucceeded(handler.getMessageCount() + 1);
         } catch (FileNotFoundCacheException | NotDirCacheException e) {
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {

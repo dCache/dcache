@@ -28,20 +28,22 @@ public class PnfsListDirectoryMessage extends PnfsMessage
 {
     private static final long serialVersionUID = -5774904472984157638L;
 
-    public final Glob _pattern;
-    public final Integer _lower;
-    public final Integer _upper;
-    public final BoundType _lowerBoundType;
-    public final BoundType _upperBoundType;
-    public final UUID _uuid = UUID.randomUUID();
-    public final Set<FileAttribute> _requestedAttributes;
-    public Collection<DirectoryEntry> _entries =
+    private final Glob _pattern;
+    private final Integer _lower;
+    private final Integer _upper;
+    private final BoundType _lowerBoundType;
+    private final BoundType _upperBoundType;
+    private final UUID _uuid = UUID.randomUUID();
+    private final Set<FileAttribute> _requestedAttributes;
+    private Collection<DirectoryEntry> _entries =
         CollectionFactory.newArrayList();
 
     /**
-     * The last message has the following field set to true.
+     * The last message has the following field set to true and a non-zero
+     * message count;
      */
-    public boolean _isFinal = true;
+    private boolean _isFinal;
+    private int _messageCount;
 
     /**
      * Constructs a new message.
@@ -123,14 +125,27 @@ public class PnfsListDirectoryMessage extends PnfsMessage
         _entries.clear();
     }
 
-    public void setFinal(boolean isFinal)
+    @Override
+    public void setSucceeded()
     {
-        _isFinal = isFinal;
+        super.setSucceeded();
+        _isFinal = true;
+    }
+
+    public void setSucceeded(int messageCount)
+    {
+        setSucceeded();
+        _messageCount = messageCount;
     }
 
     public boolean isFinal()
     {
         return _isFinal;
+    }
+
+    public int getMessageCount()
+    {
+        return _messageCount;
     }
 
     @Override
