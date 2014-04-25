@@ -1,5 +1,6 @@
 package org.dcache.pool.movers;
 
+import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -587,6 +588,10 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              */
             gftpProtocolInfo.setBytesTransferred(getBytesTransferred());
             gftpProtocolInfo.setTransferTime(getTransferTime());
+            if (passive) {
+                gftpProtocolInfo.setSocketAddress(
+                        Iterables.getFirst(mode.getRemoteAddresses(), gftpProtocolInfo.getSocketAddress()));
+            }
         }
     }
 
