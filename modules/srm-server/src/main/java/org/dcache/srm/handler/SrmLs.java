@@ -153,7 +153,7 @@ public class SrmLs
             // The spec doesn't say what to do in case of negative
             // values, so filter 'em out...
             if (numOfLevels < 0) {
-                throw new SRMInvalidRequestException("numOfLevels < 0");
+                throw new SRMInvalidRequestException("Recursion depth must be non-negative: " + numOfLevels);
             }
             return numOfLevels;
         }
