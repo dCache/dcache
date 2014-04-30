@@ -249,39 +249,65 @@ public class WassPartition extends ClassicPartition
      * become random. This it the same behaviour as with the classic
      * partition.
      */
-    protected double getWeightedAvailable(PoolCostInfo info, long filesize)
+    protected double getWeightedAvailable(PoolCostInfo info, double available, double load)
     {
-        double available = getAvailable(info.getSpaceInfo(), filesize);
-        double load = _performanceCostFactor *
-            info.getMoverCostFactor() * info.getWriters();
-        return Math.pow(available, _spaceCostFactor) / Math.pow(2.0, load);
+        return (available == 0) ? 0 : (Math.pow(available, _spaceCostFactor) / Math.pow(2.0, load));
+    }
+
+    private double getLoad(PoolCostInfo info)
+    {
+        return _performanceCostFactor * info.getMoverCostFactor() * info.getWriters();
     }
 
     /**
      * Selects a pool from a list using the WASS algorithm.
-     *
+     * <p/>
      * Returns null if all pools are full.
      */
-    protected PoolInfo
-        selectByAvailableSpace(List<PoolInfo> pools, long size)
+    public PoolInfo selectByAvailableSpace(List<PoolInfo> pools, long filesize)
     {
-        double[] available = new double[pools.size()];
-        double sum = 0.0;
+        int length = pools.size();
+        double[] available = new double[length];
 
-        for (int i = 0; i < available.length; i++) {
-            sum += getWeightedAvailable(pools.get(i).getCostInfo(), size);
+        /* Calculate available space adjusted by space cost factor. Determine the smallest
+         * load of all pools able to hold the file.
+         */
+        double minLoad = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < length; i++) {
+            PoolCostInfo info = pools.get(i).getCostInfo();
+            double free = getAvailable(info.getSpaceInfo(), filesize);
+            if (free > 0) {
+                available[i] = free;
+                minLoad = Math.min(minLoad, getLoad(info));
+            }
+        }
+
+        if (minLoad == Double.POSITIVE_INFINITY) {
+            return null;
+        }
+
+        /* Weight available space by normalized load. Load is normalized to ensure that at least
+         * for one pool we maintain enough precision to not reduce available space to zero.
+         */
+        double sum = 0.0;
+        for (int i = 0; i < length; i++) {
+            PoolCostInfo info = pools.get(i).getCostInfo();
+            double normalizedLoad = getLoad(info) - minLoad;
+            double weightedAvailable = getWeightedAvailable(info, available[i], normalizedLoad);
+            sum += weightedAvailable;
             available[i] = sum;
         }
 
+        /* Randomly choose one of the pools.
+         */
         double threshold = random() * sum;
-
-        for (int i = 0; i < available.length; i++) {
+        for (int i = 0; i < length; i++) {
             if (threshold < available[i]) {
                 return pools.get(i);
             }
         }
 
-        return null;
+        throw new RuntimeException("Unreachable statement");
     }
 
     @Override
