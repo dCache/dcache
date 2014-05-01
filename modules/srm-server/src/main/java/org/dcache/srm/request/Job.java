@@ -355,12 +355,11 @@ public abstract class Job  {
             return newState == State.DONE
                     || newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.RUNNING
                     || newState == State.TQUEUED;
         case TQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.RUNNING
+                    || newState == State.PRIORITYTQUEUED
                     || newState == State.PENDING;
         case PRIORITYTQUEUED:
             return newState == State.CANCELED
@@ -387,8 +386,7 @@ public abstract class Job  {
         case RETRYWAIT:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.RUNNING
-                    || newState == State.PRIORITYTQUEUED;
+                    || newState == State.TQUEUED;
         case RQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED

@@ -101,7 +101,6 @@ public class SchedulerContainer
         StringBuilder sb = new StringBuilder();
 
         scheduler.printThreadQueue(sb);
-        scheduler.printPriorityThreadQueue(sb);
         scheduler.printReadyQueue(sb);
 
         return sb;
