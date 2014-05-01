@@ -290,6 +290,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 case RUNNING:
                 case RQUEUED:
                 case ASYNCWAIT:
+                case PRIORITYTQUEUED:
                     return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
                 default:
                     return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);

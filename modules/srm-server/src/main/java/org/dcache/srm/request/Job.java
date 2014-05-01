@@ -361,7 +361,7 @@ public abstract class Job  {
             return newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.RUNNING
-                    || newState == State.RESTORED;
+                    || newState == State.PENDING;
         case PRIORITYTQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
@@ -1121,6 +1121,11 @@ public abstract class Job  {
             switch (state) {
             // Pending jobs were never worked on before the SRM restart; we
             // simply schedule them now.
+            case TQUEUED:
+                setState(State.PENDING, "Restarting request.");
+                scheduler.schedule(this);
+                break;
+
             case PENDING:
                 scheduler.schedule(this);
                 break;

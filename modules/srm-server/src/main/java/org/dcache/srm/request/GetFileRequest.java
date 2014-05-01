@@ -514,7 +514,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
         switch (getState()) {
         case PENDING:
-        case RQUEUED:
+        case TQUEUED:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:
         case TRANSFERRING:

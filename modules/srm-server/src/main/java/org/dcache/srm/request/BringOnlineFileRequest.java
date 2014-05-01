@@ -395,7 +395,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             break;
 
         case PRIORITYTQUEUED:
-        case TQUEUED:
         case RUNNING:
             setState(State.RESTORED, "Rescheduled after SRM service restart");
             scheduler.schedule(this);
@@ -546,7 +545,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
         switch (getState()) {
         case PENDING:
-        case RQUEUED:
+        case TQUEUED:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:
         case TRANSFERRING:
