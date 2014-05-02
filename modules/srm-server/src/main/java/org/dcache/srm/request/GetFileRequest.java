@@ -475,10 +475,21 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     logger.error(ire.toString()) ;
                     return;
                 }
-                CheckedFuture<String, ? extends SRMException> future =
+                final CheckedFuture<String, ? extends SRMException> future =
                         getStorage().unPinFile(user, getFileId(), getPinId());
-                future.addListener(new TheUnpinCallbacks(this.getId(), future), MoreExecutors.sameThreadExecutor());
-
+                future.addListener(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            String pinId = future.checkedGet();
+                            logger.debug("Unpinned (pinId={}).", pinId);
+                        } catch (SRMException e) {
+                            logger.error("Unpinning failed: {}", e.getMessage());
+                        }
+                    }
+                }, MoreExecutors.sameThreadExecutor());
             }
         }
 
@@ -693,37 +704,4 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
     }
 
-    private  static class TheUnpinCallbacks implements Runnable
-    {
-        private final long fileRequestJobId;
-        private final CheckedFuture<String, ? extends SRMException> future;
-
-        public TheUnpinCallbacks(long fileRequestJobId, CheckedFuture<String, ? extends SRMException> future)
-        {
-            this.fileRequestJobId = fileRequestJobId;
-            this.future = future;
-        }
-
-        @Override
-        public void run()
-        {
-            try {
-                GetFileRequest fr = Job.getJob(fileRequestJobId, GetFileRequest.class);
-                String pinId = future.checkedGet();
-                logger.debug("Unpinned (pinId={}).", pinId);
-                State state = fr.getState();
-                if(state == State.ASYNCWAIT) {
-                    fr.setPinId(pinId);
-                    Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                    scheduler.schedule(fr);
-                }
-            } catch (IllegalStateTransition e) {
-                logger.error(e.getMessage());
-            } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
-            } catch (SRMException e) {
-                logger.error("Unpinning failed: {}", e.getMessage());
-            }
-        }
-    }
 }
