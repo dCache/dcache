@@ -69,8 +69,6 @@ define context PoolDefaults endDefine
    flush set interval 60
    flush set retry delay 60
 
-   rh set max active 0
-   st set max active 0
    rh set timeout 14400
    st set timeout 14400
 
