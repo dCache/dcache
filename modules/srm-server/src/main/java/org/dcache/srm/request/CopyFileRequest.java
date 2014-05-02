@@ -593,6 +593,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             Exception transferError = getTransferError();
             getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(),
                                   (transferError == null) ? null : transferError.getMessage());
+            setDestinationFileId(null);
             setTransferId(null);
             throw new NonFatalJobFailure(transferError);
         }
