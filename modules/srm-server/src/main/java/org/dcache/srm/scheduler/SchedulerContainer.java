@@ -14,28 +14,28 @@ import org.dcache.srm.request.Job;
  */
 public class SchedulerContainer
 {
-    private ImmutableMap<Class<? extends Job>, Scheduler> schedulers;
+    private ImmutableMap<Class<? extends Job>, Scheduler<?>> schedulers;
 
     public SchedulerContainer()
     {
         schedulers = ImmutableMap.of();
     }
 
-    public SchedulerContainer(Scheduler... schedulers)
+    public SchedulerContainer(Scheduler<?>... schedulers)
     {
-        ImmutableMap.Builder<Class<? extends Job>, Scheduler> builder =
-                ImmutableMap.<Class<? extends Job>, Scheduler> builder();
-        for (Scheduler scheduler : schedulers) {
+        ImmutableMap.Builder<Class<? extends Job>, Scheduler<?>> builder =
+                ImmutableMap.builder();
+        for (Scheduler<?> scheduler : schedulers) {
             builder.put(scheduler.getType(), scheduler);
         }
         this.schedulers = builder.build();
     }
 
-    public void setSchedulers(Collection<Scheduler> schedulers)
+    public void setSchedulers(Collection<Scheduler<?>> schedulers)
     {
-        ImmutableMap.Builder<Class<? extends Job>, Scheduler> builder =
-                ImmutableMap.<Class<? extends Job>, Scheduler> builder();
-        for (Scheduler scheduler : schedulers) {
+        ImmutableMap.Builder<Class<? extends Job>, Scheduler<?>> builder =
+                ImmutableMap.builder();
+        for (Scheduler<?> scheduler : schedulers) {
             builder.put(scheduler.getType(), scheduler);
         }
         this.schedulers = builder.build();
@@ -43,33 +43,31 @@ public class SchedulerContainer
 
     public double getLoad(Class<? extends Job> type)
     {
-        Scheduler scheduler = getScheduler(type);
-        return (double)scheduler.getTotalRunningThreads() /
-                scheduler.getThreadPoolSize();
+        return getScheduler(type).getLoad();
     }
 
     public void setMaxReadyJobs(Class<? extends Job> type, int value)
     {
-        Scheduler scheduler = getScheduler(type);
+        Scheduler<?> scheduler = getScheduler(type);
         scheduler.setMaxReadyJobs(value);
     }
 
     public void schedule(Job job) throws InterruptedException, IllegalStateException, IllegalStateTransition
     {
-        Scheduler scheduler = getScheduler(job.getSchedulerType());
+        Scheduler<?> scheduler = getScheduler(job.getSchedulerType());
         job.scheduleWith(scheduler);
     }
 
-    private Scheduler getScheduler(Class<? extends Job> type)
+    private Scheduler<?> getScheduler(Class<? extends Job> type)
     {
         return getScheduler(null, type);
     }
 
-    private Scheduler getScheduler(Scheduler suggestion, Class<? extends Job> type)
+    private Scheduler<?> getScheduler(Scheduler<?> suggestion, Class<? extends Job> type)
             throws UnsupportedOperationException
     {
         if (suggestion == null || !suggestion.getType().isAssignableFrom(type)) {
-            for (Entry<Class<? extends Job>, Scheduler> entry : schedulers.entrySet()) {
+            for (Entry<Class<? extends Job>, Scheduler<?>> entry : schedulers.entrySet()) {
                 if (entry.getKey().isAssignableFrom(type)) {
                     suggestion = entry.getValue();
                     break;
@@ -88,7 +86,7 @@ public class SchedulerContainer
     public CharSequence getInfo()
     {
         StringBuilder sb = new StringBuilder();
-        for (Scheduler scheduler : schedulers.values()) {
+        for (Scheduler<?> scheduler : schedulers.values()) {
             scheduler.getInfo(sb);
         }
         return sb;
@@ -96,7 +94,7 @@ public class SchedulerContainer
 
     public CharSequence getDetailedInfo(Class<? extends Job> type)
     {
-        Scheduler scheduler = getScheduler(type);
+        Scheduler<?> scheduler = getScheduler(type);
 
         StringBuilder sb = new StringBuilder();
 
@@ -108,7 +106,7 @@ public class SchedulerContainer
 
     public void restoreJobsOnSrmStart(Iterable<? extends Job> activeJobs)
     {
-        Scheduler scheduler = null;
+        Scheduler<?> scheduler = null;
 
         for (Job job : activeJobs) {
             scheduler = getScheduler(scheduler, job.getSchedulerType());

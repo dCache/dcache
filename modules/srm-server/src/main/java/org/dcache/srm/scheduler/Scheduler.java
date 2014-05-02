@@ -94,13 +94,10 @@ public final class Scheduler <T extends Job>
     private static final Logger LOGGER =
             LoggerFactory.getLogger(Scheduler.class);
 
-    public static final int ON_RESTART_FAIL_REQUEST = 1;
-    public static final int ON_RESTART_RESTORE_REQUEST = 2;
-    public static final int ON_RESTART_WAIT_FOR_UPDATE_REQUEST = 3;
+    private int maxRequests;
 
-    public int restorePolicy = ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
     // thread queue variables
-    private final ModifiableQueue threadQueue;
+    private final ModifiableQueue requestQueue;
     private final CountByCreator threadQueuedJobsNum =
             new CountByCreator();
 
@@ -114,14 +111,11 @@ public final class Scheduler <T extends Job>
             new CountByCreator();
 
     // runningWithoutThread state related variables
-    private int maxRunningWithoutThreadByOwner = 10;
     private final CountByCreator runningWithoutThreadStateJobsNum =
             new CountByCreator();
 
     // thread pool related variables
     private final ThreadPoolExecutor pooledExecutor;
-    private final CountByCreator runningThreadsNum =
-            new CountByCreator();
 
     // ready queue related variables
     private final CountByCreator readyQueuedJobsNum =
@@ -133,12 +127,11 @@ public final class Scheduler <T extends Job>
             new CountByCreator();
 
     // async wait state related variables
-    private int maxAsyncWaitJobs = 1000;
+    private int maxInProgress = 1000;
     private final CountByCreator asyncWaitJobsNum =
             new CountByCreator();
 
     // retry wait state related variables
-    private int maxRetryWaitJobs = 1000;
     private int maxNumberOfRetries = 20;
     private long retryTimeout = 60 * 1000; //one minute
     private final CountByCreator retryWaitJobsNum =
@@ -148,8 +141,6 @@ public final class Scheduler <T extends Job>
     private final String id;
     private volatile boolean running;
 
-    // private Object waitingGuard = new Object();
-    // private int waitingJobNum;
     // this will not prevent jobs from getting into the waiting state but will
     // prevent the addition of the new jobs to the scheduler
 
@@ -158,29 +149,25 @@ public final class Scheduler <T extends Job>
     // this timer is used for tracking the expiration of retry timeout
     private final Timer retryTimer;
 
-    private boolean useFairness = true;
-    //private boolean useJobPriority;
-    //private boolean useCreatorPriority;
-
     // this will contain the number of
     private final long timeStamp = System.currentTimeMillis();
     private long queuesUpdateMaxWait = 60 * 1000;
 
-    private static volatile Map<String, Scheduler> schedulers = ImmutableMap.of();
+    private static volatile Map<String, Scheduler<?>> schedulers = ImmutableMap.of();
 
     private JobPriorityPolicyInterface jobAppraiser;
     private String priorityPolicyPlugin;
 
     private final WorkSupplyService workSupplyService;
 
-    public static Scheduler getScheduler(String id)
+    public static Scheduler<?> getScheduler(String id)
     {
         return schedulers.get(id);
     }
 
-    public static synchronized void addScheduler(String id, Scheduler scheduler)
+    public static synchronized void addScheduler(String id, Scheduler<?> scheduler)
     {
-        schedulers = ImmutableMap.<String, Scheduler>builder()
+        schedulers = ImmutableMap.<String, Scheduler<?>>builder()
                 .putAll(schedulers)
                 .put(id, scheduler)
                 .build();
@@ -191,8 +178,8 @@ public final class Scheduler <T extends Job>
         this.id = checkNotNull(id);
         checkArgument(!id.isEmpty(), "need non-empty string as an id");
 
-        threadQueue = new ModifiableQueue("ThreadQueue", id, type);
-        readyQueue = new ModifiableQueue("ReadyQueue", id, type);
+        requestQueue = new ModifiableQueue(type);
+        readyQueue = new ModifiableQueue(type);
 
         jobAppraiser = new DefaultJobAppraiser();
         priorityPolicyPlugin = jobAppraiser.getClass().getSimpleName();
@@ -231,6 +218,7 @@ public final class Scheduler <T extends Job>
                    IllegalStateTransition
     {
         checkState(running, "scheduler is not running");
+        checkJobType(job);
         LOGGER.trace("schedule is called for job with id={} in state={}", job.getId(), job.getState());
 
         job.wlock();
@@ -341,26 +329,6 @@ public final class Scheduler <T extends Job>
     public int getTotalRunningWithoutThreadState()
     {
         return runningWithoutThreadStateJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfRunningThreads(Job job)
-    {
-        runningThreadsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfRunningThreads(Job job)
-    {
-        runningThreadsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getRunningThreadsByCreator(Job job)
-    {
-        return runningThreadsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalRunningThreads()
-    {
-        return runningThreadsNum.getTotal();
     }
 
     private void increaseNumberOfTQueued(Job job)
@@ -499,20 +467,32 @@ public final class Scheduler <T extends Job>
 
     private boolean threadQueue(Job job)
     {
-        if (threadQueue.offer(job)) {
+        if (getTotalRequests() < getMaxRequests()) {
+            requestQueue.put(job);
             workSupplyService.distributeWork();
             return true;
         }
         return false;
     }
 
-    private boolean readyQueue(Job job)
+    private int getTotalRequests()
     {
-        if (readyQueue.offer(job)) {
-            workSupplyService.distributeWork();
-            return true;
-        }
-        return false;
+        return getTotalTQueued() + getTotalInprogress() + getTotalRQueued();
+    }
+
+    private int getTotalInprogress()
+    {
+        return getTotalAsyncWait() + getTotalPriorityTQueued() + getTotalRunningState() + getTotalRunningWithoutThreadState();
+    }
+
+    private void readyQueue(Job job)
+    {
+        readyQueue.put(job);
+    }
+
+    public double getLoad()
+    {
+        return (getTotalTQueued() + getTotalInprogress()) / (double) getMaxInProgress();
     }
 
     /**
@@ -575,42 +555,33 @@ public final class Scheduler <T extends Job>
                 throws SRMInvalidRequestException, InterruptedException
         {
             while (true) {
-                Job job = null;
-                if (isFair()) {
-                    ModifiableQueue.ValueCalculator calc =
-                            new ModifiableQueue.ValueCalculator()
-                            {
-                                private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
-                                private final int maxRunningByOwner = getMaxRunningByOwner();
+                ModifiableQueue.ValueCalculator calc =
+                        new ModifiableQueue.ValueCalculator()
+                        {
+                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                            private final int maxRunningByOwner = getMaxRunningByOwner();
 
-                                @Override
-                                public int calculateValue(
-                                        int queueLength,
-                                        int queuePosition,
-                                        Job job)
-                                {
-                                    int numOfRunningBySameCreator =
-                                                    getAsyncWaitByCreator(job) +
-                                                    getPriorityTQueuedByCreator(job) +
-                                                    getRunningStateByCreator(job) +
-                                                    getRunningWithoutThreadStateByCreator(job) +
-                                                    getRQueuedByCreator(job) +
-                                                    getReadyByCreator(job);
-                                    int value = jobAppraiser.evaluateJobPriority(
-                                            queueLength, queuePosition,
-                                            numOfRunningBySameCreator,
-                                            maxRunningByOwner,
-                                            job);
-                                    //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
-                                    return value;
-                                }
-                            };
-                    job = threadQueue.getGreatestValueObject(calc);
-                }
+                            @Override
+                            public int calculateValue(
+                                    int queueLength,
+                                    int queuePosition,
+                                    Job job)
+                            {
+                                int numOfRunningBySameCreator = getTotalRunningByCreator(job);
+                                int value = jobAppraiser.evaluateJobPriority(
+                                        queueLength, queuePosition,
+                                        numOfRunningBySameCreator,
+                                        maxRunningByOwner,
+                                        job);
+                                //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
+                                return value;
+                            }
+                        };
+                Job job = requestQueue.getGreatestValueObject(calc);
 
                 if (job == null) {
                     //logger.debug("updateThreadQueue(), job is null, trying threadQueue.peek();");
-                    job = threadQueue.peek();
+                    job = requestQueue.peek();
                 }
 
                 if (job == null) {
@@ -618,13 +589,8 @@ public final class Scheduler <T extends Job>
                     break;
                 }
 
-                /* Don't prepare more jobs if ready queue is filled already. */
-                if (getTotalAsyncWait() + getTotalPriorityTQueued() + getTotalRunningState() + getTotalRunningWithoutThreadState() + getTotalRQueued() >= getMaxReadyQueueSize() ) {
-                    break;
-                }
-
                 /* Don't prepare more jobs if max allowed IN_PROGRESS jobs has been reached. */
-                if (getTotalAsyncWait() + getTotalPriorityTQueued() + getTotalRunningState() + getTotalRunningWithoutThreadState() > getMaxAsyncWaitJobNum()) {
+                if (getTotalInprogress() > getMaxInProgress()) {
                     break;
                 }
 
@@ -648,6 +614,16 @@ public final class Scheduler <T extends Job>
         }
     }
 
+    private int getTotalRunningByCreator(Job job)
+    {
+        return getAsyncWaitByCreator(job) +
+                getPriorityTQueuedByCreator(job) +
+                getRunningStateByCreator(job) +
+                getRunningWithoutThreadStateByCreator(job) +
+                getRQueuedByCreator(job) +
+                getReadyByCreator(job);
+    }
+
     private class JobWrapper implements Runnable
     {
         private final Job job;
@@ -662,7 +638,6 @@ public final class Scheduler <T extends Job>
         {
             try (JDC ignored = job.applyJdc()) {
                 try {
-                    increaseNumberOfRunningThreads(job);
                     LOGGER.trace("Scheduler(id={}) entering sync(job) block", getId());
                     job.wlock();
                     try {
@@ -743,10 +718,7 @@ public final class Scheduler <T extends Job>
                         if (job.getState() == State.RUNNING) {
                             // put blocks if ready queue is full
                             job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
-                            if (!readyQueue(job)) {
-                                LOGGER.warn("All ready slots are taken and ready queue is full.");
-                                job.setState(State.FAILED, "Site busy: too many active requests.");
-                            }
+                            readyQueue(job);
                         }
                     } catch (IllegalStateTransition e) {
                         LOGGER.error("Illegal State Transition : " + e.getMessage());
@@ -757,7 +729,6 @@ public final class Scheduler <T extends Job>
                     Thread thread = Thread.currentThread();
                     thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
                 } finally {
-                    decreaseNumberOfRunningThreads(job);
                     workSupplyService.distributeWork();
                 }
             }
@@ -822,7 +793,7 @@ public final class Scheduler <T extends Job>
 
         switch (oldState) {
         case TQUEUED:
-            threadQueue.remove(job);
+            requestQueue.remove(job);
             decreaseNumberOfTQueued(job);
             break;
         case PRIORITYTQUEUED:
@@ -855,26 +826,6 @@ public final class Scheduler <T extends Job>
         if (oldState == State.RETRYWAIT && newState.isFinal()) {
             job.cancelRetryTimer();
         }
-    }
-
-    /**
-     * Getter for property useFairness.
-     *
-     * @return Value of property useFairness.
-     */
-    public synchronized boolean isFair()
-    {
-        return useFairness;
-    }
-
-    /**
-     * Setter for property useFairness.
-     *
-     * @param useFairness New value of property useFairness.
-     */
-    public synchronized void setUseFairness(boolean useFairness)
-    {
-        this.useFairness = useFairness;
     }
 
     /**
@@ -953,34 +904,24 @@ public final class Scheduler <T extends Job>
      *
      * @return Value of property maxThreadQueueSize.
      */
-    public synchronized int getMaxThreadQueueSize()
+    public synchronized int getMaxRequests()
     {
-        return threadQueue.getCapacity();
+        return maxRequests;
     }
 
-    public synchronized void setMaxThreadQueueSize(int maxThreadQueueSize)
+    public synchronized void setMaxRequests(int maxRequests)
     {
-        threadQueue.setCapacity(maxThreadQueueSize);
+        this.maxRequests = maxRequests;
     }
 
-    public synchronized int getMaxAsyncWaitJobNum()
+    public synchronized int getMaxInProgress()
     {
-        return maxAsyncWaitJobs;
+        return maxInProgress;
     }
 
-    public synchronized void setMaxWaitingJobNum(int maxAsyncWaitJobs)
+    public synchronized void setMaxInprogress(int maxAsyncWaitJobs)
     {
-        this.maxAsyncWaitJobs = maxAsyncWaitJobs;
-    }
-
-    public synchronized int getMaxRetryWaitJobNum()
-    {
-        return maxRetryWaitJobs;
-    }
-
-    public synchronized void setMaxRetryWaitJobNum(int maxRetryWaitJobs)
-    {
-        this.maxRetryWaitJobs = maxRetryWaitJobs;
+        this.maxInProgress = maxAsyncWaitJobs;
     }
 
     public synchronized int getMaxNumberOfRetries()
@@ -1003,16 +944,6 @@ public final class Scheduler <T extends Job>
         this.retryTimeout = retryTimeout;
     }
 
-    public int getMaxReadyQueueSize()
-    {
-        return readyQueue.getCapacity();
-    }
-
-    public void setMaxReadyQueueSize(int maxReadyQueueSize)
-    {
-        readyQueue.setCapacity(maxReadyQueueSize);
-    }
-
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
@@ -1023,14 +954,11 @@ public final class Scheduler <T extends Job>
     public synchronized void getInfo(StringBuilder sb)
     {
         sb.append("Scheduler id=").append(id).append('\n');
-        sb.append("          useFairness=").append(useFairness).append('\n');
         sb.append("          asyncWaitJobsNum=").append(getTotalAsyncWait())
                 .append('\n');
-        sb.append("          maxAsyncWaitJobsNum=").append(maxAsyncWaitJobs)
+        sb.append("          maxAsyncWaitJobsNum=").append(maxInProgress)
                 .append('\n');
         sb.append("          retryWaitJobsNum=").append(getTotalRetryWait())
-                .append('\n');
-        sb.append("          maxRetryWaitJobsNum=").append(maxRetryWaitJobs)
                 .append('\n');
         sb.append("          readyJobsNum=").append(getTotalReady())
                 .append('\n');
@@ -1043,46 +971,27 @@ public final class Scheduler <T extends Job>
                 .append(getTotalRunningWithoutThreadState()).append('\n');
         sb.append("          threadPoolSize=").append(getThreadPoolSize())
                 .append('\n');
-        sb.append("          total number of threads running =")
-                .append(getTotalRunningThreads()).append('\n');
         sb.append("          retryTimeout=").append(retryTimeout).append('\n');
-        sb.append("          maxThreadQueueSize=").append(getMaxThreadQueueSize())
+        sb.append("          maxThreadQueueSize=").append(getMaxRequests())
                 .append('\n');
-        sb.append("          threadQueue size=").append(threadQueue.size())
+        sb.append("          threadQueue size=").append(requestQueue.size())
                 .append('\n');
         sb.append("          !!! threadQueued=").append(getTotalTQueued())
                 .append('\n');
         sb.append("          !!! priorityThreadQueued=")
                 .append(getTotalPriorityTQueued()).append('\n');
-        sb.append("          maxReadyQueueSize=").append(getMaxReadyQueueSize())
-                .append('\n');
         sb.append("          readyQueue size=").append(readyQueue.size())
                 .append('\n');
         sb.append("          !!! readyQueued=").append(getTotalRQueued())
                 .append('\n');
         sb.append("          maxNumberOfRetries=").append(maxNumberOfRetries)
                 .append('\n');
-        sb.append("          restorePolicy");
-        switch (restorePolicy) {
-        case ON_RESTART_FAIL_REQUEST: {
-            sb.append(" fail saved request on restart\n");
-            break;
-        }
-        case ON_RESTART_RESTORE_REQUEST: {
-            sb.append(" restore saved request on restart\n");
-            break;
-        }
-        case ON_RESTART_WAIT_FOR_UPDATE_REQUEST: {
-            sb.append(" wait for client update before restoring of saved requests on restart\n");
-            break;
-        }
-        }
     }
 
     public void printThreadQueue(StringBuilder sb)
     {
         sb.append("ThreadQueue :\n");
-        threadQueue.printQueue(sb);
+        requestQueue.printQueue(sb);
     }
 
     public void printReadyQueue(StringBuilder sb)
@@ -1142,7 +1051,15 @@ public final class Scheduler <T extends Job>
 
     public Class<T> getType()
     {
-        return (Class<T>) threadQueue.getType();
+        return (Class<T>) requestQueue.getType();
+    }
+
+    private void checkJobType(Job job)
+    {
+        if (!getType().isInstance(job)) {
+            throw new IllegalArgumentException("Scheduler " + getId() + " doesn't accept " + job.getClass() + '.');
+        }
     }
 }
+
 

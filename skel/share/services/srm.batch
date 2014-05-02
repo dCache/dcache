@@ -64,11 +64,9 @@ check -strong srm.limits.jetty.threads.idle-time.max
 check -strong srm.limits.jetty.threads.idle-time.max.unit
 check -strong srm.limits.jetty.threads.queued.max
 
-check -strong srm.request.bring-online.thread-queue-size
 check -strong srm.request.bring-online.threads
-check -strong srm.request.bring-online.max-waiting-requests
-check -strong srm.request.bring-online.ready-queue-size
-check -strong srm.request.bring-online.max-ready-requests
+check -strong srm.request.bring-online.max-requests
+check -strong srm.request.bring-online.max-inprogress
 check -strong srm.request.bring-online.retries
 check -strong srm.request.bring-online.retry-timeout
 check -strong srm.request.bring-online.retry-timeout.unit
@@ -86,9 +84,9 @@ check -strong srm.persistence.bring-online.remove-expired-period.unit
 check -strong srm.request.bring-online.lifetime
 check -strong srm.request.bring-online.lifetime.unit
 
-check -strong srm.request.copy.thread-queue-size
 check -strong srm.request.copy.threads
-check -strong srm.request.copy.max-waiting-requests
+check -strong srm.request.copy.max-requests
+check -strong srm.request.copy.max-inprogress
 check -strong srm.request.copy.retries
 check -strong srm.request.copy.retry-timeout
 check -strong srm.request.copy.retry-timeout.unit
@@ -104,11 +102,10 @@ check -strong srm.persistence.copy.remove-expired-period.unit
 check -strong srm.request.copy.lifetime
 check -strong srm.request.copy.lifetime.unit
 
-check -strong srm.request.get.thread-queue-size
 check -strong srm.request.get.threads
-check -strong srm.request.get.max-waiting-requests
-check -strong srm.request.get.ready-queue-size
-check -strong srm.request.get.max-ready-requests
+check -strong srm.request.get.max-requests
+check -strong srm.request.get.max-inprogress
+check -strong srm.request.get.max-transfers
 check -strong srm.request.get.retries
 check -strong srm.request.get.retry-timeout
 check -strong srm.request.get.retry-timeout.unit
@@ -126,11 +123,9 @@ check -strong srm.persistence.get.remove-expired-period.unit
 check -strong srm.request.get.lifetime
 check -strong srm.request.get.lifetime.unit
 
-check -strong srm.request.ls.thread-queue-size
 check -strong srm.request.ls.threads
-check -strong srm.request.ls.max-waiting-requests
-check -strong srm.request.ls.ready-queue-size
-check -strong srm.request.ls.max-ready-requests
+check -strong srm.request.ls.max-requests
+check -strong srm.request.ls.max-inprogress
 check -strong srm.request.ls.retries
 check -strong srm.request.ls.retry-timeout
 check -strong srm.request.ls.retry-timeout.unit
@@ -148,11 +143,10 @@ check -strong srm.persistence.ls.remove-expired-period.unit
 check -strong srm.limits.ls.entries
 check -strong srm.limits.ls.levels
 
-check -strong srm.request.put.thread-queue-size
 check -strong srm.request.put.threads
-check -strong srm.request.put.max-waiting-requests
-check -strong srm.request.put.ready-queue-size
-check -strong srm.request.put.max-ready-requests
+check -strong srm.request.put.max-requests
+check -strong srm.request.put.max-inprogress
+check -strong srm.request.put.max-transfers
 check -strong srm.request.put.retries
 check -strong srm.request.put.retry-timeout
 check -strong srm.request.put.retry-timeout.unit
@@ -170,11 +164,9 @@ check -strong srm.persistence.put.remove-expired-period.unit
 check -strong srm.request.put.lifetime
 check -strong srm.request.put.lifetime.unit
 
-check -strong srm.request.reserve-space.thread-queue-size
 check -strong srm.request.reserve-space.threads
-check -strong srm.request.reserve-space.max-waiting-requests
-check -strong srm.request.reserve-space.ready-queue-size
-check -strong srm.request.reserve-space.max-ready-requests
+check -strong srm.request.reserve-space.max-requests
+check -strong srm.request.reserve-space.max-inprogress
 check -strong srm.request.reserve-space.retries
 check -strong srm.request.reserve-space.retry-timeout
 check -strong srm.request.reserve-space.retry-timeout.unit

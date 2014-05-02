@@ -79,7 +79,7 @@ public class SchedulerContainerTests
         genericScheduler = mockScheduler(Job.class, "copy_localhost");
 
         container = new SchedulerContainer();
-        List<Scheduler> schedulers = Lists.newArrayList(getScheduler,
+        List<Scheduler<?>> schedulers = Lists.<Scheduler<?>>newArrayList(getScheduler,
                 lsScheduler, putScheduler, bringOnlineScheduler,
                 reserveSpaceScheduler, genericScheduler);
         container.setSchedulers(schedulers);

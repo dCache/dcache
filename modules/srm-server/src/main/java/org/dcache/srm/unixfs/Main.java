@@ -96,16 +96,15 @@ public class Main extends CommandInterpreter implements  Runnable {
     {
         Scheduler scheduler = new Scheduler(name, type);
 
-        scheduler.setMaxThreadQueueSize(getIntConfigValue(configPrefix, "ReqTQueueSize"));
+        scheduler.setMaxRequests(getIntConfigValue(configPrefix, "ReqTQueueSize"));
         scheduler.setThreadPoolSize(getIntConfigValue(configPrefix, "ThreadPoolSize"));
-        scheduler.setMaxWaitingJobNum(getIntConfigValue(configPrefix, "MaxWaitingRequests"));
+        scheduler.setMaxInprogress(getIntConfigValue(configPrefix, "MaxWaitingRequests"));
         scheduler.setMaxNumberOfRetries(getIntConfigValue(configPrefix, "MaxNumOfRetries"));
         scheduler.setRetryTimeout(getLongConfigValue(configPrefix, "RetryTimeout"));
         scheduler.setMaxRunningByOwner(getIntConfigValue(configPrefix, "MaxRunningBySameOwner"));
         scheduler.setPriorityPolicyPlugin("DefaultJobAppraiser");
 
         if (!configPrefix.equals("Copy")) {
-            scheduler.setMaxReadyQueueSize(getIntConfigValue(configPrefix, "ReadyQueueSize"));
             scheduler.setMaxReadyJobs(getIntConfigValue(configPrefix, "MaxReadyJobs"));
         }
 
