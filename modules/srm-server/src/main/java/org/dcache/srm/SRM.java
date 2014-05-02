@@ -1298,25 +1298,21 @@ public class SRM {
 
     public void setPutMaxReadyJobs(int value)
     {
-        configuration.setPutMaxReadyJobs(value);
         schedulers.setMaxReadyJobs(PutFileRequest.class, value);
     }
 
     public void setGetMaxReadyJobs(int value)
     {
-        configuration.setGetMaxReadyJobs(value);
         schedulers.setMaxReadyJobs(GetRequest.class, value);
     }
 
     public void setBringOnlineMaxReadyJobs(int value)
     {
-        configuration.setBringOnlineMaxReadyJobs(value);
         schedulers.setMaxReadyJobs(BringOnlineFileRequest.class, value);
     }
 
     public void setLsMaxReadyJobs(int value)
     {
-        configuration.setLsMaxReadyJobs(value);
         schedulers.setMaxReadyJobs(LsFileRequest.class, value);
     }
 
