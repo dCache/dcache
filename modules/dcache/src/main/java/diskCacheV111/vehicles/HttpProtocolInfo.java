@@ -116,7 +116,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
   {
     StringBuilder sb = new StringBuilder() ;
     sb.append(getVersionString()) ;
-    sb.append(_clientSocketAddress.getAddress().getHostName());
+    sb.append(':').append(_clientSocketAddress.getAddress().getHostName());
     sb.append(':').append(_clientSocketAddress.getPort()) ;
     sb.append(':').append(httpDoorCellName);
     sb.append(':').append(httpDoorDomainName);
