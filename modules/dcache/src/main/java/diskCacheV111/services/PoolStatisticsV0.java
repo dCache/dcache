@@ -1148,7 +1148,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           allPw.close() ;
       }
 
-      printTotal( new File( pathBase , "total.raw" ) , total , date ) ;
+      if (total != null) {
+          printTotal(new File(pathBase, "total.raw"), total, date);
+      }
 
       BaseStatisticsHtml allClassesHtml = new BaseStatisticsHtml() ;
       allClassesHtml.setSorted(true);
