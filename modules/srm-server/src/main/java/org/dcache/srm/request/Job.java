@@ -63,13 +63,6 @@ COPYRIGHT STATUS:
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
-
-/*
- * Job.java
- *
- * Created on March 22, 2004, 11:30 AM
- */
-
 package org.dcache.srm.request;
 
 import com.google.common.collect.Iterables;
@@ -675,11 +668,7 @@ public abstract class Job  {
                 // we need to save job every time the scheduler is set
                 // even if the jbbc monitoring log is disabled,
                 // as we use scheduler id to identify who this job belongs to.
-                try {
-                        getJobStorage().saveJob(this,true);
-                }catch (DataAccessException sqle) {
-                    logger.error(sqle.toString());
-                }
+                saveJob(true);
             }
         } finally {
             wunlock();
@@ -1000,12 +989,12 @@ public abstract class Job  {
     {
         wlock();
         try{
-            if(!State.PENDING.equals(state)) {
+            if(state != State.PENDING) {
                 throw new IllegalStateException("Job " +
                         getClass().getSimpleName() + " [" + this.getId() +
                         "] has state " + state + "(not PENDING)");
             }
-            setScheduler(scheduler.getId(), 0);
+            setScheduler(scheduler.getId(), scheduler.getTimestamp());
             scheduler.schedule(this);
         } finally {
             wunlock();

@@ -436,22 +436,18 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
             for (int i = 0; i < getFileCount(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
-                if (cfr.getState() != State.PENDING || cfr.getSchedulerId() != null) {
-                    // copy file request has being canceled,failed or scheduled before
-                    continue;
+                if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
+                    if (cfr.getSourceTurl() != null) {
+                        cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
+                    } else {
+                        // Since source SURLs are local, we can just set the path
+                        remoteSurlToFileReqIds.put(getSourceUrl(i).getURL(), cfr.getId());
+                        String path = localPathFromSurl(cfr.getDestinationSurl());
+                        LOG.debug("setting destination path to {}", path);
+                        cfr.setLocalDestinationPath(path);
+                        cfr.saveJob();
+                    }
                 }
-
-                if (cfr.getSourceTurl() != null) {
-                    Scheduler.getScheduler(schedulerId).schedule(cfr);
-                    continue;
-                }
-
-                // Since source SURLs are local, we can just set the path
-                remoteSurlToFileReqIds.put(getSourceUrl(i).getURL(), cfr.getId());
-                String path = localPathFromSurl(cfr.getDestinationSurl());
-                LOG.debug("setting destination path to {}", path);
-                cfr.setLocalDestinationPath(path);
-                cfr.saveJob();
             }
             String[] remoteSurlsUniqueArray = remoteSurlToFileReqIds.keySet()
                             .toArray(new String[remoteSurlToFileReqIds.size()]);
@@ -541,8 +537,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     String path = localPathFromSurl(cfr.getDestinationSurl());
                     LOG.debug("setting local destination path to {}", path);
                     cfr.setLocalDestinationPath(path);
-                    cfr.saveJob();
-                    Scheduler.getScheduler(schedulerId).schedule(cfr);
+                    cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                 }
             }
             return;
@@ -556,8 +551,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
                     LOG.debug("setting destination to {}", getDestinationUrl(i).getURL());
                     cfr.setDestinationTurl(getDestinationUrl(i).getURI());
-                    cfr.saveJob();
-                    Scheduler.getScheduler(schedulerId).schedule(cfr);
+                    cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                 }
             }
             return;
@@ -570,16 +564,12 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             CopyFileRequest cfr = getFileRequests().get(i);
             if (cfr.getState() != State.PENDING || cfr.getSchedulerId() != null) {
                 // copy file request has being canceled,failed or scheduled before
-                continue;
-            }
-
-            if (cfr.getDestinationTurl() != null) {
+            } else if (cfr.getDestinationTurl() != null) {
                 //destination TURL has arrived, but request has not been scheduled
-                Scheduler.getScheduler(schedulerId).schedule(cfr);
-                continue;
+                cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
+            } else {
+                remoteSurlToFileReqIds.put(getDestinationUrl(i).getURL(), cfr.getId());
             }
-
-            remoteSurlToFileReqIds.put(getDestinationUrl(i).getURL(), cfr.getId());
         }
 
         int uniqueCount = remoteSurlToFileReqIds.size();
@@ -676,13 +666,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 cfr.saveJob();
 
                 try {
-                    String theShedulerId = getSchedulerId();
+                    String theSchedulerId = getSchedulerId();
                     State state = cfr.getState();
-                    if (theShedulerId != null && !state.isFinal()) {
-                        Scheduler.getScheduler(theShedulerId).schedule(cfr);
+                    if (theSchedulerId != null && !state.isFinal()) {
+                        cfr.scheduleWith(Scheduler.getScheduler(theSchedulerId));
                     }
                 } catch (IllegalStateException | IllegalArgumentException |
-                        IllegalStateTransition e) {
+                        IllegalStateTransition | InterruptedException e) {
                     LOG.error("failed to schedule CopyFileRequest {}: {}", cfr,
                             e.toString());
                     try {

@@ -106,7 +106,7 @@ public final class Scheduler <T extends Job>
             new CountByCreator();
 
     // running state related variables
-    private int maxRunningByOwner = 10;
+    private int maxRunningByOwner;
     private final CountByCreator runningStateJobsNum =
             new CountByCreator();
 
@@ -122,18 +122,18 @@ public final class Scheduler <T extends Job>
             new CountByCreator();
 
     // ready state related variables
-    private int maxReadyJobs = 60;
+    private int maxReadyJobs;
     private final CountByCreator readyJobsNum =
             new CountByCreator();
 
     // async wait state related variables
-    private int maxInProgress = 1000;
+    private int maxInProgress;
     private final CountByCreator asyncWaitJobsNum =
             new CountByCreator();
 
     // retry wait state related variables
-    private int maxNumberOfRetries = 20;
-    private long retryTimeout = 60 * 1000; //one minute
+    private int maxNumberOfRetries;
+    private long retryTimeout;
     private final CountByCreator retryWaitJobsNum =
             new CountByCreator();
 
@@ -218,16 +218,13 @@ public final class Scheduler <T extends Job>
                    IllegalStateTransition
     {
         checkState(running, "scheduler is not running");
-        checkJobType(job);
+        checkOwnership(job);
         LOGGER.trace("schedule is called for job with id={} in state={}", job.getId(), job.getState());
 
         job.wlock();
         try {
             switch (job.getState()) {
             case PENDING:
-                // TODO: This case should maybe be moved to the add method
-                job.setScheduler(this.id, timeStamp);
-                // fall through
             case RETRYWAIT:
                 job.setState(State.TQUEUED, "Request enqueued.");
                 if (!threadQueue(job)) {
@@ -239,7 +236,6 @@ public final class Scheduler <T extends Job>
             case ASYNCWAIT:
             case RUNNINGWITHOUTTHREAD:
             case TQUEUED:
-                checkArgument(id.equals(job.getSchedulerId()), "job assigned to wrong scheduler");
                 LOGGER.trace("putting job in a thread queue, job#{}", job.getId());
                 job.setState(State.PRIORITYTQUEUED, "Waiting for thread.");
                 try {
@@ -493,6 +489,11 @@ public final class Scheduler <T extends Job>
     public double getLoad()
     {
         return (getTotalTQueued() + getTotalInprogress()) / (double) getMaxInProgress();
+    }
+
+    public long getTimestamp()
+    {
+        return timeStamp;
     }
 
     /**
@@ -1054,10 +1055,13 @@ public final class Scheduler <T extends Job>
         return (Class<T>) requestQueue.getType();
     }
 
-    private void checkJobType(Job job)
+    private void checkOwnership(Job job)
     {
         if (!getType().isInstance(job)) {
             throw new IllegalArgumentException("Scheduler " + getId() + " doesn't accept " + job.getClass() + '.');
+        }
+        if (!id.equals(job.getSchedulerId()) || timeStamp != job.getSchedulerTimeStamp()) {
+            throw new IllegalArgumentException("Job " + job.getId() + " doesn't belong to scheduler " + getId() + '.');
         }
     }
 }
