@@ -18,6 +18,9 @@ public class CacheException extends Exception
     /** Pool already contains a replica. */
     public final static int FILE_IN_CACHE = 210;
 
+    /** File is broken on a tape, can't be staged */
+    public final static int BROKEN_ON_TAPE = 243;
+
     /** Usually followed by component shutdown. */
     public final static int PANIC = 10000;
 

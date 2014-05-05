@@ -288,21 +288,18 @@ public class DummyFileSystemProvider implements FileSystemProvider {
     }
 
     @Override
-    public boolean remove(String arg0) throws ChimeraFsException {
+    public void remove(String arg0) throws ChimeraFsException {
         // TODO Auto-generated method stub
-        return false;
     }
 
     @Override
-    public boolean remove(FsInode arg0) throws ChimeraFsException {
+    public void remove(FsInode arg0) throws ChimeraFsException {
         // TODO Auto-generated method stub
-        return false;
     }
 
     @Override
-    public boolean remove(FsInode arg0, String arg1) throws ChimeraFsException {
+    public void remove(FsInode arg0, String arg1) throws ChimeraFsException {
         // TODO Auto-generated method stub
-        return false;
     }
 
     @Override

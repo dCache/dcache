@@ -166,7 +166,7 @@ public class HFile extends File {
         boolean rc = false;
         if (exists()) {
             try {
-                rc = _fs.remove(_inode);
+                _fs.remove(_inode);
             } catch (ChimeraFsException hfe) {
                 /*
                  * according java.io.File javadoc we have to eat all exceptions

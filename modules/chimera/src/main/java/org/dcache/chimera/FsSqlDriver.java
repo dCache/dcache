@@ -254,22 +254,22 @@ class FsSqlDriver {
          */
     }
 
-    boolean remove(Connection dbConnection, FsInode parent, String name) throws ChimeraFsException, SQLException {
+    void remove(Connection dbConnection, FsInode parent, String name) throws ChimeraFsException, SQLException {
 
         FsInode inode = inodeOf(dbConnection, parent, name);
 
         if (inode.isDirectory()) {
-            return removeDir(dbConnection, parent, inode, name);
+            removeDir(dbConnection, parent, inode, name);
+        } else {
+            removeFile(dbConnection, parent, inode, name);
         }
-
-        return removeFile(dbConnection, parent, inode, name);
     }
 
-    private boolean removeDir(Connection dbConnection, FsInode parent, FsInode inode, String name) throws ChimeraFsException, SQLException {
+    private void removeDir(Connection dbConnection, FsInode parent, FsInode inode, String name) throws ChimeraFsException, SQLException {
 
         Stat dirStat = inode.statCache();
         if (dirStat.getNlink() > 2) {
-            throw new ChimeraFsException("directory is not empty");
+            throw new DirNotEmptyHimeraFsException("directory is not empty");
         }
 
         removeEntryInParent(dbConnection, inode, ".");
@@ -283,21 +283,18 @@ class FsSqlDriver {
         decNlink(dbConnection, parent);
         setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
 
-        return removeInode(dbConnection, inode);
+        removeInode(dbConnection, inode);
     }
 
-    private boolean removeFile(Connection dbConnection, FsInode parent, FsInode inode, String name) throws ChimeraFsException, SQLException {
+    private void removeFile(Connection dbConnection, FsInode parent, FsInode inode, String name) throws ChimeraFsException, SQLException {
 
-        boolean removed;
         boolean isLast = inode.stat().getNlink() == 1;
 
         decNlink(dbConnection, inode);
         removeEntryInParent(dbConnection, parent, name);
 
         if (isLast) {
-            removed = removeInode(dbConnection, inode);
-        } else {
-            removed = true;
+            removeInode(dbConnection, inode);
         }
 
         /* During bulk deletion of files in the same directory,
@@ -307,17 +304,15 @@ class FsSqlDriver {
          */
         decNlink(dbConnection, parent);
         setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
-
-        return removed;
     }
 
-    boolean remove(Connection dbConnection, FsInode parent, FsInode inode) throws ChimeraFsException, SQLException {
+    void remove(Connection dbConnection, FsInode parent, FsInode inode) throws ChimeraFsException, SQLException {
 
         if (inode.isDirectory()) {
 
             Stat dirStat = inode.statCache();
             if (dirStat.getNlink() > 2) {
-                throw new ChimeraFsException("directory is not empty");
+                throw new DirNotEmptyHimeraFsException("directory is not empty");
             }
             removeEntryInParent(dbConnection, inode, ".");
             removeEntryInParent(dbConnection, inode, "..");
@@ -343,7 +338,7 @@ class FsSqlDriver {
         setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
         removeStorageInfo(dbConnection, inode);
 
-        return removeInode(dbConnection, inode);
+        removeInode(dbConnection, inode);
     }
 
     public Stat stat(Connection dbConnection, FsInode inode) throws SQLException {
@@ -460,21 +455,7 @@ class FsSqlDriver {
 
         try {
 
-            FsInode destInode = inodeOf(dbConnection, destDir, dest);
             FsInode srcInode = inodeOf(dbConnection, srcDir, source);
-
-            if (destInode != null) {
-
-                if (destInode.equals(srcInode)) {
-                    // according to POSIX, we are done
-                    return;
-                }
-
-                // remove old entry if exist
-                remove(dbConnection, destDir, dest);
-            }
-            incNlink(dbConnection, destDir);
-
             stMove = dbConnection.prepareStatement(sqlMove);
 
             stMove.setString(1, destDir.toString());
@@ -493,8 +474,6 @@ class FsSqlDriver {
                 stParentMove.setString(2, srcInode.toString());
                 stParentMove.executeUpdate();
             }
-
-            decNlink(dbConnection, srcDir);
 
         } finally {
             SqlHelper.tryToClose(stMove);
@@ -1044,29 +1023,12 @@ class FsSqlDriver {
 
         try {
 
-            FsInode destInode = inodeOf(dbConnection, dir, newName);
-            FsInode srcInode = inodeOf(dbConnection, dir, oldName);
-
-            if (destInode != null) {
-
-                if (destInode.equals(srcInode)) {
-                    // according to POSIX, we are done
-                    return;
-                }
-
-                // remove old entry if exist
-                remove(dbConnection, dir, newName);
-            }
-
             ps = dbConnection.prepareStatement(sqlSetFileName);
 
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.setString(3, dir.toString());
             ps.executeUpdate();
-
-            // update parent modification time
-            setFileMTime(dbConnection, dir, 0, System.currentTimeMillis());
 
         } finally {
             SqlHelper.tryToClose(ps);

@@ -5,13 +5,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import org.dcache.chimera.FileSystemProvider;
-import org.dcache.chimera.nfs.ExportFile;
-import org.dcache.chimera.nfs.v3.MountServer;
-import org.dcache.chimera.nfs.v3.NfsServerV3;
-import org.dcache.chimera.nfs.v3.xdr.mount_prot;
-import org.dcache.chimera.nfs.v3.xdr.nfs3_prot;
-import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
+import org.dcache.nfs.ExportFile;
+import org.dcache.nfs.v3.MountServer;
+import org.dcache.nfs.v3.NfsServerV3;
+import org.dcache.nfs.v3.xdr.mount_prot;
+import org.dcache.nfs.v3.xdr.nfs3_prot;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
 

@@ -17,7 +17,7 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.chimera.nfs.v4.NfsIdMapping;
+import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.xdr.RpcLoginService;
 
 public class StrategyIdMapper implements NfsIdMapping, RpcLoginService {

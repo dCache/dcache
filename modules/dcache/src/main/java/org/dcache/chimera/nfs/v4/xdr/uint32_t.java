@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2009 - 2014 Deutsches Elektronen-Synchroton,
+ * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
+ *
  * This library is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Library General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -14,31 +17,19 @@
  * details); if not, write to the Free Software Foundation, Inc.,
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-package org.dcache.chimera;
+package org.dcache.chimera.nfs.v4.xdr;
 
-import java.io.IOException;
+import java.io.Serializable;
 
-public class ChimeraFsException extends IOException {
+public class uint32_t implements Serializable {
 
-    private static final long serialVersionUID = 6626394459630111276L;
+    static final long serialVersionUID = -6603937444681096490L;
 
-    /**
-     * Creates a new instance of <code>ChimeraFsException</code> without detail message.
-     */
-    public ChimeraFsException() {
-        super();
+    public int value;
+
+    public uint32_t(int value) {
+        this.value = value;
     }
 
-    /**
-     * Constructs an instance of <code>ChimeraFsException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public ChimeraFsException(String msg) {
-        super(msg);
-    }
-
-    public ChimeraFsException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
 }
+// End of uint32_t.java

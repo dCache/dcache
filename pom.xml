@@ -729,9 +729,9 @@
                 </exclusions>
             </dependency>
         <dependency>
-            <groupId>org.dcache.chimera</groupId>
-            <artifactId>jpnfs</artifactId>
-            <version>0.5.10</version>
+            <groupId>org.dcache</groupId>
+            <artifactId>nfs4j-core</artifactId>
+            <version>0.7.5</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
@@ -742,16 +742,8 @@
                     <artifactId>dcache-auth</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.dcache</groupId>
-                    <artifactId>oncrpc4j-spring</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>com.sun.jna</groupId>
                     <artifactId>jna</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.h2database</groupId>
-                    <artifactId>h2</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
