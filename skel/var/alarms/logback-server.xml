@@ -38,34 +38,107 @@
     </appender>
 
     <!--
-        if you wish alarms to be sent as email, you will need to provide host,
-        to and from information below (note the possibility of multiple 'to's),
-        and then include the appender in the root logger.
-    -->
+        SMTP email forwarding.
+
+        If you wish alarms to be sent as email, you will need to configure the
+        missing information below, and then include the appender as an embedded
+        appender in the STORE appender by commenting out the pertinent line.
+
+        For further information, see also http://logback.qos.ch/manual/appenders.html.
+      -->
     <appender name="ALARM_MAIL" class="ch.qos.logback.classic.net.SMTPAppender">
         <!-- this filter ensures that only events sent marked as ALARM
              are received by this appender -->
         <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
+        <!-- The host name of the SMTP server.  This parameter is mandatory. -->
         <smtpHost></smtpHost>
+        <!-- The port where the SMTP server is listening. Default is 25. -->
+        <smtpPort></smtpPort>
+        <!--
+            Authentication and encryption.
+
+            The SMTP client used by dCache supports authentication via plain
+            user passwords as well as both the STARTTLS and SSL protocols.
+            Note that STARTTLS differs from SSL in that, in STARTTLS,
+            the connection is initially non-encrypted and only after the
+            STARTTLS command is issued by the client (if the server supports it)
+            does the connection switch to SSL. In SSL mode, the connection is
+            encrypted right from the start. Which of these to use is usually
+            determined by the server.
+
+            If username and password are left undefined, unauthenticated sends
+            will be attempted, which may not be supported by the server.
+          -->
+
+        <!--
+            If this parameter is set to true, then this appender will issue the
+            STARTTLS command (if the server supports it) causing the connection
+            to switch to SSL. Note that the connection is initially non-encrypted.
+            Default is false.
+          -->
+        <STARTTLS></STARTTLS>
+        <!--
+            If this parameter is set to true, then this appender will open an
+            SSL connection to the server.
+          -->
+        <SSL></SSL>
+        <!--
+            The username value to use during plain user/password authentication.
+            Default is undefined.
+          -->
+        <username></username>
+        <!--
+            The password value to use for plain user/password authentication.
+            Default is undefined.
+
+            NOTE:  while using SSL will guarantee encryption over the wire,
+            there is currently no way of storing an encrypted password in this file.
+
+            Two possible workarounds to this:
+
+                a.  Set up an admin account with a plaintext password that
+                    is protected by root privileges but which can be shared among
+                    adminstrators or those with access to the host containing this
+                    file;
+
+                b.  Set up a host-based authentication to the server; the email
+                    admin will usually require the client IP, and it will need
+                    to be static in that case.
+          -->
+        <password></password>
+        <!--
+            A comma-separated list of recipient email addresses. Alternatively,
+            these can be expressed by multiple 'to' elements.
+          -->
         <to></to>
-        <to></to>
+        <!--
+            The originator of the email messages sent. If you wish to include the
+            sender's name, then use the format
+            "John Q. Public &lt;public@example.org&gt;".
+          -->
         <from></from>
-        <subject>dCache Alarm</subject>
+        <!-- Subject of the email sent. -->
+        <subject>dCacheAlarm</subject>
         <layout class="ch.qos.logback.classic.PatternLayout">
             <pattern>%-5level %d{dd MMM yyyy HH:mm:ss} \(%X{host}\)\(%X{cells.cell}\)\(%X{cells.domain}\) %m%n</pattern>
         </layout>
         <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
-            <!-- send just one log entry per email -->
+            <!--
+                The client buffers outgoing alarms.  The max number of alarms in
+                given message is determined by the buffer size, which has an upper
+                limit of 256.  This is the internal default.  It is set to 1
+                here to enforce a single alarm per email message.
+              -->
             <bufferSize>1</bufferSize>
         </cyclicBufferTracker>
     </appender>
 
-    <!-- stores all received events; adds alarm metadata on the basis of either
+    <!-- Stores all received events; adds alarm metadata on the basis of either
          a marker or a match with one of the alarmType definitions provided;
          delegates all received events to other appenders, possibly with using a
          cloned event with an added alarm marker if it is an alarm and was not
-         originally sent with one.
-         for further information, see the dCache Book -->
+         originally sent with one. For further information, see the dCache Book.
+      -->
     <appender name="STORE" class="org.dcache.alarms.logback.LogEntryAppender">
         <storePath>${alarms.db.xml.path}</storePath>
         <url>${alarms.db.url}</url>
@@ -74,11 +147,11 @@
         <driver>${alarms.db.driver}</driver>
         <propertiesPath>${alarms.db.config.path}</propertiesPath>
         <definitionsPath>${alarms.definitions.path}</definitionsPath>
-        <!-- it would be normal to comment this out if you are using an RDBMS
+        <!-- It would be normal to comment this out if you are using an RDBMS
              and not running periodic deletes -->
-        <appender-ref ref="HISTORY"/>
-        <!-- uncomment this in order to receive alarm mails;
-             see below for how to set mail appender -->
+        <!-- <appender-ref ref="HISTORY"/> -->
+        <!-- Uncomment this in order to receive alarm mails;
+             see above for how to configure the SMTP appender. -->
         <!-- <appender-ref ref="ALARM_MAIL"/> -->
     </appender>
 
