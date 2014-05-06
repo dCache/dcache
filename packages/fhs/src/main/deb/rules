@@ -23,7 +23,7 @@ install_package_data:
 	dh_fixperms
 	dh_gencontrol
 	dh_md5sums
-	dh_builddeb
+	dh_builddeb -- -Z gzip
 
 clean:
 	dh_testdir
