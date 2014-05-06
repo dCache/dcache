@@ -873,6 +873,8 @@ public class PnfsManagerV3
                 updateFlag(subject, pnfsId , operation , flagName , value );
             }
 
+        } catch (FileNotFoundCacheException e) {
+            pnfsMessage.setFailed(e.getRc(), e.getMessage());
         } catch (CacheException e) {
             _log.warn("Exception in updateFlag: " + e);
             pnfsMessage.setFailed(e.getRc(), e.getMessage());

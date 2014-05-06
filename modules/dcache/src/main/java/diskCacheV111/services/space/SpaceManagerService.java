@@ -418,19 +418,24 @@ public final class SpaceManagerService
                                 envelope.revertDirection();
                             }
 
-                            try {
-                                sendMessage(envelope);
-                            } catch (NoRouteToCellException e) {
-                                LOGGER.error("Failed to forward message: {}", e.getMessage());
-                            }
+                            forwardMessage(envelope, isEnRouteToDoor);
                         }
                     });
                 } else {
-                    try {
-                        sendMessage(envelope);
-                    } catch (NoRouteToCellException e) {
-                        LOGGER.error("Failed to forward message: {}", e.getMessage());
-                    }
+                    forwardMessage(envelope, isEnRouteToDoor);
+                }
+            }
+        }
+
+        private void forwardMessage(CellMessage envelope, boolean isEnRouteToDoor)
+        {
+            try {
+                sendMessage(envelope);
+            } catch (NoRouteToCellException e) {
+                if (!isEnRouteToDoor) {
+                    LOGGER.error("Failed to forward message: {}", e.getMessage());
+                } else {
+                    LOGGER.debug("Failed to forward message: {}", e.getMessage());
                 }
             }
         }
