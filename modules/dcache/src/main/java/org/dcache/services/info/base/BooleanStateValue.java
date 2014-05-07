@@ -42,6 +42,9 @@ public class BooleanStateValue extends StateValue {
 		return Boolean.toString( _storage);
 	}
 
+        public boolean getValue() {
+            return _storage;
+        }
 
 	@Override
 	public String getTypeName() {

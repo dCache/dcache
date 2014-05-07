@@ -54,6 +54,10 @@ public class FloatingPointStateValue extends StateValue {
 		return Double.toString( _storage);
 	}
 
+        public double getValue() {
+            return _storage;
+        }
+
 	/**
 	 *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
 	 *  actual implementation and StateVisitor interface for more details.

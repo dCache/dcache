@@ -40,6 +40,11 @@ public class StringStateValue extends StateValue {
 		_storage = value;
 	}
 
+        public String getValue()
+        {
+            return _storage;
+        }
+
 	@Override
 	public String toString() {
 		return _storage != null ? _storage : "(null)";

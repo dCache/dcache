@@ -1,13 +1,22 @@
 package org.dcache.services.info;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
@@ -19,61 +28,136 @@ import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
 import org.dcache.cells.CellStub;
+import org.dcache.services.info.serialisation.JsonSerialiser;
+import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
+import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
+import static com.google.common.base.Predicates.notNull;
+import static com.google.common.base.Throwables.propagate;
+import static com.google.common.collect.Iterables.find;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * This class provides support for querying the info cell via the admin web-interface.  It
- * implements the HttpResponseEngine to handle requests at a particular point (a specific alias).
+ * This class provides support for querying the info cell via the admin
+ * web-interface.  It implements the HttpResponseEngine to handle requests at a
+ * particular point (a specific alias).
  * <p>
- * It provides either a complete XML dump of the info cell or the subtree matching the supplied
- * list of path elements.
+ * Users may query the complete tree, or select a subtree by specifying the
+ * path.
  * <p>
- * If the info cell cannot be contacted or takes too long to reply, or there was a problem when
- * (de-)serialising the Message then an appropriate HTTP status code (50x server-side error)
- * is generated.
+ * It supports several serialisers from which the user may chose, either by
+ * specifying  the query parameter 'format', by specifying the HTTP Accept
+ * header.  XML is the default if neither indicates which serialiser to use.
  * <p>
- * It is anticipated that clients query this information (roughly) once per minute.
- * <p>
- * The implementation caches the XML data obtained from the info cell for one second.  This
- * is a safety feature, reducing the impact on the info cell of pathologically broken clients
- * that make many requests per second.
- * <p>
- * Future versions may include additional functionality, such as server-side transformation of
- * the XML data into another format.
- *
- * @author Paul Millar <paul.millar@desy.de>
+ * The implementation caches serialised data for one second.  This is a safety
+ * feature to reducing the impact on info of pathologically broken clients that
+ * make many requests per second.
  */
 public class InfoHttpEngine implements HttpResponseEngine {
 
-	private static Logger _log = LoggerFactory.getLogger( HttpResponseEngine.class);
-
+	private static final Logger LOG = LoggerFactory.getLogger(HttpResponseEngine.class);
 	private static final String INFO_CELL_NAME = "info";
 
-	/** The maximum age of our cache, in milliseconds */
-	private static final long MAX_CACHE_AGE = 1000;
+        private static final List<String> ENTIRE_TREE = new ArrayList<>();
 
-	/** How long we should wait for the info cell to reply before timing out, in milliseconds */
-	private static final long INFO_CELL_TIMEOUT = 4000;
+        private final SerialisationHandler xmlSerialiser =
+                new SerialisationHandler(XmlSerialiser.NAME, "text/xml");
 
-	private final CellEndpoint _endpoint;
-    private final CellStub _infoCell;
+        private final SerialisationHandler jsonSerialiser =
+                new SerialisationHandler(JsonSerialiser.NAME, "text/json");
 
-    /** Our local cache of the complete XML data */
-	private byte _cache[];
-	private Date _whenReceived;
+        private final SerialisationHandler prettyPrintSerialiser =
+                new SerialisationHandler(PrettyPrintTextSerialiser.NAME, "text/x-ascii-art");
+
+        private final Map<String,SerialisationHandler> mimetypeToSerialiser =
+                ImmutableMap.<String,SerialisationHandler>builder().
+                put("application/xml", xmlSerialiser).
+                put("text/xml", xmlSerialiser).
+                put("application/json", jsonSerialiser).
+                put("text/x-ascii-art", prettyPrintSerialiser).
+                build();
+
+        private final Map<String,SerialisationHandler> queryParameterToSerialiser =
+                ImmutableMap.<String,SerialisationHandler>builder().
+                put("xml", xmlSerialiser).
+                put("json", jsonSerialiser).
+                put("pretty", prettyPrintSerialiser).
+                build();
+
+        private final CellStub _info;
+
+        /**
+         * httpd-side class for each info-side serialiser.
+         */
+        private class SerialisationHandler
+        {
+            private final String _name;
+            private final String _mimeType;
+
+            LoadingCache<List<String>, String> resultCache = CacheBuilder.newBuilder()
+                   .maximumSize(10)
+                   .expireAfterWrite(1, TimeUnit.SECONDS)
+                   .build(new CacheLoader<List<String>, String>() {
+                        @Override
+                        public String load(List<String> path) throws InterruptedException, CacheException {
+                            InfoGetSerialisedDataMessage message =
+                                    (path == ENTIRE_TREE) ? new InfoGetSerialisedDataMessage(_name)
+                                    : new InfoGetSerialisedDataMessage(path, _name);
+                            message = _info.sendAndWait(message);
+                            return message.getSerialisedData();
+                        }
+                    });
+
+            public SerialisationHandler(String name, String mimeType)
+            {
+                _name = name;
+                _mimeType = mimeType;
+            }
+
+            public void handleRequest(HttpRequest request) throws HttpException
+            {
+                String[] urlItems = request.getRequestTokens();
+                OutputStream out = request.getOutputStream();
+
+                List<String> path = urlItems.length == 1 ? ENTIRE_TREE :
+                        Arrays.asList(urlItems).subList(1, urlItems.length);
+
+                try {
+                    byte[] raw = resultCache.get(path).getBytes(Charsets.UTF_8);
+                    request.printHttpHeader(raw.length);
+                    request.setContentType(this._mimeType);
+                    out.write(raw);
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof TimeoutCacheException) {
+                        throw new HttpException(503, "The info cell took too " +
+                                "long to reply, suspect trouble (" +
+                                cause.getMessage() + ")");
+                    }
+                    if (cause instanceof CacheException) {
+                       throw new HttpException(500, "Error when requesting " +
+                               "info from info cell. (" + cause.getMessage() + ")");
+                    }
+                    if (cause instanceof InterruptedException) {
+                        throw new HttpException(503, "Received interrupt " +
+                                "whilst processing data. Please try again later.");
+                    }
+                    propagate(cause);
+                } catch (IOException e) {
+                    LOG.error("IOException caught whilst writing output : {}", e.getMessage());
+                }
+            }
+        }
+
 
 
 	/**
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
 	 */
 	public InfoHttpEngine(CellEndpoint endpoint, String[] args) {
-            if( _log.isInfoEnabled()) {
-                _log.info("in InfoHttpEngine constructor");
-            }
-            _endpoint = endpoint;
-            _infoCell = new CellStub(_endpoint, new CellPath(INFO_CELL_NAME), INFO_CELL_TIMEOUT, MILLISECONDS);
+            _info = new CellStub(endpoint, new CellPath(INFO_CELL_NAME), 4000, MILLISECONDS);
 	}
 
 	/**
@@ -81,65 +165,93 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	 * still valid), or queries the info cell for information.
 	 */
 	@Override
-        public void queryUrl(HttpRequest request) throws HttpException {
+        public void queryUrl(HttpRequest request) throws HttpException
+        {
+            if( LOG.isInfoEnabled()) {
+                LOG.info( "Received request for: {}",
+                        Arrays.toString(request.getRequestTokens()));
+            }
 
-		List<String> pathElements = null;
-		byte recv[];
+            SerialisationHandler handler = find(asList(
+                    serialiserFromUri(request),
+                    serialiserFromHttpHeaders(request),
+                    xmlSerialiser), notNull());
 
-		String[]    urlItems = request.getRequestTokens();
-        OutputStream out     = request.getOutputStream();
-
-        if( _log.isInfoEnabled()) {
-        	StringBuilder sb = new StringBuilder();
-
-        	for( String urlItem : urlItems) {
-        		if( sb.length() > 0) {
-                            sb.append("/");
-                        }
-         		sb.append( urlItem);
-        	}
-        	_log.info( "Received request for: " + sb.toString());
-        }
-
-        if( urlItems.length > 1) {
-        	pathElements = new ArrayList<>( urlItems.length-1);
-
-        	for( int i = 1; i < urlItems.length; i++) {
-                    pathElements.add(i - 1, urlItems[i]);
-                }
-        }
-
-        /**
-         * Maintain our cache of XML.  This prevents end-users from thrashing the info cell.
-         */
-       	try {
-       		if( pathElements == null) {
-       			if( _whenReceived == null || System.currentTimeMillis() - _whenReceived.getTime() > MAX_CACHE_AGE) {
-                    updateXMLCache();
-                }
-       			recv = _cache;
-       		} else {
-       			recv = fetchXML( pathElements);
-       		}
-       	} catch( TimeoutCacheException e) {
-               throw new HttpException(503, "The info cell took too long to reply, suspect trouble (" + e.getMessage() + ")");
-       	} catch (CacheException e) {
-               throw new HttpException(500, "Error when requesting info from info cell. (" + e.getMessage() + ")");
-       	} catch( NullPointerException e) {
-       		throw new HttpException( 500, "Received no sensible reply from info cell.  See info cell for details.");
-       	} catch( InterruptedException e) {
-       		throw new HttpException( 503, "Received interrupt whilst processing data. Please try again later.");
-       	}
-
-        request.setContentType( "application/xml");
-
-        try {
-            request.printHttpHeader( recv.length);
-        	out.write( recv);
-        } catch( IOException e) {
-        	_log.error("IOException caught whilst writing output : " + e.getMessage());
-        }
+            handler.handleRequest(request);
 	}
+
+        private SerialisationHandler serialiserFromUri(HttpRequest request) throws HttpException
+        {
+            SerialisationHandler serialiser = null;
+
+            String argument = request.getParameter("format");
+            if (argument != null) {
+                serialiser = queryParameterToSerialiser.get(argument);
+                if (serialiser == null) {
+                    throw new HttpException(415, "specified format does not exist");
+                }
+            }
+
+            return serialiser;
+        }
+
+        private SerialisationHandler serialiserFromHttpHeaders(HttpRequest request)
+        {
+            String accept = request.getRequestAttributes().get("Accept");
+            if (accept == null) {
+                return null;
+            }
+
+            SerialisationHandler bestHandler = null;
+
+            /*
+             * Choose the best mime-type that the client will accept, taking
+             * into account which formats we support, the client's preferences
+             * (q values) and choosing the most specific (i.e. longest) mime-type.
+             * Here is an example value (should be one line)
+             *
+             *     application/xml;q=0.5,application/json;q=0.8,
+             *     application/x-proprietary-format
+             *
+             * For details, see
+             *
+             *     http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+             */
+            double bestQ = 0;
+            String bestEntry = "";
+            for (String entry : Splitter.on(',').trimResults().split(accept)) {
+                List<String> items = Splitter.on(';').trimResults().splitToList(entry);
+                String mimeType = items.get(0);
+                List<String> args = items.subList(1, items.size());
+
+                StringBuilder sb = new StringBuilder().append(mimeType);
+                double q = 1;
+                for (String arg : args) {
+                    if (arg.startsWith("q=")) {
+                        try {
+                            q = Double.parseDouble(arg.substring(2));
+                        } catch (NumberFormatException e) {
+                            LOG.debug("malformed q value: {}", arg);
+                            q = 0;
+                        }
+                    } else {
+                        sb.append(';').append(arg);
+                    }
+                }
+                String entryWithoutQ = sb.toString();
+
+                // REVISIT: no wildcard support for mimetypes; e.g. text/* or */*
+                SerialisationHandler handler = mimetypeToSerialiser.get(mimeType);
+
+                if (q >= bestQ && entryWithoutQ.length() > bestEntry.length() && handler != null) {
+                    bestHandler = handler;
+                    bestQ = q;
+                    bestEntry = entryWithoutQ;
+                }
+            }
+
+            return bestHandler;
+        }
 
         @Override
         public void startup()
@@ -152,46 +264,4 @@ public class InfoHttpEngine implements HttpResponseEngine {
         {
             // No background activity to shutdown.
         }
-
-	/**
-	 * Send a message off to the info cell
-	 */
-	public void updateXMLCache() throws InterruptedException, CacheException
-    {
-		_cache = fetchXML( null);
-		_whenReceived = new Date();
-	}
-
-	/**
-	 * Attempt to gather XML data for given path, or complete tree if pathElements is null.
-	 * @param pathElements
-	 * @return
-	 */
-	private byte[] fetchXML( List<String> pathElements)
-            throws InterruptedException, CacheException
-    {
-		if( _log.isDebugEnabled()) {
-            _log.debug("Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
-        }
-
-		try {
-            InfoGetSerialisedDataMessage sendMsg =
-                    (pathElements == null) ? new InfoGetSerialisedDataMessage() : new InfoGetSerialisedDataMessage(pathElements);
-			InfoGetSerialisedDataMessage reply = _infoCell.sendAndWait(sendMsg);
-            String serialisedData = reply.getSerialisedData();
-			if( serialisedData == null) {
-				/**
-				 *  TODO: replyStr == null should only come from a problem within the Info cell
-				 *  when serialising the content.  This should be handled by a specific Exception
-				 *  that is propagated via the vehicle.
-				 */
-				throw new NullPointerException();
-			}
-            return serialisedData.getBytes();
-		} catch (InterruptedException e) {
-			_cache = null;
-			_whenReceived = null;
-			throw e;
-		}
-	}
 }

@@ -55,10 +55,6 @@ public class IntegerStateValue extends StateValue {
 		return "integer";
 	}
 
-	/**
-	 * Return the value stored within this IntegerStateValue
-	 * @return
-	 */
 	public long getValue() {
 		return _storage;
 	}

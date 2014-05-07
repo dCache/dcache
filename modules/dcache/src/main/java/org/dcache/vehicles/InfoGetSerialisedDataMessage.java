@@ -1,5 +1,7 @@
 package org.dcache.vehicles;
 
+import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
 import java.util.List;
 
 import diskCacheV111.vehicles.Message;
@@ -12,6 +14,7 @@ import diskCacheV111.vehicles.Message;
 public class InfoGetSerialisedDataMessage  extends Message {
 
 	private final List<String> _pathElements;
+        private final String _serialiser;
 
 	/**
 	 * Auto-generated number.
@@ -23,20 +26,21 @@ public class InfoGetSerialisedDataMessage  extends Message {
 	private String _data;
 
 	/**
-	 * Request a complete dump of dCache's state in the default format,
-	 * which is XML.
+	 * Request a complete dump of dCache's state in the specified
+         * serialisation.
 	 */
-	public InfoGetSerialisedDataMessage() {
-            this(null);
+	public InfoGetSerialisedDataMessage(String serialiser) {
+            this(null, serialiser);
 	}
 
 	/**
-	 * Request an XML dump of dCache's state, expanding only from
-	 * @param pathElements a list of elements, excluding the initial "dCache".
+	 * Request serialisation of dCache's state.  Only the specified subtree
+         * is returned.
 	 */
-	public InfoGetSerialisedDataMessage( List <String> pathElements) {
+	public InfoGetSerialisedDataMessage(List <String> pathElements, String serialiser) {
 		super( true);
-		_pathElements = pathElements;
+                _pathElements = pathElements == null ? null : ImmutableList.copyOf(pathElements);
+                _serialiser = serialiser;
 	}
 
 	/**
@@ -47,9 +51,13 @@ public class InfoGetSerialisedDataMessage  extends Message {
 		return _data;
 	}
 
+        public String getSerialiser()
+        {
+            return _serialiser;
+        }
+
 	/**
 	 * Set the serialised Data.
-	 * @param serialisedData  The XML data.
 	 */
 	public void setData( String serialisedData) {
 		_data = serialisedData;

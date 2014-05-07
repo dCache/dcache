@@ -49,6 +49,10 @@
               <bean class="org.dcache.services.info.serialisation.PrettyPrintTextSerialiser">
                   <property name="stateExhibitor" ref="state"/>
               </bean>
+
+              <bean class="org.dcache.services.info.serialisation.JsonSerialiser">
+                  <property name="stateExhibitor" ref="state"/>
+              </bean>
           </list>
       </property>
   </bean>

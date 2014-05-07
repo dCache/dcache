@@ -28,6 +28,8 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
     private static final String ROOT_ELEMENT_LABEL = "dCache";
 
+    public static final String NAME = "pretty-print";
+
     private StateExhibitor _exhibitor;
     private final Stack<Chunk> _lastChunkStack = new Stack<>();
     private final List<Chunk> _pendingChunks = new ArrayList<>();
@@ -47,7 +49,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
      */
     @Override
     public String getName() {
-        return "pretty-print";
+        return NAME;
     }
 
     /**

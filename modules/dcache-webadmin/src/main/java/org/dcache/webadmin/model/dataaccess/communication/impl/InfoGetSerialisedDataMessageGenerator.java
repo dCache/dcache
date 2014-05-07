@@ -12,6 +12,7 @@ import java.util.Set;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.SerializationException;
 
+import org.dcache.services.info.serialisation.XmlSerialiser;
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 import org.dcache.webadmin.model.dataaccess.XMLDataGatherer;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
@@ -79,7 +80,7 @@ public class InfoGetSerialisedDataMessageGenerator
         private boolean _sentSuccessfully;
 
         public InfoGetSerialisedDataMessageRequest(List<String> pathElements) {
-            _payload = new InfoGetSerialisedDataMessage(pathElements);
+            _payload = new InfoGetSerialisedDataMessage(pathElements, XmlSerialiser.NAME);
             _destination = INFO_CELL;
         }
 

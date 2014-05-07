@@ -94,7 +94,6 @@ abstract public class StateValue implements StateComponent {
 	@Override
         public abstract void acceptVisitor( StatePath path, StateVisitor visitor);
 
-
 	/** Force subclasses to override equals and hashCode */
 	@Override
 	public abstract boolean equals( Object other);

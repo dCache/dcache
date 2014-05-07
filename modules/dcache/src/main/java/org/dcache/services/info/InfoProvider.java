@@ -195,13 +195,11 @@ public class InfoProvider  implements CellCommandListener, CellInfoProvider,
     {
         _log.trace("Received InfoGetSerialisedDataMessage.");
 
-        StateSerialiser serialiser = _availableSerialisers.get(XmlSerialiser.NAME);
+        StateSerialiser serialiser = _availableSerialisers.get(message.getSerialiser());
 
         if (serialiser == null) {
-            _log.error("Couldn't find the xmlSerialiser");
-            // Really, we should propagate this back as an Exception.
-            message.setData(null);
-            return message;
+            _log.error("Couldn't find serialiser {}", message.getSerialiser());
+            throw new IllegalArgumentException("no such serialiser");
         }
 
         String data;
