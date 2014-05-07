@@ -50,6 +50,10 @@ public class HandlerDelegator extends AbstractHandler {
         } else if (e instanceof HttpException) {
             printHttpException((HttpException) e, response);
             logger.warn("Problem with {}: {}", uri, e.getMessage());
+        } else if (e instanceof RuntimeException) {
+            printHttpException(new HttpException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                                                "Internal problem processing request"), response);
+            logger.warn("Bug found, please report it", e);
         } else {
             printHttpException(new HttpException(HttpServletResponse.SC_BAD_REQUEST,
                                                 "Bad Request : " + e), response);
