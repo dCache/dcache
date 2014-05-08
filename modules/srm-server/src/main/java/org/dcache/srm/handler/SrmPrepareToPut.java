@@ -113,12 +113,6 @@ public class SrmPrepareToPut
         long lifetime = getLifetime(request, configuration.getPutLifetime());
         TOverwriteMode overwriteMode = getOverwriteMode(request);
 
-        String[] supportedProtocols = storage.supportedPutProtocols();
-        boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
-        if (!isAnyProtocolSupported) {
-            throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
-        }
-
         URI[] surls = new URI[fileRequests.length];
         Long[] sizes = new Long[fileRequests.length];
         boolean[] wantPermanent = new boolean[fileRequests.length];
