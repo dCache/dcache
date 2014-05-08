@@ -642,11 +642,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     }
                 } catch (SRMInternalErrorException e) {
                     if (!fr.getState().isFinal()) {
-                        try {
-                            fr.pinFile();
-                        } catch (NonFatalJobFailure | FatalJobFailure | SRMInternalErrorException e1) {
-                            logger.error(e1.getMessage());
-                        }
+                        Scheduler<?> scheduler =
+                                Scheduler.getScheduler(fr.getSchedulerId());
+                        scheduler.schedule(fr);
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
