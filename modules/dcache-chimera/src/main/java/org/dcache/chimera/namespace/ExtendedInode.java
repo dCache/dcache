@@ -67,6 +67,13 @@ public class ExtendedInode extends FsInode
     private ACL acl;
     private HashMap<Integer, ExtendedInode> levels;
     private InodeStorageInformation storageInfo;
+    private Optional<ExtendedInode> parent;
+
+    public ExtendedInode(ExtendedInode parent, FsInode inode)
+    {
+        this(inode);
+        this.parent = Optional.of(parent);
+    }
 
     public ExtendedInode(FsInode inode)
     {
@@ -107,26 +114,35 @@ public class ExtendedInode extends FsInode
     @Override
     public ExtendedInode mkdir(String newDir) throws ChimeraFsException
     {
-        return new ExtendedInode(super.mkdir(newDir));
+        return new ExtendedInode(this, super.mkdir(newDir));
     }
 
     @Override
     public ExtendedInode mkdir(String name, int owner, int group, int mode) throws ChimeraFsException
     {
-        return new ExtendedInode(super.mkdir(name, owner, group, mode));
+        return new ExtendedInode(this, super.mkdir(name, owner, group, mode));
     }
 
     @Override
     public ExtendedInode create(String name, int uid, int gid, int mode) throws ChimeraFsException
     {
-        return new ExtendedInode(super.create(name, uid, gid, mode));
+        return new ExtendedInode(this, super.create(name, uid, gid, mode));
+    }
+
+    @Override
+    public ExtendedInode inodeOf(String name) throws ChimeraFsException
+    {
+        return new ExtendedInode(this, super.inodeOf(name));
     }
 
     @Override
     public ExtendedInode getParent()
     {
-        FsInode parent = super.getParent();
-        return (parent == null) ? null : new ExtendedInode(parent);
+        if (parent == null) {
+            FsInode actualParent = super.getParent();
+            parent = Optional.fromNullable(actualParent != null ? new ExtendedInode(actualParent) : null);
+        }
+        return parent.get();
     }
 
     public ImmutableMap<String,byte[]> getTags() throws ChimeraFsException

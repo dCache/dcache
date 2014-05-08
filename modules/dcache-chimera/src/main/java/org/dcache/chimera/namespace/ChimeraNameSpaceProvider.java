@@ -220,8 +220,8 @@ public class ChimeraNameSpaceProvider
 
             ExtendedInode inode = parent.create(newEntryFile.getName(), uid, gid, mode);
             FileAttributes fileAttributes = getFileAttributes(inode, requestedAttributes);
-            if (inode.getTags().containsKey(TAG_EXPECTED_SIZE)) {
-                fileAttributes.setSize(Long.parseLong(getFirst(inode.getTag(TAG_EXPECTED_SIZE), "0")));
+            if (parent.getTags().containsKey(TAG_EXPECTED_SIZE)) {
+                fileAttributes.setSize(Long.parseLong(getFirst(parent.getTag(TAG_EXPECTED_SIZE), "0")));
             }
             return fileAttributes;
         } catch (NotDirChimeraException e) {
@@ -1119,7 +1119,7 @@ public class ChimeraNameSpaceProvider
             /* File must not exist unless overwrite is enabled.
              */
             try {
-                FsInode inodeOfPath = parentOfPath.inodeOf(path.getName());
+                ExtendedInode inodeOfPath = parentOfPath.inodeOf(path.getName());
                 if (!options.contains(CreateOption.OVERWRITE_EXISTING)) {
                     throw new FileExistsCacheException("File exists: " + path);
                 }
