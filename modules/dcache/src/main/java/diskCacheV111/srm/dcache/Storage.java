@@ -120,6 +120,8 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -266,10 +268,10 @@ public final class Storage
             new ChainedPermissionHandler(new ACLPermissionHandler(),
                                          new PosixPermissionHandler());
     private final Set<FileAttribute> attributesRequiredForRmdir;
+    private Executor _executor;
 
     private PoolMonitor _poolMonitor;
 
-    private SRM srm;
     private Configuration config;
     private boolean customGetHostByAddr; //falseByDefault
 
@@ -338,6 +340,12 @@ public final class Storage
     {
         attributesRequiredForRmdir = EnumSet.of(TYPE);
         attributesRequiredForRmdir.addAll(permissionHandler.getRequiredAttributes());
+    }
+
+    @Required
+    public void setExecutor(Executor executor)
+    {
+        _executor = executor;
     }
 
     @Required
@@ -531,7 +539,8 @@ public final class Storage
                                                             _poolMonitor,
                                                             _pnfsStub,
                                                             _poolManagerStub,
-                                                            _pinManagerStub),
+                                                            _pinManagerStub,
+                                                            _executor),
                                        new ToSRMException());
         } catch (SRMInvalidPathException e) {
             return Futures.immediateFailedCheckedFuture(new SRMInvalidPathException(e.getMessage()));

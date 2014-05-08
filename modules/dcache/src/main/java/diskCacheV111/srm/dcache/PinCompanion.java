@@ -69,7 +69,6 @@ package diskCacheV111.srm.dcache;
 import com.google.common.base.Objects;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +76,7 @@ import javax.security.auth.Subject;
 
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.AccessLatency;
@@ -120,6 +120,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
     private final CellStub _pnfsStub;
     private final CellStub _poolManagerStub;
     private final CellStub _pinManagerStub;
+    private final Executor _executor;
     private final PoolMonitor _poolMonitor;
     private final boolean _isOnlinePinningEnabled;
 
@@ -163,7 +164,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PnfsGetFileAttributes(_path.toString(), attributes);
             msg.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
             msg.setSubject(_subject);
-            CellStub.addCallback(_pnfsStub.send(msg), this, MoreExecutors.sameThreadExecutor());
+            CellStub.addCallback(_pnfsStub.send(msg), this, _executor);
         }
 
         private boolean isDirectory(FileAttributes attributes)
@@ -224,7 +225,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             msg.setSkipCostUpdate(true);
             msg.setSubject(_subject);
 
-            CellStub.addCallback(_poolManagerStub.send(msg), this, MoreExecutors.sameThreadExecutor());
+            CellStub.addCallback(_poolManagerStub.send(msg), this, _executor);
         }
 
         @Override
@@ -252,7 +253,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                 new PinManagerPinMessage(_attributes, getProtocolInfo(),
                                          _requestToken, _pinLifetime);
             msg.setSubject(_subject);
-            CellStub.addCallback(_pinManagerStub.send(msg), this, MoreExecutors.sameThreadExecutor());
+            CellStub.addCallback(_pinManagerStub.send(msg), this, _executor);
         }
 
         @Override
@@ -279,7 +280,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
                          PoolMonitor poolMonitor,
                          CellStub pnfsStub,
                          CellStub poolManagerStub,
-                         CellStub pinManagerStub)
+                         CellStub pinManagerStub, Executor executor)
     {
         _subject = subject;
         _path = path;
@@ -291,6 +292,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
         _pnfsStub = pnfsStub;
         _poolManagerStub = poolManagerStub;
         _pinManagerStub = pinManagerStub;
+        _executor = executor;
         _state = new LookupState();
     }
 
@@ -349,12 +351,13 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
             PoolMonitor poolMonitor,
             CellStub pnfsStub,
             CellStub poolManagerStub,
-            CellStub pinManagerStub)
+            CellStub pinManagerStub,
+            Executor executor)
     {
         return new PinCompanion(subject, path, clientHost,
                                 pinLifetime, requestToken, isOnlinePinningEnabled,
                                 poolMonitor,
-                                pnfsStub, poolManagerStub, pinManagerStub);
+                                pnfsStub, poolManagerStub, pinManagerStub, executor);
     }
 }
 
