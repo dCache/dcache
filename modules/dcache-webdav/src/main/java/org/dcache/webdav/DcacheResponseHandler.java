@@ -47,6 +47,8 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     private final static Logger log =
         LoggerFactory.getLogger(DcacheResponseHandler.class);
 
+    private static final String HTML_TEMPLATE_NAME = "errorpage";
+
     private final static Splitter PATH_SPLITTER =
         Splitter.on('/').omitEmptyStrings();
 
@@ -79,6 +81,15 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             throws IOException
     {
         _templateGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
+
+        /* StringTemplate has lazy initialisation, but this is very racey and
+         * can break StringTemplate altogether:
+         *
+         *     https://github.com/antlr/stringtemplate4/issues/61
+         *
+         * here we force initialisation to work-around this.
+         */
+        _templateGroup.getInstanceOf(HTML_TEMPLATE_NAME);
     }
 
     /**
@@ -166,7 +177,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(path), String.class);
 
-        ST template = _templateGroup.getInstanceOf("errorpage");
+        ST template = _templateGroup.getInstanceOf(HTML_TEMPLATE_NAME);
 
         template.add("path", UrlPathWrapper.forPaths(base));
         template.add("base", UrlPathWrapper.forEmptyPath());
