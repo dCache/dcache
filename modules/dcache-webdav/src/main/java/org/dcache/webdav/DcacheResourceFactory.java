@@ -796,6 +796,16 @@ public class DcacheResourceFactory
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
         final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
+
+        if (t == null) {
+            _log.error("template '{}' not found in templategroup: {}",
+                    HTML_TEMPLATE_NAME, _listingGroup.getFileName());
+            out.append(DcacheResponseHandler.templateNotFoundErrorPage(_listingGroup,
+                    HTML_TEMPLATE_NAME));
+            out.flush();
+            return;
+        }
+
         t.add("path", asList(UrlPathWrapper.forPaths(base)));
         t.add("static", _staticContentPath);
         t.add("subject", new SubjectWrapper(getSubject()));
