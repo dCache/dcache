@@ -183,6 +183,13 @@
         <property name="fsStatTimeUnit" value="${nfs.fs-stat-cache.time.unit}" />
     </bean>
 
+    <bean id="messageThreadPool" class="org.dcache.util.BoundedExecutor"
+        destroy-method="shutdown">
+        <description>Thread pool for message processing</description>
+        <constructor-arg value="${nfs.cell.limits.message.threads.max}"/>
+        <constructor-arg value="${nfs.cell.limits.message.queue.max}"/>
+    </bean>
+
     <beans  profile="portmap-true">
         <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"
 	    destroy-method="shutdown"/>
