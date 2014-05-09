@@ -150,13 +150,13 @@ public final class BillingCell
             doStatistics(info);
         }
 
-        String output = getFormattedMessage(info);
-        if (output.isEmpty()) {
-            return;
-        }
-        _log.info(output);
-
         if (_enableText) {
+
+            String output = getFormattedMessage(info);
+            if (output.isEmpty()) {
+                return;
+            }
+
             String ext = getFilenameExtension(new Date(info.getTimestamp()));
             logInfo(output, ext);
             if (info.getResultCode() != 0) {
