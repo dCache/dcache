@@ -113,6 +113,9 @@ public class MetaDataCache
             try {
                 checkState(!_isClosed);
                 _record = _inner.create(_id);
+            } catch (DuplicateEntryException e) {
+                _inner.remove(_id);
+                _record = _inner.create(_id);
             } finally {
                 if (_record == null) {
                     _entries.remove(_id);
@@ -131,6 +134,9 @@ public class MetaDataCache
             try {
                 checkState(!_isClosed);
                 _record = _inner.create(entry);
+            } catch (DuplicateEntryException e) {
+                _inner.remove(_id);
+                _record = _inner.create(_id);
             } finally {
                 if (_record == null) {
                     _entries.remove(_id);
