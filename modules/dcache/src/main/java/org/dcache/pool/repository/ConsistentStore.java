@@ -303,8 +303,7 @@ public class ConsistentStore
          */
         File dataFile = _fileStore.get(id);
         if (dataFile.exists()) {
-            _log.warn("Entry already exists: " + id);
-            throw new FileInCacheException("Entry already exists: " + id);
+            throw new DuplicateEntryException(id);
         }
 
         /* Create meta data record. Recreate if it already exists.
@@ -318,8 +317,7 @@ public class ConsistentStore
             try {
                 entry = _metaDataStore.create(id);
             } catch (DuplicateEntryException f) {
-                throw
-                    new RuntimeException("Unexpected repository error", e);
+                throw new DiskErrorCacheException("Unexpected repository error", e);
             }
         }
 
