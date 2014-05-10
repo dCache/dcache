@@ -922,6 +922,7 @@ public class PoolV4
                 case CacheException.FILE_IN_CACHE:
                     _log.info("Pool already contains replica");
                     _message.setSucceeded();
+                    break;
                 case CacheException.ERROR_IO_DISK:
                 case 41:
                 case 42:
