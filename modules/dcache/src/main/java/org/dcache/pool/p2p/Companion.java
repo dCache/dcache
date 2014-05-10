@@ -514,9 +514,9 @@ class Companion
         }
 
         if (_error != null) {
-            if (_error instanceof RuntimeException) {
+            if (_error instanceof RuntimeException || _error instanceof Error) {
                 _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error),
-                           (Exception) _error);
+                           (Throwable) _error);
             } else {
                 _log.error(String.format("P2P for %s failed: %s", getPnfsId(), _error));
             }
