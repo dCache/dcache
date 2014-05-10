@@ -11,11 +11,16 @@ username=$(id -u -n)
 cd @TARGET@/dcache
 
 if [ ! -f etc/dcache.kpwd ]; then
+    if [ -f ~/.globus/dcache-systemtest-usercert.pem ]; then
+        DN=$(openssl x509 -in ~/.globus/dcache-systemtest-usercert.pem -subject -noout | sed -e 's/subject= *//')
+        bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
+            -w read-write -p password -s "$DN" system-test
+        bin/dcache kpwd dcmapadd "$DN" system-test
+    fi
     if [ -f ~/.globus/usercert.pem ]; then
         DN=$(openssl x509 -in ~/.globus/usercert.pem -subject -noout | sed -e 's/subject= *//')
         bin/dcache kpwd dcuseradd -u $uid -g $gid -h / -r / -f / \
             -w read-write -p password -s "$DN" "$username"
-
         bin/dcache kpwd dcmapadd "$DN" "$username"
     fi
 
@@ -93,6 +98,7 @@ if [ ! -f etc/linkgroup.conf ]; then
     cat > etc/linkgroup.conf <<EOF
 LinkGroup sm-group
 $username
+system-test
 EOF
 fi
 
