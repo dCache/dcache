@@ -106,11 +106,6 @@ public class MigrationModuleServer
             return null;
         }
 
-        if (envelope.getLocalAge() >= envelope.getTtl()) {
-            _log.warn("PoolMigrationCopyReplica message discarded: TTL exceeded");
-            return null;
-        }
-
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
             throw new CacheException(CacheException.POOL_DISABLED,
                                      "Pool is disabled");

@@ -98,8 +98,6 @@ public class PnfsManagerV3
         LoggerFactory.getLogger(PnfsManagerV3.class);
 
     private static final int THRESHOLD_DISABLED = 0;
-    private static final int TTL_BUFFER_MAXIMUM = 10000;
-    private static final float TTL_BUFFER_FRACTION = 0.10f;
 
     private final Random _random = new Random(System.currentTimeMillis());
 
@@ -1459,7 +1457,7 @@ public class PnfsManagerV3
 
             checkMask(msg.getSubject(), path, msg.getAccessMask());
 
-            long delay = getAdjustedTtl(envelope);
+            long delay = envelope.getAdjustedTtl();
             long initialDelay =
                 (delay == Long.MAX_VALUE)
                 ? Long.MAX_VALUE
@@ -1512,7 +1510,7 @@ public class PnfsManagerV3
                      */
                     PnfsMessage pnfs =
                         (PnfsMessage)message.getMessageObject();
-                    if (message.getLocalAge() > getAdjustedTtl(message)
+                    if (message.getLocalAge() > message.getAdjustedTtl()
                         && useEarlyDiscard(pnfs)) {
                         _log.warn("Discarding " + pnfs.getClass().getSimpleName() +
                                   " because its time to live has been exceeded.");
@@ -2015,21 +2013,6 @@ public class PnfsManagerV3
             message.setPnfsId(pnfsId);
         }
         return pnfsId;
-    }
-
-    /**
-     * Returns the adjusted TTL of a message. The adjusted TTL is the
-     * TTL with some time subtracted to allow for cell communication
-     * overhead. Returns Long.MAX_VALUE if the TTL is infinite.
-     */
-    private static long getAdjustedTtl(CellMessage message)
-    {
-        long ttl = message.getTtl();
-        return
-            (ttl == Long.MAX_VALUE)
-            ? Long.MAX_VALUE
-            : ttl - Math.min(TTL_BUFFER_MAXIMUM,
-                             (long) (ttl * TTL_BUFFER_FRACTION));
     }
 
     /**

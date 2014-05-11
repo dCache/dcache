@@ -786,6 +786,12 @@ public class   CellAdapter extends CommandInterpreter
             Serializable obj = msg.getMessageObject();
 
             if (msg.isFinalDestination()) {
+                if (!msg.isReply() && msg.getLocalAge() > msg.getAdjustedTtl()) {
+                    _log.warn("Discarding " + obj.getClass().getSimpleName() +
+                                      " because its time to live has been exceeded.");
+                    return;
+                }
+
                 if (_useInterpreter && (! msg.isReply()) &&
                     ((obj instanceof String) ||
                      (obj instanceof AuthorizedString))) {

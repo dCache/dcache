@@ -21,6 +21,16 @@ public class CellMessage implements Cloneable , Serializable {
 
   private static final long serialVersionUID = -5559658187264201731L;
 
+  /**
+   * Maximum TTL adjustment in milliseconds.
+   */
+  private static final int TTL_BUFFER_MAXIMUM = 10000;
+
+  /**
+   * Maximum TTL adjustment as a fraction of TTL.
+   */
+  private static final float TTL_BUFFER_FRACTION = 0.10f;
+
   private CellPath    _source , _destination ;
   private Object      _message ;
   private long        _creationTime ;
@@ -206,4 +216,17 @@ public boolean equals( Object obj ){
     {
         return System.currentTimeMillis() - _receivedAt;
     }
+
+    /**
+     * Returns the adjusted TTL of a message. The adjusted TTL is the
+     * TTL with some time subtracted to allow for cell communication
+     * overhead. Returns Long.MAX_VALUE if the TTL is infinite.
+     */
+    public long getAdjustedTtl()
+    {
+        return (_ttl == Long.MAX_VALUE)
+                ? Long.MAX_VALUE
+                : _ttl - Math.min(TTL_BUFFER_MAXIMUM, (long) (_ttl * TTL_BUFFER_FRACTION));
+    }
+
 }
