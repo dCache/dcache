@@ -108,6 +108,8 @@ public class DcacheResourceFactory
         EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
                    MODE, OWNER, OWNER_GROUP);
 
+    private static final String HTML_TEMPLATE_NAME = "page";
+
     private static final String PROTOCOL_INFO_NAME = "Http";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
     private static final int PROTOCOL_INFO_MINOR_VERSION = 1;
@@ -426,6 +428,15 @@ public class DcacheResourceFactory
         throws IOException
     {
         _listingGroup = new STGroupFile(resource.getURL(), "UTF-8", '$', '$');
+
+        /* StringTemplate has lazy initialisation, but this is very racey and
+         * can break StringTemplate altogether:
+         *
+         *     https://github.com/antlr/stringtemplate4/issues/61
+         *
+         * here we force initialisation to work-around this.
+         */
+        _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
     }
 
     /**
@@ -755,7 +766,7 @@ public class DcacheResourceFactory
         String requestPath = new URI(request.getAbsoluteUrl()).getPath();
         String[] base =
             Iterables.toArray(PATH_SPLITTER.split(requestPath), String.class);
-        final ST t = _listingGroup.getInstanceOf("page");
+        final ST t = _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
         t.add("path", asList(UrlPathWrapper.forPaths(base)));
         t.add("static", _staticContentPath);
         t.add("subject", new SubjectWrapper(getSubject()));
