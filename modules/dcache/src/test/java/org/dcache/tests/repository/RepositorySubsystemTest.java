@@ -726,15 +726,32 @@ public class RepositorySubsystemTest
 
     @Test(expected=FileInCacheException.class)
     public void testCreateEntryFileExists()
-        throws IOException, CacheException,
-               InterruptedException, FileInCacheException
+            throws Throwable
     {
         repository.init();
         repository.load();
         stateChangeEvents.clear();
 
-        List<StickyRecord> stickyRecords = Collections.emptyList();
-        repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords, EnumSet.noneOf(OpenFlags.class));
+        new CellStubHelper(cell) {
+            /* Attempting to create an existing entry triggers a
+             * add cache location message.
+             */
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsAddCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            @Override
+            protected void run()
+                    throws CacheException, InterruptedException
+            {
+                List<StickyRecord> stickyRecords = Collections.emptyList();
+                repository.createEntry(attributes1, FROM_CLIENT, PRECIOUS, stickyRecords,
+                                       EnumSet.noneOf(OpenFlags.class));
+            }
+        };
     }
 
     /* Helper method for creating a fourth entry in the repository.
