@@ -818,8 +818,10 @@ public class CellNucleus implements ThreadFactory
                     //
                     LOGGER.trace("addToEventQueue : lock found for : {}", msg);
                     try {
+                        _eventQueueSize.incrementAndGet();
                         lock.getExecutor().execute(new CallbackTask(lock, msg));
                     } catch (RejectedExecutionException e) {
+                        _eventQueueSize.decrementAndGet();
                         /* Put it back; the timeout handler
                          * will eventually take care of it.
                          */
@@ -832,8 +834,12 @@ public class CellNucleus implements ThreadFactory
                 }
             }     // end of : msg != null
 
+            EventLogger.queueBegin(ce);
+            _eventQueueSize.incrementAndGet();
             _messageExecutor.execute(new DeliverMessageTask(ce));
         } catch (RejectedExecutionException e) {
+            EventLogger.queueEnd(ce);
+            _eventQueueSize.decrementAndGet();
             LOGGER.error("Message queue overflow. Dropping {}", ce);
         }
     }
@@ -1008,7 +1014,6 @@ public class CellNucleus implements ThreadFactory
         {
             _lock = lock;
             _message = message;
-            _eventQueueSize.incrementAndGet();
         }
 
         @Override
@@ -1050,8 +1055,6 @@ public class CellNucleus implements ThreadFactory
         public DeliverMessageTask(CellEvent event)
         {
             _event = event;
-            EventLogger.queueBegin(_event);
-            _eventQueueSize.incrementAndGet();
         }
 
         @Override
