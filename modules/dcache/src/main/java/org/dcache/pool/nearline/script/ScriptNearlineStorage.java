@@ -88,6 +88,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
             new CDCExecutorServiceDecorator<>(new BoundedExecutor(executor, DEFAULT_REMOVE_THREADS));
 
     private volatile String command;
+    private volatile String options;
 
     public ScriptNearlineStorage(String type, String name)
     {
@@ -158,6 +159,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
             throw new IllegalArgumentException("command option must be defined");
         }
         command = buildCommand(properties);
+        options = buildOptions(properties);
 
         configureThreadPoolSize(flushExecutor.delegate(), properties.get(CONCURRENT_PUTS), 1);
         configureThreadPoolSize(stageExecutor.delegate(), properties.get(CONCURRENT_GETS), 1);
@@ -178,10 +180,11 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
         StringBuilder sb = new StringBuilder(command);
-        sb.append(" -si=").append(storageInfo.toString());
         sb.append(" put ").
                 append(fileAttributes.getPnfsId()).append(' ').
                 append(file.getPath());
+        sb.append(" -si=").append(storageInfo.toString());
+        sb.append(options);
         LOGGER.debug("COMMAND: {}", sb);
         return sb.toString();
     }
@@ -190,15 +193,16 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(attributes);
         StringBuilder sb = new StringBuilder(command);
+        sb.append(" get ").
+                append(attributes.getPnfsId()).append(' ').
+                append(file.getPath());
         sb.append(" -si=").append(storageInfo.toString());
         for (URI location: getLocations(attributes)) {
             if (location.getScheme().equals(type) && location.getAuthority().equals(name)) {
                 sb.append(" -uri=").append(location.toString());
             }
         }
-        sb.append(" get ").
-                append(attributes.getPnfsId()).append(' ').
-                append(file.getPath());
+        sb.append(options);
         LOGGER.debug("COMMAND: {}", sb);
         return sb.toString();
     }
@@ -241,15 +245,21 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
 
     private String buildCommand(Map<String, String> properties)
     {
-        StringBuilder command = new StringBuilder(properties.get(COMMAND));
+        return properties.get(COMMAND);
+    }
+
+    private String buildOptions(Map<String, String> properties)
+    {
+        StringBuilder options = new StringBuilder();
         for (Map.Entry<String,String> attr : Maps.filterKeys(properties, not(in(PROPERTIES))).entrySet()) {
             String key = attr.getKey();
             String val = attr.getValue();
-            command.append(" -").append(key);
+            options.append(" -").append(key);
             if (!Strings.isNullOrEmpty(val)) {
-                command.append('=').append(val);
+                options.append('=').append(val);
             }
         }
-        return command.toString();
+        return options.toString();
+
     }
 }
