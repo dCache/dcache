@@ -10,6 +10,7 @@ import java.util.concurrent.Semaphore;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.RemoveFileCallback;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
@@ -116,13 +117,14 @@ public class SrmRm
             URI surl = URI.create(surls[i].toString());
             for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl)) {
                 try {
-                    request.setState(State.CANCELED,
-                            "Upload aborted because the file was deleted by another request.");
-                    returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted"));
+                    request.abort("Upload aborted because the file was deleted by another request.");
+                    returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted."));
                 } catch (IllegalStateTransition e) {
                     // The request likely aborted or finished before we could abort it
                     LOGGER.debug("srmRm attempted to abort put request {}, but failed: {}",
                             request.getId(), e.getMessage());
+                } catch (SRMException e) {
+                    returnStatus.setStatus(new TReturnStatus(e.getStatusCode(), e.getMessage()));
                 }
             }
 
@@ -135,12 +137,13 @@ public class SrmRm
             // as SRM_ABORTED.
             for (GetFileRequest request : SRM.getSRM().getActiveFileRequests(GetFileRequest.class, surl)) {
                 try {
-                    request.setState(State.CANCELED,
-                            "Download aborted because the file was deleted by another request.");
+                    request.abort("Download aborted because the file was deleted by another request.");
                 } catch (IllegalStateTransition e) {
                     // The request likely aborted or finished before we could abort it
                     LOGGER.debug("srmRm attempted to abort get request {}, but failed: {}",
                             request.getId(), e.getMessage());
+                } catch (SRMException e) {
+                    returnStatus.setStatus(new TReturnStatus(e.getStatusCode(), e.getMessage()));
                 }
             }
         }

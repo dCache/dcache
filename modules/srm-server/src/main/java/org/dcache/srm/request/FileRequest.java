@@ -284,7 +284,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         }
     }
 
-    public void abort() throws IllegalStateTransition, SRMException
+    public void abort(String reason) throws IllegalStateTransition, SRMException
     {
         wlock();
         try {
@@ -305,7 +305,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
              * requests. Some subclasses thus override this method.
              */
             if (!getState().isFinal()) {
-                setState(State.CANCELED, "Request aborted.");
+                setState(State.CANCELED, reason);
             }
         } finally {
             wunlock();

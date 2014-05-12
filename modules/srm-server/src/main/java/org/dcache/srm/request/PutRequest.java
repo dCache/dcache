@@ -256,7 +256,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public TReturnStatus abort()
+    public TReturnStatus abort(String reason)
     {
         wlock();
         try {
@@ -289,7 +289,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
             if (!state.isFinal()) {
                 for (PutFileRequest file : getFileRequests()) {
                     try {
-                        file.abort();
+                        file.abort(reason);
                         hasSuccess = true;
                     } catch (SRMException e) {
                         hasFailure = true;
