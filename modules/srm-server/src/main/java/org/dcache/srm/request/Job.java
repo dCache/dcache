@@ -181,15 +181,6 @@ public abstract class Job  {
         this.lastStateTransitionTime = lastStateTransitionTime;
         this.jdc = new JDC();
         if(jobHistoryArray != null) {
-            Arrays.sort(jobHistoryArray,new Comparator<JobHistory>(){
-                 @Override
-                 public int compare(JobHistory jobHistory1 , JobHistory jobHistory2) {
-                     long  transitionTime1 = jobHistory1.getTransitionTime();
-                     long  transitionTime2 = jobHistory2.getTransitionTime();
-                     if(transitionTime1<transitionTime2) { return -1  ;}
-                     if(transitionTime1==transitionTime2) { return 0  ;}
-                     return 1;
-                 } });
             Collections.addAll(jobHistory, jobHistoryArray);
         } else {
             jobHistory.add(new JobHistory(nextLong(), state, "Request restored from database", System.currentTimeMillis()));
