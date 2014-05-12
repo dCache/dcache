@@ -527,24 +527,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public void checkExpiration()
-    {
-        wlock();
-        try {
-            if (creationTime + lifetime < System.currentTimeMillis()) {
-                logger.debug("expiring job #{}", getId());
-                if (!getState().isFinal()) {
-                    setStateAndStatusCode(State.FAILED, "Total request time exceeded.", TStatusCode.SRM_REQUEST_TIMED_OUT);
-                }
-            }
-        } catch (IllegalStateTransition e) {
-            logger.error("Illegal state transition while expiring job: {}", e.toString());
-        } finally {
-            wunlock();
-        }
-    }
-
-    @Override
     public String getNameForRequestType() {
         return "Put";
     }
