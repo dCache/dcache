@@ -657,7 +657,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     protected Job.JobHistory[] getJobHistory(Long jobId,Connection _con) throws SQLException{
         List<Job.JobHistory> l = new ArrayList<>();
         String select = "SELECT * FROM " +getHistoryTableName()+
-                " WHERE JOBID="+jobId;
+                " WHERE JOBID="+jobId + " ORDER BY ID";
         logger.debug("executing statement: {}", select);
         Statement statement = _con.createStatement();
         ResultSet set = statement.executeQuery(select);
