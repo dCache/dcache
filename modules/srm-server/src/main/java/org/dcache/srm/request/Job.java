@@ -766,13 +766,9 @@ public abstract class Job  {
     {
         wlock();
         try {
-            if (creationTime + lifetime < System.currentTimeMillis()) {
-                logger.debug("expiring job #{}", getId());
-                if (state == State.READY || state == State.TRANSFERRING) {
-                    setState(State.DONE, "Request lifetime expired.");
-                } else if (!state.isFinal()) {
-                    setState(State.FAILED, "Request lifetime expired.");
-                }
+            if (creationTime + lifetime < System.currentTimeMillis() && !state.isFinal()) {
+                logger.info("expiring job #{}", getId());
+                setState(State.FAILED, "Request lifetime expired.");
             }
         } catch (IllegalStateTransition e) {
             logger.error("Illegal state transition while expiring job: {}", e.toString());
