@@ -469,7 +469,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public void abort() throws IllegalStateTransition, SRMException
+    public void abort(String reason) throws IllegalStateTransition, SRMException
     {
         wlock();
         try {
@@ -496,7 +496,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             State state = getState();
             if (!state.isFinal()) {
                 if (getFileId() != null) {
-                    getStorage().abortPut(getUser(), getFileId(), getSurl(), "Upload aborted by client.");
+                    getStorage().abortPut(getUser(), getFileId(), getSurl(), reason);
                 }
                 setState(State.CANCELED, "Request aborted.");
             } else if (state == State.DONE) {

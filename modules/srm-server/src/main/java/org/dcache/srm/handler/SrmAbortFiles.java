@@ -79,7 +79,7 @@ public class SrmAbortFiles
     private TReturnStatus abortSurl(ContainerRequest<?> request, org.apache.axis.types.URI surl)
     {
         try {
-            request.getFileRequestBySurl(new URI(surl.toString())).abort();
+            request.getFileRequestBySurl(new URI(surl.toString())).abort("File request aborted by client.");
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } catch (SRMFileRequestNotFoundException | URISyntaxException e) {
             return new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
