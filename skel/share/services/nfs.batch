@@ -4,6 +4,7 @@
 
 onerror shutdown
 check -strong nfs.cell.name
+check -strong nfs.cell.export
 check -strong nfs.net.port
 check -strong nfs.version
 check -strong nfs.service.loginbroker
@@ -48,5 +49,6 @@ check nfs.mover.queue
 
 create org.dcache.cells.UniversalSpringCell ${nfs.cell.name} \
         "classpath:org/dcache/chimera/nfsv41/door/nfsv41-common.xml \
+            -export=${nfs.cell.export} \
             -profiles=portmap-${nfs.enable.portmap}"
 
