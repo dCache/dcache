@@ -2,11 +2,8 @@ package org.dcache.pool.p2p;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +44,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -57,6 +55,7 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -162,20 +161,18 @@ class Companion
         _pool = pool;
         _sourcePoolName = sourcePoolName;
 
-        checkNotNull(fileAttributes);
-        checkNotNull(destinationPoolCellname, "Destination pool name is unknown. Aborting the request.");
-        checkNotNull(destinationPoolCellDomainName, "Destination domain name is unknown. Aborting the request");
+        _destinationPoolCellname = checkNotNull(destinationPoolCellname, "Destination pool name is unknown.");
+        _destinationPoolCellDomainName = checkNotNull(destinationPoolCellDomainName, "Destination domain name is unknown.");
+        _fileAttributes = checkNotNull(fileAttributes, "File attributes is missing.");
 
-        _destinationPoolCellname = destinationPoolCellname;
-        _destinationPoolCellDomainName = destinationPoolCellDomainName;
+        if (!_fileAttributes.isDefined(FileAttribute.PNFSID)) {
+            throw new IllegalArgumentException("PNFSID is required, got " + _fileAttributes.getDefinedAttributes());
+        }
 
         _callback = callback;
         _forceSourceMode = forceSourceMode;
         _targetState = targetState;
         _stickyRecords = new ArrayList<>(stickyRecords);
-        if (fileAttributes != null) {
-            setFileAttributes(fileAttributes);
-        }
 
         _id = _nextId.getAndIncrement();
 

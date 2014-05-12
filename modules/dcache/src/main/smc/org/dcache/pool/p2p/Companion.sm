@@ -106,9 +106,9 @@ Exit
                         startTimer(ctxt.getPingPeriod());
                 }
         timeout
-                Failed
+                nil
                 {
-                        setError("Ping failed (no response)");
+                        ping();
                 }
         noroute
                 Failed

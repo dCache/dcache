@@ -118,6 +118,21 @@ public class P2PClient
         Companion companion = _companions.get(sessionId);
         if (companion != null) {
             companion.messageArrived(message);
+        } else {
+            /* The original p2p is no longer around, but maybe we can use the redirect
+             * for another p2p transfer.
+             */
+            String pnfsId = message.getPnfsId();
+            for (Companion c : _companions.values()) {
+                if (c.getPnfsId().equals(pnfsId)) {
+                    c.messageArrived(message);
+                    return;
+                }
+            }
+
+            /* TODO: We should kill the mover, but at the moment we don't
+             * know the mover id here.
+             */
         }
     }
 
