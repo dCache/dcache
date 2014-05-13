@@ -384,12 +384,23 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             rs.errorMessage += "\n"+fr_error;
         }
 
-        if (havePendingRequests) {
-            rs.state = "Pending";
-        } else if(haveFailedRequests) {
+        switch (getState()) {
+        case DONE:
+            rs.state = "Done";
+            break;
 
-            if(!haveRunningRequests && !haveReadyRequests ){
-                // no running, no ready and  no peding  requests
+        case CANCELED:
+        case FAILED:
+            rs.state = "Failed";
+            break;
+
+        default:
+            if (havePendingRequests) {
+                rs.state = "Pending";
+            } else if (haveRunningRequests || haveReadyRequests) {
+                rs.state = "Active";
+            } else if(haveFailedRequests) {
+                // no running, no ready and  no pending  requests
                 // there are only failed requests
                 // we can fail this request
                 rs.state = "Failed";
@@ -402,38 +413,34 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                 {
                     logger.error("Illegal State Transition : " +ist.getMessage());
                 }
-            }
+            } else if (haveDoneRequests) {
+                // all requests are done
+                try
+                {
+                    setState(State.DONE,"All files are done.");
+                    stopUpdating();
+                }
+                catch(IllegalStateTransition ist)
+                {
+                    logger.error("Illegal State Transition : " +ist.getMessage());
+                }
+                rs.state = "Done";
+            } else {
+                // we should never be here, but we have this block
+                // in case request is restored with no files in it
 
-
-        } else if (haveRunningRequests || haveReadyRequests) {
-            rs.state = "Active";
-        } else if (haveDoneRequests) {
-            // all requests are done
-            try
-            {
-                setState(State.DONE,"All files are done.");
+                logger.error("request state is unknown or no files in request!!!");
                 stopUpdating();
+                try
+                {
+                    setState(State.FAILED, "Request state is unknown or no files in request!!!");
+                }
+                catch(IllegalStateTransition ist)
+                {
+                    logger.error("Illegal State Transition : " +ist.getMessage());
+                }
+                rs.state = "Failed";
             }
-            catch(IllegalStateTransition ist)
-            {
-                logger.error("Illegal State Transition : " +ist.getMessage());
-            }
-            rs.state = "Done";
-        } else {
-            // we should never be here, but we have this block
-            // in case request is restored with no files in it
-
-            logger.error("request state is unknown or no files in request!!!");
-            stopUpdating();
-            try
-            {
-                setState(State.FAILED, "Request state is unknown or no files in request!!!");
-            }
-            catch(IllegalStateTransition ist)
-            {
-                logger.error("Illegal State Transition : " +ist.getMessage());
-            }
-            rs.state = "Failed";
         }
 
         // the following it the hack to make FTS happy
