@@ -16,13 +16,16 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.InvalidPropertyException;
+import org.springframework.beans.NotReadablePropertyException;
 import org.springframework.beans.PropertyAccessException;
+import org.springframework.beans.PropertyAccessorUtils;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -110,6 +113,15 @@ public class UniversalSpringCell
     private static final Logger LOGGER = LoggerFactory.getLogger(UniversalSpringCell.class);
 
     private static final long WAIT_FOR_FILE_SLEEP = 30000;
+
+    private static final Set<Class<?>> PRIMITIVE_TYPES =
+            Sets.<Class<?>>newHashSet(Byte.class, Byte.TYPE, Short.class, Short.TYPE,
+                                      Integer.class, Integer.TYPE, Long.class, Long.TYPE,
+                                      Float.class, Float.TYPE, Double.class, Double.TYPE,
+                                      Character.class, Character.TYPE, Boolean.class,
+                                      Boolean.TYPE, String.class);
+    private static final Class<?>[] TERMINAL_TYPES = new Class<?>[] { Class.class, ApplicationContext.class };
+    private static final Class<?>[] HIDDEN_TYPES = new Class<?>[] { ApplicationContext.class, AutoCloseable.class };
 
     /**
      * Environment map this cell was instantiated in.
@@ -272,7 +284,7 @@ public class UniversalSpringCell
         if (messageExecutor != null) {
             Object executor = getBean(messageExecutor);
             checkState(executor instanceof ThreadPoolExecutor,
-                    "No such bean: " + messageExecutor);
+                       "No such bean: " + messageExecutor);
             getNucleus().setMessageExecutor((ThreadPoolExecutor) executor);
         }
     }
@@ -596,16 +608,12 @@ public class UniversalSpringCell
                 ConfigurableListableBeanFactory factory = _context.getBeanFactory();
                 s.format(format, "Bean", "Description");
                 s.format(format, "----", "-----------");
-                for (String name : getBeanNames()) {
+                for (String name : factory.getBeanDefinitionNames()) {
                     if (!name.startsWith("org.springframework.")) {
-                        try {
-                            BeanDefinition definition = factory.getBeanDefinition(name);
-                            String description = definition.getDescription();
-                            s.format(format, name,
-                                     (description != null ? description : "-"));
-                        } catch (NoSuchBeanDefinitionException e) {
-                            debug("Failed to query bean definition for " + name);
-                        }
+                        BeanDefinition definition = factory.getBeanDefinition(name);
+                        String description = definition.getDescription();
+                        s.format(format, name,
+                                 (description != null ? description : "-"));
                     }
                 }
 
@@ -648,7 +656,7 @@ public class UniversalSpringCell
         String[] a = s.split("\\.", 2);
         Object o = getBean(a[0]);
         if (o != null && a.length == 2) {
-            BeanWrapper bean = new BeanWrapperImpl(o);
+            BeanWrapper bean = new RestrictedBeanWrapper(o);
             o = bean.isReadableProperty(a[1])
                 ? bean.getPropertyValue(a[1])
                 : null;
@@ -670,18 +678,16 @@ public class UniversalSpringCell
             Object o = getBeanProperty(name);
             if (o != null) {
                 StringBuilder s = new StringBuilder();
-                BeanWrapper bean = new BeanWrapperImpl(o);
+                BeanWrapper bean = new RestrictedBeanWrapper(o);
                 for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
-                    if (!p.isHidden()) {
-                        String property = p.getName();
-                        if (bean.isReadableProperty(property)) {
-                            Object value = bean.getPropertyValue(property);
-                            s.append(property).append('=').append(org.dcache.commons.util.Strings.toString(value));
-                            if (!bean.isWritableProperty(property)) {
-                                s.append(" [read-only]");
-                            }
-                            s.append('\n');
+                    String property = p.getName();
+                    if (bean.isReadableProperty(property)) {
+                        Object value = bean.getPropertyValue(property);
+                        s.append(property).append('=').append(org.dcache.commons.util.Strings.toString(value));
+                        if (!bean.isWritableProperty(property)) {
+                            s.append(" [read-only]");
                         }
+                        s.append('\n');
                     }
                 }
                 return s.toString();
@@ -777,8 +783,11 @@ public class UniversalSpringCell
             throws CacheException
     {
         Map<String,Object> beans = Maps.newHashMap();
-        for (String name : getBeanNames()) {
-            beans.put(name, getBean(name));
+        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+        for (String name : factory.getBeanDefinitionNames()) {
+            if (!name.startsWith("org.springframework.")) {
+                beans.put(name, getBean(name));
+            }
         }
         message.setResult(serialize(beans));
         return message;
@@ -787,7 +796,19 @@ public class UniversalSpringCell
     public BeanQueryMessage messageArrived(BeanQuerySinglePropertyMessage message)
             throws CacheException
     {
-        Object o = getBeanProperty(message.getPropertyName());
+        String[] a = message.getPropertyName().split("\\.", 2);
+        String name = a[0];
+        Object o = null;
+        if (_context != null && _context.isSingleton(name) && _context.containsBeanDefinition(name)) {
+            o = _context.getBean(name);
+            if (a.length == 2) {
+                String propertyName = a[1];
+                BeanWrapper bean = new RestrictedBeanWrapper(o);
+                o = bean.isReadableProperty(propertyName)
+                        ? bean.getPropertyValue(propertyName)
+                        : null;
+            }
+        }
         if (o == null) {
             throw new CacheException("No such property");
         }
@@ -795,20 +816,25 @@ public class UniversalSpringCell
         return message;
     }
 
-    private final static Set<Class<?>> PRIMITIVES =
-            Sets.<Class<?>>newHashSet(Byte.class, Byte.TYPE, Short.class, Short.TYPE,
-                    Integer.class, Integer.TYPE, Long.class, Long.TYPE,
-                    Float.class, Float.TYPE, Double.class, Double.TYPE,
-                    Character.class, Character.TYPE, Boolean.class,
-                    Boolean.TYPE, String.class);
-    private final static Set<Class<?>> TERMINALS =
-            Sets.<Class<?>>newHashSet(Class.class);
+    /**
+     * Returns true if {@code clazz} is assignable to any of the classes in {@code classes}, false
+     * otherwise.
+     */
+    private boolean isAssignableTo(Class<?> clazz, Class<?>... classes)
+    {
+        for (Class<?> aClass : classes) {
+            if (aClass.isAssignableFrom(clazz)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private Object serialize(Set<Object> prune, Queue<Map.Entry<String,Object>> queue, Object o)
     {
-        if (o == null || PRIMITIVES.contains(o.getClass())) {
+        if (o == null || PRIMITIVE_TYPES.contains(o.getClass())) {
             return o;
-        } else if (TERMINALS.contains(o.getClass())) {
+        } else if (isAssignableTo(o.getClass(), TERMINAL_TYPES)) {
             return o.toString();
         } else if (o.getClass().isEnum()) {
             return o;
@@ -854,17 +880,15 @@ public class UniversalSpringCell
             prune.add(o);
 
             Map<String,Object> values = Maps.newHashMap();
-            BeanWrapper bean = new BeanWrapperImpl(o);
+            BeanWrapper bean = new RestrictedBeanWrapper(o);
             for (PropertyDescriptor p: bean.getPropertyDescriptors()) {
-                if (!p.isHidden()) {
-                    String property = p.getName();
-                    if (bean.isReadableProperty(property)) {
-                        try {
-                            values.put(property, bean.getPropertyValue(property));
-                        } catch (InvalidPropertyException | PropertyAccessException e) {
-                            LOGGER.debug("Failed to read {} of object of class {}: {}",
-                                    property, o.getClass(), e.getMessage());
-                        }
+                String property = p.getName();
+                if (bean.isReadableProperty(property)) {
+                    try {
+                        values.put(property, bean.getPropertyValue(property));
+                    } catch (InvalidPropertyException | PropertyAccessException e) {
+                        LOGGER.debug("Failed to read {} of object of class {}: {}",
+                                property, o.getClass(), e.getMessage());
                     }
                 }
             }
@@ -1054,5 +1078,77 @@ public class UniversalSpringCell
         }
 
         _context = context;
+    }
+
+    /**
+     * BeanWrapper that restricts access to certain private properties that should not be exposed.
+     */
+    private class RestrictedBeanWrapper extends BeanWrapperImpl
+    {
+        private RestrictedBeanWrapper(Object object)
+        {
+            super(object);
+        }
+
+        private RestrictedBeanWrapper(Object object, String nestedPath, Object rootObject)
+        {
+            super(object, nestedPath, rootObject);
+        }
+
+        @Override
+        protected BeanWrapperImpl getBeanWrapperForPropertyPath(String propertyPath)
+        {
+            int pos = PropertyAccessorUtils.getFirstNestedPropertySeparatorIndex(propertyPath);
+            if (pos > -1) {
+                String nestedProperty = propertyPath.substring(0, pos);
+                if (!isReadableProperty(nestedProperty)) {
+                    throw new NotReadablePropertyException(getRootClass(), nestedProperty);
+                }
+            }
+            return super.getBeanWrapperForPropertyPath(propertyPath);
+        }
+
+        @Override
+        public boolean isReadableProperty(String propertyName)
+        {
+            if (isAllowedName(propertyName)) {
+                PropertyDescriptor pd = getPropertyDescriptorInternal(propertyName);
+                if (pd == null || pd.getReadMethod() != null && !pd.isHidden() && isAllowedType(pd.getPropertyType())) {
+                    try {
+                        Object value = super.getPropertyValue(propertyName);
+                        if (value == null || isAllowedType(value.getClass())) {
+                            return true;
+                        }
+                    } catch (InvalidPropertyException ignored) {
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean isAllowedType(Class<?> clazz)
+        {
+            return !isAssignableTo(clazz, HIDDEN_TYPES);
+        }
+
+        private boolean isAllowedName(String propertyName)
+        {
+            String s = propertyName.toLowerCase();
+            return !s.contains("password") && !s.contains("username");
+        }
+
+        @Override
+        public Object getPropertyValue(String propertyName) throws BeansException
+        {
+            if (!isReadableProperty(propertyName)) {
+                throw new NotReadablePropertyException(getRootClass(), propertyName);
+            }
+            return super.getPropertyValue(propertyName);
+        }
+
+        @Override
+        protected BeanWrapperImpl newNestedBeanWrapper(Object object, String nestedPath) {
+            return new RestrictedBeanWrapper(object, nestedPath, this);
+        }
     }
 }
