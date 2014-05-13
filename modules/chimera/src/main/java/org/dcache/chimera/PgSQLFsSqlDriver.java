@@ -254,7 +254,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
                  * To be compatible with others, throw corresponding
                  * SQL exception.
                  */
-                throw new SQLException("Entry already exists", "2300");
+                throw new SQLException("Entry already exists", DUPLICATE_KEY_ERROR);
             }
 
         } finally {
@@ -288,7 +288,7 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
                  * To be compatible with others, throw corresponding
                  * SQL exception.
                  */
-                throw new SQLException("Entry already exists", "2300");
+                throw new SQLException("Entry already exists", DUPLICATE_KEY_ERROR);
             }
         }
     }
