@@ -397,7 +397,7 @@ public abstract class Request extends Job {
         return configuration;
     }
 
-    public TReturnStatus abort()
+    public TReturnStatus abort(String reason)
     {
         wlock();
         try {
@@ -410,7 +410,7 @@ public abstract class Request extends Job {
              */
             State state = getState();
             if (!state.isFinal()) {
-                setState(State.CANCELED, "Request aborted.");
+                setState(State.CANCELED, reason);
             }
         } catch (IllegalStateTransition e) {
             return new TReturnStatus(TStatusCode.SRM_FAILURE, "Cannot abort request in its current state");

@@ -287,7 +287,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     public abstract String getMethod();
 
     @Override
-    public TReturnStatus abort()
+    public TReturnStatus abort(String reason)
     {
         boolean hasSuccess = false;
         boolean hasFailure = false;
@@ -309,7 +309,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             if (!getState().isFinal()) {
                 for (R file : getFileRequests()) {
                     try {
-                        file.abort();
+                        file.abort(reason);
                         hasSuccess = true;
                     } catch (SRMException | IllegalStateTransition e) {
                         hasFailure = true;

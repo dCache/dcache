@@ -47,7 +47,7 @@ public class SrmAbortRequest
     {
         Request requestToAbort = Request.getRequest(this.request.getRequestToken(), Request.class);
         try (JDC ignored = requestToAbort.applyJdc()) {
-            return new SrmAbortRequestResponse(requestToAbort.abort());
+            return new SrmAbortRequestResponse(requestToAbort.abort("Request aborted by client."));
         }
     }
 
