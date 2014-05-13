@@ -61,6 +61,8 @@ class FsSqlDriver {
      */
     private final static int IOMODE_ENABLE = 1;
     private final static int IOMODE_DISABLE = 0;
+    public static final String DUPLICATE_KEY_ERROR = "23505";
+    public static final String FOREIGN_KEY_ERROR = "23503";
     private final int _ioMode;
 
     /**
@@ -2563,7 +2565,7 @@ class FsSqlDriver {
       * @return true is sqlState is a unique key violation and false other wise
       */
     public boolean isDuplicatedKeyError(String sqlState) {
-        return sqlState.equals("23505");
+        return sqlState.equals(DUPLICATE_KEY_ERROR);
     }
 
     /**
@@ -2572,7 +2574,7 @@ class FsSqlDriver {
      * @return true is sqlState is a foreign key violation and false other wise
      */
     public boolean isForeignKeyError(String sqlState) {
-        return sqlState.equals("23503");
+        return sqlState.equals(FOREIGN_KEY_ERROR);
     }
 
     /**
