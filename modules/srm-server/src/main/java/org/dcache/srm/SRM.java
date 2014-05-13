@@ -631,6 +631,25 @@ public class SRM {
         // create a request object
         try {
             logger.debug("get(): user = " + user);
+            String[] supportedProtocols = storage.supportedGetProtocols();
+            boolean foundMatchedProtocol = false;
+            for (String supportedProtocol : supportedProtocols) {
+                for (String protocol : protocols) {
+                    if (supportedProtocol.equals(protocol)) {
+                        foundMatchedProtocol = true;
+                        break;
+                    }
+                }
+            }
+            if (!foundMatchedProtocol) {
+                StringBuilder errorsb =
+                        new StringBuilder("Protocol(s) specified not supported: [ ");
+                for (String protocol : protocols) {
+                    errorsb.append(protocol).append(' ');
+                }
+                errorsb.append(']');
+                return createFailedRequestStatus(errorsb.toString());
+            }
             URI[] uris = new URI[surls.length];
             for (int i = 0; i < surls.length; i++) {
                 uris[i] = new URI(surls[i]);
@@ -841,6 +860,25 @@ public class SRM {
                 }
             }
 
+            String[] supportedProtocols = storage.supportedPutProtocols();
+            boolean foundMatchedProtocol = false;
+            for (String supportedProtocol : supportedProtocols) {
+                for (String protocol : protocols) {
+                    if (supportedProtocol.equals(protocol)) {
+                        foundMatchedProtocol = true;
+                        break;
+                    }
+                }
+            }
+            if (!foundMatchedProtocol) {
+                StringBuilder errorsb =
+                        new StringBuilder("Protocol(s) specified not supported: [ ");
+                for (String protocol : protocols) {
+                    errorsb.append(protocol).append(' ');
+                }
+                errorsb.append(']');
+                return createFailedRequestStatus(errorsb.toString());
+            }
             // create a new put request
             PutRequest r = new PutRequest(user,
                     credential.getId(),
