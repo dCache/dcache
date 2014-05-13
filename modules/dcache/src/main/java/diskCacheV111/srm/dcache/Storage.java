@@ -768,7 +768,7 @@ public final class Storage
         }
         _log.warn("Cannot find suitable protocol. Client requested one of {}.",
                   Arrays.toString(includes));
-        throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(includes));
+        throw new SRMNotSupportedException("Cannot find suitable transfer protocol.");
     }
 
     private LoginBrokerInfo selectDoor(String[] includes, String[] excludes, DcacheUser user, FsPath path)

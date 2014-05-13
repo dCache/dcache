@@ -94,7 +94,13 @@ public class SrmPrepareToGet
         String[] protocols = getTransferProtocols(request);
         String clientHost = getClientHost(request).or(this.clientHost);
         long lifetime = getLifetime(request, configuration.getGetLifetime());
+        String[] supportedProtocols = storage.supportedGetProtocols();
         URI[] surls = getSurls(request);
+
+        boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
+        if (!isAnyProtocolSupported) {
+            throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
+        }
 
         GetRequest r =
                 new GetRequest(
