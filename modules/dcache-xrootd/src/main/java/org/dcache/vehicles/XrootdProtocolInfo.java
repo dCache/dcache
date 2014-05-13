@@ -68,9 +68,11 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 		return _name + "-" + _major + "." + _minor;
 	}
 
+        @Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getVersionString());
+                sb.append(':');
                 sb.append(_clientSocketAddress.getAddress().getHostAddress());
 		sb.append(":").append(_clientSocketAddress.getPort());
 
