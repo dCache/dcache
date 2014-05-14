@@ -286,14 +286,17 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Override
     public void cleanUp()
     {
+        if (_requests != null) {
+            _requests.shutdown();
+        }
         if (_executor != null) {
             _executor.shutdownNow();
         }
-        if (_dataSource != null) {
-            _dataSource.shutdown();
-        }
         if (_broadcastRegistration != null) {
             _broadcastRegistration.unregister();
+        }
+        if (_dataSource != null) {
+            _dataSource.shutdown();
         }
     }
 
