@@ -1292,7 +1292,7 @@ public class ChimeraNameSpaceProvider
                 uploadDirInode = _fs.path2inode(temporaryDir.getParent().toString());
                 temporaryDirInode = uploadDirInode.inodeOf(temporaryPath.getParent().getName());
             } catch (FileNotFoundHimeraFsException e) {
-                throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
+                throw new FileNotFoundCacheException("No such file or directory: " + temporaryDir, e);
             }
 
             /* Subject must be authorized to cancel the upload.
