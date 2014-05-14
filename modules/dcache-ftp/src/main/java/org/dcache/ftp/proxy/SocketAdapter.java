@@ -135,11 +135,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     private boolean _clientToPool;
 
     /**
-     * The cell used for error logging.
-     */
-    private AbstractCell _door;
-
-    /**
      * Non null if an error has occurred and the transfer has failed.
      */
     private String _error;
@@ -154,11 +149,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * than this are divided into smaller blocks.
      */
     private int _maxBlockSize = 131072;
-
-    /**
-     * Random number generator used when binding sockets.
-     */
-    private static Random _random = new Random();
 
     /**
      * A thread driving the adapter
@@ -768,5 +758,11 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     @Override
     public void start() {
 	_thread.start();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "passiv; " + _dataChannelConnections + " streams created";
     }
 }

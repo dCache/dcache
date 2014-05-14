@@ -1229,6 +1229,26 @@ public abstract class AbstractFtpDoorV1
             setTransfer(null);
             reply(msg);
         }
+
+        public void getInfo(PrintWriter pw)
+        {
+            pw.println( "  Data channel  : " + _mode + "; mode " + _xferMode + "; " + _parallel + " streams");
+            PerfMarkerTask perfMarkerTask = _perfMarkerTask;
+            long size = getLength();
+            if (size > 0) {
+                pw.println("     File size  : " + size);
+            }
+            if (!isWrite() && _size > -1 && _offset > -1) {
+                pw.println("  File segment  : " + _offset + '-' + (_offset + _size));
+            }
+            if (perfMarkerTask != null) {
+                pw.println("   Transferred  : " + perfMarkerTask.getBytesTransferred());
+            }
+            ProxyAdapter adapter = _adapter;
+            if (adapter != null) {
+                pw.println("         Proxy  : " + adapter);
+            }
+        }
     }
 
     protected FtpTransfer _transfer;
@@ -1573,13 +1593,16 @@ public abstract class AbstractFtpDoorV1
     {
         String user = getUser();
         if (user != null) {
-            pw.println( "         User  : " + user);
+            pw.println( "          User  : " + user);
         }
-        pw.println( "    User Host  : " + _clientDataAddress.getAddress().getHostAddress());
-        pw.println( "   Local Host  : " + _local_host);
-        pw.println( " Last Command  : " + _lastCommand);
-        pw.println( " Command Count : " + _commandCounter);
-        pw.println( "     I/O Queue : " + _ioQueueName);
+        pw.println( "    Local Host  : " + _local_host);
+        pw.println( "  Last Command  : " + _lastCommand);
+        pw.println( " Command Count  : " + _commandCounter);
+        pw.println( "     I/O Queue  : " + _ioQueueName);
+        FtpTransfer transfer = _transfer;
+        if (transfer != null) {
+            transfer.getInfo(pw);
+        }
         pw.println(ac_get_door_info(new Args("")));
     }
 
@@ -3940,6 +3963,11 @@ public abstract class AbstractFtpDoorV1
                 LOGGER.error("Performance marker engine: {}",
                         msg.getClass().getName());
             }
+        }
+
+        public long getBytesTransferred()
+        {
+            return _perfMarkersBlock.getBytesTransferred();
         }
     }
 

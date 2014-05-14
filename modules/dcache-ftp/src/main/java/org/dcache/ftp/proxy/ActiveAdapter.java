@@ -694,4 +694,10 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         sc.connect(new InetSocketAddress(host, port));
         return sc;
     }
+
+    @Override
+    public String toString()
+    {
+        return "active -> " + _tgtHost + ":" + _tgtPort + "; " + _streamsCreated + " streams created";
+    }
 }

@@ -151,4 +151,13 @@ public class GFtpPerfMarkersBlock {
         count   = 0;
         markers = null;
     }
+
+    public long getBytesTransferred()
+    {
+        long sum = 0;
+        for (GFtpPerfMarker marker : markers) {
+            sum += marker.getstripeBytesTransferred();
+        }
+        return sum;
+    }
 }

@@ -239,7 +239,7 @@ public class LineBasedDoor
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("    User Host  : " + engine.getInetAddress().getHostAddress());
+        pw.println("     User Host  : " + engine.getInetAddress().getHostAddress());
         if (interpreter instanceof CellInfoProvider) {
             ((CellInfoProvider) interpreter).getInfo(pw);
         }
