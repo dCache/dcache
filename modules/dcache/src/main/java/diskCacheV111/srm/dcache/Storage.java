@@ -169,6 +169,7 @@ import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
@@ -1030,7 +1031,10 @@ public final class Storage
             infoMsg.setResult(0, "");
             infoMsg.setFileSize(msg.getFileAttributes().getSize());
             infoMsg.setStorageInfo(msg.getFileAttributes().getStorageInfo());
-            infoMsg.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+            Origin origin = Subjects.getOrigin(subject);
+            if (origin != null) {
+                infoMsg.setClient(origin.getAddress().getHostAddress());
+            }
             _billingStub.notify(infoMsg);
         } catch (FileNotFoundCacheException e) {
             throw new SRMInvalidPathException(e.getMessage(), e);
@@ -1064,7 +1068,10 @@ public final class Storage
             infoMsg.setTransaction(CDC.getSession());
             infoMsg.setPnfsId(msg.getPnfsId());
             infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, reason);
-            infoMsg.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+            Origin origin = Subjects.getOrigin(subject);
+            if (origin != null) {
+                infoMsg.setClient(origin.getAddress().getHostAddress());
+            }
             _billingStub.notify(infoMsg);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException("Permission denied.", e);
