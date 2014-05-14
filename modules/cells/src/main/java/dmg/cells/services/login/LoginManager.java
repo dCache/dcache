@@ -137,7 +137,7 @@ public class LoginManager
             int listenPort = Integer.parseInt(_args.argv(0));
             String loginCell = _args.argv(1);
 
-            Args childArgs = new Args(argString.replaceFirst("(^|\\s)-export($|\\s)", ""));
+            Args childArgs = new Args(argString.replaceFirst("(^|\\s)-export(=true|=false)?($|\\s)", " "));
             childArgs.shift();
             childArgs.shift();
 
