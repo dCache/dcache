@@ -271,7 +271,7 @@ public class ColumnWriter
         private void render(long value, long factor, char unit, PrintWriter out)
         {
             double tmp = ((double) value) / factor;
-            if (tmp < 9.95) {
+            if (tmp >= 0 && tmp < 9.95) {
                 out.format("%3.1f", tmp).append(unit);
             } else {
                 out.format("%3.0f", tmp).append(unit);
@@ -287,17 +287,18 @@ public class ColumnWriter
                 }
             } else {
                 long value = (long) o;
+                long abs = Math.abs(value);
                 if (!abbrev) {
                     out.format("%" + actualWidth + "d", value);
-                } else if (value >= PETA) {
+                } else if (abs >= PETA) {
                     render(value, PETA, 'P', out);
-                } else if (value >= TERA) {
+                } else if (abs >= TERA) {
                     render(value, TERA, 'T', out);
-                } else if (value >= GIGA) {
+                } else if (abs >= GIGA) {
                     render(value, GIGA, 'G', out);
-                } else if (value >= MEGA) {
+                } else if (abs >= MEGA) {
                     render(value, MEGA, 'M', out);
-                } else if (value >= KILO) {
+                } else if (abs >= KILO) {
                     render(value, KILO, 'k', out);
                 } else {
                     out.format("%3d", value).append('B');
