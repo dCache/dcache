@@ -148,7 +148,7 @@ public class       LoginManager
                              " [args givenToLoginClass]");
          }
 
-          _childArgs = new Args(argString.replaceFirst("(^|\\s)-export($|\\s)", ""));
+          _childArgs = new Args(argString.replaceFirst("(^|\\s)-export(=true|=false)?($|\\s)", " "));
 
          _protocol = args.getOpt("prot") ;
          checkProtocol();
