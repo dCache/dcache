@@ -3,7 +3,9 @@ package org.dcache.services.billing.text;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -16,6 +18,7 @@ import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
 import com.google.common.io.LineProcessor;
 import com.google.common.io.OutputSupplier;
+import com.google.gson.stream.JsonWriter;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.slf4j.Logger;
@@ -33,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.PrintStream;
@@ -49,6 +53,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -99,12 +104,13 @@ public class Indexer
     private final boolean isFlat;
     private final File dir;
 
+    private final DateFormat dateFormat = DateFormat.getDateInstance();
     private final SimpleDateFormat fileNameFormat =
             new SimpleDateFormat("yyyy.MM.dd");
     private final SimpleDateFormat directoryNameFormat =
             new SimpleDateFormat("yyyy" + File.separator + "MM");
 
-    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
+    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException, ParseException
     {
         double fpp = args.getDoubleOption("fpp", 0.01);
 
@@ -113,21 +119,42 @@ public class Indexer
         dir = new File(args.getOption("dir", configuration.getValue(BILLING_TEXT_DIR)));
 
         if (args.hasOption("find")) {
-            boolean shouldOutputFilesNames = args.hasOption("files");
             Collection<String> searchTerms;
             if (args.hasOption("f")) {
                 searchTerms = Files.readLines(new File(args.getOption("f")), Charsets.UTF_8);
-            } else {
+            } else if (args.argc() > 0) {
                 searchTerms = args.getArguments();
+            } else {
+                searchTerms = ImmutableList.of("");
             }
+
             FluentIterable<File> filesWithPossibleMatch =
-                    SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isBillingFileAndMightContain(searchTerms));
-            if (shouldOutputFilesNames) {
+                    SORTED_FILE_TREE_TRAVERSER
+                            .preOrderTraversal(dir);
+            if (args.hasOption("since") || args.hasOption("until")) {
+                Date since = args.hasOption("since") ? dateFormat.parse(args.getOption("since")) : new Date(0);
+                Date until = args.hasOption("until") ? dateFormat.parse(args.getOption("until")) : new Date();
+                filesWithPossibleMatch =
+                        filesWithPossibleMatch.filter(inRange(since, until));
+            }
+            if (searchTerms.contains("")) {
+                filesWithPossibleMatch =
+                        filesWithPossibleMatch.filter(isBillingFile());
+            } else {
+                filesWithPossibleMatch =
+                        filesWithPossibleMatch.filter(isBillingFileAndMightContain(searchTerms));
+            }
+
+            if (args.hasOption("files")) {
                 for (File file : filesWithPossibleMatch) {
                     System.out.println(file);
                 }
+            } else if (args.hasOption("yaml")) {
+                find(searchTerms, filesWithPossibleMatch, toYaml(System.out));
+            } else if (args.hasOption("json")) {
+                find(searchTerms, filesWithPossibleMatch, toJson(System.out));
             } else {
-                find(searchTerms, filesWithPossibleMatch, System.out);
+                find(searchTerms, filesWithPossibleMatch, toText(System.out));
             }
         } else if (args.hasOption("all")) {
             for (File file : SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isFile())) {
@@ -175,10 +202,98 @@ public class Indexer
         }
     }
 
+    private LineProcessor<Void> toText(final PrintStream out)
+    {
+        return new LineProcessor<Void>()
+        {
+            @Override
+            public boolean processLine(String line) throws IOException
+            {
+                out.println(line);
+                return true;
+            }
+
+            @Override
+            public Void getResult()
+            {
+                return null;
+            }
+        };
+    }
+
+    private LineProcessor<Void> toJson(final PrintStream out) throws IOException, URISyntaxException
+    {
+        return new LineProcessor<Void>()
+        {
+            Function<String, Map<String, String>> parser =
+                    new BillingParserBuilder(configuration)
+                            .addAllAttributes()
+                            .buildToMap();
+            JsonWriter writer = new JsonWriter(new OutputStreamWriter(out));
+
+            {
+                writer.setIndent("  ");
+                writer.beginArray();
+            }
+
+            @Override
+            public boolean processLine(String line) throws IOException
+            {
+                writer.beginObject();
+                for (Map.Entry<String, String> entry : parser.apply(line).entrySet()) {
+                    writer.name(entry.getKey()).value(entry.getValue());
+                }
+                writer.endObject();
+                return true;
+            }
+
+            @Override
+            public Void getResult()
+            {
+                try {
+                    writer.endArray();
+                    writer.flush();
+                    out.println();
+                } catch (IOException e) {
+                    Throwables.propagate(e);
+                }
+                return null;
+            }
+        };
+    }
+
+    private LineProcessor<Void> toYaml(final PrintStream out) throws IOException, URISyntaxException
+    {
+        return new LineProcessor<Void>()
+        {
+            Function<String, Map<String, String>> parser =
+                    new BillingParserBuilder(configuration)
+                            .addAllAttributes()
+                            .buildToMap();
+
+            @Override
+            public boolean processLine(String line) throws IOException
+            {
+                String format = "- %-21s %s\n";
+                for (Map.Entry<String, String> entry : parser.apply(line).entrySet()) {
+                    out.printf(format, entry.getKey() + ':', entry.getValue());
+                    format = "  %-21s %s\n";
+                }
+                return true;
+            }
+
+            @Override
+            public Void getResult()
+            {
+                return null;
+            }
+        };
+    }
+
     /**
      * Searches for searchTerm in files and writes any matching lines to out.
      */
-    private void find(final Collection<String> searchTerms, FluentIterable<File> files, PrintStream out)
+    private void find(final Collection<String> searchTerms, FluentIterable<File> files, LineProcessor<Void> out)
             throws IOException
     {
         int threads = Runtime.getRuntime().availableProcessors();
@@ -207,7 +322,7 @@ public class Indexer
                 }
             }
             for (Reader reader : readers) {
-                CharStreams.copy(reader, out);
+                CharStreams.readLines(reader, out);
             }
         } finally {
             executor.shutdown();
@@ -272,13 +387,11 @@ public class Indexer
         out.println("          Compress FILE.");
         out.println("   -decompress FILE...");
         out.println("          Decompress FILE.");
-        out.println("   -find [-files] [-dir=BASE] SEARCHTERM...");
+        out.println("   -find [-files|-json|-yaml] [-dir=BASE] [-since=DATE] [-until=DATE] [-f=FILE] [SEARCHTERM]...");
         out.println("          Output billing entries that contain SEARCHTERM. Valid search terms are");
         out.println("          path, pnfsid, dn and path prefixes of those. Optionally output names");
-        out.println("          of billing files that might contain the search term.");
-        out.println("   -find [-files] [-dir=BASE] -f=FILE");
-        out.println("          Like above, but read search terms from FILE. Each line of the file is");
-        out.println("          treated as a separate seach term.");
+        out.println("          of billing files that might contain the search term. If no search term");
+        out.println("          is provided, all entries are output.");
         out.println("   -index [-fpp=PROP] FILE...");
         out.println("          Create index for FILE.");
         out.println("   -yesterday [-compress] [-fpp=PROP] [-dir=BASE] [-flat=BOOL]");
@@ -384,6 +497,22 @@ public class Indexer
         }
     }
 
+    private Predicate<File> isBillingFile()
+    {
+        return new Predicate<File>()
+        {
+            @Override
+            public boolean apply(File file)
+            {
+                if (!file.isFile()) {
+                    return false;
+                }
+                Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+                return matcher.matches();
+            }
+        };
+    }
+
     private Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
     {
         final List<String> searchTerms =
@@ -416,6 +545,28 @@ public class Indexer
                     if (filter.mightContain(term)) {
                         return true;
                     }
+                }
+                return false;
+            }
+        };
+    }
+
+    private Predicate<? super File> inRange(final Date since, final Date until)
+    {
+        return new Predicate<File>()
+        {
+            @Override
+            public boolean apply(File file)
+            {
+                try {
+                    Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+                    if (matcher.matches()) {
+                        Date date = fileNameFormat.parse(matcher.group(1));
+                        if ((date.equals(since) || date.after(since)) && date.before(until)) {
+                            return true;
+                        }
+                    }
+                } catch (ParseException ignore) {
                 }
                 return false;
             }
@@ -529,7 +680,7 @@ public class Indexer
 
         try {
             new Indexer(new Args(arguments));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ParseException e) {
             System.err.println(e.getMessage());
             System.err.println();
             help(System.err);

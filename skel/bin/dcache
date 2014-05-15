@@ -30,8 +30,7 @@ usage()
     echo "   alarm add    (interactive)"
     echo "   alarm modify (interactive)"
     echo "   alarm remove (interactive)"
-    echo "   billing [-files] <path>|<pnfsid>|<dn>..."
-    echo "   billing [-files] -f=<file>"
+    echo "   billing [--format=raw|files|json|yaml] [--since=DATE] [--until=DATE] [-f=<file>] [<path>|<pnfsid>|<dn>]..."
     echo "   check-config"
     echo "   condrestart [<domain>]..."
     echo "   database ls"
@@ -189,7 +188,7 @@ parseOptions() # $1 = list of valid options
             usage
         fi
 
-        eval "opt_${name}=${value}"
+        eval "opt_${name}=\"${value}\""
 
         shift
         count=$((${count}+1))
@@ -1092,11 +1091,27 @@ case "$1" in
 
     billing)
         shift
-        if [ $# -eq 0 ]; then
-            usage
-        fi
         . ${lib}/billing.sh
-        billing_find ${opt_files:+-files} "$@"
+
+        parseOptions "format since until f" "$@" || shift $?
+
+        case "${opt_format}" in
+            "")
+                billing_find ${opt_f:+-f="${opt_f}"} ${opt_since:+-since="${opt_since}"} ${opt_until:+-until="${opt_until}"} "$@"
+                ;;
+            raw)
+                billing_find ${opt_f:+-f="${opt_f}"} ${opt_since:+-since="${opt_since}"} ${opt_until:+-until="${opt_until}"} "$@"
+                ;;
+            files)
+                billing_find -files ${opt_f:+-f="${opt_f}"} ${opt_since:+-since="${opt_since}"} ${opt_until:+-until="${opt_until}"} "$@"
+                ;;
+            json)
+                billing_find -json ${opt_f:+-f="${opt_f}"} ${opt_since:+-since="${opt_since}"} ${opt_until:+-until="${opt_until}"} "$@"
+                ;;
+            yaml)
+                billing_find -yaml ${opt_f:+-f="${opt_f}"} ${opt_since:+-since="${opt_since}"} ${opt_until:+-until="${opt_until}"} "$@"
+                ;;
+        esac
         ;;
 
     loader)
