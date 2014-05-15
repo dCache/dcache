@@ -193,7 +193,7 @@
     <property name="pinManagerStub" ref="pin-manager-stub"/>
     <property name="billingStub" ref="billing-stub"/>
     <property name="isSpaceManagerEnabled"
-              value="${dcache.enable.space-reservation}"/>
+              value="${srm.enable.space-reservation}"/>
     <property name="loginBrokerUpdatePeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.protocols.loginbroker.period},
