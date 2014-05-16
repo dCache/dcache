@@ -12,6 +12,7 @@ import io.milton.http.HttpManager;
 import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
+import io.milton.servlet.ServletRequest;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
@@ -104,6 +105,8 @@ public class DcacheResourceFactory
 {
     private static final Logger _log =
         LoggerFactory.getLogger(DcacheResourceFactory.class);
+
+    public static final String TRANSACTION_ATTRIBUTE = "org.dcache.transaction";
 
     private static final Set<FileAttribute> REQUIRED_ATTRIBUTES =
         EnumSet.of(TYPE, PNFSID, CREATION_TIME, MODIFICATION_TIME, SIZE,
@@ -1145,6 +1148,9 @@ public class DcacheResourceFactory
             super(pnfs, subject, path);
             initializeTransfer(this, subject);
             _clientAddressForPool = getClientAddress();
+
+            ServletRequest.getRequest().setAttribute(TRANSACTION_ATTRIBUTE,
+                    getTransaction());
         }
 
         protected ProtocolInfo createProtocolInfo(InetSocketAddress address)

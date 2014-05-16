@@ -65,6 +65,8 @@ public class SecurityFilter implements Filter
     private final Logger _log = LoggerFactory.getLogger(SecurityFilter.class);
     private static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";
+    public static final String DCACHE_SUBJECT_ATTRIBUTE =
+            "org.dcache.subject";
 
     private String _realm;
     private boolean _isReadOnly;
@@ -103,6 +105,8 @@ public class SecurityFilter implements Filter
 
             LoginReply login = _loginStrategy.login(subject);
             subject = login.getSubject();
+
+            servletRequest.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, subject);
 
             if (!isAuthorizedMethod(request.getMethod(), login)) {
                 throw new PermissionDeniedCacheException("Permission denied: " +
