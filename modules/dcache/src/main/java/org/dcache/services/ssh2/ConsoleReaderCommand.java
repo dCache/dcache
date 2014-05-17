@@ -169,7 +169,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     private void runAsciiMode() throws IOException {
         while (!_adminShellThread.isInterrupted()) {
-            String prompt = new ANSIBuffer().green(_userAdminShell.getPrompt()).toString(_useColors);
+            String prompt = new ANSIBuffer().bold(_userAdminShell.getPrompt()).toString(_useColors);
             String str = _console.readLine(prompt);
             Object result;
             try {
