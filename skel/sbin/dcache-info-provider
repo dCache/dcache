@@ -131,7 +131,7 @@ case $xsltProcessor in
         #
         t=$(mktemp)
         export XML_CATALOG_FILES="$catalog"
-        xmllint --xinclude $xylophoneXMLFile | grep -v dCache-config > $t
+        xmllint --noent --xinclude $xylophoneXMLFile | grep -v dCache-config > $t
 	"${JAVA}" -classpath "${saxonDir}/*" \
             com.icl.saxon.StyleSheet $t  \
 	    "$xylophoneXSLTFile" xml-src-uri="$uri"
