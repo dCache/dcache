@@ -32,6 +32,7 @@ import dmg.cells.nucleus.CDC;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
+import org.dcache.vehicles.FileAttributes;
 
 /**
  * Abstract base class for all netty servers running on the pool
@@ -223,6 +224,11 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         conditionallyStopServer();
     }
 
+    public FileAttributes getFileAttributes(UUID uuid)
+    {
+        Entry entry = _uuids.get(uuid);
+        return (entry == null) ? null : entry.getFileAttributes();
+    }
 
     public MoverChannel<T> open(UUID uuid, boolean exclusive)
     {
@@ -302,6 +308,11 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
                     _completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
                 }
             }
+        }
+
+        public FileAttributes getFileAttributes()
+        {
+            return _channel.getFileAttributes();
         }
 
         private class Sync

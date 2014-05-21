@@ -1,5 +1,6 @@
 package org.dcache.xrootd.door;
 
+import com.google.common.net.InetAddresses;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -12,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -43,6 +46,7 @@ public class NettyXrootdServer
     private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private FsPath _rootPath;
+    private InetAddress _address;
 
     /**
      * Switch Netty to slf4j for logging.
@@ -61,6 +65,16 @@ public class NettyXrootdServer
     public void setPort(int port)
     {
         _port = port;
+    }
+
+    public String getAddress()
+    {
+        return (_address == null) ? null : _address.toString();
+    }
+
+    public void setAddress(String address) throws UnknownHostException
+    {
+        _address = (address == null) ? null : InetAddresses.forString(address);
     }
 
     public int getBacklog()
@@ -147,6 +161,6 @@ public class NettyXrootdServer
                 }
             });
 
-        bootstrap.bind(new InetSocketAddress(_port));
+        bootstrap.bind(new InetSocketAddress(_address, _port));
     }
 }

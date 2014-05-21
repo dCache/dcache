@@ -17,10 +17,8 @@
  */
 package org.dcache.pool.classic;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +44,7 @@ import org.dcache.cells.CellCommandListener;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.Checksums;
 
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.isEmpty;
@@ -56,19 +55,6 @@ public class ChecksumModuleV1
     extends AbstractCellComponent
     implements CellCommandListener, ChecksumModule
 {
-    private static final Ordering<ChecksumType> PREFERRED_CHECKSUM_TYPE_ORDERING =
-            Ordering.explicit(MD5_TYPE, ADLER32, MD4_TYPE);
-    private static final Ordering<Checksum> PREFERRED_CHECKSUM_ORDERING =
-            PREFERRED_CHECKSUM_TYPE_ORDERING.onResultOf(
-                    new Function<Checksum, ChecksumType>()
-                    {
-                        @Override
-                        public ChecksumType apply(Checksum checksum)
-                        {
-                            return checksum.getType();
-                        }
-                    });
-
     private static final long BYTES_IN_MEBIBYTE = 1024 * 1024;
 
     private final EnumSet<PolicyFlag> _policy = EnumSet.of(ON_TRANSFER, ENFORCE_CRC);
@@ -377,7 +363,7 @@ public class ChecksumModuleV1
     public ChecksumFactory getPreferredChecksumFactory(ReplicaDescriptor handle)
             throws NoSuchAlgorithmException, CacheException
     {
-        List<Checksum> existingChecksumsByPreference = PREFERRED_CHECKSUM_ORDERING.sortedCopy(handle.getChecksums());
+        List<Checksum> existingChecksumsByPreference = Checksums.preferrredOrder().sortedCopy(handle.getChecksums());
         return ChecksumFactory.getFactory(existingChecksumsByPreference, getDefaultChecksumType());
     }
 

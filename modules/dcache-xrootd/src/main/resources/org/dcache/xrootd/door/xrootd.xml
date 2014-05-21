@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
 
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <description>Imported configuration data</description>
     <property name="location" value="arguments:"/>
+  </bean>
+
+  <!-- Convert properties with multiple values separated by comma into an array of strings:
+       key=value1,value2,value3 : String[] {value1, value2, value3}
+    -->
+  <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+      <property name="customEditors">
+          <map>
+              <entry key="java.lang.String[]"
+                     value="org.springframework.beans.propertyeditors.StringArrayPropertyEditor" />
+          </map>
+      </property>
   </bean>
 
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
@@ -103,7 +120,8 @@
   </bean>
 
   <bean id="channel-factory"
-        class="org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory">
+        class="org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory"
+        destroy-method="releaseExternalResources">
     <description>Creates Netty channels</description>
     <constructor-arg ref="accept-thread-pool"/>
     <constructor-arg ref="io-thread-pool"/>
