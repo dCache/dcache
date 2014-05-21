@@ -60,6 +60,7 @@ documents or software obtained from this server.
 package org.dcache.util.backoff;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,6 +139,7 @@ public class BackoffControllerTest {
                         - delays.get(1)));
     }
 
+    @Ignore
     @Test
     public void shouldRetryWithNoBackoff() throws Exception {
         givenFailureSimulatorWithFailFor(3);
