@@ -1,3 +1,20 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.xrootd.door;
 
 import org.jboss.netty.channel.Channel;
@@ -33,11 +50,13 @@ import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.MessageCallback;
+import org.dcache.util.Checksum;
+import org.dcache.util.Checksums;
+import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntries;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
+import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
-import org.dcache.xrootd.core.XrootdRequestHandler;
-import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.DirListResponse;
@@ -45,8 +64,8 @@ import org.dcache.xrootd.protocol.messages.MkDirRequest;
 import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
 import org.dcache.xrootd.protocol.messages.PrepareRequest;
-import org.dcache.xrootd.protocol.messages.ProtocolRequest;
-import org.dcache.xrootd.protocol.messages.ProtocolResponse;
+import org.dcache.xrootd.protocol.messages.QueryRequest;
+import org.dcache.xrootd.protocol.messages.QueryResponse;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.RmDirRequest;
 import org.dcache.xrootd.protocol.messages.RmRequest;
@@ -69,7 +88,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.*;
  * Should possibly be renamed as only open requests are
  * redirected. Other requests can be handled locally.
  */
-public class XrootdRedirectHandler extends XrootdRequestHandler
+public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
 {
     private final static Logger _log =
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
@@ -425,6 +444,52 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
     }
 
     @Override
+    protected Object doOnQuery(ChannelHandlerContext ctx, MessageEvent event, QueryRequest msg) throws XrootdException
+    {
+        switch (msg.getReqcode()) {
+        case kXR_Qconfig:
+            StringBuilder s = new StringBuilder();
+            for (String name: msg.getArgs().split(" ")) {
+                switch (name) {
+                case "bind_max":
+                    s.append(0);
+                    break;
+                case "csname":
+                    s.append("1:ADLER32,2:MD5");
+                    break;
+                case "version":
+                    s.append("dCache ").append(Version.of(XrootdRedirectHandler.class).getVersion());
+                    break;
+                default:
+                    s.append(name);
+                    break;
+                }
+                s.append('\n');
+            }
+            return new QueryResponse(msg, s.toString());
+
+        case kXR_Qcksum:
+            try {
+                Set<Checksum> checksums = _door.getChecksums(createFullPath(msg.getArgs()), msg.getSubject());
+                if (!checksums.isEmpty()) {
+                    Checksum checksum = Checksums.preferrredOrder().min(checksums);
+                    return new QueryResponse(msg, checksum.getType().getName() + " " + checksum.getValue());
+                }
+            } catch (FileNotFoundCacheException e) {
+                throw new XrootdException(kXR_NotFound, e.getMessage());
+            } catch (PermissionDeniedCacheException e) {
+                throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            } catch (CacheException e) {
+                throw new XrootdException(kXR_ServerError, e.getMessage());
+            }
+            throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
+
+        default:
+            return super.doOnQuery(ctx, event, msg);
+        }
+    }
+
+    @Override
     protected AbstractResponseMessage doOnDirList(ChannelHandlerContext context,
                                                   MessageEvent event,
                                                   DirListRequest request)
@@ -453,13 +518,6 @@ public class XrootdRedirectHandler extends XrootdRequestHandler
         throws XrootdException
     {
         return withOk(msg);
-    }
-
-    @Override
-    protected AbstractResponseMessage
-            doOnProtocolRequest(ChannelHandlerContext ctx, MessageEvent event,
-                ProtocolRequest msg) throws XrootdException {
-        return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
     }
 
     private void logDebugOnOpen(OpenRequest req)
