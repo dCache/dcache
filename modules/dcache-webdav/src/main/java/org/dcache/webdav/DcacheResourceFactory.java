@@ -176,6 +176,13 @@ public class DcacheResourceFactory
     private MissingFileStrategy _missingFileStrategy =
         new AlwaysFailMissingFileStrategy();
 
+
+    /*
+      ownCloud magic path
+    */
+    private static final String OC_PREFIX = "/remote.php/webdav";
+    private static final String OC_STATUS = "status.php";
+
     public DcacheResourceFactory()
         throws UnknownHostException
     {
@@ -527,7 +534,17 @@ public class DcacheResourceFactory
         if (_log.isDebugEnabled()) {
             _log.debug("Resolving " + HttpManager.request().getAbsoluteUrl());
         }
-         return getResource(getFullPath(path));
+
+        if (path.endsWith(OC_STATUS)) {
+            return new OwnCloudResource();
+        }
+
+        if (path.contains(OC_PREFIX)) {
+            int i = path.indexOf(OC_PREFIX);
+            String newPath = path.substring(0, i) + path.substring(i + OC_PREFIX.length());
+            return getResource(getFullPath(newPath));
+        }
+        return getResource(getFullPath(path));
     }
 
     /**
