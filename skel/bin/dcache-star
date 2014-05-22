@@ -4,6 +4,7 @@
 #  These records provide storage-usage accounting information.
 #
 import os
+import sys
 import time
 import psycopg2
 import csv
@@ -240,24 +241,25 @@ def open_records_file():
 
 
 def write_records(now):
-    f = open_records_file()
-    try:
+   physical_sums = fetch_physical_record_data()
+   logical_sums, counts = fetch_logical_record_data()
+
+   f = open_records_file()
+   try:
        f.write("<?xml version='1.0' encoding='UTF-8' ?>\n")
        f.write("<sr:StorageUsageRecords xmlns:sr='http://eu-emi.eu/namespaces/2011/02/storagerecord'>\n")
 
-       physical_sums = fetch_physical_record_data()
        for (group, share, media), rcu in physical_sums.items():
           rec_args = createPhysicalRecordArgs(now, share, media, group, now, rcu)
           write_record(f, rec_args)
 
-       logical_sums, counts = fetch_logical_record_data()
        for group, lcu in logical_sums.items():
           count = counts.get(group, 0)
           rec_args = createLogicalRecordArgs(now, group, now, lcu, count, physical_sums)
           write_record(f, rec_args)
 
        f.write("</sr:StorageUsageRecords>\n")
-    finally:
+   finally:
        f.close()
 
 
@@ -271,8 +273,12 @@ def update_last_update(now):
 
 def main():
     now = time.strftime(ISOZ_TIME_FORMAT)
-    write_records(now)
-    update_last_update(now)
+    try:
+        write_records(now)
+        update_last_update(now)
+    except Exception as e:
+        sys.stderr.write("dcache-star: Problem detected: %s" % e.message)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
