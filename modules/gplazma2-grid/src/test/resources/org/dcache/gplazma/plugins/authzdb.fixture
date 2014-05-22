@@ -3,3 +3,4 @@ version 2.2
 authorize behrmann read-write 1000 1000 / /pnfs/dcache-vm/data/  /pnfs/dcache-vm/data/
 authorize atlas-user read-write 1001 1001 / / /
 authorize atlas-prod read-write 1002 1002 / / /
+authorize martinelli read-write 1003 1004,1005 / / /

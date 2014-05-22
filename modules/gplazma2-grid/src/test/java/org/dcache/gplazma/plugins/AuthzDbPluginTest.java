@@ -211,6 +211,17 @@ public class AuthzDbPluginTest
                               new LoginNamePrincipal("behrmann")));
     }
 
+    @Test
+    public void testUserNameMapToMultipleGids()
+        throws AuthenticationException
+    {
+            check(ImmutableSet.of(new UserNamePrincipal("martinelli")),
+                  ImmutableSet.of(new UserNamePrincipal("martinelli"),
+                                  new UidPrincipal(1003),
+                                  new GidPrincipal(1004, true),
+                                  new GidPrincipal(1005, false)));
+    }
+
     @Test(expected=AuthenticationException.class)
     public void testMultipleUserNames()
         throws AuthenticationException
