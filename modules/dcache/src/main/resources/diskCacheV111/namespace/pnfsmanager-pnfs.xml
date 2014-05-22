@@ -25,6 +25,7 @@
       <property name="directoryListLimit" value="${directoryListLimit}"/>
       <property name="permissionHandler" ref="permission-handler"/>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
+      <property name="cacheLocationProvider" ref="basic-provider"/>
       <property name="queueMaxSize" value="${queueMaxSize}"/>
   </bean>
 
