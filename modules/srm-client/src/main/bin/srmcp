@@ -35,6 +35,29 @@ check_protocols() {
 }
 
 skip=0
+
+##  haveSrm is a boolean variable that describes whether either of the
+##  two transfer URLs involved in the transfer uses the 'srm' schema
+##  (i.e., starts 'srm:').  A value of '0' indicates that neither URL
+##  has the 'srm' schema; a value of '1' indicates that at least one
+##  URL has the 'srm' schema.
+haveSrm=0
+
+##  haveRemote is a boolean variable that describes whether one of the
+##  transfers is remote to the SRM endpoint.  If so, the SRM will need
+##  to do a 3rd-party transfer.  A value of '0' indicates that the
+##  transfer is between the client-local machine and the SRM; a value
+##  of '1' indicates that the transfer is (likely) a third-party
+##  transfer.
+haveRemote=0
+
+##  haveDelegate is a boolean variable that describes whether the user
+##  has supplied the '-delegate' option.  A value of '0' indicates the
+##  user is accepting the default value by not specifying the option;
+##  a value of '1' indicates that the user specified the '-delegate'
+##  option.
+haveDelegate=0
+
 i=0
 fargs=
 
@@ -45,10 +68,28 @@ for arg in $args;
 	  skip=1
 	  continue
 	  ;;
-      srm:*|gsiftp:*|gridftp:*|file:*|http:*)
+      srm:*)
+          if [ "$haveSrm" = 0 ]; then
+	      haveSrm=1
+          else
+              haveRemote=1
+          fi
 	  skip=1
 	  continue
 	  ;;
+      file:*)
+	  skip=1
+	  continue
+	  ;;
+      gsiftp:*|gridftp:*|http:*)
+	  haveRemote=1
+	  skip=1
+	  continue
+	  ;;
+      -delegate|-delegate=*)
+          haveDelegate=1
+          continue
+          ;;
       *=*|-*)
 	  continue
 	  ;;
@@ -170,5 +211,8 @@ if [ "${skip}" -eq 0 ]
 	fi
     fi
 else
-    "${SRM_PATH}/lib/srm" -copy $*
+    if [ "$haveSrm" = 1 ] && [ "$haveRemote" = 1 ] && [ "$haveDelegate" = 0 ]; then
+        delegate=-delegate=true
+    fi
+    "${SRM_PATH}/lib/srm" -copy $delegate "$@"
 fi

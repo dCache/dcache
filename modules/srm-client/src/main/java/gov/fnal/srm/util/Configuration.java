@@ -1390,7 +1390,7 @@ public class Configuration {
     @Option(
             name = "delegate",
             description =  "enables delegation of user credenital to the server",
-            defaultValue = "true",
+            defaultValue = "false",
             required=false,
             log=true,
             save=true
