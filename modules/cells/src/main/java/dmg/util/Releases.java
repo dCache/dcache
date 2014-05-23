@@ -21,6 +21,7 @@ package dmg.util;
 
 public abstract class Releases
 {
+    public static final short PRE_2_6      = 0x0205;
     public static final short RELEASE_2_10 = 0x020A;
     public static final short RELEASE_2_11 = 0x020B;
     public static final short RELEASE_2_12 = 0x020C;
@@ -28,6 +29,7 @@ public abstract class Releases
     public static final short RELEASE_2_14 = 0x020E;
     public static final short RELEASE_2_15 = 0x020F;
     public static final short RELEASE_2_16 = 0x0210;
+    public static final short RELEASE_3_0  = 0x0300;
 
     public static short getRelease(String version)
     {

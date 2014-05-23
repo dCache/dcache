@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -157,30 +159,41 @@ public class LocationMgrTunnel
 
     private void handshake() throws IOException
     {
-        try  {
+        try {
             ObjectOutputStream out = new ObjectOutputStream(_rawOut);
             out.writeObject(_localDomainInfo);
             out.flush();
             ObjectInputStream in = new ObjectInputStream(_rawIn);
 
             _remoteDomainInfo = (CellDomainInfo) in.readObject();
-
             if (_remoteDomainInfo == null) {
-                throw new IOException("EOS encountered while reading DomainInfo.");
+                throw new IOException("Remote dCache domain disconnected during handshake.");
             }
-            if (_remoteDomainInfo.getRelease() < Releases.RELEASE_2_16) {
+            short release = _remoteDomainInfo.getRelease();
+            if (release < Releases.RELEASE_2_16) {
                 throw new IOException("Connection from incompatible domain " + _remoteDomainInfo + " rejected.");
+            } else if (release < Releases.RELEASE_3_0) {
+                /* Releases before dCache 3.0 use Java Serialization for CellMessage.
+                 * This branch can be removed in 4.0.
+                 */
+                _log.debug("Using Java serialization for message envelope.");
+                _input = new JavaObjectSource(in);
+                _output = new JavaObjectSink(out);
+            } else {
+                _log.debug("Using raw serialization for message envelope.");
+
+                /* Since dCache 3.0 we use raw encoding of CellMessage.
+                 */
+                _input = new RawObjectSource(_rawIn);
+                _output = new RawObjectSink(_rawOut);
             }
 
             _allowForwardingOfRemoteMessages = (_remoteDomainInfo.getRole() != CellDomainRole.CORE);
 
-            _input = new JavaObjectSource(in);
-            _output = new JavaObjectSink(out);
+            _log.info("Established connection with {}", _remoteDomainInfo);
         } catch (ClassNotFoundException e) {
             throw new IOException("Cannot deserialize object. This is most likely due to a version mismatch.", e);
         }
-
-        _log.debug("Established tunnel to {}", getRemoteDomainName());
     }
 
     @Override
@@ -373,12 +386,45 @@ public class LocationMgrTunnel
              * object DAG at the other end. To avoid that the receiver
              * needs to unnecessarily keep references to previous objects,
              * we reset the stream. Notice that resetting the stream sends
-             * a reset messsage. Hence we reset the stream before flushing
+             * a reset message. Hence we reset the stream before flushing
              * it.
              */
             out.writeObject(message);
             out.reset();
             out.flush();
+        }
+    }
+
+    private static class RawObjectSink implements ObjectSink
+    {
+        private final DataOutputStream out;
+
+        private RawObjectSink(OutputStream out)
+        {
+            this.out = new DataOutputStream(out);
+        }
+
+        @Override
+        public void writeObject(CellMessage message) throws IOException
+        {
+            message.writeTo(out);
+            out.flush();
+        }
+    }
+
+    private static class RawObjectSource implements ObjectSource
+    {
+        private final DataInputStream in;
+
+        private RawObjectSource(InputStream in)
+        {
+            this.in = new DataInputStream(in);
+        }
+
+        @Override
+        public CellMessage readObject() throws IOException, ClassNotFoundException
+        {
+            return CellMessage.createFrom(in);
         }
     }
 }

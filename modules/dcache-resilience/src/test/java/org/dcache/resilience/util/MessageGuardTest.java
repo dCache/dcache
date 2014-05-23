@@ -95,13 +95,13 @@ public final class MessageGuardTest {
         backlogHandler = mock(BackloggedMessageHandler.class);
         guard.setBacklogHandler(backlogHandler);
         handler = new MessageReceiver();
-        msg = mock(CellMessage.class);
+        msg = new CellMessage();
     }
 
     @Test
     public void shouldAcceptMessage() throws Exception {
-        given(msg.getSession()).willReturn(UUID.randomUUID().toString());
-        given(msg.getSourcePath()).willReturn(new CellPath("Foo", "bar"));
+        msg.setSession(UUID.randomUUID().toString());
+        msg.getSourcePath().add(new CellPath("Foo", "bar"));
         givenGuardIsEnabled();
         handler.messageArrived(msg);
 
@@ -110,8 +110,8 @@ public final class MessageGuardTest {
 
     @Test
     public void shouldRejectMessage() throws Exception {
-        given(msg.getSession()).willReturn(MessageGuard.RESILIENCE_ID);
-        given(msg.getSourcePath()).willReturn(new CellPath("Foo", "bar"));
+        msg.setSession(MessageGuard.RESILIENCE_ID);
+        msg.getSourcePath().add(new CellPath("Foo", "bar"));
         givenGuardIsEnabled();
         handler.messageArrived(msg);
 
@@ -120,8 +120,8 @@ public final class MessageGuardTest {
 
     @Test
     public void shouldSaveMessage() throws Exception {
-        given(msg.getSession()).willReturn(UUID.randomUUID().toString());
-        given(msg.getSourcePath()).willReturn(new CellPath("Foo", "bar"));
+        msg.setSession(UUID.randomUUID().toString());
+        msg.getSourcePath().add(new CellPath("Foo", "bar"));
         handler.messageArrived(msg);
 
         assertTrue(Status.DISABLED == guard.getStatus("test", msg));
@@ -130,8 +130,8 @@ public final class MessageGuardTest {
 
     @Test
     public void shouldDropMessage() throws Exception {
-        given(msg.getSession()).willReturn(UUID.randomUUID().toString());
-        given(msg.getSourcePath()).willReturn(new CellPath("Foo", "bar"));
+        msg.setSession(UUID.randomUUID().toString());
+        msg.getSourcePath().add(new CellPath("Foo", "bar"));
         givenGuardIsDisabledWithDropTrue();
         handler.messageArrived(msg);
 

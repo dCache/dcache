@@ -44,7 +44,7 @@ public class CellDomainInfo implements Serializable
 
     public short getRelease()
     {
-        return Releases.getRelease(_version);
+        return _version == null ? Releases.PRE_2_6 : Releases.getRelease(_version);
     }
 
     public String getCellDomainName()

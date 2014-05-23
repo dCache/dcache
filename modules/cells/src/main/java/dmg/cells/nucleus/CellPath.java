@@ -2,6 +2,9 @@ package dmg.cells.nucleus;
 
 import com.google.common.collect.Lists;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -322,5 +325,36 @@ public final class CellPath implements Cloneable, Serializable
     public boolean contains(CellAddressCore address)
     {
         return _list.contains(address);
+    }
+
+    /**
+     * Writes CellPath to a data output stream.
+     *
+     * This is the raw encoding used by tunnels since release 3.0.
+     */
+    public void writeTo(DataOutput out) throws IOException
+    {
+        out.writeInt(_list.size());
+        out.writeInt(_position);
+        for (CellAddressCore cellAddressCore : _list) {
+            out.writeUTF(cellAddressCore.getCellName());
+            out.writeUTF(cellAddressCore.getCellDomainName());
+        }
+    }
+
+    /**
+     * Reads CellPath from a data input stream.
+     *
+     * This is the raw encoding used by tunnels since release 3.0.
+     */
+    public static CellPath createFrom(DataInput in) throws IOException
+    {
+        int len = in.readInt();
+        int position = in.readInt();
+        ArrayList<CellAddressCore> list = new ArrayList<>(len);
+        for (int i = 0; i < len; i++) {
+            list.add(new CellAddressCore(in.readUTF(), in.readUTF().intern()));
+        }
+        return new CellPath(position, list);
     }
 }
