@@ -2372,41 +2372,43 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public synchronized void
         doorTransferArrived( DoorTransferFinishedMessage reply ){
 
-            if( reply.getReturnCode() == 0 ){
+            try {
+                if( reply.getReturnCode() == 0 ){
 
-                long filesize = reply.getFileAttributes().getSize() ;
-                _log.info("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
-                if( _strictSize && ( filesize > 0L ) && (_ioMode.contains("w")) ){
+                    long filesize = reply.getFileAttributes().getSize() ;
+                    _log.info("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
+                    if( _strictSize && ( filesize > 0L ) && (_ioMode.contains("w")) ){
 
-                    for( int count = 0 ; count < 10 ; count++  ){
-                        try{
-                            long fs = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE)).getSize();
-                            _log.info("doorTransferArrived : Size of {}: {}",
-                                      _fileAttributes.getPnfsId(), fs);
-                            if( fs > 0L ) {
-                                break;
+                        for( int count = 0 ; count < 10 ; count++  ){
+                            try{
+                                long fs = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE)).getSize();
+                                _log.info("doorTransferArrived : Size of {}: {}",
+                                          _fileAttributes.getPnfsId(), fs);
+                                if( fs > 0L ) {
+                                    break;
+                                }
+                            }catch(Exception ee ){
+                                _log.error("Problem getting storage info (check) for {}: {}", _fileAttributes.getPnfsId(), ee);
                             }
-                        }catch(Exception ee ){
-                            _log.error("Problem getting storage info (check) for {}: {}", _fileAttributes.getPnfsId(), ee);
-                        }
-                        try{
-                            Thread.sleep(10000L);
-                        }catch(InterruptedException ie ){
-                            break ;
+                            try{
+                                Thread.sleep(10000L);
+                            }catch(InterruptedException ie ){
+                                break ;
+                            }
                         }
                     }
+                    sendReply( "doorTransferArrived" , 0 , "" ) ;
+                }else{
+                    sendReply( "doorTransferArrived" , reply ) ;
                 }
-                sendReply( "doorTransferArrived" , 0 , "" ) ;
-            }else{
-                sendReply( "doorTransferArrived" , reply ) ;
+            }finally {
+                /*
+                 * mover is already gone
+                 */
+                _moverId = null;
+                removeUs() ;
+                setStatus( "<done>" ) ;
             }
-
-            /*
-             * mover is already gone
-             */
-            _moverId = null;
-            removeUs() ;
-            setStatus( "<done>" ) ;
         }
         @Override
         public String toString(){ return "io ["+_pool+"] "+super.toString() ; }
