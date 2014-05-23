@@ -3,6 +3,7 @@ package dmg.cells.nucleus;
 import com.google.common.collect.ComparisonChain;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,17 +24,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /*
  * @Immutable
  */
-public class CellAddressCore implements Cloneable, Serializable, Comparable<CellAddressCore> {
+public final class CellAddressCore implements Cloneable, Serializable, Comparable<CellAddressCore> {
 
     private static final long serialVersionUID = 4072907109959708379L;
 
     private final String _domain;
     private final String _cell;
 
-    /**
-     * while CellAddressCore always used in CellPath, where it stored inside
-     * List, store pre-calculated hashcode;
-     */
+    @Deprecated // Remote in 2.11
     private final int _hashcode;
 
     /**
@@ -111,7 +109,7 @@ public class CellAddressCore implements Cloneable, Serializable, Comparable<Cell
 
     @Override
     public int hashCode() {
-        return _hashcode;
+        return Objects.hash(_cell, _domain);
     }
 
     @Override

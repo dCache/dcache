@@ -29,38 +29,50 @@ import java.util.StringTokenizer;
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-  /*
-  */
-public class CellPath  implements Cloneable , Serializable {
-   private static final long serialVersionUID =  -4922955783102747577L;
+public final class CellPath  implements Cloneable , Serializable
+{
+    private static final long serialVersionUID =  -4922955783102747577L;
 
-   private List<CellAddressCore> _list     = new ArrayList<>() ;
-   private int    _position = -1 ;
+    private final List<CellAddressCore> _list;
+    private int _position = -1;
 
-   protected CellPath(){ /* only subclasses allowed to created 'empty' paths*/}
-   protected CellPath( CellPath addr ){
-      //
-      // this only works because _list contains
-      // immutable objects
-      //
-      _list.addAll(addr._list);
-      _position = addr._position ;
-   }
-   /**
-     *  Creates a CellAddress with an initial path of &lt;path&gt;
-     *
-     *  @param path The initial cell travel path.
-     */
-   public CellPath( String path ){
-      add( path ) ;
-   }
-   public CellPath(CellAddressCore address) {
-       add(address);
-   }
-   public CellPath( String cellName , String domainName ){
-       this(new CellAddressCore( cellName , domainName ) ) ;
-   }
-   public int hops(){ return _list.size() ; }
+    private CellPath(int position, List<CellAddressCore> list)
+    {
+        _position = position;
+        _list = list;
+    }
+
+    protected CellPath(CellPath addr)
+    {
+        this(addr._position, Lists.newArrayList(addr._list));
+    }
+
+    protected CellPath()
+    {
+        this(-1, new ArrayList<CellAddressCore>());
+    }
+
+    public CellPath(String path)
+    {
+        this();
+        add(path);
+    }
+
+    public CellPath(CellAddressCore address)
+    {
+        this();
+        add(address);
+    }
+
+    public CellPath(String cellName, String domainName)
+    {
+        this(new CellAddressCore(cellName, domainName));
+    }
+
+    public int hops()
+    {
+        return _list.size();
+    }
 
    public synchronized void add(CellAddressCore core)
    {
@@ -128,10 +140,8 @@ public class CellPath  implements Cloneable , Serializable {
    }
 
     public synchronized CellPath revert(){
-        CellPath copy = new CellPath();
-        copy._list = Lists.newArrayList(Lists.reverse(_list));
-        copy._position = copy._list.size() == 0 ? -1 : 0 ;
-        return copy;
+        return new CellPath(_list.isEmpty() ? -1 : 0,
+                            Lists.newArrayList(Lists.reverse(_list)));
     }
    public synchronized boolean isFinalDestination(){
       return _position >= ( _list.size() - 1 ) ;
@@ -249,20 +259,7 @@ public class CellPath  implements Cloneable , Serializable {
 
    @Override
    public synchronized int hashCode(){
-       return _list.hashCode();
-   }
-
-   public static void main( String [] args ){
-      CellPath addr = new CellPath() ;
-       for (String arg : args) {
-           addr.add(arg);
-
-       }
-      System.out.println( addr.toFullString() ) ;
-      System.out.println( addr.toString() ) ;
-      while( addr.next() ) {
-          System.out.println(addr.toString());
-      }
+       return (_list.hashCode() * 17) ^ _position;
    }
 
 
