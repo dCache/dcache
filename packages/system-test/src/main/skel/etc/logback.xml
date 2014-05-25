@@ -64,13 +64,13 @@
 
   <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{dd MMM yyyy HH:mm:ss} \(%X{cells.cell}\) [%X{org.dcache.ndc}] %m%n</pattern>
+      <pattern>${dcache.log.format.file}</pattern>
     </encoder>
   </appender>
 
   <appender name="pinboard" class="dmg.util.PinboardAppender">
     <layout>
-      <pattern>[%t] [%X{org.dcache.ndc}] %m</pattern>
+      <pattern>${dcache.log.format.pinboard}</pattern>
     </layout>
   </appender>
 
@@ -166,25 +166,25 @@
     <threshold>
       <appender>stdout</appender>
       <logger>root</logger>
-      <level>warn</level>
+      <level>${dcache.log.level.file}</level>
     </threshold>
 
     <threshold>
       <appender>pinboard</appender>
       <logger>root</logger>
-      <level>info</level>
+      <level>${dcache.log.level.pinboard}</level>
     </threshold>
 
     <threshold>
       <appender>events</appender>
       <logger>org.dcache.events</logger>
-      <level>debug</level>
+      <level>${dcache.log.level.events}</level>
     </threshold>
 
     <threshold>
       <appender>access</appender>
       <logger>org.dcache.access</logger>
-      <level>debug</level>
+      <level>${dcache.log.level.access}</level>
     </threshold>
   </turboFilter>
 </configuration>
