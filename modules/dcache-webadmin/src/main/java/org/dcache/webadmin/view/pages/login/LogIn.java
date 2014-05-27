@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.pages.login;
 
+import org.apache.wicket.Page;
 import org.apache.wicket.Session;
 import org.apache.wicket.authentication.IAuthenticationStrategy;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -13,7 +14,9 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.protocol.https.RequireHttps;
+import org.apache.wicket.request.RequestHandlerStack.ReplaceHandlerException;
 import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +30,7 @@ import org.dcache.webadmin.view.beans.LogInBean;
 import org.dcache.webadmin.view.beans.UserBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
+import org.dcache.webadmin.view.panels.userpanel.UserPanel;
 import org.dcache.webadmin.view.util.DefaultFocusBehaviour;
 
 @RequireHttps
@@ -36,6 +40,8 @@ public class LogIn extends BasePage {
         = "javax.servlet.request.X509Certificate";
     private static final Logger _log = LoggerFactory.getLogger(LogIn.class);
     private static final long serialVersionUID = 8902191632839916396L;
+
+    private Class<? extends Page> returnPage;
 
     private class LogInForm extends StatelessForm {
 
@@ -138,18 +144,47 @@ public class LogIn extends BasePage {
             return getWebadminSession().isSignedIn();
         }
 
+        /**
+         * There seems to be an unresolved issue in the way the base url
+         * is determined for the originating page.  It seems that if the
+         * RestartResponseAtInterceptPageException is thrown
+         * from within a subcomponent of the page, the url
+         * reflects in its query part that subcomponent, and
+         * consequently on redirect after intercept, Wicket attempts
+         * to return to it, generating an Access Denied Page.
+         * <p>
+         * At present I see no other way of maintaining proper intercept-
+         * redirect behavior except via a workaround which defeats
+         * the exception handling mechanism by setting the response page,
+         * determined via the constructor.  Panels using the
+         * intercept exception (for example, {@link UserPanel}) should
+         * set the first page parameter to be the originating page
+         * class name.
+         * <p>
+         * This behavior has been present since Wicket 1.5.
+         * See <a href="http://apache-wicket.1842946.n4.nabble.com/RestartResponseAtInterceptPageException-problem-in-1-5-td4255020.html">RestartAtIntercept problem</a>.
+         */
         private void setGoOnPage() {
             /*
-             * If login has been called because the user was not yetlogged in,
+             * If login has been called because the user was not yet logged in,
              * then continue to the original destination, otherwise to the Home
-             * page
+             * page.
              */
-            continueToOriginalDestination();
+            try {
+                continueToOriginalDestination();
+            } catch (ReplaceHandlerException e) {
+                /*
+                 * Note that #continueToOriginalDestination should use
+                 * this exception to return to the calling page, with
+                 * no exception thrown if this page was not invoked
+                 * as an intercept page.  Hence catching this exception
+                 * is technically incorrect behavior, according to the
+                 * Wicket specification.  But see the documentation
+                 * to this method.
+                 */
+            }
 
-            /*
-             *  if we reach this line there was no intercept page, so go to home page
-             */
-            setResponsePage(getApplication().getHomePage());
+            setResponsePage(returnPage);
         }
 
         private void signIn(LogInBean model, IAuthenticationStrategy strategy)
@@ -183,6 +218,18 @@ public class LogIn extends BasePage {
     }
 
     public LogIn() {
+        super();
+        this.returnPage = getApplication().getHomePage();
+    }
+
+    public LogIn(PageParameters pageParameters) throws ClassNotFoundException {
+        super(pageParameters);
+        this.returnPage = (Class<? extends Page>)BasePage.class.getClassLoader()
+                           .loadClass(pageParameters.get(0).toString());
+    }
+
+    protected void initialize() {
+        super.initialize();
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         add(new Label("dCacheInstanceName",
                         getWebadminApplication().getDcacheName()));
