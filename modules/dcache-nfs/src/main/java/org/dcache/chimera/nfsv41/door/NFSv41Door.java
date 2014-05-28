@@ -450,7 +450,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                     _ioMessages.put(stateid, transfer);
 
-                    PoolDS ds = getPool(transfer, protocolInfo, ioMode);
+                    PoolDS ds = getPool(transfer, ioMode);
                     deviceid = ds.getDeviceId();
                 } else {
                     PoolDS ds = transfer.waitForRedirect(NFS_RETRY_PERIOD);
@@ -494,7 +494,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    private PoolDS getPool(NfsTransfer transfer, NFS4ProtocolInfo protocolInfo, int iomode)
+    private PoolDS getPool(NfsTransfer transfer, int iomode)
             throws InterruptedException, CacheException
     {
 
