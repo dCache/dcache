@@ -1014,19 +1014,6 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        public void setChecksum(Checksum checksum)
-            throws CacheException
-        {
-            if (checksum != null) {
-                setStatus("PnfsManager: Setting checksum");
-                try {
-                    _pnfs.setChecksum(getPnfsId(), checksum);
-                } finally {
-                    setStatus(null);
-                }
-            }
-        }
-
         @Override
         public synchronized void startMover(String queue, long timeout)
             throws CacheException, InterruptedException
@@ -3300,7 +3287,9 @@ public abstract class AbstractFtpDoorV1
 
             transfer.createNameSpaceEntry();
             transfer.createTransactionLog();
-            transfer.setChecksum(_checkSum);
+            if (_checkSum != null) {
+                transfer.setChecksum(_checkSum);
+            }
 
             transfer.createAdapter();
             transfer.selectPoolAndStartMover(_ioQueueName, _writeRetryPolicy);

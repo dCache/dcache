@@ -11,6 +11,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -610,7 +611,9 @@ public class Transfer implements Comparable<Transfer>
                 msg = _pnfs.createPnfsEntry(_path.toString());
             }
 
-            setFileAttributes(msg.getFileAttributes());
+            FileAttributes attrs = msg.getFileAttributes();
+            attrs.setChecksums(new HashSet<Checksum>());
+            setFileAttributes(attrs);
             setWrite(true);
         } finally {
             setStatus(null);
@@ -700,6 +703,29 @@ public class Transfer implements Comparable<Transfer>
             throw new IllegalStateException("Can only set length for uploads");
         }
         _fileAttributes.setSize(length);
+    }
+
+    /**
+     * Sets checksum of the file to be uploaded. Can be called multiple times
+     * with different checksums types. Only valid for uploads.
+     * @param checksum of the file
+     * @throws CacheException if reading the entry failed
+     */
+    public void setChecksum(Checksum checksum) throws CacheException
+    {
+        if (!isWrite()) {
+            throw new IllegalStateException("Can only set checksum for uploads");
+        }
+
+        try {
+            setStatus("PnfsManager: Setting checksum");
+            _pnfs.setChecksum(getPnfsId(), checksum);
+            synchronized(this) {
+                _fileAttributes.getChecksums().add(checksum);
+            }
+        } finally {
+            setStatus(null);
+        }
     }
 
     /**

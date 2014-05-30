@@ -30,6 +30,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.*;
+import java.util.Collections;
 import static java.util.Collections.singleton;
 import static org.dcache.namespace.FileAttribute.*;
 
