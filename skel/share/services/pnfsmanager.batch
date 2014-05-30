@@ -31,4 +31,8 @@ create org.dcache.cells.UniversalSpringCell ${pnfsmanager.cell.name} \
         -cachelocation-threads=0 \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -inheritFileOwnership=${pnfsInheritFileOwnership} \
+        -verifyAllLookups=${pnfsVerifyAllLookups} \
+        -atime.gap=${atime.gap} \
+        -pnfsmanager.ws.port=${pnfsmanager.ws.port} \
        "
