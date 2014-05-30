@@ -381,23 +381,29 @@ public class UniversalSpringCell
     @Override
     public void getInfo(PrintWriter pw)
     {
-        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
-        for (Map.Entry<CellInfoProvider,String> entry: _infoProviders.entrySet()) {
-            CellInfoProvider provider = entry.getKey();
-            String name = entry.getValue();
-            try {
-                BeanDefinition definition = factory.getBeanDefinition(name);
-                String description = definition.getDescription();
-                if (description != null) {
-                    pw.println(String.format("--- %s (%s) ---",
-                                             name, description));
-                } else {
-                    pw.println(String.format("--- %s ---", name));
+        /* getInfo is called during cell initialization, but the context isn't fully
+         * initialized until cell initialization is done.
+         */
+        ConfigurableApplicationContext context = _context;
+        if (context != null) {
+            ConfigurableListableBeanFactory factory = context.getBeanFactory();
+            for (Map.Entry<CellInfoProvider, String> entry : _infoProviders.entrySet()) {
+                CellInfoProvider provider = entry.getKey();
+                String name = entry.getValue();
+                try {
+                    BeanDefinition definition = factory.getBeanDefinition(name);
+                    String description = definition.getDescription();
+                    if (description != null) {
+                        pw.println(String.format("--- %s (%s) ---",
+                                                 name, description));
+                    } else {
+                        pw.println(String.format("--- %s ---", name));
+                    }
+                    provider.getInfo(pw);
+                    pw.println();
+                } catch (NoSuchBeanDefinitionException e) {
+                    LOGGER.error("Failed to query bean definition for {}", name);
                 }
-                provider.getInfo(pw);
-                pw.println();
-            } catch (NoSuchBeanDefinitionException e) {
-                LOGGER.error("Failed to query bean definition for {}", name);
             }
         }
     }
