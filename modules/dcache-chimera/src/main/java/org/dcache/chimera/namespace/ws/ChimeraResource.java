@@ -51,15 +51,15 @@ public class ChimeraResource {
         for (String s : splitter.split(asFile.getParent())) {
             root = root + "/" + s;
             try {
-                nameSpaceProvider.createEntry(Subjects.ROOT, root, 0, 0, 0700, true);
+                nameSpaceProvider.createDirectory(Subjects.ROOT, root, 0, 0, 0700);
             } catch (FileExistsCacheException e) {
                 // OK
             }
         }
 
         root = root + "/" + asFile.getName();
-        PnfsId id = nameSpaceProvider.createEntry(Subjects.ROOT, root, Integer.parseInt(uid),
-                Integer.parseInt(gid), 0700, true);
+        PnfsId id = nameSpaceProvider.createDirectory(Subjects.ROOT, root, Integer.parseInt(uid),
+                Integer.parseInt(gid), 0700);
         return "OK: " + id;
     }
 
