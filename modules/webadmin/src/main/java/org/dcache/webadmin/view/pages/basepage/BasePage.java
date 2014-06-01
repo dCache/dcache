@@ -5,6 +5,7 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +28,22 @@ public class BasePage extends WebPage {
     private static final Logger _log = LoggerFactory.getLogger(BasePage.class);
 
     public BasePage() {
+        initialize();
+    }
+
+    public BasePage(PageParameters parameters) {
+        super(parameters);
+        initialize();
+    }
+
+    protected void initialize() {
         setTimeout();
         setTitle(getStringResource("title"));
         add(new Label("pageTitle", new PropertyModel<String>(this, "_title")));
         add(new HeaderPanel("headerPanel"));
-        add(new UserPanel("userPanel"));
+        add(new UserPanel("userPanel", this));
         BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
-                this.getClass());
+                                this.getClass());
         add(navigation);
     }
 
