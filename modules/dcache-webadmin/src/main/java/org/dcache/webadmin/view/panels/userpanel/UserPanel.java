@@ -5,8 +5,10 @@ import org.apache.wicket.Session;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
+import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
 import org.dcache.webadmin.view.pages.login.LogIn;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
@@ -24,9 +26,12 @@ public class UserPanel extends BasePanel {
 
     private static final long serialVersionUID = -4419358909048041100L;
 
-    public UserPanel(String id) {
-
+    public UserPanel(String id, BasePage basePage) {
         super(id);
+
+        final PageParameters parameters = new PageParameters();
+        parameters.set(0, basePage.getClass().getName());
+
         add(new Label("username", new PropertyModel(this, "session.userName")));
         add(new Link("logout") {
 
@@ -52,8 +57,8 @@ public class UserPanel extends BasePanel {
 
             @Override
             public void onClick() {
-                throw new RestartResponseAtInterceptPageException(
-                        LogIn.class);
+                throw new RestartResponseAtInterceptPageException(LogIn.class,
+                                                                  parameters);
             }
 
             @Override
