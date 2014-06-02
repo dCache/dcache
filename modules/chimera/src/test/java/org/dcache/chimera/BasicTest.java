@@ -21,6 +21,8 @@ import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.Assert.*;
@@ -602,26 +604,26 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testUpdateChecksum() throws Exception {
-        String sum = "asum";
+        String sum = "abc";
 
         FsInode base = _rootInode.mkdir("junit");
         FsInode fileInode = base.create("testCreateFile", 0, 0, 0644);
         _fs.setInodeChecksum(fileInode, 1, sum);
-        assertEquals("Checksum set/get miss match", sum, _fs.getInodeChecksum(fileInode, 1));
+        assertHasChecksum(new Checksum(ChecksumType.getChecksumType(1), sum), fileInode);
     }
 
     @Ignore("Functionality not yet written, but desired")
     @Test
     public void testUpdateChecksumDifferTypes() throws Exception {
-        String sum1 = "asum1";
-        String sum2 = "asum2";
+        String sum1 = "abc1";
+        String sum2 = "abc2";
 
         FsInode base = _rootInode.mkdir("junit");
         FsInode fileInode = base.create("testCreateFile", 0, 0, 0644);
         _fs.setInodeChecksum(fileInode, 1, sum1);
         _fs.setInodeChecksum(fileInode, 2, sum2);
-        assertEquals("Checksum set/get miss match", sum1, _fs.getInodeChecksum(fileInode, 1));
-        assertEquals("Checksum set/get miss match", sum2, _fs.getInodeChecksum(fileInode, 2));
+        assertHasChecksum(new Checksum(ChecksumType.getChecksumType(1), sum1), fileInode);
+        assertHasChecksum(new Checksum(ChecksumType.getChecksumType(2), sum2), fileInode);
     }
 
     @Test
@@ -1020,5 +1022,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         assertTrue(newId.length < oldId.length);
         assertEquals(inodeWithOldId, inodeWithNewId);
+    }
+
+    private void assertHasChecksum(Checksum expectedChecksum, FsInode inode) throws Exception {
+        for(Checksum checksum: _fs.getInodeChecksums(inode)) {
+            if (checksum.equals(expectedChecksum)) {
+                return;
+            }
+        }
+        fail("No checksums");
     }
 }

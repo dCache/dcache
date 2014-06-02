@@ -160,11 +160,8 @@ public class Checksum
         {
             FsInode inode = getFileInode();
 
-            for(ChecksumType type : ChecksumType.values()) {
-                String checksum = _fs.getInodeChecksum(inode, type.getType());
-                if (checksum != null) {
-                    System.out.println(type.getName() + ":" + checksum);
-                }
+            for(org.dcache.util.Checksum checksum : _fs.getInodeChecksums(inode)) {
+                    System.out.println(checksum.getType().getName() + ":" + checksum.getValue());
             }
         }
     }
@@ -183,13 +180,15 @@ public class Checksum
             ChecksumType type = ChecksumType.getChecksumType(_args[0]);
 
             FsInode inode = getFileInode();
-            String checksum = _fs.getInodeChecksum(inode, type.getType());
 
-            if (checksum == null) {
-                System.out.println("No checksum of type " + type.getName());
-            } else {
-                System.out.println(checksum);
+            for(org.dcache.util.Checksum checksum: _fs.getInodeChecksums(inode)) {
+                if (checksum.getType() == type) {
+                    System.out.println(checksum.getValue());
+                    return;
+                }
             }
+
+            System.out.println("No checksum of type " + type.getName());
         }
     }
 

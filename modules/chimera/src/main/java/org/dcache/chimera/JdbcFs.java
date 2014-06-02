@@ -2633,32 +2633,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public String getInodeChecksum(FsInode inode, int type) throws ChimeraFsException {
-        String checkSum = null;
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            dbConnection.setAutoCommit(true);
-
-            checkSum = _sqlDriver.getInodeChecksum(dbConnection, inode, type);
-
-        } catch (SQLException e) {
-            _log.error("getInodeChecksum", e);
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-        return checkSum;
-    }
-
-    @Override
     public Set<Checksum> getInodeChecksums(FsInode inode) throws ChimeraFsException {
         Set<Checksum> checkSums = new HashSet<>();
         Connection dbConnection;

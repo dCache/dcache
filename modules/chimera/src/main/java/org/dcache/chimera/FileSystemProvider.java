@@ -315,9 +315,6 @@ public interface FileSystemProvider extends Closeable {
     public abstract void removeInodeChecksum(FsInode inode, int type)
             throws ChimeraFsException;
 
-    public abstract String getInodeChecksum(FsInode inode, int type)
-            throws ChimeraFsException;
-
     public abstract Set<Checksum> getInodeChecksums(FsInode inode)
                     throws ChimeraFsException;
 

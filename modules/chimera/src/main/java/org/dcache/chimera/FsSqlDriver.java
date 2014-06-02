@@ -2405,44 +2405,7 @@ class FsSqlDriver {
         }
 
     }
-    private static final String sqlGetInodeChecksum = "SELECT isum FROM t_inodes_checksum WHERE ipnfsid=? AND itype=?";
 
-    /**
-     *
-     * @param dbConnection
-     * @param inode
-     * @param type
-     * @return HEX presentation of the checksum value for the specific file and checksum type or null
-     * @throws SQLException
-     */
-    String getInodeChecksum(Connection dbConnection, FsInode inode, int type) throws SQLException {
-
-
-        String checksum = null;
-
-        PreparedStatement stGetInodeChecksum = null;
-        ResultSet getGetInodeChecksumResultSet = null;
-
-        try {
-
-            stGetInodeChecksum = dbConnection.prepareStatement(sqlGetInodeChecksum);
-            stGetInodeChecksum.setString(1, inode.toString());
-            stGetInodeChecksum.setInt(2, type);
-
-            getGetInodeChecksumResultSet = stGetInodeChecksum.executeQuery();
-
-            if (getGetInodeChecksumResultSet.next()) {
-                checksum = getGetInodeChecksumResultSet.getString("isum");
-            }
-
-        } finally {
-            SqlHelper.tryToClose(getGetInodeChecksumResultSet);
-            SqlHelper.tryToClose(stGetInodeChecksum);
-        }
-
-        return checksum;
-
-    }
     private static final String sqlGetInodeChecksums = "SELECT isum, itype FROM t_inodes_checksum WHERE ipnfsid=?";
     /**
      *
