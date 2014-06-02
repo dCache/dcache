@@ -44,7 +44,6 @@ import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
-import org.dcache.util.ChecksumType;
 
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
@@ -166,14 +165,7 @@ public class ExtendedInode extends FsInode
     public ImmutableCollection<Checksum> getChecksums() throws ChimeraFsException
     {
         if (checksums == null) {
-            ImmutableList.Builder<Checksum> builder = ImmutableList.builder();
-            for (ChecksumType type: ChecksumType.values()) {
-                String value = _fs.getInodeChecksum(this, type.getType());
-                if (value != null) {
-                    builder.add(new Checksum(type, value));
-                }
-            }
-            checksums = builder.build();
+            checksums = ImmutableList.copyOf(_fs.getInodeChecksums(this));
         }
         return checksums;
     }
