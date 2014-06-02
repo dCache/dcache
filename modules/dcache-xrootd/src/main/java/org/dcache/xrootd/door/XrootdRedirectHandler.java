@@ -17,6 +17,7 @@
  */
 package org.dcache.xrootd.door;
 
+import com.google.common.net.InetAddresses;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -222,7 +223,10 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             InetSocketAddress address = transfer.getRedirect();
             _log.info("Redirecting to {}", address);
 
-            return new RedirectResponse(req, address.getHostString(), address.getPort(), opaque, "");
+            /* xrootd developers say that IPv6 addresses must always be URI quoted.
+             * The spec doesn't require this, but clients depend on it.
+             */
+            return new RedirectResponse(req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, "");
         } catch (FileNotFoundCacheException e) {
             throw new XrootdException(kXR_NotFound, "No such file");
         } catch (FileExistsCacheException e) {
