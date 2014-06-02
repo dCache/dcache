@@ -9,8 +9,12 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnresolvedAddressException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.dcache.pool.repository.RepositoryChannel;
 
@@ -62,6 +66,9 @@ public abstract class Mode extends AbstractMultiplexerListener
 
     /** Number of connections that have been closed. */
     protected int               _closed;
+
+    /** Remote addresses of data channels connected by this class. */
+    private final Set<InetSocketAddress> _remoteAddresses = new HashSet<>();
 
     /** Constructs a new mode for outgoing connections. */
     public Mode(Role role, RepositoryChannel file, ConnectionMonitor monitor)
@@ -154,6 +161,12 @@ public abstract class Mode extends AbstractMultiplexerListener
     public long getSize()
     {
         return _size;
+    }
+
+    /** Returns the remote addresses the mode connected with. */
+    public Collection<InetSocketAddress> getRemoteAddresses()
+    {
+        return Collections.unmodifiableCollection(_remoteAddresses);
     }
 
     /**
@@ -358,6 +371,7 @@ public abstract class Mode extends AbstractMultiplexerListener
             Socket socket = channel.socket();
             _opened++;
             multiplexer.say("Opened " + socket);
+            _remoteAddresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
             channel.configureBlocking(false);
             if (_bufferSize > 0) {
                 channel.socket().setSendBufferSize(_bufferSize);
@@ -386,6 +400,7 @@ public abstract class Mode extends AbstractMultiplexerListener
                 Socket socket = channel.socket();
                 _opened++;
                 multiplexer.say("Opened " + socket);
+                _remoteAddresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
                 newConnection(multiplexer, channel);
             }
         } catch (IOException e) {

@@ -216,15 +216,19 @@
   </bean>
 
   <bean id="workerThreadPool"
-        class="java.util.concurrent.Executors"
-        factory-method="newScheduledThreadPool"
-        destroy-method="shutdown">
-    <description>Thread pool for background tasks</description>
-    <constructor-arg value="${pool.limits.worker-threads}"/>
-    <property name="executeExistingDelayedTasksAfterShutdownPolicy"
-              value="false"/>
-    <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
-              value="false"/>
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
+      <description>Thread pool for background tasks</description>
+      <constructor-arg>
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newScheduledThreadPool"
+                destroy-method="shutdown">
+              <constructor-arg value="${pool.limits.worker-threads}"/>
+              <property name="executeExistingDelayedTasksAfterShutdownPolicy"
+                        value="false"/>
+              <property name="continueExistingPeriodicTasksAfterShutdownPolicy"
+                        value="false"/>
+          </bean>
+      </constructor-arg>
   </bean>
 
   <bean id="messageThreadPool"

@@ -7,11 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,13 +32,8 @@ public class SequentialExecutor extends AbstractExecutorService
         }
     };
 
-    private final RunnableFuture<Void> worker =
-            new FutureTask<Void>(new Worker()) {
-                public void run()
-                {
-                    runAndReset();
-                }
-            };
+    private final Worker worker = new Worker();
+    private Thread thread;
     private boolean isShutdown;
     private boolean isRunning;
 
@@ -70,9 +62,9 @@ public class SequentialExecutor extends AbstractExecutorService
             List<Runnable> unexecutedTasks = new ArrayList<>();
             unexecutedTasks.addAll(tasks);
             tasks.clear();
-
-            // Kill runnable
-
+            if (thread != null) {
+                thread.interrupt();
+            }
             return unexecutedTasks;
         } finally {
             monitor.leave();
@@ -132,35 +124,52 @@ public class SequentialExecutor extends AbstractExecutorService
             }
             tasks.add(task);
             if (!isRunning) {
-                isRunning = true;
                 executor.execute(worker);
+                isRunning = true;
             }
         } finally {
             monitor.leave();
         }
     }
 
-    private Runnable getTask()
+    private class Worker implements Runnable
     {
-        monitor.enter();
-        try {
-            if (tasks.isEmpty()) {
-                isRunning = false;
-                return null;
-            } else {
-                return tasks.remove();
-            }
-        } finally {
-            monitor.leave();
-        }
-    }
-
-    private class Worker implements Callable<Void>
-    {
-        @Override
-        public Void call()
+        private Runnable getFirstTask()
         {
-            Runnable task = getTask();
+            monitor.enter();
+            try {
+                if (tasks.isEmpty()) {
+                    isRunning = false;
+                    return null;
+                } else {
+                    thread = Thread.currentThread();
+                    return tasks.remove();
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        private Runnable getNextTask()
+        {
+            monitor.enter();
+            try {
+                if (tasks.isEmpty()) {
+                    isRunning = false;
+                    thread = null;
+                    return null;
+                } else {
+                    return tasks.remove();
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        @Override
+        public void run()
+        {
+            Runnable task = getFirstTask();
             while (task != null) {
                 try {
                     task.run();
@@ -168,9 +177,8 @@ public class SequentialExecutor extends AbstractExecutorService
                     Thread thread = Thread.currentThread();
                     thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
                 }
-                task = getTask();
+                task = getNextTask();
             }
-            return null;
         }
     }
 }

@@ -256,6 +256,10 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
         return _checksumType;
     }
 
+    public void setSocketAddress(InetSocketAddress address) {
+        _addr = address;
+    }
+
     @Override
     public InetSocketAddress getSocketAddress() {
         return _addr;

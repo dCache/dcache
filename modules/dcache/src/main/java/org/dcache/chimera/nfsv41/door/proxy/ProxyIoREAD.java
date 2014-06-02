@@ -8,9 +8,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
+import dmg.cells.nucleus.CDC;
+
+import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
@@ -20,6 +24,7 @@ import org.dcache.nfs.v4.OperationREAD;
 import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.xdr.READ4res;
 import org.dcache.nfs.v4.xdr.READ4resok;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
@@ -32,6 +37,10 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     private static final Logger _log = LoggerFactory.getLogger(ProxyIoREAD.class.getName());
     private final DcapProxyIoFactory proxyIoFactory;
 
+    // FIXME: this should be imported form org.dcache.nfs.v4.Stateids
+    private final static stateid4 ZERO_STATEID
+	    = new stateid4(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0);
+
     public ProxyIoREAD(nfs_argop4 args, DcapProxyIoFactory proxyIoFactory) {
         super(args, nfs_opnum4.OP_READ);
         this.proxyIoFactory = proxyIoFactory;
@@ -41,8 +50,9 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final READ4res res = result.opread;
 
+        CDC cdc = CDC.reset(proxyIoFactory.getCellName(), proxyIoFactory.getCellDomainName());
         try {
-
+	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
             if (!context.getFs().hasIOLayout(inode)) {
                 /*
@@ -56,9 +66,30 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
             int count = _args.opread.count.value.value;
             stateid4 stateid = _args.opread.stateid;
 
-            ProxyIoAdapter proxyIoAdapter = getOrCreateProxy(inode, stateid, context);
-            ByteBuffer bb = ByteBuffer.allocate(count);
-            int bytesReaded = proxyIoAdapter.read(bb, offset);
+	    int bytesReaded;
+	    boolean stateLess = isStateLess(stateid);
+	    ProxyIoAdapter proxyIoAdapter;
+	    ByteBuffer bb = ByteBuffer.allocate(count);
+	    if (stateLess) {
+
+		/*
+		 * As there was no open, we have to check  permissions.
+		 */
+		if (context.getFs().access(inode, nfs4_prot.ACCESS4_READ) == 0) {
+		    throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
+		}
+
+		/*
+		 * use try-with-resource as wee need to close adapter on each request
+		 */
+		try (ProxyIoAdapter oneUseProxyIoAdapter = createIoAdapter(inode, context)) {
+		    proxyIoAdapter = oneUseProxyIoAdapter;
+		    bytesReaded = oneUseProxyIoAdapter.read(bb, offset);
+		}
+	    } else {
+		proxyIoAdapter = getOrCreateProxy(inode, stateid, context);
+		bytesReaded = proxyIoAdapter.read(bb, offset);
+	    }
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
@@ -79,6 +110,8 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
         }catch(Exception e) {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
+        } finally {
+            cdc.close();
         }
     }
 
@@ -90,21 +123,14 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 
                         @Override
                         public ProxyIoAdapter call() throws Exception {
-                            final RpcCall call = context.getRpcCall();
                             final NFS4State state = context.getStateHandler().getClientIdByStateId(stateid).state(stateid);
-
-                            final ProxyIoAdapter adapter = proxyIoFactory.getAdapter(inode, call.getCredential().getSubject(),
-                                    call.getTransport().getRemoteSocketAddress());
+                            final ProxyIoAdapter adapter = createIoAdapter(inode, context);
 
                             state.addDisposeListener( new StateDisposeListener() {
 
                                 @Override
                                 public void notifyDisposed(NFS4State state) {
-                                    try {
-                                        adapter.close();
-                                    }catch (IOException e) {
-                                        _log.error("failed fo close io adapter: ", e.getMessage());
-                                    }
+				    tryToClose(adapter);
                                     _prioxyIO.invalidate(state.stateid());
                                 }
                             });
@@ -121,11 +147,36 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                 throw (ChimeraNFSException)t;
             }
             int status = nfsstat.NFSERR_IO;
-            if (t instanceof CacheException ) {
+            if ((t instanceof CacheException) && ((CacheException)t).getRc() != CacheException.BROKEN_ON_TAPE) {
                 status = nfsstat.NFSERR_DELAY;
             }
             throw new ChimeraNFSException(status, t.getMessage());
         }
+    }
+
+    private boolean isStateLess(stateid4 stateid) {
+	/*
+	 * As stateid4#equals() does not check seqid,
+	 * we need a special equality check
+	 */
+	return stateid.seqid.value == ZERO_STATEID.seqid.value  &&
+		Arrays.equals(stateid.other, ZERO_STATEID.other);
+    }
+
+    private ProxyIoAdapter createIoAdapter(final Inode inode, final CompoundContext context)
+	    throws CacheException, InterruptedException, IOException {
+
+	RpcCall call = context.getRpcCall();
+	return proxyIoFactory.getAdapter(inode, call.getCredential().getSubject(),
+		call.getTransport().getRemoteSocketAddress());
+    }
+
+    private static void tryToClose(ProxyIoAdapter adapter) {
+	try {
+	    adapter.close();
+	} catch (IOException e) {
+	    _log.error("failed fo close io adapter: ", e.getMessage());
+	}
     }
 
     private static final Cache<stateid4, ProxyIoAdapter> _prioxyIO=

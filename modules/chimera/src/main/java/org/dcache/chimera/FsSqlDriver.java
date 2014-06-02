@@ -64,6 +64,8 @@ class FsSqlDriver {
      */
     private final static int IOMODE_ENABLE = 1;
     private final static int IOMODE_DISABLE = 0;
+    public static final String DUPLICATE_KEY_ERROR = "23505";
+    public static final String FOREIGN_KEY_ERROR = "23503";
     private final int _ioMode;
 
     /**
@@ -463,21 +465,7 @@ class FsSqlDriver {
 
         try {
 
-            FsInode destInode = inodeOf(dbConnection, destDir, dest);
             FsInode srcInode = inodeOf(dbConnection, srcDir, source);
-
-            if (destInode != null) {
-
-                if (destInode.equals(srcInode)) {
-                    // according to POSIX, we are done
-                    return;
-                }
-
-                // remove old entry if exist
-                remove(dbConnection, destDir, dest);
-            }
-            incNlink(dbConnection, destDir);
-
             stMove = dbConnection.prepareStatement(sqlMove);
 
             stMove.setString(1, destDir.toString());
@@ -496,8 +484,6 @@ class FsSqlDriver {
                 stParentMove.setString(2, srcInode.toString());
                 stParentMove.executeUpdate();
             }
-
-            decNlink(dbConnection, srcDir);
 
         } finally {
             SqlHelper.tryToClose(stMove);
@@ -1048,29 +1034,12 @@ class FsSqlDriver {
 
         try {
 
-            FsInode destInode = inodeOf(dbConnection, dir, newName);
-            FsInode srcInode = inodeOf(dbConnection, dir, oldName);
-
-            if (destInode != null) {
-
-                if (destInode.equals(srcInode)) {
-                    // according to POSIX, we are done
-                    return;
-                }
-
-                // remove old entry if exist
-                remove(dbConnection, dir, newName);
-            }
-
             ps = dbConnection.prepareStatement(sqlSetFileName);
 
             ps.setString(1, newName);
             ps.setString(2, oldName);
             ps.setString(3, dir.toString());
             ps.executeUpdate();
-
-            // update parent modification time
-            setFileMTime(dbConnection, dir, 0, System.currentTimeMillis());
 
         } finally {
             SqlHelper.tryToClose(ps);
@@ -2633,7 +2602,7 @@ class FsSqlDriver {
       * @return true is sqlState is a unique key violation and false other wise
       */
     public boolean isDuplicatedKeyError(String sqlState) {
-        return sqlState.equals("23505");
+        return sqlState.equals(DUPLICATE_KEY_ERROR);
     }
 
     /**
@@ -2642,7 +2611,7 @@ class FsSqlDriver {
      * @return true is sqlState is a foreign key violation and false other wise
      */
     public boolean isForeignKeyError(String sqlState) {
-        return sqlState.equals("23503");
+        return sqlState.equals(FOREIGN_KEY_ERROR);
     }
 
     /**

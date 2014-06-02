@@ -24,6 +24,7 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 
 import dmg.util.Args;
 
@@ -418,15 +419,14 @@ public class CacheRepositoryV5
                                    Set<OpenFlags> flags)
         throws FileInCacheException
     {
+        if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
+            throw new IllegalArgumentException("PNFSID and STORAGEINFO are required, only got " + fileAttributes.getDefinedAttributes());
+        }
+        if (stickyRecords == null) {
+            throw new IllegalArgumentException("List of sticky records must not be null");
+        }
+        PnfsId id = fileAttributes.getPnfsId();
         try {
-            if (!fileAttributes.isDefined(EnumSet.of(PNFSID, STORAGEINFO))) {
-                throw new IllegalArgumentException("StorageInfo must not be null");
-            }
-
-            if (stickyRecords == null) {
-                throw new IllegalArgumentException("List of sticky records must not be null");
-            }
-
             assertOpen();
 
             switch (transferState) {
@@ -446,7 +446,7 @@ public class CacheRepositoryV5
                 throw new IllegalArgumentException("Invalid target state");
             }
 
-            MetaDataRecord entry = _store.create(fileAttributes.getPnfsId());
+            MetaDataRecord entry = _store.create(id);
             synchronized (entry) {
                 entry.setFileAttributes(fileAttributes);
                 setState(entry, transferState);
@@ -455,7 +455,11 @@ public class CacheRepositoryV5
                         this, _allocator, _pnfs, entry, fileAttributes, targetState, stickyRecords, flags);
             }
         } catch (DuplicateEntryException e) {
-            throw new FileInCacheException("Entry already exists: " + fileAttributes.getPnfsId());
+            /* Somebody got the idea that we don't have the file, so we make
+             * sure to register it.
+             */
+            _pnfs.notify(new PnfsAddCacheLocationMessage(id, getPoolName()));
+            throw new FileInCacheException("Entry already exists: " + id);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);

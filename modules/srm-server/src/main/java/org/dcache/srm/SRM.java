@@ -916,7 +916,7 @@ public class SRM {
             int requestId, int fileRequestId, String state) {
         try {
             logger.debug(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
-            if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running")) {
+            if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running") && !state.equalsIgnoreCase("failed")) {
                 return createFailedRequestStatus("setFileStatus(): incorrect state " + state);
             }
 

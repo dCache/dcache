@@ -11,6 +11,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,14 +37,12 @@ public abstract class BasePage extends WebPage {
     private String _title = "";
 
     public BasePage() {
-        setTimeout();
-        setTitle(getStringResource("title"));
-        add(new Label("pageTitle", new PropertyModel<String>(this, "title")));
-        add(new HeaderPanel("headerPanel"));
-        add(new UserPanel("userPanel"));
-        BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
-                        this.getClass());
-        add(navigation);
+        initialize();
+    }
+
+    public BasePage(PageParameters parameters) {
+        super(parameters);
+        initialize();
     }
 
     public String getTitle() {
@@ -149,6 +148,17 @@ public abstract class BasePage extends WebPage {
                 return super.shouldTrigger();
             }
         });
+    }
+
+    protected void initialize() {
+        setTimeout();
+        setTitle(getStringResource("title"));
+        add(new Label("pageTitle", new PropertyModel<String>(this, "title")));
+        add(new HeaderPanel("headerPanel"));
+        add(new UserPanel("userPanel", this));
+        BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
+                        this.getClass());
+        add(navigation);
     }
 
     /**

@@ -100,14 +100,18 @@ public class HttpPoolNettyServer
         public ChannelPipeline getPipeline() throws Exception {
             ChannelPipeline pipeline = pipeline();
 
+            /* The disk executor is an OrderedMemoryAwareThreadPoolExecutor.  It only
+             * knows how to estimate the size of ChannelBuffer, so we cannot place
+             * decoded messages on the queue.
+             */
+            pipeline.addLast("executor",
+                             new ExecutionHandler(getDiskExecutor()));
             pipeline.addLast("decoder", new HttpRequestDecoder());
             pipeline.addLast("encoder", new HttpResponseEncoder());
 
             if (_logger.isDebugEnabled()) {
                 pipeline.addLast("logger", new LoggingHandler(HttpPoolNettyServer.class));
             }
-            pipeline.addLast("executor",
-                             new ExecutionHandler(getDiskExecutor()));
             pipeline.addLast("idle-state-handler",
                              new IdleStateHandler(_timer,
                                                   0,
