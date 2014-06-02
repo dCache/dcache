@@ -358,7 +358,7 @@ public class XrootdDoor
         throws CacheException, InterruptedException
     {
         if (!isReadAllowed(path)) {
-            throw new PermissionDeniedCacheException("Write permission denied");
+            throw new PermissionDeniedCacheException("Read permission denied");
         }
 
         XrootdTransfer transfer =
