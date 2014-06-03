@@ -1,8 +1,13 @@
 package org.dcache.util;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 import java.io.Serializable;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.padStart;
@@ -175,5 +180,22 @@ public class Checksum  implements Serializable
         String checksum = digest.substring(del + 1);
 
         return new Checksum(ChecksumType.getChecksumType(type), checksum);
+    }
+
+
+    /**
+     * Returns an {@link Optional} containing checksum of a given type. If
+     * no matching checksum type is found, an empty {@link Optional} will be returned.
+     * @param checksums to evaluate
+     * @param type of checksum
+     * @return Optional containing checksum
+     */
+    public static Optional<Checksum> forType(final Set<Checksum> checksums, final ChecksumType type) {
+        return Iterables.tryFind(checksums, new Predicate<Checksum>() {
+            @Override
+            public boolean apply(Checksum t) {
+                return t.getType() == type;
+            }
+        });
     }
 }

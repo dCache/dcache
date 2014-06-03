@@ -1,6 +1,7 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -908,13 +909,12 @@ public class ChimeraNameSpaceProvider
                         break;
                     case CHECKSUM:
                         for (Checksum sum: attr.getChecksums()) {
-                            int type = sum.getType().getType();
+                            ChecksumType type = sum.getType();
                             String value = sum.getValue();
-                            String existingValue =
-                                _fs.getInodeChecksum(inode, type);
-                            if (existingValue == null) {
-                                _fs.setInodeChecksum(inode, type, value);
-                            } else if (!existingValue.equals(value)) {
+                            Optional<Checksum> existingSum = Checksum.forType(_fs.getInodeChecksums(inode),type);
+                            if (!existingSum.isPresent()) {
+                                _fs.setInodeChecksum(inode, type.getType(), value);
+                            } else if (!existingSum.get().equals(sum)) {
                                 throw new CacheException(CacheException.INVALID_ARGS,
                                                          "Checksum mismatch");
                             }

@@ -17,6 +17,7 @@
  */
 package org.dcache.chimera.cli;
 
+import com.google.common.base.Optional;
 import com.google.common.primitives.Booleans;
 
 import javax.annotation.Nonnull;
@@ -833,12 +834,9 @@ public class Shell extends ShellApplication
         public Serializable call() throws IOException
         {
             FsInode inode = lookup(path);
-            for (ChecksumType type : ChecksumType.values()) {
-                String checksum = fs.getInodeChecksum(inode, type.getType());
-                if (checksum != null) {
-                    console.printString(type.getName() + ":" + checksum);
+            for (Checksum checksum : fs.getInodeChecksums(inode)) {
+                    console.printString(checksum.getType().getName() + ":" + checksum.getValue());
                     console.printNewline();
-                }
             }
             return null;
         }
@@ -857,11 +855,12 @@ public class Shell extends ShellApplication
         public Serializable call() throws IOException
         {
             FsInode inode = lookup(path);
-            String checksum = fs.getInodeChecksum(inode, type.getType());
-            if (checksum == null) {
-                console.printString("No checksum of type " + type.getName());
+            Optional<Checksum> checksum = Checksum.forType(fs.getInodeChecksums(inode), type);
+
+            if (checksum.isPresent()) {
+                console.printString(checksum.get().getValue());
             } else {
-                console.printString(checksum);
+                console.printString("No checksum of type " + type.getName());
             }
             console.printNewline();
             return null;
