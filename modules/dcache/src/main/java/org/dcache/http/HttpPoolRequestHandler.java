@@ -126,11 +126,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         String contentRange = BYTES + RANGE_SP + lower + RANGE_SEPARATOR +
                 upper + RANGE_PRE_TOTAL + total;
 
-        response.setHeader(ACCEPT_RANGES, BYTES);
-        response.setHeader(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
-        response.setHeader(CONTENT_RANGE, contentRange);
+        response.headers().add(ACCEPT_RANGES, BYTES);
+        response.headers().add(CONTENT_LENGTH, String.valueOf((upper - lower) + 1));
+        response.headers().add(CONTENT_RANGE, contentRange);
         if(!digest.isEmpty()) {
-            response.setHeader(DIGEST, digest);
+            response.headers().add(DIGEST, digest);
         }
 
         return context.getChannel().write(response);
@@ -142,11 +142,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         HttpResponse response =
                 new DefaultHttpResponse(HTTP_1_1, PARTIAL_CONTENT);
 
-        response.setHeader(ACCEPT_RANGES, BYTES);
-        response.setHeader(CONTENT_LENGTH, totalBytes);
-        response.setHeader(CONTENT_TYPE, MULTIPART_TYPE);
+        response.headers().add(ACCEPT_RANGES, BYTES);
+        response.headers().add(CONTENT_LENGTH, totalBytes);
+        response.headers().add(CONTENT_TYPE, MULTIPART_TYPE);
         if(!digest.isEmpty()) {
-            response.setHeader(DIGEST, digest);
+            response.headers().add(DIGEST, digest);
         }
         return context.getChannel().write(response);
     }
@@ -199,15 +199,15 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
         response.headers().add(ACCEPT_RANGES, BYTES);
-        response.setHeader(CONTENT_LENGTH, file.size());
+        response.headers().add(CONTENT_LENGTH, file.size());
         String digest = buildDigest(file);
         if(!digest.isEmpty()) {
-            response.setHeader(DIGEST, digest);
+            response.headers().add(DIGEST, digest);
         }
-        response.setHeader("Content-Disposition", contentDisposition(path
+        response.headers().add("Content-Disposition", contentDisposition(path
                 .getName()));
         if (file.getProtocolInfo().getLocation() != null) {
-            response.setHeader(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
+            response.headers().add(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
         }
 
         return context.getChannel().write(response);

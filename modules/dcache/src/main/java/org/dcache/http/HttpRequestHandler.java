@@ -124,7 +124,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         }
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
-        response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.headers().add(CONTENT_TYPE, "text/plain; charset=UTF-8");
         response.setContent(ChannelBuffers.copiedBuffer(
                 message + CRLF, CharsetUtil.UTF_8));
         setContentLength(response, response.getContent().readableBytes());
@@ -155,8 +155,8 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
         }
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
-        response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
-        response.setHeader(CONNECTION, CLOSE);
+        response.headers().add(CONTENT_TYPE, "text/plain; charset=UTF-8");
+        response.headers().add(CONNECTION, CLOSE);
         response.setContent(ChannelBuffers.copiedBuffer(
                 message + CRLF, CharsetUtil.UTF_8));
         setContentLength(response, response.getContent().readableBytes());
@@ -216,7 +216,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
                                            long upperRange)
         throws HttpException
     {
-        String rangeHeader = request.getHeader(RANGE);
+        String rangeHeader = request.headers().get(RANGE);
 
         if (rangeHeader != null) {
             try {
@@ -225,7 +225,7 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
                 /*
                  * ignore errors in the range, if the If-Range header is present
                  */
-                if (request.getHeader(IF_RANGE) == null) {
+                if (request.headers().get(IF_RANGE) == null) {
                     throw e;
                 }
             }
