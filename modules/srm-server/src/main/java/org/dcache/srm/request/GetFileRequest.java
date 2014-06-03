@@ -107,7 +107,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 public final class GetFileRequest extends FileRequest<GetRequest> {
     private final static Logger logger = LoggerFactory.getLogger(GetFileRequest.class);
 
-    private URI surl;
+    private final URI surl;
     private URI turl;
     private String pinId;
     private String fileId;
@@ -213,12 +213,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     public URI getSurl() {
-        rlock();
-        try {
-            return surl;
-        } finally {
-            runlock();
-        }
+        return surl;
     }
 
     public URI getTurl() {
