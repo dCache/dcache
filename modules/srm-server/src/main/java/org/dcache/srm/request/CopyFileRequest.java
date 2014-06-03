@@ -903,12 +903,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
      */
     public URI getSourceSurl()
     {
-        rlock();
-        try {
-            return sourceSurl;
-        } finally {
-            runlock();
-        }
+        return sourceSurl;
     }
     /**
      * Getter for property to_surl.
@@ -916,12 +911,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
      */
     public URI getDestinationSurl()
     {
-        rlock();
-        try {
-            return destinationSurl;
-        } finally {
-            runlock();
-        }
+        return destinationSurl;
     }
     /**
      * Setter for property remoteRequestId.
@@ -955,12 +945,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
      */
     public String getSpaceReservationId()
     {
-        rlock();
-        try {
-            return spaceReservationId;
-        } finally {
-            runlock();
-        }
+        return spaceReservationId;
     }
 
     /**
