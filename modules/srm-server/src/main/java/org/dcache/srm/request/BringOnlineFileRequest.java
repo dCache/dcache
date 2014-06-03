@@ -113,7 +113,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             LoggerFactory.getLogger(BringOnlineFileRequest.class);
 
     // the globus url class created from surl_string
-    private URI surl;
+    private final URI surl;
     private String pinId;
     private String fileId;
     private transient FileMetaData fileMetaData;
@@ -214,12 +214,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
     public URI getSurl() {
-        rlock();
-        try {
-            return surl;
-        } finally {
-            runlock();
-        }
+        return surl;
     }
 
 

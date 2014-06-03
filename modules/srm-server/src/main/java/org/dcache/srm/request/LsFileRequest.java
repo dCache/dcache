@@ -48,7 +48,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         private static final Logger logger =
                 LoggerFactory.getLogger(LsFileRequest.class);
         private static final String SFN_STRING="SFN=";
-        private URI surl;
+        private final URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
                 new Comparator<FileMetaData>() {
