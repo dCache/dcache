@@ -344,7 +344,7 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(CONTENT_TYPE,
                 "multipart/byteranges; boundary=\"__AAAAAAAAAAAAAAAA__\""));
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
-        assertThat(_response, hasHeader(CONTENT_LENGTH, "150"));
+        assertThat(_response, hasHeader(CONTENT_LENGTH, "154"));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
