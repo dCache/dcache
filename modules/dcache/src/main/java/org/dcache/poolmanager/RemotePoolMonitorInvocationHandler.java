@@ -100,7 +100,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
         _poolMonitor =
                 CacheBuilder.newBuilder()
                         .maximumSize(1)
-                        .expireAfterWrite(10, MINUTES)
+                        .expireAfterWrite(3, MINUTES)
                         .refreshAfterWrite(_refreshDelay, MILLISECONDS)
                         .build(new PoolMonitorCacheLoader());
     }
