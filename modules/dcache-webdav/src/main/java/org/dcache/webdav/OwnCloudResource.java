@@ -26,7 +26,12 @@ public class OwnCloudResource
     @Override
     public Object authenticate(String user, String password)
     {
-        return user;
+        /*
+         * ownCloud client checks status.php before authenticating.
+         * To support this behavior we need to fake authentication by
+         * returning any non null object.
+         */
+        return "";
     }
 
     @Override
