@@ -207,21 +207,11 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
     @Nullable
     public final Long getSize() {
-        rlock();
-        try {
-            return size;
-        } finally {
-            runlock();
-        }
+        return size;
     }
 
     public final URI getSurl() {
-        rlock();
-        try {
-            return surl;
-       } finally {
-           runlock();
-       }
+        return surl;
     }
 
     public final String getSurlString() {
@@ -575,12 +565,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
      */
     @Nullable
     public final String getSpaceReservationId() {
-        rlock();
-        try {
-            return spaceReservationId;
-        } finally {
-            runlock();
-        }
+        return spaceReservationId;
     }
 
     @Override
@@ -687,22 +672,12 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
     @Nullable
     public final TAccessLatency getAccessLatency() {
-        rlock();
-        try {
-            return accessLatency;
-        } finally {
-            runlock();
-        }
+        return accessLatency;
     }
 
     @Nullable
     public final TRetentionPolicy getRetentionPolicy() {
-        rlock();
-        try {
-            return retentionPolicy;
-        } finally {
-            runlock();
-        }
+        return retentionPolicy;
     }
 
     /**
