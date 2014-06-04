@@ -127,8 +127,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
         private static final Logger logger =
                 LoggerFactory.getLogger(CopyFileRequest.class);
         private static final String SFN_STRING="?SFN=";
-	private URI from_surl;
-	private URI to_surl;
+	private final URI from_surl;
+	private final URI to_surl;
 	private URI from_turl;
 	private URI to_turl;
 	private String local_from_path;
@@ -1109,24 +1109,14 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> {
 	 * @return Value of property from_surl.
 	 */
 	public URI getFrom_surl() {
-                rlock();
-                try {
-                        return from_surl;
-                } finally {
-                        runlock();
-                }
+        return from_surl;
 	}
 	/**
 	 * Getter for property to_surl.
 	 * @return Value of property to_surl.
 	 */
 	public URI getTo_surl() {
-                rlock();
-                try {
-                        return to_surl;
-                } finally {
-                        runlock();
-                }
+        return to_surl;
 	}
 	/**
 	 * Setter for property remoteRequestId.

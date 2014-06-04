@@ -115,9 +115,9 @@ import org.dcache.srm.v2_2.TStatusCode;
 public final class PutFileRequest extends FileRequest<PutRequest> {
     private final static Logger logger = LoggerFactory.getLogger(PutFileRequest.class);
     // this is anSurl path
-    private URI surl;
+    private final URI surl;
     private URI turl;
-    private long size;
+    private final long size;
     // parent directory info
     private String fileId;
     private String parentFileId;
@@ -224,22 +224,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
     }
 
-    public final void setSize(long size) {
-        wlock();
-        try {
-            this.size = size;
-        } finally {
-            wunlock();
-        }
-    }
-
     public final long getSize() {
-        rlock();
-        try {
-            return size;
-        } finally {
-            runlock();
-        }
+        return size;
     }
 
     private void setTurl(String turl_string) throws URISyntaxException {
@@ -247,12 +233,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     public final URI getSurl() {
-        rlock();
-        try {
-            return surl;
-       } finally {
-           runlock();
-       }
+        return surl;
     }
 
     public final String getSurlString() {
@@ -757,18 +738,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         wlock();
         try {
             this.parentFileId = parentFileId;
-        } finally {
-            wunlock();
-        }
-    }
-
-    /**
-     * @param anSurl the anSurl to set
-     */
-    public final void setSurl(URI surl) {
-        wlock();
-        try {
-            this.surl = surl;
         } finally {
             wunlock();
         }
