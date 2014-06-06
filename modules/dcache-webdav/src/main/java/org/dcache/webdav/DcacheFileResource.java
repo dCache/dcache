@@ -1,7 +1,6 @@
 package org.dcache.webdav;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import io.milton.http.Auth;
 import io.milton.http.Range;
 import io.milton.http.Request;
@@ -31,10 +30,13 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotInTrashCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import org.dcache.vehicles.FileAttributes;
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
+import io.milton.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
 import static org.dcache.util.Checksums.TO_RFC3230;
 
 /**
@@ -51,6 +53,8 @@ public class DcacheFileResource
 
     private static final String DCACHE_NAMESPACE_URI =
             "http://www.dcache.org/2013/webdav";
+
+    private static final String PARAM_ACTION = "action";
 
     // We use the SRM 2.2 WSDL's TargetNamespace for the WebDAV properties
     // associated with SRM concepts.
@@ -88,6 +92,22 @@ public class DcacheFileResource
                             Map<String,String> params, String contentType)
         throws IOException, NotAuthorizedException
     {
+        /**
+         * We set the Content-Disposition to reflect the users choice whether
+         * or not to download the file.  This is crazy, but necessary until
+         * HTML supports some mechanism to do this purely in the browser.  The
+         * 'download' attribute for the 'a' tag seems promising; but, adoption
+         * is low:
+         *
+         *     http://caniuse.com/#feat=download
+         *
+         * As of 07-2014, above website estimates 54% support.  Until IE
+         * supports the attribute, we can't relying on it.
+         */
+
+        ServletResponse.getResponse().addHeader("Content-Disposition",
+                dispositionFor(params.get(PARAM_ACTION)).toString().toLowerCase());
+
         try {
             _factory.readFile(new FsPath(_path), _attributes.getPnfsId(),
                               out, range);
@@ -122,12 +142,26 @@ public class DcacheFileResource
         return _attributes.getSize();
     }
 
+    public static HttpProtocolInfo.Disposition dispositionFor(String action)
+    {
+        if (action != null) {
+            switch (action) {
+            case "download":
+                return HttpProtocolInfo.Disposition.ATTACHMENT;
+            case "show":
+                return HttpProtocolInfo.Disposition.INLINE;
+            }
+        }
+        return HttpProtocolInfo.Disposition.ATTACHMENT;
+    }
+
     @Override
     public String checkRedirect(Request request)
     {
         try {
             if (_factory.shouldRedirect(request)) {
-                return _factory.getReadUrl(_path, _attributes.getPnfsId());
+                return _factory.getReadUrl(_path, _attributes.getPnfsId(),
+                        dispositionFor(request.getParams().get(PARAM_ACTION)));
             }
             return null;
         } catch (PermissionDeniedCacheException e) {

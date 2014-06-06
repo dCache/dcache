@@ -52,7 +52,10 @@ file(f) ::= <<
         <span class="glyphicon glyphicon-file"></span>
     </td>
     <td>
-        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$">$f.name.unencoded$</a>
+        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$?action=show" title="Show $f.name.unencoded$">$f.name.unencoded$</a>
+        <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$" title="Download $f.name.unencoded$" download="$f.name.encoded$">
+            <span class="glyphicon glyphicon-cloud-download"></span>
+        </a>
     </td>
     <td>$f.size$</td>
     $endif$

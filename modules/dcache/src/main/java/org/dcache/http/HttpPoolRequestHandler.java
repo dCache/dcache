@@ -201,8 +201,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         if(!digest.isEmpty()) {
             response.headers().add(DIGEST, digest);
         }
-        response.headers().add("Content-Disposition", contentDisposition(path
-                .getName()));
+        response.headers().add("Content-Disposition",
+                contentDisposition(file.getProtocolInfo().getDisposition(),
+                path.getName()));
         if (file.getProtocolInfo().getLocation() != null) {
             response.headers().add(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
         }
@@ -222,8 +223,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         if (!digest.isEmpty()) {
             response.headers().add(DIGEST, digest);
         }
-        response.headers().add("Content-Disposition", contentDisposition(path
-                .getName()));
+        response.headers().add("Content-Disposition",
+                contentDisposition(file.getProtocolInfo().getDisposition(),
+                path.getName()));
         if (file.getProtocolInfo().getLocation() != null) {
             response.headers().add(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
         }
@@ -231,11 +233,12 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         return context.getChannel().write(response);
     }
 
-    private static String contentDisposition(String filename)
+    private static String contentDisposition(HttpProtocolInfo.Disposition disposition,
+            String filename)
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("attachment");
+        sb.append(disposition.toString().toLowerCase());
 
         appendDispositionParm(sb, "filename", filename);
 

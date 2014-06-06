@@ -11,6 +11,21 @@ import java.net.URI;
 
 public class HttpProtocolInfo implements IpProtocolInfo
 {
+    /**
+     * This enum propagates the user-agent's choice whether to download to
+     * the pool so it can send the correct content-disposition header.  This
+     * is crazy, but necessary until HTML supports some mechanism to do this
+     * purely in the browser.  The 'download' attribute for the 'a' tag seems
+     * promising; but, until IE supports it, we can't relying on it.
+     */
+    public enum Disposition {
+        // hint to user-agent to show content in browser
+        INLINE,
+
+        // hint to user-agent to download content
+        ATTACHMENT
+    };
+
   private String _name  = "Unkown" ;
   private int    _minor;
   private int    _major;
@@ -27,6 +42,8 @@ public class HttpProtocolInfo implements IpProtocolInfo
   private String path;
   private URI _location;
 
+  private final Disposition _disposition;
+
   private static final long serialVersionUID = 8002182588464502270L;
 
   public HttpProtocolInfo( String protocol, int major , int minor ,
@@ -36,6 +53,18 @@ public class HttpProtocolInfo implements IpProtocolInfo
                            String path,
                            URI location)
   {
+      this(protocol, major, minor, clientSocketAddress, httpDoorCellName,
+              httpDoorDomainName, path, location, null);
+  }
+
+  public HttpProtocolInfo( String protocol, int major , int minor ,
+                           InetSocketAddress clientSocketAddress,
+                           String httpDoorCellName ,
+                           String httpDoorDomainName,
+                           String path,
+                           URI location,
+                           Disposition disposition)
+  {
     _name  = protocol ;
     _minor = minor ;
     _major = major ;
@@ -44,6 +73,7 @@ public class HttpProtocolInfo implements IpProtocolInfo
     this.httpDoorDomainName = httpDoorDomainName;
     this.path = path;
     _location = location;
+    _disposition = disposition;
   }
 
   public String getHttpDoorCellName()
@@ -150,6 +180,14 @@ public class HttpProtocolInfo implements IpProtocolInfo
      */
     public URI getLocation() {
         return _location;
+    }
+
+    /**
+     * The hint how dCache should supply the User-Agent describing how the
+     * content should be used.
+     */
+    public Disposition getDisposition() {
+        return _disposition != null ? _disposition : Disposition.ATTACHMENT;
     }
 }
 
