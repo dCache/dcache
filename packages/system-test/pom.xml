@@ -46,6 +46,12 @@
                                       <filename name="**/*.png" />
                                       <filename name="**/*.jar" />
                                       <filename name="**/*.ico" />
+                                      <filename name="**/*.svg" />
+                                      <filename name="**/*.woff" />
+                                      <filename name="**/*.eot" />
+                                      <filename name="**/*.ttf" />
+                                      <filename name="**/*.css" />
+                                      <filename name="**/*.js" />
                                   </or>
                               </selector>
                               <filterset id="filter">
