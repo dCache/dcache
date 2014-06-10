@@ -19,6 +19,7 @@
         </layout>
     </appender>
 
+    <!-- DO NOT CHANGE THE NAME OF THIS APPENDER -->
     <appender name="HISTORY" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${alarms.dir}/history.log</File>
 
@@ -37,48 +38,44 @@
         </encoder>
     </appender>
 
-    <!--
-        if you wish alarms to be sent as email, you will need to provide host,
-        to and from information below (note the possibility of multiple 'to's),
-        and then include the appender in the root logger.
-    -->
+    <!-- DO NOT CHANGE THE NAME OF THIS APPENDER -->
     <appender name="ALARM_MAIL" class="ch.qos.logback.classic.net.SMTPAppender">
         <!-- this filter ensures that only events sent marked as ALARM
              are received by this appender -->
         <filter class="org.dcache.alarms.logback.AlarmMarkerFilter"/>
-        <smtpHost></smtpHost>
-        <to></to>
-        <to></to>
-        <from></from>
-        <subject>dCache Alarm</subject>
+        <smtpHost>${alarms.email.smtp-host}</smtpHost>
+        <smtpPort>${alarms.email.smtp-port}</smtpPort>
+        <STARTTLS>${alarms.email.start-tls}</STARTTLS>
+        <SSL>${alarms.email.ssl}</SSL>
+        <username>${alarms.email.user}</username>
+        <password>${alarms.email.password}</password>
+        <to>${alarms.email.to}</to>
+        <from>${alarms.email.from}</from>
+        <subject>${alarms.email.subject}</subject>
         <layout class="ch.qos.logback.classic.PatternLayout">
             <pattern>%-5level %d{dd MMM yyyy HH:mm:ss} \(%X{host}\)\(%X{cells.cell}\)\(%X{cells.domain}\) %m%n</pattern>
         </layout>
         <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
-            <!-- send just one log entry per email -->
-            <bufferSize>1</bufferSize>
+            <bufferSize>${alarms.email.buffer-size}</bufferSize>
         </cyclicBufferTracker>
     </appender>
 
-    <!-- stores all received events; adds alarm metadata on the basis of either
+    <!-- Stores all received events; adds alarm metadata on the basis of either
          a marker or a match with one of the alarmType definitions provided;
          delegates all received events to other appenders, possibly with using a
          cloned event with an added alarm marker if it is an alarm and was not
-         originally sent with one.
-         for further information, see the dCache Book -->
+         originally sent with one. For further information, see the dCache Book -->
     <appender name="STORE" class="org.dcache.alarms.logback.LogEntryAppender">
         <storePath>${alarms.db.xml.path}</storePath>
         <url>${alarms.db.url}</url>
         <user>${alarms.db.user}</user>
         <pass>${alarms.db.password}</pass>
+        <sendEmail>${alarms.enable.email}</sendEmail>
+        <writeHistory>${alarms.enable.history}</writeHistory>
         <propertiesPath>${alarms.db.config.path}</propertiesPath>
         <definitionsPath>${alarms.definitions.path}</definitionsPath>
-        <!-- it would be normal to comment this out if you are using an RDBMS
-             and not running periodic deletes -->
         <appender-ref ref="HISTORY"/>
-        <!-- uncomment this in order to receive alarm mails;
-             see below for how to set mail appender -->
-        <!-- <appender-ref ref="ALARM_MAIL"/> -->
+        <appender-ref ref="ALARM_MAIL"/>
     </appender>
 
     <logger name="ch.qos.logback" additivity="false" level="warn">

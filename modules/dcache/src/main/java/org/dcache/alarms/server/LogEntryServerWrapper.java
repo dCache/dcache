@@ -99,6 +99,18 @@ public class LogEntryServerWrapper {
     private String user;
     private String pass;
     private String level;
+    private String smtpHost;
+    private String smtpPort;
+    private String startTls;
+    private String ssl;
+    private String emailUser;
+    private String emailPassword;
+    private String emailRecipients;
+    private String emailSender;
+    private String emailSubject;
+    private String emailBufferSize;
+    private String emailEnabled;
+    private String historyEnabled;
     private Integer port;
 
     private SimpleSocketServer server;
@@ -113,6 +125,38 @@ public class LogEntryServerWrapper {
 
     public void setDefinitions(String definitionsPath) {
         this.definitionsPath = Strings.emptyToNull(definitionsPath);
+    }
+
+    public void setEmailBufferSize(Integer emailBufferSize) {
+        this.emailBufferSize = emailBufferSize == null ? null : emailBufferSize.toString();
+    }
+
+    public void setEmailEnabled(Boolean emailEnabled) {
+        this.emailEnabled = emailEnabled == null ? null : emailEnabled.toString();
+    }
+
+    public void setEmailPassword(String emailPassword) {
+        this.emailPassword = Strings.emptyToNull(emailPassword);
+    }
+
+    public void setEmailRecipients(String emailRecipients) {
+        this.emailRecipients = Strings.emptyToNull(emailRecipients);
+    }
+
+    public void setEmailSender(String emailSender) {
+        this.emailSender = Strings.emptyToNull(emailSender);
+    }
+
+    public void setEmailSubject(String emailSubject) {
+        this.emailSubject = emailSubject;
+    }
+
+    public void setEmailUser(String emailUser) {
+        this.emailUser = Strings.emptyToNull(emailUser);
+    }
+
+    public void setHistoryEnabled(Boolean historyEnabled) {
+        this.historyEnabled = historyEnabled == null ? null : historyEnabled.toString();
     }
 
     public void setLevel(String level) {
@@ -133,6 +177,26 @@ public class LogEntryServerWrapper {
 
     public void setProperties(String properties) {
         this.properties = Strings.emptyToNull(properties);
+    }
+
+    public void setServer(SimpleSocketServer server) {
+        this.server = server;
+    }
+
+    public void setSmtpHost(String smtpHost) {
+        this.smtpHost = Strings.emptyToNull(smtpHost);
+    }
+
+    public void setSmtpPort(Integer smtpPort) {
+        this.smtpPort = smtpPort == null ? null : smtpPort.toString();
+    }
+
+    public void setSsl(Boolean ssl) {
+        this.ssl = ssl == null ? null : ssl.toString();
+    }
+
+    public void setStartTls(Boolean startTls) {
+        this.startTls = startTls == null ? null : startTls.toString();
     }
 
     public void setUrl(String url) {
@@ -191,6 +255,18 @@ public class LogEntryServerWrapper {
             loggerContext.putProperty("alarms.db.config.path", properties);
             loggerContext.putProperty("alarms.definitions.path", definitionsPath);
             loggerContext.putProperty("alarms.log.root-level", level);
+            loggerContext.putProperty("alarms.email.smtp-host", smtpHost);
+            loggerContext.putProperty("alarms.email.smtp-port", smtpPort);
+            loggerContext.putProperty("alarms.email.start-tls", startTls);
+            loggerContext.putProperty("alarms.email.ssl", ssl);
+            loggerContext.putProperty("alarms.email.user", emailUser);
+            loggerContext.putProperty("alarms.email.password", emailPassword);
+            loggerContext.putProperty("alarms.email.to", emailRecipients);
+            loggerContext.putProperty("alarms.email.from", emailSender);
+            loggerContext.putProperty("alarms.email.subject", emailSubject);
+            loggerContext.putProperty("alarms.email.buffer-size", emailBufferSize);
+            loggerContext.putProperty("alarms.enable.email", emailEnabled);
+            loggerContext.putProperty("alarms.enable.history", historyEnabled);
 
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(loggerContext);

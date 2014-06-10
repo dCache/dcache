@@ -19,6 +19,18 @@
         <property name="properties" value="${alarms.db.config.path}"/>
         <property name="definitions" value="${alarms.definitions.path}"/>
         <property name="level" value="${alarms.log.root-level}"/>
+        <property name="emailEnabled" value="${alarms.enable.email}"/>
+        <property name="historyEnabled" value="${alarms.enable.history}"/>
+        <property name="smtpHost" value="${alarms.email.smtp-host}"/>
+        <property name="smtpPort" value="${alarms.email.smtp-port}"/>
+        <property name="startTls" value="${alarms.email.start-tls}"/>
+        <property name="ssl" value="${alarms.email.ssl}"/>
+        <property name="emailUser" value="${alarms.email.user}"/>
+        <property name="emailPassword" value="${alarms.email.password}"/>
+        <property name="emailRecipients" value="${alarms.email.to}"/>
+        <property name="emailSender" value="${alarms.email.from}"/>
+        <property name="emailSubject" value="${alarms.email.subject}"/>
+        <property name="emailBufferSize" value="${alarms.email.buffer-size}"/>
     </bean>
 
     <beans profile="rdbms">

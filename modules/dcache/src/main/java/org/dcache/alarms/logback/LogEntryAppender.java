@@ -112,6 +112,13 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
                 AppenderAttachable<ILoggingEvent> {
 
     public static final String EMPTY_XML_STORE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<entries></entries>\n";
+
+    /**
+     * Fixed names, used for appenders in the logback-server.xml file.
+     */
+    public static final String ALARM_MAIL_APPENDER = "ALARM_MAIL";
+    public static final String HISTORY_APPENDER = "HISTORY";
+
     private final Map<String, AlarmDefinition> definitions
         = Collections.synchronizedMap(new TreeMap<String, AlarmDefinition>());
     private final Map<String, Appender<ILoggingEvent>> childAppenders
@@ -125,6 +132,8 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     private String url;
     private String user;
     private String password;
+    private boolean sendEmail;
+    private boolean writeHistory;
     private JDOPersistenceManagerFactory pmf;
     private HikariDataSource dataSource;
 
@@ -179,6 +188,10 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
         this.definitionsPath = definitionsPath;
     }
 
+    public void setSendEmail(boolean sendEmail) {
+        this.sendEmail = sendEmail;
+    }
+
     public void setPass(String pass) {
         this.password = pass;
     }
@@ -199,6 +212,10 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
         this.user = user;
     }
 
+    public void setWriteHistory(boolean writeHistory) {
+        this.writeHistory = writeHistory;
+    }
+
     @Override
     public void start() {
         try {
@@ -217,7 +234,21 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
                 store = new DataNucleusLogEntryStore(pmf);
             }
 
-            for (Appender<ILoggingEvent> child : childAppenders.values()) {
+            /*
+             * The logback-server.xml is set to add the email and history
+             * appenders, for ease of configuration through standard
+             * dcache properties; hence if use of these is set to false
+             * via enable properties, they must be removed here.
+             */
+            if (!sendEmail) {
+                childAppenders.remove(ALARM_MAIL_APPENDER);
+            }
+
+            if (!writeHistory) {
+                childAppenders.remove(HISTORY_APPENDER);
+            }
+
+            for (Appender<ILoggingEvent> child : childAppenders.values() ) {
                 child.start();
             }
 
