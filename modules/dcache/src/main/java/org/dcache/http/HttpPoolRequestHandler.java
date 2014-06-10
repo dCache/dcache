@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import diskCacheV111.util.FsPath;
@@ -41,12 +40,9 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
-import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.util.Checksum;
-import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
@@ -75,6 +71,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private static final String RANGE_SP = " ";
     private static final String BOUNDARY = "__AAAAAAAAAAAAAAAA__";
     private static final String MULTIPART_TYPE = "multipart/byteranges; boundary=\"" + HttpPoolRequestHandler.BOUNDARY + "\"";
+    private static final String TWO_HYPHENS = "--";
     // See RFC 2045 for definition of 'tspecials'
     private static final CharMatcher TSPECIAL = CharMatcher.anyOf("()<>@,;:\\\"/[]?=");
 
@@ -154,7 +151,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private static CharSequence generateMultipartFragmentMarker(long lower, long upper, long total, String boundary) {
         StringBuilder sb = new StringBuilder(64);
         sb.append(CRLF);
-        sb.append("--").append(boundary).append(CRLF);
+        sb.append(TWO_HYPHENS).append(boundary).append(CRLF);
         sb.append(CONTENT_RANGE).append(": ")
                 .append(BYTES)
                 .append(RANGE_SP)
@@ -185,7 +182,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     {
         StringBuilder sb = new StringBuilder(64);
         sb.append(CRLF);
-        sb.append("--").append(BOUNDARY).append("--").append(CRLF);
+        sb.append(TWO_HYPHENS).append(BOUNDARY).append(TWO_HYPHENS).append(CRLF);
 
         ChannelBuffer buffer = ChannelBuffers.copiedBuffer(sb, CharsetUtil.UTF_8);
         return context.getChannel().write(buffer);
@@ -198,6 +195,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         FsPath path = new FsPath(file.getProtocolInfo().getPath());
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        response.headers().add(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_LENGTH, file.size());
         String digest = buildDigest(file);
         if(!digest.isEmpty()) {
@@ -207,6 +205,27 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 .getName()));
         if (file.getProtocolInfo().getLocation() != null) {
             response.setHeader(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
+        }
+
+        return context.getChannel().write(response);
+    }
+
+    private static ChannelFuture sendHeadResponse(ChannelHandlerContext context,
+            MoverChannel<HttpProtocolInfo> file)
+            throws IOException {
+        FsPath path = new FsPath(file.getProtocolInfo().getPath());
+
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        response.headers().add(ACCEPT_RANGES, BYTES);
+        response.headers().add(CONTENT_LENGTH, file.size());
+        String digest = buildDigest(file);
+        if (!digest.isEmpty()) {
+            response.headers().add(DIGEST, digest);
+        }
+        response.headers().add("Content-Disposition", contentDisposition(path
+                .getName()));
+        if (file.getProtocolInfo().getLocation() != null) {
+            response.headers().add(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
         }
 
         return context.getChannel().write(response);
@@ -437,7 +456,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     CharSequence marker = generateMultipartFragmentMarker(lower, upper, fileSize, BOUNDARY);
                     totalLen += marker.length();
                 }
-                totalLen += 2 + BOUNDARY.length() + CRLF.length();
+                totalLen += TWO_HYPHENS.length()*2 + BOUNDARY.length() + CRLF.length()*2; // see sendMultipartEnd for details.
 
                 future = sendMultipartHeader(context, buildDigest(file), totalLen);
                 for(HttpByteRange range: ranges) {
@@ -578,6 +597,32 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 if (future != null && (!isKeepAlive() || !chunk.isLast())) {
                     future.addListener(ChannelFutureListener.CLOSE);
                 }
+            }
+        }
+    }
+
+    @Override
+    protected void doOnHead(ChannelHandlerContext context,
+            MessageEvent event,
+            HttpRequest request) {
+        ChannelFuture future = null;
+        MoverChannel<HttpProtocolInfo> file;
+
+        try {
+            file = open(request, false);
+            future = sendHeadResponse(context, file);
+        } catch (IOException | IllegalArgumentException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, e.getMessage());
+        } catch (URISyntaxException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, BAD_REQUEST, "URI not valid: " + e.getMessage());
+        } catch (RuntimeException e) {
+            future = conditionalSendError(context, request.getMethod(),
+                    future, INTERNAL_SERVER_ERROR, e.getMessage());
+        } finally {
+            if (future != null && !isKeepAlive()) {
+                future.addListener(ChannelFutureListener.CLOSE);
             }
         }
     }

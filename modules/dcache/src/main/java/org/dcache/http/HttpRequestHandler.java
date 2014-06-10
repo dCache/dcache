@@ -56,6 +56,8 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
                 doOnPost(ctx, event, request);
             } else if (request.getMethod() == HttpMethod.DELETE) {
                 doOnDelete(ctx, event, request);
+            } else if (request.getMethod() == HttpMethod.HEAD) {
+                doOnHead(ctx, event, request);
             } else {
                 unsupported(ctx, event);
             }
@@ -91,6 +93,12 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
     protected void doOnChunk(ChannelHandlerContext context, MessageEvent event,
                              HttpChunk chunk) {
         _logger.info("Received an HTTP chunk, writing default response.");
+        unsupported(context, event);
+    }
+
+    protected void doOnHead(ChannelHandlerContext context, MessageEvent event,
+           HttpRequest request) {
+        _logger.info("Received a HEAD request, writing default response.");
         unsupported(context, event);
     }
 
