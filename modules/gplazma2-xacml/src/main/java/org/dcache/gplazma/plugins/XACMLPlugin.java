@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.util.GSSUtils;
@@ -389,10 +390,17 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * retrieve the first valid mapping and add it to the identified
          * principals
          */
-        String userName = getMappingFor(login, extensions);
-        checkAuthentication(userName != null, "no mapping for: " + extensions);
 
-        identifiedPrincipals.add(new UserNamePrincipal(userName));
+        final LocalId localId = getMappingFor(login, extensions);
+        checkAuthentication(localId != null, "no mapping for: " + extensions);
+        checkAuthentication(localId.getUserName() != null, "no mapping for: " + extensions);
+
+        identifiedPrincipals.add(new UserNamePrincipal(localId.getUserName()));
+
+        if (localId.getGID() != null) {
+            identifiedPrincipals.add(new LoginGidPrincipal(localId.getGID()));
+        }
+
     }
 
     /**
@@ -568,8 +576,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      *            all groups of extracted VOMS extensions
      * @return local id or <code>null</code> if no mapping is found
      */
-    private String getMappingFor(Principal login,
-                    Set<VomsExtensions> extensionSet) {
+    private LocalId getMappingFor(Principal login,
+                                  Set<VomsExtensions> extensionSet) {
         for (VomsExtensions extensions : extensionSet) {
             try {
                 LocalId localId = _localIdCache.get(extensions);
@@ -579,7 +587,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 }
                 if (login == null || login.getName().equals(name)) {
                     logger.debug("getMappingFor {} = {}", extensions, name);
-                    return name;
+                    return localId;
                 }
             } catch (ExecutionException t) {
                 /*
