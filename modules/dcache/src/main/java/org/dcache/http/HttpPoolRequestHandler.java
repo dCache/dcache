@@ -195,7 +195,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         FsPath path = new FsPath(file.getProtocolInfo().getPath());
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-        response.headers().add(ACCEPT_RANGES, BYTES);
+        response.setHeader(ACCEPT_RANGES, BYTES);
         response.setHeader(CONTENT_LENGTH, file.size());
         String digest = buildDigest(file);
         if(!digest.isEmpty()) {
@@ -216,16 +216,16 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         FsPath path = new FsPath(file.getProtocolInfo().getPath());
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-        response.headers().add(ACCEPT_RANGES, BYTES);
-        response.headers().add(CONTENT_LENGTH, file.size());
+        response.setHeader(ACCEPT_RANGES, BYTES);
+        response.setHeader(CONTENT_LENGTH, file.size());
         String digest = buildDigest(file);
         if (!digest.isEmpty()) {
-            response.headers().add(DIGEST, digest);
+            response.setHeader(DIGEST, digest);
         }
-        response.headers().add("Content-Disposition", contentDisposition(path
+        response.setHeader("Content-Disposition", contentDisposition(path
                 .getName()));
         if (file.getProtocolInfo().getLocation() != null) {
-            response.headers().add(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
+            response.setHeader(CONTENT_LOCATION, file.getProtocolInfo().getLocation());
         }
 
         return context.getChannel().write(response);
