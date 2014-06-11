@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import diskCacheV111.util.FsPath;
@@ -40,9 +41,12 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
+import org.dcache.util.Checksum;
+import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
