@@ -599,8 +599,6 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 notifyNamespace(pnfsId, fileAttributesForNotification);
                 notifyFlushMessageTarget(pnfsId, fileAttributesForNotification);
 
-                LOGGER.info("{} stored to {}.", pnfsId, uris);
-
                 try {
                     repository.setState(pnfsId, EntryState.CACHED);
                 } catch (IllegalTransitionException ignored) {
@@ -610,6 +608,8 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                      */
                 }
                 done(null);
+
+                LOGGER.info("Flushed {} to nearline storage: {}", pnfsId, Joiner.on(' ').join(uris));
             } catch (Exception e) {
                 done(e);
             }
@@ -696,9 +696,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         private void done(Throwable cause)
         {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
-            if (cause == null) {
-                LOGGER.debug("Flush of {} completed successfully.", pnfsId);
-            } else {
+            if (cause != null) {
                 if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Flush was cancelled.", cause);
                 }
@@ -838,6 +836,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 }
                 checksumModule.enforcePostRestorePolicy(descriptor);
                 descriptor.commit();
+                LOGGER.info("Staged {} from nearline storage.", getFileAttributes().getPnfsId());
             } catch (InterruptedException | CacheException | RuntimeException | Error e) {
                 error = e;
             } catch (NoSuchAlgorithmException e) {
@@ -852,10 +851,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         private void done(Throwable cause)
         {
             PnfsId pnfsId = getFileAttributes().getPnfsId();
-            if (cause == null) {
-                LOGGER.debug("Stage of {} completed successfully.",
-                             pnfsId);
-            } else {
+            if (cause != null) {
                 if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Stage was cancelled.", cause);
                 }
@@ -892,7 +888,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         {
             super(storage);
             this.uri = uri;
-            LOGGER.debug("Stage request created for {}.", uri);
+            LOGGER.debug("Remove request created for {}.", uri);
         }
 
         @Override
@@ -923,7 +919,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
         public void completed(Void result)
         {
-            LOGGER.debug("Remove of {} completed successfully.", uri);
+            LOGGER.info("Removed {} from nearline storage.", uri);
             removeRequests.removeAndCallback(uri, null);
         }
 
