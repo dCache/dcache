@@ -209,7 +209,9 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
 
     private String getRemoveCommand(URI uri)
     {
-        return command + " -uri=" + uri + " remove";
+        String s = command + " remove -uri=" + uri;
+        LOGGER.debug("COMMAND: {}", s);
+        return s;
     }
 
     private Set<Checksum> readChecksumFromHsm(File file)
