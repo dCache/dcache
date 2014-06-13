@@ -1,12 +1,11 @@
 package org.dcache.chimera.namespace;
 
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,6 +126,6 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     }
 
     private static boolean isEncoded(String s) throws UnsupportedEncodingException {
-        return !s.equals(URLDecoder.decode(s,"UTF-8"));
+        return !s.equals(UriUtils.decode(s,"UTF-8"));
     }
 }
