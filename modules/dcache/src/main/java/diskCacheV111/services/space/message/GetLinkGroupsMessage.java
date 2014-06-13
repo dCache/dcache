@@ -10,6 +10,7 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space.message;
 
+import java.util.Collections;
 import java.util.Set;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.services.space.LinkGroup;
@@ -19,7 +20,7 @@ public class GetLinkGroupsMessage extends Message {
 	static final long serialVersionUID = 2889995137324365133L;
 	private Long linkGroupId=null;
 
-	private Set<LinkGroup> list;
+	private Set<LinkGroup> list = Collections.emptySet();
 
 	public void setLinkGroupidI(long id) {
 		linkGroupId = new Long(id);
@@ -43,7 +44,7 @@ public class GetLinkGroupsMessage extends Message {
 	}
 
 	public void setLinkGroupSet(Set<LinkGroup> lglist) {
-		this.list=lglist;
+		this.list = (lglist == null) ? Collections.<LinkGroup>emptySet() : lglist;
 	}
 
 }

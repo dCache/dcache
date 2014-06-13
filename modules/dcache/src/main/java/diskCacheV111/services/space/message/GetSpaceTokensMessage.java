@@ -11,6 +11,7 @@
 
 package diskCacheV111.services.space.message;
 
+import java.util.Collections;
 import java.util.Set;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.services.space.Space;
@@ -20,7 +21,7 @@ public class GetSpaceTokensMessage extends Message {
 	static final long serialVersionUID = -419540669938740860L;
 	private Long spacetokenId=null;
 
-	private Set<Space> list;
+	private Set<Space> list = Collections.emptySet();
 
 	public void setSpaceTokenId(long id) {
 		spacetokenId = new Long(id);
@@ -43,7 +44,7 @@ public class GetSpaceTokensMessage extends Message {
 	}
 
 	public void setSpaceTokenSet(Set<Space> lglist) {
-		this.list=lglist;
-	}
+        this.list = (lglist == null) ? Collections.<Space>emptySet() : lglist;
+    }
 
 }
