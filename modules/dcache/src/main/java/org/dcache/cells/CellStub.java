@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -532,7 +533,7 @@ public class CellStub
      *
      * @see CellStub#get
      */
-    public static <T extends Message> T getMessage(ListenableFuture<T> future)
+    public static <T extends Message> T getMessage(Future<T> future)
             throws CacheException, InterruptedException
     {
         T reply = get(future);
@@ -556,7 +557,7 @@ public class CellStub
      *     other {@link RuntimeException}.
      * </ul>
      */
-    public static <T> T get(ListenableFuture<T> future)
+    public static <T> T get(Future<T> future)
             throws CacheException, InterruptedException
     {
         try {

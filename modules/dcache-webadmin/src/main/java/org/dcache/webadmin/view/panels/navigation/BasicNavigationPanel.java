@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
+import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfersPage;
 import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
@@ -42,12 +42,12 @@ import org.dcache.webadmin.view.util.Role;
 public class BasicNavigationPanel extends BasePanel {
 
     private static final long serialVersionUID = 4803403315602047391L;
-    private Class _currentPage;
+    private Class<?> _currentPage;
     private static final String LINK_TITLE_PROPERTY_NAME = "link";
     private static List<Class<? extends BasePage>> _linkList = Lists.newArrayList(
                     DCacheServices.class, CellServices.class, PoolList.class,
                     PoolQueues.class, UnavailablePage.class, PoolGroupView.class,
-                    TapeTransferQueue.class, ActiveTransfers.class, UnavailablePage.class,
+                    TapeTransferQueue.class, ActiveTransfersPage.class, UnavailablePage.class,
                     PoolSelectionSetup.class, PoolAdmin.class, CellAdmin.class,
                     SpaceTokens.class, InfoXml.class, AlarmsPage.class);
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
@@ -122,12 +122,12 @@ public class BasicNavigationPanel extends BasePanel {
     }
 
     public static void addBillingPage() {
-        int i = _linkList.indexOf(ActiveTransfers.class);
+        int i = _linkList.indexOf(ActiveTransfersPage.class);
         _linkList.set(i+1, BillingPlots.class);
     }
 
     public static void removeBillingPage() {
-        int i = _linkList.indexOf(ActiveTransfers.class);
+        int i = _linkList.indexOf(ActiveTransfersPage.class);
         _linkList.set(i+1, UnavailablePage.class);
     }
 

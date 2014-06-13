@@ -27,6 +27,11 @@ public class ActiveTransfersBean implements Serializable {
     private long _lastTransferred;
     private long _jobId;
 
+    public Key getKey()
+    {
+        return new Key(getCellDomainName(), getCellName(), getSerialId());
+    }
+
     public String getWaitingSinceTime() {
         int sec = (int) ((System.currentTimeMillis() - _waitingSince) / 1000L);
         int min = sec / 60;
@@ -44,21 +49,23 @@ public class ActiveTransfersBean implements Serializable {
         if (day > 0) {
             sb.append(day).append(" d ");
         }
-        sb.append(hS.length() < 2 ? ("0" + hS) : hS).append(":");
-        sb.append(mS.length() < 2 ? ("0" + mS) : mS).append(":");
-        sb.append(sS.length() < 2 ? ("0" + sS) : sS);
+        sb.append(hS.length() < 2 ? "0" : "").append(hS).append(":");
+        sb.append(mS.length() < 2 ? "0" : "").append(mS).append(":");
+        sb.append(sS.length() < 2 ? "0" : "").append(sS);
 
         return sb.toString();
     }
 
-    public String getTransferRate() {
-        return (_transferTime > 0
-                ? String.valueOf((1000 * _bytesTransferred) / (1024 * _transferTime))
-                : "-");
+    /** Returns transfer rate in kB/s (decimal). */
+    public long getTransferRate() {
+        return (_transferTime > 0)
+                ? _bytesTransferred / _transferTime
+                : 0;
     }
 
+    /** Returns data transferred so far in kB (decimal). */
     public long getTransferred() {
-        return _bytesTransferred / 1024;
+        return _bytesTransferred / 1000;
     }
 
     public long getBytesTransferred() {
@@ -161,6 +168,10 @@ public class ActiveTransfersBean implements Serializable {
         _protocolVersion = protocolVersion;
     }
 
+    public String getProtocol() {
+        return getProtocolFamily() + '-' + getProtocolVersion();
+    }
+
     public String getReplyHost() {
         return _replyHost;
     }
@@ -199,5 +210,43 @@ public class ActiveTransfersBean implements Serializable {
 
     public void setWaitingSince(long waitingSince) {
         _waitingSince = waitingSince;
+    }
+
+    public static class Key
+    {
+        private final String domainName;
+        private final String cellName;
+        private final long serialId;
+
+        public Key(String domainName, String cellName, long serialId)
+        {
+
+            this.domainName = domainName;
+            this.cellName = cellName;
+            this.serialId = serialId;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Key key = (Key) o;
+            return (serialId == key.serialId) && cellName.equals(key.cellName) && domainName.equals(key.domainName);
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = domainName.hashCode();
+            result = 31 * result + cellName.hashCode();
+            result = 31 * result + (int) (serialId ^ (serialId >>> 32));
+            return result;
+        }
     }
 }

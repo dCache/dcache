@@ -29,13 +29,12 @@ public class ActiveTransfersTest {
         _activeTransfersService = new StandardActiveTransfersService(daoFactory);
         authenticatedWebApp.setActiveTransfersService(_activeTransfersService);
         _tester = new WicketTester(authenticatedWebApp);
-        ActiveTransfers.autorefresh = false;
-        _tester.startPage(ActiveTransfers.class);
+        _tester.startPage(ActiveTransfersPage.class);
     }
 
     @Test
     public void testBasicRender() {
-        _tester.assertRenderedPage(ActiveTransfers.class);
+        _tester.assertRenderedPage(ActiveTransfersPage.class);
     }
 
     @Test

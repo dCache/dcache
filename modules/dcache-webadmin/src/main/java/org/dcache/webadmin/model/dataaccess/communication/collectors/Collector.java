@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.cells.CellStub;
@@ -29,7 +30,7 @@ public abstract class Collector implements Runnable,
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     protected String _name = "";
-    protected Map<String, Object> _pageCache;
+    protected ConcurrentMap<String, Object> _pageCache;
     protected CellStub _cellStub;
     protected long sleepInterval;
     protected TimeUnit sleepIntervalUnit;
@@ -103,7 +104,7 @@ public abstract class Collector implements Runnable,
         _name = name;
     }
 
-    public void setPageCache(Map<String, Object> pageCache) {
+    public void setPageCache(ConcurrentMap<String, Object> pageCache) {
         _pageCache = pageCache;
     }
 

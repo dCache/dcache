@@ -21,6 +21,12 @@ public class CellCommandSenderFactory implements CommandSenderFactory {
         return commandSender;
     }
 
+    @Override
+    public CellStub getCellStub()
+    {
+        return _poolCellStub;
+    }
+
     public void setPoolCellStub(CellStub poolCellStub) {
         _poolCellStub = poolCellStub;
     }

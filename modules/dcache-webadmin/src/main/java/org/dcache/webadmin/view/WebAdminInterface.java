@@ -50,7 +50,7 @@ import org.dcache.webadmin.controller.impl.LoginStrategyLogInService;
 import org.dcache.webadmin.controller.util.ThumbnailPanelProvider;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.AuthenticatedWebPage;
-import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfers;
+import org.dcache.webadmin.view.pages.activetransfers.ActiveTransfersPage;
 import org.dcache.webadmin.view.pages.alarms.AlarmsPage;
 import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
@@ -349,7 +349,7 @@ public class WebAdminInterface extends WebApplication {
         mountPage("pooladmin", PoolAdmin.class);
         mountPage("celladmin", CellAdmin.class);
         mountPage("infoxml", InfoXml.class);
-        mountPage("transfers", ActiveTransfers.class);
+        mountPage("transfers", ActiveTransfersPage.class);
         mountPage("poolinfo", PoolSelectionSetup.class);
         mountPage("tapetransfers", TapeTransferQueue.class);
         mountPage("alarms", AlarmsPage.class);

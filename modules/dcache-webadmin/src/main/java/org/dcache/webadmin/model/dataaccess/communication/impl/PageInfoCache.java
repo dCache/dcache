@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.dcache.webadmin.model.dataaccess.communication.collectors.Collector;
 import org.dcache.webadmin.model.exceptions.NoSuchContextException;
@@ -21,7 +22,7 @@ public class PageInfoCache {
 
     private List<Collector> _collectors;
     private final List<Thread> _threads = new ArrayList<>();
-    private final Map<String, Object> _cache =
+    private final ConcurrentMap<String, Object> _cache =
             new ConcurrentHashMap<>();
     private final static Logger _log = LoggerFactory.getLogger(PageInfoCache.class);
 
