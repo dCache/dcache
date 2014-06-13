@@ -3386,9 +3386,10 @@ public abstract class AbstractFtpDoorV1
          */
         if (_mode == Mode.PASSIVE) {
             replyDelayedPassive(_delayedPassive, (InetSocketAddress) _passiveModeServerSocket.getLocalAddress());
-            reply("150 Openening ASCII mode data connection", false);
+            reply("150 Ready to accept ASCII mode data connection", false);
             _dataSocket = _passiveModeServerSocket.accept().socket();
         } else {
+            reply("150 Opening ASCII mode data connection", false);
             _dataSocket = new Socket();
             _dataSocket.connect(_clientDataAddress);
         }
