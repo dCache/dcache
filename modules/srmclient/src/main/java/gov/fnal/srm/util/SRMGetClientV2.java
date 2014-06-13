@@ -226,7 +226,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
 
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
-                for(int i = 0 ; i<len;++i) {
+                for(int i = 0 ; i<getRequestFileStatuses.length;++i) {
                     TGetRequestFileStatus getRequestFileStatus = getRequestFileStatuses[i];
                     org.apache.axis.types.URI surl = getRequestFileStatus.getSourceSURL();
                     if(surl == null) {
