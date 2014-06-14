@@ -67,14 +67,12 @@ COPYRIGHT STATUS:
 package org.dcache.ftp.door;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
-import com.google.common.net.HostAndPort;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
@@ -110,6 +108,7 @@ import java.security.Principal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -119,10 +118,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -214,7 +213,6 @@ import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.*;
-import static java.lang.Math.min;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
@@ -230,6 +228,12 @@ import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 @interface Help
 {
     String value();
+}
+
+@Retention(RUNTIME)
+@Target(METHOD)
+@interface ConcurrentWithTransfer
+{
 }
 
 enum AnonymousPermission
@@ -319,6 +323,195 @@ public abstract class AbstractFtpDoorV1
     protected Executor _executor;
     private IdentityResolverFactory _identityResolverFactory;
     private IdentityResolver _identityResolver;
+
+    public enum ReplyType
+    {
+        CLEAR, MIC, ENC, CONF
+    }
+
+    protected class CommandRequest
+    {
+        private final String commandLine;
+        private final String commandLineDescription;
+        private final String name;
+        private final String arg;
+        private final Method method;
+        private final Object commandContext;
+        private final ReplyType replyType;
+        private final CommandRequest originalRequest = _currentRequest;
+        private boolean captureReply;
+        private List<String> delayedReplies;
+        private boolean hasProxyRequest;
+
+        public CommandRequest(String commandLine, ReplyType replyType, Object commandContext)
+        {
+            this.replyType = replyType;
+            this.commandContext = commandContext;
+
+            // Every FTP command is 3 or 4 characters
+            if (commandLine.length() < 3) {
+                this.commandLine = commandLine;
+                commandLineDescription = commandLine;
+                name = null;
+                arg = null;
+                method = null;
+            } else {
+                int l = (commandLine.length() == 3 || commandLine.charAt(3) == ' ') ? 3 : 4;
+                name = commandLine.substring(0,l).toLowerCase();
+                arg = commandLine.length() > l + 1 ? commandLine.substring(l + 1) : "";
+                method = _methodDict.get(name);
+
+                this.commandLine = name.equals("pass") && !arg.isEmpty()
+                        ? commandLine.substring(0, 4) + " ..."
+                        : commandLine;
+
+                if (replyType == ReplyType.CLEAR) {
+                    commandLineDescription = commandLine;
+                } else {
+                    commandLineDescription = replyType.name() + "{" + commandLine + "}";
+                }
+            }
+
+            if (originalRequest != null) {
+                originalRequest.setHasProxyRequest();
+            }
+        }
+
+        public void setHasProxyRequest()
+        {
+            hasProxyRequest = true;
+            captureReply = false;
+        }
+
+        public boolean hasProxyRequest()
+        {
+            return hasProxyRequest;
+        }
+
+        public boolean isConcurrentCommand()
+        {
+            return method != null && method.isAnnotationPresent(ConcurrentWithTransfer.class);
+        }
+
+        public String getCommandLineDescription()
+        {
+            return commandLineDescription;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public ReplyType getReplyType()
+        {
+            return replyType;
+        }
+
+        public CommandRequest getOriginalRequest()
+        {
+            return originalRequest;
+        }
+
+        public boolean isReplyCapturing()
+        {
+            return captureReply;
+        }
+
+        public void storeReply(String reply)
+        {
+            if (delayedReplies == null) {
+                delayedReplies = new ArrayList<>();
+            }
+
+            delayedReplies.add(reply);
+        }
+
+        /**
+         * Run the command and capture the output.  Subsequent call to
+         * {@code #run} returns output to client.
+         */
+        public void runCapturingReply() throws CommandExitException
+        {
+            if (!captureReply) {
+                captureReply = true;
+                runCommand();
+            }
+        }
+
+        /**
+         * Emit captured output if command has captured output, otherwise
+         * run the command and return output to client.
+         */
+        public void run() throws CommandExitException
+        {
+            if (hasProxyRequest) {
+                // do nothing: the proxy handles all output
+            } else if (captureReply) {
+                captureReply = false;
+                if (delayedReplies != null) {
+                    for (String reply : delayedReplies) {
+                        reply(this, reply);
+                    }
+                }
+            } else {
+                runCommand();
+            }
+        }
+
+        private void runCommand() throws CommandExitException
+        {
+            _lastCommand = commandLine;
+            _commandCounter++;
+
+            if (!isCommandAllowed(this, commandContext)) {
+                return;
+            }
+
+            try {
+                if (method == null) {
+                    reply(this, err(commandLine, ""));
+                    return;
+                }
+
+                try {
+                    _currentRequest = this;
+                    method.invoke(AbstractFtpDoorV1.this, new Object[]{arg});
+                } catch (InvocationTargetException ite) {
+                    //
+                    // is thrown if the underlying method
+                    // actively throws an exception.
+                    //
+                    Throwable te = ite.getTargetException();
+                    if (te instanceof FTPCommandException) {
+                        FTPCommandException failure = (FTPCommandException) te;
+                        reply(this, String.valueOf(failure.getCode()) + " " + failure.getReply());
+                    } else if (te instanceof CommandExitException) {
+                        throw (CommandExitException) te;
+                    } else {
+                        reply(this, "500 Operation failed due to internal error: " +
+                              te.getMessage());
+                        LOGGER.error("FTP command '{}' got exception", commandLine, te);
+                    }
+                } catch (IllegalAccessException e) {
+                    reply(this, "500 Operation failed due to internal error: " + e.getMessage());
+                    LOGGER.error("This is a bug. Please report it.", e);
+                } finally {
+                    _currentRequest = null;
+                }
+            } finally {
+                if (name == null || !name.equals("rest")) {
+                    _skipBytes = 0;
+                }
+            }
+        }
+
+        @Override
+        public String toString()
+        {
+            return commandLine;
+        }
+    }
 
 
     /**
@@ -538,10 +731,11 @@ public abstract class AbstractFtpDoorV1
     private final Map<String,Method>  _methodDict =
         new HashMap<>();
     private final Map<String,Help>  _helpDict = new HashMap<>();
+    private final Queue<CommandRequest> _pendingCommands = new ArrayDeque<>();
 
     protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
-    protected String _commandLine;
+    protected CommandRequest _currentRequest;
     private boolean _isHello = true;
 
     protected InetSocketAddress _clientDataAddress;
@@ -556,6 +750,7 @@ public abstract class AbstractFtpDoorV1
 
     protected boolean _confirmEOFs;
 
+    private boolean _subjectLogged;
     protected Subject _subject;
     protected Restriction _doorRestriction;
     protected Restriction _authz = Restrictions.denyAll();
@@ -579,9 +774,6 @@ public abstract class AbstractFtpDoorV1
     protected CheckStagePermission _checkStagePermission;
 
     protected LoginStrategy _loginStrategy;
-
-    /** Can be "mic", "conf", "enc", "clear". */
-    protected String _gReplyType = "clear";
 
     protected Mode _mode = Mode.ACTIVE;
 
@@ -649,7 +841,7 @@ public abstract class AbstractFtpDoorV1
         private final DelayedPassiveReply _delayedPassive;
         private final ProtocolFamily _protocolFamily;
         private final int _version;
-        private final String _commandLine = AbstractFtpDoorV1.this._commandLine;
+        private final CommandRequest _request = AbstractFtpDoorV1.this._currentRequest;
 
         private long _offset;
         private long _size;
@@ -923,14 +1115,14 @@ public abstract class AbstractFtpDoorV1
                     assert _mode == Mode.PASSIVE;
                     assert _adapter != null;
 
-                    replyDelayedPassive(_commandLine, _delayedPassive,
+                    replyDelayedPassive(_request, _delayedPassive,
                                         redirect.getPoolAddress());
 
                     LOGGER.info("Closing adapter");
                     _adapter.close();
                     _adapter = null;
                 } else if (_mode == Mode.PASSIVE) {
-                    replyDelayedPassive(_commandLine, _delayedPassive,
+                    replyDelayedPassive(_request, _delayedPassive,
                                         (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress());
                 }
             }
@@ -942,10 +1134,10 @@ public abstract class AbstractFtpDoorV1
             setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
                       (isWrite() ? "Receiving" : "Sending"));
 
-            reply(_commandLine, "150 Opening BINARY data connection for " + _path, false);
+            reply(_request, "150 Opening BINARY data connection for " + _path);
 
             if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
-                _perfMarkerTask = new PerfMarkerTask(_commandLine, getPoolAddress(),
+                _perfMarkerTask = new PerfMarkerTask(_request, getPoolAddress(),
                         getMoverId(), _performanceMarkerPeriod / 2);
                 TIMER.schedule(_perfMarkerTask, _performanceMarkerPeriod, _performanceMarkerPeriod);
             }
@@ -986,8 +1178,9 @@ public abstract class AbstractFtpDoorV1
                 }
 
                 notifyBilling(0, "");
+                reply(_request, "226 Transfer complete.");
                 setTransfer(null);
-                reply(_commandLine, "226 Transfer complete.");
+                _executor.execute(AbstractFtpDoorV1.this::runPendingCommands);
             } catch (InterruptedException e) {
                 throw new FTPCommandException(451, "FTP proxy was interrupted", e);
             }
@@ -1059,8 +1252,9 @@ public abstract class AbstractFtpDoorV1
             if (!(t instanceof FTPCommandException)) {
                 LOGGER.debug(t.toString(), t);
             }
+            reply(_request, msg);
             setTransfer(null);
-            reply(_commandLine, msg);
+            _executor.execute(AbstractFtpDoorV1.this::runPendingCommands);
         }
 
         @Override
@@ -1228,7 +1422,9 @@ public abstract class AbstractFtpDoorV1
 
         _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
 
-        reply(_commandLine, "220 " + _ftpDoorName + " door ready");
+        reply("220 " + _ftpDoorName + " door ready");
+
+        _isHello = false;
     }
 
     /**
@@ -1303,83 +1499,50 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected boolean isCommandAllowed(String command, Object commandContext)
+    protected boolean isCommandAllowed(CommandRequest command, Object commandContext)
     {
-        // If a transfer is in progress, only permit ABORT and a few
-        // other commands to be processed
-        if (getTransfer() != null && !(command.equals("abor") ||
-                command.equals("mic") || command.equals("conf") ||
-                command.equals("enc") || command.equals("quit") ||
-                command.equals("bye"))) {
-            reply("503 Transfer in progress", false);
-            return false;
-        }
-
         return true;
     }
 
-    public void ftpcommand(String cmdline, Object commandContext)
+    public void ftpcommand(String cmdline, Object commandContext, ReplyType replyType)
         throws CommandExitException
     {
-        int l = 4;
-        // Every FTP command is 3 or 4 characters
-        if (cmdline.length() < 3) {
-            reply(err(cmdline, ""));
-            return;
-        }
-        if (cmdline.length() == 3 || cmdline.charAt(3) == ' ') {
-            l = 3;
-        }
+        CommandRequest request = new CommandRequest(cmdline, replyType, commandContext);
 
-        String cmd = cmdline.substring(0,l);
-        String arg = cmdline.length() > l + 1 ? cmdline.substring(l + 1) : "";
-        Object args[] = {arg};
+        synchronized (_pendingCommands) {
+            if (isTransferring() || !_pendingCommands.isEmpty()) {
+                if (request.isConcurrentCommand()) {
+                    request.runCapturingReply();
+                }
 
-        cmd = cmd.toLowerCase();
-
-        // most of the ic is handled in the ftp_ functions but a few
-        // commands need special handling
-        if (!cmd.equals("mic" ) && !cmd.equals("conf") && !cmd.equals("enc") &&
-            !cmd.equals("adat") && !cmd.equals("pass")) {
-            _lastCommand = cmdline;
-        }
-
-        if (!isCommandAllowed(cmd, commandContext)) {
-            return;
-        }
-
-        if (!_methodDict.containsKey(cmd)) {
-            _skipBytes = 0;
-            reply(err(cmd, arg));
-            return;
-        }
-
-        Method m = _methodDict.get(cmd);
-        try {
-            m.invoke(this, args);
-            if (!cmd.equals("rest")) {
-                _skipBytes = 0;
+                _pendingCommands.add(request);
+                return;
             }
-        } catch (InvocationTargetException ite) {
-            //
-            // is thrown if the underlying method
-            // actively throws an exception.
-            //
-            Throwable te = ite.getTargetException();
-            if (te instanceof FTPCommandException) {
-                FTPCommandException failure = (FTPCommandException) te;
-                reply(String.valueOf(failure.getCode()) + " " + failure.getReply());
-            } else if (te instanceof CommandExitException) {
-                throw (CommandExitException) te;
-            } else {
-                reply("500 Operation failed due to internal error: " +
-                      te.getMessage());
-                LOGGER.error("FTP command '{}' got exception", cmd, te);
-            }
+        }
 
-            _skipBytes = 0;
-        } catch (IllegalAccessException e) {
-            LOGGER.error("This is a bug. Please report it.", e);
+        request.run();
+    }
+
+    void runPendingCommands()
+    {
+        synchronized (_pendingCommands) {
+            boolean queuingCommands = isTransferring();
+
+            List<CommandRequest> todo = new ArrayList<>(_pendingCommands);
+            _pendingCommands.clear();
+
+            for (CommandRequest request : todo) {
+                if (queuingCommands) {
+                    _pendingCommands.add(request);
+                } else {
+                    try {
+                        request.run();
+                    } catch (CommandExitException e) {
+                        LOGGER.error("Bug detected: blocking command issued CommandExitException", e);
+                    }
+                    queuingCommands |= isTransferring();
+                }
+            }
         }
     }
 
@@ -1427,17 +1590,7 @@ public abstract class AbstractFtpDoorV1
     public void execute(String command)
             throws CommandExitException
     {
-        _commandLine = command;
-        try {
-            if (command.equals("")) {
-                reply(err("",""));
-            } else {
-                _commandCounter++;
-                ftpcommand(command, null);
-            }
-        } finally {
-            _commandLine = null;
-        }
+        ftpcommand(command, null, ReplyType.CLEAR);
     }
 
     protected String getUser()
@@ -1522,59 +1675,38 @@ public abstract class AbstractFtpDoorV1
     //
     // GSS authentication
     //
-    protected void reply(String answer, boolean resetReply)
+    protected void reply(CommandRequest request, String answer)
     {
-        reply(_commandLine, answer, resetReply, null);
-    }
+        if (!_isHello && request.isReplyCapturing()) {
+            request.storeReply(answer);
+        } else {
+            logReply(request, answer);
 
-    protected void reply(String commandLine, String answer, boolean resetReply)
-    {
-        reply(commandLine, answer, resetReply, null);
-    }
-
-    protected void reply(String commandLine, String answer, boolean resetReply, Subject subject)
-    {
-        logReply(commandLine, answer, subject);
-        switch (_gReplyType) {
-        case "clear":
-            println(answer);
-            break;
-        case "mic":
-            secure_reply(answer, "631");
-            break;
-        case "enc":
-            secure_reply(answer, "633");
-            break;
-        case "conf":
-            secure_reply(answer, "632");
-            break;
-        }
-        if (resetReply) {
-            _gReplyType = "clear";
+            switch (_isHello ? ReplyType.CLEAR : request.getReplyType()) {
+            case CLEAR:
+                println(answer);
+                break;
+            case MIC:
+                secure_reply(request, answer, "631");
+                break;
+            case ENC:
+                secure_reply(request, answer, "633");
+                break;
+            case CONF:
+                secure_reply(request, answer, "632");
+                break;
+            }
         }
     }
 
-    private void logReply(String commandLine, String response, Subject subject)
+    private void logReply(CommandRequest request, String response)
     {
         if (ACCESS_LOGGER.isInfoEnabled()) {
             String event = _isHello ? "org.dcache.ftp.hello" :
                     "org.dcache.ftp.response";
 
-            if (commandLine != null) {
-                // For some commands we don't want to log the arguments.
-                String command = commandLine.substring(0, min(commandLine.length(), 4)).trim();
-                if (command.equalsIgnoreCase("ADAT") ||
-                        command.equalsIgnoreCase("PASS")) {
-                    commandLine = command + " ...";
-                }
-            }
-
             if (response.startsWith("335 ADAT=")) {
                 response = "335 ADAT=...";
-            }
-
-            if (!_gReplyType.equals("clear")) {
-                response = _gReplyType.toUpperCase() + "{" + response + "}";
             }
 
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
@@ -1585,17 +1717,30 @@ public abstract class AbstractFtpDoorV1
                     log.add("socket.proxy", _proxySocketAddress);
                 }
                 log.add("socket.local", _localSocketAddress);
+            } else {
+                if (request.getReplyType() != ReplyType.CLEAR) {
+                    response = request.getReplyType().name() + "{" + response + "}";
+                }
 
+                String commandLine = request.getCommandLineDescription();
+
+                if (request.getName() != null) {
+                    // For some commands we don't want to log the arguments.
+                    String name = request.getName();
+                    if (name.equals("adat") || name.equals("pass")) {
+                        commandLine = name.toUpperCase() + " ...";
+                    }
+                }
+
+                log.addInQuotes("command", commandLine);
             }
-            if (subject != null) {
-                logSubject(log, subject);
+            if (_subject != null && !_subjectLogged) {
+                logSubject(log, _subject);
                 log.add("user.mapped", _subject);
+                _subjectLogged = true;
             }
-            log.addInQuotes("command", commandLine);
             log.addInQuotes("reply", response);
             log.toLogger(ACCESS_LOGGER);
-
-            _isHello = false;
         }
     }
 
@@ -1603,20 +1748,10 @@ public abstract class AbstractFtpDoorV1
 
     protected void reply(String answer)
     {
-        reply(answer, true);
+        reply(_currentRequest, answer);
     }
 
-    protected void reply(String answer, Subject subject)
-    {
-        reply(_commandLine, answer, true, subject);
-    }
-
-    protected void reply(String commandLine, String answer)
-    {
-        reply(commandLine, answer, true);
-    }
-
-    protected abstract void secure_reply(String answer, String code);
+    protected abstract void secure_reply(CommandRequest request, String answer, String code);
 
     protected void checkLoggedIn(AnonymousPermission mode) throws FTPCommandException
     {
@@ -3156,6 +3291,11 @@ public abstract class AbstractFtpDoorV1
         return _transfer;
     }
 
+    private synchronized boolean isTransferring()
+    {
+        return _transfer != null;
+    }
+
     protected synchronized void setTransfer(FtpTransfer transfer)
     {
         _transfer = transfer;
@@ -3488,11 +3628,11 @@ public abstract class AbstractFtpDoorV1
         switch (_mode) {
         case PASSIVE:
             replyDelayedPassive(_delayedPassive, (InetSocketAddress) _passiveModeServerSocket.getLocalAddress());
-            reply("150 Ready to accept ASCII mode data connection", false);
+            reply("150 Ready to accept ASCII mode data connection");
             _dataSocket = _passiveModeServerSocket.accept().socket();
             break;
         case ACTIVE:
-            reply("150 Opening ASCII mode data connection", false);
+            reply("150 Opening ASCII mode data connection");
             _dataSocket = new Socket();
             _dataSocket.connect(_clientDataAddress);
             break;
@@ -3869,6 +4009,7 @@ public abstract class AbstractFtpDoorV1
     //      The delayed QUIT has not been directly implemented yet, instead...
     // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
     // ---------------------------------------------
+    @ConcurrentWithTransfer
     @Help("QUIT - Disconnect.")
     public void ftp_quit(String arg)
         throws CommandExitException
@@ -3898,6 +4039,7 @@ public abstract class AbstractFtpDoorV1
     // --------------------------------------------
     // BYE: synonym for QUIT
     // ---------------------------------------------
+    @ConcurrentWithTransfer
     @Help("BYE - Disconnect.")
     public void ftp_bye( String arg ) throws CommandExitException
     {
@@ -3907,6 +4049,7 @@ public abstract class AbstractFtpDoorV1
     // --------------------------------------------
     // ABOR: close data channels, but leave command channel open
     // ---------------------------------------------
+    @ConcurrentWithTransfer
     @Help("ABOR - Abort transfer.")
     public void ftp_abor(String arg)
         throws FTPCommandException
@@ -3960,17 +4103,17 @@ public abstract class AbstractFtpDoorV1
         private final long _timeout;
         private final CellAddressCore _pool;
         private final int _moverId;
-        private final String _commandLine;
+        private final CommandRequest _request;
         private final CDC _cdc;
         private boolean _stopped;
 
-        public PerfMarkerTask(String commandLine, CellAddressCore pool, int moverId, long timeout)
+        public PerfMarkerTask(CommandRequest request, CellAddressCore pool, int moverId, long timeout)
         {
             _pool = pool;
             _moverId = moverId;
             _timeout = timeout;
             _cdc = new CDC();
-            _commandLine = commandLine;
+            _request = request;
 
             /* For the first time, send markers with zero counts -
              * requirement of the standard
@@ -4016,7 +4159,7 @@ public abstract class AbstractFtpDoorV1
         protected synchronized void sendMarker()
         {
             if (!_stopped) {
-                reply(_commandLine, _perfMarkersBlock.markers(0).getReply(), false);
+                reply(_request, _perfMarkersBlock.markers(0).getReply());
             }
         }
 
@@ -4207,10 +4350,10 @@ public abstract class AbstractFtpDoorV1
      */
     protected void replyDelayedPassive(DelayedPassiveReply format, InetSocketAddress socketAddress)
     {
-        replyDelayedPassive(_commandLine, format, socketAddress);
+        replyDelayedPassive(_currentRequest, format, socketAddress);
     }
 
-    protected void replyDelayedPassive(String commandLine, DelayedPassiveReply format, InetSocketAddress socketAddress)
+    protected void replyDelayedPassive(CommandRequest request, DelayedPassiveReply format, InetSocketAddress socketAddress)
     {
         InetAddress address = socketAddress.getAddress();
         Protocol protocol = Protocol.fromAddress(address);
@@ -4221,16 +4364,16 @@ public abstract class AbstractFtpDoorV1
             checkArgument(protocol == Protocol.IPV4, "PASV required IPv4 data channel.");
             int port = socketAddress.getPort();
             byte[] host = address.getAddress();
-            reply(commandLine, String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
+            reply(request, String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
                                 (host[0] & 0377),
                                 (host[1] & 0377),
                                 (host[2] & 0377),
                                 (host[3] & 0377),
                                 (port / 256),
-                                (port % 256)), false);
+                                (port % 256)));
             break;
         case EPSV:
-            reply(commandLine, String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
+            reply(request, String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
                                 protocol.getCode(), InetAddresses.toAddrString(address), socketAddress.getPort()));
             break;
         }

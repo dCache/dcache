@@ -81,14 +81,14 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    protected void secure_reply(String answer, String code)
+    protected void secure_reply(CommandRequest request, String answer, String code)
     {
         answer = answer + "\r\n";
         byte[] data = answer.getBytes(UTF8);
         try {
             data = context.wrap(data, 0, data.length);
         } catch (IOException e) {
-            reply("500 Reply encryption error: " + e);
+            reply(request.getOriginalRequest(), "500 Reply encryption error: " + e);
             return;
         }
         println(code + " " + Base64.getEncoder().encodeToString(data));
@@ -187,31 +187,34 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         reply("533 CCC must be protected");
     }
 
+    @ConcurrentWithTransfer
     @Help("MIC <SP> <arg> - Integrity protected command.")
     @Plaintext
     public void ftp_mic(String arg)
             throws CommandExitException
     {
-        secure_command(arg, "mic");
+        secure_command(arg, ReplyType.MIC);
     }
 
+    @ConcurrentWithTransfer
     @Help("ENC <SP> <arg> - Privacy protected command.")
     @Plaintext
     public void ftp_enc(String arg)
             throws CommandExitException
     {
-        secure_command(arg, "enc");
+        secure_command(arg, ReplyType.ENC);
     }
 
+    @ConcurrentWithTransfer
     @Help("CONF <SP> <arg> - Confidentiality protection command.")
     @Plaintext
     public void ftp_conf(String arg)
             throws CommandExitException
     {
-        secure_command(arg, "conf");
+        secure_command(arg, ReplyType.CONF);
     }
 
-    public void secure_command(String answer, String sectype)
+    public void secure_command(String answer, ReplyType sectype)
             throws CommandExitException
     {
         if (answer == null || answer.length() <= 0) {
@@ -242,34 +245,26 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         for (i = data.length; i > 0 && data[i - 1] == 0; i--) {
             //do nothing, just decrement i
         }
-        String msg = new String(data, 0, i, UTF8);
-        msg = msg.trim();
-
-        if (msg.toLowerCase().startsWith("pass") && msg.length() != 4) {
-            _commandLine = sectype.toUpperCase() + "{" + msg.substring(0, 4) + " ...}";
-        } else {
-            _commandLine = sectype.toUpperCase() + "{" + msg + "}";
-        }
+        String msg = new String(data, 0, i, UTF8).trim();
 
         if (msg.equalsIgnoreCase("CCC")) {
-            _gReplyType = "clear";
+            sectype = ReplyType.CLEAR;
             _hasControlPortCleared = true;
             reply("200 OK");
         } else {
-            _gReplyType = sectype;
-            ftpcommand(msg, SECURE_COMMAND_CONTEXT);
+            ftpcommand(msg, SECURE_COMMAND_CONTEXT, sectype);
         }
 
     }
 
     @Override
-    protected boolean isCommandAllowed(String command, Object commandContext)
+    protected boolean isCommandAllowed(CommandRequest command, Object commandContext)
     {
         boolean isSecureCommand = commandContext == SECURE_COMMAND_CONTEXT;
 
         if (!_hasControlPortCleared && !isSecureCommand &&
-                !_plaintextCommands.contains(command)) {
-            reply("530 Command must be wrapped in MIC, ENC or CONF", false);
+                !_plaintextCommands.contains(command.getName())) {
+            reply("530 Command must be wrapped in MIC, ENC or CONF");
             return false;
         }
 
@@ -297,7 +292,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
         try {
             login(subject);
-            reply("200 User " + arg + " logged in", this.subject);
+            reply("200 User " + arg + " logged in");
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}: {}", context.getPeerName(), e.getMessage());
             println("530 Login denied");
