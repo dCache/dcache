@@ -645,15 +645,25 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     String fileId = future.checkedGet();
 
                     State state = fr.getState();
-                    if(state == State.ASYNCWAIT) {
+                    switch (state) {
+                    case ASYNCWAIT:
                         logger.trace("Storage info arrived for file {}.", fr.getSurlString());
                         fr.setFileId(fileId);
-                        Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
+                        Scheduler<?> scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                         try {
                             scheduler.schedule(fr);
-                        } catch(Exception ie) {
+                        } catch (Exception ie) {
                             logger.error(ie.toString());
                         }
+                        break;
+                    case CANCELED:
+                    case FAILED:
+                        fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(), fr.getErrorMessage());
+                        break;
+                    default:
+                        logger.error("Put request is in an unexpected state in callback: {}", state);
+                        fr.getStorage().abortPut(fr.getUser(), fileId, fr.getSurl(), fr.getErrorMessage());
+                        break;
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
