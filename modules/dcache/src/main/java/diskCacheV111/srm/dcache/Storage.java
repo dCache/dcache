@@ -134,6 +134,8 @@ import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
+import diskCacheV111.services.space.message.Release;
+import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -181,6 +183,8 @@ import org.dcache.namespace.FileType;
 import org.dcache.namespace.PermissionHandler;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.pinmanager.PinManagerExtendPinMessage;
+import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.pinmanager.PinManagerUnpinMessage;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
@@ -520,6 +524,43 @@ public final class Storage
 
             _log.debug("removing TransferInfo for callerId="+callerId);
             callerIdToHandler.remove(callerId);
+        }
+    }
+
+    public void messageArrived(PnfsCreateUploadPath msg)
+    {
+        // Catches replies for which the callback timed out
+        try {
+            if (msg.isReply() && msg.getReturnCode() == 0) {
+                _pnfsStub.notify(
+                        new PnfsCancelUpload(msg.getSubject(), new FsPath(msg.getUploadPath()), msg.getPath()));
+            }
+        } catch (NoRouteToCellException e) {
+            _log.error("Failed to remove {}: No route to {}.", msg.getUploadPath(), _pnfsStub.getDestinationPath());
+        }
+    }
+
+    public void messageArrived(PinManagerPinMessage msg)
+    {
+        // Catches replies for which the callback timed out
+        try {
+            if (msg.isReply() && msg.getReturnCode() == 0) {
+                _pinManagerStub.notify(new PinManagerUnpinMessage(msg.getPnfsId(), msg.getPinId()));
+            }
+        } catch (NoRouteToCellException e) {
+            _log.error("Failed to unpin {}: No route to {}.", msg.getPinId(), _pinManagerStub.getDestinationPath());
+        }
+    }
+
+    public void messageArrived(Reserve msg)
+    {
+        // Catches replies for which the callback timed out
+        try {
+            if (msg.isReply() && msg.getReturnCode() == 0) {
+                _spaceManagerStub.notify(new Release(msg.getSpaceToken(), null));
+            }
+        } catch (NoRouteToCellException e) {
+            _log.error("Failed to release {}: No route to {}.", msg.getSpaceToken(), _spaceManagerStub.getDestinationPath());
         }
     }
 

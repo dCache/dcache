@@ -19,6 +19,12 @@ public class PinManagerUnpinMessage extends Message
         _pnfsId = pnfsId;
     }
 
+    public PinManagerUnpinMessage(PnfsId pnfsId, long pinId)
+    {
+        this(pnfsId);
+        _pinId = pinId;
+    }
+
     public void setPinId(long pinId)
     {
         _pinId = pinId;
