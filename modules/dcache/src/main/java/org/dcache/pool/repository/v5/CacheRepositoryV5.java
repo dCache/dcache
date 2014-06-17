@@ -723,7 +723,8 @@ public class CacheRepositoryV5
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("State             : " + _state);
+        pw.println("State : " + _state);
+        pw.println("Files : " + _store.list().size());
 
         SpaceRecord space = getSpaceRecord();
         long total = space.getTotalSpace();
@@ -732,7 +733,7 @@ public class CacheRepositoryV5
         long fsFree = _store.getFreeSpace();
         long fsTotal = _store.getTotalSpace();
 
-        pw.println("Diskspace usage   : ");
+        pw.println("Disk space");
         pw.println("    Total    : " + UnitInteger.toUnitString(total));
         pw.println("    Used     : " + used + "    ["
                    + (((float) used) / ((float) total)) + "]");
@@ -745,8 +746,8 @@ public class CacheRepositoryV5
                    + (((float) space.getRemovableSpace()) / ((float) total))
                    + "]");
         pw.println("File system");
-        pw.println("    Size: " + fsTotal);
-        pw.println("    Free: " + fsFree +
+        pw.println("    Size : " + fsTotal);
+        pw.println("    Free : " + fsFree +
                    "    [" + (((float) fsFree) / fsTotal) + "]");
         pw.println("Limits for maximum disk space");
         pw.println("    File system          : " + (fsFree + used));
