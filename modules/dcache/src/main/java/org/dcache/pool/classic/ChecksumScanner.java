@@ -124,6 +124,9 @@ public class ChecksumScanner
                     } catch (CacheException e) {
                         _log.warn("Checksum scanner failed for {}: {}", id, e.getMessage());
                         _badCount++;
+                    } catch (IOException e) {
+                        _log.error("Checksum scanner failed with IO error for {}: {}", id, e.getMessage());
+                        _badCount++;
                     }
                     _totalCount++;
                 }
@@ -437,6 +440,7 @@ public class ChecksumScanner
                 } catch (IOException e) {
                     _log.error("Failed to verify the checksum of {} (skipping): {}",
                             id, e.getMessage());
+                    _badCount++;
                 }
                 _lastFileChecked = id;
                 _totalCount++;
