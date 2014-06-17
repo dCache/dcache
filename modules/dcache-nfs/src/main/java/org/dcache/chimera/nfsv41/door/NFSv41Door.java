@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +45,11 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerHandler;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
+import java.io.Serializable;
+import java.util.concurrent.Callable;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -89,7 +93,6 @@ import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.nfs.vfs.VirtualFileSystem;
-import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -594,29 +597,49 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    public static final String hh_kill_mover = " <pool> <moverid> # kill mover on the pool";
-    public String ac_kill_mover_$_2(Args args) throws Exception {
-        int mover = Integer.parseInt(args.argv(1));
-        String pool = args.argv(0);
+    @Command(name = "kill mover", hint = "Kill mover on the pool.")
+    public class KillMoverCmd implements Callable<String> {
 
-        PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover);
-        message.setReplyRequired(false);
-        _poolStub.notify(new CellPath(pool), message);
-        return "";
+        @Argument(index = 0, metaVar = "pool", usage = "pool name")
+        String pool;
+
+        @Argument(index = 1, metaVar = "moverid", usage = "mover id")
+        int mover;
+
+        @Override
+        public String call() throws Exception {
+            PoolMoverKillMessage message = new PoolMoverKillMessage(pool, mover);
+            message.setReplyRequired(false);
+            _poolStub.notify(new CellPath(pool), message);
+            return "Done.";
+        }
+
     }
 
-    public static final String fh_exports_reload = " # re-scan export file";
-    public String ac_exports_reload(Args args) throws IOException {
-        _exportFile.rescan();
-        return "Done";
+    @Command(name = "exports reload", hint = "Re-scan export file.")
+    public class ExportsReloadCmd implements Callable<String> {
+
+        @Override
+        public String call() throws IOException {
+            _exportFile.rescan();
+            return "Done.";
+        }
     }
-    public static final String fh_exports_ls = " [host] # dump nfs exports";
-    public String ac_exports_ls_$_0_1(Args args) throws UnknownHostException {
-        InetAddress address = InetAddress.getByName(args.argv(0));
-        if (args.argc() > 0 ) {
-            return Joiner.on('\n').join(_exportFile.exportsFor(address));
-        } else {
-            return Joiner.on('\n').join(_exportFile.getExports());
+
+    @Command(name = "exports ls", hint = "Dump nfs exports.")
+    public class ExportsLsCmd implements Callable<String> {
+
+        @Argument(required = false)
+        String host;
+
+        @Override
+        public String call() throws IOException {
+            if (host != null) {
+                InetAddress address = InetAddress.getByName(host);
+                return Joiner.on('\n').join(_exportFile.exportsFor(address));
+            } else {
+                return Joiner.on('\n').join(_exportFile.getExports());
+            }
         }
     }
 
@@ -682,39 +705,46 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    /**
+    /*
      * To allow the transfer monitoring in the httpd cell to recognize us
      * as a door, we have to emulate LoginManager.  To emulate
      * LoginManager we list ourselves as our child.
      */
-    public final static String hh_get_children = "[-binary]";
+    @Command(name = "get children", hint = "Get door's children associated with transfers.")
+    public class GetDoorChildrenCmd implements Callable<Serializable> {
+        @Option(name = "binary", usage = "returns binary object instead of string form")
+        boolean isBinary;
 
-    public Object ac_get_children(Args args) {
-        boolean binary = args.hasOption("binary");
-        if (binary) {
-            String[] childrens = new String[]{this.getCellName()};
-            return new LoginManagerChildrenInfo(this.getCellName(), this.getCellDomainName(), childrens);
-        } else {
-            return this.getCellName();
+        @Override
+        public Serializable call() throws Exception {
+            if (isBinary) {
+                String[] children = new String[]{NFSv41Door.this.getCellName()};
+                return new LoginManagerChildrenInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName(), children);
+            } else {
+                return NFSv41Door.this.getCellName();
+            }
         }
     }
-    public final static String hh_get_door_info = "[-binary]";
-    public final static String fh_get_door_info =
-            "Provides information about the door and current transfers";
 
-    public Object ac_get_door_info(Args args) {
-        List<IoDoorEntry> entries = new ArrayList<>();
-        for (Transfer transfer : _ioMessages.values()) {
-            entries.add(transfer.getIoDoorEntry());
+    @Command(name = "get door info", hint = "Provide information about the door and current transfers.")
+    public class GetDoorInfoCmd implements Callable<Serializable> {
+        @Option(name = "binary", usage = "returns binary object instead of string form")
+        boolean isBinary;
+
+        @Override
+        public Serializable call() throws Exception {
+            List<IoDoorEntry> entries = new ArrayList<>();
+            for (Transfer transfer : _ioMessages.values()) {
+                entries.add(transfer.getIoDoorEntry());
+            }
+
+            IoDoorInfo doorInfo = new IoDoorInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName());
+            doorInfo.setProtocol("NFSV4.1", "0");
+            doorInfo.setOwner("");
+            doorInfo.setProcess("");
+            doorInfo.setIoDoorEntries(entries.toArray(new IoDoorEntry[0]));
+            return isBinary ? doorInfo : doorInfo.toString();
         }
-
-        IoDoorInfo doorInfo = new IoDoorInfo(this.getCellName(), this.getCellDomainName());
-        doorInfo.setProtocol("NFSV4.1", "0");
-        doorInfo.setOwner("");
-        doorInfo.setProcess("");
-        doorInfo.setIoDoorEntries(entries
-                .toArray(new IoDoorEntry[entries.size()]));
-        return args.hasOption("binary") ? doorInfo : doorInfo.toString();
     }
 
     /**
@@ -772,19 +802,22 @@ public class NFSv41Door extends AbstractCellComponent implements
         return multipath;
     }
 
-    public final static String fh_stats =
-            "stats [-c] # show nfs requests statstics\n\n" +
-            "  Print nfs operation statistics.\n" +
-            "    -c clear current statistics values";
-    public final static String hh_stats = " [-c] # show nfs requests statstics";
-    public String ac_stats(Args args) {
-        RequestExecutionTimeGauges<String> gauges = _nfs4.getStatistics();
-        StringBuilder sb = new StringBuilder();
-        sb.append("Stats:").append("\n").append(gauges);
+    @Command(name="stats", hint = "Show nfs requests statstics.")
+    public class NfsStatsCmd implements Callable<String> {
 
-        if (args.hasOption("c")) {
-            gauges.reset();
+        @Option(name = "c", usage = "clear current statistics values")
+        boolean clean;
+
+        @Override
+        public String call() {
+            RequestExecutionTimeGauges<String> gauges = _nfs4.getStatistics();
+            StringBuilder sb = new StringBuilder();
+            sb.append("Stats:").append("\n").append(gauges);
+
+            if (clean) {
+                gauges.reset();
+            }
+            return sb.toString();
         }
-        return sb.toString();
     }
 }
