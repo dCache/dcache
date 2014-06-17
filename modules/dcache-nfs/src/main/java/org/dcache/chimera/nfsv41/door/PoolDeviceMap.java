@@ -88,4 +88,13 @@ public class PoolDeviceMap {
             _rlock.unlock();
         }
     }
+
+    PoolDS remove(String pool) {
+        _wlock.lock();
+        try {
+            return _poolNameToIpMap.remove(pool);
+        } finally {
+            _wlock.unlock();
+        }
+    }
 }

@@ -820,4 +820,21 @@ public class NFSv41Door extends AbstractCellComponent implements
             return sb.toString();
         }
     }
+
+    @Command(name = "pool reset id", hint = "Reset device id associated with the pool.")
+    public class PoolResetDeviceidCmd implements Callable<String> {
+
+        @Argument(metaVar = "pool")
+        String pool;
+
+        @Override
+        public String call() {
+            PoolDS ds = _poolDeviceMap.remove(pool);
+            if (ds != null) {
+                return "Pools " + pool + " as: " + ds + " removed.";
+            } else {
+                return "pool " + pool + " Not Found.";
+            }
+        }
+    }
 }
