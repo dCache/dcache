@@ -2,7 +2,10 @@
 
 package diskCacheV111.vehicles ;
 
+import java.io.IOException;
 import java.io.Serializable;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DoorInfo implements Serializable {
 
@@ -23,14 +26,14 @@ public class DoorInfo implements Serializable {
    public void setProtocol( String protocolFamily ,
                             String protocolVersion  ){
 
-      _protocolFamily = protocolFamily ;
-      _protocolVersion = protocolVersion ;
+      _protocolFamily = checkNotNull(protocolFamily);
+      _protocolVersion = checkNotNull(protocolVersion);
    }
 
    public String getCellName(){ return _cellName ; }
    public String getDomainName(){ return _cellDomainName ; }
-   public void setOwner( String owner ){ _owner = owner ; }
-   public void setProcess( String process ){ _process = process ; }
+   public void setOwner( String owner ){ _owner = checkNotNull(owner); }
+   public void setProcess( String process ){ _process = checkNotNull(process); }
 
    public String getProtocolFamily(){ return _protocolFamily ; }
    public String getProtocolVersion(){ return _protocolVersion ; }
@@ -48,4 +51,15 @@ public class DoorInfo implements Serializable {
          append(";");
       return sb.toString();
    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        _cellDomainName = _cellDomainName.intern();
+        _protocolFamily = _protocolFamily.intern();
+        _protocolVersion = _protocolVersion.intern();
+        _owner = _owner.intern();
+        _process = _process.intern();
+    }
 }

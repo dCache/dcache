@@ -2,6 +2,7 @@
 
 package diskCacheV111.vehicles ;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import diskCacheV111.util.PnfsId;
@@ -9,7 +10,7 @@ import diskCacheV111.util.PnfsId;
 public class IoDoorEntry implements Serializable {
    private final long _serialId;
    private final PnfsId _pnfsId;
-   private final String _pool;
+   private String _pool;
    private final String _status;
    private final long   _waitingSince;
    private final String _replyHost;
@@ -46,4 +47,12 @@ public class IoDoorEntry implements Serializable {
       return sb.toString() ;
    }
 
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_pool != null) {
+            _pool = _pool.intern();
+        }
+    }
 }

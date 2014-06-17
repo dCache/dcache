@@ -2,9 +2,12 @@
 
 package diskCacheV111.vehicles;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class JobInfo implements Serializable {
 
@@ -16,13 +19,13 @@ public class JobInfo implements Serializable {
    private final long   _clientId;
    private final long   _submitTime;
    private final long   _startTime;
-   private final String _status;
+   private String _status;
    private final long   _jobId;
 
     public JobInfo(long submitTime, long startTime, String status, int id, String clientName , long clientId ){
       _submitTime = submitTime ;
       _startTime  = startTime;
-      _status     = status;
+      _status     = checkNotNull(status);
       _jobId      = id;
       _client   = clientName ;
       _clientId = clientId ;
@@ -45,4 +48,11 @@ public class JobInfo implements Serializable {
       }
       return sb.toString();
    }
+
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        _status = _status.intern();
+    }
 }
