@@ -62,7 +62,7 @@ public class PoolDeviceMap {
         }
     }
 
-    synchronized PoolDS getByPoolName(String name) {
+    PoolDS getByPoolName(String name) {
         _rlock.lock();
         try {
             return _poolNameToIpMap.get(name);
@@ -71,7 +71,7 @@ public class PoolDeviceMap {
         }
     }
 
-    synchronized PoolDS getByDeviceId(deviceid4 deviceId) {
+    PoolDS getByDeviceId(deviceid4 deviceId) {
         _rlock.lock();
         try {
             return _deviceMap.get(deviceId);
@@ -80,7 +80,7 @@ public class PoolDeviceMap {
         }
     }
 
-    synchronized Collection<Map.Entry<String,PoolDS>> getEntries() {
+    Collection<Map.Entry<String,PoolDS>> getEntries() {
         _rlock.lock();
         try {
             return ImmutableSet.copyOf(_poolNameToIpMap.entrySet());
