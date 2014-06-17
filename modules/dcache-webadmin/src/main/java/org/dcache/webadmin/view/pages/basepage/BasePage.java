@@ -8,7 +8,7 @@ import org.apache.wicket.markup.head.StringHeaderItem;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -34,8 +34,6 @@ public abstract class BasePage extends WebPage {
 
     protected final Logger _log = LoggerFactory.getLogger(this.getClass());
 
-    private String _title = "";
-
     public BasePage() {
         initialize();
     }
@@ -43,14 +41,6 @@ public abstract class BasePage extends WebPage {
     public BasePage(PageParameters parameters) {
         super(parameters);
         initialize();
-    }
-
-    public String getTitle() {
-        return _title;
-    }
-
-    protected void setTitle(String title) {
-        _title = title;
     }
 
     /*
@@ -152,8 +142,7 @@ public abstract class BasePage extends WebPage {
 
     protected void initialize() {
         setTimeout();
-        setTitle(getStringResource("title"));
-        add(new Label("pageTitle", new PropertyModel<String>(this, "title")));
+        add(new Label("pageTitle", new ResourceModel("title")));
         add(new HeaderPanel("headerPanel"));
         add(new UserPanel("userPanel", this));
         BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
