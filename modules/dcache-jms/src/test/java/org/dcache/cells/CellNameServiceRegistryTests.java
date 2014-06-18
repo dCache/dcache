@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -36,11 +37,19 @@ public class CellNameServiceRegistryTests {
 
     public static final String UNKNOWN_CELL = "unknown-cell";
 
+    long _currentTimeMillis;
     CellNameServiceRegistry _registry;
 
     @Before
     public void setup() {
-        _registry = new CellNameServiceRegistry();
+        _currentTimeMillis = System.currentTimeMillis();
+        _registry = new CellNameServiceRegistry() {
+            @Override
+            protected long currentTimeMillis()
+            {
+                return _currentTimeMillis;
+            }
+        };
         simulateDomainRegistration(DOMAIN_1, 60000, DOMAIN_1_CELLS);
         simulateDomainRegistration(DOMAIN_2, 60000, DOMAIN_2_CELLS);
     }
@@ -76,8 +85,7 @@ public class CellNameServiceRegistryTests {
         String expiringDomain = "new-domain";
         String expiringDomainsCell = "well-known";
         simulateDomainRegistration(expiringDomain, 1, expiringDomainsCell);
-
-        Thread.sleep(2);
+        _currentTimeMillis += 2;
 
         assertNull(_registry.getDomain(expiringDomainsCell));
 
