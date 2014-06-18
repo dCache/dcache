@@ -8,7 +8,7 @@ Standards-Version: 3.9.0
 Package: @PackageName@
 Depends: ssh-client, adduser, ssl-cert
 Conflicts: dcache-server
-Recommends: libxml2-utils
+Recommends: libxml2-utils, python-psycopg2
 Architecture: all
 Suggests: ruby
 Description: distributed mass storage system
