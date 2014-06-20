@@ -134,48 +134,6 @@ public class AlarmJDOUtils {
         }
     }
 
-    /**
-     * Construct an actual JDO query from the filter.
-     */
-    public static Query createQuery(PersistenceManager pm, AlarmDAOFilter filter) {
-        String expression;
-        String parameters;
-        Integer from;
-        Integer to;
-        Query query = pm.newQuery(LogEntry.class);
-
-        /*
-         * 2013/12/11 -- added a range limit guard.  This can be hard-coded
-         * as effectively the capacity to hold more than 10000 entries in
-         * memory should not be required.  One can always adjust the numbers or
-         * refine the query.
-         */
-        if (filter != null) {
-            expression = filter.filter;
-            parameters = filter.parameters;
-            filter.normalizeRange();
-            from = filter.rangeStart == null ? 0
-                            : filter.rangeStart;
-            int limit = from + MAXIMUM_QUERY_RESULTS;
-            to   = filter.rangeEnd   == null ? limit
-                            : Math.min(filter.rangeEnd, limit);
-            query.setFilter(expression);
-            query.declareParameters(parameters);
-            query.setRange(from, to);
-        } else {
-            expression = null;
-            parameters = null;
-            from = null;
-            to = null;
-        }
-
-        query.addExtension("datanucleus.query.resultCacheType", "none");
-        query.addExtension("datanucleus.rdbms.query.resultSetType",
-                        "scroll-insensitive");
-        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
-        return query;
-    }
-
     public static long delete(PersistenceManager pm, AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
         return filter.values == null ? query.deletePersistentAll()
@@ -185,6 +143,20 @@ public class AlarmJDOUtils {
     public static Collection<LogEntry> execute(PersistenceManager pm,
                     AlarmDAOFilter filter) {
         Query query = AlarmJDOUtils.createQuery(pm, filter);
+
+        /*
+         * 2013/12/11 -- added a range limit guard.  This can be hard-coded
+         * as effectively the capacity to hold more than 10000 entries in
+         * memory should not be required.  One can always adjust the numbers or
+         * refine the query.
+         */
+        Integer from = filter.rangeStart == null ? 0
+                        : filter.rangeStart;
+        int limit = from + MAXIMUM_QUERY_RESULTS;
+        Integer to = filter.rangeEnd == null ? limit
+                        : Math.min(filter.rangeEnd, limit);
+        query.setRange(from, to);
+
         /*
          * evidently required by DataNucleus 3.1.3+ to get most recent
          * updates from other JVMs
@@ -322,6 +294,23 @@ public class AlarmJDOUtils {
         filter.parameters = Strings.emptyToNull(p.toString());
         filter.values = emptyListToNull(values);
         return filter;
+    }
+
+    /**
+     * Construct an actual JDO query from the filter.
+     */
+    private static Query createQuery(PersistenceManager pm,
+                                     AlarmDAOFilter filter) {
+        filter.normalizeRange();
+
+        Query query = pm.newQuery(LogEntry.class);
+        query.setFilter(filter.filter);
+        query.declareParameters(filter.parameters);
+        query.addExtension("datanucleus.query.resultCacheType", "none");
+        query.addExtension("datanucleus.rdbms.query.resultSetType",
+                           "scroll-insensitive");
+        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
+        return query;
     }
 
     private static Object[] emptyListToNull(List<Object> values) {
