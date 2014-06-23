@@ -159,7 +159,7 @@ public class NfsTransferService extends AbstractCellComponent
     public String ac_nfs_sessions(Args args) {
 
        StringBuilder sb = new StringBuilder();
-        for (NFS4Client client : _nfsIO.getNFSServer().getClients()) {
+        for (NFS4Client client : _nfsIO.getNFSServer().getStateHandler().getClients()) {
             sb.append(client).append('\n');
             for (NFSv41Session session : client.sessions()) {
                 sb.append("  ")

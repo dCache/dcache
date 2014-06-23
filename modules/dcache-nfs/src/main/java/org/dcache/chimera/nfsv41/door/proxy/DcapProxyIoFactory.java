@@ -25,6 +25,8 @@ import org.dcache.chimera.JdbcFs;
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.DelayException;
+import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
@@ -168,9 +170,9 @@ public class DcapProxyIoFactory extends AbstractCell {
             }
             int status = nfsstat.NFSERR_IO;
             if ((t instanceof CacheException) && ((CacheException) t).getRc() != CacheException.BROKEN_ON_TAPE) {
-                status = nfsstat.NFSERR_DELAY;
+                throw new DelayException();
             }
-            throw new ChimeraNFSException(status, t.getMessage());
+            throw new NfsIoException();
         }
     }
 
