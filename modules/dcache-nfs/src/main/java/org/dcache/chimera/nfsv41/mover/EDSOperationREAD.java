@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.READ4res;
@@ -41,8 +42,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             NfsMover mover = _activeIO.get(_args.opread.stateid);
             if(mover == null) {
-                throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
-                        "No mover associated with given stateid");
+                throw new BadStateidException("No mover associated with given stateid");
             }
             mover.attachSession(context.getSession());
 

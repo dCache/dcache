@@ -11,6 +11,7 @@ import dmg.cells.nucleus.CDC;
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.AccessException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.OperationWRITE;
@@ -67,7 +68,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 		 * As there was no open, we have to check  permissions.
 		 */
 		if (context.getFs().access(inode, nfs4_prot.ACCESS4_MODIFY | nfs4_prot.ACCESS4_EXTEND ) == 0) {
-		    throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "Permission denied.");
+		    throw new AccessException();
 		}
 
 		/*
