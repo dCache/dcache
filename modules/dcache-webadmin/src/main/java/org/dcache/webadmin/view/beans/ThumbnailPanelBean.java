@@ -84,7 +84,7 @@ public class ThumbnailPanelBean implements IRegexFilterable,
     private static final long serialVersionUID = 1264628048199749823L;
 
     private static final String PLACEHOLDER
-        = "org/dcache/webadmin/view/pages/poolqueues/eaglebw.jpg";
+        = "org/dcache/webadmin/view/pages/poolqueues/blank.jpg";
 
     private final String name;
     private final Link<?> link;
