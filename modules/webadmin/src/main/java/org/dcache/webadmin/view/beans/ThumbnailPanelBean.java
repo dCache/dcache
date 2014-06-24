@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.view.beans;
 
+import org.apache.wicket.core.util.resource.UrlResourceStream;
 import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.link.PopupSettings;
@@ -66,7 +67,6 @@ import org.apache.wicket.markup.html.link.ResourceLink;
 import org.apache.wicket.request.resource.IResource;
 import org.apache.wicket.request.resource.ResourceStreamResource;
 import org.apache.wicket.util.resource.FileResourceStream;
-import org.apache.wicket.util.resource.UrlResourceStream;
 
 import java.io.File;
 import java.io.Serializable;
@@ -84,16 +84,16 @@ public class ThumbnailPanelBean implements IRegexFilterable,
     private static final long serialVersionUID = 1264628048199749823L;
 
     private static final String PLACEHOLDER
-        = "org/dcache/webadmin/view/pages/poolqueues/eaglebw.jpg";
+        = "org/dcache/webadmin/view/pages/poolqueues/blank.jpg";
 
     private final String name;
     private final Link<?> link;
 
     public ThumbnailPanelBean() {
         name = "";
-        UrlResourceStream stream = new UrlResourceStream(
-                        Thread.currentThread().getContextClassLoader().getResource(
-                                        PLACEHOLDER));
+        UrlResourceStream stream
+            = new UrlResourceStream(Thread.currentThread().getContextClassLoader()
+                                          .getResource(PLACEHOLDER));
         IResource resource = new ResourceStreamResource(stream);
         Image image = new Image("thumbnail", resource);
         link = new Link<String>("plotlink") {
