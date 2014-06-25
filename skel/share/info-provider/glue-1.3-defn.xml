@@ -78,7 +78,7 @@
             </suppress>
 
             <!-- Don't publish any nfs doors -->
-            <suppress test="file">
+            <suppress test="nfs">
               <lookup path="d:protocol/d:metric[@name='family']"/>
             </suppress>
 
