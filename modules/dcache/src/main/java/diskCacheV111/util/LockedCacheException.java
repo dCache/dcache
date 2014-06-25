@@ -1,5 +1,8 @@
 package diskCacheV111.util;
 
+/**
+ * Thrown when accessing a locked resource.
+ */
 public class LockedCacheException extends CacheException
 {
     static final long serialVersionUID = 3557655138424508092L;

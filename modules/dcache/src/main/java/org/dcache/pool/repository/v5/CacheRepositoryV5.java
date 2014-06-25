@@ -1,59 +1,61 @@
 package org.dcache.pool.repository.v5;
 
-import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.FileNotInCacheException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.pool.repository.EntryChangeEvent;
-import org.dcache.pool.repository.StickyChangeEvent;
-import org.dcache.pool.repository.StateChangeListener;
-import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.SpaceRecord;
-import org.dcache.pool.repository.IllegalTransitionException;
-import org.dcache.pool.repository.Repository;
-import org.dcache.pool.repository.Account;
-import org.dcache.pool.repository.Allocator;
-import org.dcache.pool.repository.MetaDataStore;
-import org.dcache.pool.repository.MetaDataLRUOrder;
-import org.dcache.pool.repository.MetaDataRecord;
-import org.dcache.pool.repository.SpaceSweeperPolicy;
-import org.dcache.pool.repository.MetaDataCache;
-import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
-import org.dcache.pool.FaultAction;
-import org.dcache.cells.AbstractCellComponent;
-import org.dcache.cells.CellCommandListener;
-import org.dcache.util.CacheExceptionFactory;
-import static org.dcache.pool.repository.EntryState.*;
-
-import java.io.PrintWriter;
-import java.io.IOException;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Collections;
-
 import dmg.util.Args;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
+import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.Allocator;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.DuplicateEntryException;
+import org.dcache.pool.repository.EntryChangeEvent;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.MetaDataCache;
+import org.dcache.pool.repository.MetaDataLRUOrder;
+import org.dcache.pool.repository.MetaDataRecord;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.SpaceSweeperPolicy;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.StickyChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.CacheExceptionFactory;
+
+import static org.dcache.pool.repository.EntryState.*;
 
 
 /**
@@ -382,9 +384,10 @@ public class CacheRepositoryV5
                     stateChanged(entry, NEW, entry.getState());
                 }
 
-                _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
-                                        entries.size(), _account.getTotal(),
-                                        usedDataSpace, _account.getFree()));
+                _log.info(String.format(
+                        "Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
+                        entries.size(), _account.getTotal(),
+                        usedDataSpace, _account.getFree()));
 
                 _state = State.OPEN;
             }
@@ -486,10 +489,6 @@ public class CacheRepositoryV5
     public ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
         throws CacheException, InterruptedException
     {
-        /* TODO: Refine the exceptions. Throwing FileNotInCacheException
-         * implies that one could create the entry, however this is not
-         * the case for broken or incomplete files.
-         */
         assertInitialized();
 
         try {
@@ -497,18 +496,16 @@ public class CacheRepositoryV5
 
             MetaDataRecord entry = getMetaDataRecord(id);
             synchronized (entry) {
-                /* REVISIT: Is using FileNotInCacheException appropriate?
-                 */
                 switch (entry.getState()) {
                 case NEW:
                 case FROM_CLIENT:
                 case FROM_STORE:
                 case FROM_POOL:
-                    throw new FileNotInCacheException("File is incomplete");
+                    throw new LockedCacheException("File is incomplete");
                 case BROKEN:
-                    throw new FileNotInCacheException("File is broken");
+                    throw new LockedCacheException("File is broken");
                 case DESTROYED:
-                    throw new FileNotInCacheException("File has been removed");
+                    throw new LockedCacheException("File has been removed");
                 case PRECIOUS:
                 case CACHED:
                 case REMOVED:
