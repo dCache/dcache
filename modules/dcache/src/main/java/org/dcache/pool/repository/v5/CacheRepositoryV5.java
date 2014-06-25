@@ -21,6 +21,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
@@ -487,10 +488,6 @@ public class CacheRepositoryV5
     public ReplicaDescriptor openEntry(PnfsId id, Set<OpenFlags> flags)
         throws CacheException, InterruptedException
     {
-        /* TODO: Refine the exceptions. Throwing FileNotInCacheException
-         * implies that one could create the entry, however this is not
-         * the case for broken or incomplete files.
-         */
         assertInitialized();
 
         try {
@@ -498,18 +495,16 @@ public class CacheRepositoryV5
 
             MetaDataRecord entry = getMetaDataRecord(id);
             synchronized (entry) {
-                /* REVISIT: Is using FileNotInCacheException appropriate?
-                 */
                 switch (entry.getState()) {
                 case NEW:
                 case FROM_CLIENT:
                 case FROM_STORE:
                 case FROM_POOL:
-                    throw new FileNotInCacheException("File is incomplete");
+                    throw new LockedCacheException("File is incomplete");
                 case BROKEN:
-                    throw new FileNotInCacheException("File is broken");
+                    throw new LockedCacheException("File is broken");
                 case DESTROYED:
-                    throw new FileNotInCacheException("File has been removed");
+                    throw new LockedCacheException("File has been removed");
                 case PRECIOUS:
                 case CACHED:
                 case REMOVED:
