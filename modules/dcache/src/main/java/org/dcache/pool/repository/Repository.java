@@ -89,10 +89,6 @@ public interface Repository
      * entry from being deleted. Notice that an open read handle does
      * not prevent state changes.
      *
-     * TODO: Refine the exceptions. Throwing FileNotInCacheException
-     * implies that one could create the entry, however this is not
-     * the case for broken or incomplet files.
-     *
      * @param id the PNFS ID of the entry to open
      * @param flags options that influence how the entry is opened
      * @return IO descriptor
