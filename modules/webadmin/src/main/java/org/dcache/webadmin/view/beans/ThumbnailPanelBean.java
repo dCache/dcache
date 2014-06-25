@@ -84,16 +84,16 @@ public class ThumbnailPanelBean implements IRegexFilterable,
     private static final long serialVersionUID = 1264628048199749823L;
 
     private static final String PLACEHOLDER
-        = "org/dcache/webadmin/view/pages/poolqueues/eaglebw.jpg";
+        = "org/dcache/webadmin/view/pages/poolqueues/blank.jpg";
 
     private final String name;
     private final Link<?> link;
 
     public ThumbnailPanelBean() {
         name = "";
-        UrlResourceStream stream = new UrlResourceStream(
-                        Thread.currentThread().getContextClassLoader().getResource(
-                                        PLACEHOLDER));
+        UrlResourceStream stream
+            = new UrlResourceStream(Thread.currentThread().getContextClassLoader()
+                                          .getResource(PLACEHOLDER));
         IResource resource = new ResourceStreamResource(stream);
         Image image = new Image("thumbnail", resource);
         link = new Link<String>("plotlink") {
