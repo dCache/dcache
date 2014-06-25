@@ -77,6 +77,11 @@
               <lookup path="d:protocol/d:metric[@name='family']"/>
             </suppress>
 
+            <!-- Don't publish any nfs doors -->
+            <suppress test="file">
+              <lookup path="d:protocol/d:metric[@name='family']"/>
+            </suppress>
+
             <!-- Uncomment the next section to suppress publishing gsidcap -->
 <!--
             <suppress test="gsidcap">
