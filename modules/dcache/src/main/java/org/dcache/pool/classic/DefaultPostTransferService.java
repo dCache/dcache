@@ -114,10 +114,10 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
                     } catch (DiskErrorCacheException e) {
                         LOGGER.warn("Transfer failed in post-processing due to disk error: {}", e.toString());
                         _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED, e.getMessage(), e));
-                        mover.setTransferStatus(e.getRc(), e.getMessage());
+                        mover.setTransferStatus(e.getRc(), "Disk error: " + e.getMessage());
                     } catch (CacheException e) {
                         LOGGER.warn("Transfer failed in post-processing: {}", e.getMessage());
-                        mover.setTransferStatus(e.getRc(), e.getMessage());
+                        mover.setTransferStatus(e.getRc(), "Post-processing failed: " + e.getMessage());
                     } catch (IOException e) {
                         LOGGER.warn("Transfer failed in post-processing: {}", e.toString());
                         mover.setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,

@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.movers;
 
+import com.google.common.base.Strings;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +114,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     {
         if (_errorCode == 0) {
             _errorCode = errorCode;
-            _errorMessage = errorMessage;
+            _errorMessage = Strings.nullToEmpty(errorMessage);
         }
     }
 
@@ -204,16 +205,16 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
                     setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
                 } catch (CacheException e) {
                     LOGGER.error("Transfer failed: {}", e.getMessage());
-                    setTransferStatus(e.getRc(), e.getMessage());
+                    setTransferStatus(e.getRc(), "Internal problem: " + e.getMessage());
                 } catch (InterruptedIOException | InterruptedException e) {
                     LOGGER.error("Transfer was forcefully killed");
                     setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was forcefully killed");
                 } catch (RuntimeException e) {
                     LOGGER.error("Transfer failed due to a bug", e);
-                    setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
+                    setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Bug detected (please report): " + e.getMessage());
                 } catch (Exception e) {
                     LOGGER.error("Transfer failed: {}", e.toString());
-                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, e.getMessage());
+                    setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "General problem: " + e.getMessage());
                 } catch (Throwable e) {
                     LOGGER.error("Transfer failed:", e);
                     Thread thread = Thread.currentThread();
