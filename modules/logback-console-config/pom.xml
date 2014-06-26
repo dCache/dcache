@@ -12,4 +12,8 @@
   <packaging>jar</packaging>
 
   <name>Logback config for console output</name>
+
+  <prerequisites>
+      <maven>3.0.4</maven>
+  </prerequisites>
 </project>
