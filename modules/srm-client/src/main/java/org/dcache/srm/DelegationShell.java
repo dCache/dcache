@@ -593,8 +593,8 @@ public class DelegationShell extends ShellApplication
                     BouncyCastleCertProcessingFactory.getDefault();
 
             return factory.createProxyCertificate(proxy.getCertificateChain()[0],
-                    proxy.getPrivateKey(), pubKey, lifetime,
-                    CertificateType.GSI_4_INDEPENDENT_PROXY, null, null);
+                    proxy.getPrivateKey(), pubKey, lifetime, proxy.getProxyType(),
+                    null, null);
         }
 
         private Iterable<X509Certificate> concat(X509Certificate certificate,
