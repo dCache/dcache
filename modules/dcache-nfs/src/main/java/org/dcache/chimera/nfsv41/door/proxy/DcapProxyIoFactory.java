@@ -26,6 +26,7 @@ import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.CompoundContext;
+import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.xdr.stateid4;
@@ -134,7 +135,15 @@ public class DcapProxyIoFactory extends AbstractCell {
 
                         @Override
                         public ProxyIoAdapter call() throws Exception {
-                            final NFS4State state = context.getStateHandler().getClientIdByStateId(stateid).state(stateid);
+
+                            final NFS4Client nfsClient;
+                            if (context.getMinorversion() == 1) {
+                                nfsClient = context.getSession().getClient();
+                            } else {
+                                nfsClient = context.getStateHandler().getClientIdByStateId(stateid);
+                            }
+
+                            final NFS4State state = nfsClient.state(stateid);
                             final ProxyIoAdapter adapter = createIoAdapter(inode, context, isWrite);
 
                             state.addDisposeListener(new StateDisposeListener() {
