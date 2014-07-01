@@ -43,7 +43,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileLocality;
@@ -717,18 +716,6 @@ public class XrootdDoor
             }
         }
         return false;
-    }
-
-    private Inet4Address getFirstIpv4(Collection<NetIFContainer> interfaces)
-    {
-        for (NetIFContainer container: interfaces) {
-            for (Object ip: container.getInetAddresses()) {
-                if (ip instanceof Inet4Address) {
-                    return (Inet4Address) ip;
-                }
-            }
-        }
-        return null;
     }
 
     /**
