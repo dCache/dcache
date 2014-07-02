@@ -1,5 +1,5 @@
 /*
-COPYRIGHT STATUS: 
+COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
   software are sponsored by the U.S. Department of Energy under Contract No.
   DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -77,20 +77,15 @@ package org.dcache.srm.scheduler;
  * @author  timur
  */
 public class NonFatalJobFailure extends Exception {
-    
+
     private static final long serialVersionUID = -200994820966509585L;
-    
-    /** Creates a new instance of NonFatalFailure */
-    public NonFatalJobFailure() {
-        super();
-    }
-    
+
     public NonFatalJobFailure(String s) {
         super(s);
     }
-    
-    public NonFatalJobFailure(Throwable t) {
-        super(t);
+
+    public NonFatalJobFailure(String message, Throwable t) {
+        super(message, t);
     }
-    
+
 }

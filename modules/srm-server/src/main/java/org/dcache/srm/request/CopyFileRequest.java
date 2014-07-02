@@ -595,7 +595,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                                   (transferError == null) ? null : transferError.getMessage());
             setDestinationFileId(null);
             setTransferId(null);
-            throw new NonFatalJobFailure(transferError);
+            throw new NonFatalJobFailure(transferError.getMessage(), transferError);
         }
     }
 
@@ -638,7 +638,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             // there was some kind of error durign the transfer
             getStorage().killRemoteTransfer(getTransferId());
             setTransferId(null);
-            throw new NonFatalJobFailure(getTransferError());
+            Exception e = getTransferError();
+            throw new NonFatalJobFailure(e.getMessage(), e);
         }
     }
 
@@ -675,7 +676,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                 setStateToFailed("Unknown combination of to/from ursl");
             }
         } catch (IllegalStateTransition | IOException | SRMException | DataAccessException e) {
-            throw new NonFatalJobFailure(e.toString());
+            throw new NonFatalJobFailure(e.getMessage(), e);
         }
     }
 

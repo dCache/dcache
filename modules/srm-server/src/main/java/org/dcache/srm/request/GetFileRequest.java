@@ -422,7 +422,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.
-            throw new NonFatalJobFailure(e.toString());
+            throw new NonFatalJobFailure(e.getMessage(), e);
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
 

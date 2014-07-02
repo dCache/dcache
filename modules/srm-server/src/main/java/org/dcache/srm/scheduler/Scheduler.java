@@ -682,12 +682,10 @@ public final class Scheduler <T extends Job>
                         try {
                             if (job.getNumberOfRetries() < getMaxNumberOfRetries() &&
                                     job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
-                                job.setState(State.RETRYWAIT,
-                                        " nonfatal error [" + e.toString() + "] retrying");
+                                job.setState(State.RETRYWAIT, e.getMessage());
                                 startRetryTimer(job);
                             } else {
-                                job.setState(State.FAILED,
-                                        "Maximum number of retries exceeded: " + e.getMessage());
+                                job.setState(State.FAILED, "Too many retries; most recent failure was " + e.getMessage());
                             }
                         } catch (IllegalStateTransition ist) {
                             LOGGER.error("Illegal State Transition : " + ist.getMessage());

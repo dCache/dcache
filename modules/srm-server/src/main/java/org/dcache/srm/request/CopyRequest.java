@@ -827,9 +827,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             // FIXME some SRMException failures are temporary and others are
             // permanent.  Code currently doesn't distinguish between them and
             // always retries, even if problem isn't transitory.
-            throw new NonFatalJobFailure(e.toString());
-        } catch (IOException | InterruptedException e) {
-            throw new FatalJobFailure(e.toString());
+            throw new NonFatalJobFailure(e.getMessage());
+        } catch (IOException e) {
+            throw new FatalJobFailure(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new FatalJobFailure("shutting down.");
         }
     }
 
