@@ -425,9 +425,6 @@ public class ChecksumScanner
                     }
                 } catch (FileCorruptedCacheException e) {
                     _badCount++;
-                    /* This can now be configured as an alarm by using
-                     * the org.dcache.alarms.logback.AlarmDefinitionFilter
-                     */
                     _log.error("Marking {} as BROKEN: {}", id, e.getMessage());
                     try {
                         _repository.setState(id, EntryState.BROKEN);
