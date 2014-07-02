@@ -94,7 +94,7 @@
     <alarmType>
         <logger>org.dcache.pool.classic.ChecksumScanner</logger>
         <type>CHECKSUM</type>
-        <regex>Checksum mismatch detected for (.+) - marking as BROKEN</regex>
+        <regex>Marking (.+) as BROKEN</regex>
         <level>ERROR</level>
         <severity>MODERATE</severity>
         <includeInKey>group1 type host service domain</includeInKey>
