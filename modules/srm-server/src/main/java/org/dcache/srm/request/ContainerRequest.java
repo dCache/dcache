@@ -403,10 +403,16 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                 // no running, no ready and  no pending  requests
                 // there are only failed requests
                 // we can fail this request
+
+                // REVISIT: the above logic seems flawed: this branch is reached
+                //          if there are multiple file requests, some in state
+                //          Done and others in state Failed.  The behaviour may
+                //          be correct, but should be checked.
+
                 rs.state = "Failed";
                 try
                 {
-                    setState(State.FAILED, rs.errorMessage);
+                    setState(State.FAILED, "File requests have failed.");
                     stopUpdating();
                 }
                 catch(IllegalStateTransition ist)
@@ -417,7 +423,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                 // all requests are done
                 try
                 {
-                    setState(State.DONE,"All files are done.");
+                    setState(State.DONE, "All file requests succeeded.");
                     stopUpdating();
                 }
                 catch(IllegalStateTransition ist)
