@@ -437,11 +437,11 @@
                   -->
                 <version>0.8.0</version>
             </dependency>
-
+            <!-- liquibase 3.2.0 produces wrong checksums -->
             <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
-                <version>3.2.0</version>
+                <version>3.1.1</version>
             </dependency>
             <dependency>
                 <groupId>com.mattbertolini</groupId>
