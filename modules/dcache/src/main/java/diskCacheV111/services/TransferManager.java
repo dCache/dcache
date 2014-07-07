@@ -282,7 +282,7 @@ public abstract class TransferManager extends AbstractCell
         properties.setProperty("datanucleus.validateConstraints", "false");
         properties.setProperty("datanucleus.autoCreateColumns", "true");
         properties.setProperty("datanucleus.connectionPoolingType", "None");
-// below is default, supported are "LowerCase", "MixedCase"
+// below is default, supported are "LowerCase", "PreserveCase"
 //                properties.setProperty("datanucleus.identifier.case","UpperCase");
         HikariConfig config = new HikariConfig();
         config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
