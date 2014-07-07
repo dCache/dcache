@@ -4,18 +4,14 @@
 /plugins/*/target/
 
 ## Ignore Eclipse-generated files and directories
-/.project
-/.classpath
-/.settings/
-/modules/*/.project
-/modules/*/.classpath
-/modules/*/.settings/
-/packages/*/.project
-/packages/*/.classpath
-/packages/*/.settings/
-/plugins/*/.project
-/plugins/*/.classpath
-/plugins/*/.settings/
+## The globbed version does not work on Mac OS X.9.
+## The expression of the file or directory name
+## should be sufficient to indicate it should be
+## ignored whatever its parent path.
+
+.project
+.classpath
+.settings/
 
 ## Ignore IntelliJ-generated files and directories
 ##
