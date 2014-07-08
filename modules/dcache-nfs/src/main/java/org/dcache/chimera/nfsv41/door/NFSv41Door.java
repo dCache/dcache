@@ -665,6 +665,40 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
+    @Command(name = "kill client", hint = "kill NFS client and it's sessions",
+    description = "With this command, dCache responds to " +
+            "this specific client as if it was " +
+            "restarted. All other NFS clients are " +
+            "unaffected." +
+            "\n\n" +
+            "One use of this command is for an admin " +
+            "to allow dCache to recover from a client " +
+            "that is itself trying to recover from a " +
+            "(perceived) error in dCache response, but " +
+            "is failing to do so. Such behaviour can " +
+            "result in the client becoming stuck." +
+            "\n\n" +
+            "This command should not be necessary " +
+            "under normal circumstances; please " +
+            "contact dCache support if you make " +
+            "continued use of it.")
+    public class KillClientCmd implements Callable<String> {
+
+        @Argument(required = false, metaVar = "clientid")
+        long clientid;
+
+        @Override
+        public String call() throws IOException {
+            if (_nfs4 == null) {
+                return "NFS4 server not running.";
+            }
+
+            NFS4Client client = _nfs4.getStateHandler().getClientByID(clientid);
+            _nfs4.getStateHandler().removeClient(client);
+            return "Done.";
+        }
+    }
+
     private static deviceid4 deviceidOf(int id) {
         byte[] deviceidBytes = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
         Bytes.putInt(deviceidBytes, 0, id);
