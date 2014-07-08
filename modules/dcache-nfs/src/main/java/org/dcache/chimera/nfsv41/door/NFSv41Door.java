@@ -304,6 +304,9 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void destroy() throws IOException {
         _loginBrokerHandler.stop();
         _rpcService.stop();
+        if (_nfs4 != null) {
+            _nfs4.getStateHandler().shutdown();
+        }
         if(_proxyIoFactory != null) {
             _proxyIoFactory.cleanUp();
         }
