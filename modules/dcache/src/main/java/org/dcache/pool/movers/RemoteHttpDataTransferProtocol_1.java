@@ -28,14 +28,13 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
-import diskCacheV111.util.InconsistentCacheException;
-import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.ThirdPartyTransferFailedCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 
+import org.dcache.pool.movers.MoverChannel.AllocatorMode;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
@@ -177,7 +176,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
         RemoteHttpDataTransferProtocolInfo info =
                 (RemoteHttpDataTransferProtocolInfo) genericInfo;
         _channel = new MoverChannel<>(access, attributes, info, channel,
-                allocator);
+                allocator, AllocatorMode.HARD);
 
         _client = createHttpClient();
         try {
