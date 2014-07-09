@@ -94,10 +94,46 @@ public class CopyFilter implements Filter
             LoggerFactory.getLogger(CopyFilter.class);
 
     private static final String QUERY_KEY_ASKED_TO_DELEGATE = "asked-to-delegate";
-
+    private static final String REQUEST_HEADER_CREDENTIAL = "Credential";
     private static final Set<AccessMask> READ_ACCESS_MASK =
             EnumSet.of(AccessMask.READ_DATA);
 
+    /**
+     * Describes where to fetch the delegated credential, if at all.
+     */
+    public enum CredentialSource {
+        /* Get it from an SRM's GridSite credential store */
+        GRIDSITE("gridsite"),
+
+        /* Don't get a credential */
+        NONE("none");
+
+        private static final Map<String,CredentialSource> SOURCE_FOR_HEADER =
+                new HashMap<>();
+
+        private final String _headerValue;
+
+        static {
+            for (CredentialSource source : CredentialSource.values()) {
+                SOURCE_FOR_HEADER.put(source.getHeaderValue(), source);
+            }
+        }
+
+        public static CredentialSource forHeaderValue(String value)
+        {
+            return SOURCE_FOR_HEADER.get(value);
+        }
+
+        CredentialSource(String value)
+        {
+            _headerValue = value;
+        }
+
+        public String getHeaderValue()
+        {
+            return _headerValue;
+        }
+    }
 
     private final VOMSValidator _vomsValidator = new VOMSValidator(null, null);
 
@@ -188,7 +224,8 @@ public class CopyFilter implements Filter
     {
         URI destination = getDestination(request);
 
-        if (!TransferType.isSchemeSupported(destination.getScheme())) {
+        TransferType type = TransferType.fromScheme(destination.getScheme());
+        if (type == null) {
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
                     "Destination URI contains unsupported scheme; supported " +
                             "schemes are " + Joiner.on(", ").join(TransferType.validSchemes()));
@@ -202,36 +239,72 @@ public class CopyFilter implements Filter
         FsPath path = getFullPath(request.getAbsolutePath());
         checkPath(path);
 
-        X509Credential credential = fetchCredential();
-
-        if (credential == null) {
+        CredentialSource source = getCredentialSource(request, type);
+        X509Credential credential = fetchCredential(source);
+        if (credential == null && source != CredentialSource.NONE) {
             redirectWithDelegation(response);
         } else {
-            _remoteTransfers.acceptRequest(response.getOutputStream(), getSubject(),
-                    path, destination, credential);
+            _remoteTransfers.acceptRequest(response.getOutputStream(),
+                    request.getHeaders(), getSubject(), path, destination,
+                    credential);
         }
     }
 
-    private X509Credential fetchCredential() throws InterruptedException, ErrorResponseException
+    private CredentialSource getCredentialSource(Request request, TransferType type)
+            throws ErrorResponseException
     {
-        X509Certificate[] certificates = getCertificateChain();
+        String headerValue = request.getHeaders().get(REQUEST_HEADER_CREDENTIAL);
 
-        if (certificates.length == 0) {
-            throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
-                    "user must present valid X.509 certificate");
+        CredentialSource source = headerValue != null ?
+                CredentialSource.forHeaderValue(headerValue) :
+                type.getDefaultCredentialSource();
+
+        if (source == null) {
+            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                    "HTTP header 'Credential' has unknown value \"" +
+                    headerValue + "\".  Valid values are: " +
+                    Joiner.on(',').join(CredentialSource.values()));
         }
 
-        try {
-            // Try to obtain a reasonable credential
-            return _srmHandler.getDelegatedCredential(
-                    X509Utils.getSubjectFromX509Chain(certificates, false),
-                    extractPrimaryFqan(certificates),
-                    20, MINUTES);
-        } catch (AuthenticationException e) {
-            _log.error("Failed to extract DN from certificate chain: {}",
-                    e.getMessage());
-            throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
-                    "Internal server error");
+        if (!type.isSupported(source)) {
+            throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                    "HTTP header 'Credential' value \"" + headerValue + "\" is not " +
+                    "supported for transport " + getDestination(request).getScheme());
+        }
+
+        return source;
+    }
+
+    private X509Credential fetchCredential(CredentialSource source)
+            throws InterruptedException, ErrorResponseException
+    {
+        switch (source) {
+        case GRIDSITE:
+            X509Certificate[] certificates = getCertificateChain();
+
+            if (certificates.length == 0) {
+                throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
+                        "user must present valid X.509 certificate");
+            }
+
+            try {
+                // Try to obtain a reasonable credential
+                return _srmHandler.getDelegatedCredential(
+                        X509Utils.getSubjectFromX509Chain(certificates, false),
+                        extractPrimaryFqan(certificates),
+                        20, MINUTES);
+            } catch (AuthenticationException e) {
+                _log.error("Failed to extract DN from certificate chain: {}",
+                        e.getMessage());
+                throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
+                        "Internal server error");
+            }
+
+        case NONE:
+            return null;
+
+        default:
+            throw new RuntimeException("Unsupported source " + source);
         }
     }
 

@@ -73,9 +73,33 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             GlobusGSSCredentialImpl credential,
                                             String user) throws GSSException
     {
-        checkArgument(credential instanceof Serializable,
-                      "Credential must be Serializable");
+        this(protocol,
+             major,
+             minor,
+             addr,
+             gsiftpUrl,
+             gsiftpTranferManagerName,
+             gsiftpTranferManagerDomain,
+             bufferSize,
+             tcpBufferSize,
+             credential.getPrivateKey(),
+             credential.getCertificateChain(),
+             user);
+    }
 
+    public RemoteGsiftpTransferProtocolInfo(String protocol,
+                                            int major,
+                                            int minor,
+                                            InetSocketAddress addr,
+                                            String gsiftpUrl,
+                                            String gsiftpTranferManagerName,
+                                            String gsiftpTranferManagerDomain,
+                                            int bufferSize,
+                                            int tcpBufferSize,
+                                            PrivateKey key,
+                                            X509Certificate[] certChain,
+                                            String user)
+    {
         this.name = protocol;
         this.minor = minor;
         this.major = major;
@@ -86,8 +110,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         this.bufferSize = bufferSize;
         this.tcpBufferSize = tcpBufferSize;
         this.user = user;
-        this.key = credential.getPrivateKey();
-        this.certChain = credential.getCertificateChain();
+        this.key = key;
+        this.certChain = certChain;
     }
 
   public String getGsiftpUrl()

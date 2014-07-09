@@ -23,21 +23,24 @@ import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.AbstractHttpConnection;
+import org.globus.gsi.CredentialException;
 import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import diskCacheV111.services.TransferManagerHandler;
@@ -46,6 +49,8 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpDataTransferProtocolInfo;
+import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteTransferManagerMessage;
@@ -56,8 +61,10 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 
 import org.dcache.cells.CellStub;
+import org.dcache.webdav.transfer.CopyFilter.CredentialSource;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.dcache.webdav.transfer.CopyFilter.CredentialSource.*;
 
 /**
  * This class provides the basis for interactions with the remotetransfer
@@ -88,43 +95,67 @@ public class RemoteTransferHandler implements CellMessageReceiver
      * The different transport schemes supported.
      */
     public enum TransferType {
-        GSIFTP(2811), HTTPS(443);
+        GSIFTP(2811, GRIDSITE, EnumSet.noneOf(CredentialSource.class)),
+        HTTP(80,     NONE,     EnumSet.noneOf(CredentialSource.class)),
+        HTTPS(443,   GRIDSITE, EnumSet.of(NONE));
 
-        private static final ImmutableMap<String,TransferType> BY_NAME =
-            ImmutableMap.of("gsiftp", GSIFTP, "https", HTTPS);
+        private static final ImmutableMap<String,TransferType> BY_SCHEME =
+            ImmutableMap.of("gsiftp", GSIFTP, "http", HTTP, "https", HTTPS);
 
         private final int _defaultPort;
+        private final CredentialSource _defaultCredentialSource;
+        private final EnumSet<CredentialSource> _supported;
 
-        TransferType(int port) {
+        TransferType(int port, CredentialSource defaultSource,
+                EnumSet<CredentialSource> additionalSources)
+        {
             _defaultPort = port;
+            _defaultCredentialSource = defaultSource;
+            _supported = EnumSet.copyOf(additionalSources);
+            _supported.add(defaultSource);
         }
 
-        public int getDefaultPort() {
+        public int getDefaultPort()
+        {
             return _defaultPort;
+        }
+
+        public CredentialSource getDefaultCredentialSource()
+        {
+            return _defaultCredentialSource;
+        }
+
+        public boolean isSupported(CredentialSource source)
+        {
+            return _supported.contains(source);
         }
 
         public static TransferType fromScheme(String scheme)
         {
-            return BY_NAME.get(scheme.toLowerCase());
+            return BY_SCHEME.get(scheme.toLowerCase());
         }
 
         public static Set<String> validSchemes()
         {
-            return BY_NAME.keySet();
-        }
-
-        public static boolean isSchemeSupported(String scheme)
-        {
-            return fromScheme(scheme) != null;
+            return BY_SCHEME.keySet();
         }
     };
+
+    private enum TransferFlag {
+        REQUIRE_VERIFICATION
+    }
 
     private static final Logger LOG =
             LoggerFactory.getLogger(RemoteTransferHandler.class);
     private static final long DUMMY_LONG = 0;
+    private static final String REQUEST_HEADER_VERIFICATION =
+            "RequireChecksumVerification";
+    private static final String REQUEST_HEADER_TRANSFER_HEADER_PREFIX =
+            "TransferHeader";
 
     private final HashMap<Long,RemoteTransfer> _transfers = new HashMap<>();
 
+    private boolean _defaultVerification;
     private long _performanceMarkerPeriod;
     private CellStub _transferManager;
 
@@ -146,11 +177,25 @@ public class RemoteTransferHandler implements CellMessageReceiver
         return _performanceMarkerPeriod;
     }
 
-    public void acceptRequest(OutputStream out, Subject subject, FsPath path,
-            URI destination, X509Credential credential)
+    @Required
+    public void setDefaultVerification(boolean verify)
+    {
+        _defaultVerification = verify;
+    }
+
+    public boolean isDefaultVerification()
+    {
+        return _defaultVerification;
+    }
+
+    public void acceptRequest(OutputStream out, Map<String,String> requestHeaders,
+            Subject subject, FsPath path, URI destination, X509Credential credential)
             throws ErrorResponseException, InterruptedException
     {
-        RemoteTransfer transfer = new RemoteTransfer(out, subject, path, destination, credential);
+        EnumSet<TransferFlag> flags = EnumSet.noneOf(TransferFlag.class);
+        flags = addVerificationFlag(flags, requestHeaders);
+        ImmutableMap<String,String> transferHeaders = buildTransferHeaders(requestHeaders);
+        RemoteTransfer transfer = new RemoteTransfer(out, subject, path, destination, credential, flags, transferHeaders);
 
         long id;
 
@@ -166,6 +211,52 @@ public class RemoteTransferHandler implements CellMessageReceiver
                 _transfers.remove(id);
             }
         }
+    }
+
+    private EnumSet<TransferFlag> addVerificationFlag(EnumSet<TransferFlag> existingFlags,
+            Map<String,String> headers) throws ErrorResponseException
+    {
+        String header = headers.get(REQUEST_HEADER_VERIFICATION);
+
+        boolean verification;
+        if (header == null) {
+            verification = _defaultVerification;
+        } else {
+            switch (header) {
+            case "true":
+                verification = true;
+                break;
+            case "false":
+                verification = false;
+                break;
+            default:
+                throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                        "HTTP request header '" + REQUEST_HEADER_VERIFICATION + "' " +
+                                "has unknown value \"" + header + "\": " +
+                                "valid values are true or false");
+            }
+        }
+
+        EnumSet<TransferFlag> result = EnumSet.copyOf(existingFlags);
+        if (verification) {
+            result.add(TransferFlag.REQUIRE_VERIFICATION);
+        }
+        return result;
+    }
+
+    private ImmutableMap<String,String> buildTransferHeaders(Map<String,String> requestHeaders)
+    {
+        ImmutableMap.Builder<String,String> builder = ImmutableMap.builder();
+
+        for (Map.Entry<String,String> header : requestHeaders.entrySet()) {
+            String key = header.getKey();
+            if (key.startsWith(REQUEST_HEADER_TRANSFER_HEADER_PREFIX)) {
+                builder.put(key.substring(REQUEST_HEADER_TRANSFER_HEADER_PREFIX.length()),
+                        header.getValue());
+            }
+        }
+
+        return builder.build();
     }
 
 
@@ -205,8 +296,13 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final Subject _subject;
         private final FsPath _path;
         private final URI _destination;
-        private final X509Credential _credential;
+        @Nullable
+        private final PrivateKey _privateKey;
+        @Nullable
+        private final X509Certificate[] _certificateChain;
         private final PrintWriter _out;
+        private final EnumSet<TransferFlag> _flags;
+        private final ImmutableMap<String,String> _transferHeaders;
         private String _problem;
         private long _id;
         private final EndPoint _endpoint = AbstractHttpConnection.
@@ -215,14 +311,30 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private boolean _finished;
 
         public RemoteTransfer(OutputStream out, Subject subject, FsPath path,
-                URI destination, X509Credential credential)
+                URI destination, @Nullable X509Credential credential,
+                EnumSet<TransferFlag> flags, ImmutableMap<String,String> transferHeaders)
+                throws ErrorResponseException
         {
             _subject = subject;
             _path = path;
             _destination = destination;
             _type = TransferType.fromScheme(destination.getScheme());
-            _credential = credential;
+            if (credential != null) {
+                try {
+                    _privateKey = credential.getPrivateKey();
+                } catch (CredentialException e) {
+                    LOG.warn("Client credential could not be extracted: {}", e.getMessage());
+                    throw new ErrorResponseException(Status.SC_BAD_REQUEST,
+                            "Failed to extract private key from delegated credential");
+                }
+                _certificateChain = credential.getCertificateChain();
+            } else {
+                _privateKey = null;
+                _certificateChain = null;
+            }
             _out = new PrintWriter(out);
+            _flags = flags;
+            _transferHeaders = transferHeaders;
         }
 
         private long start() throws ErrorResponseException, InterruptedException
@@ -286,21 +398,21 @@ public class RemoteTransferHandler implements CellMessageReceiver
 
             switch (_type) {
             case GSIFTP:
-                try {
-                    return new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
-                            1, 1, address, _destination.toASCIIString(), null,
-                            null, buffer, 1024*1024,
-                            new GlobusGSSCredentialImpl(_credential,
-                                    GSSCredential.INITIATE_AND_ACCEPT));
-                } catch (GSSException e) {
-                    LOG.error("Failed to create ProtocolInfo: {}", e.getMessage());
-                    throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
-                            "Problem using delegated credential");
-                }
+                return new RemoteGsiftpTransferProtocolInfo("RemoteGsiftpTransfer",
+                        1, 1, address, _destination.toASCIIString(), null,
+                        null, buffer, 1024*1024, _privateKey, _certificateChain, null);
+
+            case HTTP:
+                return new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",
+                        1, 1, address, buffer, _destination.toASCIIString(),
+                        _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
+                        _transferHeaders);
+
             case HTTPS:
-                // FIXME when third-party HTTPS support is available.
-                throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                        "The https transport is currently not available");
+                return new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
+                        1, 1, address, buffer, _destination.toASCIIString(),
+                        _flags.contains(TransferFlag.REQUIRE_VERIFICATION),
+                        _transferHeaders, _privateKey, _certificateChain);
             }
 
             throw new RuntimeException("Unexpected TransferType: " + _type);

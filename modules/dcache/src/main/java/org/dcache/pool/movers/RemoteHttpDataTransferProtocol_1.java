@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.channels.Channels;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -128,7 +127,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
 
     protected static final String USER_AGENT = "dCache/" +
-            Version.of(RemoteHttpDataTransferProtocol_1.class);
+            Version.of(RemoteHttpDataTransferProtocol_1.class).getVersion();
 
     private static final Function<Checksum,ChecksumType> GET_TYPE =
             new Function<Checksum,ChecksumType>() {
@@ -207,6 +206,9 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
         HttpGet get = new HttpGet(info.getUri());
         get.setProtocolVersion(HttpVersion.HTTP_1_1);
         get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
+        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
+            get.addHeader(header.getKey(), header.getValue());
+        }
         get.setConfig(RequestConfig.custom().
                 setConnectTimeout(CONNECTION_TIMEOUT).
                 setSocketTimeout(SOCKET_TIMEOUT).
@@ -294,7 +296,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
         try {
             verifyRemoteFile(info);
         } catch (ThirdPartyTransferFailedCacheException e) {
-            deleteRemoteFile(e.getMessage(), info.getUri());
+            deleteRemoteFile(e.getMessage(), info);
             throw new ThirdPartyTransferFailedCacheException("verification " +
                     "failed: " + e.getMessage());
         }
@@ -311,6 +313,10 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
                 setConnectTimeout(CONNECTION_TIMEOUT).
                 setSocketTimeout(0).
                 build());
+        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
+            put.addHeader(header.getKey(), header.getValue());
+        }
+
         put.setEntity(entity);
         // FIXME add SO_KEEPALIVE setting
 
@@ -340,6 +346,9 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
                 setConnectTimeout(CONNECTION_TIMEOUT).
                 setSocketTimeout(SOCKET_TIMEOUT).
                 build());
+        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
+            head.addHeader(header.getKey(), header.getValue());
+        }
 
         try (CloseableHttpResponse response = _client.execute(head)) {
             StatusLine status = response.getStatusLine();
@@ -426,14 +435,18 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
         }
     }
 
-    private void deleteRemoteFile(String why, URI uri) throws ThirdPartyTransferFailedCacheException
+    private void deleteRemoteFile(String why, RemoteHttpDataTransferProtocolInfo info)
+            throws ThirdPartyTransferFailedCacheException
     {
-        HttpDelete delete = new HttpDelete(uri);
+        HttpDelete delete = new HttpDelete(info.getUri());
         delete.setProtocolVersion(HttpVersion.HTTP_1_1);
         delete.setConfig(RequestConfig.custom().
                 setConnectTimeout(CONNECTION_TIMEOUT).
                 setSocketTimeout(SOCKET_TIMEOUT).
                 build());
+        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
+            delete.addHeader(header.getKey(), header.getValue());
+        }
 
         try (CloseableHttpResponse response = _client.execute(delete)) {
             StatusLine status = response.getStatusLine();

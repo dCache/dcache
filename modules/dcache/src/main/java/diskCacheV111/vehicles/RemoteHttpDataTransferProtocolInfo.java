@@ -8,6 +8,8 @@ import java.net.URISyntaxException;
 
 import diskCacheV111.util.CacheException;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -37,7 +39,7 @@ public class RemoteHttpDataTransferProtocolInfo implements IpProtocolInfo
         this.sourceHttpUrl = url;
         this.bufferSize = buf_size;
         this.isVerificationRequired = isVerificationRequired;
-        this.headers = headers;
+        this.headers = checkNotNull(headers);
     }
 
     public URI getUri()
