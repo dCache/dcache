@@ -94,7 +94,6 @@ import org.dcache.nfs.vfs.ChimeraVfs;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
-import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -178,7 +177,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private boolean _enableRpcsecGss;
 
-    private VirtualFileSystem _vfs;
+    private VfsCache _vfs;
 
     private LoginBrokerHandler _loginBrokerHandler;
 
@@ -365,10 +364,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         NFS4ProtocolInfo protocolInfo = (NFS4ProtocolInfo)transferFinishedMessage.getProtocolInfo();
         _log.debug("Mover {} done.", protocolInfo.stateId());
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = protocolInfo.stateId();
-        Transfer transfer = _ioMessages.remove(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
+        NfsTransfer transfer = _ioMessages.remove(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         if(transfer != null) {
                 transfer.finished(transferFinishedMessage);
                 transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
+                _vfs.invalidateStatCache(transfer.getInode());
         }
     }
 
