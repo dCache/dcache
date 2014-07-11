@@ -209,8 +209,8 @@ public class RequestCredential
     public synchronized void keepBestDelegatedCredential(GSSCredential credential)
             throws GSSException
     {
-        if (credential != null && this.delegatedCredential == null ||
-                expiryDateFor(credential) > this.delegatedCredentialExpiration) {
+        if (credential != null && (this.delegatedCredential == null ||
+                expiryDateFor(credential) > this.delegatedCredentialExpiration)) {
             updateCredential(credential);
         }
     }
