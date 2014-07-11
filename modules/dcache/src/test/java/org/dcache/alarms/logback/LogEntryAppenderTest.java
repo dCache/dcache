@@ -70,13 +70,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Marker;
 
+import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Tests filtering and storing of logging events.<br>
@@ -157,8 +156,7 @@ public class LogEntryAppenderTest {
     @Test
     public void shouldCreateAlarmWhenDefinedErrorWithMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType("JVM_OUT_OF_MEMORY");
-        whenMessageIsLogged(AlarmDefinition.getMarker(null), Level.ERROR,
-                        message, null);
+        whenMessageIsLogged(AlarmMarkerFactory.getMarker(), Level.ERROR, message, null);
         assertThat(lastEntry.isAlarm(), is(true));
         assertNotNull(lastInternalEvent);
         assertNotNull(lastMailEvent);
@@ -176,8 +174,7 @@ public class LogEntryAppenderTest {
     @Test
     public void shouldCreateAlarmWhenUndefinedErrorWithMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType(null);
-        whenMessageIsLogged(AlarmDefinition.getMarker(null), Level.ERROR,
-                        message, null);
+        whenMessageIsLogged(AlarmMarkerFactory.getMarker(), Level.ERROR, message, null);
         assertThat(lastEntry.isAlarm(), is(true));
         assertNotNull(lastInternalEvent);
         assertNotNull(lastMailEvent);

@@ -62,14 +62,17 @@ package org.dcache.alarms.dao;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.common.base.Preconditions;
+import org.slf4j.Marker;
 
 import javax.annotation.Nonnull;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 
+import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.Severity;
 import org.dcache.alarms.logback.AlarmDefinition;
@@ -200,20 +203,38 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
         this.alarm = alarm;
     }
 
-    public void setAlarmMetadata(ILoggingEvent event, AlarmDefinition definition) {
+    /**
+     * When the alarm is generated at the origin usind a marker,
+     * its key is determined directly by the value of the key
+     * submarker.  This is distinct from the key generation
+     * based on attributes and/or regex groups used when the
+     * alarm is matched against a definition.
+     */
+    public void setAlarmMetadata(ILoggingEvent event,
+                                 AlarmDefinition definition) {
         Level level = event.getLevel();
         if (definition == null) {
-            setSeverity(getSeverityFromLevel(level).ordinal());
-            if (alarm) {
-                setType(event.getMarker().toString());
+            Marker marker = event.getMarker();
+            if (marker != null) {
+                severity = getSeverityFromMarker(marker);
+                type = getTypeFromMarker(marker);
+                key = getKeyFromMarker(marker);
+                if (key == null) {
+                    key = UUID.randomUUID().toString();
+                }
+                /*
+                 * The key is type-specific in this case.
+                 */
+                key = type + ":" + key;
             } else {
-                setType(level.toString());
+                severity = getSeverityFromLogLevel(event);
+                type = level.toString();
+                key = UUID.randomUUID().toString();
             }
-            setKey(UUID.randomUUID().toString());
         } else {
-            setSeverity(definition.getSeverityEnum().ordinal());
-            setType(definition.getType());
-            setKey(definition.getKey(event, host, domain, service));
+            severity = definition.getSeverityEnum().ordinal();
+            type = definition.getType();
+            key = definition.getKey(event, host, domain, service);
         }
     }
 
@@ -307,12 +328,46 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
         return format.format(date);
     }
 
-    private static Severity getSeverityFromLevel(Level level) {
-        switch(level.toInt()) {
-            case Level.ERROR_INT: return Severity.HIGH;
-            case Level.WARN_INT : return Severity.MODERATE;
-            default:
-                return Severity.LOW;
+    private static String getKeyFromMarker(Marker marker) {
+        Marker keyMarker
+            = AlarmMarkerFactory.getSubmarker(marker, IAlarms.ALARM_MARKER_KEY);
+        if (keyMarker == null) {
+            return null;
         }
+
+        StringBuilder builder = new StringBuilder();
+        for (Iterator<Marker> it = keyMarker.iterator(); it.hasNext(); ) {
+            builder.append(it.next().getName());
+        }
+
+        return builder.toString();
+    }
+
+    private static Integer getSeverityFromLogLevel(ILoggingEvent event) {
+        Level level = event.getLevel();
+        switch(level.toInt()) {
+            case Level.ERROR_INT: return Severity.HIGH.ordinal();
+            case Level.WARN_INT : return Severity.MODERATE.ordinal();
+            default:
+                return Severity.LOW.ordinal();
+        }
+    }
+
+    private static int getSeverityFromMarker(Marker marker) {
+        Marker severityMarker
+            = AlarmMarkerFactory.getSubmarker(marker, IAlarms.ALARM_MARKER_SEVERITY);
+        Preconditions.checkNotNull(severityMarker);
+        Marker alarmSeverity = (Marker) severityMarker.iterator().next();
+        Preconditions.checkNotNull(alarmSeverity);
+        return Severity.valueOf(alarmSeverity.getName()).ordinal();
+    }
+
+    private static String getTypeFromMarker(Marker marker) {
+        Marker typeMarker
+            = AlarmMarkerFactory.getSubmarker(marker, IAlarms.ALARM_MARKER_TYPE);
+        Preconditions.checkNotNull(typeMarker);
+        Marker alarmType = (Marker) typeMarker.iterator().next();
+        Preconditions.checkNotNull(alarmType);
+        return alarmType.getName();
     }
 }

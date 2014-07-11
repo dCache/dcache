@@ -60,7 +60,7 @@ documents or software obtained from this server.
 package org.dcache.webadmin.controller;
 
 import java.io.Serializable;
-import java.util.List;
+import java.util.Collection;
 
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 
@@ -73,7 +73,7 @@ public interface IAlarmDisplayService extends Serializable {
 
     AlarmTableProvider getDataProvider();
 
-    List<String> getPredefinedAlarmTypes();
+    Collection<String> getPredefinedAlarmTypes();
 
     boolean isConnected();
 

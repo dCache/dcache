@@ -59,50 +59,88 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
+import com.google.common.base.Preconditions;
+import org.slf4j.IMarkerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
+import java.util.Iterator;
+
 /**
- * Convenience interface for properties in common between the wire object and
- * the storage object for Alarm processing.
+ * Provides internal API for constructing alarm markers.
  *
  * @author arossi
  */
-public interface IAlarms {
-    /*
-     * Shared alarm property/field names
-     */
-    final String KEY_TAG = "key";
-    final String TIMESTAMP_TAG = "timestamp";
-    final String TYPE_TAG = "type";
-    final String SEVERITY_TAG = "severity";
-    final String HOST_TAG = "host";
-    final String DOMAIN_TAG = "domain";
-    final String SERVICE_TAG = "service";
-    final String MESSAGE_TAG = "message";
-    final String GROUP_TAG = "group";
+public final class AlarmMarkerFactory {
 
-    /*
-     * The base marker; all specific alarm types carry an additional
-     * embedded Marker.
-     */
-    final String ALARM_MARKER = "ALARM";
+    private static final IMarkerFactory factory
+        = MarkerFactory.getIMarkerFactory();
 
-    /*
-     * Placeholder for host name which cannot be resolved.
-     */
-    final String UNKNOWN_HOST = "<unknown host>";
+    public static Marker getMarker() {
+        return getMarker((String)null, null);
+    }
 
-    /*
-     * Placeholder for host name which cannot be resolved.
-     */
-    final String UNKNOWN_SERVICE = "<unknown service>";
+    public static Marker getMarker(String severity,
+                                   String type) {
+        return getMarker(severity, type, (String[])null);
+    }
 
-    /*
-     * Placeholder for host name which cannot be resolved.
-     */
-    final String UNKNOWN_DOMAIN = "<unknown domain>";
+    public static Marker getMarker(String severity,
+                                   String type,
+                                   String ... keywords) {
+        if (severity == null) {
+            return getMarker((Severity)null, type, keywords);
+        }
 
-    /*
-     * These are defined elsewhere for use in the MDC.
-     */
-    final String CELL = "cells.cell";
-    final String DOMAIN = "cells.domain";
+        return getMarker(Severity.valueOf(severity), type, keywords);
+    }
+
+    public static Marker getMarker(Severity severity,
+                                   String type,
+                                   String ... keywords) {
+        if (severity == null) {
+            severity = Severity.HIGH;
+        }
+
+        if (type == null) {
+            type = IAlarms.ALARM_MARKER_TYPE_GENERIC;
+        }
+
+        Marker alarmMarker = factory.getDetachedMarker(IAlarms.ALARM_MARKER);
+
+        Marker severityMarker
+            = factory.getDetachedMarker(IAlarms.ALARM_MARKER_SEVERITY);
+        Marker alarmSeverity = factory.getDetachedMarker(severity.toString());
+        severityMarker.add(alarmSeverity);
+        alarmMarker.add(severityMarker);
+
+        Marker typeMarker = factory.getDetachedMarker(IAlarms.ALARM_MARKER_TYPE);
+        Marker alarmType = factory.getDetachedMarker(type);
+        typeMarker.add(alarmType);
+        alarmMarker.add(typeMarker);
+
+        if (keywords != null) {
+            Marker keyMarker
+                = factory.getDetachedMarker(IAlarms.ALARM_MARKER_KEY);
+            for (String keyword: keywords) {
+                Marker alarmKey = factory.getDetachedMarker(keyword);
+                keyMarker.add(alarmKey);
+            }
+            alarmMarker.add(keyMarker);
+        }
+
+        return alarmMarker;
+    }
+
+    public static Marker getSubmarker(Marker marker, String name) {
+        Preconditions.checkNotNull(marker);
+        Preconditions.checkNotNull(name);
+        for (Iterator<Marker> m = marker.iterator(); m.hasNext();) {
+            Marker next = m.next();
+            if (name.equals(next.getName())) {
+                return next;
+            }
+        }
+        return null;
+    }
 }

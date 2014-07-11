@@ -296,6 +296,13 @@ public class AlarmJDOUtils {
         return filter;
     }
 
+    public static Query getTypeQuery(PersistenceManager pm) {
+        return pm.newQuery("JPQL", "SELECT DISTINCT e.type "
+                                 + "FROM "
+                                 + LogEntry.class.getName()
+                                 + " e ORDER BY e.type");
+    }
+
     /**
      * Construct an actual JDO query from the filter.
      */

@@ -293,7 +293,6 @@
         <constructor-arg>
             <ref bean="DAOFactory"/>
         </constructor-arg>
-        <property name="definitions" value="${httpd.alarms.definitions.path}"/>
     </bean>
 
     <bean id="ThumbnailPanelProvider" class="org.dcache.webadmin.controller.util.ThumbnailPanelProvider">

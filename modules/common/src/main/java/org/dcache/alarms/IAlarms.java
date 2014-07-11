@@ -57,94 +57,72 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.controller.impl;
-
-import java.util.Collection;
-import java.util.Date;
-
-import org.dcache.alarms.Severity;
-import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.controller.IAlarmDisplayService;
-import org.dcache.webadmin.controller.util.AlarmTableProvider;
-import org.dcache.webadmin.model.dataaccess.DAOFactory;
-import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
-import org.dcache.webadmin.model.util.AlarmJDOUtils;
-import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+package org.dcache.alarms;
 
 /**
- * Provider does in-memory filtering and sorts on sortable fields; service
- * delegates values for filtering to provider; provider also holds internal map
- * of the current alarms.
+ * Convenience interface for properties in common between the wire object and
+ * the storage object for Alarm processing.
  *
  * @author arossi
  */
-public class StandardAlarmDisplayService implements IAlarmDisplayService {
-
-    private static final long serialVersionUID = 6949169602783225125L;
-
-    private final AlarmTableProvider alarmTableProvider = new AlarmTableProvider();
-    private final ILogEntryDAO access;
-
-    public StandardAlarmDisplayService(DAOFactory factory) {
-        access = checkNotNull(factory.getLogEntryDAO());
-    }
-
-    @Override
-    public AlarmTableProvider getDataProvider() {
-        return alarmTableProvider;
-    }
-
-
-    @Override
-    public Collection<String> getPredefinedAlarmTypes() {
-        return access.getEntryTypes();
-    }
-
-    public boolean isConnected() {
-        return access.isConnected();
-    }
-
-    /**
-     * Calls update, then delete, then refreshes the in-memory list.
+public interface IAlarms {
+    /*
+     * Shared alarm property/field names
      */
-    @Override
-    public void refresh() {
-        if (!isConnected()) {
-            return;
-        }
+    final String KEY_TAG = "key";
+    final String TIMESTAMP_TAG = "timestamp";
+    final String TYPE_TAG = "type";
+    final String SEVERITY_TAG = "severity";
+    final String HOST_TAG = "host";
+    final String DOMAIN_TAG = "domain";
+    final String SERVICE_TAG = "service";
+    final String MESSAGE_TAG = "message";
+    final String GROUP_TAG = "group";
 
-        update();
-        delete();
+    /*
+     * The base marker; all alarms must carry this marker.
+     */
+    final String ALARM_MARKER = "ALARM";
 
-        AlarmTableProvider alarmTableProvider = getDataProvider();
-        Date after = alarmTableProvider.getAfter();
-        Date before = alarmTableProvider.getBefore();
-        String severityStr = alarmTableProvider.getSeverity();
-        Severity severity = severityStr == null ? null :
-            Severity.valueOf(severityStr);
-        String type = alarmTableProvider.getType();
-        Boolean alarm = alarmTableProvider.isAlarm();
-        Integer rangeStart = alarmTableProvider.getFrom();
-        Integer rangeEnd = alarmTableProvider.getTo();
+    /*
+     * The severity marker; submarker indicates the level.
+     */
+    final String ALARM_MARKER_SEVERITY = "ALARM_SEVERITY";
 
-        AlarmDAOFilter filter
-            = AlarmJDOUtils.getFilter(after, before, severity, type,
-                                      alarm, rangeStart, rangeEnd);
-        Collection<LogEntry> refreshed = access.get(filter);
-        alarmTableProvider.setEntries(refreshed);
-    }
+    /*
+     * The type marker; submarker indicates the alarm type.
+     */
+    final String ALARM_MARKER_TYPE = "ALARM_TYPE";
 
-    public void shutDown() {
-        access.shutDown();
-    }
+    /*
+     * Default alarm type.
+     */
+    final String ALARM_MARKER_TYPE_GENERIC = "GENERIC";
 
-    private void delete() {
-        getDataProvider().delete(access);
-    }
+    /*
+     * The key marker; submarker specifies the key properties determining
+     * alarm identity.
+     */
+    final String ALARM_MARKER_KEY = "ALARM_KEY";
 
-    private void update() {
-        getDataProvider().update(access);
-    }
+    /*
+     * Placeholder for host name which cannot be resolved.
+     */
+    final String UNKNOWN_HOST = "<unknown host>";
+
+    /*
+     * Placeholder for host name which cannot be resolved.
+     */
+    final String UNKNOWN_SERVICE = "<unknown service>";
+
+    /*
+     * Placeholder for host name which cannot be resolved.
+     */
+    final String UNKNOWN_DOMAIN = "<unknown domain>";
+
+    /*
+     * These are defined elsewhere for use in the MDC.
+     */
+    final String CELL = "cells.cell";
+    final String DOMAIN = "cells.domain";
 }

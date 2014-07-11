@@ -77,8 +77,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.IAlarms;
-import org.dcache.alarms.logback.AlarmDefinition;
 import org.dcache.util.Args;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -106,7 +106,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *     <tr>
  *         <td>-l=[level]</td>
  *         <td>NO</td>
- *         <td>logging level</td>
+ *         <td>severity level</td>
  *     </tr>
  *     <tr>
  *         <td>-t=[type]</td>
@@ -141,14 +141,13 @@ public class SendAlarm {
 
         private static final Map<String, String> HELP_MESSAGES
             = ImmutableMap.of
-                (LEVEL,       "-l=<level>       (optional): logging level [WARN, ERROR (default)]",
+                (LEVEL,       "-l=<level>       (optional): severity level [CRITICAL, HIGH, MODERATE, LOW]",
                  TYPE,        "-t=<type>        (optional): alarm subtype tag",
                  SOURCE,      "-s=<source>      (optional): source info uri"
                               + " (i.e., \"src://[host]/[domain]/[service]\")",
                  DESTINATION, "-d=<destination> (required): logging server uri"
                               + " (i.e., \"dst://[host]:[port]\"; port may be blank)");
 
-        private final Level level;
         private final Marker marker;
         private final String sourceHost;
         private final String sourceService;
@@ -215,14 +214,8 @@ public class SendAlarm {
                 sourceService = sourceDomain;
             }
 
-            marker = AlarmDefinition.getMarker(parsed.getOption(TYPE));
-
-            arg = parsed.getOption(LEVEL);
-            if (arg == null) {
-                level = Level.ERROR;
-            } else {
-                level = Level.valueOf(arg);
-            }
+            marker = AlarmMarkerFactory.getMarker(parsed.getOption(LEVEL),
+                                                  parsed.getOption(TYPE));
         }
     }
 
@@ -266,11 +259,7 @@ public class SendAlarm {
         lc.reset();
         lc.putProperty("remote.server.host", host);
         lc.putProperty("remote.server.port", port);
-        /*
-         * Allow all levels to be sent.  The remote server will be set
-         * to intercept only messages sent at the defined dcache.log.remote.level.
-         */
-        lc.putProperty("remote.log.level", Level.DEBUG.toString());
+        lc.putProperty("remote.log.level", Level.ERROR.toString());
 
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
@@ -305,15 +294,7 @@ public class SendAlarm {
         MDC.put(IAlarms.DOMAIN_TAG, alarmArgs.sourceDomain);
         MDC.put(IAlarms.SERVICE_TAG, alarmArgs.sourceService);
         Logger logger = configureLogger(alarmArgs.destinationHost,
-                        alarmArgs.destinationPort);
-        if (Level.ERROR.equals(alarmArgs.level)) {
-            logger.error(alarmArgs.marker, alarmArgs.message);
-        } else if (Level.WARN.equals(alarmArgs.level)) {
-            logger.warn(alarmArgs.marker, alarmArgs.message);
-        } else if (Level.INFO.equals(alarmArgs.level)) {
-            logger.info(alarmArgs.marker, alarmArgs.message);
-        } else if (Level.DEBUG.equals(alarmArgs.level)) {
-            logger.debug(alarmArgs.marker, alarmArgs.message);
-        }
+                                        alarmArgs.destinationPort);
+        logger.error(alarmArgs.marker, alarmArgs.message);
     }
 }

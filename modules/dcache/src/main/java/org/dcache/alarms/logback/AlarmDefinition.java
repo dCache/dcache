@@ -68,8 +68,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.jdom.Element;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 
 import java.util.Collections;
 import java.util.Set;
@@ -308,18 +306,6 @@ public class AlarmDefinition {
                     .append(newLine);
         }
         return builder.toString();
-    }
-
-    public static Marker getMarker(String subMarker) {
-        Marker alarmMarker = MarkerFactory.getIMarkerFactory()
-                        .getMarker(IAlarms.ALARM_MARKER);
-
-        if (subMarker != null) {
-            alarmMarker.add(MarkerFactory.getIMarkerFactory()
-                            .getDetachedMarker(subMarker));
-        }
-
-        return alarmMarker;
     }
 
     private final Set<String> hashedKeyElements = Sets.newHashSet();

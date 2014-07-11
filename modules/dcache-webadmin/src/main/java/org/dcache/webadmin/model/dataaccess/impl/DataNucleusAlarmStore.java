@@ -61,7 +61,6 @@ package org.dcache.webadmin.model.dataaccess.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import javax.jdo.JDOException;
 import javax.jdo.PersistenceManager;
@@ -171,7 +170,38 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             logger.debug("successfully executed get for filter {}", filter);
             return detached;
         } catch (JDOException t) {
-            logJDOException("update", filter, t);
+            logJDOException("get", filter, t);
+            return Collections.emptyList();
+        } finally {
+            try {
+                rollbackIfActive(tx);
+            } finally {
+                readManager.close();
+            }
+        }
+    }
+
+    /*
+     * Uses JPQL (JPA-type) DISTINCT query.
+     */
+    public Collection<String> getEntryTypes() {
+        PersistenceManager readManager = getManager();
+        if (readManager == null) {
+            return Collections.emptyList();
+        }
+
+        Transaction tx = readManager.currentTransaction();
+
+        try {
+            tx.begin();
+            Collection<String> result
+                = (Collection<String>)AlarmJDOUtils.getTypeQuery(readManager)
+                                                   .execute();
+            logger.debug("got collection {}", result);
+            tx.commit();
+            return result;
+        } catch (JDOException t) {
+            logJDOException("get entry types", null, t);
             return Collections.emptyList();
         } finally {
             try {
@@ -230,7 +260,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             logger.debug("successfully removed {} entries", removed);
             return removed;
         } catch (JDOException t) {
-            logJDOException("update", filter, t);
+            logJDOException("remove", filter, t);
             return 0;
         } finally {
             try {
@@ -245,7 +275,8 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     public void run() {
         while (isRunning()) {
             Long currentThreshold
-                = System.currentTimeMillis() - alarmCleanerDeleteThresholdUnit.toMillis(alarmCleanerDeleteThreshold);
+                = System.currentTimeMillis() - alarmCleanerDeleteThresholdUnit
+                                               .toMillis(alarmCleanerDeleteThreshold);
 
             try {
                 long count = remove(currentThreshold);
@@ -337,7 +368,12 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
          * a checked exception here; the SQL error should neither
          * be dealt with by the client nor be propagated up in this case
          */
-        logger.error("alarm data, failed to {}, {}", action, filter);
+        if (filter == null) {
+            logger.error("alarm data, failed to {}: {}", action, e.getMessage());
+        } else {
+            logger.error("alarm data, failed to {}, {}: {}", action, filter, e.getMessage());
+        }
+
         logger.debug("{}", action, e);
     }
 

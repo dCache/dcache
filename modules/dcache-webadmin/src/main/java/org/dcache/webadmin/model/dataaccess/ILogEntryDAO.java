@@ -80,6 +80,11 @@ public interface ILogEntryDAO {
     Collection<LogEntry> get(AlarmDAOFilter filter);
 
     /**
+     * @return collection of unique entry types.
+     */
+    Collection<String> getEntryTypes();
+
+    /**
      * @return number of entries removed
      */
     long remove(Collection<LogEntry> selected);
