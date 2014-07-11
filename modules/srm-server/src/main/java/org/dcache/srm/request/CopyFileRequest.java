@@ -613,26 +613,38 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
 
     private void setStateToDone()
     {
-        try {
-            setState(State.DONE, "setStateToDone called");
+        if (!getState().isFinal()) {
             try {
-                getContainerRequest().fileRequestCompleted();
-            } catch (SRMInvalidRequestException ire) {
-                LOG.error(ire.toString());
+                setState(State.DONE, "completed");
+
+                try {
+                    getContainerRequest().fileRequestCompleted();
+                } catch (SRMInvalidRequestException ire) {
+                    LOG.error("Failed to find container request: " + ire.toString());
+                }
+            } catch (IllegalStateTransition ist) {
+                LOG.error("Failed to set copy file request state to DONE: "  +
+                        ist.getMessage());
             }
-        } catch (IllegalStateTransition ist) {
-            LOG.error("setStateToDone: Illegal State Transition : " +ist.getMessage());
         }
     }
 
-    private void setStateToFailed(String error) throws SRMInvalidRequestException
+    private void setStateToFailed(String error)
     {
-        try {
-            setState(State.FAILED, error);
-        } catch (IllegalStateTransition ist) {
-            LOG.error("setStateToFailed: Illegal State Transition : " +ist.getMessage());
+        if (!getState().isFinal()) {
+            try {
+                setState(State.FAILED, error);
+
+                try {
+                    getContainerRequest().fileRequestCompleted();
+                } catch (SRMInvalidRequestException e) {
+                    LOG.error("Failed to find container request: " + e);
+                }
+            } catch (IllegalStateTransition ist) {
+                LOG.error("Failed to set copy file request state to FAILED: " +
+                        ist.getMessage());
+            }
         }
-        getContainerRequest().fileRequestCompleted();
     }
 
     private void runLocalToRemoteCopy() throws SRMException, NonFatalJobFailure,
