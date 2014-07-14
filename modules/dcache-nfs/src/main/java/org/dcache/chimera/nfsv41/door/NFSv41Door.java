@@ -440,7 +440,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 Transfer.initSession();
                 NfsTransfer transfer = _ioMessages.get(stateid);
                 if (transfer == null) {
-                    transfer = new NfsTransfer(_pnfsHandler,
+                    transfer = new NfsTransfer(_pnfsHandler, nfsInode,
                             context.getRpcCall().getCredential().getSubject());
 
                     transfer.setProtocolInfo(protocolInfo);
@@ -697,8 +697,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private static class NfsTransfer extends RedirectedTransfer<PoolDS> {
 
-        NfsTransfer(PnfsHandler pnfs, Subject ioSubject) {
+        private final Inode _nfsInode;
+
+        NfsTransfer(PnfsHandler pnfs, Inode nfsInode, Subject ioSubject) {
             super(pnfs, Subjects.ROOT, ioSubject,  new FsPath("/"));
+            _nfsInode = nfsInode;
         }
 
         @Override
@@ -709,6 +712,10 @@ public class NFSv41Door extends AbstractCellComponent implements
                     getPool(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress());
+        }
+
+        Inode getInode() {
+            return _nfsInode;
         }
     }
 
