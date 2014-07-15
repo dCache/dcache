@@ -1,4 +1,4 @@
-package diskCacheV111.util;
+package diskCacheV111.doors;
 
 import org.dcache.util.Args;
 

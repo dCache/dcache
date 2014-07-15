@@ -36,7 +36,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.SpreadAndWait;
-import diskCacheV111.util.VspArgs;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;

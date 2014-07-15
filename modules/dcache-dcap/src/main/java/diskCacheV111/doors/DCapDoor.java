@@ -13,8 +13,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.VspArgs;
-
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;

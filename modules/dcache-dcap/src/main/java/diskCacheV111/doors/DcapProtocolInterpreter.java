@@ -2,8 +2,6 @@ package diskCacheV111.doors;
 
 import java.io.PrintWriter;
 
-import diskCacheV111.util.VspArgs;
-
 import dmg.cells.nucleus.CellMessage;
 
 /**
