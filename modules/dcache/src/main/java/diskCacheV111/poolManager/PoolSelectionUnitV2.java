@@ -737,7 +737,6 @@ public class PoolSelectionUnitV2
     //
     // Legal formats : <protocol>/<version>
     //
-    private boolean _protocolsChecked;
 
     public Unit findProtocolUnit(String protocolUnitName) {
         //
