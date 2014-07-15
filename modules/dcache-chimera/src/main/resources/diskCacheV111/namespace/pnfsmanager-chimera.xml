@@ -36,7 +36,7 @@
       <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
   </bean>
 
-   <bean id="chimera-data-source" class="com.zaxxer.hikari.HikariDataSource"
+   <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
           destroy-method="shutdown">
         <description>Database connection pool</description>
         <constructor-arg>
@@ -58,7 +58,7 @@
                 </property>
             </bean>
         </constructor-arg>
-    </bean>
+   </bean>
 
   <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
       <description>Database schema manager</description>
@@ -74,7 +74,14 @@
   </bean>
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
-      <constructor-arg ref="chimera-data-source"/>
+      <constructor-arg>
+        <bean class="org.dcache.db.AlarmEnabledDataSource" destroy-method="shutdown">
+            <description>Connection pool decorator</description>
+            <constructor-arg value="${pnfsmanager.db.url}"/>
+            <constructor-arg value="JdbcFs"/>
+            <constructor-arg ref="data-source-delegate"/>
+        </bean>
+      </constructor-arg>
       <constructor-arg value="${pnfsmanager.db.dialect}"/>
   </bean>
 

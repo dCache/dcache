@@ -28,6 +28,8 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
+import org.dcache.db.AlarmEnabledDataSource;
+
 public class FsFactory
 {
     public static final String USAGE = "<jdbcUrl> <dbDialect> <dbUser> <dbPass>";
@@ -48,7 +50,10 @@ public class FsFactory
         config.setDataSource(new DriverManagerDataSource(url, user, pass));
         config.setMaximumPoolSize(3);
         config.setMinimumIdle(0);
-        return new JdbcFs(new HikariDataSource(config), dialect);
+        return new JdbcFs(new AlarmEnabledDataSource(url,
+                                                     FsFactory.class.getSimpleName(),
+                                                     new HikariDataSource(config)),
+                                                     dialect);
     }
 
     private static class DriverManagerDataSource implements DataSource

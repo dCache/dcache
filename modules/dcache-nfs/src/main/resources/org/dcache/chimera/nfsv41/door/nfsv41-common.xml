@@ -53,7 +53,7 @@
         <constructor-arg value="1"/>
     </bean>
 
-    <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"
+    <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
           destroy-method="shutdown">
         <description>Database connection pool</description>
         <constructor-arg>
@@ -77,6 +77,12 @@
         </constructor-arg>
     </bean>
 
+    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="shutdown">
+        <description>Connection pool decorator</description>
+        <constructor-arg value="${nfs.db.url}"/>
+        <constructor-arg value="DCacheAwareJdbcFs"/>
+        <constructor-arg ref="data-source-delegate"/>
+    </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
         <description>Database schema manager</description>

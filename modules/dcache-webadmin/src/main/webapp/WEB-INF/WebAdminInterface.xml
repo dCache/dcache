@@ -328,6 +328,11 @@
     </bean>
 
     <beans profile="alarms-rdbms">
+        <!--
+             this data source is not wrapped with the AlarmEnabledDataSource
+             decorator because we do not want internal errors to become
+             alarms
+          -->
         <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"
               destroy-method="shutdown">
             <description>Database connection pool</description>

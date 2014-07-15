@@ -43,6 +43,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
+import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
@@ -180,7 +181,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _cleanerTask;
     private PoolInformationBase _pools = new PoolInformationBase();
-    private HikariDataSource _dataSource;
+    private AlarmEnabledDataSource _dataSource;
     private JdbcTemplate _db;
     private BroadcastRegistrationTask _broadcastRegistration;
     private CellStub _broadcasterStub;
@@ -276,7 +277,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         config.setMinimumIdle(1);
         config.setMaximumPoolSize(10);
 
-        _dataSource = new HikariDataSource(config);
+        _dataSource = new AlarmEnabledDataSource(jdbcUrl,
+                                                 ChimeraCleaner.class.getSimpleName(),
+                                                 new HikariDataSource(config));
         _db = new JdbcTemplate(_dataSource);
 
         _log.info("Database connection with jdbcUrl={}; user={}",

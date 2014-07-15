@@ -48,7 +48,7 @@
     <constructor-arg ref="pnfs-stub"/>
   </bean>
 
-    <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
+    <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
             destroy-method="shutdown">
         <constructor-arg>
             <bean class="com.zaxxer.hikari.HikariConfig">
@@ -71,16 +71,23 @@
         </constructor-arg>
     </bean>
 
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="shutdown">
+            <description>Connection pool decorator</description>
+            <constructor-arg value="${spacemanager.db.url}"/>
+            <constructor-arg value="SpaceManager"/>
+            <constructor-arg ref="data-source-delegate"/>
+    </bean>
+
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
         <description>Database schema manager</description>
-        <property name="dataSource" ref="data-source"/>
+        <property name="dataSource" ref="data-source-delegate"/>
         <property name="changeLog" value="classpath:${spacemanager.db.schema.changelog}"/>
         <property name="shouldUpdate" value="${spacemanager.db.schema.auto}"/>
     </bean>
 
   <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-    <description>Database transaction manager</description>
-    <property name="dataSource" ref="data-source"/>
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="data-source"/>
   </bean>
 
   <bean class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">

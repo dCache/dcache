@@ -25,7 +25,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.MessageEventTimer;
 import diskCacheV111.util.Pgpass;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -44,11 +42,10 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.Reply;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
+import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
@@ -90,7 +87,7 @@ public abstract class TransferManager extends AbstractCell
     private final Map<Long, TimerTask> _moverTimeoutTimerTasks =
             new ConcurrentHashMap<>();
     private String _ioQueueName; // multi io queue option
-    private HikariDataSource ds;
+    private AlarmEnabledDataSource ds;
     private JobIdGenerator idGenerator;
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
@@ -196,7 +193,9 @@ public abstract class TransferManager extends AbstractCell
             config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
             config.setMaximumPoolSize(50);
             config.setMinimumIdle(1);
-            ds = new HikariDataSource(config);
+            ds = new AlarmEnabledDataSource(_jdbcUrl,
+                                            TransferManager.class.getSimpleName(),
+                                            new HikariDataSource(config));
 
             RequestsPropertyStorage.initPropertyStorage(
                     new DataSourceTransactionManager(ds), ds, "srmnextrequestid");
@@ -291,7 +290,9 @@ public abstract class TransferManager extends AbstractCell
         config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
         JDOPersistenceManagerFactory pmf = new JDOPersistenceManagerFactory(
                 Maps.<String, Object>newHashMap(Maps.fromProperties(properties)));
-        pmf.setConnectionFactory(new HikariDataSource(config));
+        pmf.setConnectionFactory(new AlarmEnabledDataSource(_jdbcUrl,
+                                                            TransferManager.class.getSimpleName(),
+                                                            new HikariDataSource(config)));
         return pmf.getPersistenceManager();
     }
 

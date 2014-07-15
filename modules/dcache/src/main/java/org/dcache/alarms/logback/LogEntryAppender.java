@@ -100,6 +100,7 @@ import org.dcache.alarms.IAlarms;
 import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.alarms.dao.impl.DataNucleusLogEntryStore;
+import org.dcache.db.AlarmEnabledDataSource;
 
 /**
  * For server-side interception of log messages. Will store them to the LogEntry
@@ -136,6 +137,12 @@ public class LogEntryAppender extends AppenderBase<ILoggingEvent> implements
     private boolean sendEmail;
     private boolean writeHistory;
     private JDOPersistenceManagerFactory pmf;
+
+    /**
+     * Obviously, we do not wrap this data source with the
+     * {@link AlarmEnabledDataSource} because we don't want
+     * internal errors being logged to the alarm system itself.
+     */
     private HikariDataSource dataSource;
 
     public void addAlarmType(AlarmDefinition definition) {

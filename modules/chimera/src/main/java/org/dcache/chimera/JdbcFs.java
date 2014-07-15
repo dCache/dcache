@@ -40,6 +40,7 @@ import diskCacheV111.util.RetentionPolicy;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
+import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.util.Checksum;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
@@ -2802,7 +2803,9 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void close() throws IOException {
-        if (_dbConnectionsPool instanceof HikariDataSource) {
+        if (_dbConnectionsPool instanceof AlarmEnabledDataSource) {
+            ((AlarmEnabledDataSource) _dbConnectionsPool).close();
+        } else if (_dbConnectionsPool instanceof HikariDataSource) {
             ((HikariDataSource) _dbConnectionsPool).shutdown();
         } else if (_dbConnectionsPool instanceof Closeable) {
             ((Closeable) _dbConnectionsPool).close();

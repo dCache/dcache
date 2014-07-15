@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import org.dcache.chimera.JdbcFs;
+import org.dcache.db.AlarmEnabledDataSource;
 
 public class ChimeraFsHelper {
 
@@ -17,6 +18,9 @@ public class ChimeraFsHelper {
         config.setDataSource(new DriverManagerDataSource(url, user, pass));
         config.setMinimumIdle(1);
         config.setMaximumPoolSize(2);
-        return new JdbcFs(new HikariDataSource(config), dialect);
+        return new JdbcFs(new AlarmEnabledDataSource(url,
+                                                     ChimeraFsHelper.class.getSimpleName(),
+                                                     new HikariDataSource(config)),
+                                                     dialect);
     }
 }
