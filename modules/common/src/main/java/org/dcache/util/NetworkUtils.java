@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
@@ -30,13 +31,14 @@ import static com.google.common.collect.ImmutableList.copyOf;
  * Various network related utility functions.
  */
 public abstract class NetworkUtils {
+    public final static String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
+    private final static String canonicalHostName;
     private static final int RANDOM_PORT = 23241;
     private static final int FIRST_CLIENT_HOST = 0;
 
     private final static List<InetAddress> LOCAL_INET_ADDRESSES;
     private final static boolean FAKED_ADDRESS;
-    public final static String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
     static {
         /*
@@ -77,6 +79,19 @@ public abstract class NetworkUtils {
             }
         }
         LOCAL_INET_ADDRESSES = ImmutableList.copyOf(localInetAddress);
+
+        if (LOCAL_INET_ADDRESSES.isEmpty()) {
+            canonicalHostName = "localhost";
+        } else {
+            InetAddress[] addresses
+                = LOCAL_INET_ADDRESSES.toArray(new InetAddress[0]);
+            Arrays.sort(addresses, getExternalInternalSorter());
+            canonicalHostName = addresses[0].getCanonicalHostName();
+        }
+    }
+
+    public static String getCanonicalhostname() {
+        return canonicalHostName;
     }
 
     /**
