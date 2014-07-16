@@ -8,12 +8,17 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.InetAddress;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.logging.LogManager;
 
 import dmg.util.CommandException;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.util.Args;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
 
@@ -71,9 +76,10 @@ public class BootLoader
     public static void main(String arguments[])
     {
         String command = null;
+        Args args = null;
 
         try {
-            Args args = new Args(arguments);
+            args = new Args(arguments);
             if (args.argc() < 1) {
                 help();
             }
@@ -132,15 +138,16 @@ public class BootLoader
                 throw new IllegalArgumentException("Invalid command: " + command);
             }
         } catch (IllegalArgumentException | CommandException | URISyntaxException | FileNotFoundException e) {
-            handleFatalError(e.getMessage(), command);
+            handleFatalError(e.getMessage(), args);
         } catch (IOException e) {
-            handleFatalError(e.toString(), command);
+            handleFatalError(e.toString(), args);
         } catch (RuntimeException e) {
-            handleFatalError(e, command);
+            handleFatalError(e, args);
         }
     }
 
-    private static void handleFatalError(Object message, String command) {
+    private static void handleFatalError(Object message, Args args) {
+        String command = args.argv(0);
         if (CMD_START.equals(command)) {
             String logMessage;
 
@@ -151,7 +158,12 @@ public class BootLoader
                 logMessage = "Failure at startup: {}";
             }
 
-            LoggerFactory.getLogger("root").error(logMessage, message);
+            LoggerFactory.getLogger("root")
+                .error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
+                                                    "DOMAIN_STARTUP_FAILURE",
+                                                    NetworkUtils.getCanonicalhostname(),
+                                                    args.toString()),
+                        logMessage, message);
         } else {
             if (message instanceof RuntimeException) {
                 getRootCause((RuntimeException)message).printStackTrace();

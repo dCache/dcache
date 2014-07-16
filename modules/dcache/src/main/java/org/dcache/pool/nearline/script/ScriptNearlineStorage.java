@@ -119,7 +119,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         try {
             Set<URI> locations = new HashSet<>();
             String storeCommand = getFlushCommand(request.getFile(), request.getFileAttributes());
-            String output = new HsmRunSystem(storeCommand, MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
+            String output = new HsmRunSystem(name, storeCommand, MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
             for (String uri : Splitter.on("\n").trimResults().omitEmptyStrings().split(output)) {
                 try {
                     locations.add(new URI(uri));
@@ -139,7 +139,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         try {
             FileAttributes attributes = request.getFileAttributes();
             String fetchCommand = getFetchCommand(request.getFile(), attributes);
-            new HsmRunSystem(fetchCommand, MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
+            new HsmRunSystem(name, fetchCommand, MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
             return readChecksumFromHsm(request.getFile());
         } catch (IllegalThreadStateException  e) {
             throw new CacheException(3, e.getMessage(), e);
@@ -149,7 +149,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     @Override
     protected void remove(RemoveRequest request) throws IOException, CacheException
     {
-        new HsmRunSystem(getRemoveCommand(request.getUri()), MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
+        new HsmRunSystem(name, getRemoveCommand(request.getUri()), MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
     }
 
     @Override

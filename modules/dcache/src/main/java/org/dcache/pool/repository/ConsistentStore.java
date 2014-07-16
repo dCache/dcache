@@ -15,10 +15,11 @@ import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
@@ -171,12 +172,20 @@ public class ConsistentStore
 
                 default:
                     entry.setState(EntryState.BROKEN);
-                    _log.error(String.format(BAD_MSG, id, e.getMessage()));
+                    _log.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
+                                                            EntryState.BROKEN_FILE,
+                                                            id.toString(),
+                                                            _poolName),
+                               String.format(BAD_MSG, id, e.getMessage()));
                     break;
                 }
             } catch (NoSuchAlgorithmException e) {
                 entry.setState(EntryState.BROKEN);
-                _log.error(String.format(BAD_MSG, id, e.getMessage()));
+                _log.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
+                                                        EntryState.BROKEN_FILE,
+                                                        id.toString(),
+                                                        _poolName),
+                                String.format(BAD_MSG, id, e.getMessage()));
             }
         }
 
@@ -222,9 +231,20 @@ public class ConsistentStore
                  * may thus safe some time for incomplete files.
                  */
                 long length = entry.getDataFile().length();
-                if ((state != EntryState.FROM_CLIENT || fileAttributes.isDefined(FileAttribute.SIZE) && fileAttributes.getSize() != 0)
+                if ((state != EntryState.FROM_CLIENT ||
+                     fileAttributes.isDefined(FileAttribute.SIZE) &&
+                         fileAttributes.getSize() != 0)
                     && fileAttributes.getSize() != length) {
-                    throw new CacheException(String.format(BAD_SIZE_MSG, id, fileAttributes.getSize(), length));
+                    String message = String.format(BAD_SIZE_MSG,
+                                                   id,
+                                                   fileAttributes.getSize(),
+                                                   length);
+                    _log.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
+                                                            "BROKEN_FILE",
+                                                            id.toString(),
+                                                            _poolName),
+                                                            message);
+                    throw new CacheException(message);
                 }
 
                 /* Verify checksum. Will fail if there is a mismatch.

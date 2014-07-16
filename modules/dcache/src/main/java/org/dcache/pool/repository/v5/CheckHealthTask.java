@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.MetaDataStore;
@@ -203,19 +205,33 @@ class CheckHealthTask implements Runnable
             }
 
             if (total < account.getTotal()) {
-                LOGGER.warn(String
-                        .format("The file system containing the data files appears to be smaller (%,d bytes) than the configured pool size (%,d bytes).", total, _account
-                                .getTotal()));
+                LOGGER.warn(AlarmMarkerFactory.getMarker(Severity.LOW,
+                                                         "POOL_SIZE",
+                                                         _repository.getPoolName()),
+                                "The file system containing the data files "
+                                + "appears to be smaller {} than the configured "
+                                + "pool size {}.",
+                                String.format("(%,d bytes)", total),
+                                String.format("(%,d bytes)", _account.getTotal()));
             }
 
             if (free < account.getFree()) {
                 long newSize =
                     account.getTotal() - (account.getFree() - free);
-
-                LOGGER.warn(String
-                        .format("The file system containing the data files appears to have less free space (%,d bytes) than expected (%,d bytes); reducing the pool size to %,d bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.", free, _account
-                                .getFree(), newSize));
-
+                LOGGER.warn(AlarmMarkerFactory.getMarker(Severity.LOW,
+                                                         "POOL_FREE_SPACE",
+                                                         _repository.getPoolName()),
+                                "The file system containing the data files "
+                                + "appears to have less free space {} than "
+                                + "expected {}; reducing the pool size to {} "
+                                + "to compensate. Notice that this does not leave "
+                                + "any space for the meta data. If such data is "
+                                + "stored on the same file system, then it is "
+                                + "paramount that the pool size is reconfigured "
+                                + "to leave enough space for the meta data.",
+                                String.format("(%,d bytes)", free),
+                                String.format("(%,d bytes)", _account.getFree()),
+                                String.format("%,d bytes", newSize));
                 account.setTotal(newSize);
             }
         }

@@ -3,6 +3,7 @@ package dmg.cells.nucleus ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -15,6 +16,8 @@ import dmg.util.DomainInterruptHandler;
 import dmg.util.Gate;
 import dmg.util.logback.FilterShell;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.util.Args;
 
 /**
@@ -317,9 +320,28 @@ public class      SystemCell
          */
         if (e instanceof VirtualMachineError) {
             _oomSafetyBuffer = null;
-            _log.error("Fatal JVM error", e);
+            _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
+                                                    "FATAL_JVM_ERROR",
+                                                    getCellDomainName(),
+                                                    getCellName()),
+                                                    "Fatal JVM error", e);
             _log.error("Shutting down...");
             kill();
+        }
+
+        if (e instanceof IOException) {
+            Throwable cause = e;
+            while(cause != null) {
+                if (cause.toString().contains("Too many open files")) {
+                    _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
+                                                            "OUT_OF_FILE_DESCRIPTORS",
+                                                            getCellDomainName(),
+                                                            getCellName()),
+                                     "Uncaught exception in thread " + t.getName(),
+                                     e);
+                    return;
+                }
+            }
         }
 
         _log.error("Uncaught exception in thread " + t.getName(), e);

@@ -144,6 +144,7 @@
 
   <bean id="scanner" class="org.dcache.pool.classic.ChecksumScanner">
     <description>Implements background checksum verification</description>
+    <property name="poolName" value="${pool.name}"/>
     <property name="pnfs" ref="pnfs"/>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>

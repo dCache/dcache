@@ -39,7 +39,6 @@ import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
-import org.dcache.pool.nearline.HsmSet;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.UnitInteger;
@@ -81,12 +80,15 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.util.CommandSyntaxException;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
-import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
+import org.dcache.pool.nearline.HsmSet;
+import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
@@ -1342,7 +1344,16 @@ public class PoolV4
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
+        if (errorString != null) {
+           _log.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
+                                                  "POOL_DISABLED",
+                                                  _poolName),
+                     "Pool mode changed to {}: {}",
+                     _poolMode,
+                     _poolStatusMessage);
+        } else {
+            _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
+        }
     }
 
     /**

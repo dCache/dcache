@@ -14,7 +14,10 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
@@ -401,7 +404,15 @@ class WriteHandleImpl implements ReplicaDescriptor
         if (_targetState == EntryState.REMOVED) {
             _repository.setState(_entry, EntryState.REMOVED);
         } else {
-            _log.warn("Marking pool entry as BROKEN");
+            PnfsId id = _entry.getPnfsId();
+            String pool = _repository.getPoolName();
+            _log.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
+                                                   "BROKEN_FILE",
+                                                   id.toString(),
+                                                   pool),
+                      "Marking pool entry {} on {} as BROKEN",
+                      _entry.getPnfsId(),
+                      _repository.getPoolName());
             _repository.setState(_entry, EntryState.BROKEN);
         }
     }

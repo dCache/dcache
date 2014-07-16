@@ -23,6 +23,8 @@ import dmg.protocols.ssh.SshStreamEngine;
 import dmg.util.DummyStreamEngine;
 import dmg.util.StreamEngine;
 
+import org.dcache.alarms.AlarmMarkerFactory;
+import org.dcache.alarms.Severity;
 import org.dcache.util.Args;
 
 public class LocationManagerConnector
@@ -173,7 +175,13 @@ public class LocationManagerConnector
                 } catch (InterruptedIOException e) {
                     throw e;
                 } catch (IOException e) {
-                    _log.warn("Failed to connect to " + _domain + ": " + e.getMessage());
+                    _log.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
+                                                           "LOCATION_MANAGER_FAILURE",
+                                                           name,
+                                                           _domain,
+                                                           e.getMessage()),
+                              "Failed to connect to " + _domain + ": "
+                                                      + e.getMessage());
                 }
 
                 setStatus("Sleeping");
