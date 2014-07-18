@@ -385,7 +385,6 @@
         <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
               init-method="initialize" destroy-method="shutDown">
             <property name="persistenceManagerFactory" ref="pmf"/>
-            <property name="alarmsXMLPath" value="${httpd.alarms.db.xml.path}"/>
             <property name="alarmsCleanerEnabled" value="${httpd.enable.alarm-cleaner}"/>
             <property name="alarmsCleanerSleepInterval" value="${httpd.alarm-cleaner.timeout}"/>
             <property name="alarmsCleanerSleepIntervalUnit" value="${httpd.alarm-cleaner.timeout.unit}"/>
