@@ -84,7 +84,6 @@ define env checkAlarmProperties end
      onerror shutdown
      check httpd.alarms.db.user
      check httpd.alarms.db.password
-     check httpd.alarms.db.xml.path
      check httpd.alarms.db.config.path
 end
 
