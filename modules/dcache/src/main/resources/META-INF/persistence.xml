@@ -18,7 +18,7 @@
     <persistence-unit name="PinManager">
       <mapping-file>org/dcache/pinmanager/model/package.jdo</mapping-file>
       <properties>
-        <property name="datanucleus.identifier.case" value="PreserveCase"/>
+        <property name="datanucleus.identifier.case" value="MixedCase"/>
       </properties>
     </persistence-unit>
 

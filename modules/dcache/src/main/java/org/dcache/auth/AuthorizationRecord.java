@@ -1,6 +1,7 @@
 package org.dcache.auth;
 
 import com.google.common.base.Objects;
+import org.datanucleus.api.jpa.annotations.JdbcType;
 import org.globus.gsi.jaas.GlobusPrincipal;
 
 import javax.persistence.Basic;
@@ -316,6 +317,7 @@ public class AuthorizationRecord {
 
     @Basic
     @Column(name="read_only")
+    @JdbcType("SMALLINT")
     public boolean isReadOnly() {
         return readOnly;
     }
