@@ -1,5 +1,7 @@
 package org.dcache.util;
 
+import liquibase.Contexts;
+import liquibase.LabelExpression;
 import liquibase.Liquibase;
 import liquibase.changelog.ChangeSet;
 import liquibase.exception.LiquibaseException;
@@ -52,11 +54,13 @@ public class SpringLiquibase
             try {
                 Liquibase liquibase = createLiquibase(c);
                 try {
+                    Contexts contexts = new Contexts(getContexts());
+                    LabelExpression labels = new LabelExpression(getLabels());
                     if (_shouldUpdate) {
-                        liquibase.update(getContexts());
+                        liquibase.update(contexts, labels);
                     } else {
                         List<ChangeSet> changeSets =
-                            liquibase.listUnrunChangeSets(getContexts());
+                            liquibase.listUnrunChangeSets(contexts, labels);
                         if (!changeSets.isEmpty()) {
                             throw new MigrationFailedException(changeSets.get(0),
                                                                "Automatic schema migration is disabled. Please apply missing changes.");
