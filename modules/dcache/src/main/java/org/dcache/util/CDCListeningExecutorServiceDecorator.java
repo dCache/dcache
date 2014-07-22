@@ -1,6 +1,5 @@
 package org.dcache.util;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ForwardingListenableFuture;
 import com.google.common.util.concurrent.ForwardingListeningExecutorService;
@@ -74,7 +73,7 @@ public class CDCListeningExecutorServiceDecorator extends ForwardingListeningExe
     public <T> List<Future<T>> invokeAll(
             Collection<? extends Callable<T>> tasks) throws InterruptedException
     {
-        return wrap(_delegate.invokeAll(wrap(tasks)));
+        return wrap(_delegate.invokeAll(this.<T>wrap(tasks)));
     }
 
     @Override
@@ -82,7 +81,7 @@ public class CDCListeningExecutorServiceDecorator extends ForwardingListeningExe
             Collection<? extends Callable<T>> tasks, long timeout,
             TimeUnit unit) throws InterruptedException
     {
-        return wrap(_delegate.invokeAll(wrap(tasks), timeout, unit));
+        return wrap(_delegate.invokeAll(this.<T>wrap(tasks), timeout, unit));
     }
 
     @Override
@@ -155,26 +154,12 @@ public class CDCListeningExecutorServiceDecorator extends ForwardingListeningExe
 
     private <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks)
     {
-        return Lists.newArrayList(transform(tasks, new Function<Callable<T>, Callable<T>>()
-                {
-                    @Override
-                    public Callable<T> apply(Callable<T> task)
-                    {
-                        return wrap(task);
-                    }
-                }));
+        return Lists.newArrayList(transform(tasks, task -> wrap(task)));
     }
 
     private <T> List<Future<T>> wrap(List<Future<T>> futures)
     {
         return Lists.newArrayList(transform(futures,
-                new Function<Future<T>, Future<T>>()
-                {
-                    @Override
-                    public Future<T> apply(Future<T> future)
-                    {
-                        return wrap((ListenableFuture<T>) future);
-                    }
-                }));
+                                            future -> wrap((ListenableFuture<T>) future)));
     }
 }

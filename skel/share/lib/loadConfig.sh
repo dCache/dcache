@@ -56,7 +56,7 @@ isJavaVersionOk()
 {
     version=$($JAVA -version 2>&1)
     case $version in
-        *1.[78]*)
+        *1.[8]*)
             return 0
             ;;
         *)

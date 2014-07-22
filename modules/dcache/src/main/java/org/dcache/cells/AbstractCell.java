@@ -482,7 +482,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
                     result = type.cast(i);
                 }
             } else if (Enum.class.isAssignableFrom(type)) {
-                result = type.cast(Enum.valueOf(type.asSubclass(Enum.class), so));
+                result = (T) Enum.valueOf((Class<Enum>) type, so);
             } else if (Class.class.isAssignableFrom(type)) {
                 try {
                     result = type.cast(Class.forName(so));
