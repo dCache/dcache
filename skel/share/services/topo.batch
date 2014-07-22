@@ -55,4 +55,4 @@ define env topo-none.exe end
   exec env topo-cells.exe
 end
 
-exec env topo-${broker.scheme}.exe
+exec env topo-${dcache.broker.scheme}.exe
