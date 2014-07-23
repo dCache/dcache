@@ -170,7 +170,7 @@ public class SrmCopy
     {
         long lifetimeInSeconds = 0;
         if (request.getDesiredTotalRequestTime() != null) {
-            long reqLifetime = (long) request.getDesiredTotalRequestTime().intValue();
+            long reqLifetime = request.getDesiredTotalRequestTime();
             /* [ SRM 2.2, 5.7.2 ]
              *
              * o)    If input parameter desiredTotalRequestTime is 0 (zero),

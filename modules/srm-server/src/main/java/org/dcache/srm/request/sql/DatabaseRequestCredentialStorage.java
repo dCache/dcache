@@ -155,25 +155,20 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    private void dbInit()
            throws DataAccessException
    {
-       jdbcTemplate.execute(new ConnectionCallback<Void>()
-       {
-           @Override
-           public Void doInConnection(Connection con) throws SQLException, DataAccessException
-           {
-               //get database info
-               DatabaseMetaData md = con.getMetaData();
-               String tableNameAsStored = getIdentifierAsStored(md, getTableName());
-               try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
-                   if (!tableRs.next()) {
-                       // Table does not exist
-                       try (Statement s = con.createStatement()) {
-                           logger.debug("dbInit trying " + createRequestCredentialTable);
-                           s.executeUpdate(createRequestCredentialTable);
-                       }
+       jdbcTemplate.execute((Connection con) -> {
+           //get database info
+           DatabaseMetaData md = con.getMetaData();
+           String tableNameAsStored = getIdentifierAsStored(md, getTableName());
+           try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
+               if (!tableRs.next()) {
+                   // Table does not exist
+                   try (Statement s = con.createStatement()) {
+                       logger.debug("dbInit trying " + createRequestCredentialTable);
+                       s.executeUpdate(createRequestCredentialTable);
                    }
                }
-               return null;
            }
+           return null;
        });
    }
 
@@ -204,21 +199,15 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
     private RequestCredential getRequestCredentialByCondition(String query, Object ...args)
             throws DataAccessException
     {
-        List<RequestCredential> result = jdbcTemplate.query(query, args,
-                new RowMapper<RequestCredential>()
-                {
-                    @Override
-                    public RequestCredential mapRow(ResultSet rs, int rowNum) throws SQLException
-                    {
-                        return new RequestCredential(rs.getLong("id"),
-                                rs.getLong("creationtime"),
-                                rs.getString("credentialname"),
-                                rs.getString("role"),
-                                read(rs.getString("delegatedcredentials")),
-                                rs.getLong("credentialexpiration"),
-                                DatabaseRequestCredentialStorage.this);
-                    }
-                });
+        List<RequestCredential> result =
+                jdbcTemplate.query(query, args,
+                                   (rs, rowNum) -> new RequestCredential(rs.getLong("id"),
+                                                                         rs.getLong("creationtime"),
+                                                                         rs.getString("credentialname"),
+                                                                         rs.getString("role"),
+                                                                         read(rs.getString("delegatedcredentials")),
+                                                                         rs.getLong("credentialexpiration"),
+                                                                         DatabaseRequestCredentialStorage.this));
         return getFirst(result, null);
     }
 

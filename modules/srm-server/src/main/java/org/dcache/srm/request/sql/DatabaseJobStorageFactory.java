@@ -79,7 +79,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
         executor = new ThreadPoolExecutor(
                 config.getJdbcExecutionThreadNum(), config.getJdbcExecutionThreadNum(),
                 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(config.getMaxQueuedJdbcTasksNum()),
+                new LinkedBlockingQueue<>(config.getMaxQueuedJdbcTasksNum()),
                 new ThreadFactoryBuilder().setNameFormat("srm-db-save-%d").build());
         scheduledExecutor =
                 Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("srm-db-gc-%d").build());

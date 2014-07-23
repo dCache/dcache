@@ -1289,15 +1289,6 @@ public class SRM {
     public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
             throws DataAccessException
     {
-        return Iterables.filter(Job.getActiveJobs(type),
-                new Predicate<T>()
-                {
-                    @Override
-                    public boolean apply(T request)
-                    {
-                        return request.isTouchingSurl(surl);
-                    }
-                }
-        );
+        return Iterables.filter(Job.getActiveJobs(type), request -> request.isTouchingSurl(surl));
     }
 }

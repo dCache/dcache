@@ -151,35 +151,30 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
 
     private Boolean validateProtocolsTableSchema(final String tableName)
     {
-        return jdbcTemplate.execute(new ConnectionCallback<Boolean>()
-        {
-            @Override
-            public Boolean doInConnection(Connection con) throws SQLException, DataAccessException
-            {
-                DatabaseMetaData md = con.getMetaData();
-                String tableNameAsStored =
-                        getIdentifierAsStored(md, tableName);
-                try (ResultSet columns = md.getColumns(null, null, tableNameAsStored, null)) {
-                    if (!columns.next()) {
-                        return false;
-                    }
-                    try {
-                        verifyStringType("PROTOCOL", 1, tableName,
-                                columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
-                    } catch (SQLException e) {
-                        return false;
-                    }
-                    if (!columns.next()) {
-                        return false;
-                    }
-                    try {
-                        verifyLongType("RequestID", 2, tableName,
-                                columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
-                    } catch (SQLException e) {
-                        return false;
-                    }
-                    return true;
+        return jdbcTemplate.execute((Connection con) -> {
+            DatabaseMetaData md = con.getMetaData();
+            String tableNameAsStored =
+                    getIdentifierAsStored(md, tableName);
+            try (ResultSet columns = md.getColumns(null, null, tableNameAsStored, null)) {
+                if (!columns.next()) {
+                    return false;
                 }
+                try {
+                    verifyStringType("PROTOCOL", 1, tableName,
+                            columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
+                } catch (SQLException e) {
+                    return false;
+                }
+                if (!columns.next()) {
+                    return false;
+                }
+                try {
+                    verifyLongType("RequestID", 2, tableName,
+                            columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
+                } catch (SQLException e) {
+                    return false;
+                }
+                return true;
             }
         });
     }

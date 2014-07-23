@@ -133,14 +133,14 @@ public class SrmBringOnline
                 || request.getDesiredLifeTime() == 0) {
             return TimeUnit.MILLISECONDS.toSeconds(requestTime);
         }
-        return (long) request.getDesiredLifeTime().intValue();
+        return (long) request.getDesiredLifeTime();
     }
 
     private static long getRequestTime(SrmBringOnlineRequest request, long max) throws SRMInvalidRequestException
     {
         long requestTime = 0;
         if (request.getDesiredTotalRequestTime() != null) {
-            long time = (long) request.getDesiredTotalRequestTime().intValue();
+            long time = request.getDesiredTotalRequestTime();
             /* [ SRM 2.2, 5.3.2 ]
              *
              * o)    If input parameter desiredTotalRequestTime is 0 (zero), each file request must

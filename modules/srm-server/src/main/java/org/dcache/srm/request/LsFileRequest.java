@@ -52,10 +52,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         private final URI surl;
         private TMetaDataPathDetail metaDataPathDetail;
         private static final Comparator<FileMetaData> DIRECTORY_LAST_ORDER =
-                new Comparator<FileMetaData>() {
-                @Override
-                public int compare(FileMetaData f1,
-                                   FileMetaData f2) {
+                (f1, f2) -> {
                         if (f1.isDirectory&&f2.isRegular) {
                             return 1;
                         }
@@ -63,8 +60,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                             return -1;
                         }
                         return 0;
-                }
-        };
+                };
 
         public LsFileRequest(long requestId,
                              Long  requestCredentalId,

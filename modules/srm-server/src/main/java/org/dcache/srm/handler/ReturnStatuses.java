@@ -10,24 +10,6 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 public class ReturnStatuses
 {
-    private static final Function<TSURLReturnStatus,TStatusCode> TSURL_RETURN_STATUS =
-            new Function<TSURLReturnStatus, TStatusCode>()
-            {
-                @Override
-                public TStatusCode apply(TSURLReturnStatus returnStatus)
-                {
-                    return returnStatus.getStatus().getStatusCode();
-                }
-            };
-    private static final Function<TSURLLifetimeReturnStatus,TStatusCode> SURL_LIFETIME_RETURN_STATUS =
-            new Function<TSURLLifetimeReturnStatus, TStatusCode>()
-            {
-                @Override
-                public TStatusCode apply(TSURLLifetimeReturnStatus returnStatus)
-                {
-                    return returnStatus.getStatus().getStatusCode();
-                }
-            };
 
     private ReturnStatuses()
     {
@@ -49,7 +31,7 @@ public class ReturnStatuses
 
     public static TReturnStatus getSummaryReturnStatus(TSURLReturnStatus[] returnStatuses)
     {
-        return getSummaryReturnStatusForSurls(returnStatuses, TSURL_RETURN_STATUS);
+        return getSummaryReturnStatusForSurls(returnStatuses, returnStatus -> returnStatus.getStatus().getStatusCode());
     }
 
     static TReturnStatus getSummaryReturnStatus(TMetaDataSpace[] metadataSpaces)
@@ -87,6 +69,6 @@ public class ReturnStatuses
 
     static TReturnStatus getSummaryReturnStatus(TSURLLifetimeReturnStatus[] surlStatus)
     {
-        return getSummaryReturnStatusForSurls(surlStatus, SURL_LIFETIME_RETURN_STATUS);
+        return getSummaryReturnStatusForSurls(surlStatus, returnStatus -> returnStatus.getStatus().getStatusCode());
     }
 }

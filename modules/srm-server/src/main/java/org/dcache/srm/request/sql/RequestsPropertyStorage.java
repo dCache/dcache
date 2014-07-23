@@ -134,37 +134,31 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private void dbInit()
             throws DataAccessException
     {
-        jdbcTemplate.execute(new ConnectionCallback<Void>()
-        {
-            @Override
-            public Void doInConnection(Connection con)
-                    throws SQLException, DataAccessException
-            {
-                DatabaseMetaData md = con.getMetaData();
-                String tableNameAsStored =
-                        getIdentifierAsStored(md, nextRequestIdTableName);
-                try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
-                    if (!tableRs.next()) {
-                        logger.debug("RequestsPropertyStorage: {} does not exits", nextRequestIdTableName);
-                        try (Statement s = con.createStatement()) {
-                            String createTable =
-                                    "CREATE TABLE " + nextRequestIdTableName + "(NEXTINT INTEGER ,NEXTLONG BIGINT)";
-                            logger.debug("RequestsPropertyStorage: dbInit trying {}", createTable);
-                            s.executeUpdate(createTable);
-                            try (ResultSet set = s
-                                    .executeQuery("SELECT * FROM " + nextRequestIdTableName)) {
-                                if (!set.next()) {
-                                    String insert = "INSERT INTO " + nextRequestIdTableName + " VALUES (" + Integer.MIN_VALUE +
-                                            ", " + Long.MIN_VALUE + ")";
-                                    logger.debug("RequestsPropertyStorage: dbInit trying {}", insert);
-                                    s.executeUpdate(insert);
-                                }
+        jdbcTemplate.execute((Connection con) -> {
+            DatabaseMetaData md = con.getMetaData();
+            String tableNameAsStored =
+                    getIdentifierAsStored(md, nextRequestIdTableName);
+            try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
+                if (!tableRs.next()) {
+                    logger.debug("RequestsPropertyStorage: {} does not exits", nextRequestIdTableName);
+                    try (Statement s = con.createStatement()) {
+                        String createTable =
+                                "CREATE TABLE " + nextRequestIdTableName + "(NEXTINT INTEGER ,NEXTLONG BIGINT)";
+                        logger.debug("RequestsPropertyStorage: dbInit trying {}", createTable);
+                        s.executeUpdate(createTable);
+                        try (ResultSet set = s
+                                .executeQuery("SELECT * FROM " + nextRequestIdTableName)) {
+                            if (!set.next()) {
+                                String insert = "INSERT INTO " + nextRequestIdTableName + " VALUES (" + Integer.MIN_VALUE +
+                                        ", " + Long.MIN_VALUE + ")";
+                                logger.debug("RequestsPropertyStorage: dbInit trying {}", insert);
+                                s.executeUpdate(insert);
                             }
                         }
                     }
                 }
-                return null;
             }
+            return null;
         });
     }
 
@@ -186,19 +180,15 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
 
     public synchronized  int nextInt()   {
         if (nextIntIncrement >= NEXT_INT_STEP) {
-            nextIntBase = transactionTemplate.execute(new TransactionCallback<Integer>() {
-                @Override
-                public Integer doInTransaction(TransactionStatus status)
-                {
-                    int base = jdbcTemplate.queryForObject("SELECT NEXTINT FROM " + nextRequestIdTableName + " FOR UPDATE", Integer.class);
-                    int newBase = base + NEXT_INT_STEP;
-                    int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTINT=?", newBase);
-                    if (n != 1) {
-                        throw new IncorrectResultSizeDataAccessException(
-                                "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
-                    }
-                    return newBase;
+            nextIntBase = transactionTemplate.execute(status -> {
+                int base = jdbcTemplate.queryForObject("SELECT NEXTINT FROM " + nextRequestIdTableName + " FOR UPDATE", Integer.class);
+                int newBase = base + NEXT_INT_STEP;
+                int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTINT=?", newBase);
+                if (n != 1) {
+                    throw new IncorrectResultSizeDataAccessException(
+                            "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
                 }
+                return newBase;
             });
             nextIntIncrement = 0;
         }
@@ -226,20 +216,15 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     @Override
     public synchronized long nextLong() {
         if (nextLongIncrement >= NEXT_LONG_STEP) {
-            nextLongBase = transactionTemplate.execute(new TransactionCallback<Long>()
-            {
-                @Override
-                public Long doInTransaction(TransactionStatus status)
-                {
-                    long base = jdbcTemplate.queryForObject("SELECT NEXTLONG FROM " + nextRequestIdTableName + " FOR UPDATE", Long.class);
-                    long newBase = base + NEXT_LONG_STEP;
-                    int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTLONG=?", newBase);
-                    if (n != 1) {
-                        throw new IncorrectResultSizeDataAccessException(
-                                "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
-                    }
-                    return newBase;
+            nextLongBase = transactionTemplate.execute(status -> {
+                long base = jdbcTemplate.queryForObject("SELECT NEXTLONG FROM " + nextRequestIdTableName + " FOR UPDATE", Long.class);
+                long newBase = base + NEXT_LONG_STEP;
+                int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTLONG=?", newBase);
+                if (n != 1) {
+                    throw new IncorrectResultSizeDataAccessException(
+                            "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
                 }
+                return newBase;
             });
             nextLongIncrement = 0;
         }

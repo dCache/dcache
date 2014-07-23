@@ -66,8 +66,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,6 +95,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.dcache.commons.util.SqlHelper;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -119,14 +118,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             LoggerFactory.getLogger(DatabaseJobStorage.class);
 
     protected static final String INDEX_SUFFIX="_idx";
-    public static final Predicate<Job.JobHistory> NOT_SAVED = new Predicate<Job.JobHistory>()
-    {
-        @Override
-        public boolean apply(Job.JobHistory element)
-        {
-            return !element.isSaved();
-        }
-    };
 
     @SuppressWarnings("unchecked")
     private final Class<J> jobType = (Class<J>) new TypeToken<J>(getClass()) {}.getRawType();
@@ -274,40 +265,35 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     private void insertStates() throws DataAccessException
     {
-        jdbcTemplate.execute(new ConnectionCallback<Void>()
-        {
-            @Override
-            public Void doInConnection(Connection connection) throws SQLException, DataAccessException
-            {
-                connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+        jdbcTemplate.execute((Connection connection) -> {
+            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 
-                EnumSet<State> states = EnumSet.allOf(State.class);
-                try (Statement s = connection.createStatement()) {
-                    ResultSet rs = s.executeQuery("SELECT ID,STATE FROM " + srmStateTableName);
-                    while (rs.next()) {
-                        int id = rs.getInt(1);
-                        String name = rs.getString(2);
-                        State state = State.getState(id);
-                        if (state.toString().equals(name)) {
-                            states.remove(state);
-                        }
+            EnumSet<State> states = EnumSet.allOf(State.class);
+            try (Statement s = connection.createStatement()) {
+                ResultSet rs = s.executeQuery("SELECT ID,STATE FROM " + srmStateTableName);
+                while (rs.next()) {
+                    int id = rs.getInt(1);
+                    String name = rs.getString(2);
+                    State state = State.getState(id);
+                    if (state.toString().equals(name)) {
+                        states.remove(state);
                     }
                 }
-                if (!states.isEmpty()) {
-                    try (Statement s = connection.createStatement()) {
-                        s.executeUpdate("DELETE FROM " + srmStateTableName);
-                    }
-                    try (PreparedStatement s = connection.prepareStatement("INSERT INTO " + srmStateTableName + " VALUES (?,?)")) {
-                        for (State state : State.values()) {
-                            s.setInt(1, state.getStateId());
-                            s.setString(2, state.toString());
-                            s.addBatch();
-                        }
-                        s.executeBatch();
-                    }
-                }
-                return null;
             }
+            if (!states.isEmpty()) {
+                try (Statement s = connection.createStatement()) {
+                    s.executeUpdate("DELETE FROM " + srmStateTableName);
+                }
+                try (PreparedStatement s = connection.prepareStatement("INSERT INTO " + srmStateTableName + " VALUES (?,?)")) {
+                    for (State state : State.values()) {
+                        s.setInt(1, state.getStateId());
+                        s.setString(2, state.toString());
+                        s.addBatch();
+                    }
+                    s.executeBatch();
+                }
+            }
+            return null;
         });
     }
 
@@ -336,14 +322,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public J getJob(final long jobId) throws DataAccessException
     {
-        return jdbcTemplate.execute(new ConnectionCallback<J>()
-        {
-            @Override
-            public J doInConnection(Connection con) throws SQLException, DataAccessException
-            {
-                return getJob(jobId, con);
-            }
-        });
+        return jdbcTemplate.execute((Connection con) -> getJob(jobId, con));
     }
 
     @Override
@@ -459,8 +438,8 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     private List<Job.JobHistory> getJobHistoriesToSave(Job job)
     {
         return logHistory
-                ? Lists.newArrayList(filter(job.getJobHistory(), NOT_SAVED))
-                : Collections.<Job.JobHistory>emptyList();
+                ? job.getJobHistory().stream().filter(history -> !history.isSaved()).collect(Collectors.toList())
+                : Collections.emptyList();
     }
 
 
@@ -472,29 +451,16 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         }
 
         final List<Job.JobHistory> history = getJobHistoriesToSave(job);
-        transactionTemplate.execute(new TransactionCallback<Void>()
-        {
-            @Override
-            public Void doInTransaction(TransactionStatus status)
-            {
-                return jdbcTemplate.execute(new ConnectionCallback<Void>()
-                {
-                    @Override
-                    public Void doInConnection(Connection con) throws SQLException, DataAccessException
-                    {
-                        int rowCount = updateJob(con, job);
-                        if (rowCount == 0) {
-                            createJob(con, job);
-                        }
-                        if (!history.isEmpty()) {
-                            saveHistory(con, job, history);
-                        }
-                        return null;
-                    }
-                });
-
+        transactionTemplate.execute(status -> jdbcTemplate.execute((Connection con) -> {
+            int rowCount = updateJob(con, job);
+            if (rowCount == 0) {
+                createJob(con, job);
             }
-        });
+            if (!history.isEmpty()) {
+                saveHistory(con, job, history);
+            }
+            return null;
+        }));
         markHistoryAsSaved(history);
     }
 
@@ -510,17 +476,11 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public Set<J> getJobs(final String schedulerId) throws DataAccessException
     {
-        return getJobs(new PreparedStatementCreator()
-        {
-            @Override
-            public PreparedStatement createPreparedStatement(Connection connection)
-                    throws SQLException
-            {
-                String sql = "SELECT * FROM " + getTableName() + " WHERE SCHEDULERID=?";
-                PreparedStatement stmt = connection.prepareStatement(sql);
-                stmt.setString(1, schedulerId);
-                return stmt;
-            }
+        return getJobs(connection -> {
+            String sql = "SELECT * FROM " + getTableName() + " WHERE SCHEDULERID=?";
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, schedulerId);
+            return stmt;
         });
     }
 
@@ -616,15 +576,10 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     private Set<J> getJobs(PreparedStatementCreator psc) throws DataAccessException
     {
-        return new HashSet<>(jdbcTemplate.query(psc, new RowMapper<J>()
-        {
-            @Override
-            public J mapRow(ResultSet rs, int rowNum) throws SQLException
-            {
-                J job = getJob(rs.getStatement().getConnection(), rs);
-                logger.debug("==========> deserialized job with id {}", job.getId());
-                return job;
-            }
+        return new HashSet<>(jdbcTemplate.query(psc, (rs, rowNum) -> {
+            J job = getJob(rs.getStatement().getConnection(), rs);
+            logger.debug("==========> deserialized job with id {}", job.getId());
+            return job;
         }));
 
     }
@@ -632,44 +587,32 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public Set<J> getActiveJobs() throws DataAccessException
     {
-        return getJobs(new PreparedStatementCreator()
-        {
-            @Override
-            public PreparedStatement createPreparedStatement(Connection connection)
-                    throws SQLException
-            {
-                String sql =
-                        "SELECT * FROM " + getTableName() +
-                                " WHERE STATE !=" + State.DONE.getStateId() +
-                                " AND STATE !=" + State.CANCELED.getStateId() +
-                                " AND STATE !=" + State.FAILED.getStateId();
-                return connection.prepareStatement(sql);
-            }
+        return getJobs(connection -> {
+            String sql =
+                    "SELECT * FROM " + getTableName() +
+                            " WHERE STATE !=" + State.DONE.getStateId() +
+                            " AND STATE !=" + State.CANCELED.getStateId() +
+                            " AND STATE !=" + State.FAILED.getStateId();
+            return connection.prepareStatement(sql);
         });
     }
 
     @Override
     public Set<J> getJobs(final String schedulerId, final State state) throws DataAccessException
     {
-        return getJobs(new PreparedStatementCreator()
-        {
-            @Override
-            public PreparedStatement createPreparedStatement(Connection connection)
-                    throws SQLException
-            {
-                PreparedStatement stmt;
-                if (schedulerId == null) {
-                    stmt = connection
-                            .prepareStatement("SELECT * FROM " + getTableName() + " WHERE SCHEDULERID IS NULL AND STATE=?");
-                    stmt.setInt(1, state.getStateId());
-                } else {
-                    stmt = connection
-                            .prepareStatement("SELECT * FROM " + getTableName() + " WHERE SCHEDULERID=? AND STATE=?");
-                    stmt.setString(1, schedulerId);
-                    stmt.setInt(2, state.getStateId());
-                }
-                return stmt;
+        return getJobs(connection -> {
+            PreparedStatement stmt;
+            if (schedulerId == null) {
+                stmt = connection
+                        .prepareStatement("SELECT * FROM " + getTableName() + " WHERE SCHEDULERID IS NULL AND STATE=?");
+                stmt.setInt(1, state.getStateId());
+            } else {
+                stmt = connection
+                        .prepareStatement("SELECT * FROM " + getTableName() + " WHERE SCHEDULERID=? AND STATE=?");
+                stmt.setString(1, schedulerId);
+                stmt.setInt(2, state.getStateId());
             }
+            return stmt;
         });
     }
 
@@ -682,83 +625,70 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected void createTable(final String tableName, final String createStatement, final boolean verify, final boolean clean)
             throws DataAccessException
     {
-            jdbcTemplate.execute(new ConnectionCallback<Void>()
-            {
-                @Override
-                public Void doInConnection(Connection con)
-                        throws SQLException, DataAccessException
-                {
-                    DatabaseMetaData md = con.getMetaData();
-                    String tableNameAsStored = getIdentifierAsStored(md, tableName);
-                    try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
-                        if (!tableRs.next()) {
-                            logger.debug("DatabaseMetaData.getTables returned empty result set");
-                            logger.debug("{} does not exits", tableName);
-                            logger.debug("executing statement: {}", createStatement);
-                            try (Statement s = con.createStatement()) {
-                                s.executeUpdate(createStatement);
-                            }
-                        } else if (verify) {
-                            try (ResultSet columns = md
-                                    .getColumns(null, null, tableNameAsStored, null)) {
-                                int columnIndex = 0;
-                                while (columns.next()) {
-                                    columnIndex++;
-                                    String columnName = columns.getString("COLUMN_NAME");
-                                    int columnDataType = columns.getInt("DATA_TYPE");
-                                    verify(columnIndex, tableName, columnName, columnDataType);
-                                }
-                                if (getColumnNum() != columnIndex) {
-                                    throw new SQLException("database table schema changed:" +
-                                            " table named " + tableName +
-                                            " has wrong number of fields: " + columnIndex + ", should be :" + getColumnNum());
-                                }
-                            } catch (SQLException e) {
-                                logger.warn("Verification failed. Trying to drop the table and create a new one: {}",
-                                        e.toString());
-                                dropTable(tableName, con);
-                                droppedOldTable = true;
-
-                                try (Statement s = con.createStatement()) {
-                                    logger.debug("executing statement: {}", createStatement);
-                                    s.executeUpdate(createStatement);
-                                }
-                            }
+            jdbcTemplate.execute((Connection con) -> {
+                DatabaseMetaData md = con.getMetaData();
+                String tableNameAsStored = getIdentifierAsStored(md, tableName);
+                try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
+                    if (!tableRs.next()) {
+                        logger.debug("DatabaseMetaData.getTables returned empty result set");
+                        logger.debug("{} does not exits", tableName);
+                        logger.debug("executing statement: {}", createStatement);
+                        try (Statement s = con.createStatement()) {
+                            s.executeUpdate(createStatement);
                         }
-                        if (clean) {
-                            String sqlStatementString = "UPDATE " + getTableName() +
-                                    " SET STATE=" + State.DONE.getStateId() +
-                                    " WHERE STATE=" + State.READY.getStateId();
-                            try (Statement s = con.createStatement()) {
-                                logger.debug("executing statement: {}", sqlStatementString);
-                                s.executeUpdate(sqlStatementString);
+                    } else if (verify) {
+                        try (ResultSet columns = md
+                                .getColumns(null, null, tableNameAsStored, null)) {
+                            int columnIndex = 0;
+                            while (columns.next()) {
+                                columnIndex++;
+                                String columnName = columns.getString("COLUMN_NAME");
+                                int columnDataType = columns.getInt("DATA_TYPE");
+                                verify(columnIndex, tableName, columnName, columnDataType);
                             }
-                            sqlStatementString = "UPDATE " + getTableName() +
-                                    " SET STATE=" + State.FAILED.getStateId() +
-                                    " WHERE STATE !=" + State.FAILED.getStateId() + " AND" +
-                                    " STATE !=" + State.CANCELED.getStateId() + " AND " +
-                                    " STATE !=" + State.DONE.getStateId();
+                            if (getColumnNum() != columnIndex) {
+                                throw new SQLException("database table schema changed:" +
+                                        " table named " + tableName +
+                                        " has wrong number of fields: " + columnIndex + ", should be :" + getColumnNum());
+                            }
+                        } catch (SQLException e) {
+                            logger.warn("Verification failed. Trying to drop the table and create a new one: {}",
+                                    e.toString());
+                            dropTable(tableName, con);
+                            droppedOldTable = true;
+
                             try (Statement s = con.createStatement()) {
-                                logger.debug("executing statement: {}", sqlStatementString);
-                                s.executeUpdate(sqlStatementString);
+                                logger.debug("executing statement: {}", createStatement);
+                                s.executeUpdate(createStatement);
                             }
                         }
                     }
-                    return null;
+                    if (clean) {
+                        String sqlStatementString = "UPDATE " + getTableName() +
+                                " SET STATE=" + State.DONE.getStateId() +
+                                " WHERE STATE=" + State.READY.getStateId();
+                        try (Statement s = con.createStatement()) {
+                            logger.debug("executing statement: {}", sqlStatementString);
+                            s.executeUpdate(sqlStatementString);
+                        }
+                        sqlStatementString = "UPDATE " + getTableName() +
+                                " SET STATE=" + State.FAILED.getStateId() +
+                                " WHERE STATE !=" + State.FAILED.getStateId() + " AND" +
+                                " STATE !=" + State.CANCELED.getStateId() + " AND " +
+                                " STATE !=" + State.DONE.getStateId();
+                        try (Statement s = con.createStatement()) {
+                            logger.debug("executing statement: {}", sqlStatementString);
+                            s.executeUpdate(sqlStatementString);
+                        }
+                    }
                 }
+                return null;
             });
     }
 
     protected int dropTable(final String oldName) throws DataAccessException
     {
-        return jdbcTemplate.execute(new ConnectionCallback<Integer>()
-        {
-            @Override
-            public Integer doInConnection(Connection con) throws SQLException, DataAccessException
-            {
-                return dropTable(oldName, con);
-            }
-        });
+        return jdbcTemplate.execute((Connection con) -> dropTable(oldName, con));
     }
 
     private int dropTable(String oldName, Connection con) throws SQLException
@@ -822,29 +752,24 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected void createIndex(final String indexname, final String expression, final String tableName)
                     throws DataAccessException
     {
-        jdbcTemplate.execute(new ConnectionCallback<Void>()
-        {
-            @Override
-            public Void doInConnection(Connection con) throws SQLException, DataAccessException
-            {
-                DatabaseMetaData dbMetaData = con.getMetaData();
-                ResultSet index_rset =
-                        dbMetaData.getIndexInfo(null,
-                                null,
-                                getIdentifierAsStored(dbMetaData, tableName),
-                                false,
-                                false);
+        jdbcTemplate.execute((Connection con) -> {
+            DatabaseMetaData dbMetaData = con.getMetaData();
+            ResultSet index_rset =
+                    dbMetaData.getIndexInfo(null,
+                            null,
+                            getIdentifierAsStored(dbMetaData, tableName),
+                            false,
+                            false);
 
-                while (index_rset.next()) {
-                    String s = index_rset.getString("index_name").toLowerCase();
-                    if (indexname.equalsIgnoreCase(s)) {
-                        logger.debug("index {} already exists", indexname);
-                        return null;
-                    }
+            while (index_rset.next()) {
+                String s = index_rset.getString("index_name").toLowerCase();
+                if (indexname.equalsIgnoreCase(s)) {
+                    logger.debug("index {} already exists", indexname);
+                    return null;
                 }
-                createIndex(con, indexname, tableName, expression);
-                return null;
             }
+            createIndex(con, indexname, tableName, expression);
+            return null;
         });
     }
 

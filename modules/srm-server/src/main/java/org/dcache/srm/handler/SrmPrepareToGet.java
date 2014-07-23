@@ -169,7 +169,7 @@ public class SrmPrepareToGet
     {
         long lifetimeInSeconds = 0;
         if (request.getDesiredTotalRequestTime() != null) {
-            long reqLifetime = (long) request.getDesiredTotalRequestTime().intValue();
+            long reqLifetime = request.getDesiredTotalRequestTime();
             if (reqLifetime < 0) {
                 /* [ SRM 2.2, 5.2.1 ]
                  * m) If input parameter desiredTotalRequestTime is 0 (zero), each file request

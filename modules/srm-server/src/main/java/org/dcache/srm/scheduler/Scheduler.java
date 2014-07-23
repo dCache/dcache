@@ -189,7 +189,7 @@ public class Scheduler <T extends Job>
 
         workSupplyService = new WorkSupplyService();
         retryTimer = new Timer();
-        pooledExecutor = new ThreadPoolExecutor(30, 30, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+        pooledExecutor = new ThreadPoolExecutor(30, 30, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
         addScheduler(id, this);
     }

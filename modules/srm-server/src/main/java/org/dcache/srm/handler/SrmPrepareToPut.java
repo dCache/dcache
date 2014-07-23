@@ -204,7 +204,7 @@ public class SrmPrepareToPut
     {
         long lifetimeInSeconds = 0;
         if (request.getDesiredTotalRequestTime() != null) {
-            long reqLifetime = (long) request.getDesiredTotalRequestTime().intValue();
+            long reqLifetime = request.getDesiredTotalRequestTime();
             if (reqLifetime < 0) {
                 /* [ SRM 2.2, 5.5.2 ]
                  * q)    If input parameter desiredTotalRequestTime is 0 (zero), each file

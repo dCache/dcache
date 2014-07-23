@@ -142,27 +142,15 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     @Override
-    public GSSCredential search(final String targetDn)
+    public GSSCredential search(String targetDn)
     {
-        return bestCredentialMatching(new DnFqanMatcher() {
-            @Override
-            public boolean matches(String dn, String fqan)
-            {
-                return targetDn.equals(dn);
-            }
-        });
+        return bestCredentialMatching((dn, fqan) -> targetDn.equals(dn));
     }
 
     @Override
-    public GSSCredential search(final String targetDn, final String targetFqan)
+    public GSSCredential search(String targetDn, String targetFqan)
     {
-        return bestCredentialMatching(new DnFqanMatcher() {
-            @Override
-            public boolean matches(String dn, String fqan)
-            {
-                return targetDn.equals(dn) && Objects.equals(targetFqan, fqan);
-            }
-        });
+        return bestCredentialMatching((dn, fqan) -> targetDn.equals(dn) && Objects.equals(targetFqan, fqan));
     }
 
     private interface DnFqanMatcher

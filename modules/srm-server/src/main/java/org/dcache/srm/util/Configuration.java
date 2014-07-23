@@ -524,9 +524,7 @@ public class Configuration {
         sb.append("\n\t\t maximum number of retries = ").append(this.copyMaxNumOfRetries);
         sb.append("\n\t\t retry timeout in miliseconds =").append(this.copyRetryTimeout);
 
-        for (DatabaseParameters parameters: databaseParameters.values()) {
-            sb.append(parameters);
-        }
+        databaseParameters.values().forEach(sb::append);
 
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
         sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);

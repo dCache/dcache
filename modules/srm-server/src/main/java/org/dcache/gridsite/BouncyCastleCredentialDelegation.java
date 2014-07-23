@@ -73,21 +73,17 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
     private static final Logger LOG = LoggerFactory.getLogger(BouncyCastleCredentialDelegation.class);
 
     private static final Function<X509Certificate,X509Certificate> AS_BC_CERTIFICATE =
-            new Function<X509Certificate,X509Certificate>() {
-                @Override
-                public X509Certificate apply(X509Certificate certificate)
-                {
-                    if(certificate instanceof X509CertificateObject) {
-                        return certificate;
-                    } else {
-                        try {
-                            ByteArrayInputStream in =
-                                    new ByteArrayInputStream(certificate.getEncoded());
-                            return loadCertificate(in);
-                        } catch (GeneralSecurityException | IOException e) {
-                            throw new RuntimeException("failed to convert" +
-                                    " certificate: " + e.getMessage());
-                        }
+            certificate -> {
+                if(certificate instanceof X509CertificateObject) {
+                    return certificate;
+                } else {
+                    try {
+                        ByteArrayInputStream in =
+                                new ByteArrayInputStream(certificate.getEncoded());
+                        return loadCertificate(in);
+                    } catch (GeneralSecurityException | IOException e) {
+                        throw new RuntimeException("failed to convert" +
+                                " certificate: " + e.getMessage());
                     }
                 }
             };

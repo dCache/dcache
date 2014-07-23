@@ -1,9 +1,6 @@
 package org.dcache.srm.scheduler;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.MapMaker;
-import com.google.common.collect.Sets;
 import org.springframework.dao.DataAccessException;
 
 import java.sql.Connection;
@@ -12,6 +9,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import org.dcache.srm.request.Job;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Canonicalizing job storage.
@@ -49,14 +48,7 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
 
     private Set<J> canonicalize(Set<J> jobs)
     {
-        return Sets.newHashSet(Collections2.transform(jobs, new Function<J, J>()
-        {
-            @Override
-            public J apply(J job)
-            {
-                return canonicalize(job.getId(), job);
-            }
-        }));
+        return jobs.stream().map(job -> canonicalize(job.getId(), job)).collect(toSet());
     }
 
 

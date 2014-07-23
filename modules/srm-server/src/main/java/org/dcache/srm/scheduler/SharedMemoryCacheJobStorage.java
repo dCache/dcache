@@ -39,7 +39,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     private static final Timer timer = new Timer("Job expiration", true);
     private final JobStorage<J> storage;
     private final Class<J> type;
-    private final Set<J> jobsToExpire = Collections.newSetFromMap(new ConcurrentHashMap<J, Boolean>());
+    private final Set<J> jobsToExpire = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public SharedMemoryCacheJobStorage(JobStorage<J> storage, Class<J> type)
     {
@@ -72,9 +72,7 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     public void init() throws DataAccessException
     {
         storage.init();
-        for (J job : storage.getActiveJobs()) {
-            canonicalize(job);
-        }
+        storage.getActiveJobs().forEach(this::canonicalize);
         timer.schedule(new ExpirationTask(), SECONDS.toMillis(10), SECONDS.toMillis(60));
     }
 

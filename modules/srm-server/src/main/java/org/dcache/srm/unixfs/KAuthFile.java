@@ -882,11 +882,9 @@ public class KAuthFile {
             return;
         }
         Set<String> allusers = new HashSet<>();
-        allusers.addAll( pwd_records.keySet());
+        allusers.addAll(pwd_records.keySet());
         allusers.addAll(auth_records.keySet());
-        for (Object alluser : allusers) {
-            System.out.println(alluser);
-        }
+        allusers.forEach(System.out::println);
     }
 
     public void dcmapadd(Arguments arguments) {
