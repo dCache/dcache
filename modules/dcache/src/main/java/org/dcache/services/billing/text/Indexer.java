@@ -13,11 +13,11 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.TreeTraverser;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
+import com.google.common.io.ByteSource;
+import com.google.common.io.CharSource;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
-import com.google.common.io.InputSupplier;
 import com.google.common.io.LineProcessor;
-import com.google.common.io.OutputSupplier;
 import com.google.gson.stream.JsonWriter;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -26,13 +26,11 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -332,7 +330,7 @@ public class Indexer
     private void grep(final Collection<String> searchTerms, File file, final String prefix, final PrintWriter out)
             throws IOException
     {
-        CharStreams.readLines(newReaderSupplier(file, Charsets.UTF_8), new LineProcessor<Void>()
+        asCharSource(file, Charsets.UTF_8).readLines(new LineProcessor<Void>()
         {
             @Override
             public boolean processLine(String line) throws IOException
@@ -367,14 +365,18 @@ public class Indexer
         String path = compressedFile.getPath();
         checkArgument(Files.getFileExtension(path).equals(BZ2), "File must have " + BZ2 + " extension.");
         File file = new File(compressedFile.getParent(), Files.getNameWithoutExtension(path));
-        Files.copy(new Bzip2CompressorInputStreamSupplier(compressedFile), file);
+        try (InputStream in = new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(file)))) {
+            Files.asByteSink(file).writeFrom(in);
+        }
         java.nio.file.Files.delete(compressedFile.toPath());
     }
 
     private void compress(File file) throws IOException
     {
         File compressedFile = new File(file.getPath() + "." + BZ2);
-        Files.copy(file, new Bzip2CompressorOutputStreamSupplier(compressedFile));
+        try (OutputStream out = new BZip2CompressorOutputStream(Files.asByteSink(compressedFile).openBufferedStream())) {
+            Files.asByteSource(file).copyTo(out);
+        }
         java.nio.file.Files.delete(file.toPath());
     }
 
@@ -449,7 +451,7 @@ public class Indexer
             IndexProcessor processor = new IndexProcessor(configuration);
             Set<String> index;
             try (ParallelizingLineProcessor<Set<String>> parallelizer = new ParallelizingLineProcessor<>(threads, processor)) {
-                index = CharStreams.readLines(newReaderSupplier(file, Charsets.UTF_8), parallelizer);
+                index = asCharSource(file, Charsets.UTF_8).readLines(parallelizer);
             }
             return index;
         } catch (IOException e) {
@@ -459,16 +461,21 @@ public class Indexer
         }
     }
 
-    private static InputSupplier<InputStreamReader> newReaderSupplier(File file, Charset charset)
+    private static CharSource asCharSource(final File file, Charset charset)
     {
-        InputSupplier<InputStreamReader> input;
+        ByteSource source;
         if (Files.getFileExtension(file.getPath()).equals(BZ2)) {
-            input = CharStreams
-                    .newReaderSupplier(new Bzip2CompressorInputStreamSupplier(file), charset);
+            source = new ByteSource() {
+                @Override
+                public InputStream openStream() throws IOException
+                {
+                    return new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(file)));
+                }
+            };
         } else {
-            input = Files.newReaderSupplier(file, charset);
+            source = Files.asByteSource(file);
         }
-        return input;
+        return source.asCharSource(charset);
     }
 
     private static BloomFilter<CharSequence> produceBloomFilter(double fpp, Set<String> index)
@@ -622,44 +629,6 @@ public class Indexer
                 index = next + 1;
             }
             paths.add(path);
-        }
-    }
-
-    /**
-     * A factory for Bzip2CompressorInputStream.
-     */
-    private static class Bzip2CompressorInputStreamSupplier implements InputSupplier<InputStream>
-    {
-        private final File file;
-
-        public Bzip2CompressorInputStreamSupplier(File file)
-        {
-            this.file = file;
-        }
-
-        @Override
-        public InputStream getInput() throws IOException
-        {
-            return new BZip2CompressorInputStream(new BufferedInputStream(new FileInputStream(file)));
-        }
-    }
-
-    /**
-     * A factory for Bzip2CompressorOutputStream.
-     */
-    private static class Bzip2CompressorOutputStreamSupplier implements OutputSupplier<OutputStream>
-    {
-        private final File file;
-
-        public Bzip2CompressorOutputStreamSupplier(File file)
-        {
-            this.file = file;
-        }
-
-        @Override
-        public OutputStream getOutput() throws IOException
-        {
-            return new BZip2CompressorOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
         }
     }
 
