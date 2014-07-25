@@ -1,0 +1,11 @@
+--- org/dcache/srm/v2_2/TStatusCode.java-old	2014-07-24 19:12:39.000000000 +0200
++++ org/dcache/srm/v2_2/TStatusCode.java	2014-07-24 19:13:10.000000000 +0200
+@@ -131,4 +131,8 @@
+         return typeDesc;
+     }
+ 
++    public boolean isProcessing()
++    {
++        return this == SRM_REQUEST_QUEUED || this == SRM_REQUEST_INPROGRESS;
++    }
+ }

@@ -20,25 +20,42 @@
        <artifactId>axistools-maven-plugin</artifactId>
        <version>1.4</version>
 
-       <configuration>
-          <packageSpace>org.dcache.delegation</packageSpace>
-          <subPackageByFileName>true</subPackageByFileName>
-          <testCases>false</testCases>
-          <serverSide>true</serverSide>
-          <wsdlFiles>
-              <wsdlFile>gridsite1.wsdl</wsdlFile>
-              <wsdlFile>gridsite2.wsdl</wsdlFile>
-          </wsdlFiles>
-       </configuration>
-
        <executions>
          <execution>
+           <id>gridsite</id>
            <goals>
               <goal>wsdl2java</goal>
            </goals>
+	   <configuration>
+	       <packageSpace>org.dcache.delegation</packageSpace>
+               <subPackageByFileName>true</subPackageByFileName>
+               <testCases>false</testCases>
+               <serverSide>true</serverSide>
+               <wsdlFiles>
+		   <wsdlFile>gridsite1.wsdl</wsdlFile>
+		   <wsdlFile>gridsite2.wsdl</wsdlFile>
+               </wsdlFiles>
+	   </configuration>
+         </execution>
+
+         <execution>
+	   <id>srm</id>
+           <goals>
+              <goal>wsdl2java</goal>
+           </goals>
+	   <configuration>
+               <packageSpace>org.dcache.srm.v2_2</packageSpace>
+               <subPackageByFileName>false</subPackageByFileName>
+               <testCases>false</testCases>
+               <serverSide>true</serverSide>
+               <wsdlFiles>
+		   <wsdlFile>srm2.2.wsdl</wsdlFile>
+               </wsdlFiles>
+	   </configuration>
          </execution>
        </executions>
       </plugin>
+
 
       <!-- Fix up Axis auto-generated code -->
       <plugin>
