@@ -82,10 +82,14 @@ import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
+import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
@@ -98,7 +102,7 @@ import static org.dcache.namespace.FileAttribute.*;
 /**
  * Entry point to and management interface for the nearline storage subsystem.
  */
-public class NearlineStorageHandler extends AbstractCellComponent implements CellCommandListener
+public class NearlineStorageHandler extends AbstractCellComponent implements CellCommandListener, StateChangeListener
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NearlineStorageHandler.class);
 
@@ -123,31 +127,31 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     @Required
     public void setScheduledExecutor(ScheduledExecutorService executor)
     {
-        this.scheduledExecutor = executor;
+        this.scheduledExecutor = checkNotNull(executor);
     }
 
     @Required
     public void setExecutor(ListeningExecutorService executor)
     {
-        this.executor = executor;
+        this.executor = checkNotNull(executor);
     }
 
     @Required
     public void setRepository(Repository repository)
     {
-        this.repository = repository;
+        this.repository = checkNotNull(repository);
     }
 
     @Required
     public void setChecksumModule(ChecksumModule checksumModule)
     {
-        this.checksumModule = checksumModule;
+        this.checksumModule = checkNotNull(checksumModule);
     }
 
     @Required
     public void setPnfsHandler(PnfsHandler pnfs)
     {
-        this.pnfs = pnfs;
+        this.pnfs = checkNotNull(pnfs);
     }
 
     @Required
@@ -159,19 +163,20 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     @Required
     public void setBillingStub(CellStub billingStub)
     {
-        this.billingStub = billingStub;
+        this.billingStub = checkNotNull(billingStub);
     }
 
     @Required
     public void setHsmSet(HsmSet hsmSet)
     {
-        this.hsmSet = hsmSet;
+        this.hsmSet = checkNotNull(hsmSet);
     }
 
     @PostConstruct
     public void init()
     {
         scheduledExecutor.scheduleWithFixedDelay(new TimeoutTask(), 30, 30, TimeUnit.SECONDS);
+        repository.addListener(this);
     }
 
     /**
@@ -258,6 +263,26 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     public int getStoreQueueSize()
     {
         return flushRequests.getCount(AbstractRequest.State.QUEUED);
+    }
+
+    @Override
+    public void stateChanged(StateChangeEvent event)
+    {
+        if (event.getNewState() == EntryState.REMOVED) {
+            PnfsId pnfsId = event.getPnfsId();
+            stageRequests.cancel(pnfsId);
+            flushRequests.cancel(pnfsId);
+        }
+    }
+
+    @Override
+    public void accessTimeChanged(EntryChangeEvent event)
+    {
+    }
+
+    @Override
+    public void stickyChanged(StickyChangeEvent event)
+    {
     }
 
 
