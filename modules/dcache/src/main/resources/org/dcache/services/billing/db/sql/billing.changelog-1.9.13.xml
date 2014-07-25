@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 	<preConditions>
 		<dbms type="postgresql"/>
 	</preConditions>
-	<changeSet id="0.0" author="arossi" context="billing">
+	<changeSet id="0.0.1" author="arossi" context="billing">
 		<preConditions onFail="MARK_RAN">
 			<not>
 				<tableExists tableName="billinginfo"/>
@@ -14,24 +15,24 @@
 		</preConditions>
 		<comment>basic fine-grained table</comment>
 		<createTable tableName="billinginfo">
-			<column name="client" type="character varying(256)"/>
-			<column name="initiator" type="character varying(256)"/>
+			<column name="client" type="varchar(256)"/>
+			<column name="initiator" type="varchar(256)"/>
 			<column name="isnew" type="boolean"/>
-			<column name="protocol" type="character varying(256)"/>
+			<column name="protocol" type="varchar(256)"/>
 			<column name="transfersize" type="bigint"/>
 			<column name="fullsize" type="bigint"/>
-			<column name="storageclass" type="character varying(256)"/>
+			<column name="storageclass" type="varchar(256)"/>
 			<column name="connectiontime" type="bigint"/>
-			<column name="action" type="character varying(256)"/>
-			<column name="cellname" type="character varying(256)"/>
+			<column name="action" type="varchar(256)"/>
+			<column name="cellname" type="varchar(256)"/>
 			<column name="datestamp" type="timestamp with time zone"/>
 			<column name="errorcode" type="integer"/>
-			<column name="errormessage" type="character varying(256)"/>
-			<column name="pnfsid" type="character varying(256)"/>
-			<column name="transaction" type="character varying(256)"/>
+			<column name="errormessage" type="varchar(256)"/>
+			<column name="pnfsid" type="varchar(256)"/>
+			<column name="transaction" type="varchar(256)"/>
 		</createTable>
 	</changeSet>
-	<changeSet id="0.1" author="arossi" context="billing">
+	<changeSet id="0.1.1" author="arossi" context="billing">
 		<preConditions onFail="MARK_RAN">
 			<not>
 				<tableExists tableName="storageinfo"/>
@@ -41,18 +42,18 @@
 		<createTable tableName="storageinfo">
 			<column name="queuedtime" type="bigint"/>
 			<column name="fullsize" type="bigint"/>
-			<column name="storageclass" type="character varying(256)"/>
+			<column name="storageclass" type="varchar(256)"/>
 			<column name="connectiontime" type="bigint"/>
-			<column name="action" type="character varying(256)"/>
-			<column name="cellname" type="character varying(256)"/>
+			<column name="action" type="varchar(256)"/>
+			<column name="cellname" type="varchar(256)"/>
 			<column name="datestamp" type="timestamp with time zone"/>
 			<column name="errorcode" type="integer"/>
-			<column name="errormessage" type="character varying(256)"/>
-			<column name="pnfsid" type="character varying(256)"/>
-			<column name="transaction" type="character varying(256)"/>
+			<column name="errormessage" type="varchar(256)"/>
+			<column name="pnfsid" type="varchar(256)"/>
+			<column name="transaction" type="varchar(256)"/>
 		</createTable>
 	</changeSet>
-	<changeSet id="0.2" author="arossi" context="billing">
+	<changeSet id="0.2.1" author="arossi" context="billing">
 		<preConditions onFail="MARK_RAN">
 			<not>
 				<tableExists tableName="doorinfo"/>
@@ -60,23 +61,23 @@
 		</preConditions>
 		<comment>basic fine-grained table</comment>
 		<createTable tableName="doorinfo">
-			<column name="client" type="character varying(256)"/>
+			<column name="client" type="varchar(256)"/>
 			<column name="mappedgid" type="integer"/>
 			<column name="mappeduid" type="integer"/>
-			<column name="owner" type="character varying(256)"/>
-			<column name="path" type="character varying(256)"/>
+			<column name="owner" type="varchar(256)"/>
+			<column name="path" type="varchar(256)"/>
 			<column name="queuedtime" type="bigint"/>
 			<column name="connectiontime" type="bigint"/>
-			<column name="action" type="character varying(256)"/>
-			<column name="cellname" type="character varying(256)"/>
+			<column name="action" type="varchar(256)"/>
+			<column name="cellname" type="varchar(256)"/>
 			<column name="datestamp" type="timestamp with time zone"/>
 			<column name="errorcode" type="integer"/>
-			<column name="errormessage" type="character varying(256)"/>
-			<column name="pnfsid" type="character varying(256)"/>
-			<column name="transaction" type="character varying(256)"/>
+			<column name="errormessage" type="varchar(256)"/>
+			<column name="pnfsid" type="varchar(256)"/>
+			<column name="transaction" type="varchar(256)"/>
 		</createTable>
 	</changeSet>
-	<changeSet id="0.3" author="arossi" context="billing">
+	<changeSet id="0.3.1" author="arossi" context="billing">
 		<preConditions onFail="MARK_RAN">
 			<not>
 				<tableExists tableName="costinfo"/>
@@ -85,16 +86,16 @@
 		<comment>basic fine-grained table</comment>
 		<createTable tableName="costinfo">
 			<column name="cost" type="double precision"/>
-			<column name="action" type="character varying(256)"/>
-			<column name="cellname" type="character varying(256)"/>
+			<column name="action" type="varchar(256)"/>
+			<column name="cellname" type="varchar(256)"/>
 			<column name="datestamp" type="timestamp with time zone"/>
 			<column name="errorcode" type="integer"/>
-			<column name="errormessage" type="character varying(256)"/>
-			<column name="pnfsid" type="character varying(256)"/>
-			<column name="transaction" type="character varying(256)"/>
+			<column name="errormessage" type="varchar(256)"/>
+			<column name="pnfsid" type="varchar(256)"/>
+			<column name="transaction" type="varchar(256)"/>
 		</createTable>
 	</changeSet>
-	<changeSet id="0.4" author="arossi" context="billing">
+	<changeSet id="0.4.1" author="arossi" context="billing">
 		<preConditions onFail="MARK_RAN">
 			<not>
 				<tableExists tableName="hitinfo"/>
@@ -103,24 +104,20 @@
 		<comment>basic fine-grained table</comment>
 		<createTable tableName="hitinfo">
 			<column name="filecached" type="boolean"/>
-			<column name="action" type="character varying(256)"/>
-			<column name="cellname" type="character varying(256)"/>
+			<column name="action" type="varchar(256)"/>
+			<column name="cellname" type="varchar(256)"/>
 			<column name="datestamp" type="timestamp with time zone"/>
 			<column name="errorcode" type="integer"/>
-			<column name="errormessage" type="character varying(256)"/>
-			<column name="pnfsid" type="character varying(256)"/>
-			<column name="transaction" type="character varying(256)"/>
+			<column name="errormessage" type="varchar(256)"/>
+			<column name="pnfsid" type="varchar(256)"/>
+			<column name="transaction" type="varchar(256)"/>
 		</createTable>
 	</changeSet>
-    <changeSet id="1.0-v2" author="arossi" context="billing" runInTransaction="false">
+    <changeSet id="1.0.1" author="arossi" context="billing" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
             <and>
-                <tableExists tableName="billinginfo"/>
                 <not>
                     <indexExists indexName="billinginfo_date_idx"/>
-                </not>
-                <not>
-                    <indexExists indexName="billinginfo_isnew_idx"/>
                 </not>
             </and>
         </preConditions>
@@ -128,19 +125,25 @@
         <sql splitStatements="false">
             CREATE INDEX CONCURRENTLY billinginfo_date_idx on billinginfo(datestamp);
         </sql>
+    </changeSet>
+    <changeSet id="1.0.2" author="arossi" context="billing" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="billinginfo_isnew_idx"/>
+                </not>
+            </and>
+        </preConditions>
+        <comment>read optimization</comment>
         <sql splitStatements="false">
             CREATE INDEX CONCURRENTLY billinginfo_isnew_idx on billinginfo(isnew);
         </sql>
     </changeSet>
-    <changeSet id="1.1-v2" author="arossi" context="billing" runInTransaction="false">
+    <changeSet id="1.1.1" author="arossi" context="billing" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
             <and>
-                <tableExists tableName="storageinfo"/>
                 <not>
                     <indexExists indexName="storageinfo_date_idx"/>
-                </not>
-                <not>
-                    <indexExists indexName="storageinfo_action_idx"/>
                 </not>
             </and>
         </preConditions>
@@ -148,14 +151,23 @@
         <sql splitStatements="false">
             CREATE INDEX CONCURRENTLY storageinfo_date_idx on storageinfo(datestamp);
         </sql>
+    </changeSet>
+    <changeSet id="1.1.2" author="arossi" context="billing" runInTransaction="false">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="storageinfo_action_idx"/>
+                </not>
+            </and>
+        </preConditions>
+        <comment>read optimization</comment>
         <sql splitStatements="false">
             CREATE INDEX CONCURRENTLY storageinfo_action_idx on storageinfo(action);
         </sql>
     </changeSet>
-    <changeSet id="1.2-v2" author="arossi" context="billing" runInTransaction="false">
+    <changeSet id="1.2.1" author="arossi" context="billing" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
             <and>
-                <tableExists tableName="doorinfo"/>
                 <not>
                     <indexExists indexName="doorinfo_date_idx"/>
                 </not>
@@ -166,10 +178,9 @@
             CREATE INDEX CONCURRENTLY doorinfo_date_idx on doorinfo(datestamp);
         </sql>
     </changeSet>
-    <changeSet id="1.4-v2" author="arossi" context="billing" runInTransaction="false">
+    <changeSet id="1.4.1" author="arossi" context="billing" runInTransaction="false">
         <preConditions onFail="MARK_RAN">
             <and>
-                <tableExists tableName="hitinfo"/>
                 <not>
                     <indexExists indexName="hitinfo_date_idx"/>
                 </not>
