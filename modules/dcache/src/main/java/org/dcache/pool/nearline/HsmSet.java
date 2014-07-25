@@ -18,6 +18,7 @@
 package org.dcache.pool.nearline;
 
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
@@ -99,9 +100,10 @@ public class HsmSet
     {
         private final String _type;
         private final String _instance;
-        private final Map<String,String> _attr = new HashMap<>();
+        private final Map<String,String> _currentAttributes = new HashMap<>();
+        private final Map<String,String> _newAttributes = new HashMap<>();
         private final NearlineStorageProvider _provider;
-        private NearlineStorage _nearlineStorage;
+        private final NearlineStorage _nearlineStorage;
 
         /**
          * Constructs an HsmInfo object.
@@ -114,6 +116,7 @@ public class HsmSet
             _instance = instance;
             _type = type.toLowerCase();
             _provider = findProvider(provider);
+            _nearlineStorage = _provider.createNearlineStorage(_type, _instance);
         }
 
         /**
@@ -148,7 +151,7 @@ public class HsmSet
          */
         public synchronized String getAttribute(String attribute)
         {
-           return _attr.get(attribute);
+           return _currentAttributes.get(attribute);
         }
 
         /**
@@ -158,10 +161,7 @@ public class HsmSet
          */
         public synchronized void unsetAttribute(String attribute)
         {
-            _attr.remove(attribute);
-            if (_nearlineStorage != null) {
-                _nearlineStorage.configure(_attr);
-            }
+            _newAttributes.remove(attribute);
         }
 
         /**
@@ -172,10 +172,7 @@ public class HsmSet
          */
         public synchronized void setAttribute(String attribute, String value)
         {
-           _attr.put(attribute, value);
-            if (_nearlineStorage != null) {
-                _nearlineStorage.configure(_attr);
-            }
+           _newAttributes.put(attribute, value);
         }
 
         /**
@@ -183,23 +180,64 @@ public class HsmSet
          */
         public synchronized Iterable<Map.Entry<String, String>> attributes()
         {
-            return new ArrayList<>(_attr.entrySet());
+            return new ArrayList<>(_currentAttributes.entrySet());
         }
 
-        public synchronized NearlineStorage getNearlineStorage()
+        /**
+         * Applies the current configuration to the nearline storage. Roles back
+         * to the previous configuration if the new configuration is rejected.
+         */
+        public synchronized void refresh()
         {
-            if (_nearlineStorage == null) {
-                _nearlineStorage = _provider.createNearlineStorage(_type, _instance);
-                _nearlineStorage.configure(_attr);
+            try {
+                _nearlineStorage.configure(_newAttributes);
+                _currentAttributes.clear();
+                _currentAttributes.putAll(_newAttributes);
+            } catch (Exception e) {
+                _newAttributes.clear();
+                _newAttributes.putAll(_currentAttributes);
+                throw Throwables.propagate(e);
             }
+        }
+
+        /**
+         * Scans an argument set for options and applies those as
+         * attributes to an HsmInfo object.
+         */
+        public synchronized void scanOptions(Args args, boolean doRefresh)
+        {
+            for (Map.Entry<String,String> e: args.options().entries()) {
+                String optName  = e.getKey();
+                String optValue = e.getValue();
+                setAttribute(optName, optValue == null ? "" : optValue);
+            }
+            if (doRefresh) {
+                refresh();
+            }
+        }
+
+        /**
+         * Scans an argument set for options and removes and unsets those
+         * attributes in the given HsmInfo object.
+         */
+        public synchronized void scanOptionsUnset(Args args, boolean doRefresh)
+        {
+            for (String optName: args.options().keySet()) {
+                unsetAttribute(optName);
+            }
+            if (doRefresh) {
+                refresh();
+            }
+        }
+
+        public NearlineStorage getNearlineStorage()
+        {
             return _nearlineStorage;
         }
 
-        public synchronized void shutdown()
+        public void shutdown()
         {
-            if (_nearlineStorage != null) {
-                _nearlineStorage.shutdown();
-            }
+            _nearlineStorage.shutdown();
         }
     }
 
@@ -288,30 +326,6 @@ public class HsmSet
         }
     }
 
-    /**
-     * Scans an argument set for options and applies those as
-     * attributes to an HsmInfo object.
-     */
-    private void scanOptions(HsmInfo info, Args args)
-    {
-        for (Map.Entry<String,String> e: args.options().entries()) {
-            String optName  = e.getKey();
-            String optValue = e.getValue();
-            info.setAttribute(optName, optValue == null ? "" : optValue);
-        }
-    }
-
-    /**
-     * Scans an argument set for options and removes and unsets those
-     * attributes in the given HsmInfo object.
-     */
-    private void scanOptionsUnset(HsmInfo info, Args args)
-    {
-        for (String optName: args.options().keySet()) {
-            info.unsetAttribute(optName);
-        }
-    }
-
     public static final String hh_hsm_create = "<type> [<name> [<provider>]] [-<key>=<value>] ...";
     public String ac_hsm_create_$_1_3(Args args)
     {
@@ -319,7 +333,7 @@ public class HsmSet
         String instance = (args.argc() == 1) ? type : args.argv(1);
         String provider = (args.argc() == 3) ? args.argv(2) : DEFAULT_PROVIDER;
         HsmInfo info = new HsmInfo(instance, type, provider);
-        scanOptions(info, args);
+        info.scanOptions(args, !_isReadingSetup);
         if (_hsm.putIfAbsent(instance, info) != null) {
             throw new IllegalArgumentException("Nearline storage already exists: " + instance);
         }
@@ -339,14 +353,14 @@ public class HsmSet
             if (existing != null) {
                 info = existing;
             }
-            scanOptions(info, args);
+            info.scanOptions(args, false);
         } else {
             String instance = args.argv(0);
             HsmInfo info = getHsmInfoByName(instance);
             if (info == null) {
                 throw new IllegalArgumentException("No such nearline storage: " + instance);
             }
-            scanOptions(info, args);
+            info.scanOptions(args, true);
         }
         return "";
     }
@@ -359,7 +373,7 @@ public class HsmSet
        if (info == null) {
            throw new IllegalArgumentException("No such nearline storage: " + instance);
        }
-       scanOptionsUnset(info, args);
+       info.scanOptionsUnset(args, !_isReadingSetup);
        return "";
     }
 
@@ -427,20 +441,24 @@ public class HsmSet
     @Override
     public void printSetup(PrintWriter pw)
     {
-        for (HsmInfo info : _hsm.values()) {
-            pw.print("hsm create ");
-            pw.print(info.getType());
-            pw.print(" ");
-            pw.print(info.getInstance());
-            pw.print(" ");
-            pw.println(info.getProvider());
-            for (Map.Entry<String,String> entry : info.attributes()) {
-                pw.print("hsm set ");
+        if (!_hsm.isEmpty()) {
+            pw.println("#\n# Nearline storage\n#");
+            for (HsmInfo info : _hsm.values()) {
+                pw.print("hsm create ");
+                pw.print(info.getType());
+                pw.print(" ");
                 pw.print(info.getInstance());
-                pw.print(" -");
-                pw.print(entry.getKey());
-                pw.print("=");
-                pw.println(entry.getValue() == null ? "-" : entry.getValue());
+                pw.print(" ");
+                pw.print(info.getProvider());
+                for (Map.Entry<String, String> entry : info.attributes()) {
+                    pw.print(" -");
+                    pw.print(entry.getKey());
+                    if (entry.getValue() != null) {
+                        pw.print("=");
+                        pw.print(entry.getValue());
+                    }
+                }
+                pw.println();
             }
         }
     }
@@ -467,6 +485,7 @@ public class HsmSet
                     info.setAttribute(ScriptNearlineStorage.CONCURRENT_REMOVES, String.valueOf(_legacyRemoveConcurrency));
                 }
             }
+            info.refresh();
         }
     }
 
