@@ -62,6 +62,8 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
@@ -697,6 +699,7 @@ public class DcacheResourceFactory
                         transfer.getMoverId() + ": Waiting for completion");
             } finally {
                 if (uri == null) {
+                    transfer.killMover(_killTimeout, _killTimeoutUnit);
                     transfer.deleteNameSpaceEntry();
                 }
             }
@@ -744,6 +747,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
+            transfer.killMover(_killTimeout, _killTimeoutUnit);
             _transfers.remove((int) transfer.getSessionId());
         }
     }
@@ -965,6 +969,7 @@ public class DcacheResourceFactory
             throw e;
         } finally {
             if (uri == null) {
+                transfer.killMover(_killTimeout, _killTimeoutUnit);
                 _transfers.remove((int) transfer.getSessionId());
             }
         }
@@ -992,6 +997,23 @@ public class DcacheResourceFactory
         Transfer transfer = _transfers.get((int) message.getId());
         if (transfer != null) {
             transfer.finished(message);
+        }
+    }
+
+    /**
+     * Fall back message handler for mover creation replies. We
+     * only receive these if the Transfer timed out before the
+     * mover was created. Instead we kill the mover.
+     */
+    public void messageArrived(PoolIoFileMessage message)
+    {
+        if (message.getReturnCode() == 0) {
+            try {
+                _poolStub.notify(new PoolMoverKillMessage(message.getPoolName(), message.getMoverId()));
+            } catch (NoRouteToCellException e) {
+                _log.debug("Failed to kill mover {}/{}: {}", message.getPoolName(), message.getMoverId(),
+                           e.getMessage());
+            }
         }
     }
 
