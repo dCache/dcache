@@ -50,6 +50,7 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
@@ -64,6 +65,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.Origin;
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
 import org.dcache.namespace.ACLPermissionHandler;
@@ -471,6 +474,25 @@ public class XrootdDoor
 
         Set<FileType> allowedSet = EnumSet.of(FileType.REGULAR);
         pnfsHandler.deletePnfsEntry(path.toString(), allowedSet);
+        sendRemoveInfoToBilling(path, subject);
+    }
+
+    private void sendRemoveInfoToBilling(FsPath path, Subject subject)
+    {
+        try {
+            DoorRequestInfoMessage infoRemove =
+                    new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
+            infoRemove.setSubject(subject);
+            infoRemove.setPath(path);
+            Origin origin = Subjects.getOrigin(subject);
+            if (origin != null) {
+                infoRemove.setClient(origin.getAddress().getHostAddress());
+            }
+            _billingStub.notify(infoRemove);
+        } catch (NoRouteToCellException e) {
+            _log.error("Cannot send remove message to billing: {}",
+                       e.getMessage());
+        }
     }
 
     /**
