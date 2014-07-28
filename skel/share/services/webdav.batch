@@ -53,6 +53,22 @@ check -strong webdav.service.missing-files.timeout
 check -strong webdav.service.missing-files.timeout.unit
 check -strong webdav.enable.missing-files
 
+check -strong webdav.limits.acceptors
+check -strong webdav.limits.idle-time
+check -strong webdav.limits.idle-time.unit
+check -strong webdav.limits.low-resource-idle-time
+check -strong webdav.limits.low-resource-idle-time.unit
+check -strong webdav.limits.handshake-time
+check -strong webdav.limits.handshake-time.unit
+check -strong webdav.limits.backlog
+check -strong webdav.limits.threads.max
+check -strong webdav.limits.threads.min
+check -strong webdav.limits.threads.idle-time
+check -strong webdav.limits.threads.idle-time.unit
+check -strong webdav.limits.queue-length
+check -strong webdav.limits.graceful-shutdown
+check -strong webdav.limits.graceful-shutdown.unit
+
 check webdav.net.internal
 check webdav.mover.queue
 check webdav.authn.ciphers
