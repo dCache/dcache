@@ -99,18 +99,8 @@ import org.dcache.srm.v2_2.TRequestSummary;
 import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.util.TimeUtils;
 
 import static org.dcache.srm.handler.ReturnStatuses.*;
-
-import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.RequestStatusTool;
-import org.dcache.srm.v2_2.TRequestSummary;
-import org.dcache.srm.v2_2.TRequestType;
-import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.util.TimeUtils;
 
 import static org.dcache.util.TimeUtils.relativeTimestamp;
 
@@ -167,6 +157,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
          super(user ,
          requestCredentalId,
          max_number_of_retries,
+         max_update_period,
          lifetime,
          description,
          client_host);
@@ -345,6 +336,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         // we can rely on the fact that
         // once file request reach their final state, this state does not change
         // so the combined logic
+        updateRetryDeltaTime();
         RequestStatus rs = new RequestStatus();
         rs.requestId = getRequestNum();
         rs.errorMessage = getLastJobChange().getDescription();
