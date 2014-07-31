@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
@@ -99,6 +100,9 @@ import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static java.util.Arrays.asList;
+
 /**
  *
  * @author  timur
@@ -386,12 +390,10 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     return;
                 }
 
-                pinFile();
-                if(getPinId() == null) {
-                    setState(State.ASYNCWAIT, "Pinning file.");
-                    logger.trace("GetFileRequest: waiting async notification about pinId...");
-                    return;
-                }
+                GetRequest request = getContainerRequest();
+                setState(State.ASYNCWAIT, "Pinning file.");
+                pinFile(request);
+                return;
             }
 
             try {
@@ -428,23 +430,18 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     }
 
-    public void pinFile()
-        throws NonFatalJobFailure, FatalJobFailure, SRMException
+    public void pinFile(ContainerRequest request)
     {
-        GetRequest request = getContainerRequest();
-        if (!isProtocolSupported(request.protocols)) {
-            throw new FatalJobFailure("Transfer protocols not supported");
-        }
-
         URI surl = getSurl();
         logger.info("Pinning {}", surl);
         CheckedFuture<AbstractStorageElement.Pin,? extends SRMException> future =
                 getStorage().pinFile(
-                        getUser(),
+                        request.getUser(),
                         surl,
-                        getContainerRequest().getClient_host(),
+                        request.getClient_host(),
                         lifetime,
                         String.valueOf(getRequestId()));
+        logger.trace("GetFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.sameThreadExecutor());
     }
 
@@ -672,15 +669,11 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     AbstractStorageElement.Pin pin = future.checkedGet();
                     logger.debug("File pinned (pinId={}).", pin.pinId);
                     State state = fr.getState();
-                    if (state == State.ASYNCWAIT || state == State.RUNNING) {
+                    if (state == State.ASYNCWAIT) {
                         fr.setFileId(pin.fileMetaData.fileId);
                         fr.setFileMetaData(pin.fileMetaData);
                         fr.setPinId(pin.pinId);
-                        if (state == State.ASYNCWAIT) {
-                            Scheduler scheduler =
-                                    Scheduler.getScheduler(fr.getSchedulerId());
-                            scheduler.schedule(fr);
-                        }
+                        Scheduler.getScheduler(fr.getSchedulerId()).schedule(fr);
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(State.FAILED,
@@ -695,6 +688,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 if (!e.getFromState().isFinal()) {
                     logger.error(e.getMessage());
                 }
+            } catch (RuntimeException e) {
+                logger.error("Criticial failure in pinning (please report to support@dcache.org).", e);
             }
         }
     }

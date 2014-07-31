@@ -97,9 +97,11 @@ public class SrmPrepareToGet
         String[] supportedProtocols = storage.supportedGetProtocols();
         URI[] surls = getSurls(request);
 
-        boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
-        if (!isAnyProtocolSupported) {
-            throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
+        if (protocols != null && protocols.length > 0) {
+            boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
+            if (!isAnyProtocolSupported) {
+                throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
+            }
         }
 
         GetRequest r =
