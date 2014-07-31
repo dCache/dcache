@@ -5,12 +5,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.RequestCredential;
@@ -27,6 +29,9 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.collect.Iterables.any;
+import static java.util.Arrays.asList;
 
 public class SrmBringOnline
 {
@@ -34,6 +39,7 @@ public class SrmBringOnline
             LoggerFactory.getLogger(SrmBringOnline.class);
 
     private final SrmBringOnlineRequest request;
+    private final AbstractStorageElement storage;
     private SrmBringOnlineResponse response;
     private final SRMUser user;
     private final SRM srm;
@@ -52,6 +58,7 @@ public class SrmBringOnline
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
         this.clientHost = clientHost;
+        this.storage = checkNotNull(storage);
         this.credential = checkNotNull(credential);
         this.configuration = srm.getConfiguration();
     }
@@ -61,6 +68,8 @@ public class SrmBringOnline
         if (response == null) {
             try {
                 response = srmBringOnline();
+            } catch (SRMNotSupportedException e) {
+                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_NOT_SUPPORTED);
             } catch (SRMInternalErrorException e) {
                 LOGGER.error(e.getMessage());
                 response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
@@ -72,7 +81,7 @@ public class SrmBringOnline
     }
 
     private SrmBringOnlineResponse srmBringOnline()
-            throws SRMInvalidRequestException, SRMInternalErrorException
+            throws SRMInvalidRequestException, SRMInternalErrorException, SRMNotSupportedException
     {
         String[] protocols = getProtocols(request);
         String clientHost = getClientNetwork(request).or(this.clientHost);
@@ -80,6 +89,14 @@ public class SrmBringOnline
         URI[] surls = getSurls(fileRequests);
         long requestTime = getRequestTime(request, configuration.getBringOnlineLifetime());
         long desiredLifetimeInSeconds = getDesiredLifetime(request, requestTime);
+
+        if (protocols != null && protocols.length > 0) {
+            String[] supportedProtocols = storage.supportedGetProtocols();
+            boolean isAnyProtocolSupported = any(asList(protocols), in(asList(supportedProtocols)));
+            if (!isAnyProtocolSupported) {
+                throw new SRMNotSupportedException("Protocol(s) not supported: " + Arrays.toString(protocols));
+            }
+        }
 
         BringOnlineRequest r =
                 new BringOnlineRequest(user,
