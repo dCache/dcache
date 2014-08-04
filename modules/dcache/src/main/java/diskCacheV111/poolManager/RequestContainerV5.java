@@ -1,6 +1,9 @@
 package diskCacheV111.poolManager ;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -21,7 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -52,6 +54,7 @@ import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
@@ -75,11 +78,6 @@ public class RequestContainerV5
     private static final Logger _log =
         LoggerFactory.getLogger(RequestContainerV5.class);
 
-    /**
-     * State of CheckFilePingHandler.
-     */
-    private enum PingState { STOPPED, WAITING, QUERYING }
-
     public enum RequestState { ST_INIT, ST_DONE, ST_POOL_2_POOL,
             ST_STAGE, ST_WAITING, ST_WAITING_FOR_STAGING,
             ST_WAITING_FOR_POOL_2_POOL, ST_SUSPENDED }
@@ -91,12 +89,13 @@ public class RequestContainerV5
     private static final String STRING_NOTCHECKED = "notchecked" ;
 
     /** value in milliseconds */
-    private static final int DEFAULT_RETRY_INTERVAL = 60000;
+    private static final int DEFAULT_TICKER_INTERVAL = 60000;
 
     private final Map<UOID, PoolRequestHandler>     _messageHash   = new HashMap<>() ;
     private final Map<String, PoolRequestHandler>   _handlerHash   = new HashMap<>() ;
 
     private CellStub _billing;
+    private CellStub _poolStub;
     private long        _retryTimer    = 15 * 60 * 1000 ;
 
     private int         _maxRequestClumping = 1 ;
@@ -120,11 +119,13 @@ public class RequestContainerV5
     private Executor _executor;
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<>() ;
     private PartitionManager   _partitionManager ;
-    private long               _checkFilePingTimer = 10 * 60 * 1000 ;
+    private volatile long               _checkFilePingTimer = 10 * 60 * 1000 ;
     /** value in milliseconds */
-    private final int _stagingRetryInterval;
+    private final long _ticketInterval;
 
     private final Thread _tickerThread;
+
+    private final PoolPingThread _poolPingThread = new PoolPingThread();
 
     /**
      * Tape Protection.
@@ -137,20 +138,22 @@ public class RequestContainerV5
     public static final EnumSet<RequestState> allStatesExceptStage =
         EnumSet.complementOf(EnumSet.of(RequestState.ST_STAGE));
 
-    public RequestContainerV5( int stagingRetryInterval) {
-        _stagingRetryInterval = stagingRetryInterval;
+    public RequestContainerV5(long tickerInterval) {
+        _ticketInterval = tickerInterval;
         _tickerThread = new Thread(this, "Container-ticker");
         _tickerThread.start();
+        _poolPingThread.start();
     }
 
     public RequestContainerV5()
     {
-        this( DEFAULT_RETRY_INTERVAL);
+        this(DEFAULT_TICKER_INTERVAL);
     }
 
     public void shutdown()
     {
         _tickerThread.interrupt();
+        _poolPingThread.interrupt();
     }
 
     @Required
@@ -194,6 +197,12 @@ public class RequestContainerV5
         _billing = billing;
     }
 
+    @Required
+    public void setPoolStub(CellStub poolStub)
+    {
+        _poolStub = poolStub;
+    }
+
     public void messageArrived(CellMessage envelope, Object message)
     {
         UOID uoid = envelope.getLastUOID();
@@ -214,7 +223,7 @@ public class RequestContainerV5
     {
         while (!Thread.interrupted()) {
             try {
-                Thread.sleep(_stagingRetryInterval) ;
+                Thread.sleep(_ticketInterval) ;
 
                 List<PoolRequestHandler> list;
                 synchronized (_handlerHash) {
@@ -395,6 +404,9 @@ public class RequestContainerV5
     public static final String hh_rc_set_poolpingtimer = "<checkPoolFileTimer/seconds>" ;
     public String ac_rc_set_poolpingtimer_$_1(Args args ){
        _checkFilePingTimer = 1000L * Long.parseLong(args.argv(0));
+        synchronized (_poolPingThread) {
+            _poolPingThread.notify();
+        }
        return "" ;
     }
     public static final String hh_rc_set_retry = "<retryTimer/seconds>" ;
@@ -690,17 +702,16 @@ public class RequestContainerV5
     //
     private class PoolRequestHandler  {
 
-        protected PnfsId       _pnfsId;
+        protected final PnfsId       _pnfsId;
         protected final List<CellMessage>    _messages = new ArrayList<>() ;
         protected int _retryCounter;
         private final CDC _cdc = new CDC();
 
 
         private   UOID         _waitingFor;
-        private   long         _waitUntil;
 
         private   String       _status        = "[<idle>]";
-        private   RequestState _state         = RequestState.ST_INIT;
+        private   volatile RequestState _state         = RequestState.ST_INIT;
         private   final Collection<RequestState> _allowedStates;
         private   boolean      _stagingDenied;
         private   int          _currentRc;
@@ -721,7 +732,7 @@ public class RequestContainerV5
          * RT_OK, and by askForStaging(). Also set in the
          * stateEngine() at various points.
          */
-        private   PoolInfo    _poolCandidate;
+        private   volatile PoolInfo    _poolCandidate;
 
         /**
          * The host name of the pool used for staging.
@@ -743,7 +754,7 @@ public class RequestContainerV5
          * The destination of a pool to pool transfer. Set by
          * askForPoolToPool() when it returns RT_FOUND.
          */
-        private   PoolInfo   _p2pDestinationPool;
+        private   volatile PoolInfo   _p2pDestinationPool;
 
         /**
          * The source of a pool to pool transfer. Set by
@@ -752,7 +763,7 @@ public class RequestContainerV5
         private   PoolInfo   _p2pSourcePool;
 
         private   final long   _started       = System.currentTimeMillis() ;
-        private   String       _name;
+        private   final String       _name;
 
         private   FileAttributes _fileAttributes;
         private   StorageInfo  _storageInfo;
@@ -763,8 +774,6 @@ public class RequestContainerV5
         private   boolean _enforceP2P;
         private   int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
 
-        private CheckFilePingHandler  _pingHandler = new CheckFilePingHandler(_checkFilePingTimer) ;
-
         private PoolSelector _poolSelector;
         private Partition _parameter = _partitionManager.getDefaultPartition();
 
@@ -773,111 +782,6 @@ public class RequestContainerV5
          * exceeded.
          */
         private long _nextTtlTimeout = Long.MAX_VALUE;
-
-        private class CheckFilePingHandler {
-            private long _timeInterval;
-            private long _timer;
-            private PoolInfo _candidate;
-            private PingState _state = PingState.STOPPED;
-            private String _query;
-
-            private CheckFilePingHandler(long timerInterval)
-            {
-                _timeInterval = timerInterval;
-            }
-
-            private void startP2P(PoolInfo candidate)
-            {
-                if (_timeInterval <= 0L || candidate == null) {
-                    return;
-                }
-                _candidate = candidate;
-                _timer = _timeInterval + System.currentTimeMillis();
-                _state = PingState.WAITING;
-                _query = "pp ls";
-            }
-
-            private void startStage(PoolInfo candidate)
-            {
-                if (_timeInterval <= 0L || candidate == null) {
-                    return;
-                }
-                _candidate = candidate;
-                _timer = _timeInterval + System.currentTimeMillis();
-                _state = PingState.WAITING;
-                _query = "rh ls";
-            }
-
-            private void stop()
-            {
-                _candidate = null;
-                _state = PingState.STOPPED;
-                synchronized (_messageHash) {
-                    if (_waitingFor != null) {
-                        _messageHash.remove(_waitingFor);
-                    }
-                }
-            }
-
-            private void alive()
-            {
-                if ((_candidate == null) || (_timer == 0L)) {
-                    return;
-                }
-
-                long now = System.currentTimeMillis();
-                if (now > _timer) {
-                    switch (_state) {
-                    case WAITING:
-                        _log.info("CheckFilePingHandler : sending " + _query + " to " + _candidate);
-                        sendQuery();
-                        _state = PingState.QUERYING;
-                        break;
-
-                    case QUERYING:
-                        /* No reply since last query.
-                         */
-                        _log.info("CheckFilePingHandler : request died");
-                        stop();
-                        setError(CacheException.TIMEOUT,
-                                 "Replication/staging timed out");
-                        errorHandler();
-                        break;
-
-                    case STOPPED:
-                        return;
-                    }
-                    _timer = _timeInterval + now;
-                }
-            }
-
-            private void gotReply(Object object)
-            {
-                if (_state == PingState.QUERYING && object instanceof String) {
-                    String s = (String) object;
-                    if (s.contains(_pnfsId.toString())) {
-                        _log.info("CheckFilePingHandler : request is alive");
-                        _state = PingState.WAITING;
-                    }
-                }
-            }
-
-            private void sendQuery()
-            {
-                CellMessage envelope =
-                    new CellMessage(new CellPath(_candidate.getAddress()), _query);
-                synchronized (_messageHash) {
-                    try {
-                        sendMessage(envelope);
-                        _waitingFor = envelope.getUOID();
-                        _messageHash.put(_waitingFor, PoolRequestHandler.this);
-                    } catch (NoRouteToCellException e) {
-                        _log.warn("Can't send pool ping to {}: {}",
-                                  _candidate, e.toString());
-                    }
-                }
-            }
-        }
 
         public PoolRequestHandler(PnfsId pnfsId, String canonicalName,
                                   Collection<RequestState> allowedStates)
@@ -1035,9 +939,6 @@ public class RequestContainerV5
         // the state mechanism. (which is thread save because
         // we only allow to run a single thread at a time.
         //
-        private void waitFor( long millis ){
-           _waitUntil = System.currentTimeMillis() + millis ;
-        }
         private void clearSteering(){
            synchronized( _messageHash ){
 
@@ -1046,14 +947,6 @@ public class RequestContainerV5
               }
            }
            _waitingFor = null ;
-           _waitUntil  = 0L ;
-
-           //
-           // and the ping handler
-           //
-           _pingHandler.stop() ;
-
-
         }
         private void setError( int errorCode , String errorMessage ){
            _currentRc = errorCode ;
@@ -1103,7 +996,7 @@ public class RequestContainerV5
 	}
 
         /**
-         * Removes request messages whos time to live has been
+         * Removes request messages who's time to live has been
          * exceeded. Messages are dropped; no reply is sent to the
          * requestor, as we assume it is no longer waiting for the
          * reply.
@@ -1341,6 +1234,7 @@ public class RequestContainerV5
                 }
             }
         }
+
         //
         //  askIfAvailable :
         //
@@ -1566,8 +1460,7 @@ public class RequestContainerV5
 
                        nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
                        _status = "Pool2Pool "+_formatter.format(new Date()) ;
-                       setError(0,"");
-                       _pingHandler.startP2P(_p2pDestinationPool) ;
+                       setError(0, "");
 
                        if (_sendHitInfo ) {
                            sendHitMsg(_pnfsId, _path,
@@ -1681,8 +1574,7 @@ public class RequestContainerV5
 
                        nextStep(RequestState.ST_WAITING_FOR_STAGING , WAIT ) ;
                        _status = "Staging "+_formatter.format(new Date()) ;
-                       setError(0,"");
-                       _pingHandler.startStage(_poolCandidate) ;
+                       setError(0, "");
 
                     }else if( rc == RT_OUT_OF_RESOURCES ){
 
@@ -1727,9 +1619,12 @@ public class RequestContainerV5
 
                     handleCommandObject( (Object []) inputObject ) ;
 
-                 }else{
-                     _pingHandler.gotReply(inputObject);
-                 }
+                } else if (inputObject instanceof PingFailure &&
+                        _p2pDestinationPool.getAddress().equals(((PingFailure) inputObject).getPool())) {
+                    _log.info("Ping reported that request died.");
+                    setError(CacheException.TIMEOUT, "Replication timed out");
+                    errorHandler();
+                }
 
               break ;
               case ST_WAITING_FOR_STAGING :
@@ -1755,13 +1650,16 @@ public class RequestContainerV5
 
                     handleCommandObject( (Object []) inputObject ) ;
 
-                 }else{
-                     _pingHandler.gotReply(inputObject);
-                 }
-              break ;
-              case ST_SUSPENDED :
-                 _log.debug( "stateEngine: case ST_SUSPENDED" );
-                 if( inputObject instanceof Object [] ){
+                } else if (inputObject instanceof PingFailure &&
+                        _poolCandidate.getAddress().equals(((PingFailure) inputObject).getPool())) {
+                    _log.info("Ping reported that request died.");
+                    setError(CacheException.TIMEOUT, "Staging timed out");
+                    errorHandler();
+                }
+                break;
+            case ST_SUSPENDED:
+                _log.debug("stateEngine: case ST_SUSPENDED");
+                if (inputObject instanceof Object[]) {
 
                     handleCommandObject( (Object []) inputObject ) ;
 
@@ -1809,21 +1707,12 @@ public class RequestContainerV5
                 setError(CacheException.OUT_OF_DATE, "Operator asked for retry");
                 nextStep(RequestState.ST_DONE, CONTINUE);
                 break;
+
             case "alive":
-
                 long now = System.currentTimeMillis();
-
                 if (now > _nextTtlTimeout) {
                     expireRequests();
                 }
-
-                if ((_waitUntil > 0L) && (now > _waitUntil)) {
-                    clearSteering();
-                    nextStep(_state, CONTINUE);
-                } else {
-                    _pingHandler.alive();
-                }
-
                 break;
             }
 
@@ -2197,5 +2086,104 @@ public class RequestContainerV5
     public void setStageConfigurationFile(String path)
     {
         _stagePolicyDecisionPoint = new CheckStagePermission(path);
+    }
+
+    private class PoolPingThread extends Thread
+    {
+        private PoolPingThread()
+        {
+            super("Container-ping");
+        }
+
+        public void run()
+        {
+            try {
+                while (!Thread.interrupted()) {
+                    try {
+                        synchronized (this) {
+                            wait(_checkFilePingTimer);
+                        }
+
+                        long now = System.currentTimeMillis();
+
+                        // Determine which pools to query
+                        List<PoolRequestHandler> list;
+                        synchronized (_handlerHash) {
+                            list = new ArrayList<>(_handlerHash.values());
+                        }
+                        Multimap<CellAddressCore, PoolRequestHandler> p2pRequests = ArrayListMultimap.create();
+                        Multimap<CellAddressCore, PoolRequestHandler> stageRequests = ArrayListMultimap.create();
+                        for (PoolRequestHandler handler : list) {
+                            if (handler._started < now - _checkFilePingTimer) {
+                                PoolInfo pool;
+                                switch (handler._state) {
+                                case ST_WAITING_FOR_POOL_2_POOL:
+                                    pool = handler._p2pDestinationPool;
+                                    if (pool != null) {
+                                        p2pRequests.put(pool.getAddress(), handler);
+                                    }
+                                    break;
+                                case ST_WAITING_FOR_STAGING:
+                                    pool = handler._poolCandidate;
+                                    if (pool != null) {
+                                        stageRequests.put(pool.getAddress(), handler);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Send query to all pools
+                        Map<CellAddressCore, ListenableFuture<String>> futures = new HashMap<>();
+                        for (CellAddressCore pool : p2pRequests.keySet()) {
+                            futures.put(pool, _poolStub.send(new CellPath(pool), "pp ls", String.class));
+                        }
+                        for (CellAddressCore pool : stageRequests.keySet()) {
+                            futures.put(pool, _poolStub.send(new CellPath(pool), "rh ls", String.class));
+                        }
+
+                        // Collect replies
+                        for (Map.Entry<CellAddressCore, ListenableFuture<String>> entry : futures.entrySet()) {
+                            String reply;
+                            try {
+                                reply = CellStub.get(entry.getValue());
+                            } catch (CacheException ignored) {
+                                reply = "";
+                            }
+
+                            CellAddressCore address = entry.getKey();
+                            for (PoolRequestHandler handler : p2pRequests.get(address)) {
+                                if (!reply.contains(handler._pnfsId.toString())) {
+                                    handler.add(new PingFailure(address));
+                                }
+                            }
+                            for (PoolRequestHandler handler : stageRequests.get(address)) {
+                                if (!reply.contains(handler._pnfsId.toString())) {
+                                    handler.add(new PingFailure(address));
+                                }
+                            }
+                        }
+                    } catch (RuntimeException e) {
+                        _log.error("Pool ping failed", e);
+                    }
+                }
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
+    private static class PingFailure
+    {
+        private final CellAddressCore pool;
+
+        private PingFailure(CellAddressCore pool)
+        {
+            this.pool = pool;
+        }
+
+        public CellAddressCore getPool()
+        {
+            return pool;
+        }
     }
 }
