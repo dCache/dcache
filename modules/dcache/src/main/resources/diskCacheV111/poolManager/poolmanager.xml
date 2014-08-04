@@ -60,6 +60,11 @@
       <property name="destination" value="${poolmanager.service.billing}"/>
   </bean>
 
+  <bean id="pool-stub" class="org.dcache.cells.CellStub">
+      <property name="timeout" value="180"/>
+      <property name="timeoutUnit" value="SECONDS"/>
+  </bean>
+
   <bean id="broadcast-stub" class="org.dcache.cells.CellStub">
       <property name="destination" value="${poolmanager.service.broadcast}"/>
   </bean>
@@ -81,6 +86,7 @@
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="hitInfoMessages" value="${poolmanager.enable.cache-hit-message}"/>
     <property name="billing" ref="billing-stub"/>
+    <property name="poolStub" ref="pool-stub"/>
   </bean>
 
   <bean id="rebalance" class="org.dcache.poolmanager.Rebalancer">
