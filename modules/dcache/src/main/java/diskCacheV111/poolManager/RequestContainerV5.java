@@ -523,23 +523,7 @@ public class RequestContainerV5
        rph.failed(errorNumber,errorString) ;
        return "" ;
     }
-    public static final String hh_rc_destroy = "<pnfsId> # !!!  use with care" ;
-    public String ac_rc_destroy_$_1( Args args )
-    {
 
-       PoolRequestHandler rph;
-
-       synchronized( _handlerHash ){
-          rph = _handlerHash.get(args.argv(0));
-          if( rph == null ) {
-              throw new
-                      IllegalArgumentException("Not found : " + args.argv(0));
-          }
-
-          _handlerHash.remove( args.argv(0) ) ;
-       }
-       return "" ;
-    }
     public static final String hh_rc_ls = " [<regularExpression>] [-w] [-l] # lists pending requests" ;
     public String ac_rc_ls_$_0_1( Args args ){
        StringBuilder sb  = new StringBuilder() ;
@@ -1083,6 +1067,9 @@ public class RequestContainerV5
                     return false;
                 }
                 sendMessage( cellMessage );
+                if( _waitingFor != null ) {
+                    _messageHash.remove(_waitingFor);
+                }
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
                 _status = "Staging "+_formatter.format(new Date()) ;
