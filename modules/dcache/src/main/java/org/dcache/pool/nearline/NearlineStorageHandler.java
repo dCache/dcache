@@ -19,6 +19,8 @@ package org.dcache.pool.nearline;
 
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Ordering;
+import com.google.common.primitives.Longs;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -297,7 +299,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
      *
      * @param <K> key identifying a request
      */
-    private abstract static class AbstractRequest<K>
+    private abstract static class AbstractRequest<K> implements Comparable<AbstractRequest<K>>
     {
         private enum State { QUEUED, ACTIVE, CANCELED }
 
@@ -376,6 +378,12 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 sb.append(' ').append(new Date(activatedAt));
             }
             return sb.toString();
+        }
+
+        @Override
+        public int compareTo(AbstractRequest<K> o)
+        {
+            return Longs.compare(createdAt, o.createdAt);
         }
     }
 
@@ -470,6 +478,11 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         public synchronized String printJobQueue()
         {
             return Joiner.on('\n').join(requests.values());
+        }
+
+        public synchronized String printJobQueue(Ordering ordering)
+        {
+            return Joiner.on('\n').join(ordering.sortedCopy(requests.values()));
         }
 
         private synchronized Iterable<CompletionHandler<Void,K>> remove(K key)
@@ -1000,7 +1013,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public String call()
         {
-            return stageRequests.printJobQueue();
+            return stageRequests.printJobQueue(Ordering.natural());
         }
     }
 
@@ -1049,7 +1062,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public String call()
         {
-            return flushRequests.printJobQueue();
+            return flushRequests.printJobQueue(Ordering.natural());
         }
     }
 
@@ -1082,7 +1095,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public String call()
         {
-            return removeRequests.printJobQueue();
+            return removeRequests.printJobQueue(Ordering.natural());
         }
     }
 
