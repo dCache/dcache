@@ -17,11 +17,11 @@
  */
 package org.dcache.gridsite;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Calendar;
 import java.util.HashMap;
@@ -42,7 +42,22 @@ import static org.dcache.gridsite.Utilities.assertThat;
  */
 public class InMemoryCredentialStore implements CredentialStore
 {
-    Map<DelegationIdentity,GSSCredential> _storage = new HashMap<>();
+    private Map<DelegationIdentity,GSSCredential> _storage = new HashMap<>();
+
+    private String vomsDir;
+    private String caDir;
+
+    @Required
+    public void setCaCertificatePath(String caDir)
+    {
+        this.caDir = caDir;
+    }
+
+    @Required
+    public void setVomsdir(String vomsDir)
+    {
+        this.vomsDir = vomsDir;
+    }
 
     @Override
     public GSSCredential get(DelegationIdentity id) throws DelegationException
@@ -163,7 +178,7 @@ public class InMemoryCredentialStore implements CredentialStore
         for (Map.Entry<DelegationIdentity,GSSCredential> entry : _storage.entrySet()) {
             try {
                 GSSCredential credential = entry.getValue();
-                Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(credential);
+                Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(vomsDir, caDir, credential);
                 String primaryFqan = Iterables.getFirst(fqans, null);
 
                 if (!predicate.matches(entry.getKey().getDn(), primaryFqan)) {
