@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.Striped;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -49,11 +50,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -403,32 +406,40 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
      */
     private abstract static class AbstractRequestContainer<K, F, R extends AbstractRequest<K> & NearlineRequest<?>>
     {
-        private final Map<K, R> requests = new HashMap<>();
+        private final Map<K, R> requests = new ConcurrentHashMap<>();
 
-        public synchronized void addAll(NearlineStorage storage,
-                                        Iterable<F> files,
-                                        CompletionHandler<Void,K> callback)
+        private final Striped<Lock> locks = Striped.lock(16);
+
+        public void addAll(NearlineStorage storage,
+                           Iterable<F> files,
+                           CompletionHandler<Void,K> callback)
         {
             List<R> newRequests = new ArrayList<>();
             for (F file : files) {
                 K key = extractKey(file);
-                R request = requests.get(key);
-                if (request == null) {
-                    try {
-                        request = checkNotNull(createRequest(storage, file));
-                    } catch (Exception e) {
-                        callback.failed(e, key);
-                        continue;
+                R request;
+                locks.get(key).lock();
+                try {
+                    request = requests.get(key);
+                    if (request == null) {
+                        try {
+                            request = checkNotNull(createRequest(storage, file));
+                        } catch (Exception e) {
+                            callback.failed(e, key);
+                            continue;
+                        }
+                        requests.put(key, request);
+                        newRequests.add(request);
                     }
-                    requests.put(key, request);
-                    newRequests.add(request);
+                } finally {
+                    locks.get(key).unlock();
                 }
                 request.addCallback(callback);
             }
             submit(storage, newRequests);
         }
 
-        public synchronized void cancel(K key)
+        public void cancel(K key)
         {
             R request = requests.get(key);
             if (request != null) {
@@ -436,7 +447,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             }
         }
 
-        public synchronized void cancelOldRequests(long timeout)
+        public void cancelOldRequests(long timeout)
         {
             long now = System.currentTimeMillis();
             for (R request : requests.values()) {
@@ -446,7 +457,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             }
         }
 
-        public synchronized int getCount(AbstractRequest.State state)
+        public int getCount(AbstractRequest.State state)
         {
             int cnt = 0;
             for (R request : requests.values()) {
@@ -475,17 +486,17 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             }
         }
 
-        public synchronized String printJobQueue()
+        public String printJobQueue()
         {
             return Joiner.on('\n').join(requests.values());
         }
 
-        public synchronized String printJobQueue(Ordering ordering)
+        public String printJobQueue(Ordering ordering)
         {
             return Joiner.on('\n').join(ordering.sortedCopy(requests.values()));
         }
 
-        private synchronized Iterable<CompletionHandler<Void,K>> remove(K key)
+        private Iterable<CompletionHandler<Void,K>> remove(K key)
         {
             R actualRequest = requests.remove(key);
             return (actualRequest != null) ? actualRequest.callbacks() : Collections.<CompletionHandler<Void,K>>emptyList();
