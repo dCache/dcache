@@ -142,12 +142,17 @@ public class BoundedExecutor extends AbstractExecutorService
         }
     }
 
-    public void setMaximumPoolSize(int threads)
+    public void setMaximumPoolSize(int size)
     {
         monitor.enter();
         try {
-            maxThreads = threads;
-            // TODO: If tasks are queued, we could possibly start more threads at this point
+            maxThreads = size;
+
+            int threadsToStart = Math.min(maxThreads - threads, workQueue.size());
+            for (int i = 0; i < threadsToStart; i++) {
+                threads++;
+                executor.execute(worker);
+            }
         } finally {
             monitor.leave();
         }
