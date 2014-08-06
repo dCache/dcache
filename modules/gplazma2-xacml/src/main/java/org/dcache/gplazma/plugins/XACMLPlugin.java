@@ -298,8 +298,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         String caDir = properties.getProperty(CADIR);
         String vomsDir = properties.getProperty(VOMSDIR);
 
-        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir,
-                                                MDC.getCopyOfContextMap());
+        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir);
 
 
         /*
