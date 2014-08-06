@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
-    <changeSet id="2.0.1" author="arossi" context="alarms">
-        <preConditions onError="WARN" onFail="MARK_RAN">
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet id="2.0.1.1" author="arossi" context="alarms">
+        <preConditions onFail="MARK_RAN">
             <and>
                 <not>
                     <tableExists tableName="logentry"/>
@@ -12,38 +13,28 @@
             </and>
         </preConditions>
         <createTable tableName="logentry">
-            <column name="key" type="character varying(256)">
+            <column name="key" type="varchar(256)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="alarm" type="boolean"/>
             <column name="firstarrived" type="bigint"/>
             <column name="lastupdate" type="bigint"/>
-            <column name="type" type="character varying(64)"/>
+            <column name="type" type="varchar(64)"/>
             <column name="severity" type="numeric"/>
-            <column name="host" type="character varying(256)"/>
-            <column name="domain" type="character varying(256)"/>
-            <column name="service" type="character varying(256)"/>
+            <column name="host" type="varchar(256)"/>
+            <column name="domain" type="varchar(256)"/>
+            <column name="service" type="varchar(256)"/>
             <column name="info" type="text"/>
             <column name="notes" type="text"/>
             <column name="closed" type="boolean"/>
             <column name="received" type="integer"/>
         </createTable>
     </changeSet>
-    <changeSet id="2.0.2" author="arossi" context="alarms">
-        <preConditions onError="WARN" onFail="MARK_RAN">
+    <changeSet id="2.0.2.1" author="arossi" context="alarms">
+        <preConditions onFail="MARK_RAN">
             <and>
-                <tableExists tableName="logentry"/>
                 <not>
                     <indexExists indexName="logentry_first_idx"/>
-                </not>
-                <not>
-                    <indexExists indexName="logentry_last_idx"/>
-                </not>
-                <not>
-                    <indexExists indexName="logentry_type_idx"/>
-                </not>
-                <not>
-                    <indexExists indexName="logentry_severity_idx"/>
                 </not>
             </and>
         </preConditions>
@@ -51,12 +42,42 @@
         <createIndex indexName="logentry_first_idx" tableName="logentry">
             <column name="firstarrived"/>
         </createIndex>
+    </changeSet>
+    <changeSet id="2.0.2.2" author="arossi" context="alarms">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="logentry_last_idx"/>
+                </not>
+            </and>
+        </preConditions>
+        <comment>read optimization</comment>
         <createIndex indexName="logentry_last_idx" tableName="logentry">
             <column name="lastupdate"/>
         </createIndex>
+    </changeSet>
+    <changeSet id="2.0.2.3" author="arossi" context="alarms">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="logentry_type_idx"/>
+                </not>
+            </and>
+        </preConditions>
+        <comment>read optimization</comment>
         <createIndex indexName="logentry_type_idx" tableName="logentry">
             <column name="type"/>
         </createIndex>
+    </changeSet>
+    <changeSet id="2.0.2.4" author="arossi" context="alarms">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <not>
+                    <indexExists indexName="logentry_severity_idx"/>
+                </not>
+            </and>
+        </preConditions>
+        <comment>read optimization</comment>
         <createIndex indexName="logentry_severity_idx" tableName="logentry">
             <column name="severity"/>
         </createIndex>
