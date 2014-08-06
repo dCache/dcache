@@ -354,16 +354,11 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                             TStatusCode.SRM_FILE_BUSY);
                 }
 
-                // do not check explicitely if we can read the file
-                // this is done by pnfs manager when we call askFileId()
-
                 logger.debug("pinId is null, asking to pin ");
-                pinFile();
-                if(getPinId() == null) {
-                    setState(State.ASYNCWAIT, "Pinning file.");
-                    logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
-                    return;
-                }
+                BringOnlineRequest request = getContainerRequest();
+                setState(State.ASYNCWAIT, "Pinning file.");
+                pinFile(request);
+                return;
             }
         } catch(SRMException | DataAccessException | IllegalStateTransition e) {
             // FIXME some SRMExceptions are permanent failures while others
@@ -403,30 +398,22 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
     }
 
-    public void pinFile()
-            throws NonFatalJobFailure, FatalJobFailure, SRMInvalidRequestException, SRMInternalErrorException
+    public void pinFile(BringOnlineRequest request)
     {
-        BringOnlineRequest request = getContainerRequest();
-        String[] protocols = request.getProtocols();
-        if (protocols != null && !isProtocolSupported(protocols)) {
-            throw new FatalJobFailure("Transfer protocols not supported: " +
-                                      Joiner.on(", ").join(protocols));
-        }
-
         long desiredPinLifetime = request.getDesiredOnlineLifetimeInSeconds();
         if (desiredPinLifetime != -1) {
             desiredPinLifetime *= 1000;  // convert to millis
         }
-
         URI surl = getSurl();
         logger.info("Pinning {}", surl);
         CheckedFuture<AbstractStorageElement.Pin,? extends SRMException> future =
                 getStorage().pinFile(
-                        getUser(),
+                        request.getUser(),
                         surl,
-                        getContainerRequest().getClient_host(),
+                        request.getClient_host(),
                         desiredPinLifetime,
                         String.valueOf(getRequestId()));
+        logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
         future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.sameThreadExecutor());
     }
 
@@ -630,7 +617,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     logger.debug("File pinned (pinId={}).", pin.pinId);
 
                     State state = fr.getState();
-                    if (state == State.ASYNCWAIT || state == State.RUNNING) {
+                    if (state == State.ASYNCWAIT) {
                         fr.setFileId(pin.fileMetaData.fileId);
                         fr.fileMetaData = pin.fileMetaData;
                         fr.setPinId(pin.pinId);
