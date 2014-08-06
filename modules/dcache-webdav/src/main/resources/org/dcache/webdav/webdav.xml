@@ -158,7 +158,7 @@
       <property name="srmHandler" ref="srm-handler"/>
       <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
-      <property name="rootPath" value="${webdavRootPath}"/>
+      <property name="rootPath" value="${webdav.root}"/>
   </bean>
 
 
