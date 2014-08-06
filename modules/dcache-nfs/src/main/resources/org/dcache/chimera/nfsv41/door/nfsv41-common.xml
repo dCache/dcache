@@ -77,7 +77,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="shutdown">
+    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
         <description>Connection pool decorator</description>
         <constructor-arg value="${nfs.db.url}"/>
         <constructor-arg value="DCacheAwareJdbcFs"/>

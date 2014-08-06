@@ -1,9 +1,10 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -320,27 +321,25 @@ public class      SystemCell
          */
         if (e instanceof VirtualMachineError) {
             _oomSafetyBuffer = null;
+            kill();
             _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
                                                     "FATAL_JVM_ERROR",
                                                     getCellDomainName(),
                                                     getCellName()),
-                                                    "Fatal JVM error", e);
-            _log.error("Shutting down...");
-            kill();
+                       "Restarting due to fatal JVM error", e);
+            return;
         }
 
-        if (e instanceof IOException) {
-            Throwable cause = e;
-            while(cause != null) {
-                if (cause.toString().contains("Too many open files")) {
-                    _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
-                                                            "OUT_OF_FILE_DESCRIPTORS",
-                                                            getCellDomainName(),
-                                                            getCellName()),
-                                     "Uncaught exception in thread " + t.getName(),
-                                     e);
-                    return;
-                }
+        Throwable root = Throwables.getRootCause(e);
+        if (root instanceof FileNotFoundException) {
+            if (root.getMessage().contains("Too many open files")) {
+                _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
+                                                        "OUT_OF_FILE_DESCRIPTORS",
+                                                        getCellDomainName(),
+                                                        getCellName()),
+                           "Uncaught exception in thread " + t.getName(),
+                           e);
+                return;
             }
         }
 

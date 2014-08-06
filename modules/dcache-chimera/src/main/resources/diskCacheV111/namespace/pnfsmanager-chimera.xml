@@ -75,7 +75,7 @@
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
       <constructor-arg>
-        <bean class="org.dcache.db.AlarmEnabledDataSource" destroy-method="shutdown">
+        <bean class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
             <description>Connection pool decorator</description>
             <constructor-arg value="${pnfsmanager.db.url}"/>
             <constructor-arg value="JdbcFs"/>

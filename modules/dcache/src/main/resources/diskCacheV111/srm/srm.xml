@@ -457,7 +457,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="shutdown">
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
             <description>Connection pool decorator</description>
             <constructor-arg value="${srm.db.url}"/>
             <constructor-arg value="Srm"/>

@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.db;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -75,6 +74,8 @@ import java.util.logging.Logger;
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.Severity;
 import org.dcache.util.NetworkUtils;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A decorator which allows exception thrown by the connection
@@ -93,34 +94,46 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
     private final String url;
 
     /**
-     * @param serviceName alarms will be identified by a combination of
+     * @param connectorName alarms will be identified by a combination of
      *        this name, the connection url and the canonical name of
      *        this client host.
      */
     public AlarmEnabledDataSource(String url,
                                   String connectorName,
                                   DataSource delegate) {
-        this.connectorName = connectorName;
-        this.url = url;
-        this.delegate = delegate;
+        this.connectorName = checkNotNull(connectorName);
+        this.url = checkNotNull(url);
+        this.delegate = checkNotNull(delegate);
     }
 
+    @Override
     public PrintWriter getLogWriter() throws SQLException {
         return delegate.getLogWriter();
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public <T> T unwrap(Class<T> iface) throws SQLException {
+        if (iface.isInstance(delegate)) {
+            return (T) delegate;
+        }
         return delegate.unwrap(iface);
     }
 
+    @Override
     public void setLogWriter(PrintWriter out) throws SQLException {
         delegate.setLogWriter(out);
     }
 
+    @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        if (iface.isInstance(delegate)) {
+            return true;
+        }
         return delegate.isWrapperFor(iface);
     }
 
+    @Override
     public Connection getConnection() throws SQLException {
         try {
             return delegate.getConnection();
@@ -135,10 +148,12 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
         }
     }
 
+    @Override
     public void setLoginTimeout(int seconds) throws SQLException {
         delegate.setLoginTimeout(seconds);
     }
 
+    @Override
     public Connection getConnection(String username, String password)
                     throws SQLException {
 
@@ -155,33 +170,20 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
         }
     }
 
+    @Override
     public int getLoginTimeout() throws SQLException {
         return delegate.getLoginTimeout();
     }
 
+    @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return delegate.getParentLogger();
     }
 
-    public DataSource getDelegate() {
-        return delegate;
-    }
-
+    @Override
     public void close() throws IOException {
-        if (delegate instanceof HikariDataSource) {
-            ((HikariDataSource) delegate).shutdown();
-        } else if (delegate instanceof Closeable) {
+        if (delegate instanceof Closeable) {
             ((Closeable) delegate).close();
-        }
-    }
-
-    public void shutdown() {
-        try {
-            close();
-        } catch (IOException t) {
-            LOGGER.warn("{}: shutdown encountered a problem: {}",
-                            connectorName,
-                            t.getMessage() );
         }
     }
 }

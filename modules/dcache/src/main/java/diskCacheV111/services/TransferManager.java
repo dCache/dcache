@@ -14,6 +14,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Transaction;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -181,7 +182,11 @@ public abstract class TransferManager extends AbstractCell
     {
         super.cleanUp();
         if (ds != null) {
-            ds.shutdown();
+            try {
+                ds.close();
+            } catch (IOException e) {
+                log.debug("Failed to shutdown database connection pool: {}", e.getMessage());
+            }
         }
         executor.shutdown();
     }

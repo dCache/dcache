@@ -13,6 +13,7 @@ import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -299,7 +300,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _broadcastRegistration.unregister();
         }
         if (_dataSource != null) {
-            _dataSource.shutdown();
+            try {
+                _dataSource.close();
+            } catch (IOException e) {
+                _log.debug("Failed to shutdown database connection pool: {}", e.getMessage());
+            }
         }
     }
 
