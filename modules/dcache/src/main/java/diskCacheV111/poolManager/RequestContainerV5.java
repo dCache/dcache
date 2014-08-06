@@ -99,7 +99,7 @@ public class RequestContainerV5
     private CellStub _billing;
     private long        _retryTimer    = 15 * 60 * 1000 ;
 
-    private int         _maxRequestClumping = 1 ;
+    private int         _maxRequestClumping = 20;
 
     private String      _onError       = "suspend" ;
     private int         _maxRetries    = 3 ;
@@ -1764,14 +1764,12 @@ public class RequestContainerV5
                     // it is essential that we are not within any other
                     // lock when trying to get the handlerHash lock.
                     //
-                    synchronized( _handlerHash ){
-                       if( answerRequest( _maxRequestClumping ) ){
-                            setError(CacheException.RESOURCE,
-                                     "Request clumping limit reached");
-                            nextStep(RequestState.ST_DONE, CONTINUE);
-                       }else{
-                           _handlerHash.remove( _name ) ;
-                       }
+                    synchronized (_handlerHash) {
+                        _handlerHash.remove(_name);
+                    }
+                    while (answerRequest(_maxRequestClumping)) {
+                        setError(CacheException.OUT_OF_DATE,
+                                 "Request clumping limit reached");
                     }
                  }
 
