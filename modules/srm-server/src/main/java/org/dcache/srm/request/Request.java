@@ -113,12 +113,14 @@ public abstract class Request extends Job {
     public Request(@Nonnull SRMUser user,
     Long requestCredentalId,
     int max_number_of_retries,
+    long max_update_period,
     long lifetime,
     @Nullable String description,
     String client_host
         ) {
         super(lifetime,max_number_of_retries);
         this.credentialId = requestCredentalId;
+        this.max_update_period = max_update_period;
         this.description = description;
         this.client_host = client_host;
         this.user = checkNotNull(user);
@@ -176,7 +178,20 @@ public abstract class Request extends Job {
 
     /** general srm server configuration settings */
     private transient Configuration configuration;
+
+
+
+
     private final Long credentialId;
+
+
+
+    protected int cyclicUpdateCounter;
+
+    protected long max_update_period = 10*60*60;
+
+
+
 
     /*
      * public constructors
@@ -302,6 +317,37 @@ public abstract class Request extends Job {
         try {
             retryDeltaTime = 1;
             should_updateretryDeltaTime = false;
+        } finally {
+            wunlock();
+        }
+    }
+
+    /**
+     * updateRetryDeltaTime is called every time user gets RequestStatus
+     * so the next time user waits longer (up to MAX_RETRY_TIME secs)
+     * if nothing has been happening for a while
+     * The algoritm of incrising retryDeltaTime is absolutely arbitrary
+     */
+
+    protected void updateRetryDeltaTime() {
+        wlock();
+        try {
+            if (should_updateretryDeltaTime && cyclicUpdateCounter == 0) {
+
+                if(retryDeltaTime <100) {
+                    retryDeltaTime +=3;
+                }
+                else if(retryDeltaTime <300) {
+                    retryDeltaTime +=6;
+                }
+                else {
+                    retryDeltaTime *= 2;
+                }
+                if (retryDeltaTime > max_update_period) {
+                    retryDeltaTime = (int) max_update_period;
+                }
+            }
+            cyclicUpdateCounter = (cyclicUpdateCounter+1)%5;
         } finally {
             wunlock();
         }
