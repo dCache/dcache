@@ -49,6 +49,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.acl.enums.AccessMask;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.util.X509Utils;
 import org.dcache.cells.CellStub;
 import org.dcache.gplazma.AuthenticationException;
@@ -134,8 +135,6 @@ public class CopyFilter implements Filter
             return _headerValue;
         }
     }
-
-    private final VOMSValidator _vomsValidator = new VOMSValidator(null, null);
 
     private PnfsHandler _pnfs;
     private SrmHandler _srmHandler;
@@ -280,25 +279,16 @@ public class CopyFilter implements Filter
     {
         switch (source) {
         case GRIDSITE:
-            X509Certificate[] certificates = getCertificateChain();
-
-            if (certificates.length == 0) {
+            Subject subject = Subject.getSubject(AccessController.getContext());
+            String dn = Subjects.getDn(subject);
+            if (dn == null) {
                 throw new ErrorResponseException(Response.Status.SC_UNAUTHORIZED,
-                        "user must present valid X.509 certificate");
+                                                 "user must present valid X.509 certificate");
             }
 
-            try {
-                // Try to obtain a reasonable credential
-                return _srmHandler.getDelegatedCredential(
-                        X509Utils.getSubjectFromX509Chain(certificates, false),
-                        extractPrimaryFqan(certificates),
-                        20, MINUTES);
-            } catch (AuthenticationException e) {
-                _log.error("Failed to extract DN from certificate chain: {}",
-                        e.getMessage());
-                throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
-                        "Internal server error");
-            }
+            return _srmHandler.getDelegatedCredential(
+                    dn, Subjects.getPrimaryFqan(subject),
+                    20, MINUTES);
 
         case NONE:
             return null;
@@ -377,34 +367,6 @@ public class CopyFilter implements Filter
     private boolean hasClientAlreadyBeenRedirected(HttpServletRequest request)
     {
         return request.getParameter(QUERY_KEY_ASKED_TO_DELEGATE) != null;
-    }
-
-
-    private String extractPrimaryFqan(X509Certificate[] chain)
-    {
-        String[] fqans = _vomsValidator.setClientChain(chain).parse().
-                getAllFullyQualifiedAttributes();
-
-        return fqans.length > 0 ? fqans[0] : null;
-    }
-
-
-    private static X509Certificate[] getCertificateChain()
-    {
-        HttpServletRequest request = ServletRequest.getRequest();
-
-        Object object =
-                request.getAttribute(SecurityFilter.X509_CERTIFICATE_ATTRIBUTE);
-
-        if (object == null) {
-            return new X509Certificate[0];
-        }
-
-        if (!(object instanceof X509Certificate[])) {
-            throw new RuntimeException("X509_CERTIFICATE_ATTRIBUTE not of type X509Certificate[]");
-        }
-
-        return (X509Certificate[]) object;
     }
 
     /**

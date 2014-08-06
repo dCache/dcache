@@ -1,12 +1,13 @@
 package org.dcache.pool.movers;
 
 import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.globus.gsi.provider.GlobusProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 
@@ -16,14 +17,15 @@ import java.security.KeyStore;
 import java.security.KeyStore.LoadStoreParameter;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -31,7 +33,6 @@ import diskCacheV111.vehicles.RemoteHttpsDataTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.EnvironmentAware;
-import dmg.cells.nucleus.Environments;
 import dmg.util.Formats;
 import dmg.util.Replaceable;
 
@@ -47,15 +48,32 @@ import static org.globus.gsi.provider.KeyStoreParametersFactory.createTrustStore
 public class RemoteHttpsDataTransferProtocol_1 extends RemoteHttpDataTransferProtocol_1 implements EnvironmentAware
 {
     // Cached values of our trust stores
-    private static KeyStore trustStore;
-
-    private PrivateKey privateKey;
-    private X509Certificate[] chain;
-    private String _caPath;
+    private static final LoadingCache<String,KeyStore> trustStoreCache =
+            CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build(
+                    new CacheLoader<String, KeyStore>()
+                    {
+                        @Override
+                        public KeyStore load(String path) throws Exception
+                        {
+                            KeyStore store = KeyStore.getInstance(GlobusProvider.KEYSTORE_TYPE, GlobusProvider.PROVIDER_NAME);
+                            LoadStoreParameter param = createTrustStoreParameters(path + "/*.[0-9]");
+                            store.load(param);
+                            if (store.size() == 0) {
+                                throw new IOException("Failed to load any CA certificates: " + path);
+                            }
+                            return store;
+                        }
+                    }
+            );
 
     static {
         Security.addProvider(new GlobusProvider());
     }
+
+    private PrivateKey privateKey;
+    private X509Certificate[] chain;
+
+    private String caPath;
 
     // constructor needed by Pool mover contract.
     public RemoteHttpsDataTransferProtocol_1(CellEndpoint cell)
@@ -64,22 +82,21 @@ public class RemoteHttpsDataTransferProtocol_1 extends RemoteHttpDataTransferPro
     }
 
     @Override
-    public void setEnvironment(Map<String,Object> environment)
+    public void setEnvironment(final Map<String,Object> environment)
     {
-        Properties config = Environments.toProperties(environment);
-        _caPath = getRequiredProperty(config, "pool.authn.capath");
-    }
-
-
-    private static String getRequiredProperty(Properties config,
-            String key)
-    {
-        String value = config.getProperty(key);
+        Replaceable replaceable = new Replaceable() {
+            @Override
+            public String getReplacement(String name)
+            {
+                Object value =  environment.get(name);
+                return (value == null) ? null : value.toString().trim();
+            }
+        };
+        String value = Objects.toString(environment.get("pool.authn.capath"), null);
         if (value == null) {
-            throw new IllegalArgumentException("Required property '" + key +
-                    "' not found");
+            throw new IllegalArgumentException("Required property 'pool.authn.capath' not found");
         }
-        return value;
+        caPath = Formats.replaceKeywords(value, replaceable);
     }
 
     @Override
@@ -95,28 +112,16 @@ public class RemoteHttpsDataTransferProtocol_1 extends RemoteHttpDataTransferPro
          super.runIO(attributes, channel, genericInfo, allocator, access);
     }
 
-    private KeyStore buildTrustStore() throws KeyStoreException, IOException, CertificateException
+    private KeyStore getTrustStore() throws KeyStoreException, IOException, CertificateException
     {
         try {
-            KeyStore store = KeyStore.getInstance(GlobusProvider.KEYSTORE_TYPE, GlobusProvider.PROVIDER_NAME);
-            LoadStoreParameter param = createTrustStoreParameters(_caPath + "/*.[0-9]");
-            store.load(param);
-            if (store.size() == 0) {
-                throw new IOException("Failed to load any CA certificates: " + _caPath);
-            }
-            return store;
-        } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
+            return trustStoreCache.get(caPath);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            Throwables.propagateIfInstanceOf(cause, KeyStoreException.class);
+            Throwables.propagateIfInstanceOf(cause, IOException.class);
             throw Throwables.propagate(e);
         }
-    }
-
-    private synchronized KeyStore getTrustStore() throws KeyStoreException, IOException, CertificateException
-    {
-        if (trustStore == null) {
-            trustStore = buildTrustStore();
-        }
-
-        return trustStore;
     }
 
     private KeyStore buildKeyStore(char[] password) throws KeyStoreException
