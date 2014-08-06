@@ -155,6 +155,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
          super(user ,
          requestCredentalId,
          max_number_of_retries,
+         max_update_period,
          lifetime,
          description,
          client_host);
@@ -333,6 +334,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         // we can rely on the fact that
         // once file request reach their final state, this state does not change
         // so the combined logic
+        updateRetryDeltaTime();
         RequestStatus rs = new RequestStatus();
         rs.requestId = getRequestNum();
         rs.errorMessage = getLastJobChange().getDescription();
