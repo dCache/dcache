@@ -433,35 +433,27 @@
               value="#{ '${srm.persistence.reserve-space.enable.store-transient-state}'.equals('false') ? true : false }"/>
   </bean>
 
-    <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
-          destroy-method="shutdown">
-        <description>Database connection pool</description>
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Connection pool decorator</description>
+        <constructor-arg value="${srm.db.url}"/>
+        <constructor-arg value="Srm"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariConfig">
-                <constructor-arg type="java.util.Properties">
-                    <value>
-                        minimumIdle = ${srm.db.connections.idle}
-                        maximumPoolSize = ${srm.db.connections.max}
-                        autoCommit = true
-                        transactionIsolation = TRANSACTION_READ_COMMITTED
-                    </value>
-                </constructor-arg>
-                <property name="dataSource">
-                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                        <property name="url" value="${srm.db.url}"/>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
+                <description>Database connection pool</description>
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="driverClassName" value="java.lang.String"/>
+                        <property name="jdbcUrl" value="${srm.db.url}"/>
                         <property name="username" value="${srm.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>
+                        <property name="minimumIdle" value="${srm.db.connections.idle}"/>
+                        <property name="maximumPoolSize" value="${srm.db.connections.max}"/>
+                        <property name="autoCommit" value="true"/>
+                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
                     </bean>
-                </property>
+                </constructor-arg>
             </bean>
         </constructor-arg>
-    </bean>
-
-    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-            <description>Connection pool decorator</description>
-            <constructor-arg value="${srm.db.url}"/>
-            <constructor-arg value="Srm"/>
-            <constructor-arg ref="data-source-delegate"/>
     </bean>
 
   <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">

@@ -36,52 +36,38 @@
       <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
   </bean>
 
-   <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
-          destroy-method="shutdown">
-        <description>Database connection pool</description>
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource">
+        <description>Connection pool decorator</description>
+        <constructor-arg value="${pnfsmanager.db.url}"/>
+        <constructor-arg value="JdbcFs"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariConfig">
-                <constructor-arg type="java.util.Properties">
-                    <value>
-                        minimumIdle = ${pnfsmanager.db.connections.idle}
-                        maximumPoolSize = ${pnfsmanager.db.connections.max}
-                        autoCommit = true
-                        transactionIsolation = TRANSACTION_READ_COMMITTED
-                    </value>
-                </constructor-arg>
-                <property name="dataSource">
-                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                        <property name="url" value="${pnfsmanager.db.url}"/>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
+                <description>Database connection pool</description>
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="driverClassName" value="java.lang.String"/>
+                        <property name="jdbcUrl" value="${pnfsmanager.db.url}"/>
                         <property name="username" value="${pnfsmanager.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pnfsmanager.db.password.file}', '${pnfsmanager.db.url}', '${pnfsmanager.db.user}', '${pnfsmanager.db.password}') }"/>
+                        <property name="minimumIdle" value="${pnfsmanager.db.connections.idle}"/>
+                        <property name="maximumPoolSize" value="${pnfsmanager.db.connections.max}"/>
+                        <property name="autoCommit" value="true"/>
+                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
                     </bean>
-                </property>
+                </constructor-arg>
             </bean>
         </constructor-arg>
-   </bean>
+    </bean>
 
   <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
       <description>Database schema manager</description>
-      <property name="dataSource">
-          <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-              <property name="url" value="${pnfsmanager.db.url}"/>
-              <property name="username" value="${pnfsmanager.db.user}"/>
-              <property name="password" value="${pnfsmanager.db.password}"/>
-          </bean>
-      </property>
+      <property name="dataSource" ref="data-source"/>
       <property name="changeLog" value="classpath:${pnfsmanager.db.schema.changelog}"/>
       <property name="shouldUpdate" value="${pnfsmanager.db.schema.auto}"/>
   </bean>
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
-      <constructor-arg>
-        <bean class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-            <description>Connection pool decorator</description>
-            <constructor-arg value="${pnfsmanager.db.url}"/>
-            <constructor-arg value="JdbcFs"/>
-            <constructor-arg ref="data-source-delegate"/>
-        </bean>
-      </constructor-arg>
+      <constructor-arg ref="data-source"/>
       <constructor-arg value="${pnfsmanager.db.dialect}"/>
   </bean>
 

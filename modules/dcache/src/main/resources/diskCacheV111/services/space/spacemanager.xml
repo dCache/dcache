@@ -48,39 +48,32 @@
     <constructor-arg ref="pnfs-stub"/>
   </bean>
 
-    <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
-            destroy-method="shutdown">
+
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Connection pool decorator</description>
+        <constructor-arg value="${spacemanager.db.url}"/>
+        <constructor-arg value="SpaceManager"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariConfig">
-                <constructor-arg type="java.util.Properties">
-                    <value>
-                        minimumIdle = ${spacemanager.db.connections.idle}
-                        maximumPoolSize = ${spacemanager.db.connections.max}
-                        autoCommit = true
-                        transactionIsolation = TRANSACTION_READ_COMMITTED
-                    </value>
-                </constructor-arg>
-                <property name="dataSource">
-                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                        <property name="url" value="${spacemanager.db.url}"/>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="driverClassName" value="java.lang.String"/>
+                        <property name="jdbcUrl" value="${spacemanager.db.url}"/>
                         <property name="username" value="${spacemanager.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>
+                        <property name="minimumIdle" value="${spacemanager.db.connections.idle}"/>
+                        <property name="maximumPoolSize" value="${spacemanager.db.connections.max}"/>
+                        <property name="autoCommit" value="true"/>
+                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
                     </bean>
-                </property>
+                </constructor-arg>
             </bean>
         </constructor-arg>
     </bean>
 
-    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-            <description>Connection pool decorator</description>
-            <constructor-arg value="${spacemanager.db.url}"/>
-            <constructor-arg value="SpaceManager"/>
-            <constructor-arg ref="data-source-delegate"/>
-    </bean>
-
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
         <description>Database schema manager</description>
-        <property name="dataSource" ref="data-source-delegate"/>
+        <property name="dataSource" ref="data-source"/>
         <property name="changeLog" value="classpath:${spacemanager.db.schema.changelog}"/>
         <property name="shouldUpdate" value="${spacemanager.db.schema.auto}"/>
     </bean>

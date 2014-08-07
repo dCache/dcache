@@ -53,35 +53,27 @@
         <constructor-arg value="1"/>
     </bean>
 
-    <bean id="data-source-delegate" class="com.zaxxer.hikari.HikariDataSource"
-          destroy-method="shutdown">
-        <description>Database connection pool</description>
-        <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariConfig">
-                <constructor-arg type="java.util.Properties">
-                    <value>
-                        minimumIdle = ${nfs.db.connections.idle}
-                        maximumPoolSize = ${nfs.db.connections.max}
-                        autoCommit = true
-                        transactionIsolation = TRANSACTION_READ_COMMITTED
-                    </value>
-                </constructor-arg>
-                <property name="dataSource">
-                    <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                        <property name="url" value="${nfs.db.url}"/>
-                        <property name="username" value="${nfs.db.user}"/>
-                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${nfs.db.password.file}', '${nfs.db.url}', '${nfs.db.user}', '${nfs.db.password}') }"/>
-                    </bean>
-                </property>
-            </bean>
-        </constructor-arg>
-    </bean>
-
     <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
         <description>Connection pool decorator</description>
         <constructor-arg value="${nfs.db.url}"/>
         <constructor-arg value="DCacheAwareJdbcFs"/>
-        <constructor-arg ref="data-source-delegate"/>
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
+                <description>Database connection pool</description>
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="driverClassName" value="java.lang.String"/>
+                        <property name="jdbcUrl" value="${nfs.db.url}"/>
+                        <property name="username" value="${nfs.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${nfs.db.password.file}', '${nfs.db.url}', '${nfs.db.user}', '${nfs.db.password}') }"/>
+                        <property name="minimumIdle" value="${nfs.db.connections.idle}"/>
+                        <property name="maximumPoolSize" value="${nfs.db.connections.max}"/>
+                        <property name="autoCommit" value="true"/>
+                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
