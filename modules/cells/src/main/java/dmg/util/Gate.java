@@ -25,6 +25,11 @@ public class Gate {
       }
 
    }
+
+   public synchronized boolean isOpen() {
+       return _isOpen;
+   }
+
    public synchronized void open(){
      _isOpen = true ;
      notifyAll() ;

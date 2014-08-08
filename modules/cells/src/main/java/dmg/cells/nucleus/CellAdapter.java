@@ -78,7 +78,6 @@ public class   CellAdapter extends CommandInterpreter
     private final CellNucleus _nucleus;
     private final Gate        _readyGate = new Gate(false);
     private final Gate        _startGate = new Gate(false);
-    private final Gate        _shutdownGate = new Gate(false);
     private final Args        _args;
     private boolean     _useInterpreter = true;
     private boolean     _returnCommandException = true;
@@ -707,8 +706,8 @@ public class   CellAdapter extends CommandInterpreter
     public void prepareRemoval(KillEvent ce)
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
+        _startGate.check();
         _readyGate.check();
-        _shutdownGate.open();
         cleanUp();
         dumpPinboard();
         _log.info("CellAdapter : prepareRemoval : done");
@@ -777,10 +776,24 @@ public class   CellAdapter extends CommandInterpreter
      */
     @Override
     public void   messageArrived(MessageEvent me) {
-        _startGate.check();
         if (me instanceof LastMessageEvent) {
             _log.info("messageArrived : LastMessageEvent (opening gate)");
             _readyGate.open();
+        } else if (!_startGate.isOpen()) {
+            CellMessage msg = me.getMessage();
+            if (!msg.isReply()) {
+                try {
+                    NoRouteToCellException e =
+                            new NoRouteToCellException(msg.getUOID(),
+                                                       msg.getDestinationPath(),
+                                                       getCellName() + " is still initializing.");
+                    msg.revertDirection();
+                    msg.setMessageObject(e);
+                    _nucleus.sendMessage(msg, true, true);
+                } catch (NoRouteToCellException e) {
+                    _log.warn("PANIC : Problem returning answer : " + e);
+                }
+            }
         } else {
             CellMessage msg = me.getMessage();
             Serializable obj = msg.getMessageObject();
