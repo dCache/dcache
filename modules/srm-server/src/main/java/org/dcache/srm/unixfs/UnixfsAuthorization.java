@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
@@ -47,11 +48,11 @@ public final class UnixfsAuthorization implements SRMAuthorization {
      *            not authorized to access/use the resource.
      */
     @Override
-    public SRMUser authorize(Long requestCredentialId, String secureId,String name, GSSContext context,
+    public SRMUser authorize(Long requestCredentialId, String secureId, X509Certificate[] chain,
                              String remoteIP)
     throws SRMAuthorizationException {
   /** @todo -- javadoc, there is no such arg 'chain' */
-        UserAuthRecord user_rec = authorize(secureId,name);
+        UserAuthRecord user_rec = authorize(secureId);
         logger.debug("Received authorization request from remote IP {}", remoteIP);
         String username = user_rec.Username;
         String root = user_rec.Root;
@@ -63,12 +64,10 @@ public final class UnixfsAuthorization implements SRMAuthorization {
 
     }
 
-    private UserAuthRecord authorize(String secureId,String name)
+    private UserAuthRecord authorize(String secureId)
     throws SRMAuthorizationException {
 
-        if(name==null) {
-            name = getUserNameByGlobusId(secureId);
-        }
+        String name = getUserNameByGlobusId(secureId);
         UserAuthRecord userRecord = getUserRecord(name,secureId);
         return userRecord;
     }

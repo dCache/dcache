@@ -207,8 +207,6 @@ public class SRMServerV2 implements ISRM  {
     private final SRM srm;
     private final RequestLogger[] loggers =
             { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
-    private final String caDir;
-    private final String vomsDir;
 
     public SRMServerV2()
     {
@@ -217,11 +215,9 @@ public class SRMServerV2 implements ISRM  {
         Configuration config = Axis.getConfiguration();
         srmAuth = new SrmAuthorizer(config.getAuthorization(),
                 srm.getRequestCredentialStorage(),
-                config.isClientDNSLookup());
+                config.isClientDNSLookup(), config.getVomsdir(), config.getCaCertificatePath());
         srmServerCounters = srm.getSrmServerV2Counters();
         srmServerGauges = srm.getSrmServerV2Gauges();
-        caDir = config.getCaCertificatePath();
-        vomsDir = config.getVomsdir();
     }
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
@@ -257,13 +253,9 @@ public class SRMServerV2 implements ISRM  {
             RequestCredential requestCredential;
             try {
                 userCred          = srmAuth.getUserCredentials();
-                Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-                String role = Iterables.getFirst(roles, null);
-                LOGGER.debug("role is {}", role);
-                requestCredential = srmAuth.getRequestCredential(userCred,role);
+                requestCredential = srmAuth.getRequestCredential(userCred);
                 user              = srmAuth.getRequestUser(requestCredential,
-                                                           null,
-                                                           userCred.context);
+                                                           userCred.chain);
                 if (user.isReadOnly()) {
                     switch (requestName) {
                     case "srmRmdir":

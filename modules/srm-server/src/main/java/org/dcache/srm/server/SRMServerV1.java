@@ -1,8 +1,6 @@
 package org.dcache.srm.server;
 
-import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
-import org.gridforum.jgss.ExtendedGSSContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +17,6 @@ import org.dcache.srm.util.JDC;
 
 public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
-    private final String vomsDir;
-    private final String caDir;
     private final Logger log;
     private final SrmAuthorizer srmAuth;
     private final SRM srm;
@@ -38,11 +34,11 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
              srmAuth = new SrmAuthorizer(config.getAuthorization(),
                     srm.getRequestCredentialStorage(),
-                    config.isClientDNSLookup());
+                    config.isClientDNSLookup(),
+                    config.getVomsdir(),
+                    config.getCaCertificatePath());
              srmServerCounters = srm.getSrmServerV1Counters();
              srmServerGauges = srm.getSrmServerV1Gauges();
-             vomsDir = config.getVomsdir();
-             caDir = config.getCaCertificatePath();
        } catch (Exception e) {
            throw new java.rmi.RemoteException("exception",e);
        }
@@ -71,11 +67,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
               userCred = srmAuth.getUserCredentials();
-              Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-              String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+              user = srmAuth.getRequestUser(requestCredential, userCred.chain);
               if (user.isReadOnly()) {
                   throw new SRMAuthorizationException("Session is read-only");
               }
@@ -114,11 +107,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential, userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -158,11 +148,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential, userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -204,11 +191,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -233,11 +217,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("SRMServerV1.pin() : role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -263,11 +244,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -293,11 +271,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -333,11 +308,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -375,11 +347,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -418,11 +387,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -459,11 +425,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -500,11 +463,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();
@@ -540,11 +500,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-              user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+              user = srmAuth.getRequestUser(requestCredential,userCred.chain);
               if (user.isReadOnly()) {
                   throw new SRMAuthorizationException("Session is read-only");
               }
@@ -580,11 +537,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
              userCred = srmAuth.getUserCredentials();
-             Iterable<String> roles = SrmAuthorizer.getFQANsFromContext(vomsDir, caDir, (ExtendedGSSContext) userCred.context);
-             String role = Iterables.getFirst(roles, null);
-              log.debug("SRMServerV1.getProtocols() : role is "+role);
-              requestCredential = srmAuth.getRequestCredential(userCred,role);
-             user = srmAuth.getRequestUser(requestCredential,null,userCred.context);
+              requestCredential = srmAuth.getRequestCredential(userCred);
+             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
           }
           catch (SRMAuthorizationException sae) {
               String msg = "SRM Authorization failed: " + sae.getMessage();

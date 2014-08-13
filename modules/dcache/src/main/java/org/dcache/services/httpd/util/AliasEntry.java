@@ -78,8 +78,7 @@ public class AliasEntry {
                     "org.eclipse.jetty.webapp.FragmentConfiguration",
                     "org.eclipse.jetty.plus.webapp.EnvConfiguration",
                     "org.eclipse.jetty.plus.webapp.PlusConfiguration",
-                    "org.eclipse.jetty.webapp.JettyWebXmlConfiguration",
-                    "org.eclipse.jetty.webapp.TagLibConfiguration" };
+                    "org.eclipse.jetty.webapp.JettyWebXmlConfiguration" };
 
     public static final String TYPE_FILE = "file";
     public static final String TYPE_DIRECTORY = "directory";

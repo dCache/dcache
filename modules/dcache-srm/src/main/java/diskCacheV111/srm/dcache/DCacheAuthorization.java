@@ -127,31 +127,19 @@ public final class DCacheAuthorization implements SRMAuthorization
      *
      * @param requestCredentialId
      * @param secureId
-     * @param name
-     * @param gsscontext
+     * @param chain
+     * @param remoteIP
      * @exception <code>SRMAuthorizationException</code> if the peer is
      *            not authorized to access/use the resource.
      */
     @Override
     public SRMUser authorize(Long requestCredentialId,
-                             String secureId,String name, GSSContext gsscontext, String remoteIP)
+                             String secureId, X509Certificate[] chain, String remoteIP)
             throws SRMAuthorizationException
     {
-        LOGGER.trace("authorize {}:{}:{}", requestCredentialId, secureId, name);
+        LOGGER.trace("authorize {}:{}", requestCredentialId, secureId);
         try {
-            if (!(gsscontext instanceof ExtendedGSSContext)) {
-                throw new RuntimeException("GSSContext not instance of ExtendedGSSContext");
-            }
-
-            ExtendedGSSContext extendedcontext =
-                (ExtendedGSSContext) gsscontext;
-            X509Certificate[] chain =
-                (X509Certificate[]) extendedcontext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-
             Subject subject = new Subject();
-            if (name != null && !name.isEmpty()) {
-                subject.getPrincipals().add(new LoginNamePrincipal(name));
-            }
             if (secureId != null && !secureId.isEmpty()) {
                 /* Technically, the secureId could be a
                  * KerberosPrincipal too. At this point we cannot tell
@@ -173,7 +161,7 @@ public final class DCacheAuthorization implements SRMAuthorization
             }
 
             return persistenceManager.persist(loginStrategy.login(subject));
-        } catch (GSSException | CacheException | CertificateException e) {
+        } catch (CacheException | CertificateException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
         }
     }

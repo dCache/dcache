@@ -7,11 +7,10 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -329,14 +328,11 @@ public class HttpServiceCell extends CommandInterpreter
     public void initialize() throws Exception {
         URL url = HttpServiceCell.class.getResource(webappResourceUrl);
         defaultWebappsXml = url.toExternalForm();
-        server = new Server(httpPort);
-        createAndSetThreadPool();
+        server = new Server(new QueuedThreadPool(maxThreads));
 
+        server.addConnector(createSimpleConnector(server));
         if (authenticated) {
-            server.setConnectors(new Connector[] { createSimpleConnector(),
-                                                   createSslConnector() });
-        } else {
-            server.setConnectors(new Connector[] { createSimpleConnector() });
+            server.addConnector(createSslConnector(server));
         }
 
         createAndSetHandlers();
@@ -361,34 +357,28 @@ public class HttpServiceCell extends CommandInterpreter
         server.setHandler(handlers);
     }
 
-    private void createAndSetThreadPool() {
-        QueuedThreadPool threadPool = new QueuedThreadPool();
-        threadPool.setMaxThreads(maxThreads);
-        server.setThreadPool(threadPool);
-    }
-
-    private Connector createSimpleConnector() {
-        Connector connector = new SelectChannelConnector();
+    private Connector createSimpleConnector(Server server) {
+        ServerConnector connector = new ServerConnector(server);
         connector.setHost(host);
         connector.setPort(httpPort);
-        connector.setMaxIdleTime((int)maxIdleTimeUnit.toMillis(maxIdleTime));
+        connector.setIdleTimeout(maxIdleTimeUnit.toMillis(maxIdleTime));
         return connector;
     }
 
     @SuppressWarnings("deprecation")
-    private Connector createSslConnector() {
-        SslSelectChannelConnector connector = new SslSelectChannelConnector();
-        connector.setHost(host);
-        connector.setPort(httpsPort);
-        connector.setExcludeCipherSuites(Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
-        SslContextFactory factory = connector.getSslContextFactory();
+    private Connector createSslConnector(Server server) {
+        SslContextFactory factory = new SslContextFactory();
+        factory.setExcludeCipherSuites(Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
         factory.setKeyStorePath(keystore);
         factory.setKeyStoreType("PKCS12");
         factory.setKeyStorePassword(keystorePassword);
-        factory.setTrustStore(truststore);
+        factory.setTrustStorePath(truststore);
         factory.setTrustStorePassword(trustPassword);
         factory.setWantClientAuth(true);
         factory.setNeedClientAuth(false);
+        ServerConnector connector = new ServerConnector(server, factory);
+        connector.setHost(host);
+        connector.setPort(httpsPort);
         return connector;
     }
 

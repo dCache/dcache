@@ -2,13 +2,11 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:aop="http://www.springframework.org/schema/aop"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans
-           http://www.springframework.org/schema/beans/spring-beans.xsd
-           http://www.springframework.org/schema/context
-           http://www.springframework.org/schema/context/spring-context.xsd
-	   http://www.springframework.org/schema/aop
-	   http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
@@ -277,132 +275,123 @@
     <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
           init-method="start" destroy-method="stop">
         <description>Thread pool used by Jetty for request processing</description>
-        <property name="maxIdleTimeMs"
-                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+
+        <constructor-arg value="${webdav.limits.threads.max}"/>
+        <constructor-arg value="${webdav.limits.threads.min}"/>
+        <constructor-arg
+                value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${webdav.limits.threads.idle-time},
                      '${webdav.limits.threads.idle-time.unit}')}" />
-        <property name="maxThreads" value="${webdav.limits.threads.max}"/>
-        <property name="minThreads" value="${webdav.limits.threads.min}"/>
-        <property name="name" value="jetty-srm"/>
-        <property name="maxQueued" value="${webdav.limits.queue-length}"/>
+        <constructor-arg>
+            <bean class="org.eclipse.jetty.util.BlockingArrayQueue">
+                <constructor-arg value="${webdav.limits.queue-length}"/>
+            </bean>
+        </constructor-arg>
+
+        <property name="name" value="jetty"/>
+    </bean>
+
+    <bean id="jetty" class="org.eclipse.jetty.server.Server"
+          init-method="start" destroy-method="stop">
+        <description>Embedded HTTP server</description>
+        <constructor-arg ref="thread-pool"/>
+        <property name="stopTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                     ${webdav.limits.graceful-shutdown},
+                     '${webdav.limits.graceful-shutdown.unit}')}"/>
+        <property name="connectors">
+            <list>
+                <ref bean="server-connector"/>
+            </list>
+        </property>
+        <property name="handler" ref="handlers"/>
+
+        <property name="beans">
+            <list>
+                <bean class="org.eclipse.jetty.server.LowResourceMonitor">
+                    <constructor-arg ref="jetty"/>
+                    <property name="lowResourcesIdleTimeout"
+                              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                              ${webdav.limits.low-resource-idle-time},
+                              '${webdav.limits.low-resource-idle-time.unit}')}" />
+                    <property name="maxLowResourcesTime" value="180000"/>
+                </bean>
+            </list>
+        </property>
     </bean>
 
     <beans profile="connector-http">
-      <bean id="jetty" class="org.eclipse.jetty.server.Server"
-	    init-method="start" destroy-method="stop">
-	  <description>Embedded HTTP server</description>
+        <bean id="server-connector" class="org.eclipse.jetty.server.ServerConnector">
+            <description>HTTP connector</description>
+            <constructor-arg ref="jetty"/>
+            <constructor-arg value="${webdav.limits.acceptors}"/>
+            <constructor-arg value="-1"/>
 
-      <property name="gracefulShutdown" value="${webdav.limits.graceful-shutdown}"/>
-      <property name="threadPool" ref="thread-pool"/>
-	  <property name="connectors">
-	      <list>
-		  <bean class="org.eclipse.jetty.server.nio.SelectChannelConnector">
-		      <property name="port" value="${webdav.net.port}"/>
-		      <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
-              <property name="acceptors" value="${webdav.limits.acceptors}"/>
-              <property name="maxIdleTime"
-                        value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.idle-time},
-                     '${webdav.limits.idle-time.unit}')}" />
-              <property name="lowResourceMaxIdleTime"
-                        value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.low-resource-idle-time},
-                     '${webdav.limits.low-resource-idle-time.unit}')}" />
-              <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
-          </bean>
-	      </list>
-	  </property>
+            <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
+            <property name="port" value="${webdav.net.port}"/>
+            <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
+            <property name="idleTimeout"
+                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                                  ${webdav.limits.idle-time},
+                                  '${webdav.limits.idle-time.unit}')}" />
+        </bean>
+    </beans>
 
-	  <property name="handler" ref="handlers"/>
-      </bean>
-  </beans>
+    <beans profile="connector-https">
+        <bean id="server-connector" class="org.eclipse.jetty.server.ServerConnector">
+            <description>HTTPS connector</description>
+            <constructor-arg ref="jetty"/>
+            <constructor-arg value="${webdav.limits.acceptors}"/>
+            <constructor-arg value="-1"/>
+            <constructor-arg>
+                <bean class="org.eclipse.jetty.util.ssl.SslContextFactory">
+                    <property name="keyStorePath" value="${webdav.authn.keystore}"/>
+                    <property name="keyStoreType" value="PKCS12"/>
+                    <property name="keyStorePassword" value="${webdav.authn.keystore.password}"/>
+                    <property name="trustStorePath" value="${webdav.authn.truststore}"/>
+                    <property name="trustStorePassword" value="${webdav.authn.truststore.password}"/>
+                    <property name="wantClientAuth" value="${webdav.authn.accept-client-cert}"/>
+                    <property name="needClientAuth" value="${webdav.authn.require-client-cert}"/>
+                    <property name="excludeCipherSuites" ref="banned-ciphers"/>
+                </bean>
+            </constructor-arg>
 
+            <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
+            <property name="port" value="${webdav.net.port}"/>
+            <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
+            <property name="idleTimeout"
+                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                                  ${webdav.limits.idle-time},
+                                  '${webdav.limits.idle-time.unit}')}" />
+        </bean>
+    </beans>
 
+    <beans profile="connector-https-jglobus">
+        <bean id="server-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
+            <description>HTTPS connector supporting grid certificates</description>
 
-  <beans profile="connector-https,connector-https-jglobus">
-      <bean id="jetty" class="org.eclipse.jetty.server.Server"
-	    init-method="start" destroy-method="stop">
-	  <description>Embedded HTTPS server</description>
+            <property name="server" ref="jetty"/>
 
-      <property name="threadPool" ref="thread-pool"/>
-	  <property name="connectors">
-	      <list>
-		  <ref bean="https-connector"/>
-	      </list>
-	  </property>
+            <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
+            <property name="port" value="${webdav.net.port}"/>
+            <property name="backlog" value="${webdav.limits.backlog}"/>
+            <property name="idleTimeout" value="${webdav.limits.idle-time}"/>
+            <property name="idleTimeoutUnit" value="${webdav.limits.idle-time.unit}"/>
+            <property name="acceptors" value="${webdav.limits.acceptors}"/>
 
-	  <property name="handler" ref="handlers"/>
-      </bean>
-  </beans>
+            <property name="wantClientAuth" value="${webdav.authn.accept-client-cert}"/>
+            <property name="needClientAuth" value="${webdav.authn.require-client-cert}"/>
+            <property name="excludedCipherSuites" ref="banned-ciphers"/>
 
+            <property name="caPath" value="${webdav.authn.capath}"/>
+            <property name="caPathTimeout" value="${webdav.authn.capath.refresh}"/>
+            <property name="caPathTimeoutUnit" value="${webdav.authn.capath.refresh.unit}"/>
 
-  <beans profile="connector-https">
-      <bean id="https-connector"
-	    class="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
-          <description>HTTPS connector from Jetty</description>
-
-          <property name="port" value="${webdav.net.port}"/>
-          <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
-          <property name="keystore" value="${webdav.authn.keystore}"/>
-          <property name="keystoreType" value="PKCS12"/>
-          <property name="password" value="${webdav.authn.keystore.password}"/>
-          <property name="truststore" value="${webdav.authn.truststore}"/>
-          <property name="trustPassword" value="${webdav.authn.truststore.password}"/>
-          <property name="wantClientAuth" value="${webdav.authn.accept-client-cert}"/>
-          <property name="needClientAuth" value="${webdav.authn.require-client-cert}"/>
-          <property name="excludeCipherSuites" ref="banned-ciphers"/>
-          <property name="acceptors" value="${webdav.limits.acceptors}"/>
-          <property name="maxIdleTime"
-                    value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.idle-time},
-                     '${webdav.limits.idle-time.unit}')}" />
-          <property name="lowResourceMaxIdleTime"
-                    value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.low-resource-idle-time},
-                     '${webdav.limits.low-resource-idle-time.unit}')}" />
-          <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
-      </bean>
-  </beans>
-
-
-
-  <beans profile="connector-https-jglobus">
-      <bean id="https-connector" class="org.dcache.util.JettyGSIConnector">
-          <description>HTTPS connector using jGlobus</description>
-
-          <property name="port" value="${webdav.net.port}"/>
-          <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
-          <property name="hostCertificatePath" value="${webdav.authn.hostcert.cert}"/>
-          <property name="hostKeyPath" value="${webdav.authn.hostcert.key}"/>
-          <property name="caCertificatePath" value="${webdav.authn.capath}"/>
-          <property name="autoFlush" value="true"/>
-          <property name="encrypt" value="true"/>
-          <property name="requireClientAuth" value="${webdav.authn.require-client-cert}"/>
-          <property name="acceptNoClientCerts"
-                     value="#{ '${webdav.authn.accept-client-cert}' == 'false' }"/>
-          <property name="gssMode" value="SSL"/>
-          <property name="hostCertRefreshInterval" value="${webdav.authn.hostcert.refresh}"/>
-          <property name="hostCertRefreshIntervalUnit" value="${webdav.authn.hostcert.refresh.unit}"/>
-          <property name="trustAnchorRefreshInterval" value="${webdav.authn.capath.refresh}"/>
-          <property name="trustAnchorRefreshIntervalUnit" value="${webdav.authn.capath.refresh.unit}"/>
-          <property name="excludeCipherSuites" ref="banned-ciphers"/>
-          <property name="acceptors" value="${webdav.limits.acceptors}"/>
-          <property name="maxIdleTime"
-                    value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.idle-time},
-                     '${webdav.limits.idle-time.unit}')}" />
-          <property name="lowResourceMaxIdleTime"
-                    value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.low-resource-idle-time},
-                     '${webdav.limits.low-resource-idle-time.unit}')}" />
-          <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
-          <property name="handshakeTimeout"
-                    value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${webdav.limits.handshake-time},
-                     '${webdav.limits.handshake-time.unit}')}" />
-      </bean>
-  </beans>
-
+            <property name="serverCertificatePath" value="${webdav.authn.hostcert.cert}"/>
+            <property name="serverKeyPath" value="${webdav.authn.hostcert.key}"/>
+            <property name="serverCertificateTimeout" value="${webdav.authn.hostcert.refresh}"/>
+            <property name="serverCertificateTimeoutUnit" value="${webdav.authn.hostcert.refresh.unit}"/>
+        </bean>
+    </beans>
 
     <beans profile="missing-files-false">
         <bean id="missing-file-strategy"

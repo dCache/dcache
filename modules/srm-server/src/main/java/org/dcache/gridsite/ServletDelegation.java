@@ -21,12 +21,17 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import org.apache.axis.MessageContext;
 import org.glite.voms.VOMSValidator;
+import org.globus.gsi.bc.BouncyCastleUtil;
+import org.globus.gsi.util.CertificateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.rpc.holders.StringHolder;
 
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -37,8 +42,9 @@ import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.util.Axis;
 import org.dcache.util.Version;
 
+import static java.util.Arrays.asList;
+import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
 import static org.dcache.gridsite.Utilities.assertThat;
-import static org.globus.axis.gsi.GSIConstants.GSI_USER_DN;
 
 /**
  * Implementation of the Delegation interface, as defined by the WSDL.  Most
@@ -138,7 +144,7 @@ public class ServletDelegation implements Delegation
                 id);
 
         CredentialDelegation delegation =
-                _factory.newDelegation(id, getClientCertificates());
+                _factory.newDelegation(id, asList(getClientCertificates()));
 
         _delegations.add(delegation);
 
@@ -164,7 +170,7 @@ public class ServletDelegation implements Delegation
         assertThat(_credentials.has(id), "no delegated credential", id);
 
         CredentialDelegation delegation =
-                _factory.newDelegation(id, getClientCertificates());
+                _factory.newDelegation(id, asList(getClientCertificates()));
 
         _delegations.add(delegation);
 
@@ -188,31 +194,33 @@ public class ServletDelegation implements Delegation
 
     private String getClientDn() throws DelegationException
     {
-        String dn;
-
         try {
-            dn = Axis.getRequestAttribute(GSI_USER_DN, String.class);
-        } catch (IllegalStateException ignored) {
-            throw new DelegationException("user's DN is not known");
+            X509Certificate[] chain = getClientCertificates();
+            return BouncyCastleUtil.getIdentity(BouncyCastleUtil.getIdentityCertificate(chain));
+        } catch (IllegalStateException | CertificateException e) {
+            throw new DelegationException("user's DN is not known: " + e.getMessage());
         }
-
-        return dn;
     }
 
-    private Iterable<X509Certificate> getClientCertificates()
+    private X509Certificate[] getClientCertificates()
             throws DelegationException
     {
-        X509Certificate[] certificates;
-
         try {
-            certificates =
-                    Axis.getRequestAttribute("javax.servlet.request.X509Certificate",
-                    X509Certificate[].class);
+            MessageContext mctx = MessageContext.getCurrentContext();
+
+            Object tmp = mctx.getProperty(MC_HTTP_SERVLETREQUEST);
+            if (!(tmp instanceof HttpServletRequest)) {
+                throw new DelegationException("HttpServletRequest is missing from Axis message context.");
+            }
+            HttpServletRequest req = (HttpServletRequest) tmp;
+            X509Certificate[] certificates = (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
+            if (certificates == null) {
+                throw new DelegationException("Client's certificate chain is missing from request.");
+            }
+            return certificates;
         } catch (IllegalStateException ignored) {
             throw new DelegationException("user supplied no certificate");
         }
-
-        return Arrays.asList(certificates);
     }
 
     private String generateDelegationId() throws DelegationException
@@ -227,7 +235,7 @@ public class ServletDelegation implements Delegation
     private String getFqanList() throws DelegationException
     {
         VOMSValidator validator =
-                new VOMSValidator(Iterables.toArray(getClientCertificates(),
+                new VOMSValidator(Iterables.toArray(asList(getClientCertificates()),
                 X509Certificate.class));
         String fqans[] = validator.validate().getAllFullyQualifiedAttributes();
         validator.cleanup();

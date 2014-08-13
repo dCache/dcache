@@ -64,10 +64,11 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.Iterables;
 import org.apache.axis.MessageContext;
+import org.globus.gsi.bc.BouncyCastleUtil;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -77,6 +78,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 import org.dcache.auth.util.GSSUtils;
 import org.dcache.srm.SRMAuthorization;
@@ -86,35 +89,32 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
-import static org.globus.axis.gsi.GSIConstants.GSI_CONTEXT;
+import static org.globus.axis.gsi.GSIConstants.GSI_CREDENTIALS;
 
 /**
  * The SrmAUthorizer provides helper methods that mediates access to
- * RequestCredentialStorage.  It uses information (attributes) taken from the
- * Axis request context and updates the Axis MessageContext (properties),
- * specifically:
- *
- *   Property "org.globus.gsi.context" from Attribute "org.globus.gsi.context"
- *   Property "REMOTE_ADDR" from HttpServletRequest's remote address.
+ * RequestCredentialStorage.
  */
 public class SrmAuthorizer
 {
     private static final Logger log = LoggerFactory.getLogger(SrmAuthorizer.class);
-    private static final String REMOTE_ADDR = "REMOTE_ADDR";
 
     private final RequestCredentialStorage storage;
+    private final String vomsdir;
+    private final String capath;
     private final SRMAuthorization authorization;
     private final boolean isClientDNSLookup;
 
     public SrmAuthorizer(SRMAuthorization authorization,
-            RequestCredentialStorage storage, boolean isClientDNSLookup)
+                         RequestCredentialStorage storage, boolean isClientDNSLookup,
+                         String vomsdir, String capath)
     {
         this.isClientDNSLookup = isClientDNSLookup;
         this.authorization = authorization;
         this.storage = storage;
-        log.debug("Successfully initialized");
+        this.vomsdir = vomsdir;
+        this.capath = capath;
     }
-
 
     /**
      * Derive the UserCredential from the current Axis context.  The method
@@ -124,47 +124,46 @@ public class SrmAuthorizer
     {
         try {
             MessageContext mctx = MessageContext.getCurrentContext();
-            setUpEnv(mctx);
 
-            GSSContext gsscontext = (GSSContext)mctx.getProperty(GSI_CONTEXT);
-
-            if(gsscontext == null) {
-                throw new SRMAuthorizationException("cant extract gsscontext " +
-                        "from MessageContext, gsscontext is null");
+            Object tmp = mctx.getProperty(MC_HTTP_SERVLETREQUEST);
+            if (!(tmp instanceof HttpServletRequest)) {
+                throw new SRMAuthorizationException("HttpServletRequest is missing from Axis message context.");
             }
+            HttpServletRequest req = (HttpServletRequest) tmp;
 
-            String secureId = gsscontext.getSrcName().toString();
-            log.debug("User ID (secureId) is: " + secureId);
-            GSSCredential delegcred = gsscontext.getDelegCred();
-            if(delegcred != null) {
+            GSSCredential delegcred = (GSSCredential) req.getAttribute(GSI_CREDENTIALS);
+            if (delegcred != null) {
                 try {
-                    log.debug("User credential (delegcred) is: " +
-                    delegcred.getName());
-                } catch (Exception e) {
-                    log.debug("Caught occasional (usually harmless) exception" +
-                        " when calling " + "delegcred.getName()): ", e);
+                    log.debug("User credential (delegcred) is: {}", delegcred.getName());
+                } catch (GSSException e) {
+                    Throwables.propagate(e);
                 }
             }
+            X509Certificate[] chain = (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
+            if (chain == null) {
+                throw new SRMAuthorizationException("Client's certificate chain is missing from request.");
+            }
+
+            String dn = BouncyCastleUtil.getIdentity(BouncyCastleUtil.getIdentityCertificate(chain));
+
+            log.debug("User ID (secureId) is: {}", dn);
 
             UserCredential userCredential = new UserCredential();
-            userCredential.secureId = secureId;
-            userCredential.context = gsscontext;
+            userCredential.secureId = dn;
             userCredential.credential = delegcred;
-            String remote_addr = (String) mctx.getProperty(REMOTE_ADDR);
-
-            if(isClientDNSLookup) {
-                userCredential.clientHost = InetAddress.getByName(remote_addr).
-                        getCanonicalHostName();
+            userCredential.chain = chain;
+            if (isClientDNSLookup) {
+                userCredential.clientHost = InetAddress.getByName(req.getRemoteAddr()). getCanonicalHostName();
             } else {
-                userCredential.clientHost = remote_addr;
+                userCredential.clientHost = req.getRemoteAddr();
             }
 
             return userCredential;
-        } catch (GSSException | UnknownHostException e) {
+        } catch (UnknownHostException | CertificateException e) {
             log.error("getUserCredentials failed with exception", e);
             throw new SRMAuthorizationException(e.toString(), e);
         }
-   }
+    }
 
 
     /**
@@ -172,14 +171,12 @@ public class SrmAuthorizer
      * back-end system.  Throws SRMAuthorizationException if the user is
      * not authorized.
      */
-    public SRMUser getRequestUser(RequestCredential requestCredential,
-            String role, GSSContext context) throws SRMAuthorizationException
+    public SRMUser getRequestUser(RequestCredential requestCredential, X509Certificate[] chain) throws SRMAuthorizationException
     {
         MessageContext mctx = MessageContext.getCurrentContext();
-        String remoteIP = (String) mctx.getProperty(REMOTE_ADDR);
-
+        HttpServletRequest req = (HttpServletRequest) mctx.getProperty(MC_HTTP_SERVLETREQUEST);
         return authorization.authorize(requestCredential.getId(),
-                requestCredential.getCredentialName(), role, context, remoteIP);
+                requestCredential.getCredentialName(), chain, req.getRemoteAddr());
     }
 
 
@@ -191,47 +188,28 @@ public class SrmAuthorizer
      * for the longest.  The method ensures the best credential is saved in
      * the storage.
      */
-    public RequestCredential getRequestCredential(UserCredential credential,
-            String role)
+    public RequestCredential getRequestCredential(UserCredential credential) throws SRMAuthorizationException
     {
         try {
+            Iterable<String> roles = SrmAuthorizer.getFQANsFromChain(vomsdir, capath, credential.chain);
+            String role = Iterables.getFirst(roles, null);
+
             String id = credential.secureId;
             GSSCredential gssCredential = credential.credential;
             RequestCredential requestCredential = RequestCredential.newRequestCredential(id, role, storage);
             requestCredential.keepBestDelegatedCredential(gssCredential);
             requestCredential.saveCredential();
             return requestCredential;
-        } catch(GSSException e) {
-            throw new RuntimeException("Problem getting request credential", e);
+        } catch (GSSException e) {
+            throw new SRMAuthorizationException("Problem getting request credential", e);
         }
    }
 
-    private void setUpEnv(MessageContext msgContext)
-    {
-        Object tmp = msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
-
-        if(tmp == null || !(tmp instanceof HttpServletRequest)) {
-            return;
-        }
-
-        HttpServletRequest req = (HttpServletRequest) tmp;
-
-        tmp = req.getAttribute(GSI_CONTEXT);
-        if (tmp != null) {
-            msgContext.setProperty(GSI_CONTEXT, tmp);
-        }
-
-        tmp = req.getRemoteAddr();
-        if (tmp != null) {
-            msgContext.setProperty(REMOTE_ADDR, tmp);
-        }
-    }
-
-    static Iterable<String> getFQANsFromContext(String vomsDir, String caDir, ExtendedGSSContext gssContext)
+    static Iterable<String> getFQANsFromChain(String vomsDir, String caDir, X509Certificate[] chain)
             throws SRMAuthorizationException
     {
         try {
-            return GSSUtils.getFQANsFromGSSContext(vomsDir, caDir, gssContext);
+            return GSSUtils.extractFQANs(vomsDir, caDir, chain);
         } catch (AuthorizationException ae) {
             log.error("Could not extract FQANs from context",ae);
             throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());

@@ -214,6 +214,7 @@ check -strong srm.enable.overwrite-by-default
 check -strong srm.enable.pin-online-files
 check -strong srm.enable.recursive-directory-creation
 check -strong srm.enable.space-reservation
+check -strong srm.enable.legacy-close
 
 check -strong srm.user.credentials.directory
 

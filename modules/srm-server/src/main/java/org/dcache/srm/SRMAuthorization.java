@@ -81,27 +81,15 @@ COPYRIGHT STATUS:
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
-
-/*
- * SRMAuthorization.java
- *
- * Created on January 13, 2003, 1:04 PM
- */
-
 package org.dcache.srm;
 
-import org.ietf.jgss.GSSContext;
+import java.security.cert.X509Certificate;
 
-
-/**
- *
- * @author  timur
- */
-public interface SRMAuthorization {
-    public SRMUser authorize(Long requestCredentialId,
-                             String SecureId,
-                             String usename,
-                             GSSContext context,
-                             String remoteIP)
+public interface SRMAuthorization
+{
+    SRMUser authorize(Long requestCredentialId,
+                      String SecureId,
+                      X509Certificate[] chain,
+                      String remoteIP)
         throws SRMAuthorizationException;
 }

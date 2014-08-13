@@ -22,7 +22,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import org.eclipse.jetty.io.EndPoint;
-import org.eclipse.jetty.server.AbstractHttpConnection;
+import org.eclipse.jetty.server.HttpConnection;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.X509Credential;
 import org.slf4j.Logger;
@@ -305,8 +305,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
         private final ImmutableMap<String,String> _transferHeaders;
         private String _problem;
         private long _id;
-        private final EndPoint _endpoint = AbstractHttpConnection.
-                getCurrentConnection().getEndPoint();
+        private final EndPoint _endpoint = HttpConnection.getCurrentConnection().getEndPoint();
 
         private boolean _finished;
 

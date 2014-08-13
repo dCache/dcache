@@ -25,6 +25,11 @@
     </property>
   </bean>
 
+  <!--
+       DCACHE CELL COMMUNICATION
+       =====================================================================================
+    -->
+
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
     <property name="destination" value="${srm.service.poolmanager}"/>
@@ -139,6 +144,16 @@
     <property name="host" value="${srm.net.host}"/>
   </bean>
 
+    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
+        <description>Maintains runtime information about all pools</description>
+        <property name="poolManagerStub" ref="pool-manager-stub"/>
+    </bean>
+
+  <!--
+       AUTHORIZATION
+       =====================================================================================
+    -->
+
   <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
     <description>Persistence manager for authentication</description>
     <constructor-arg>
@@ -171,10 +186,17 @@
     <constructor-arg ref="auth-persistence-manager"/>
   </bean>
 
-    <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
-        <description>Maintains runtime information about all pools</description>
-        <property name="poolManagerStub" ref="pool-manager-stub"/>
+    <bean id="srm-credential-store"
+          class="org.dcache.srm.request.sql.DatabaseRequestCredentialStorage">
+        <description>SRM credential store</description>
+
+        <constructor-arg ref="config"/>
     </bean>
+
+  <!--
+       CORE SRM
+       =====================================================================================
+    -->
 
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage">
     <description>dCache plugin for SRM</description>
@@ -433,34 +455,6 @@
               value="#{ '${srm.persistence.reserve-space.enable.store-transient-state}'.equals('false') ? true : false }"/>
   </bean>
 
-    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-        <description>Connection pool decorator</description>
-        <constructor-arg value="${srm.db.url}"/>
-        <constructor-arg value="Srm"/>
-        <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariDataSource">
-                <description>Database connection pool</description>
-                <constructor-arg>
-                    <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="driverClassName" value="java.lang.String"/>
-                        <property name="jdbcUrl" value="${srm.db.url}"/>
-                        <property name="username" value="${srm.db.user}"/>
-                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>
-                        <property name="minimumIdle" value="${srm.db.connections.idle}"/>
-                        <property name="maximumPoolSize" value="${srm.db.connections.max}"/>
-                        <property name="autoCommit" value="true"/>
-                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
-                    </bean>
-                </constructor-arg>
-            </bean>
-        </constructor-arg>
-    </bean>
-
-  <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-    <description>Database transaction manager</description>
-    <property name="dataSource" ref="data-source"/>
-  </bean>
-
   <bean id="scheduler-get" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for GET operations</description>
@@ -606,31 +600,62 @@
 
   <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
         init-method="start" destroy-method="stop">
-    <description>Thread pool used by Jetty for request processing</description>
-    <property name="maxIdleTimeMs"
+      <description>Thread pool used by Jetty for request processing</description>
+
+      <constructor-arg value="${srm.limits.jetty.threads.max}"/>
+      <constructor-arg value="${srm.limits.jetty.threads.min}"/>
+      <constructor-arg
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.limits.jetty.threads.idle-time.max},
                      '${srm.limits.jetty.threads.idle-time.max.unit}')}" />
-    <property name="maxThreads" value="${srm.limits.jetty.threads.max}"/>
-    <property name="minThreads" value="${srm.limits.jetty.threads.min}"/>
-    <property name="name" value="jetty-srm"/>
-    <property name="maxQueued" value="${srm.limits.jetty.threads.queued.max}"/>
+      <constructor-arg>
+              <bean class="org.eclipse.jetty.util.BlockingArrayQueue">
+                  <constructor-arg value="${srm.limits.jetty.threads.queued.max}"/>
+              </bean>
+      </constructor-arg>
+
+      <property name="name" value="jetty-srm"/>
   </bean>
 
-  <bean id="banned-ciphers" class="org.dcache.util.Crypto"
-        factory-method="getBannedCipherSuitesFromConfigurationValue">
-    <description>Banned authentication ciphers</description>
-    <constructor-arg value="${srm.authn.ciphers}"/>
-  </bean>
+  <!--
+       DATABASE
+       =====================================================================================
+    -->
 
-  <bean id="srm-credential-store"
-        class="org.dcache.srm.request.sql.DatabaseRequestCredentialStorage">
-      <description>SRM credential store</description>
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Connection pool decorator</description>
+        <constructor-arg value="${srm.db.url}"/>
+        <constructor-arg value="Srm"/>
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
+                <description>Database connection pool</description>
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="driverClassName" value="java.lang.String"/>
+                        <property name="jdbcUrl" value="${srm.db.url}"/>
+                        <property name="username" value="${srm.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>
+                        <property name="minimumIdle" value="${srm.db.connections.idle}"/>
+                        <property name="maximumPoolSize" value="${srm.db.connections.max}"/>
+                        <property name="autoCommit" value="true"/>
+                        <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
 
-      <constructor-arg ref="config"/>
-  </bean>
+    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="data-source"/>
+    </bean>
 
-  <bean id="gridsite-credential-delegation-store"
+  <!--
+       GRIDSITE DELEGATION
+       =====================================================================================
+   -->
+
+    <bean id="gridsite-credential-delegation-store"
 	class="org.dcache.gridsite.InMemoryCredentialDelegationStore"
 	init-method="start">
       <description>Store for on-going GridSite delegations</description>
@@ -671,132 +696,116 @@
       <entry key="implementation" value="dCache"/>
   </util:map>
 
-  <bean id="server" class="org.eclipse.jetty.server.Server"
+   <!--
+        JETTY SERVER
+        =====================================================================================
+    -->
+
+    <bean abstract="true" id="globus-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
+        <property name="server" ref="server"/>
+
+        <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
+        <property name="backlog" value="${srm.limits.jetty-connector.backlog}"/>
+        <property name="idleTimeout" value="${srm.limits.jetty-connector.idle-time.max}"/>
+        <property name="idleTimeoutUnit" value="${srm.limits.jetty-connector.idle-time.max.unit}"/>
+        <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
+
+        <property name="needClientAuth" value="true"/>
+        <property name="wantClientAuth" value="true"/>
+        <property name="cipherFlags" value="${srm.authn.ciphers}"/>
+
+        <property name="caPath" value="${srm.authn.capath}"/>
+        <property name="caPathTimeout" value="${srm.authn.hostcert.refresh}"/>
+        <property name="caPathTimeoutUnit" value="${srm.authn.hostcert.refresh.unit}"/>
+
+        <property name="serverCertificatePath" value="${srm.authn.hostcert.cert}"/>
+        <property name="serverKeyPath" value="${srm.authn.hostcert.key}"/>
+        <property name="serverCertificateTimeout" value="${srm.authn.capath.refresh}"/>
+        <property name="serverCertificateTimeoutUnit" value="${srm.authn.capath.refresh.unit}"/>
+    </bean>
+
+    <bean id="server" class="org.eclipse.jetty.server.Server"
         init-method="start" destroy-method="stop">
-    <description>Jetty server hosting the SRM web application</description>
+        <description>Jetty server hosting the SRM web application</description>
 
-    <property name="gracefulShutdown" value="${srm.limits.jetty.graceful-shutdown}"/>
-    <property name="threadPool" ref="thread-pool"/>
+        <constructor-arg ref="thread-pool"/>
 
-    <property name="connectors">
-      <list>
-        <ref bean="gsi-connector"/>
-        <ref bean="ssl-connector"/>
-      </list>
-    </property>
+        <property name="stopTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                         ${srm.limits.jetty.graceful-shutdown},
+                         '${srm.limits.jetty.graceful-shutdown.unit}')}"/>
 
-    <property name="handler">
-      <bean class="org.eclipse.jetty.server.handler.HandlerList">
-        <property name="handlers">
-          <list>
-            <bean class="org.eclipse.jetty.webapp.WebAppContext">
-              <property name="contextPath" value="/srm"/>
-              <property name="war" value="${dcache.paths.share}/srm-webapp"/>
-              <property name="configurationClasses">
-                <list>
-                  <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>
-                  <value>org.eclipse.jetty.plus.webapp.EnvConfiguration</value>
-                  <value>org.eclipse.jetty.plus.webapp.PlusConfiguration</value>
-                  <value>org.eclipse.jetty.webapp.WebXmlConfiguration</value>
-                  <value>org.eclipse.jetty.webapp.TagLibConfiguration</value>
-                </list>
-              </property>
-              <property name="attributes">
-                <bean class="org.eclipse.jetty.util.AttributesMap">
-                  <constructor-arg>
-                    <map>
-                      <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_CONFIG }"
-                             value-ref="config"/>
-                      <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_STORAGE }"
-                             value-ref="storage"/>
-                      <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM }"
-                             value-ref="srm"/>
-                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_STORE }"
-			     value-ref="gridsite-credential-store"/>
-                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_STORE }"
-			     value-ref="gridsite-credential-delegation-store"/>
-                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_FACTORY }"
-			     value-ref="gridsite-credential-delegation-factory"/>
-                      <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_SERVICE_METADATA }"
-			     value-ref="gridsite-service-metadata"/>
-                    </map>
-                  </constructor-arg>
+        <property name="connectors">
+            <list>
+                <bean parent="globus-connector">
+                    <description>GSI interface</description>
+                    <property name="port" value="${srm.net.port}"/>
+                    <property name="enableGsi" value="true"/>
+                    <property name="usingLegacyClose" value="${srm.enable.legacy-close}"/>
                 </bean>
-              </property>
-            </bean>
 
-            <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-          </list>
+                <bean parent="globus-connector">
+                    <description>SSL interface</description>
+                    <property name="port" value="${srm.net.ssl-port}"/>
+                </bean>
+            </list>
         </property>
-      </bean>
-    </property>
-  </bean>
 
-  <bean id="gsi-connector"
-        class="org.dcache.util.JettyGSIConnector">
-    <description>synchronous GSI connector</description>
-    <property name="port" value="${srm.net.port}"/>
-    <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
-    <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
-    <property name="maxIdleTime"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.limits.jetty-connector.idle-time.max},
-                     '${srm.limits.jetty-connector.idle-time.max.unit}')}" />
-    <property name="lowResourceMaxIdleTime"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.limits.jetty-connector.low-resource.max.idle-time},
-                     '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}" />
-    <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
-    <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
-    <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
-    <property name="caCertificatePath" value="${srm.authn.capath}"/>
-    <property name="autoFlush" value="true"/>
-    <property name="encrypt" value="true"/>
-    <property name="requireClientAuth" value="true"/>
-    <property name="acceptNoClientCerts" value="false"/>
-    <property name="gssMode" value="gsi"/>
-    <property name="handshakeTimeout"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.limits.jetty-connector.handshake.timeout},
-                     '${srm.limits.jetty-connector.handshake.timeout.unit}')}" />
-    <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
-    <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
-    <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
-    <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
-    <property name="excludeCipherSuites" ref="banned-ciphers"/>
-  </bean>
+        <property name="handler">
+            <bean class="org.eclipse.jetty.server.handler.HandlerList">
+                <property name="handlers">
+                    <list>
+                        <bean class="org.eclipse.jetty.webapp.WebAppContext">
+                            <property name="contextPath" value="/srm"/>
+                            <property name="war" value="${dcache.paths.share}/srm-webapp"/>
+                            <property name="configurationClasses">
+                                <list>
+                                    <value>org.eclipse.jetty.webapp.WebInfConfiguration</value>
+                                    <value>org.eclipse.jetty.plus.webapp.EnvConfiguration</value>
+                                    <value>org.eclipse.jetty.plus.webapp.PlusConfiguration</value>
+                                    <value>org.eclipse.jetty.webapp.WebXmlConfiguration</value>
+                                </list>
+                            </property>
+                            <property name="attributes">
+                                <bean class="org.dcache.util.jetty.ImmutableAttributesMap">
+                                    <constructor-arg>
+                                        <map>
+                                          <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_CONFIG }"
+                                                 value-ref="config"/>
+                                          <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_STORAGE }"
+                                                 value-ref="storage"/>
+                                          <entry key="#{ T(org.dcache.srm.util.Axis).ATTRIBUTE_NAME_SRM }"
+                                                 value-ref="srm"/>
+                                          <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_STORE }"
+                                     value-ref="gridsite-credential-store"/>
+                                          <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_STORE }"
+                                     value-ref="gridsite-credential-delegation-store"/>
+                                          <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_CREDENTIAL_DELEGATION_FACTORY }"
+                                     value-ref="gridsite-credential-delegation-factory"/>
+                                          <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_SERVICE_METADATA }"
+                                     value-ref="gridsite-service-metadata"/>
+                                        </map>
+                                    </constructor-arg>
+                                </bean>
+                            </property>
+                        </bean>
 
-  <bean id="ssl-connector"
-        class="org.dcache.util.JettyGSIConnector">
-    <description>synchronous SSL connector</description>
-    <property name="port" value="${srm.net.ssl-port}"/>
-    <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
-    <property name="acceptors" value="${srm.limits.jetty-connector.acceptors}"/>
-    <property name="maxIdleTime"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.limits.jetty-connector.idle-time.max},
-                     '${srm.limits.jetty-connector.idle-time.max.unit}')}" />
-    <property name="lowResourceMaxIdleTime"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.limits.jetty-connector.low-resource.max.idle-time},
-                     '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}" />
-    <property name="acceptQueueSize" value="${srm.limits.jetty-connector.backlog}"/>
-    <property name="hostCertificatePath" value="${srm.authn.hostcert.cert}"/>
-    <property name="hostKeyPath" value="${srm.authn.hostcert.key}"/>
-    <property name="caCertificatePath" value="${srm.authn.capath}"/>
-    <property name="autoFlush" value="true"/>
-    <property name="encrypt" value="true"/>
-    <property name="requireClientAuth" value="true"/>
-    <property name="acceptNoClientCerts" value="false"/>
-    <property name="gssMode" value="ssl"/>
-    <property name="handshakeTimeout"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.limits.jetty-connector.handshake.timeout},
-                     '${srm.limits.jetty-connector.handshake.timeout.unit}')}" />
-    <property name="hostCertRefreshInterval" value="${srm.authn.hostcert.refresh}" />
-    <property name="hostCertRefreshIntervalUnit" value="${srm.authn.hostcert.refresh.unit}" />
-    <property name="trustAnchorRefreshInterval" value="${srm.authn.capath.refresh}" />
-    <property name="trustAnchorRefreshIntervalUnit" value="${srm.authn.capath.refresh.unit}" />
-    <property name="excludeCipherSuites" ref="banned-ciphers"/>
-  </bean>
+                        <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                    </list>
+                </property>
+            </bean>
+        </property>
+
+        <property name="beans">
+            <list>
+                <bean class="org.eclipse.jetty.server.LowResourceMonitor">
+                    <constructor-arg ref="server"/>
+                    <property name="lowResourcesIdleTimeout"
+                              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                                  ${srm.limits.jetty-connector.low-resource.max.idle-time},
+                                 '${srm.limits.jetty-connector.low-resource.max.idle-time.unit}')}"/>
+                    <property name="maxLowResourcesTime" value="180000"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
 </beans>

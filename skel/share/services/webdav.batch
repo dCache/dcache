@@ -58,8 +58,6 @@ check -strong webdav.limits.idle-time
 check -strong webdav.limits.idle-time.unit
 check -strong webdav.limits.low-resource-idle-time
 check -strong webdav.limits.low-resource-idle-time.unit
-check -strong webdav.limits.handshake-time
-check -strong webdav.limits.handshake-time.unit
 check -strong webdav.limits.backlog
 check -strong webdav.limits.threads.max
 check -strong webdav.limits.threads.min
