@@ -2016,6 +2016,11 @@ public class RequestContainerV5
                _log.warn(err);
                setError(130, err);
                return RT_ERROR;
+           } catch (IllegalArgumentException e) {
+               String err = "Read pool selection failed:" + e.getMessage();
+               _log.error(err);
+               setError(130, err);
+               return RT_ERROR;
            } catch (RuntimeException e) {
                _log.error("Read pool selection failed", e);
                setError(130, "Read pool selection failed: " + e.toString());
@@ -2078,6 +2083,10 @@ public class RequestContainerV5
                 setError(128, e.getMessage());
                 _log.error("[p2p] {}", e.toString());
                 return RT_ERROR;
+            } catch (IllegalArgumentException e) {
+                setError(128, e.getMessage());
+                _log.error("[p2p] {}", e.getMessage());
+                return RT_ERROR;
             } catch (RuntimeException e) {
                 setError(128, e.getMessage());
                 _log.error("[p2p] contact support@dcache.org", e);
@@ -2132,6 +2141,10 @@ public class RequestContainerV5
             } catch (NoRouteToCellException e) {
                 setError(128, e.getMessage());
                 _log.error("[stage] {}", e.toString());
+                return RT_ERROR;
+            } catch (IllegalArgumentException e) {
+                setError(128, e.getMessage());
+                _log.error("[stage] {}", e.getMessage());
                 return RT_ERROR;
             } catch (RuntimeException e) {
                 setError(128, e.getMessage());
