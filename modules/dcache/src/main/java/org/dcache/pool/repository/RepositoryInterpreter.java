@@ -304,6 +304,7 @@ public class RepositoryInterpreter
                 @Override
                 public void run()
                 {
+                    int cnt = 0;
                     for (PnfsId id: _repository) {
                         try {
                             CacheEntry entry = _repository.getEntry(id);
@@ -315,19 +316,20 @@ public class RepositoryInterpreter
                             String sc = info.getStorageClass();
                             if (sc.equals(storageClassName)) {
                                 _repository.setState(id, EntryState.REMOVED);
+                                cnt++;
                             }
-                        } catch (FileNotInCacheException e) {
+                        } catch (FileNotInCacheException ignored) {
                             // File was deleted - no problem
-                        } catch (IllegalTransitionException e) {
+                        } catch (IllegalTransitionException ignored) {
                             // File is transient - no problem
                         } catch (CacheException e) {
-                            _log.error("File removal failed: " + e.getMessage());
+                            _log.error("Failed to delete {}: {}", id, e.getMessage());
                         } catch (InterruptedException e) {
-                            _log.warn("File removal was interrupted: " +
-                                      e.getMessage());
+                            _log.warn("File removal was interrupted.");
                             break;
                         }
                     }
+                    _log.info("'rep rmclass {}' removed {} files.", storageClassName, cnt);
                 }
             }, "rmclass").start();
         return "Backgrounded";
