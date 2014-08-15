@@ -1,8 +1,15 @@
 #!/bin/sh
 
+usage() {
+    echo "Usage: $0 <command> <path> [options]"
+    echo "Available commands are:"
+    echo "    chgrp chmod chown ls lstag mkdir readtag rmtag writetag"
+    echo "    writedata setfacl getfacl checksum"
+}
+
 if [ $# -lt 2 ]
 then
-    echo "Usage <command> <path> [options]"
+    usage
     exit 1
 fi
 
@@ -62,10 +69,9 @@ class_for_command() # in $1 command name, out $2 class
 	    ;;
 
 	*)
-	    echo "Unknown command $1.  Available commands are:"
-            echo "    chgrp chmod chown ls lstag mkdir readtag rmtag writetag"
-            echo "    writedata setfacl getfacl checksum"
-            exit 1
+	    echo "Unknown command $1."
+	    usage
+	    exit 1
 	    ;;
     esac
 
@@ -97,4 +103,3 @@ quickJava -Xbootclasspath/a:$classpath \
     $(getProperty chimera.db.user) \
     ${dbpass:-""} \
     "$@"
-
