@@ -76,16 +76,22 @@ class LdapPluginTest extends FlatSpec with Matchers {
     set.isInstanceOf[java.io.Serializable] should be (true)
   }
 
-  it should "return an empty Set for an non existent Uid" in {
-    ldapPlugin.reverseMap(new UidPrincipal("666")) should be ('empty)
+  it should "throw an NoSuchPrincipalException for a non existent Uid" in {
+
+    intercept[NoSuchPrincipalException] {
+      ldapPlugin.reverseMap(new UidPrincipal("666"))
+    }
   }
 
   it should "return a Set containing a GroupNamePrincipal for an existing Gid" in {
     ldapPlugin.reverseMap(new GidPrincipal("3752", true)) should contain (new GroupNamePrincipal("htw-berlin"))
   }
 
-  it should "return an empty Set for a non existent Gid" in {
-    ldapPlugin.reverseMap(new GidPrincipal("51000", true)) should be ('empty)
+  it should "throw a NoSuchPrincipalException for a non existent Gid" in {
+
+    intercept[NoSuchPrincipalException] {
+      ldapPlugin.reverseMap(new GidPrincipal("51000", true))
+    }
   }
 
   "session" should "return the user's home and root directory, and the access rights" in {
