@@ -334,7 +334,12 @@ public class Subjects
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(new UidPrincipal(user.UID));
-        principals.add(new GidPrincipal(user.GID, primary));
+
+        boolean isPrimary = primary;
+        for (int gid: user.GIDs) {
+            principals.add(new GidPrincipal(gid, isPrimary));
+            isPrimary = false;
+        }
 
         String name = user.Username;
         if (name != null && !name.isEmpty()) {

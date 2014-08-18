@@ -1,8 +1,6 @@
 package org.dcache.auth.gplazma;
 
 import org.globus.gsi.jaas.GlobusPrincipal;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
@@ -38,71 +36,46 @@ import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
- * A principal that represent an entry in a kpwd file.
+ * A principal that represents an entry in a kpwd file.
  *
  * Used internally by the KpwdPlugin to pass along identifying
  * information between the auth, map, account, and session steps.
  */
+@SuppressWarnings("deprecation")
 class KpwdPrincipal
     implements Principal, Serializable
 {
     private static final long serialVersionUID = -5104794169722666904L;
-    private String _name;
-    private long _uid;
-    private long _gid;
-    private boolean _isDisabled;
-    private String _home;
-    private String _root;
-    private boolean _isReadOnly;
+    final String name;
+    final long uid;
+    final long[] gids;
+    final boolean isDisabled;
+    final String home;
+    final String root;
+    final boolean isReadOnly;
 
-    public KpwdPrincipal(UserAuthBase record)
-    {
+    public KpwdPrincipal(UserAuthBase record) {
         checkNotNull(record);
-        _name = record.Username;
-        _uid = record.UID;
-        _gid = record.GID;
-        _isDisabled =
-            (record instanceof UserPwdRecord &&
-             ((UserPwdRecord) record).isDisabled());
-        _home = record.Home;
-        _root = record.Root;
-        _isReadOnly = record.ReadOnly;
+        name = record.Username;
+        uid = record.UID;
+        home = record.Home;
+        root = record.Root;
+        isReadOnly = record.ReadOnly;
+        gids = new long[record.GIDs.size()];
+        for (int i = 0; i < gids.length; i++ ){
+            gids[i] = record.GIDs.get(i);
+        }
+        if (record instanceof UserPwdRecord) {
+            isDisabled = ((UserPwdRecord)record).isDisabled();
+        } else {
+            isDisabled = false;
+        }
     }
 
     @Override
     public String getName()
     {
-        return _name;
-    }
-
-    public long getUid()
-    {
-        return _uid;
-    }
-
-    public long getGid()
-    {
-        return _gid;
-    }
-
-    public boolean isDisabled()
-    {
-        return _isDisabled;
-    }
-
-    public String getHome()
-    {
-        return _home;
-    }
-
-    public String getRoot()
-    {
-        return _root;
-    }
-
-    public boolean isReadOnly()
-    {
-        return _isReadOnly;
+        return name;
     }
 
     @Override
@@ -118,7 +91,6 @@ public class KpwdPlugin
                GPlazmaAccountPlugin,
                GPlazmaSessionPlugin
 {
-    private static Logger logger = LoggerFactory.getLogger(KpwdPlugin.class);
     private final static String KPWD = "gplazma.kpwd.file";
 
     private final File _kpwdFile;
@@ -162,6 +134,7 @@ public class KpwdPlugin
      * Authenticates login name + password and generates a
      * KpwdPrincipal.
      */
+    @SuppressWarnings("null")
     @Override
     public void authenticate(Set<Object> publicCredentials,
                              Set<Object> privateCredentials,
@@ -195,6 +168,7 @@ public class KpwdPlugin
      *
      * Authorizes user name, DN, Kerberos principal, UID and GID.
      */
+    @SuppressWarnings({ "null", "deprecation" })
     @Override
     public void map(Set<Principal> principals)
         throws AuthenticationException
@@ -262,11 +236,15 @@ public class KpwdPlugin
          * authorize the KpwdPrincipal to allow blacklisting in the
          * account step.
          */
-        checkAuthentication(!kpwd.isDisabled(), "account disabled");
+        checkAuthentication(!kpwd.isDisabled, "account disabled");
 
         principals.add(new UserNamePrincipal(kpwd.getName()));
-        principals.add(new UidPrincipal(kpwd.getUid()));
-        principals.add(new GidPrincipal(kpwd.getGid(), true));
+        principals.add(new UidPrincipal(kpwd.uid));
+        boolean primary = true;
+        for (long gid: kpwd.gids) {
+            principals.add(new GidPrincipal(gid, primary));
+            primary = false;
+        }
     }
 
     private static String errorMessage(Principal principal1,
@@ -286,6 +264,7 @@ public class KpwdPlugin
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static String nameFor(Principal principal)
     {
         if(principal instanceof KerberosPrincipal) {
@@ -307,13 +286,14 @@ public class KpwdPlugin
     {
         KpwdPrincipal kpwd =
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
-        checkAuthentication(kpwd == null || !kpwd.isDisabled(),
+        checkAuthentication(kpwd == null || !kpwd.isDisabled,
                 "account disabled");
     }
 
     /**
      * Assigns home, root and read only attributes from KpwdPrincipal.
      */
+    @SuppressWarnings("null")
     @Override
     public void session(Set<Principal> authorizedPrincipals,
                         Set<Object> attrib)
@@ -323,8 +303,8 @@ public class KpwdPlugin
             getFirst(filter(authorizedPrincipals, KpwdPrincipal.class), null);
         checkAuthentication(kpwd != null, "no record found");
 
-        attrib.add(new HomeDirectory(kpwd.getHome()));
-        attrib.add(new RootDirectory(kpwd.getRoot()));
-        attrib.add(new ReadOnly(kpwd.isReadOnly()));
+        attrib.add(new HomeDirectory(kpwd.home));
+        attrib.add(new RootDirectory(kpwd.root));
+        attrib.add(new ReadOnly(kpwd.isReadOnly));
     }
 }

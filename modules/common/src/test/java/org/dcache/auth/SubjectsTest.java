@@ -261,8 +261,8 @@ public class SubjectsTest
     {
         UserAuthRecord authRecord = new UserAuthRecord();
         authRecord.UID = (int)UID1;
-
-        authRecord.GIDs = new int[] { (int)GID1, (int)GID2 };
+        authRecord.GIDs.add((int)GID1);
+        authRecord.GIDs.add((int)GID2);
         Subject subject = Subjects.getSubject(authRecord);
         long[] gids = Subjects.getGids(subject);
 

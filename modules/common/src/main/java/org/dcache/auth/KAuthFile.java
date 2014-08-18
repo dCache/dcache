@@ -66,6 +66,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.auth;
 
+import com.google.common.base.Joiner;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -79,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -228,13 +231,7 @@ public class KAuthFile {
             }
         }
         int uid = Integer.parseInt(t.nextToken());
-
-        //allow gids to be coma separated list
-        StringTokenizer st1 = new StringTokenizer(t.nextToken(),",");
-        int[] gids = new int[st1.countTokens()];
-        for(int i =0; st1.hasMoreTokens(); ++i) {
-           gids[i]= Integer.parseInt(st1.nextToken());
-        }
+        int[] gids = parseGids(t.nextToken());
         String home = t.nextToken();
         String root = t.nextToken();
         String fsroot = root;
@@ -282,7 +279,7 @@ public class KAuthFile {
             }
         }
         int uid = Integer.parseInt(t.nextToken());
-        int gid = Integer.parseInt(t.nextToken());
+        int[] gids = parseGids(t.nextToken());
         String home = t.nextToken();
         String root = t.nextToken();
         String fsroot = root;
@@ -290,12 +287,24 @@ public class KAuthFile {
             fsroot = t.nextToken();
         }
 
-        UserPwdRecord rec =  new UserPwdRecord(username,passwd,readOnly,uid,gid,home,root,fsroot);
+        UserPwdRecord rec =  new UserPwdRecord(username,passwd,readOnly,uid,gids,home,root,fsroot);
 
         if (rec.isValid()) {
             return rec;
         }
         return null;
+    }
+
+    /*
+     * Allow gids to be a comma-separated list.
+     */
+    private int[] parseGids(String token) {
+        StringTokenizer st1 = new StringTokenizer(token, ",");
+        int[] gids = new int[st1.countTokens()];
+        for(int i =0; st1.hasMoreTokens(); ++i) {
+           gids[i]= Integer.parseInt(st1.nextToken());
+        }
+        return gids;
     }
 
     @Override
@@ -348,7 +357,8 @@ public class KAuthFile {
         sb.append(record.Password).append(" ");
         sb.append(record.readOnlyStr()).append(" ");
         sb.append(record.UID).append(" ");
-        sb.append(record.GID).append(" ");
+        sb.append(Joiner.on(",").skipNulls()
+                        .join(record.GIDs.iterator())).append(" ");
         sb.append(record.Home).append(" ");
         sb.append(record.Root);
         if (!record.Root.equals(record.FsRoot)) {
@@ -358,11 +368,7 @@ public class KAuthFile {
     }
 
     public UserAuthRecord getUserRecord(String username) {
-        UserAuthRecord rec = auth_records.get(username);
-        if (rec!=null) {
-            rec.currentGIDindex = 0;
-        }
-        return rec;
+        return auth_records.get(username);
     }
 
     public String getIdMapping(String id) {
@@ -741,10 +747,12 @@ public class KAuthFile {
                 " is not in the range [1,65535]");
             }
             if(pwd_record != null) {
-                pwd_record.GID = gid;
+                pwd_record.GIDs.clear();
+                pwd_record.GIDs.add(gid);
             }
             if(auth_record != null) {
-                auth_record.GID = gid;
+                auth_record.GIDs.clear();
+                auth_record.GIDs.add(gid);
             }
         }
 

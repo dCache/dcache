@@ -132,7 +132,7 @@ public class KAuthFileTests
         assertEquals(home, record.Home);
         assertEquals(hash, record.Password);
         assertEquals(uid, record.UID);
-        assertEquals(gid, record.GID);
+        assertEquals(gid, record.GIDs.get(0).intValue());
         assertEquals(isReadOnly, record.ReadOnly);
         assertEquals(root, record.Root);
         assertEquals(user, record.Username);

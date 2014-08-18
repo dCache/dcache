@@ -155,7 +155,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
             return answer;
         }
         uid  = pwdRecord.UID;
-        gid  = pwdRecord.GID;
+        gid  = pwdRecord.GIDs.get(0);
         home = pwdRecord.Home;
 
         answer.put("uid", String.valueOf(uid));
