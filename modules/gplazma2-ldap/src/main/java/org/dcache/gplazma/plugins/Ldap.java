@@ -200,6 +200,11 @@ public class Ldap implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazm
                     principals.add(new UserNamePrincipal(name));
                 }
             }
+
+            if (principals.isEmpty()) {
+                throw new NoSuchPrincipalException("no reverse mapping");
+            }
+
             return principals;
         } catch (NamingException e) {
             _log.warn("Failed to get reverse mapping: {}", e.toString());
