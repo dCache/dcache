@@ -207,33 +207,38 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     })
   }
 
-  def reverseMap(principal: Principal) = new java.util.HashSet[Principal](
-    WrapAsJava.asJavaCollection((
-    try {
-      val id: String = principal.getName
-      principal match {
-        case _: GidPrincipal =>
-          reverseMapSearchGroup(id).map((searchResult) => {
-            new GroupNamePrincipal(
-              searchResult.getAttributes.get(Ldap.COMMON_NAME_ATTRIBUTE)
-            )
-          })
-        case _: UidPrincipal =>
-          reverseMapSearchUser(id).map((searchResult) => {
-              new UserNamePrincipal(
-                searchResult.getAttributes.get(Ldap.USER_ID_ATTRIBUTE)
-              )
-            })
-        case _ => Nil
-      }
-    }
-    catch {
-      case e: NamingException => {
-        log.debug("Failed to get reverse mapping: {}", e.toString)
-        Nil
-      }
-    }
-  ).toSet[Principal]))
+  def reverseMap(principal: Principal) = {
+    new java.util.HashSet[Principal](
+      WrapAsJava.asJavaCollection((
+        try {
+          val id: String = principal.getName
+          principal match {
+            case _: GidPrincipal =>
+              reverseMapSearchGroup(id).map((searchResult) => {
+                new GroupNamePrincipal(
+                  searchResult.getAttributes.get(Ldap.COMMON_NAME_ATTRIBUTE)
+                )
+              })
+            case _: UidPrincipal =>
+              reverseMapSearchUser(id).map((searchResult) => {
+                new UserNamePrincipal(
+                  searchResult.getAttributes.get(Ldap.USER_ID_ATTRIBUTE)
+                )
+              })
+            case _ => Nil
+          }
+        }
+        catch {
+          case e: NamingException => {
+            log.debug("Failed to get reverse mapping: {}", e.toString)
+            Nil
+          }
+        }
+        ).toSet[Principal]) match {
+        case mapping if mapping.isEmpty => throw new NoSuchPrincipalException("No reverse mapping")
+        case mapping => mapping
+      })
+  }
 
   private def reverseMapSearchUser(id: String) = JEnumerationWrapper {
     retryWithNewContextOnException( () => {
