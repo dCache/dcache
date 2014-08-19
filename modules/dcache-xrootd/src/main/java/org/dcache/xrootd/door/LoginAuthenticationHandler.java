@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -17,6 +19,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
+import org.dcache.auth.Origin;
 import org.dcache.util.CertificateFactories;
 import org.dcache.xrootd.core.XrootdAuthenticationHandler;
 import org.dcache.xrootd.core.XrootdException;
@@ -54,6 +57,7 @@ public class LoginAuthenticationHandler
     {
         try {
             LoginReply reply = _loginStrategy.login(translateSubject(subject));
+            reply = addOrigin(reply, ((InetSocketAddress) context.getChannel().getRemoteAddress()).getAddress());
             context.sendUpstream(new LoginEvent(context.getChannel(), reply));
             return reply.getSubject();
         } catch (PermissionDeniedCacheException e) {
@@ -65,6 +69,16 @@ public class LoginAuthenticationHandler
                        subject, e.getMessage());
             throw new XrootdException(kXR_ServerError, e.getMessage());
         }
+    }
+
+    private LoginReply addOrigin(LoginReply login, InetAddress address)
+    {
+        Subject subject = new Subject(false,
+                                      login.getSubject().getPrincipals(),
+                                      login.getSubject().getPublicCredentials(),
+                                      login.getSubject().getPrivateCredentials());
+        subject.getPrincipals().add(new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, address));
+        return new LoginReply(subject, login.getLoginAttributes());
     }
 
     private Subject translateSubject(Subject subject) throws CertificateException
