@@ -1,5 +1,6 @@
 package org.dcache.services.info.base;
 
+import com.google.common.collect.Ordering;
 import org.junit.Assert;
 
 import java.util.HashMap;
@@ -125,9 +126,8 @@ public class TestStateExhibitor implements StateExhibitor, Cloneable {
 
             visitor.visitCompositePreDescend( ourPath, visitMetadata);
 
-            for( Map.Entry<String, Node> entry : _children.entrySet()) {
-                String childName = entry.getKey();
-                Node child = entry.getValue();
+            for (String childName : Ordering.natural().sortedCopy(_children.keySet())) {
+                Node child = _children.get(childName);
 
                 StatePath childPath = (ourPath == null)
                         ? new StatePath( childName)
