@@ -1,5 +1,7 @@
 package org.dcache.gplazma.loader.cli;
 
+import com.google.common.collect.Ordering;
+
 import java.io.PrintStream;
 
 import org.dcache.gplazma.loader.PluginMetadata;
@@ -53,7 +55,7 @@ public class ListCommand implements Command {
             boolean firstAlias = true;
             StringBuilder sb = new StringBuilder();
             sb.append( shortestName);
-            for( String name : plugin.getPluginNames()) {
+            for( String name : Ordering.natural().sortedCopy(plugin.getPluginNames())) {
                 if( name.equals( shortestName)) {
                     continue;
                 }
@@ -83,7 +85,7 @@ public class ListCommand implements Command {
             StringBuilder sb = new StringBuilder();
             sb.append( "    Name: ");
             boolean isFirstName = true;
-            for( String name : plugin.getPluginNames()) {
+            for( String name : Ordering.natural().sortedCopy(plugin.getPluginNames())) {
                 if( !isFirstName) {
                     sb.append( ",");
                 }
