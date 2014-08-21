@@ -574,6 +574,17 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="tigran" id="1.1">
+        <preConditions>
+            <not>
+                <indexExists indexName="i_dirs_ipnfsid"/>
+            </not>
+        </preConditions>
+        <createIndex indexName="i_dirs_ipnfsid" tableName="t_dirs" unique="false">
+            <column name="ipnfsid"/>
+        </createIndex>
+    </changeSet>
+
     <changeSet author="tigran" id="2">
         <!--
             populate db if empty
