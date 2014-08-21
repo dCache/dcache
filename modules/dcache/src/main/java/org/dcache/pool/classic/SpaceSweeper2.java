@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +19,9 @@ import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.util.Args;
 import dmg.util.Formats;
+import dmg.util.command.Command;
+import dmg.util.command.DelayedCommand;
+import dmg.util.command.Option;
 
 import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.namespace.FileAttribute;
@@ -200,18 +202,18 @@ public class SpaceSweeper2
     public static final String hh_sweeper_purge = "# Purges all removable files from pool";
     public synchronized String ac_sweeper_purge(Args args)
     {
-        final long toFree = _account.getRemovable();
-        new Thread("sweeper-free") {
+        new Thread("sweeper-purge") {
             @Override
             public void run()
             {
                 try {
-                    reclaim(toFree);
+                    long bytes = reclaim(Long.MAX_VALUE);
+                    _log.info("'sweeper purge' reclaimed {} bytes.", bytes);
                 } catch (InterruptedException e) {
                 }
             }
         }.start();
-        return String.format("Reclaiming %d bytes", toFree);
+        return "Purging all removable files from pool.";
     }
 
     public static final String hh_sweeper_free = "<bytesToFree>";
@@ -224,7 +226,8 @@ public class SpaceSweeper2
             public void run()
             {
                 try {
-                    reclaim(toFree);
+                    long bytes = reclaim(toFree);
+                    _log.info("'sweeper free {}' reclaimed {} bytes.", toFree, bytes);
                 } catch (InterruptedException e) {
                 }
             }
@@ -233,45 +236,53 @@ public class SpaceSweeper2
         return String.format("Reclaiming %d bytes", toFree);
     }
 
-    public static final String hh_sweeper_ls = " [-l] [-s]";
-    public String ac_sweeper_ls(Args args)
-        throws CacheException, InterruptedException
+    @Command(name = "sweeper ls", hint = "list sweeper queue")
+    public class SweeperLsCommand extends DelayedCommand<String>
     {
-        StringBuilder sb = new StringBuilder();
-        boolean l = args.hasOption("l");
-        boolean s = args.hasOption("s");
-        List<PnfsId> list;
-        synchronized (this) {
-            list = new ArrayList<>(_list);
-        }
-        int i = 0;
-        for (PnfsId id : list) {
-            try {
-                CacheEntry entry = _repository.getEntry(id);
-                if (l) {
-                    sb.append(Formats.field(""+i,3,Formats.RIGHT)).append(" ");
-                    sb.append(id.toString()).append("  ");
-                    sb.append(entry.getState()).append("  ");
-                    sb.append(Formats.field(""+entry.getReplicaSize(), 11, Formats.RIGHT));
-                    sb.append(" ");
-                    sb.append(__format.format(new Date(entry.getCreationTime()))).append(" ");
-                    sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
-                    if (s) {
-                        FileAttributes attributes = entry.getFileAttributes();
-                        if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
-                            sb.append("\n    ").append(StorageInfos.extractFrom(attributes));
-                        }
-                    }
-                    sb.append("\n");
-                } else {
-                    sb.append(entry.toString()).append("\n");
-                }
-                i++;
-            } catch (FileNotInCacheException e) {
-                // Ignored
+        @Option(name = "l", usage = "Show creation and last access times.")
+        boolean showVerbose;
+
+        @Option(name = "s", usage = "Show storage info of each entry.")
+        boolean showStorageInfo;
+
+        @Override
+        protected String execute()
+                throws CacheException, InterruptedException
+        {
+            StringBuilder sb = new StringBuilder();
+            List<PnfsId> list;
+            synchronized (SpaceSweeper2.this) {
+                list = new ArrayList<>(_list);
             }
+            int i = 0;
+            for (PnfsId id : list) {
+                try {
+                    CacheEntry entry = _repository.getEntry(id);
+                    if (showVerbose) {
+                        sb.append(Formats.field(""+i,3,Formats.RIGHT)).append(" ");
+                        sb.append(id.toString()).append("  ");
+                        sb.append(entry.getState()).append("  ");
+                        sb.append(Formats.field(""+entry.getReplicaSize(), 11, Formats.RIGHT));
+                        sb.append(" ");
+                        sb.append(__format.format(new Date(entry.getCreationTime()))).append(" ");
+                        sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
+                        if (showStorageInfo) {
+                            FileAttributes attributes = entry.getFileAttributes();
+                            if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                                sb.append("\n    ").append(StorageInfos.extractFrom(attributes));
+                            }
+                        }
+                        sb.append("\n");
+                    } else {
+                        sb.append(entry.toString()).append("\n");
+                    }
+                    i++;
+                } catch (FileNotInCacheException e) {
+                    // Ignored
+                }
+            }
+            return sb.toString();
         }
-        return sb.toString();
     }
 
     private String getTimeString(long secin)
@@ -307,63 +318,47 @@ public class SpaceSweeper2
     private long reclaim(long amount)
         throws InterruptedException
     {
-        List<CacheEntry> tmpList = new ArrayList();
-
-        _log.info(String.format("Sweeper trying to reclaim %d bytes", amount));
+        _log.debug("Sweeper tries to reclaim {} bytes.", amount);
 
         /* We copy the entries into a tmp list to avoid
          * ConcurrentModificationException.
          */
+        List<PnfsId> tmpList;
         synchronized (this) {
-            Iterator<PnfsId> i = _list.iterator();
-            long minSpaceNeeded = amount;
-
-            while (i.hasNext() && minSpaceNeeded > 0) {
-                PnfsId id = i.next();
-                try {
-                    CacheEntry entry = _repository.getEntry(id);
-
-                    //
-                    //  we are not allowed to remove the
-                    //  file if it is still in use.
-                    //
-                    if (entry.getLinkCount() > 0) {
-                        _log.warn("file skipped by sweeeper (in use): " + entry);
-                        continue;
-                    }
-                    if (!isRemovable(entry)) {
-                        _log.error("file skipped by sweeper (not removable): " + entry);
-                        continue;
-                    }
-                    long size = entry.getReplicaSize();
-                    tmpList.add(entry);
-                    minSpaceNeeded -= size;
-                    _log.debug("adds to remove list : " + entry.getPnfsId()
-                               + " " + size);
-                } catch (FileNotInCacheException e) {
-                    /* Normal if file got removed just as we wanted to
-                     * remove it ourselves.
-                     */
-                } catch (CacheException e) {
-                    _log.error(e.getMessage());
-                }
-            }
+            tmpList = new ArrayList<>(_list);
         }
 
         /* Delete the files.
          */
         long deleted = 0;
-        for (CacheEntry entry: tmpList) {
+        for (PnfsId id: tmpList) {
             try {
-                PnfsId id = entry.getPnfsId();
+                CacheEntry entry = _repository.getEntry(id);
+
+                // Removing an open file will not free space until
+                // the file is closed, so we skip it this time around.
+                if (entry.getLinkCount() > 0) {
+                    _log.debug("File skipped by sweeper (in use): {}", entry);
+                    continue;
+                }
+                if (!isRemovable(entry)) {
+                    _log.debug("File skipped by sweeper (not removable): {}", entry);
+                    continue;
+                }
+
                 long size = entry.getReplicaSize();
-                _log.info("trying to remove " + id);
+                _log.debug("Sweeper removes {}.", id);
                 _repository.setState(id, EntryState.REMOVED);
                 deleted += size;
+            } catch (IllegalTransitionException | FileNotInCacheException e) {
+                /* Normal if file got removed just as we wanted to
+                 * remove it ourselves.
+                 */
             } catch (CacheException e) {
                 _log.error(e.getMessage());
-            } catch (IllegalTransitionException e) {
-                _log.warn(e.toString());
+            }
+            if (deleted >= amount) {
+                break;
             }
         }
 
