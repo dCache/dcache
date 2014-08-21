@@ -5,6 +5,7 @@ check -strong gplazma.cell.name
 check -strong gplazma.cell.limits.threads
 check -strong gplazma.configuration.file
 check -strong gplazma.service.pnfsmanager
+check -strong gplazma.enable.plugin-creation-caching
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \

@@ -108,6 +108,8 @@ public class GPlazma
     private ValidationStrategy validationStrategy;
     private IdentityStrategy identityStrategy;
 
+    private boolean _shouldCachePluginCreation;
+
     /**
      * Storage class for failed login attempts.  This allows gPlazma to
      * refrain from filling up log files should a client attempt multiple
@@ -229,6 +231,11 @@ public class GPlazma
              * problem if configuration file is edited.
              */
         }
+    }
+
+    public void setCachePluginCreation(boolean shouldCache)
+    {
+        _shouldCachePluginCreation = shouldCache;
     }
 
     public LoginReply login(Subject subject) throws AuthenticationException
@@ -437,8 +444,10 @@ public class GPlazma
     {
         LOGGER.debug("reloading plugins");
 
-        pluginLoader = new CachingPluginLoaderDecorator(
-                XmlResourcePluginLoader.newPluginLoader());
+        pluginLoader = XmlResourcePluginLoader.newPluginLoader();
+        if (_shouldCachePluginCreation) {
+            pluginLoader = new CachingPluginLoaderDecorator(pluginLoader);
+        }
         if(_customPluginFactory != null) {
             pluginLoader.setPluginFactory(_customPluginFactory);
         }

@@ -46,6 +46,7 @@ public class Gplazma2LoginStrategy
     private GPlazma _gplazma;
     private Map<String,Object> _environment = Collections.emptyMap();
     private PluginFactory _factory;
+    private boolean _shouldCachePluginCreation;
 
     @Required
     public void setConfigurationFile(String configurationFile)
@@ -64,6 +65,12 @@ public class Gplazma2LoginStrategy
     public void setNameSpace(NameSpaceProvider namespace)
     {
         _factory = new DcacheAwarePluginFactory(namespace);
+    }
+
+    @Required
+    public void setCachePluginCreation(boolean cache)
+    {
+        _shouldCachePluginCreation = cache;
     }
 
     public String getConfigurationFile()
@@ -109,6 +116,7 @@ public class Gplazma2LoginStrategy
             new FromFileConfigurationLoadingStrategy(_configurationFile);
         _gplazma =
             new GPlazma(configuration, getEnvironmentAsProperties(), _factory);
+        _gplazma.setCachePluginCreation(_shouldCachePluginCreation);
     }
 
     static LoginReply
