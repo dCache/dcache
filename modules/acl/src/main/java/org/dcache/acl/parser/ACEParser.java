@@ -57,6 +57,10 @@ public class ACEParser {
             throw new IllegalArgumentException("ace_spec ends with \"" + SEPARATOR + "\"");
         }
 
+        if (ace_spec.contains(":+") || ace_spec.contains(":-")) {
+            return parseAdmACE(ace_spec);
+        }
+
         String[] split = ace_spec.split(SEPARATOR);
         if ( split == null ) {
             throw new IllegalArgumentException("ace_spec can't be splitted.");
