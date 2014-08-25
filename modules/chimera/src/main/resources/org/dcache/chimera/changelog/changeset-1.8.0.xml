@@ -575,7 +575,7 @@
     </changeSet>
 
     <changeSet author="tigran" id="1.1">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <not>
                 <indexExists indexName="i_dirs_ipnfsid"/>
             </not>
