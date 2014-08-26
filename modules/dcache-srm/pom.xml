@@ -27,6 +27,11 @@
           <artifactId>dcache-core</artifactId>
           <version>${project.version}</version>
       </dependency>
+      <dependency>
+          <groupId>org.dcache</groupId>
+          <artifactId>dcache-spacemanager</artifactId>
+          <version>${project.version}</version>
+      </dependency>
   </dependencies>
 
   <build>

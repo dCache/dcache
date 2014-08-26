@@ -8,10 +8,10 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>dcache-info</artifactId>
+  <artifactId>dcache-spacemanager</artifactId>
   <packaging>jar</packaging>
 
-  <name>dCache Info Service</name>
+  <name>dCache Space Manager</name>
 
   <dependencies>
     <dependency>
@@ -27,16 +27,6 @@
       <groupId>org.dcache</groupId>
       <artifactId>dcache-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.dcache</groupId>
-      <artifactId>dcache-spacemanager</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.thaiopensource</groupId>
-      <artifactId>jing</artifactId>
     </dependency>
   </dependencies>
 </project>
