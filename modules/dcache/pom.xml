@@ -237,10 +237,6 @@
         <groupId>net.sf.smc</groupId>
         <artifactId>statemap</artifactId>
     </dependency>
-    <dependency>
-        <groupId>com.thaiopensource</groupId>
-        <artifactId>jing</artifactId>
-    </dependency>
 
     <dependency>
         <groupId>org.hsqldb</groupId>

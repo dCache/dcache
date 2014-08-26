@@ -1229,6 +1229,7 @@
         <module>modules/dcache-webadmin</module>
         <module>modules/dcache-nfs</module>
         <module>modules/dcache-srm</module>
+        <module>modules/dcache-info</module>
         <module>modules/srm-common</module>
         <module>modules/srm-server</module>
         <module>modules/srm-client</module>
