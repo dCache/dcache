@@ -65,6 +65,11 @@
     </dependency>
     <dependency>
         <groupId>org.dcache</groupId>
+        <artifactId>dcache-srm</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
         <artifactId>xrootd4j-gsi</artifactId>
     </dependency>
     <dependency>

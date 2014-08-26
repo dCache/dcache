@@ -30,6 +30,11 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
+      <artifactId>dcache-srm</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
       <artifactId>dcache-ftp</artifactId>
       <version>${project.version}</version>
     </dependency>
