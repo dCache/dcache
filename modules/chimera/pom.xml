@@ -23,12 +23,21 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>annotations</artifactId>
+    </dependency>
+    <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
       <artifactId>dcache-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>common-cli</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
