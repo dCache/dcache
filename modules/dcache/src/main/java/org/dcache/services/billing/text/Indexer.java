@@ -97,10 +97,24 @@ public class Indexer
     private final boolean isFlat;
     private final File dir;
 
-    private final SimpleDateFormat fileNameFormat =
-            new SimpleDateFormat("yyyy.MM.dd");
-    private final SimpleDateFormat directoryNameFormat =
-            new SimpleDateFormat("yyyy" + File.separator + "MM");
+    private static final ThreadLocal<SimpleDateFormat> FILE_NAME_DATE_FORMAT =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("yyyy.MM.dd");
+                }
+            };
+    private static final ThreadLocal<SimpleDateFormat> DIRECTORY_NAME_DATE_FORMAT =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("yyyy" + File.separator + "MM");
+                }
+            };
 
     private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
     {
@@ -187,7 +201,7 @@ public class Indexer
                         public Void call() throws ParseException, IOException
                         {
                             try {
-                                Date date = fileNameFormat.parse(matcher.group(1));
+                                Date date = FILE_NAME_DATE_FORMAT.get().parse(matcher.group(1));
                                 grep(searchTerm, file, DateFormat.getDateInstance().format(date) + ": ", new PrintWriter(writer));
                             } finally {
                                 writer.close();
@@ -289,27 +303,27 @@ public class Indexer
         return cal.getTime();
     }
 
-    private synchronized File getDirectory(Date date)
+    private File getDirectory(Date date)
     {
-        return isFlat ? dir : new File(this.dir, directoryNameFormat.format(date));
+        return isFlat ? dir : new File(this.dir, DIRECTORY_NAME_DATE_FORMAT.get().format(date));
     }
 
-    private synchronized File getBillingFile(Date date)
+    private File getBillingFile(Date date)
     {
-        return new File(getDirectory(date), "billing-" + fileNameFormat.format(date));
+        return new File(getDirectory(date), "billing-" + FILE_NAME_DATE_FORMAT.get().format(date));
     }
 
-    private synchronized File getErrorFile(Date date)
+    private File getErrorFile(Date date)
     {
-        return new File(getDirectory(date), "billing-error-" + fileNameFormat.format(date));
+        return new File(getDirectory(date), "billing-error-" + FILE_NAME_DATE_FORMAT.get().format(date));
     }
 
-    private synchronized File getIndexFile(Date date)
+    private File getIndexFile(Date date)
     {
-        return getIndexFile(getDirectory(date), fileNameFormat.format(date));
+        return getIndexFile(getDirectory(date), FILE_NAME_DATE_FORMAT.get().format(date));
     }
 
-    private synchronized File getIndexFile(File dir, String date)
+    private File getIndexFile(File dir, String date)
     {
         return new File(dir, "index-" + date);
     }
