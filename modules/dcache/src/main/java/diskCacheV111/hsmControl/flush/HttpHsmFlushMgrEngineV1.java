@@ -44,7 +44,6 @@ package diskCacheV111.hsmControl.flush;
    private long        _requestCounter;
    private String      _cssFile          = "/flushManager/css/default.css" ;
    private final List<String> _managerList      = new ArrayList<>() ;
-   private final SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
 
    private final HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
    private final HttpFlushManagerHelper.FlushEntryComparator _flushCompare;

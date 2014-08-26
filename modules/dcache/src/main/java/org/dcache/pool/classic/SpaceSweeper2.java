@@ -41,10 +41,17 @@ public class SpaceSweeper2
     implements Runnable, CellCommandListener, StateChangeListener,
                SpaceSweeperPolicy
 {
-    private final static Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
+    private static final Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
 
-    private final SimpleDateFormat __format =
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    private static final ThreadLocal<SimpleDateFormat> __format =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                }
+            };
 
     private final Set<PnfsId> _list  = new LinkedHashSet();
 
@@ -253,8 +260,8 @@ public class SpaceSweeper2
                         sb.append(entry.getState()).append("  ");
                         sb.append(Formats.field(""+entry.getReplicaSize(), 11, Formats.RIGHT));
                         sb.append(" ");
-                        sb.append(__format.format(new Date(entry.getCreationTime()))).append(" ");
-                        sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
+                        sb.append(__format.get().format(new Date(entry.getCreationTime()))).append(" ");
+                        sb.append(__format.get().format(new Date(entry.getLastAccessTime()))).append(" ");
                         if (showStorageInfo) {
                             FileAttributes attributes = entry.getFileAttributes();
                             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {

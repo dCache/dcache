@@ -21,7 +21,15 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class NetLoggerBuilder
 {
-    private static final SimpleDateFormat TS_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+    private static final ThreadLocal<SimpleDateFormat> TS_FORMAT =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+                }
+            };
 
     private final StringBuilder s = new StringBuilder(256);
     private boolean omitNullValues;
@@ -41,9 +49,9 @@ public class NetLoggerBuilder
         ERROR, WARN, INFO, DEBUG, TRACE
     }
 
-    private static synchronized String getTimestamp()
+    private String getTimestamp()
     {
-        return TS_FORMAT.format(new Date());
+        return TS_FORMAT.get().format(new Date());
     }
 
     public NetLoggerBuilder(String event)
