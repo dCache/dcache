@@ -61,7 +61,15 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
    private Map<String,Object> _cellContext;
    private boolean          _wasStarted;
    private Date       _lastMessageArrived;
-   private SimpleDateFormat _simpleFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    private static final ThreadLocal<SimpleDateFormat> _simpleFormat =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                }
+            };
 
    private RestoreHandlerInfo [] _currentInfo;
 
@@ -282,7 +290,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
            Histogram histogram = prepareTransferHistogram( list , _binCount  , maxSize );
 
-           paintComponent( graphics , dimension , histogram , "Transfers "+_simpleFormat.format(new Date())) ;
+           paintComponent( graphics , dimension , histogram , "Transfers "+ _simpleFormat.get().format(new Date())) ;
 
 
           ImageIO.write( image , "png",  outStream );
@@ -307,7 +315,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
            _log.warn("Histogram not yet ready");
        }else{
            Histogram histogram = prepareRestoreManagerHistogram( info , _binCount );
-           paintComponent( graphics , _dimension , histogram , "Restore "+_simpleFormat.format(new Date())) ;
+           paintComponent( graphics , _dimension , histogram , "Restore "+ _simpleFormat.get().format(new Date())) ;
        }
        ByteArrayOutputStream outStream = new ByteArrayOutputStream() ;
 
