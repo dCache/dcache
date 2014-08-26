@@ -115,7 +115,15 @@ public class RequestContainerV5
     private PoolSelectionUnit  _selectionUnit;
     private PoolMonitorV5      _poolMonitor;
     private PnfsHandler        _pnfsHandler;
-    private final SimpleDateFormat   _formatter        = new SimpleDateFormat ("MM.dd HH:mm:ss");
+    private static final ThreadLocal<SimpleDateFormat> _formatter =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("MM.dd HH:mm:ss");
+                }
+            };
     private Executor _executor;
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<>() ;
     private PartitionManager   _partitionManager ;
@@ -956,7 +964,7 @@ public class RequestContainerV5
                 }
                 _poolMonitor.messageToCostModule( cellMessage ) ;
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
-                _status = "Staging "+_formatter.format(new Date()) ;
+                _status = "Staging "+ _formatter.get().format(new Date()) ;
             }
             return true ;
 	}
@@ -977,7 +985,7 @@ public class RequestContainerV5
                     _messageHash.remove(_waitingFor);
                 }
                 _messageHash.put( _waitingFor = cellMessage.getUOID() , this ) ;
-                _status = "[P2P "+_formatter.format(new Date())+"]" ;
+                _status = "[P2P "+ _formatter.get().format(new Date())+"]" ;
             }
 	}
 
@@ -1445,7 +1453,7 @@ public class RequestContainerV5
                     if( ( rc = askForPoolToPool( _overwriteCost ) ) == RT_FOUND ){
 
                        nextStep(RequestState.ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
-                       _status = "Pool2Pool "+_formatter.format(new Date()) ;
+                       _status = "Pool2Pool "+ _formatter.get().format(new Date()) ;
                        setError(0, "");
 
                        if (_sendHitInfo ) {
@@ -1559,7 +1567,7 @@ public class RequestContainerV5
                     if( ( rc = askForStaging() ) == RT_FOUND ){
 
                        nextStep(RequestState.ST_WAITING_FOR_STAGING , WAIT ) ;
-                       _status = "Staging "+_formatter.format(new Date()) ;
+                       _status = "Staging "+ _formatter.get().format(new Date()) ;
                        setError(0, "");
 
                     }else if( rc == RT_OUT_OF_RESOURCES ){
@@ -1725,7 +1733,7 @@ public class RequestContainerV5
         private void suspend(String status)
         {
             _log.debug(" stateEngine: SUSPENDED/WAIT ");
-            _status = status + " " + _formatter.format(new Date());
+            _status = status + " " + _formatter.get().format(new Date());
             nextStep(RequestState.ST_SUSPENDED, WAIT);
             sendInfoMessage(_pnfsId, _path, _fileAttributes,
                     _currentRc, "Suspended (" + _currentRm + ")");
