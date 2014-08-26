@@ -112,10 +112,6 @@
     </dependency>
     <dependency>
         <groupId>org.datanucleus</groupId>
-        <artifactId>datanucleus-api-jpa</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.datanucleus</groupId>
         <artifactId>datanucleus-api-jdo</artifactId>
     </dependency>
     <dependency>
@@ -276,6 +272,10 @@
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
     </dependency>
+      <dependency>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom</artifactId>
+      </dependency>
   </dependencies>
 
   <build>
@@ -323,17 +323,6 @@
                       </goals>
                       <configuration>
                           <metadataIncludes>**/*.jdo</metadataIncludes>
-                      </configuration>
-                  </execution>
-                  <execution>
-                      <id>datanucleus-enhance-jpa</id>
-                      <phase>process-classes</phase>
-                      <goals>
-                          <goal>enhance</goal>
-                      </goals>
-                      <configuration>
-                          <api>JPA</api>
-                          <persistenceUnitName>AuthRecordPersistenceUnit</persistenceUnitName>
                       </configuration>
                   </execution>
               </executions>
