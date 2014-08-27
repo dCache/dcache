@@ -1119,6 +1119,8 @@ public abstract class Job  {
                 return;
             }
 
+            setScheduler(scheduler.getId(), scheduler.getTimestamp());
+
             switch (state) {
             // Pending jobs were never worked on before the SRM restart; we
             // simply schedule them now.
