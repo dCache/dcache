@@ -800,7 +800,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.8.0</version>
+            <version>0.8.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
