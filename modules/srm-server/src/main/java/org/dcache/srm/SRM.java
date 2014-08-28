@@ -270,7 +270,7 @@ public class SRM {
     @Required
     public void setRequestCredentialStorage(RequestCredentialStorage store)
     {
-        RequestCredential.registerRequestCredentialStorage(requestCredentialStorage);
+        RequestCredential.registerRequestCredentialStorage(store);
         requestCredentialStorage = store;
     }
 
