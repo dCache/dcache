@@ -87,6 +87,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class RequestCredential
 {
     private static final ConcurrentMap<Long, RequestCredential> weakRequestCredentialStorage =
@@ -105,7 +107,7 @@ public class RequestCredential
 
     public static void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage)
     {
-        requestCredentailStorages.add(requestCredentialStorage);
+        requestCredentailStorages.add(checkNotNull(requestCredentialStorage));
     }
 
     public static RequestCredential getRequestCredential(Long requestCredentialId) throws DataAccessException
