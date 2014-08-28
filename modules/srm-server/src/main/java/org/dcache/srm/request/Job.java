@@ -244,6 +244,7 @@ public abstract class Job  {
      * @throws SRMInvalidRequestException if the job cannot be found or if
      * the job has the wrong type.
      */
+    @Nonnull
     public static final <T extends Job> T getJob(long id, Class<T> type)
             throws SRMInvalidRequestException
     {
@@ -258,6 +259,7 @@ public abstract class Job  {
      * @return a object representing this job.
      * @throws SRMInvalidRequestException if the job cannot be found
      */
+    @Nonnull
     public static <T extends Job> T getJob(long jobId, Class<T> type, Connection _con)
             throws SRMInvalidRequestException
     {

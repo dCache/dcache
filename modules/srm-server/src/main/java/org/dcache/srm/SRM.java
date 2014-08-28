@@ -1176,12 +1176,7 @@ public class SRM {
             throws DataAccessException, SRMInvalidRequestException
     {
         Job job = Job.getJob(requestId, Job.class);
-        if (job == null) {
-            sb.append("request with id ").append(requestId)
-                    .append(" is not found\n");
-        } else {
-            job.toString(sb,longformat);
-        }
+        job.toString(sb,longformat);
     }
 
     public void cancelRequest(StringBuilder sb, long requestId)
