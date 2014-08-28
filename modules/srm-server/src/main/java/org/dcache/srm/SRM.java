@@ -1309,7 +1309,7 @@ public class SRM {
 
     public void setGetMaxReadyJobs(int value)
     {
-        schedulers.setMaxReadyJobs(GetRequest.class, value);
+        schedulers.setMaxReadyJobs(GetFileRequest.class, value);
     }
 
     public void setBringOnlineMaxReadyJobs(int value)
