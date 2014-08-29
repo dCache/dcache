@@ -464,8 +464,7 @@ public class Configuration {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("SRM Configuration:");
-        sb.append("\n\t\"defaultSpaceLifetime\"  request lifetime: ").append(this.defaultSpaceLifetime );
+        sb.append("\t\"defaultSpaceLifetime\"  request lifetime: ").append(this.defaultSpaceLifetime );
         sb.append("\n\t\"get\"  request lifetime: ").append(this.getLifetime );
         sb.append("\n\t\"bringOnline\"  request lifetime: ").append(this.bringOnlineLifetime );
         sb.append("\n\t\"put\"  request lifetime: ").append(this.putLifetime );
