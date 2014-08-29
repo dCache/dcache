@@ -19,16 +19,15 @@ package org.dcache.gridsite;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1StreamParser;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.X509CertificateObject;
@@ -136,7 +135,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
 
         DERSequence seq;
         try {
-            DERObject object = parser.readObject().getDERObject();
+            ASN1Primitive object = parser.readObject().toASN1Primitive();
             if (!(object instanceof DERSequence)) {
                 throw new IOException("not a DER-encoded ASN.1 sequence");
             }
@@ -146,9 +145,9 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
                     e.getMessage());
         }
 
-        List<DEREncodable> rdn = new ArrayList(seq.size()+1);
+        List<ASN1Encodable> rdn = new ArrayList<>(seq.size()+1);
         for(Enumeration e = seq.getObjects(); e.hasMoreElements();) {
-            rdn.add((DEREncodable) e.nextElement());
+            rdn.add((ASN1Encodable) e.nextElement());
         }
 
         DERSequence atv = new DERSequence(new ASN1Encodable[]{X509Name.CN,
@@ -162,9 +161,9 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
     private static X509Certificate loadCertificate(InputStream in) throws IOException,
             GeneralSecurityException
     {
-        DERObject certInfo = new ASN1InputStream(in).readObject();
+        ASN1Primitive certInfo = new ASN1InputStream(in).readObject();
         ASN1Sequence seq = ASN1Sequence.getInstance(certInfo);
-        return new X509CertificateObject(new X509CertificateStructure(seq));
+        return new X509CertificateObject(Certificate.getInstance(seq));
     }
 
     private static String pemEncode(Object item) throws IOException
