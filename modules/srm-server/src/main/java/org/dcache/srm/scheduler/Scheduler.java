@@ -67,10 +67,12 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Formatter;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -88,8 +90,9 @@ import org.dcache.srm.util.JDC;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.*;
 
-public final class Scheduler <T extends Job>
+public class Scheduler <T extends Job>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(Scheduler.class);
@@ -950,41 +953,84 @@ public final class Scheduler <T extends Job>
         return sb.toString();
     }
 
-    public synchronized void getInfo(StringBuilder sb)
+    /**
+     * Helper class for formatting the info output.
+     */
+    private static class InfoFormatter
     {
-        sb.append("Scheduler id=").append(id).append('\n');
-        sb.append("          asyncWaitJobsNum=").append(getTotalAsyncWait())
-                .append('\n');
-        sb.append("          maxAsyncWaitJobsNum=").append(maxInProgress)
-                .append('\n');
-        sb.append("          retryWaitJobsNum=").append(getTotalRetryWait())
-                .append('\n');
-        sb.append("          readyJobsNum=").append(getTotalReady())
-                .append('\n');
-        sb.append("          maxReadyJobs=").append(maxReadyJobs).append('\n');
-        sb.append("          max number of jobs Running By the same owner=")
-                .append(maxRunningByOwner).append('\n');
-        sb.append("          total number of jobs in Running State =")
-                .append(getTotalRunningState()).append('\n');
-        sb.append("          total number of jobs in RunningWithoutThread State =")
-                .append(getTotalRunningWithoutThreadState()).append('\n');
-        sb.append("          threadPoolSize=").append(getThreadPoolSize())
-                .append('\n');
-        sb.append("          retryTimeout=").append(retryTimeout).append('\n');
-        sb.append("          maxThreadQueueSize=").append(getMaxRequests())
-                .append('\n');
-        sb.append("          threadQueue size=").append(requestQueue.size())
-                .append('\n');
-        sb.append("          !!! threadQueued=").append(getTotalTQueued())
-                .append('\n');
-        sb.append("          !!! priorityThreadQueued=")
-                .append(getTotalPriorityTQueued()).append('\n');
-        sb.append("          readyQueue size=").append(readyQueue.size())
-                .append('\n');
-        sb.append("          !!! readyQueued=").append(getTotalRQueued())
-                .append('\n');
-        sb.append("          maxNumberOfRetries=").append(maxNumberOfRetries)
-                .append('\n');
+        private final Formatter formatter;
+        private final int fieldWidth;
+        private final int baseWidth;
+        private final String field1;
+        private final String field2;
+        private final String field2NoState;
+
+        public InfoFormatter(Appendable appendable, int fieldWidth, int width1, int width2)
+        {
+            this.formatter = new Formatter(appendable);
+            this.fieldWidth = fieldWidth;
+            this.baseWidth = Ints.max(width1, width2 - fieldWidth - 4) + 1;
+
+            this.field1 = String.format("    %%-%ds %%%dd%s     [%%s]\n", baseWidth, fieldWidth, repeat(" ", 4 + fieldWidth));
+            this.field2 = String.format("    %%-%ds %%%dd     [%%s]\n", baseWidth + fieldWidth + 4, fieldWidth);
+            this.field2NoState = String.format("    %%-%ds %%%dd\n", baseWidth + fieldWidth + 4, fieldWidth);
+        }
+
+        public void column1(String description, int count, State state)
+        {
+            format(field1, padEnd(description + " ", baseWidth, '.'), count, state);
+        }
+
+        public void column2(String description, int count, State state)
+        {
+            format(field2, padEnd(description + " ", baseWidth + fieldWidth + 4, '.'), count, state);
+        }
+
+        public void column2(String description, int count)
+        {
+            format(field2NoState, padEnd(description + " ", baseWidth + fieldWidth + 4, '.'), count);
+        }
+
+        public void sum(String description, int count)
+        {
+            format(field2NoState, padEnd(description + " ", baseWidth, '.') + padStart("SUM >>", fieldWidth + 4, ' '), count);
+        }
+
+        public void line()
+        {
+            format("    %s\n", repeat("-", baseWidth + 2 * fieldWidth + 6));
+        }
+
+        public Formatter format(String format, Object... args)
+        {
+            return formatter.format(format, args);
+        }
+    }
+
+    public synchronized void getInfo(Appendable appendable)
+    {
+        int fieldWidth = Math.max(3, String.valueOf(getMaxRequests()).length());
+        InfoFormatter formatter =
+                new InfoFormatter(appendable, fieldWidth,
+                                  Ints.max(24, 20 + fieldWidth),
+                                  28 + fieldWidth);
+        formatter.column2("Queued", getTotalTQueued(), State.TQUEUED);
+        formatter.column1("Waiting for CPU", getTotalTQueued(), State.PRIORITYTQUEUED);
+        formatter.column1("Running (max " + getThreadPoolSize() + ")", getTotalRunningState(), State.RUNNING);
+        formatter.column1("Running without thread", getTotalRunningWithoutThreadState(), State.RUNNINGWITHOUTTHREAD);
+        formatter.column1("Waiting for callback", getTotalAsyncWait(), State.ASYNCWAIT);
+        formatter.sum("In progress (max " + getMaxInProgress() + ")", getTotalInprogress());
+        formatter.column2("Queued for retry", getTotalRetryWait(), State.RETRYWAIT);
+        if (getTotalRQueued() + getMaxReadyJobs() + getTotalReady() > 0) {
+            formatter.column2("Queued for transfer", getTotalRQueued(), State.RQUEUED);
+            formatter.column2("Waiting for transfer (max " + getMaxReadyJobs() + ")", getTotalReady(), State.READY);
+        }
+        formatter.line();
+        formatter.column2("Total requests (max " + getMaxRequests() + ")", getTotalRequests());
+        formatter.format("\n");
+        formatter.format("    In progress per user soft limit : %d requests\n", maxRunningByOwner);
+        formatter.format("    Retry timeout                   : %d ms\n", retryTimeout);
+        formatter.format("    Retry limit                     : %d retries\n", maxNumberOfRetries);
     }
 
     public void printThreadQueue(StringBuilder sb)

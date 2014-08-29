@@ -70,15 +70,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellInfoProvider;
 
 import org.dcache.commons.util.Strings;
 import org.dcache.srm.SRM;
@@ -89,7 +86,7 @@ import org.dcache.srm.util.Configuration;
 import org.dcache.util.Args;
 
 public class SrmCommandLineInterface
-        implements CellCommandListener, CellInfoProvider
+        implements CellCommandListener
 {
     private static final Logger logger = LoggerFactory.getLogger(SrmCommandLineInterface.class);
 
@@ -113,19 +110,6 @@ public class SrmCommandLineInterface
     public void setConfiguration(Configuration configuration)
     {
         this.config = configuration;
-    }
-
-    @Override
-    public void getInfo(PrintWriter pw)
-    {
-        pw.println(config);
-        pw.println(srm.getSchedulerInfo());
-    }
-
-    @Override
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
     }
 
     public static final String fh_cancel = " Syntax: cancel <id> ";

@@ -213,7 +213,7 @@
     <property name="verificationRequired" value="${srm.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
-  <bean id="config" class="org.dcache.srm.util.Configuration">
+  <bean id="config" class="diskCacheV111.srm.dcache.Configuration">
     <description>SRM configuration</description>
     <property name="port" value="${srm.net.port}"/>
     <property name="timeout"
@@ -462,7 +462,7 @@
     <property name="dataSource" ref="data-source"/>
   </bean>
 
-  <bean id="get-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+  <bean id="scheduler-get" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for GET operations</description>
 
@@ -482,7 +482,7 @@
   </bean>
 
 
-  <bean id="ls-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+  <bean id="scheduler-ls" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for LS operations</description>
 
@@ -501,7 +501,7 @@
   </bean>
 
 
-  <bean id="bringonline-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+  <bean id="scheduler-bringonline" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for BRING-ONLINE operations</description>
 
@@ -520,7 +520,7 @@
   </bean>
 
 
-  <bean id="put-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+  <bean id="scheduler-put" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for PUT operations</description>
 
@@ -539,7 +539,7 @@
       <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
-  <bean id="copy-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+  <bean id="scheduler-copy" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for COPY operations</description>
 
@@ -557,7 +557,7 @@
       <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
-  <bean id="reserve-space-scheduler" class="org.dcache.srm.scheduler.Scheduler"
+  <bean id="scheduler-reserve-space" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for RESERVE-SPACE operations</description>
 
@@ -581,13 +581,13 @@
 
       <property name="schedulers">
 	  <list>
-	      <ref bean="get-scheduler"/>
-	      <ref bean="ls-scheduler"/>
-	      <ref bean="put-scheduler"/>
-	      <ref bean="bringonline-scheduler"/>
-	      <ref bean="reserve-space-scheduler"/>
+	      <ref bean="scheduler-get"/>
+	      <ref bean="scheduler-ls"/>
+	      <ref bean="scheduler-put"/>
+	      <ref bean="scheduler-bringonline"/>
+	      <ref bean="scheduler-reserve-space"/>
 	      <!-- COPY scheduler must be last in list as it has type Job.class -->
-	      <ref bean="copy-scheduler"/>
+	      <ref bean="scheduler-copy"/>
 	  </list>
       </property>
   </bean>
