@@ -8,7 +8,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.jdo.PersistenceManager;
@@ -43,17 +42,16 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.util.TimebasedCounter;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.db.AlarmEnabledDataSource;
-import org.dcache.srm.request.sql.RequestsPropertyStorage;
-import org.dcache.srm.scheduler.JobIdGenerator;
-import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 /**
@@ -89,7 +87,7 @@ public abstract class TransferManager extends AbstractCell
             new ConcurrentHashMap<>();
     private String _ioQueueName; // multi io queue option
     private AlarmEnabledDataSource ds;
-    private JobIdGenerator idGenerator;
+    private TimebasedCounter idGenerator = new TimebasedCounter();
     public final Set<PnfsId> justRequestedIDs = new HashSet<>();
     private String _poolProxy;
     private ExecutorService executor =
@@ -130,19 +128,6 @@ public abstract class TransferManager extends AbstractCell
             setDbLogging(false);
         } else {
             log.error("Unrecognized value of \"doDbLog\" option : " + dbLog + " , ignored");
-        }
-
-        try {
-            if (_jdbcUrl != null && _user != null && _pass != null) {
-                initIdGenerator();
-            } else {
-                idGenerator = null;
-            }
-        } catch (Exception e) {
-            log.error("Failed to initialize Data Base connection to generate nextTransferId using default values");
-            log.error("jdbcUrl=" + _jdbcUrl + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
-            idGenerator = null;
-            //logString.error(e);
         }
 
         if (doDbLogging()) {
@@ -189,26 +174,6 @@ public abstract class TransferManager extends AbstractCell
             }
         }
         executor.shutdown();
-    }
-
-    private void initIdGenerator()
-    {
-        try {
-            HikariConfig config = new HikariConfig();
-            config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
-            config.setMaximumPoolSize(50);
-            config.setMinimumIdle(1);
-            ds = new AlarmEnabledDataSource(_jdbcUrl,
-                                            TransferManager.class.getSimpleName(),
-                                            new HikariDataSource(config));
-
-            RequestsPropertyStorage.initPropertyStorage(
-                    new DataSourceTransactionManager(ds), ds, "srmnextrequestid");
-        } catch (IllegalStateException ise) {
-            // already initialized
-        }
-        idGenerator = JobIdGeneratorFactory.
-                getJobIdGeneratorFactory().getJobIdGenerator();
     }
 
     @Override
@@ -322,22 +287,6 @@ public abstract class TransferManager extends AbstractCell
     public String ac_set_dbpass_$_1(Args args)
     {
         _pass = args.argv(0);
-        return "OK";
-    }
-
-    public String ac_dbinit_$_0(Args args)
-    {
-        if (idGenerator != null) {
-            return "database connection is already initialized\n";
-        }
-        try {
-            initIdGenerator();
-        } catch (Exception e) {
-            log.error("Failed to initialize Data Base connection to generate nextTransferId\n");
-            idGenerator = null;
-            log.error(e.toString());
-            return "Failed to initialize Data Base connection to generate nextTransferId\n";
-        }
         return "OK";
     }
 
@@ -578,7 +527,7 @@ public abstract class TransferManager extends AbstractCell
     {
         if (idGenerator != null) {
             try {
-                nextMessageID = idGenerator.nextLong();
+                nextMessageID = idGenerator.next();
             } catch (Exception e) {
                 log.error("Having trouble getting getNextMessageID from DB");
                 log.error(e.toString());

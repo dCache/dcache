@@ -10,8 +10,8 @@ package dmg.util;
  *
  * - Time goes forward.
  *
- * - The frequency at which values are generated between two restarts
- *   A and B is lower than 1000 Hz.
+ * - The frequency at which values are generated before a restart
+ *   does not exceed 1 MHz.
  *
  * The main reason for using time as a component is to avoid having to
  * maintain persistent state.
@@ -22,6 +22,6 @@ public class TimebasedCounter
 
     public synchronized long next()
     {
-        return (_last = Math.max(_last + 1, System.currentTimeMillis()));
+        return (_last = Math.max(_last + 1, System.currentTimeMillis() * 1_000));
     }
 }

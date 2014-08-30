@@ -29,6 +29,11 @@
       </dependency>
       <dependency>
           <groupId>org.dcache</groupId>
+          <artifactId>srm-server</artifactId>
+          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.dcache</groupId>
           <artifactId>dcache-spacemanager</artifactId>
           <version>${project.version}</version>
       </dependency>

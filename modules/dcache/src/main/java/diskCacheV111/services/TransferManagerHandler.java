@@ -1,6 +1,5 @@
 package diskCacheV111.services;
 
-import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -15,7 +14,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.util.EnumSet;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.FTPTransactionLog;
@@ -45,7 +43,6 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
@@ -536,10 +533,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             log.error(e.toString());
             //can not do much more here!!!
         }
-        Long longId = id;
         //this will allow the handler to be garbage collected
         // once we sent a response
-        manager.removeActiveTransfer(longId);
+        manager.removeActiveTransfer(id);
     }
 
     public void sendErrorReply()
@@ -589,10 +585,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             log.error(e.toString());
             //can not do much more here!!!
         }
-        Long longId = id;
         //this will allow the handler to be garbage collected
         // once we sent a response
-        manager.removeActiveTransfer(longId);
+        manager.removeActiveTransfer(id);
     }
 
     public void sendSuccessReply()
@@ -627,10 +622,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             log.error(e.toString());
             //can not do much more here!!!
         }
-        Long longId = id;
         //this will allow the handler to be garbage collected
         // once we sent a response
-        manager.removeActiveTransfer(longId);
+        manager.removeActiveTransfer(id);
     }
 
     /**

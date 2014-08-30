@@ -71,7 +71,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>srm-server</artifactId>
+      <artifactId>srm-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
