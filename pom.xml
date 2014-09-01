@@ -441,13 +441,7 @@
             <dependency>
                 <groupId>org.apache.sshd</groupId>
                 <artifactId>sshd-core</artifactId>
-                <!-- Version 0.9.0 contains a bug that prevents upgrade (see
-                     https://issues.apache.org/jira/browse/SSHD-258?jql=project%20%3D%20SSHD%20AND%20issuetype%20%3D%20Bug%20AND%20text%20~%20%220.9.0%22).
-
-                     Version 0.10.0 and beyond require a version of BouncyCastle newer
-                     than what works with JGlobus.
-                  -->
-                <version>0.8.0</version>
+                <version>0.11.0</version>
             </dependency>
             <!-- liquibase 3.2.0 produces wrong checksums -->
             <dependency>
