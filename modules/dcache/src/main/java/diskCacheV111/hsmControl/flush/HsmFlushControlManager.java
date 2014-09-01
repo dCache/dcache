@@ -67,7 +67,6 @@ public class HsmFlushControlManager  extends CellAdapter {
     private long            _timerInterval           =      30L * 1000L ;
     private FlushController _flushController         = new FlushController() ;
     private EventDispatcher _eventDispatcher         = new EventDispatcher() ;
-    private SimpleDateFormat formatter   = new SimpleDateFormat ("MM.dd hh:mm:ss");
     private QueueWatch      _queueWatch;
 
     private Map<String,Object>    _properties        = new HashMap<>() ;
