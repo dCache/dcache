@@ -35,8 +35,6 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     private int         _outstandingRequests;
     private File        _database;
     private SyncFifo2   _fifo = new SyncFifo2() ;
-    private SimpleDateFormat formatter
-         = new SimpleDateFormat ("MM.dd hh:mm:ss");
 
     public HsmControlOsm( String name , String  args ) throws Exception {
        super( name , args , false ) ;

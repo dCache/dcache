@@ -69,7 +69,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private final AgingHash   _pnfsPathMap     = new AgingHash(500);
     private final AgingHash _fileAttributesMap = new AgingHash(500);
     private final boolean     _takeAll         = true;
-    private final SimpleDateFormat _formatter  = new SimpleDateFormat ("MM.dd HH:mm:ss");
+    private static final ThreadLocal<SimpleDateFormat> _formatter =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("MM.dd HH:mm:ss");
+                }
+            };
     private volatile List<Object[]> _lazyRestoreList =
         new ArrayList<>();
     private long        _collectorUpdate = 60000L;
@@ -913,7 +921,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
         String  subnet = name.substring(pos+1);
         int     rc     = info.getErrorCode();
         String  msg    = info.getErrorMessage();
-        String  started= _formatter.format(new Date(info.getStartTime()));
+        String  started= _formatter.get().format(new Date(info.getStartTime()));
 
         boolean   error      = (rc != 0) || ((msg != null) && (!msg.equals("")));
 

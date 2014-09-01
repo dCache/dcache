@@ -194,11 +194,6 @@ public abstract class Request extends Job {
 
 
 
-    /*
-     * public constructors
-     */
-    protected static RequestsPropertyStorage requestsproperties;
-
 
     /*
      * private instance variables
