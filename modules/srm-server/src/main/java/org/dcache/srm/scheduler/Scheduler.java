@@ -286,6 +286,7 @@ public final class Scheduler <T extends Job>
             switch (job.getState()) {
             case RQUEUED:
                 increaseNumberOfReadyQueued(job);
+                readyQueue(job);
                 break;
 
             case READY:
@@ -930,7 +931,6 @@ public final class Scheduler <T extends Job>
                     job.wlock();
                     try {
                         if (job.getState() == State.RUNNING) {
-                            // put blocks if ready queue is full
                             job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
                             if (!readyQueue(job)) {
                                 LOGGER.warn("All ready slots are taken and ready queue is full.");
