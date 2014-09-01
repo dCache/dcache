@@ -39,7 +39,6 @@ public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
    private String      _flushManagerName = "FlushManager" ;
    private String      _cssFile          = "/flushManager/css/default.css" ;
    private List<String> _managerList      = new ArrayList<>() ;
-   private SimpleDateFormat _formatter   = new SimpleDateFormat ("MM.dd HH:mm:ss");
 
    private HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
    private HttpFlushManagerHelper.FlushEntryComparator _flushCompare;

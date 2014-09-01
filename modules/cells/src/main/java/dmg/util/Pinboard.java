@@ -13,8 +13,17 @@ import java.util.Vector;
 
 public class Pinboard {
 
+    private static final ThreadLocal<DateFormat> _df =
+            new ThreadLocal<DateFormat>()
+            {
+                @Override
+                protected DateFormat initialValue()
+                {
+                    return new SimpleDateFormat("hh.mm.ss ");
+                }
+            };
+
    private final List<PinEntry>       _pin = new Vector<>() ;
-   private final DateFormat   _df  = new SimpleDateFormat("hh.mm.ss " ) ;
    private final int          _size;
    private class PinEntry {
       private String _message ;
@@ -24,7 +33,7 @@ public class Pinboard {
          _date = new Date() ;
       }
       public String toString(){
-         return _df.format(_date)+" "+_message ;
+         return _df.get().format(_date)+" "+_message ;
       }
    }
    public Pinboard(){
