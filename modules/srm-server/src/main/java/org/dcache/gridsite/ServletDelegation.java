@@ -21,7 +21,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-import org.glite.voms.VOMSValidator;
+
 import org.globus.gsi.bc.BouncyCastleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +30,20 @@ import javax.xml.rpc.holders.StringHolder;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
 import org.dcache.delegation.gridsite2.Delegation;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.util.Axis;
 import org.dcache.util.Version;
+
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.VOMSAttribute;
 
 import static java.util.Arrays.asList;
 import static org.dcache.gridsite.Utilities.assertThat;
@@ -215,20 +221,15 @@ public class ServletDelegation implements Delegation
 
     private String getFqanList() throws DelegationException
     {
-        VOMSValidator validator =
-                new VOMSValidator(Iterables.toArray(asList(getClientCertificates()),
-                X509Certificate.class));
-        String fqans[] = validator.validate().getAllFullyQualifiedAttributes();
-        validator.cleanup();
+        VOMSACValidator validator = VOMSValidators.newValidator();
 
-        if (fqans == null) {
-            return "";
-        } else {
-            if(fqans.length > 1) {
-                Arrays.sort(fqans, 1, fqans.length);
-            }
+        List<VOMSAttribute> vomsAttrs = validator.validate(getClientCertificates());
+        List<String> fqans = new ArrayList<>();
 
-            return Arrays.toString(fqans);
+        for(VOMSAttribute vomsAttr: vomsAttrs) {
+            fqans.addAll(vomsAttr.getFQANs());
         }
+
+        return fqans.toString();
     }
 }

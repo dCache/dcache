@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.glite.voms.ac.AttributeCertificate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.security.rsa.RSAPublicKeyImpl;
@@ -51,10 +51,14 @@ import org.dcache.gplazma.monitor.LoginResult.SetDiff;
 import org.dcache.util.CertPaths;
 
 import static java.util.concurrent.TimeUnit.*;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AttributeCertificate;
+import org.bouncycastle.asn1.x509.V2Form;
 import static org.dcache.gplazma.configuration.ConfigurationItemControl.*;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.FAIL;
 import static org.dcache.gplazma.monitor.LoginMonitor.Result.SUCCESS;
 import static org.dcache.utils.Bytes.toHexString;
+import org.italiangrid.voms.asn1.VOMSACUtils;
 
 /**
  * This class takes a LoginResult and provides an ASCII-art description
@@ -450,13 +454,7 @@ public class LoginResultPrinter
             for(Enumeration<ASN1Sequence> e2=acSequence2.getObjects();
                     e2.hasMoreElements(); ) {
                 ASN1Sequence acSequence3 = e2.nextElement();
-
-                try {
-                    certificates.add(new AttributeCertificate(acSequence3));
-                } catch( IOException e) {
-                    _log.debug("Problem decoding AttributeCertificate: {}",
-                            e.getMessage());
-                }
+                certificates.add(AttributeCertificate.getInstance(acSequence3));
             }
         }
 
@@ -474,15 +472,20 @@ public class LoginResultPrinter
     }
 
 
+    private X500Name getX500Name(AttributeCertificate certificate) {
+        return X500Name.getInstance(
+                ((V2Form) certificate.getAcinfo().getIssuer().getIssuer())
+                        .getIssuerName().getNames()[0].getName());
+    }
 
     private String attributeCertificateInfoFor(AttributeCertificate certificate)
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(certificate.getIssuerX509().getName()).append('\n');
+        sb.append(getX500Name(certificate)).append('\n');
         sb.append("  +--Validity: ").append(validityStatementFor(certificate)).append('\n');
 
-        String oid = certificate.getSignatureAlgorithm().getObjectId().toString();
+        String oid = certificate.getSignatureAlgorithm().getAlgorithm().getId();
         sb.append("  +--Algorithm: ").append(nameForOid(oid)).append('\n');
 
         String fqanInfo = fqanInfoFor(certificate);
@@ -495,7 +498,7 @@ public class LoginResultPrinter
 
     private static String fqanInfoFor(AttributeCertificate certificate)
     {
-        List<?> fqans = certificate.getListOfFQAN();
+        List<String> fqans = VOMSACUtils.deserializeVOMSAttributes(certificate).getFQANs();
 
         if(fqans.size() > 0) {
             StringBuilder sb = new StringBuilder();
@@ -569,8 +572,8 @@ public class LoginResultPrinter
     private String validityStatementFor(AttributeCertificate certificate)
     {
         try {
-            Date notBefore = certificate.getNotBefore();
-            Date notAfter = certificate.getNotAfter();
+            Date notBefore = certificate.getAcinfo().getAttrCertValidityPeriod().getNotBeforeTime().getDate();
+            Date notAfter = certificate.getAcinfo().getAttrCertValidityPeriod().getNotAfterTime().getDate();
             return validityStatementFor(notBefore, notAfter);
         } catch(ParseException e) {
             return "problem parsing validity info (" + e.getMessage() + ")";
