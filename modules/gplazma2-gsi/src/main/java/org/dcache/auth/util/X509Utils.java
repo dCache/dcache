@@ -3,7 +3,7 @@ package org.dcache.auth.util;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.globus.gsi.bc.BouncyCastleUtil;
@@ -43,7 +43,7 @@ public class X509Utils {
             checkAuthentication(clientcert != null, "no client certificate");
             TBSCertificateStructure tbsCert = BouncyCastleUtil.getTBSCertificateStructure(clientcert);
             return toGlobusString(
-                    (ASN1Sequence) tbsCert.getSubject().toASN1Primitive(),
+                    (ASN1Sequence) tbsCert.getSubject().getDERObject(),
                     omitEmail);
         } catch (IOException | CertificateException e) {
             throw new AuthenticationException(e.getMessage(), e);
@@ -132,7 +132,7 @@ public class X509Utils {
             boolean didappend = false;
             while (ee.hasMoreElements()) {
                 ASN1Sequence s = (ASN1Sequence) ee.nextElement();
-                String derString = ((ASN1String)s.getObjectAt(1)).getString();
+                String derString = ((DERString)s.getObjectAt(1)).getString();
                 /*
                  * A temporary hack against Globus 2.  For some reason,
                  * DN=proxy is no longer accepted
