@@ -63,7 +63,7 @@ COPYRIGHT STATUS:
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
-package diskCacheV111.srm.dcache;
+package org.dcache.srm;
 
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
@@ -73,15 +73,24 @@ import org.springframework.dao.DataAccessException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.commons.util.Strings;
-import org.dcache.srm.SRM;
-import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.CopyRequest;
+import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.Job;
+import org.dcache.srm.request.LsRequest;
+import org.dcache.srm.request.PutRequest;
+import org.dcache.srm.request.Request;
+import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.util.Args;
 
@@ -101,6 +110,16 @@ public class SrmCommandLineInterface
 
     private SRM srm;
     private Configuration config;
+
+    public SrmCommandLineInterface()
+    {
+    }
+
+    public SrmCommandLineInterface(SRM srm, Configuration config)
+    {
+        this.srm = srm;
+        this.config = config;
+    }
 
     public void setSrm(SRM srm)
     {
@@ -182,62 +201,296 @@ public class SrmCommandLineInterface
         }
     }
 
-    public static final String fh_ls = " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>] " +
-            "#will list all requests";
-    public static final String hh_ls = " [-get] [-put] [-copy] [-bring] [-reserve] [-ls] [-l] [<id>]";
-
-    public String ac_ls_$_0_1(Args args) throws SRMInvalidRequestException, DataAccessException
+    @Command(name = "ls", hint = "list scheduled requests",
+             description = "List scheduled SRM requests. Scheduled requests are srmPrepareToGet, srmPrepareToPut, " +
+                     "srmLs, srmCopy, srmBringOnline, and srmReserveSpace. In the SRM protocol, these requests " +
+                     "may be processed asynchronously as seen from the client (that is, the client polls for the " +
+                     "result), and in dCache these requests may be made persistent in the SRM database.\n\n" +
+                     "Scheduled requests have a request ID that uniquely identifies the request on this server. " +
+                     "Except for srmReserveSpace, these requests may be batched, meaning a single request contains " +
+                     "several SURLs to which the request applies. In dCache, both the entire batch and each single " +
+                     "SURL has a request ID. This is true even if the request only contains a single SURL. If an " +
+                     "ID is specified, only that request is shown. If an ID is not specified, all requests matching " +
+                     "the options are shown.\n\n" +
+                     "If request persistence is enabled, recently completed requests can be retrieved from the " +
+                     "database. The transition history for such requests is only included if persistence of the " +
+                     "history is enabled too.")
+    class ListCommand implements Callable<String>
     {
-        boolean get = args.hasOption("get");
-        boolean put = args.hasOption("put");
-        boolean copy = args.hasOption("copy");
-        boolean bring = args.hasOption("bring");
-        boolean reserve = args.hasOption("reserve");
-        boolean ls = args.hasOption("ls");
-        boolean longformat = args.hasOption("l");
-        StringBuilder sb = new StringBuilder();
-        if (args.argc() == 1) {
-            try {
-                Long reqId = Long.valueOf(args.argv(0));
-                srm.listRequest(sb, reqId, longformat);
-            } catch (NumberFormatException nfe) {
-                return "id must be an integer, you gave id=" + args.argv(0);
+        @Option(name = "get", usage = "Show srmPrepareToGet requests.")
+        boolean get;
+
+        @Option(name = "put", usage = "Show srmPrepareToPut requests.")
+        boolean put;
+
+        @Option(name = "copy", usage = "Show srmCopy requests.")
+        boolean copy;
+
+        @Option(name = "bring", usage = "Show srmBringOnline requests.")
+        boolean bring;
+
+        @Option(name = "reserve", usage = "Show srmReserveSpace requests.")
+        boolean reserve;
+
+        @Option(name = "ls", usage = "Show srmLs requests.")
+        boolean ls;
+
+        @Option(name = "completed", metaVar = "max",
+                usage = "List up to this many ompleted requests.")
+        Integer completed;
+
+        @Option(name = "failed", metaVar = "max",
+                usage = "List up to this many failed requests.")
+        Integer failed;
+
+        @Option(name = "cancelled", metaVar = "max",
+                usage = "List up to this many cancelled requests.")
+        Integer cancelled;
+
+        @Option(name = "l", usage = "Show more details.")
+        boolean verbose;
+
+        @Argument(usage = "Request ID", metaVar = "id", required = false)
+        Long id;
+
+        @Override
+        public String call() throws Exception
+        {
+            StringBuilder sb = new StringBuilder();
+            if (id != null) {
+                srm.listRequest(sb, id, verbose);
+            } else {
+                if (!get && !put && !copy && !bring && !reserve && !ls) {
+                    get = true;
+                    put = true;
+                    copy = true;
+                    bring = true;
+                    reserve = true;
+                    ls = true;
+                }
+                if (get) {
+                    sb.append("Get Requests:\n");
+                    if (failed == null && cancelled == null && completed == null) {
+                        listGetRequests(sb);
+                    } else if (!config.getDatabaseParametersForGet().isDatabaseEnabled()) {
+                        sb.append("Persistence is disabled.");
+                    } else if (completed != null) {
+                        listLatestCompletedGetRequests(sb, completed);
+                    } else {
+                        if (failed != null) {
+                            listLatestFailedGetRequests(sb, failed);
+                        }
+                        if (cancelled != null) {
+                            listLatestCancelledGetRequests(sb, cancelled);
+                        }
+                    }
+                }
+                if (put) {
+                    sb.append("Put Requests:\n");
+                    if (failed == null && cancelled == null && completed == null) {
+                        listPutRequests(sb);
+                    } else if (!config.getDatabaseParametersForPut().isDatabaseEnabled()) {
+                        sb.append("Persistence is disabled.");
+                    } else if (completed != null) {
+                        listLatestCompletedPutRequests(sb, completed);
+                    } else {
+                        if (failed != null) {
+                            listLatestFailedPutRequests(sb, failed);
+                        }
+                        if (cancelled != null) {
+                            listLatestCancelledPutRequests(sb, cancelled);
+                        }
+                    }
+                }
+                if (copy) {
+                    sb.append("Copy Requests:\n");
+                    if (failed == null && cancelled == null && completed == null) {
+                        listCopyRequests(sb);
+                    } else if (!config.getDatabaseParametersForCopy().isDatabaseEnabled()) {
+                        sb.append("Persistence is disabled.");
+                    } else if (completed != null) {
+                        listLatestCompletedCopyRequests(sb, completed);
+                    } else {
+                        if (failed != null) {
+                            listLatestFailedCopyRequests(sb, failed);
+                        }
+                        if (cancelled != null) {
+                            listLatestCancelledCopyRequests(sb, cancelled);
+                        }
+                    }
+                }
+                if (bring) {
+                    sb.append("Bring Online Requests:\n");
+                    if (failed == null && cancelled == null && completed == null) {
+                        listBringOnlineRequests(sb);
+                    } else if (!config.getDatabaseParametersForBringOnline().isDatabaseEnabled()) {
+                        sb.append("Persistence is disabled.");
+                    } else if (completed != null) {
+                        listLatestCompletedBringOnlineRequests(sb, completed);
+                    } else {
+                        if (failed != null) {
+                            listLatestFailedBringOnlineRequests(sb, failed);
+                        }
+                        if (cancelled != null) {
+                            listLatestCancelledBringOnlineRequests(sb, cancelled);
+                        }
+                    }
+                }
+                if (reserve) {
+                    sb.append("Reserve Space Requests:\n");
+                    if (failed == null && cancelled == null && completed == null) {
+                        listReserveSpaceRequests(sb);
+                    } else if (!config.getDatabaseParametersForReserve().isDatabaseEnabled()) {
+                        sb.append("Persistence is disabled.");
+                    } else if (completed != null) {
+                        listLatestCompletedReserveSpaceRequests(sb, completed);
+                    } else {
+                        if (failed != null) {
+                            listLatestFailedReserveSpaceRequests(sb, failed);
+                        }
+                        if (cancelled != null) {
+                            listLatestCancelledReserveSpaceRequests(sb, cancelled);
+                        }
+                    }
+                }
+                if (ls) {
+                    sb.append("Ls Requests:\n");
+                    if (failed == null && cancelled == null && completed == null) {
+                        listLsRequests(sb);
+                    } else if (!config.getDatabaseParametersForList().isDatabaseEnabled()) {
+                        sb.append("Persistence is disabled.");
+                    } else if (completed != null) {
+                        listLatestCompletedLsRequests(sb, completed);
+                    } else {
+                        if (failed != null) {
+                            listLatestFailedLsRequests(sb, failed);
+                        }
+                        if (cancelled != null) {
+                            listLatestCancelledLsRequests(sb, cancelled);
+                        }
+                    }
+                }
             }
-        } else {
-            if (!get && !put && !copy && !bring && !reserve && !ls) {
-                get = true;
-                put = true;
-                copy = true;
-                bring = true;
-                reserve = true;
-                ls = true;
-            }
-            if (get) {
-                sb.append("Get Requests:\n");
-                srm.listGetRequests(sb);
-            }
-            if (put) {
-                sb.append("Put Requests:\n");
-                srm.listPutRequests(sb);
-            }
-            if (copy) {
-                sb.append("Copy Requests:\n");
-                srm.listCopyRequests(sb);
-            }
-            if (bring) {
-                sb.append("Bring Online Requests:\n");
-                srm.listBringOnlineRequests(sb);
-            }
-            if (reserve) {
-                sb.append("Reserve Space Requests:\n");
-                srm.listReserveSpaceRequests(sb);
-            }
-            if (ls) {
-                sb.append("Ls Requests:\n");
-                srm.listLsRequests(sb);
+            return sb.toString();
+        }
+
+        private void listGetRequests(StringBuilder sb) throws DataAccessException {
+            listRequests(sb, GetRequest.class);
+        }
+
+        private void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getGetStorage().getLatestCompletedJobIds(maxCount), GetRequest.class);
+        }
+
+        private void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getGetStorage().getLatestFailedJobIds(maxCount), GetRequest.class);
+        }
+
+        private void listLatestCancelledGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getGetStorage().getLatestCanceledJobIds(maxCount), GetRequest.class);
+        }
+
+        private void listPutRequests(StringBuilder sb) throws DataAccessException {
+            listRequests(sb, PutRequest.class);
+        }
+
+        private void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getPutStorage().getLatestCompletedJobIds(maxCount), PutRequest.class);
+        }
+
+        private void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getPutStorage().getLatestFailedJobIds(maxCount), PutRequest.class);
+        }
+
+        private void listLatestCancelledPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getPutStorage().getLatestCanceledJobIds(maxCount), PutRequest.class);
+        }
+
+        private void listCopyRequests(StringBuilder sb) throws DataAccessException {
+            listRequests(sb, CopyRequest.class);
+        }
+
+        private void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getCopyStorage().getLatestCompletedJobIds(maxCount), CopyRequest.class);
+        }
+
+        private void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getCopyStorage().getLatestFailedJobIds(maxCount), CopyRequest.class);
+        }
+
+        private void listLatestCancelledCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getCopyStorage().getLatestCanceledJobIds(maxCount), CopyRequest.class);
+        }
+
+        private void listBringOnlineRequests(StringBuilder sb) throws DataAccessException {
+            listRequests(sb, BringOnlineRequest.class);
+        }
+
+        private void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getBringOnlineStorage().getLatestCompletedJobIds(maxCount), BringOnlineRequest.class);
+        }
+
+        private void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getBringOnlineStorage().getLatestFailedJobIds(maxCount), BringOnlineRequest.class);
+        }
+
+        private void listLatestCancelledBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getBringOnlineStorage().getLatestCanceledJobIds(maxCount), BringOnlineRequest.class);
+        }
+
+        private void listReserveSpaceRequests(StringBuilder sb) throws DataAccessException {
+            listRequests(sb, ReserveSpaceRequest.class);
+        }
+
+        private void listLatestCompletedReserveSpaceRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getReserveSpaceRequestStorage().getLatestCompletedJobIds(maxCount), ReserveSpaceRequest.class);
+        }
+
+        private void listLatestFailedReserveSpaceRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getReserveSpaceRequestStorage().getLatestFailedJobIds(maxCount), ReserveSpaceRequest.class);
+        }
+
+        private void listLatestCancelledReserveSpaceRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getReserveSpaceRequestStorage().getLatestCanceledJobIds(maxCount), ReserveSpaceRequest.class);
+        }
+
+        private void listLsRequests(StringBuilder sb) throws DataAccessException {
+            listRequests(sb, LsRequest.class);
+        }
+
+        private void listLatestCompletedLsRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getLsRequestStorage().getLatestCompletedJobIds(maxCount), ReserveSpaceRequest.class);
+        }
+
+        private void listLatestFailedLsRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getLsRequestStorage().getLatestFailedJobIds(maxCount), ReserveSpaceRequest.class);
+        }
+
+        private void listLatestCancelledLsRequests(StringBuilder sb, int maxCount) throws DataAccessException {
+            listRequests(sb, srm.getLsRequestStorage().getLatestCanceledJobIds(maxCount), ReserveSpaceRequest.class);
+        }
+
+        private <T extends Job> void listRequests(StringBuilder sb,
+                                                  Set<Long> jobIds,
+                                                  Class<T> type)
+        {
+            for (long requestId : jobIds) {
+                try {
+                    T request = Job.getJob(requestId, type);
+                    sb.append(request).append('\n');
+                } catch (SRMInvalidRequestException ire) {
+                    logger.error(ire.toString());
+                }
             }
         }
-        return sb.toString();
+
+        private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws DataAccessException {
+            Set<T> requests = Job.getActiveJobs(clazz);
+            for (T request: requests) {
+                request.toString(sb,false);
+                sb.append('\n');
+            }
+        }
     }
 
     public static final String fh_ls_queues = " Syntax: ls queues " +
@@ -284,47 +537,6 @@ public class SrmCommandLineInterface
         if (ls) {
             sb.append("Ls Request Scheduler:\n");
             sb.append(srm.getLsSchedulerInfo());
-            sb.append('\n');
-        }
-        return sb.toString();
-    }
-
-    public static final String fh_ls_completed = " Syntax: ls completed [-get] [-put]" +
-            " [-copy] [max_count]" +
-            " #will list completed (done, failed or canceled) requests, " +
-            "if max_count is not specified, it is set to 50";
-    public static final String hh_ls_completed = " [-get] [-put] [-copy] [max_count]";
-
-    public String ac_ls_completed_$_0_1(Args args) throws DataAccessException
-    {
-        boolean get = args.hasOption("get");
-        boolean put = args.hasOption("put");
-        boolean copy = args.hasOption("copy");
-        int max_count = 50;
-        if (args.argc() == 1) {
-            max_count = Integer.parseInt(args.argv(0));
-        }
-
-        if (!get && !put && !copy) {
-            get = true;
-            put = true;
-            copy = true;
-
-        }
-        StringBuilder sb = new StringBuilder();
-        if (get) {
-            sb.append("Get Requests:\n");
-            srm.listLatestCompletedGetRequests(sb, max_count);
-            sb.append('\n');
-        }
-        if (put) {
-            sb.append("Put Requests:\n");
-            srm.listLatestCompletedPutRequests(sb, max_count);
-            sb.append('\n');
-        }
-        if (copy) {
-            sb.append("Copy Requests:\n");
-            srm.listLatestCompletedCopyRequests(sb, max_count);
             sb.append('\n');
         }
         return sb.toString();

@@ -20,6 +20,7 @@ import dmg.util.CommandInterpreter;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorization;
+import org.dcache.srm.SrmCommandLineInterface;
 import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.Job;
@@ -89,6 +90,8 @@ public class Main extends CommandInterpreter implements  Runnable {
                 buildRunningScheduler("copy_" + name, Job.class, "Copy")));
         srm.setRequestCredentialStorage(new DatabaseRequestCredentialStorage(config));
         srm.start();
+
+        addCommandListener(new SrmCommandLineInterface(srm, config));
 
         new Thread(this).start();
     }
@@ -214,145 +217,6 @@ public class Main extends CommandInterpreter implements  Runnable {
          return stringWriter.getBuffer().toString()  ;
        }
 
-        public static final String fh_cancel= " Syntax: cancel <id> ";
-        public static final String hh_cancel= " <id> ";
-        public String ac_cancel_$_1(Args args) {
-            try {
-                long id = Long.parseLong(args.argv(0));
-                StringBuilder sb = new StringBuilder();
-                srm.cancelRequest(sb, id);
-                return sb.toString();
-            }catch (Exception e) {
-                //esay(e);
-                return e.toString();
-            }
-        }
-
-        public static final String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-l] [<id>] "+
-        "#will list all requests";
-        public static final String hh_ls= " [-get] [-put] [-copy] [-l] [<id>]";
-        public String ac_ls_$_0_1(Args args) {
-            try {
-                boolean get=args.hasOption("get");
-                boolean put=args.hasOption("put");
-                boolean copy=args.hasOption("copy");
-                boolean longformat = args.hasOption("l");
-                StringBuilder sb = new StringBuilder();
-                if(args.argc() == 1) {
-                    try {
-                        long reqId = Long.parseLong(args.argv(0));
-                        srm.listRequest(sb, reqId, longformat);
-                    }
-                    catch( NumberFormatException nfe) {
-                        return "id must be a nonnegative integer, you gave id="+args.argv(0);
-                    }
-                }
-                else {
-                    if( !get && !put && !copy ) {
-                        get=true;
-                        put=true;
-                        copy=true;
-
-                    }
-                    if(get) {
-                        sb.append("Get Requests:\n");
-                        srm.listGetRequests(sb);
-                        sb.append('\n');
-                    }
-                    if(put) {
-                        sb.append("Put Requests:\n");
-                        srm.listPutRequests(sb);
-                        sb.append('\n');
-                    }
-                    if(copy) {
-                        sb.append("Copy Requests:\n");
-                        srm.listCopyRequests(sb);
-                        sb.append('\n');
-                    }
-                }
-                return sb.toString();
-            }
-            catch(Throwable t) {
-                t.printStackTrace();
-                return t.toString();
-            }
-        }
-        public static final String fh_ls_queues= " Syntax: ls queues [-get] [-put] [-copy] [-l]  "+
-        "#will list schedule queues";
-        public static final String hh_ls_queues= " [-get] [-put] [-copy] [-l] ";
-        public String ac_ls_queues_$_0(Args args) {
-            try {
-                boolean get=args.hasOption("get");
-                boolean put=args.hasOption("put");
-                boolean copy=args.hasOption("copy");
-                boolean longformat = args.hasOption("l");
-                StringBuilder sb = new StringBuilder();
-
-                if( !get && !put && !copy ) {
-                    get=true;
-                    put=true;
-                    copy=true;
-
-                }
-                if(get) {
-                    sb.append("Get Request Scheduler:\n");
-                    sb.append(srm.getGetSchedulerInfo());
-                    sb.append('\n');
-                }
-                if(put) {
-                    sb.append("Put Request Scheduler:\n");
-                    sb.append(srm.getPutSchedulerInfo());
-                    sb.append('\n');
-                }
-                if(copy) {
-                    sb.append("Copy Request Scheduler:\n");
-                    sb.append(srm.getCopySchedulerInfo());
-                    sb.append('\n');
-                }
-                return sb.toString();
-            }
-            catch(Throwable t) {
-                t.printStackTrace();
-                return t.toString();
-            }
-        }
-
-        public static final String fh_ls_completed= " Syntax: ls completed [-get] [-put] [-copy] [max_count]"+
-        " #will list completed (done, failed or canceled) requests, if max_count is not specified, it is set to 50";
-        public static final String hh_ls_completed= " [-get] [-put] [-copy] [[max_count]";
-        public String ac_ls_completed_$_0_1(Args args) throws Exception{
-            boolean get=args.hasOption("get");
-            boolean put=args.hasOption("put");
-            boolean copy=args.hasOption("copy");
-            int max_count=50;
-            if(args.argc() == 1) {
-                max_count = Integer.parseInt(args.argv(0));
-            }
-
-            if( !get && !put && !copy ) {
-                get=true;
-                put=true;
-                copy=true;
-
-            }
-            StringBuilder sb = new StringBuilder();
-            if(get) {
-                sb.append("Get Requests:\n");
-                srm.listLatestCompletedGetRequests(sb, max_count);
-                sb.append('\n');
-            }
-            if(put) {
-                sb.append("Put Requests:\n");
-                srm.listLatestCompletedPutRequests(sb, max_count);
-                sb.append('\n');
-            }
-            if(copy) {
-                sb.append("Copy Requests:\n");
-                srm.listLatestCompletedCopyRequests(sb, max_count);
-                sb.append('\n');
-            }
-            return sb.toString();
-        }
      public static final String hh_info = "[-l|-a]" ;
    public String ac_info( Args args ) throws Exception {
        return getInfo();

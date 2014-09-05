@@ -597,7 +597,7 @@
     <property name="requestCredentialStorage" ref="srm-credential-store"/>
   </bean>
 
-  <bean id="srm-cli" class="diskCacheV111.srm.dcache.SrmCommandLineInterface">
+  <bean id="srm-cli" class="org.dcache.srm.SrmCommandLineInterface">
     <property name="configuration" ref="config"/>
     <property name="srm" ref="srm"/>
   </bean>

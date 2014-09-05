@@ -1004,10 +1004,6 @@ public class SRM {
         return rs;
     }
 
-    public void listGetRequests(StringBuilder sb) throws DataAccessException {
-        listRequests(sb, GetRequest.class);
-    }
-
     public Set<Long> getGetRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(GetRequest.class,description);
     }
@@ -1015,23 +1011,6 @@ public class SRM {
     public Set<Long> getLsRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(LsRequest.class,description);
     }
-
-    public void listLatestCompletedGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getGetStorage().getLatestCompletedJobIds(maxCount), GetRequest.class);
-    }
-
-    public void listLatestFailedGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getGetStorage().getLatestFailedJobIds(maxCount), GetRequest.class);
-    }
-
-    public void listLatestDoneGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getGetStorage().getLatestDoneJobIds(maxCount), GetRequest.class);
-    }
-
-    public void listLatestCanceledGetRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getGetStorage().getLatestCanceledJobIds(maxCount), GetRequest.class);
-    }
-
 
     public CharSequence getSchedulerInfo()
     {
@@ -1063,107 +1042,16 @@ public class SRM {
         return schedulers.getDetailedInfo(BringOnlineFileRequest.class);
     }
 
-    public void listPutRequests(StringBuilder sb) throws DataAccessException {
-        listRequests(sb, PutRequest.class);
-    }
-
     public Set<Long> getPutRequestIds(SRMUser user, String description) throws DataAccessException {
-        return getActiveJobIds(PutRequest.class,description);
-    }
-
-    public void listLatestCompletedPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getPutStorage().getLatestCompletedJobIds(maxCount), PutRequest.class);
-    }
-
-    public void listLatestFailedPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getPutStorage().getLatestFailedJobIds(maxCount), PutRequest.class);
-    }
-
-    public void listLatestCanceledPutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getPutStorage().getLatestCanceledJobIds(maxCount), PutRequest.class);
-    }
-
-    public void listLatestDonePutRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getPutStorage().getLatestDoneJobIds(maxCount), PutRequest.class);
-    }
-
-    public void listCopyRequests(StringBuilder sb) throws DataAccessException {
-        listRequests(sb, CopyRequest.class);
+        return getActiveJobIds(PutRequest.class, description);
     }
 
     public Set<Long> getCopyRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(CopyRequest.class,description);
     }
 
-    public void listLatestCompletedCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getCopyStorage().getLatestCompletedJobIds(maxCount), CopyRequest.class);
-    }
-
-    public void listLatestFailedCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getCopyStorage().getLatestFailedJobIds(maxCount), CopyRequest.class);
-    }
-
-    public void listLatestCanceledCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getCopyStorage().getLatestCanceledJobIds(maxCount), CopyRequest.class);
-    }
-
-    public void listLatestDoneCopyRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getCopyStorage().getLatestDoneJobIds(maxCount), CopyRequest.class);
-    }
-
-    public void listBringOnlineRequests(StringBuilder sb) throws DataAccessException {
-        listRequests(sb, BringOnlineRequest.class);
-    }
-
     public Set<Long> getBringOnlineRequestIds(SRMUser user, String description) throws DataAccessException {
         return getActiveJobIds(BringOnlineRequest.class,description);
-    }
-
-    public void listLatestCompletedBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getBringOnlineStorage().getLatestCompletedJobIds(maxCount), BringOnlineRequest.class);
-    }
-
-    public void listLatestFailedBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getBringOnlineStorage().getLatestFailedJobIds(maxCount), BringOnlineRequest.class);
-    }
-
-    public void listLatestCanceledBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getBringOnlineStorage().getLatestCanceledJobIds(maxCount), BringOnlineRequest.class);
-    }
-
-
-    public void listLatestDoneBringOnlineRequests(StringBuilder sb, int maxCount) throws DataAccessException {
-        listRequests(sb, getBringOnlineStorage().getLatestDoneJobIds(maxCount), BringOnlineRequest.class);
-    }
-
-    public void listReserveSpaceRequests(StringBuilder sb) throws DataAccessException {
-        listRequests(sb, ReserveSpaceRequest.class);
-    }
-
-    public void listLsRequests(StringBuilder sb) throws DataAccessException {
-        listRequests(sb, LsRequest.class);
-    }
-
-    private <T extends Job> void listRequests(StringBuilder sb,
-            Set<Long> jobIds,
-            Class<T> type)
-    {
-        for (long requestId : jobIds) {
-            try {
-                T request = Job.getJob(requestId, type);
-                sb.append(request).append('\n');
-            } catch (SRMInvalidRequestException ire) {
-                logger.error(ire.toString());
-            }
-        }
-    }
-
-    private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws DataAccessException {
-        Set<T> requests = Job.getActiveJobs(clazz);
-        for (T request: requests) {
-            request.toString(sb,false);
-            sb.append('\n');
-        }
     }
 
     public double getLoad() {
