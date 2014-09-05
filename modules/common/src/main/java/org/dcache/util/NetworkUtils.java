@@ -80,17 +80,10 @@ public abstract class NetworkUtils {
         }
         LOCAL_INET_ADDRESSES = ImmutableList.copyOf(localInetAddress);
 
-        if (LOCAL_INET_ADDRESSES.isEmpty()) {
-            canonicalHostName = "localhost";
-        } else {
-            InetAddress[] addresses
-                = LOCAL_INET_ADDRESSES.toArray(new InetAddress[0]);
-            Arrays.sort(addresses, getExternalInternalSorter());
-            canonicalHostName = addresses[0].getCanonicalHostName();
-        }
+        canonicalHostName = getPreferredHostName();
     }
 
-    public static String getCanonicalhostname() {
+    public static String getCanonicalHostName() {
         return canonicalHostName;
     }
 
@@ -231,5 +224,52 @@ public abstract class NetworkUtils {
             return StandardProtocolFamily.INET6;
         }
         throw new IllegalArgumentException("Unknown protocol family: " + address);
+    }
+
+
+    private static String getPreferredHostName() {
+        String hostName = "localhost";
+
+        if (!LOCAL_INET_ADDRESSES.isEmpty()) {
+            InetAddress[] addresses
+                = LOCAL_INET_ADDRESSES.toArray(new InetAddress[0]);
+            Arrays.sort(addresses, getExternalInternalSorter());
+
+            boolean found = false;
+
+            /*
+             * For legibility, we prefer to see a traditional
+             * DNS host name; but if there is no mapping,
+             * use the first address.
+             */
+            for (InetAddress a: addresses) {
+                hostName = stripScope(a.getCanonicalHostName());
+
+                if (!InetAddresses.isInetAddress(hostName)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                hostName = addresses[0].getCanonicalHostName();
+            }
+        }
+
+        return hostName;
+    }
+
+    /*
+     * Workaround for bug in Guava, which should not
+     * return the scoping portion of the address.  There
+     * is a patch for this, but it has not yet been
+     * applied to InetAddresses in our current library version.
+     */
+    private static String stripScope(String hostName) {
+        int i = hostName.indexOf("%");
+        if (i > 0) {
+            return hostName.substring(0, i);
+        }
+        return hostName;
     }
 }

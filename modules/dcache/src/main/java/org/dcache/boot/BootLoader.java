@@ -161,7 +161,7 @@ public class BootLoader
             LoggerFactory.getLogger("root")
                 .error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
                                                     "DOMAIN_STARTUP_FAILURE",
-                                                    NetworkUtils.getCanonicalhostname(),
+                                                    NetworkUtils.getCanonicalHostName(),
                                                     args.toString()),
                         logMessage, message);
         } else {

@@ -51,7 +51,7 @@ public class HsmRunSystem extends RunSystem
         } catch (CacheException e) {
             LOGGER.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
                                                       "HSM_SCRIPT_FAILURE",
-                                                      NetworkUtils.getCanonicalhostname(),
+                                                      NetworkUtils.getCanonicalHostName(),
                                                       storageName,
                                                       extractPossibleEnstoreIds(getErrorString())),
                                     e.getMessage());

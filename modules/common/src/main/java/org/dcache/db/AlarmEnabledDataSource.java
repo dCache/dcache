@@ -142,7 +142,7 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
                                                       DB_CONNECTION_FAILURE,
                                                       url,
                                                       connectorName,
-                                                      NetworkUtils.getCanonicalhostname()),
+                                                      NetworkUtils.getCanonicalHostName()),
                          "Could not get connection to database", sql);
             throw sql;
         }
@@ -164,7 +164,7 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
                                                       DB_CONNECTION_FAILURE,
                                                       url,
                                                       connectorName,
-                                                      NetworkUtils.getCanonicalhostname()),
+                                                      NetworkUtils.getCanonicalHostName()),
                          "Could not get connection to database", sql);
             throw sql;
         }
