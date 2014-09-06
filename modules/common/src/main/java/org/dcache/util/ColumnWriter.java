@@ -99,7 +99,10 @@ public class ColumnWriter
 
         StringWriter result = new StringWriter();
         try (PrintWriter out = new PrintWriter(result)) {
-            out.println(renderHeader(spaces, widths));
+            String header = renderHeader(spaces, widths);
+            if (!header.isEmpty()) {
+                out.println(header);
+            }
             for (Row row: rows) {
                 row.render(columns, spaces, widths, out);
             }
