@@ -341,7 +341,7 @@ public class Shell extends ShellApplication
                 case "mtime":
                     time = stat.getMTime();
                     break;
-                case "created":
+                case "create":
                     time = stat.getCrTime();
                     break;
                 default:
