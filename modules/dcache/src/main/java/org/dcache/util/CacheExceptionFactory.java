@@ -99,10 +99,13 @@ public class CacheExceptionFactory {
     public static CacheException exceptionOf(Message message)
     {
         Object error = message.getErrorObject();
-        if (error != null && error.getClass() == CacheException.class) {
+        if (!(error instanceof CacheException)) {
+            return exceptionOf(message.getReturnCode(), Objects.toString(error, null));
+        }
+        if (error.getClass() == CacheException.class) {
             CacheException ce = (CacheException) error;
             return exceptionOf(ce.getRc(), ce.getMessage(), ce.getCause());
         }
-        return exceptionOf(message.getReturnCode(), Objects.toString(error, null));
+        return (CacheException) error;
     }
 }
