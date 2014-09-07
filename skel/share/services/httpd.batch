@@ -9,9 +9,8 @@
 onerror shutdown
 check -strong httpd.net.listen
 check -strong httpd.net.port
-check -strong dcache.paths.config
-check -strong dcache.paths.etc
 check -strong httpd.cell.name
+check -strong httpd.setup
 check -strong httpd.enable.authn
 check -strong httpd.enable.alarm-cleaner
 check -strong httpd.enable.plots.pool-queue
@@ -231,14 +230,6 @@ User-agent: *
 Disallow: /
 endDefine
 
-# Any of the above defaults can be redefined in etc/httpd.conf
-####################################################################
-
-onerror continue
-test -f ${dcache.paths.etc}/httpd.conf
-exec file:${dcache.paths.etc}/httpd.conf -ifok
-onerror shutdown
-
 # Transfer observer collects information about active transfers
 ####################################################################
 
@@ -249,7 +240,7 @@ endDefine
 
 create diskCacheV111.cells.TransferObserverV1 TransferObserver \
               "default \
-               -loginBroker=${dcache.service.loginbroker} \
+               -loginBroker=${httpd.service.loginbroker} \
                -update=60"
 
 
@@ -269,8 +260,17 @@ create diskCacheV111.cells.WebCollectorV3 collector \
     "PnfsManager \
      PoolManager \
      gPlazma \
-     -loginBroker=${dcache.service.loginbroker} \
+     -loginBroker=${httpd.service.loginbroker} \
      -replyObject"
+
+# Any of the above defaults can be redefined in etc/httpd.conf
+####################################################################
+
+onerror continue
+test -f ${httpd.setup}
+exec file:${httpd.setup} -ifok
+onerror shutdown
+
 
 # The http service cell provides the web interface
 #
