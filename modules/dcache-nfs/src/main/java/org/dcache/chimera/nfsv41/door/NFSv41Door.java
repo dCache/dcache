@@ -83,6 +83,7 @@ import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
+import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.nfs.v4.StripingPattern;
 import org.dcache.nfs.v4.xdr.device_addr4;
@@ -295,7 +296,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                      _proxyIoFactory.setRetryPolicy(RETRY_POLICY);
                      _proxyIoFactory.startAdapter();
                     _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
-                            _dm, _vfs, _idMapper, _exportFile);
+                            _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     _loginBrokerHandler.start();
                     break;
@@ -447,7 +448,7 @@ public class NFSv41Door extends AbstractCellComponent implements
      * @throws IOException in case of any other errors
      */
     @Override
-    public Layout layoutGet(CompoundContext context, Inode nfsInode, int ioMode, stateid4 stateid)
+    public Layout layoutGet(CompoundContext context, Inode nfsInode, int layoutType, int ioMode, stateid4 stateid)
             throws IOException {
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
@@ -459,6 +460,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             if (!isPnfsAllowed(context, nfsInode)) {
                 throw new LayoutUnavailableException("pNFS is not allowed");
+            }
+
+            if (layoutType != layouttype4.LAYOUT4_NFSV4_1_FILES) {
+                _log.warn("unsupported layout type ({}) requests from");
+                throw new LayoutUnavailableException("Unsuported layout type: " + layoutType);
             }
 
             if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
@@ -508,7 +514,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             nfs_fh4 fh = new nfs_fh4(nfsInode.toNfsHandle());
 
             //  -1 is special value, which means entire file
-            layout4 layout = Layout.getLayoutSegment(deviceid, fh, ioMode,
+            layout4 layout = Layout.getLayoutSegment(deviceid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh, ioMode,
                     0, nfs4_prot.NFS4_UINT64_MAX);
 
             return new Layout(true, stateid, new layout4[]{layout});

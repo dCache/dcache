@@ -26,6 +26,7 @@ import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.NFSv4OperationFactory;
+import org.dcache.nfs.v4.NfsIdMapping;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
 import org.dcache.nfs.v4.OperationCREATE_SESSION;
 import org.dcache.nfs.v4.OperationDESTROY_CLIENTID;
@@ -37,7 +38,6 @@ import org.dcache.nfs.v4.OperationPUTFH;
 import org.dcache.nfs.v4.OperationPUTROOTFH;
 import org.dcache.nfs.v4.OperationRECLAIM_COMPLETE;
 import org.dcache.nfs.v4.OperationSEQUENCE;
-import org.dcache.nfs.v4.SimpleIdMap;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
@@ -79,7 +79,12 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public Inode create(Inode parent, Type type, String path, int uid, int gid, int mode) throws IOException {
+        public void commit(Inode inode, long offset, int count) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Inode create(Inode parent, Type type, String path, Subject subject, int mode) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -99,7 +104,7 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public Inode link(Inode parent, Inode link, String path, int uid, int gid) throws IOException {
+        public Inode link(Inode parent, Inode link, String path, Subject subject) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -109,7 +114,7 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public Inode mkdir(Inode parent, String path, int uid, int gid, int mode) throws IOException {
+        public Inode mkdir(Inode parent, String path, Subject subject, int mode) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -139,12 +144,12 @@ public class NFSv4MoverHandler {
         }
 
         @Override
-        public Inode symlink(Inode parent, String path, String link, int uid, int gid, int mode) throws IOException {
+        public Inode symlink(Inode parent, String path, String link, Subject subject, int mode) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public int write(Inode inode, byte[] data, long offset, int count) throws IOException {
+        public WriteResult write(Inode inode, byte[] data, long offset, int count, StabilityLevel stabilityLevel) throws IOException {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -176,6 +181,11 @@ public class NFSv4MoverHandler {
         @Override
         public AclCheckable getAclCheckable() {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public NfsIdMapping getIdMapper() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
 
@@ -211,7 +221,7 @@ public class NFSv4MoverHandler {
     public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId, CellStub door, long bootVerifier)
             throws IOException , GSSException, OncRpcException {
 
-        _embededDS = new NFSServerV41(_operationFactory, null, _fs, new SimpleIdMap(), null);
+        _embededDS = new NFSServerV41(_operationFactory, null, _fs, null);
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withMinPort(portRange.getLower())
                 .withMaxPort(portRange.getUpper())

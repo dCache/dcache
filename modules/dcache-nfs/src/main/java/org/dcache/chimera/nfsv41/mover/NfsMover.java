@@ -34,7 +34,6 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.xdr.uint32_t;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
@@ -157,7 +156,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private class MoverState extends NFS4State {
 
         MoverState() {
-            super(NfsMover.this.getStateId(), new uint32_t(0));
+            super(NfsMover.this.getStateId());
         }
 
         @Override
