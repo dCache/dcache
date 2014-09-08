@@ -19,8 +19,12 @@ package org.dcache.chimera;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DirectoryStreamHelper {
+
+    private static final Logger _log = LoggerFactory.getLogger(DirectoryStreamHelper.class);
 
     /**
      * Convert directory stream into a {@link List}.
@@ -30,7 +34,16 @@ public class DirectoryStreamHelper {
      */
     public static List<HimeraDirectoryEntry> listOf(FsInode inode) throws IOException, IOHimeraFsException {
 
-        List<HimeraDirectoryEntry> directoryList = new ArrayList<>(inode.statCache().getNlink());
+        List<HimeraDirectoryEntry> directoryList;
+
+        int estimatedListSize = inode.statCache().getNlink();
+        if (estimatedListSize < 0) {
+            _log.error("Invalid nlink count for directory {}", inode);
+            directoryList = new ArrayList<>();
+        } else {
+            directoryList = new ArrayList<>(estimatedListSize);
+        }
+
         try (DirectoryStreamB<HimeraDirectoryEntry> dirStream =
                 inode.newDirectoryStream()) {
             for (HimeraDirectoryEntry e : dirStream) {
