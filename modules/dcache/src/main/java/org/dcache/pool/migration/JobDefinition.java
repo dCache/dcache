@@ -27,6 +27,7 @@ public class JobDefinition
     public final Expression pauseWhen;
     public final Expression stopWhen;
     public final boolean forceSourceMode;
+    public final int replicas;
 
     public JobDefinition(List<CacheEntryFilter> filters,
                          CacheEntryMode sourceMode,
@@ -38,6 +39,7 @@ public class JobDefinition
                          long refreshPeriod,
                          boolean isPermanent,
                          boolean isEager,
+                         int replicas,
                          boolean mustMovePins,
                          boolean computeChecksumOnUpdate,
                          Expression pauseWhen,
@@ -54,6 +56,7 @@ public class JobDefinition
         this.refreshPeriod = refreshPeriod;
         this.isPermanent = isPermanent;
         this.isEager = isEager;
+        this.replicas = replicas;
         this.mustMovePins = mustMovePins;
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;
         this.pauseWhen = pauseWhen;

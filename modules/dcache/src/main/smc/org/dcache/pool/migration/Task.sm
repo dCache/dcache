@@ -47,7 +47,6 @@ Entry
                 [ ctxt.hasMoreLocations() ]
                 UpdatingExistingFile
                 {
-                        updateExistingReplica();
                 }
         query_success
                 InitiatingCopy
@@ -58,12 +57,15 @@ Entry
 // We got existing copies. Try to update one of them. Keep
 // trying until we succeed or we tried them all.
 UpdatingExistingFile
+Entry
+{
+        updateExistingReplica();
+}
 {
         copy_timeout
                 [ ctxt.hasMoreLocations() ]
-                nil
+                UpdatingExistingFile
                 {
-                        updateExistingReplica();
                 }
         copy_timeout
                 [ ctxt.isEager() ]
@@ -132,15 +134,20 @@ UpdatingExistingFile
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                [ ctxt.needsMoreReplicas() ]
+                WaitingForCopyReplicaReply
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 ]
                 Done
                 {
                 }
+
 }
 
 // Ask pool to copy the file.
@@ -172,7 +179,7 @@ Entry
                                            ctxt.getTarget(), cause));
                 }
         copy_timeout
-                Waiting
+                WaitingForCopyFinishedMessage
                 {
                         // No reply, but message could have been
                         // received anyway, so try to cancel it.
@@ -199,13 +206,59 @@ Entry
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                [ ctxt.needsMoreReplicas() ]
+                WaitingForCopyReplicaReply
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 ]
                 Done
+                {
+                }
+}
+
+// Need to create more copies and received PoolMigrationCopyFinishedMessage ahead of
+// PoolMigrationCopyReplicaMessage reply. Wait for reply before proceeding.
+WaitingForCopyReplicaReply
+{
+        copy_success
+                [ ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                }
+        copy_success
+                InitiatingCopy
+                {
+                }
+        copy_nopools
+                Failed
+                {
+                        fail(String.format("No targets"));
+                }
+        copy_noroute
+                Failed
+                {
+                        fail(String.format("Pool %s failed (no route to cell)",
+                                           ctxt.getTarget()));
+                }
+        copy_failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        fail(String.format("Pool %s failed (%s)",
+                                           ctxt.getTarget(), cause));
+                }
+        copy_timeout
+                Failed
+                {
+                        fail(String.format("Pool %s failed (no response)",
+                                           ctxt.getTarget()));
+                }
+        cancel
+                Cancelled
                 {
                 }
 }
@@ -243,12 +296,21 @@ Exit
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                [ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                InitiatingCopy
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 ]
                 Done
                 {
                 }
@@ -271,7 +333,7 @@ Entry
                         // Task is alive
                 }
         ping_failure(rc: Integer, cause: Object)
-                Waiting
+                WaitingForCopyFinishedMessage
                 {
                         // Task is gone
                 }
@@ -302,12 +364,21 @@ Entry
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                [ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                InitiatingCopy
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 ]
                 Done
                 {
                 }
@@ -340,7 +411,7 @@ Exit
                         // Task is alive
                 }
         ping_failure(rc: Integer, cause: Object)
-                Waiting
+                WaitingForCopyFinishedMessage
                 {
                         // Task is gone
                 }
@@ -375,12 +446,21 @@ Exit
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                [ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                InitiatingCopy
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 ]
                 Done
                 {
                 }
@@ -392,7 +472,7 @@ Exit
 
 // Target pool no longer has the task. Let's wait for
 // the CopyFinished message.
-Waiting
+WaitingForCopyFinishedMessage
 Entry
 {
         startTimer(ctxt.getTaskDeadTimeout());
@@ -425,12 +505,21 @@ Exit
                                            message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                [ ctxt.needsMoreReplicas() && ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.needsMoreReplicas() ]
+                InitiatingCopy
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ ctxt.getMustMovePins() ]
                 MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
-                [ message.getReturnCode() == 0 ]
                 Done
                 {
                 }

@@ -41,13 +41,13 @@ import org.dcache.util.expression.Expression;
 /**
  * Encapsulates a job as defined by a user command.
  *
- * A job is a collection of tasks, each task transfering a single
+ * A job is a collection of tasks, each task transferring a single
  * replica. The tasks are scheduled by the job. Whereas a job defines
  * a bulk operation, a task encapsulates a transfer of a single
  * replica.
  *
  * Jobs monitor the local repository for changes. If a replica changes
- * state before it is transfered, and the replica no longer passes the
+ * state before it is transferred, and the replica no longer passes the
  * selection criteria of the job, then it will not be transferred. If
  * it is in the process of being transferred, then the transfer is
  * cancelled. If the transfer has already completed, then nothing

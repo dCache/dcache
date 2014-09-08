@@ -1,16 +1,19 @@
 package org.dcache.pool.migration;
 
+import com.google.common.collect.Lists;
 import statemap.TransitionUndefinedException;
 
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -32,11 +35,27 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.ReflectionUtils;
-import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Predicates.compose;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Lists.*;
+import static com.google.common.collect.Queues.newArrayDeque;
+
+/**
+ * Encapsulates the migration of a single replica of a migration job.
+ *
+ * A task encapsulates the logic for migrating a replica according to the conditions
+ * defined by a migration job. The high level logic is defined in the Task state
+ * machine generated with SMC, see Task.sm.
+ *
+ * This class mostly contains utility methods and auxiliary state used by the
+ * state machine.
+ */
 public class Task
 {
-    private final static AtomicInteger _counter = new AtomicInteger();
+    private static final AtomicInteger _counter = new AtomicInteger();
 
     private final TaskContext _fsm;
 
@@ -56,7 +75,8 @@ public class Task
     private final CacheEntry _entry;
 
     private ScheduledFuture<?> _timerTask;
-    private List<String> _locations = Collections.emptyList();
+    private Deque<String> _locations = new ArrayDeque<>(0);
+    private Set<String> _replicas = new HashSet<>();
     private CellPath _target;
 
     public Task(TaskCompletionHandler callbackHandler,
@@ -172,7 +192,7 @@ public class Task
     /** Returns the intended sticky records of the target replica. */
     private List<StickyRecord> getTargetStickyRecords()
     {
-        List<StickyRecord> result = new ArrayList();
+        List<StickyRecord> result = new ArrayList<>();
         if (_definition.targetMode.state == CacheEntryMode.State.SAME) {
             for (StickyRecord record: _entry.getStickyRecords()) {
                 if (!isPin(record)) {
@@ -204,7 +224,8 @@ public class Task
         throws NoSuchElementException
     {
         List<PoolManagerPoolInformation> pools =
-            _definition.poolList.getPools();
+                newArrayList(filter(_definition.poolList.getPools(),
+                                    compose(not(in(_replicas)), PoolManagerPoolInformation.GET_NAME)));
         if (pools.isEmpty()) {
             throw new NoSuchElementException("No pools available");
         }
@@ -230,7 +251,7 @@ public class Task
     }
 
     /** Message handler - ignores messages with the wrong ID */
-    synchronized public void
+    public synchronized void
         messageArrived(PoolMigrationCopyFinishedMessage message)
     {
         if (_uuid.equals(message.getUUID())) {
@@ -259,8 +280,7 @@ public class Task
      */
     private synchronized void setLocations(List<String> locations)
     {
-        _locations = new ArrayList(locations);
-        _locations.retainAll(getPools());
+        _locations = newArrayDeque(filter(locations, in(getPools())));
     }
 
     /**
@@ -272,18 +292,21 @@ public class Task
         return !_locations.isEmpty();
     }
 
+    /**
+     * Returns true iff the more replicas are needed to satisfy the requirements
+     * of the migration job.
+     */
+    synchronized boolean needsMoreReplicas()
+    {
+        return _replicas.size() < _definition.replicas;
+    }
+
     /** FSM Action */
     synchronized void updateExistingReplica()
     {
         assert !_locations.isEmpty();
 
-        initiateCopy(new CellPath(_locations.remove(0)));
-
-        /* Small optimisation to avoid having too many lists allocated.
-         */
-        if (_locations.isEmpty()) {
-            _locations = Collections.emptyList();
-        }
+        initiateCopy(new CellPath(_locations.removeFirst()));
     }
 
     /** FSM Action */
@@ -310,17 +333,24 @@ public class Task
     private synchronized void
         initiateCopy(CellPath target)
     {
-        FileAttributes fileAttributes = _entry.getFileAttributes();
         _target = target;
-        CellStub.addCallback(_pool.send(_target,
-                                        new PoolMigrationCopyReplicaMessage(_uuid,
-                                                                            _source,
-                                                                            fileAttributes,
-                                                                            getTargetState(),
-                                                                            getTargetStickyRecords(),
-                                                                            _definition.computeChecksumOnUpdate,
-                                                                            _definition.forceSourceMode)),
-                             new Callback<PoolMigrationCopyReplicaMessage>("copy_"), _executor);
+        PoolMigrationCopyReplicaMessage copyReplicaMessage =
+                new PoolMigrationCopyReplicaMessage(_uuid,
+                                                    _source,
+                                                    _entry.getFileAttributes(),
+                                                    getTargetState(),
+                                                    getTargetStickyRecords(),
+                                                    _definition.computeChecksumOnUpdate,
+                                                    _definition.forceSourceMode);
+        CellStub.addCallback(_pool.send(_target, copyReplicaMessage),
+                             new Callback<PoolMigrationCopyReplicaMessage>("copy_") {
+                                 @Override
+                                 public void success(PoolMigrationCopyReplicaMessage message)
+                                 {
+                                     _replicas.add(_target.getCellName());
+                                     super.success(message);
+                                 }
+                             }, _executor);
     }
 
     /** FSM Action */
@@ -336,7 +366,7 @@ public class Task
     /** FSM Action */
     synchronized void movePin()
     {
-        Collection<StickyRecord> records = new ArrayList();
+        Collection<StickyRecord> records = new ArrayList<>();
         for (StickyRecord record: _entry.getStickyRecords()) {
             if (isPin(record)) {
                 records.add(record);
@@ -447,7 +477,7 @@ public class Task
     /**
      * Starts the task.
      */
-    synchronized public void run()
+    public synchronized void run()
     {
         _fsm.run();
     }
@@ -456,7 +486,7 @@ public class Task
      * Cancels the task, if not already completed. This will trigger a
      * notification (postponed).
      */
-    synchronized public void cancel()
+    public synchronized void cancel()
     {
         _fsm.cancel();
     }
@@ -464,7 +494,7 @@ public class Task
     /**
      * Helper class implementing the MessageCallback interface,
      * forwarding all messages as events to the state machine. Events
-     * a forwarded via an executor to guarantee asynchronous delivery
+     * are forwarded via an executor to guarantee asynchronous delivery
      * (SMC state machines do not allow transitions to be triggered
      * from within transitions).
      */

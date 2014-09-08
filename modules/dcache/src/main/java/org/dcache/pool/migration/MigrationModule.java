@@ -430,6 +430,14 @@ public class MigrationModule
                         "existing replicas fail to respond.")
         boolean eager;
 
+        @Option(name = "replicas",
+                category = "Target options",
+                usage = "Number of replicas to create in the target pools. Due to idempotence " +
+                        "of migration jobs, running the same job multiple times will not create " +
+                        "additional copies. This option allows multiple replicas to be created " +
+                        "while preserving idempotence.")
+        int replicas = 1;
+
         @Option(name="exclude", metaVar="glob", separator=",",
                 category="Target options",
                 usage = "Exclude target pools matching any of the patterns. Single " +
@@ -759,6 +767,10 @@ public class MigrationModule
                 }
             }
 
+            if (replicas < 1) {
+                throw new IllegalArgumentException("Number of replicas must be positive.");
+            }
+
             Collection<Pattern> excluded = createPatterns(exclude);
             excluded.add(Pattern.compile(Pattern.quote(_context.getPoolName())));
             Collection<Pattern> included = createPatterns(include);
@@ -803,6 +815,7 @@ public class MigrationModule
                             refresh * 1000,
                             permanent,
                             eager,
+                            replicas,
                             mustMovePins,
                             verify,
                             createLifetimePredicate(pauseWhen),
