@@ -85,6 +85,7 @@ import org.dcache.services.billing.db.data.HitsHourly;
 import org.dcache.services.billing.db.data.MissesHourly;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersDaily;
 import org.dcache.services.billing.db.data.PoolToPoolTransfersHourly;
+import org.dcache.services.billing.db.data.TransferredEntry;
 import org.dcache.services.billing.histograms.TimeFrame;
 import org.dcache.services.billing.histograms.TimeFrame.BinType;
 import org.dcache.services.billing.histograms.data.TimeFrameHistogramData.HistogramDataType;
@@ -147,7 +148,7 @@ public final class JDOTimeFrameHistogramDataService implements
         }
         histogram[0].setData(plotData);
         histogram[0].setDfactor(GB);
-        histogram[0].setField(SizeEntry.SIZE);
+        histogram[0].setField(TransferredEntry.TRANSFERRED);
         return histogram;
     }
 
@@ -297,7 +298,7 @@ public final class JDOTimeFrameHistogramDataService implements
                             timeFrame);
         }
         histogram[0].setData(plotData);
-        histogram[0].setField(SizeEntry.SIZE);
+        histogram[0].setField(TransferredEntry.TRANSFERRED);
         histogram[0].setDfactor(GB);
         return histogram;
     }
