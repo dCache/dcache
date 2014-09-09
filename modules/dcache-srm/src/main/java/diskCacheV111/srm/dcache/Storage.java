@@ -84,7 +84,6 @@ import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
@@ -209,7 +208,6 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReleaseSpaceCallback;
 import org.dcache.srm.SrmReserveSpaceCallback;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.util.Tools;
@@ -343,7 +341,7 @@ public final class Storage
                                                             rc, Objects.toString(error, null));
                                                     future.setException(exception);
                                                 }
-                                            }, MoreExecutors.sameThreadExecutor());
+                                            }, _executor);
                                     return future;
                                 }
                             });
@@ -647,7 +645,7 @@ public final class Storage
 
         return Futures.makeChecked(
                 UnpinCompanion.unpinFile(
-                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), Long.parseLong(pinId), _pinManagerStub),
+                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), Long.parseLong(pinId), _pinManagerStub, _executor),
                 new ToSRMException());
     }
 
@@ -657,7 +655,7 @@ public final class Storage
     {
         return Futures.makeChecked(
                 UnpinCompanion.unpinFileBySrmRequestId(
-                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), requestToken, _pinManagerStub),
+                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), requestToken, _pinManagerStub, _executor),
                 new ToSRMException());
     }
 
@@ -667,7 +665,7 @@ public final class Storage
     {
         return Futures.makeChecked(
                 UnpinCompanion.unpinFile(
-                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), _pinManagerStub),
+                        ((DcacheUser) user).getSubject(), new PnfsId(fileId), _pinManagerStub, _executor),
                 new ToSRMException());
     }
 
@@ -1087,7 +1085,7 @@ public final class Storage
                                              break;
                                          }
                                      }
-                                 }, MoreExecutors.sameThreadExecutor());
+                                 }, _executor);
             return Futures.makeChecked(future, new ToSRMException());
         } catch (SRMInvalidPathException e) {
             return immediateFailedCheckedFuture(e);
@@ -1380,7 +1378,8 @@ public final class Storage
                                            getPath(surl).toString(),
                                            removeFileCallback,
                                            _pnfsStub,
-                                           getCellEndpoint());
+                                           getCellEndpoint(),
+                                           _executor);
         } catch (SRMInvalidPathException e) {
             callback.AdvisoryDeleteFailed(e.getMessage());
         }
@@ -1397,7 +1396,8 @@ public final class Storage
                                            getPath(surl).toString(),
                                            callbacks,
                                            _pnfsStub,
-                                           getCellEndpoint());
+                                           getCellEndpoint(),
+                                           _executor);
         } catch (SRMInvalidPathException e) {
             callbacks.notFound(e.getMessage());
         }
@@ -2200,7 +2200,7 @@ public final class Storage
                                          _log.error("Locality lookup failed: {} [{}]",
                                                     error, rc);
                                      }
-                                 }, MoreExecutors.sameThreadExecutor());
+                                 }, _executor);
         }
     }
 
@@ -2215,7 +2215,7 @@ public final class Storage
         if (_isSpaceManagerEnabled) {
             SrmReserveSpaceCompanion.reserveSpace(((DcacheUser) user).getSubject(),
                     sizeInBytes, spaceReservationLifetime, retentionPolicy,
-                    accessLatency, description, callback, _spaceManagerStub);
+                    accessLatency, description, callback, _spaceManagerStub, _executor);
         } else {
             callback.failed(SPACEMANAGER_DISABLED_MESSAGE);
         }
@@ -2228,7 +2228,7 @@ public final class Storage
             SrmReleaseSpaceCallback callbacks) {
         if (_isSpaceManagerEnabled) {
             SrmReleaseSpaceCompanion.releaseSpace(((DcacheUser) user).getSubject(),
-                    spaceToken, releaseSizeInBytes, callbacks, _spaceManagerStub);
+                    spaceToken, releaseSizeInBytes, callbacks, _spaceManagerStub, _executor);
             spaces.invalidate(spaceToken);
         } else {
             callbacks.failed(SPACEMANAGER_DISABLED_MESSAGE);

@@ -74,6 +74,7 @@ import javax.security.auth.Subject;
 
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.message.Release;
@@ -137,7 +138,8 @@ public final class SrmReleaseSpaceCompanion
             String spaceToken,
             Long spaceToReleaseInBytes,
             SrmReleaseSpaceCallback callback,
-            CellStub spaceManagerStub)
+            CellStub spaceManagerStub,
+            Executor executor)
     {
         LOGGER.trace("SrmReleaseSpaceCompanion.releaseSpace({}, token {}, spaceToReleaseInBytes {})",
                 subject.getPrincipals(), spaceToken, spaceToReleaseInBytes);
@@ -146,7 +148,7 @@ public final class SrmReleaseSpaceCompanion
             SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(callback);
             Release release = new Release(token, spaceToReleaseInBytes);
             release.setSubject(subject);
-            CellStub.addCallback(spaceManagerStub.send(release), companion, MoreExecutors.sameThreadExecutor());
+            CellStub.addCallback(spaceManagerStub.send(release), companion, executor);
         } catch (NumberFormatException e) {
             callback.invalidRequest("No such space");
         }

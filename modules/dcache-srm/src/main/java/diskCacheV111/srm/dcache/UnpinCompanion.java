@@ -74,6 +74,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.util.concurrent.Executor;
+
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.cells.AbstractMessageCallback;
@@ -131,7 +133,8 @@ public class UnpinCompanion
     public static ListenableFuture<String> unpinFile(Subject subject,
                                                      PnfsId pnfsId,
                                                      long pinId,
-                                                     CellStub pinManagerStub)
+                                                     CellStub pinManagerStub,
+                                                     Executor executor)
     {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId);
@@ -139,14 +142,15 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setPinId(pinId);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), companion, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(pinManagerStub.send(msg), companion, executor);
         return companion.future;
     }
 
     public static ListenableFuture<String> unpinFileBySrmRequestId(Subject subject,
                                                                    PnfsId pnfsId,
                                                                    String requestToken,
-                                                                   CellStub pinManagerStub)
+                                                                   CellStub pinManagerStub,
+                                                                   Executor executor)
     {
         _log.info("UnpinCompanion.unpinFile({})", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId);
@@ -154,20 +158,21 @@ public class UnpinCompanion
             new PinManagerUnpinMessage(pnfsId);
         msg.setRequestId(requestToken);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), companion, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(pinManagerStub.send(msg), companion, executor);
         return companion.future;
     }
 
     public static ListenableFuture<String> unpinFile(Subject subject,
                                                      PnfsId pnfsId,
-                                                     CellStub pinManagerStub)
+                                                     CellStub pinManagerStub,
+                                                     Executor executor)
     {
         _log.info("UnpinCompanion.unpinFile({}", pnfsId);
         UnpinCompanion companion = new UnpinCompanion(pnfsId);
         PinManagerUnpinMessage msg =
             new PinManagerUnpinMessage(pnfsId);
         msg.setSubject(subject);
-        CellStub.addCallback(pinManagerStub.send(msg), companion, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(pinManagerStub.send(msg), companion, executor);
         return companion.future;
     }
 }
