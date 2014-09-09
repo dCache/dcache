@@ -80,6 +80,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.util.EnumSet;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -127,14 +128,15 @@ public class RemoveFileCompanion
                                   String path,
                                   RemoveFileCallback callbacks,
                                   CellStub pnfsStub,
-                                  CellEndpoint endpoint)
+                                  CellEndpoint endpoint,
+                                  Executor executor)
     {
         RemoveFileCompanion companion =
             new RemoveFileCompanion(subject, path, callbacks, endpoint);
         PnfsDeleteEntryMessage message =
             new PnfsDeleteEntryMessage(path, EnumSet.of(LINK, REGULAR));
         message.setSubject(subject);
-        CellStub.addCallback(pnfsStub.send(message), companion, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(pnfsStub.send(message), companion, executor);
     }
 
     @Override
