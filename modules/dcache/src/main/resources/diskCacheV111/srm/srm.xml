@@ -177,9 +177,13 @@
   <bean id="storage" class="diskCacheV111.srm.dcache.Storage">
     <description>dCache plugin for SRM</description>
     <property name="executor">
-        <bean class="java.util.concurrent.Executors"
-              factory-method="newCachedThreadPool"
-              destroy-method="shutdown"/>
+        <bean class="org.dcache.util.CDCExecutorServiceDecorator"
+              destroy-method="shutdown">
+                <constructor-arg>
+                    <bean class="java.util.concurrent.Executors"
+                          factory-method="newCachedThreadPool"/>
+                </constructor-arg>
+        </bean>
     </property>
     <property name="directoryListSource" ref="list-handler"/>
     <property name="loginBrokerStub" ref="login-broker-stub"/>
