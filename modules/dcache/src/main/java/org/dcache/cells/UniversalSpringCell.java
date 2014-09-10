@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -80,7 +79,6 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 
 import org.dcache.util.Args;
-import org.dcache.util.ClassNameComparator;
 import org.dcache.vehicles.BeanQueryAllPropertiesMessage;
 import org.dcache.vehicles.BeanQueryMessage;
 import org.dcache.vehicles.BeanQuerySinglePropertyMessage;
@@ -138,22 +136,22 @@ public class UniversalSpringCell
      * Registered info providers mapped to their bean names. Sorted to
      * maintain consistent ordering.
      */
-    private final Map<CellInfoProvider,String> _infoProviders =
-        new TreeMap<>(new ClassNameComparator());
+    private final Map<String, CellInfoProvider> _infoProviders =
+        new TreeMap<>();
 
     /**
      * List of registered setup providers. Sorted to maintain
      * consistent ordering.
      */
-    private final Set<CellSetupProvider> _setupProviders =
-        new TreeSet<>(new ClassNameComparator());
+    private final Map<String, CellSetupProvider> _setupProviders =
+        new TreeMap<>();
 
     /**
      * List of registered life cycle aware beans. Sorted to maintain
      * consistent ordering.
      */
-    private final Set<CellLifeCycleAware> _lifeCycleAware =
-        new TreeSet<>(new ClassNameComparator());
+    private final Map<String, CellLifeCycleAware> _lifeCycleAware =
+        new TreeMap<>();
 
     /**
      * Cell name of the setup controller.
@@ -255,7 +253,7 @@ public class UniversalSpringCell
 
         /* Run the final initialisation hooks.
          */
-        for (CellLifeCycleAware bean: _lifeCycleAware) {
+        for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
             bean.afterStart();
         }
     }
@@ -267,7 +265,7 @@ public class UniversalSpringCell
     public void cleanUp()
     {
         super.cleanUp();
-        for (CellLifeCycleAware bean: _lifeCycleAware) {
+        for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
             bean.beforeStop();
         }
         if (_context != null) {
@@ -324,13 +322,13 @@ public class UniversalSpringCell
         executeDefinedSetup();
 
         if( _setupFile != null && _setupFile.isFile() ) {
-            for (CellSetupProvider provider: _setupProviders) {
+            for (CellSetupProvider provider: _setupProviders.values()) {
                 provider.beforeSetup();
             }
 
             execFile(_setupFile);
 
-            for (CellSetupProvider provider: _setupProviders) {
+            for (CellSetupProvider provider: _setupProviders.values()) {
                 provider.afterSetup();
             }
         }
@@ -387,9 +385,9 @@ public class UniversalSpringCell
         ConfigurableApplicationContext context = _context;
         if (context != null) {
             ConfigurableListableBeanFactory factory = context.getBeanFactory();
-            for (Map.Entry<CellInfoProvider, String> entry : _infoProviders.entrySet()) {
-                CellInfoProvider provider = entry.getKey();
-                String name = entry.getValue();
+            for (Map.Entry<String, CellInfoProvider> entry : _infoProviders.entrySet()) {
+                String name = entry.getKey();
+                CellInfoProvider provider = entry.getValue();
                 try {
                     BeanDefinition definition = factory.getBeanDefinition(name);
                     String description = definition.getDescription();
@@ -417,7 +415,7 @@ public class UniversalSpringCell
     public CellInfo getCellInfo()
     {
         CellInfo info = super.getCellInfo();
-        for (CellInfoProvider provider : _infoProviders.keySet()) {
+        for (CellInfoProvider provider : _infoProviders.values()) {
             info = provider.getCellInfo(info);
         }
         return info;
@@ -431,7 +429,7 @@ public class UniversalSpringCell
         pw.println("#\n# Created by " + getCellName() + "("
                    + getNucleus().getCellClass() + ") at " + (new Date()).toString()
                    + "\n#");
-        for (CellSetupProvider provider: _setupProviders) {
+        for (CellSetupProvider provider: _setupProviders.values()) {
             provider.printSetup(pw);
         }
     }
@@ -934,7 +932,7 @@ public class UniversalSpringCell
      */
     public void addInfoProviderBean(CellInfoProvider bean, String name)
     {
-        _infoProviders.put(bean, name);
+        _infoProviders.put(name, bean);
     }
 
     /**
@@ -959,18 +957,18 @@ public class UniversalSpringCell
      * Registers a setup provider. Setup providers contribute to the
      * result of the <code>save</code> method.
      */
-    public void addSetupProviderBean(CellSetupProvider bean)
+    public void addSetupProviderBean(CellSetupProvider bean, String name)
     {
-        _setupProviders.add(bean);
+        _setupProviders.put(name, bean);
     }
 
     /**
      * Registers a life cycle aware bean. Life cycle aware beans are
      * notified about cell start and stop events.
      */
-    public void addLifeCycleAwareBean(CellLifeCycleAware bean)
+    public void addLifeCycleAwareBean(CellLifeCycleAware bean, String name)
     {
-        _lifeCycleAware.add(bean);
+        _lifeCycleAware.put(name, bean);
     }
 
     /**
@@ -1001,11 +999,11 @@ public class UniversalSpringCell
         }
 
         if (bean instanceof CellSetupProvider) {
-            addSetupProviderBean((CellSetupProvider) bean);
+            addSetupProviderBean((CellSetupProvider) bean, beanName);
         }
 
         if (bean instanceof CellLifeCycleAware) {
-            addLifeCycleAwareBean((CellLifeCycleAware) bean);
+            addLifeCycleAwareBean((CellLifeCycleAware) bean, beanName);
         }
 
         if (bean instanceof EnvironmentAware) {
