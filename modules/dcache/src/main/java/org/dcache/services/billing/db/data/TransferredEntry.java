@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.services.billing.db.data;
 
+import java.util.Map;
+
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
 /**
@@ -66,6 +68,9 @@ import org.dcache.services.billing.histograms.data.IHistogramData;
  */
 public abstract class TransferredEntry extends SizeEntry implements IHistogramData {
     private static final long serialVersionUID = -3981596987619899105L;
+
+    public static final String TRANSFERRED = "transferred";
+
     protected Long transferred = 0L;
 
     public Long getTransferred() {
@@ -74,5 +79,12 @@ public abstract class TransferredEntry extends SizeEntry implements IHistogramDa
 
     public void setTransferred(Long transferred) {
         this.transferred = transferred;
+    }
+
+    @Override
+    public Map<String, Double> data() {
+        Map<String, Double> dataMap = super.data();
+        dataMap.put(TRANSFERRED, transferred.doubleValue());
+        return dataMap;
     }
 }
