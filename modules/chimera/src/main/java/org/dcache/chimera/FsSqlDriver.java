@@ -332,13 +332,6 @@ class FsSqlDriver {
 
         } else {
             decNlink(dbConnection, inode);
-
-            /*
-             * TODO: put into trash
-             */
-            for (int i = 1; i <= 7; i++) {
-                removeInodeLevel(dbConnection, inode, i);
-            }
         }
 
         removeEntryInParentByID(dbConnection, parent, inode);
