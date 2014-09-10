@@ -358,29 +358,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     }
                 }
 
-
-                addDebugHistoryEvent("selecting transfer protocol");
-                // if we can not read this path for some reason
-                //(not in ftp root for example) this will throw exception
-                // we do not care about the return value yet
-                PutRequest request = getContainerRequest();
-                String[] supportedProts = getStorage().supportedPutProtocols();
-                boolean found_supp_prot=false;
-                String[] requestProtocols = request.getProtocols();
-                mark1:
-                for(String supportedProtocol:supportedProts) {
-                    for(String requestProtocol:requestProtocols) {
-                        if(supportedProtocol.equals(requestProtocol)) {
-                            found_supp_prot = true;
-                            break mark1;
-                        }
-                    }
-                }
-
-                if(!found_supp_prot) {
-                    throw new FatalJobFailure("transfer protocols not supported");
-                }
-
                 setState(State.ASYNCWAIT, "Doing name space lookup.");
                 CheckedFuture<String, ? extends SRMException> future =
                         getStorage().prepareToPut(
@@ -409,8 +386,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
                 return;
             } catch (SRMException e) {
-                String error = "cannot obtain turl for file:" + e.getMessage();
-                logger.error(error);
+                String error = "Cannot obtain TURL for file: " + e.getMessage();
                 try {
                     setState(State.FAILED, error);
                 } catch (IllegalStateTransition ist) {

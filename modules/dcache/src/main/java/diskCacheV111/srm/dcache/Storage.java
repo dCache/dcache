@@ -75,7 +75,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
@@ -226,9 +225,12 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.net.InetAddresses.isInetAddress;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
@@ -673,16 +675,16 @@ public final class Storage
     public String[] supportedGetProtocols()
             throws SRMInternalErrorException
     {
-        return Iterables.toArray(filter(getLoginBrokerInfos().keySet(),
-                                        not(in(asList(srmGetNotSupportedProtocols)))), String.class);
+        return toArray(filter(getLoginBrokerInfos().keySet(),
+                              not(in(asList(srmGetNotSupportedProtocols)))), String.class);
     }
 
     @Override
     public String[] supportedPutProtocols()
             throws SRMInternalErrorException
     {
-        return Iterables.toArray(filter(getLoginBrokerInfos().keySet(),
-                                        not(in(asList(srmPutNotSupportedProtocols)))), String.class);
+        return toArray(filter(getLoginBrokerInfos().keySet(),
+                              not(in(asList(srmPutNotSupportedProtocols)))), String.class);
     }
 
     @Override
@@ -799,32 +801,6 @@ public final class Storage
         }
     }
 
-    private Multimap<String, LoginBrokerInfo> getLoginBrokerInfos(final Collection<String> includes,
-                                                                  final Collection<String> excludes,
-                                                                  final DcacheUser user,
-                                                                  final FsPath path)
-            throws SRMInternalErrorException
-    {
-        return Multimaps.filterEntries(
-                getLoginBrokerInfos(),
-                new Predicate<Map.Entry<String, LoginBrokerInfo>>()
-                {
-                    @Override
-                    public boolean apply(Map.Entry<String, LoginBrokerInfo> entry)
-                    {
-                        String protocol = entry.getKey();
-                        if (!includes.contains(protocol) || excludes.contains(protocol)) {
-                            return false;
-                        }
-                        FsPath root =
-                                (entry.getValue().getRoot() != null)
-                                        ? new FsPath(entry.getValue().getRoot())
-                                        : user.getRoot();
-                        return path.startsWith(root);
-                    }
-                });
-    }
-
     @Override
     public boolean isLocalTransferUrl(URI url)
             throws SRMInternalErrorException
@@ -840,31 +816,39 @@ public final class Storage
         return false;
     }
 
-    private Collection<LoginBrokerInfo> selectDoors(String[] includes, String[] excludes, DcacheUser user, FsPath path)
+    private Collection<LoginBrokerInfo> selectDoors(
+            List<String> includes, List<String> excludes,  DcacheUser user,  FsPath path)
             throws SRMInternalErrorException, SRMNotSupportedException
     {
-        Multimap<String, LoginBrokerInfo> doors =
-                getLoginBrokerInfos(asList(includes), asList(excludes), user, path);
+        Multimap<String, LoginBrokerInfo> doors = getLoginBrokerInfos();
+        Multimap<String, LoginBrokerInfo> useableDoors =
+                Multimaps.filterValues(
+                        doors, and(new SupportsProtocol(includes, excludes), new ExposesPath(user, path)));
+
         for (String protocol : srmPreferredProtocols) {
-            if (doors.containsKey(protocol)) {
-                return doors.get(protocol);
+            if (useableDoors.containsKey(protocol)) {
+                return useableDoors.get(protocol);
             }
         }
         for (String protocol : includes) {
-            if (doors.containsKey(protocol)) {
-                return doors.get(protocol);
+            if (useableDoors.containsKey(protocol)) {
+                return useableDoors.get(protocol);
             }
         }
-        _log.warn("Cannot find suitable protocol. Client requested one of {}.",
-                  Arrays.toString(includes));
-        throw new SRMNotSupportedException("Cannot find suitable transfer protocol.");
+
+        /* Check if cause is that the path is not exposed. This is a common misconfiguration.
+         */
+        if (any(doors.values(), and(new SupportsProtocol(includes, excludes), not(new ExposesPath(user, path))))) {
+            _log.warn("No door for {} provides access to {}.", includes, path);
+        }
+        throw new SRMNotSupportedException("Protocol(s) not supported: " + includes);
     }
 
     private LoginBrokerInfo selectDoor(String[] includes, String[] excludes, DcacheUser user, FsPath path)
             throws SRMInternalErrorException, SRMNotSupportedException
     {
         Collection<LoginBrokerInfo> doors =
-                selectDoors(includes, excludes, user, path);
+                selectDoors(asList(includes), asList(excludes), user, path);
         List<LoginBrokerInfo> loginBrokerInfos = LOAD_ORDER.leastOf(doors, numDoorInRanSelection);
         int index = rand.nextInt(Math.min(loginBrokerInfos.size(), numDoorInRanSelection));
         LoginBrokerInfo door = loginBrokerInfos.get(index);
@@ -2071,6 +2055,47 @@ public final class Storage
         } catch (CacheException e) {
             throw new SRMException(String.format("List failed [rc=%d,msg=%s]",
                                                  e.getRc(), e.getMessage()));
+        }
+    }
+
+    private static class SupportsProtocol implements Predicate<LoginBrokerInfo>
+    {
+        private final List<String> includes;
+        private final List<String> excludes;
+
+        public SupportsProtocol(List<String> includes, List<String> excludes)
+        {
+            this.includes = includes;
+            this.excludes = excludes;
+        }
+
+        @Override
+        public boolean apply(LoginBrokerInfo door)
+        {
+            String protocol = door.getProtocolFamily();
+            return includes.contains(protocol) && !excludes.contains(protocol);
+        }
+    }
+
+    private static class ExposesPath implements Predicate<LoginBrokerInfo>
+    {
+        private final DcacheUser user;
+        private final FsPath path;
+
+        public ExposesPath(DcacheUser user, FsPath path)
+        {
+            this.user = user;
+            this.path = path;
+        }
+
+        @Override
+        public boolean apply(LoginBrokerInfo door)
+        {
+            FsPath root =
+                    (door.getRoot() != null)
+                            ? new FsPath(door.getRoot())
+                            : user.getRoot();
+            return path.startsWith(root);
         }
     }
 

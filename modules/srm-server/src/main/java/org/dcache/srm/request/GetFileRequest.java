@@ -411,8 +411,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 }
                 return;
             } catch (SRMException e) {
-                String error = "cannot obtain turl for file:" + e.getMessage();
-                logger.error(error);
+                String error = "Cannot obtain TURL for file: " + e.getMessage();
                 try {
                     setState(State.FAILED,error);
                 } catch (IllegalStateTransition ist) {
