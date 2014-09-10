@@ -1,25 +1,32 @@
-package org.dcache.tests.util;
+package org.dcache.commons.util;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import org.dcache.commons.util.AtomicCounter;
 
 import static org.junit.Assert.*;
 
 public class AtomicCounterTest
 {
     private AtomicCounter counter;
+    private CountDownLatch latch;
 
     @Before
     public void setup()
     {
-        counter = new AtomicCounter();
+        latch = new CountDownLatch(1);
+        counter = new AtomicCounter() {
+            @Override
+            void inLock()
+            {
+                latch.countDown();
+            }
+        };
     }
 
     @Test
@@ -85,24 +92,8 @@ public class AtomicCounterTest
     public void awaitIsInterruptible()
         throws InterruptedException
     {
-        ExecutorService executor = Executors.newCachedThreadPool();
-        try {
-            final Thread thread = Thread.currentThread();
-            executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(100);
-                            thread.interrupt();
-                        } catch (InterruptedException e) {
-                            fail("Test was interrupted");
-                        }
-                    }
-                });
-            counter.awaitChangeUntil(0, new Date(System.currentTimeMillis() + 200));
-        } finally {
-            executor.shutdownNow();
-        }
+        Thread.currentThread().interrupt();
+        counter.awaitChangeUntil(0, new Date(System.currentTimeMillis() + 200));
     }
 
     @Test
@@ -115,7 +106,7 @@ public class AtomicCounterTest
                     @Override
                     public void run() {
                         try {
-                            Thread.sleep(100);
+                            latch.await();
                             counter.increment();
                         } catch (InterruptedException e) {
                             fail("Test was interrupted");
