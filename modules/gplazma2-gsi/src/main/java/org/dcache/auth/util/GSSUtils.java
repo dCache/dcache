@@ -150,10 +150,10 @@ public class GSSUtils {
             validator.setClientChain(chain).parse();
             List<VOMSAttribute> listOfAttributes = validator.getVOMSAttributes();
             return getFQANSfromVOMSAttributes(listOfAttributes);
-        } catch (AuthorizationException ae) {
-            throw new AuthorizationException(ae.toString());
-        } catch (Exception e) {
-            throw new AuthorizationException("Could not validate role.");
+        } catch (AuthorizationException e) {
+            throw e;
+        } catch (CertificateException | CRLException | IOException e) {
+            throw new AuthorizationException("Could not validate role: " + e.getMessage(), e);
         }
     }
 

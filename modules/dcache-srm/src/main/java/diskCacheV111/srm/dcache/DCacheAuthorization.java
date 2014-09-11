@@ -90,13 +90,18 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Origin.AuthType;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.util.CertificateFactories;
 
@@ -135,7 +140,7 @@ public final class DCacheAuthorization implements SRMAuthorization
     @Override
     public SRMUser authorize(Long requestCredentialId,
                              String secureId, X509Certificate[] chain, String remoteIP)
-            throws SRMAuthorizationException
+            throws SRMAuthorizationException, SRMInternalErrorException, SRMAuthenticationException
     {
         LOGGER.trace("authorize {}:{}", requestCredentialId, secureId);
         try {
@@ -161,8 +166,12 @@ public final class DCacheAuthorization implements SRMAuthorization
             }
 
             return persistenceManager.persist(loginStrategy.login(subject));
-        } catch (CacheException | CertificateException e) {
+        } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
+        } catch (CacheException e) {
+            throw new SRMInternalErrorException(e.getMessage(), e);
+        } catch (CertificateException e) {
+            throw new SRMAuthenticationException(e.getMessage(), e);
         }
     }
 }

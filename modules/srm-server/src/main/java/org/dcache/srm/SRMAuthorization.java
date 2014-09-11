@@ -91,5 +91,5 @@ public interface SRMAuthorization
                       String SecureId,
                       X509Certificate[] chain,
                       String remoteIP)
-        throws SRMAuthorizationException;
+            throws SRMAuthorizationException, SRMInternalErrorException, SRMAuthenticationException;
 }

@@ -72,10 +72,8 @@ package org.dcache.srm.server;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
-import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -93,7 +91,10 @@ import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Axis;
@@ -264,16 +265,21 @@ public class SRMServerV2 implements ISRM  {
                     case "srmRm" :
                     case "srmMv":
                     case "srmSetPermission":
-                        return getFailedResponse(capitalizedRequestName,
-                                                 TStatusCode.SRM_AUTHORIZATION_FAILURE,
-                                                 "User account is read-only");
+                        throw new SRMAuthorizationException(requestName + " denied because account " +
+                                                                    user.getDisplayName() + " is read-only.");
                     }
                 }
-            } catch (SRMAuthorizationException sae) {
-                LOGGER.info("Authentication failed: {}", sae.getMessage());
-                return getFailedResponse(capitalizedRequestName,
-                        TStatusCode.SRM_AUTHENTICATION_FAILURE,
-                        "Authentication failed (server log contains additional information)");
+            } catch (SRMInternalErrorException e) {
+                LOGGER.error(e.getMessage());
+                return getFailedResponse(capitalizedRequestName, e.getStatusCode(),
+                                         "Authentication failed (server log contains additional information).");
+            } catch (SRMAuthorizationException e) {
+                LOGGER.info(e.getMessage());
+                return getFailedResponse(capitalizedRequestName, e.getStatusCode(), "Permission denied.");
+            } catch (SRMAuthenticationException e) {
+                LOGGER.warn(e.getMessage());
+                return getFailedResponse(capitalizedRequestName, e.getStatusCode(),
+                                         "Authentication failed (server log contains additional information).");
             }
             LOGGER.debug("About to call {} handler", requestName);
             Constructor<?> handlerConstructor;

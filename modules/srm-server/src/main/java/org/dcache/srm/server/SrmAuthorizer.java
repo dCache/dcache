@@ -66,6 +66,7 @@ package org.dcache.srm.server;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
+import com.google.common.net.InetAddresses;
 import org.apache.axis.MessageContext;
 import org.globus.gsi.bc.BouncyCastleUtil;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
@@ -76,14 +77,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import org.dcache.auth.util.GSSUtils;
+import org.dcache.gplazma.AuthenticationException;
+import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
@@ -120,14 +122,14 @@ public class SrmAuthorizer
      * Derive the UserCredential from the current Axis context.  The method
      * also updates various Axis MessageContext properties as a side-effect.
      */
-    public UserCredential getUserCredentials() throws SRMAuthorizationException
+    public UserCredential getUserCredentials() throws SRMInternalErrorException, SRMAuthenticationException
     {
         try {
             MessageContext mctx = MessageContext.getCurrentContext();
 
             Object tmp = mctx.getProperty(MC_HTTP_SERVLETREQUEST);
             if (!(tmp instanceof HttpServletRequest)) {
-                throw new SRMAuthorizationException("HttpServletRequest is missing from Axis message context.");
+                throw new SRMInternalErrorException("HttpServletRequest is missing from Axis message context.");
             }
             HttpServletRequest req = (HttpServletRequest) tmp;
 
@@ -141,27 +143,26 @@ public class SrmAuthorizer
             }
             X509Certificate[] chain = (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
             if (chain == null) {
-                throw new SRMAuthorizationException("Client's certificate chain is missing from request.");
+                throw new SRMAuthenticationException("Client's certificate chain is missing from request.");
             }
 
             String dn = BouncyCastleUtil.getIdentity(BouncyCastleUtil.getIdentityCertificate(chain));
 
-            log.debug("User ID (secureId) is: {}", dn);
+            log.debug("User ID is: {}", dn);
 
             UserCredential userCredential = new UserCredential();
             userCredential.secureId = dn;
             userCredential.credential = delegcred;
             userCredential.chain = chain;
             if (isClientDNSLookup) {
-                userCredential.clientHost = InetAddress.getByName(req.getRemoteAddr()). getCanonicalHostName();
+                userCredential.clientHost = InetAddresses.forString(req.getRemoteAddr()).getCanonicalHostName();
             } else {
                 userCredential.clientHost = req.getRemoteAddr();
             }
 
             return userCredential;
-        } catch (UnknownHostException | CertificateException e) {
-            log.error("getUserCredentials failed with exception", e);
-            throw new SRMAuthorizationException(e.toString(), e);
+        } catch (CertificateException e) {
+            throw new SRMAuthenticationException(e.toString(), e);
         }
     }
 
@@ -171,7 +172,8 @@ public class SrmAuthorizer
      * back-end system.  Throws SRMAuthorizationException if the user is
      * not authorized.
      */
-    public SRMUser getRequestUser(RequestCredential requestCredential, X509Certificate[] chain) throws SRMAuthorizationException
+    public SRMUser getRequestUser(RequestCredential requestCredential, X509Certificate[] chain)
+            throws SRMInternalErrorException, SRMAuthorizationException, SRMAuthenticationException
     {
         MessageContext mctx = MessageContext.getCurrentContext();
         HttpServletRequest req = (HttpServletRequest) mctx.getProperty(MC_HTTP_SERVLETREQUEST);
@@ -188,10 +190,10 @@ public class SrmAuthorizer
      * for the longest.  The method ensures the best credential is saved in
      * the storage.
      */
-    public RequestCredential getRequestCredential(UserCredential credential) throws SRMAuthorizationException
+    public RequestCredential getRequestCredential(UserCredential credential) throws SRMAuthenticationException
     {
         try {
-            Iterable<String> roles = SrmAuthorizer.getFQANsFromChain(vomsdir, capath, credential.chain);
+            Iterable<String> roles = GSSUtils.extractFQANs(vomsdir, capath, credential.chain);
             String role = Iterables.getFirst(roles, null);
 
             String id = credential.secureId;
@@ -200,19 +202,8 @@ public class SrmAuthorizer
             requestCredential.keepBestDelegatedCredential(gssCredential);
             requestCredential.saveCredential();
             return requestCredential;
-        } catch (GSSException e) {
-            throw new SRMAuthorizationException("Problem getting request credential", e);
-        }
-   }
-
-    static Iterable<String> getFQANsFromChain(String vomsDir, String caDir, X509Certificate[] chain)
-            throws SRMAuthorizationException
-    {
-        try {
-            return GSSUtils.extractFQANs(vomsDir, caDir, chain);
-        } catch (AuthorizationException ae) {
-            log.error("Could not extract FQANs from context",ae);
-            throw new SRMAuthorizationException("Could not extract FQANs from context " + ae.getMessage());
+        } catch (GSSException | AuthorizationException e) {
+            throw new SRMAuthenticationException("Problem getting request credential: " + e.getMessage(), e);
         }
     }
 }

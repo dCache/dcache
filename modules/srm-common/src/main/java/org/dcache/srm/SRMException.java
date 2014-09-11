@@ -1,18 +1,3 @@
-// $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.4  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.3  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.2.2.2  2004/07/14 19:18:35  timur
-// added two more java1.4 specific constructors to SRMException
-//
-// Revision 1.2.2.1  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
