@@ -24,7 +24,7 @@ import dmg.util.DummyStreamEngine;
 import dmg.util.StreamEngine;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
 
 public class LocationManagerConnector
@@ -175,8 +175,7 @@ public class LocationManagerConnector
                 } catch (InterruptedIOException e) {
                     throw e;
                 } catch (IOException e) {
-                    _log.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
-                                                           "LOCATION_MANAGER_FAILURE",
+                    _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
                                                            name,
                                                            _domain,
                                                            e.getMessage()),

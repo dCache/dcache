@@ -73,7 +73,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
 
 /**
@@ -188,9 +187,6 @@ public class AlarmJDOUtils {
      * @param before
      *            closed upper bound (<=) of date range; may be
      *            <code>null</code>.
-     * @param severity
-     *            <code>null</code> will be treated as equivalent to
-     *            <code>Severity.MODERATE</code>.
      * @param type
      *            may be <code>null</code>.
      * @param isAlarm
@@ -202,9 +198,12 @@ public class AlarmJDOUtils {
      *            range ending
      *            may be <code>null</code>.
      */
-    public static AlarmDAOFilter getFilter(Date after, Date before,
-                    Severity severity, String type, Boolean isAlarm,
-                    Integer rangeStart, Integer rangeEnd) {
+    public static AlarmDAOFilter getFilter(Date after,
+                                           Date before,
+                                           String type,
+                                           Boolean isAlarm,
+                                           Integer rangeStart,
+                                           Integer rangeEnd) {
         StringBuilder f = new StringBuilder();
         StringBuilder p = new StringBuilder();
         List<Object> values = new ArrayList<>();
@@ -223,16 +222,6 @@ public class AlarmJDOUtils {
             f.append("lastUpdate<=b");
             p.append("java.lang.Long b");
             values.add(before.getTime());
-        }
-
-        if (severity != null) {
-            if (f.length() > 0) {
-                f.append(" && ");
-                p.append(", ");
-            }
-            f.append("severity>=s");
-            p.append("java.lang.Integer s");
-            values.add(severity.ordinal());
         }
 
         if (type != null) {
@@ -294,13 +283,6 @@ public class AlarmJDOUtils {
         filter.parameters = Strings.emptyToNull(p.toString());
         filter.values = emptyListToNull(values);
         return filter;
-    }
-
-    public static Query getTypeQuery(PersistenceManager pm) {
-        return pm.newQuery("JPQL", "SELECT DISTINCT e.type "
-                                 + "FROM "
-                                 + LogEntry.class.getName()
-                                 + " e ORDER BY e.type");
     }
 
     /**

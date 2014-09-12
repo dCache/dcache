@@ -57,27 +57,38 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.controller;
+package org.dcache.vehicles.alarms;
 
-import java.io.Serializable;
-import java.util.Collection;
+import java.util.Map;
 
-import org.dcache.webadmin.controller.util.AlarmTableProvider;
+import diskCacheV111.vehicles.Message;
+
+import org.dcache.alarms.AlarmPriority;
 
 /**
- * Service which handles the model for the Alarms display page.
+ * For requesting a copy of the priority map remotely.
  *
  * @author arossi
  */
-public interface IAlarmDisplayService extends Serializable {
+public final class AlarmPriorityMapRequestMessage extends Message {
+    private static final long serialVersionUID = 1477619433971608910L;
 
-    AlarmTableProvider getDataProvider();
+    private Map<String, AlarmPriority> map;
 
-    Collection<String> getPredefinedAlarmTypes();
+    public Map<String, AlarmPriority> getMap() {
+        return map;
+    }
 
-    boolean isConnected();
+    public void setMap(Map<String, AlarmPriority> map) {
+        this.map = map;
+    }
 
-    void refresh();
-
-    void shutDown();
-}
+    @Override
+    public String toString() {
+        return "AlarmPriorityRequestMessage{"
+             + map
+             + "}{"
+             + super.toString()
+             + "}";
+    }
+ }

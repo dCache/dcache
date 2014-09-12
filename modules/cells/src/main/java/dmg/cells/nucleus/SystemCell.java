@@ -18,7 +18,7 @@ import dmg.util.Gate;
 import dmg.util.logback.FilterShell;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
 
 /**
@@ -322,8 +322,7 @@ public class      SystemCell
         if (e instanceof VirtualMachineError) {
             _oomSafetyBuffer = null;
             kill();
-            _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
-                                                    "FATAL_JVM_ERROR",
+            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.FATAL_JVM_ERROR,
                                                     getCellDomainName(),
                                                     getCellName()),
                        "Restarting due to fatal JVM error", e);
@@ -333,8 +332,7 @@ public class      SystemCell
         Throwable root = Throwables.getRootCause(e);
         if (root instanceof FileNotFoundException) {
             if (root.getMessage().contains("Too many open files")) {
-                _log.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
-                                                        "OUT_OF_FILE_DESCRIPTORS",
+                _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.OUT_OF_FILE_DESCRIPTORS,
                                                         getCellDomainName(),
                                                         getCellName()),
                            "Uncaught exception in thread " + t.getName(),

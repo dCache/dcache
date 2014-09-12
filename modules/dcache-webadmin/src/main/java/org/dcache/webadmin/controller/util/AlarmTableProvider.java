@@ -67,9 +67,11 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
+import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
 import org.dcache.webadmin.view.beans.AlarmQueryBean;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
@@ -84,6 +86,20 @@ import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 public class AlarmTableProvider extends
                 AbstractRegexFilteringProvider<LogEntry, String> {
     private static final long serialVersionUID = 402824287543303781L;
+
+    private Map<String, AlarmPriority> map;
+
+    public void addToDeleted(LogEntry toDelete) {
+        getAlarmQueryBean().addToDeleted(toDelete);
+    }
+
+    public void addToUpdated(LogEntry toUpdate) {
+        getAlarmQueryBean().addToUpdated(toUpdate);
+    }
+
+    public void delete(LogEntryDAO access) {
+        getAlarmQueryBean().delete(access);
+    }
 
     public Date getAfter() {
         return getAlarmQueryBean().getAfter();
@@ -101,8 +117,12 @@ public class AlarmTableProvider extends
         return getAlarmQueryBean().getFrom();
     }
 
-    public String getSeverity() {
-        return getAlarmQueryBean().getSeverity();
+    public Map<String, AlarmPriority> getMap() {
+        return map;
+    }
+
+    public AlarmPriority getPriority() {
+        return getAlarmQueryBean().getPriority();
     }
 
     public String getTableTitle() {
@@ -149,8 +169,12 @@ public class AlarmTableProvider extends
         getAlarmQueryBean().setFrom(from);
     }
 
-    public void setSeverity(String severity) {
-        getAlarmQueryBean().setSeverity(severity);
+    public void setMap(Map<String, AlarmPriority> priorityMap) {
+        map = priorityMap;
+    }
+
+    public void setPriority(AlarmPriority priority) {
+        getAlarmQueryBean().setPriority(priority);
     }
 
     public void setShowClosed(boolean showClosed) {
@@ -165,12 +189,23 @@ public class AlarmTableProvider extends
         getAlarmQueryBean().setType(type);
     }
 
+    public boolean shouldDelete(LogEntry entry) {
+        return getAlarmQueryBean().shouldDelete(entry);
+    }
+
+    public void update(LogEntryDAO access) {
+        getAlarmQueryBean().update(access);
+    }
+
+    protected AlarmQueryBean getAlarmQueryBean() {
+        return WebAdminInterfaceSession.getAlarmQueryBean();
+    }
+
     @Override
     protected Comparator<LogEntry> getComparator() {
         return new Comparator<LogEntry>() {
-
             @Override
-            public int compare(LogEntry alarm0, LogEntry alarm1) {
+            public int compare(LogEntry entry0, LogEntry entry1) {
                 SortParam<String> sort = getSort();
                 int dir;
                 String property;
@@ -182,29 +217,52 @@ public class AlarmTableProvider extends
                     property = sort.getProperty();
                 }
 
+                /*
+                 * sort by priority first
+                 */
+                int priority0 = -1;
+                if (entry0.isAlarm()) {
+                    AlarmPriority p = map.get(entry0.getType());
+                    if (p != null) {
+                        priority0 = p.ordinal();
+                    }
+                }
+
+                int priority1 = -1;
+                if (entry1.isAlarm()) {
+                    AlarmPriority p = map.get(entry1.getType());
+                    if (p != null) {
+                        priority1 = p.ordinal();
+                    }
+                }
+
+                int priority = compare(dir, priority0, priority1);
+                if (priority != 0) {
+                    return priority;
+                }
+
                 switch (property) {
                     case "first":
-                        return compare(dir, alarm0.getDateOfFirstArrival(),
-                                        alarm1.getDateOfFirstArrival());
+                        return compare(dir, entry0.getDateOfFirstArrival(),
+                                            entry1.getDateOfFirstArrival());
                     case "last":
-                        return compare(dir, alarm0.getDateOfLastUpdate(),
-                                        alarm1.getDateOfLastUpdate());
-                    case "severity":
-                        return compare(dir, alarm0.getSeverity(),
-                                        alarm1.getSeverity());
+                        return compare(dir, entry0.getDateOfLastUpdate(),
+                                            entry1.getDateOfLastUpdate());
                     case "type":
-                        return compare(dir, alarm0.getType(), alarm1.getType());
+                        return compare(dir, entry0.getType(),
+                                            entry1.getType());
                     case "count":
-                        return compare(dir, alarm0.getReceived(),
-                                        alarm1.getReceived());
+                        return compare(dir, entry0.getReceived(),
+                                            entry1.getReceived());
                     case "host":
-                        return compare(dir, alarm0.getHost(), alarm1.getHost());
+                        return compare(dir, entry0.getHost(),
+                                            entry1.getHost());
                     case "domain":
-                        return compare(dir, alarm0.getDomain(),
-                                        alarm1.getDomain());
+                        return compare(dir, entry0.getDomain(),
+                                            entry1.getDomain());
                     case "service":
-                        return compare(dir, alarm0.getService(),
-                                        alarm1.getService());
+                        return compare(dir, entry0.getService(),
+                                            entry1.getService());
                     default:
                         return 0;
                 }
@@ -216,41 +274,19 @@ public class AlarmTableProvider extends
         };
     }
 
-    public void addToDeleted(LogEntry toDelete) {
-        getAlarmQueryBean().addToDeleted(toDelete);
-    }
-
-    public void addToUpdated(LogEntry toUpdate) {
-        getAlarmQueryBean().addToUpdated(toUpdate);
-    }
-
-    public void delete(ILogEntryDAO access) {
-        getAlarmQueryBean().delete(access);
-    }
-
-    public boolean shouldDelete(LogEntry entry) {
-        return getAlarmQueryBean().shouldDelete(entry);
-    }
-
-    public void update(ILogEntryDAO access) {
-        getAlarmQueryBean().update(access);
-    }
-
     /**
      * @return a fresh copy of the internal list, filtered for
-     *         <code>expression</code> and <code>closed</code>.
+     *          <code>priority</code>, <code>expression</code>
+     *          and <code>closed</code>.
      */
     @Override
     protected List<LogEntry> getFiltered() {
         List<LogEntry> entries = getRegexBean().getEntries();
         List<LogEntry> filtered = new ArrayList<>(entries);
+        filterOnPriority(filtered);
         filterOnExpression(filtered);
         filterOnClosed(filtered);
         return filtered;
-    }
-
-    protected AlarmQueryBean getAlarmQueryBean() {
-        return WebAdminInterfaceSession.getAlarmQueryBean();
     }
 
     @Override
@@ -259,14 +295,41 @@ public class AlarmTableProvider extends
     }
 
     /**
-     * @param alarms
+     * @param entries
      *            assumed to be a thread-local copy, hence not synchronized.
      */
-    private void filterOnClosed(List<LogEntry> alarms) {
+    private void filterOnClosed(List<LogEntry> entries) {
         if (!getAlarmQueryBean().isShowClosed()) {
-            for (Iterator<LogEntry> it = alarms.iterator(); it.hasNext();) {
+            for (Iterator<LogEntry> it = entries.iterator(); it.hasNext();) {
                 LogEntry entry = it.next();
                 if (entry.isClosed()) {
+                    it.remove();
+                }
+            }
+        }
+    }
+
+    /**
+     * @param entries
+     *            assumed to be a thread-local copy, hence not synchronized.
+     */
+    private void filterOnPriority(List<LogEntry> entries) {
+        int threshold = getPriority().ordinal();
+        for (Iterator<LogEntry> it = entries.iterator(); it.hasNext();) {
+            LogEntry entry = it.next();
+            if (entry.isAlarm()) {
+                AlarmPriority p = map.get(entry.getType());
+                if (p == null) {
+                    /*
+                     * This means the alarm definition used to exist
+                     * but has been removed (hence it no longer has
+                     * a priority), so we do not consider it an alarm any more.
+                     */
+                    entry.setAlarm(false);
+                    addToUpdated(entry);
+                    continue;
+                }
+                if (p.ordinal() < threshold) {
                     it.remove();
                 }
             }

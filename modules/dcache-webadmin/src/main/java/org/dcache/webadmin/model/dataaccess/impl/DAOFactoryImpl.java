@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
-import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
+import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
@@ -23,10 +23,10 @@ public class DAOFactoryImpl implements DAOFactory {
     private Logger _log = LoggerFactory.getLogger(DAOFactory.class);
     private CommandSenderFactory _defaultCommandSenderFactory;
     private PageInfoCache _pageCache;
-    private ILogEntryDAO _logEntryDAO;
+    private LogEntryDAO _logEntryDAO;
 
     @Override
-    public synchronized ILogEntryDAO getLogEntryDAO() {
+    public synchronized LogEntryDAO getLogEntryDAO() {
         return _logEntryDAO;
     }
 
@@ -69,7 +69,7 @@ public class DAOFactoryImpl implements DAOFactory {
         _defaultCommandSenderFactory = commandSenderFactory;
     }
 
-    public void setLogEntryDAO(ILogEntryDAO alarmDAO) {
+    public void setLogEntryDAO(LogEntryDAO alarmDAO) {
         _logEntryDAO = alarmDAO;
     }
 

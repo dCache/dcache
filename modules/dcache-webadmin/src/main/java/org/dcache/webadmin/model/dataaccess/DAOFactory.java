@@ -19,7 +19,7 @@ public interface DAOFactory {
 
     public MoverDAO getMoverDAO();
 
-    public ILogEntryDAO getLogEntryDAO();
+    public LogEntryDAO getLogEntryDAO();
 
     public void setDefaultCommandSenderFactory(CommandSenderFactory commandSenderFactory);
 }

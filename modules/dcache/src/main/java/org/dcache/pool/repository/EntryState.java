@@ -11,6 +11,4 @@ public enum EntryState
     PRECIOUS,
     REMOVED,
     DESTROYED;
-
-    public static final String BROKEN_FILE = "BROKEN_FILE";
 }

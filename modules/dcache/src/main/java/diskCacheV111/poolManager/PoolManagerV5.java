@@ -54,8 +54,7 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
-import org.dcache.alarms.logback.AlarmDefinition;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
@@ -286,13 +285,12 @@ public class PoolManagerV5
             if (pool != null) {
                 if (pool.getActive() > deathDetectedTimer
                     && pool.setSerialId(0L)) {
-
-                    if( _logPoolMonitor.isDebugEnabled() ) {
-                        _logPoolMonitor.debug("Pool " + name + " declared as DOWN (no ping in " + deathDetectedTimer/1000 +" seconds).");
-                    }
                     _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
+                    _logPoolMonitor.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DOWN, name),
+                                    "Pool {} declared as DOWN, (no ping in "
+                                    + deathDetectedTimer/1000 +" seconds).");
                 }
             }
         }
@@ -404,10 +402,6 @@ public class PoolManagerV5
                                     poolMessage.getPoolMode(),
                                     poolMessage.getCode(),
                                     poolMessage.getMessage());
-                _logPoolMonitor.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
-                                                                  "POOL_DOWN",
-                                                                  poolName),
-                                     "Pool {} is DOWN", poolName);
             } else {
                 _requestContainer.poolStatusChanged(poolName,
                                                     PoolStatusChangedMessage.UP);

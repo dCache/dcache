@@ -59,70 +59,69 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
+import java.io.Writer;
+import java.util.Collection;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.Set;
+
 /**
- * Convenience interface for properties in common between the wire object and
- * the storage object for Alarm processing.
+ * Defines the component responsible for mapping custom alarm types
+ * to their definitions.
  *
  * @author arossi
  */
-public interface IAlarms {
-    /*
-     * Shared alarm property/field names
-     */
-    final String KEY_TAG = "key";
-    final String TIMESTAMP_TAG = "timestamp";
-    final String TYPE_TAG = "type";
-    final String SEVERITY_TAG = "severity";
-    final String HOST_TAG = "host";
-    final String DOMAIN_TAG = "domain";
-    final String SERVICE_TAG = "service";
-    final String MESSAGE_TAG = "message";
-    final String GROUP_TAG = "group";
+public interface AlarmDefinitionsMap<T extends AlarmDefinition> {
 
-    /*
-     * The base marker; all alarms must carry this marker.
-     */
-    final String ALARM_MARKER = "ALARM";
+    String PATH = "alarm-definitions-path";
 
-    /*
-     * The severity marker; submarker indicates the level.
+    /**
+     * @param definition of custom alarm.
      */
-    final String ALARM_MARKER_SEVERITY = "ALARM_SEVERITY";
+    void add(T definition);
 
-    /*
-     * The type marker; submarker indicates the alarm type.
+    /**
+     * @param  type alarm name.
+     * @return definition to which this is mapped.
      */
-    final String ALARM_MARKER_TYPE = "ALARM_TYPE";
+    T getDefinition(String type) throws NoSuchElementException;
 
-    /*
-     * Default alarm type.
+    /**
+     * @return copy of the the collection of definitions.
      */
-    final String ALARM_MARKER_TYPE_GENERIC = "GENERIC";
+    Collection<T> getDefinitions();
 
-    /*
-     * The key marker; submarker specifies the key properties determining
-     * alarm identity.
+    /**
+     * @param writer e.g., string or file
+     *  to which to emit sorted string list of the entire alarms definition map.
+     * @throws Exception
      */
-    final String ALARM_MARKER_KEY = "ALARM_KEY";
+    void getSortedList(Writer writer) throws Exception;
 
-    /*
-     * Placeholder for host name which cannot be resolved.
+    /**
+     * @return a copy of the set of names of all defined alarm types.
      */
-    final String UNKNOWN_HOST = "<unknown host>";
+    Set<String> getTypes();
 
-    /*
-     * Placeholder for host name which cannot be resolved.
+    /**
+     * Should locate all external alarm types
+     * and load their definitions.
+     *
+     * @param env any special settings which should override current ones.
      */
-    final String UNKNOWN_SERVICE = "<unknown service>";
+    void load(Properties env) throws Exception;
 
-    /*
-     * Placeholder for host name which cannot be resolved.
+    /**
+     * @param alarmType type name.
+     * @return definition removed from the map.
      */
-    final String UNKNOWN_DOMAIN = "<unknown domain>";
+    T removeDefinition(String alarmType);
 
-    /*
-     * These are defined elsewhere for use in the MDC.
+    /**
+     * Should save the current mapping to some form of persistent
+     * storage for future reloading.
+     *
+     * @param env any special settings which should override current ones.
      */
-    final String CELL = "cells.cell";
-    final String DOMAIN = "cells.domain";
+    void save(Properties env) throws Exception;
 }

@@ -62,23 +62,27 @@ package org.dcache.alarms.logback;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.Appender;
-import ch.qos.logback.core.AppenderBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Marker;
 
+import java.io.File;
+import java.net.MalformedURLException;
+
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.dao.ILogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.dao.LogEntryDAO;
+import org.dcache.alarms.file.FileBackedAlarmPriorityMap;
+import org.dcache.alarms.jdom.JDomAlarmDefinition;
+import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 /**
- * Tests filtering and storing of logging events.<br>
+ * Tests filtering and storing of logging events on the basis
+ * of back-end definitions.<br>
  * <br>
  *
  * Requires <code>ch.qos.logback.classic.Logger</code>.
@@ -89,22 +93,19 @@ public class LogEntryAppenderTest {
 
     private static Logger logger;
 
-    private static AlarmDefinition givenAlarmDefinition(String logger,
+    private static JDomAlarmDefinition givenAlarmDefinition(
                     String regex, Boolean error, Integer depth, String type,
-                    String level, String severity, String include) {
-        AlarmDefinition definition = new AlarmDefinition();
-        definition.setLogger(logger);
+                    String include) {
+        JDomAlarmDefinition definition = new JDomAlarmDefinition();
         definition.setType(type);
-        definition.setLevel(level);
-        definition.setRegex(regex);
-        definition.setSeverity(severity);
-        definition.setIncludeInKey(include);
+        definition.setRegexString(regex);
+        definition.setKeyWords(include);
         definition.setMatchException(error);
         definition.setDepth(depth);
         return definition;
     }
 
-    private final ILogEntryDAO store = new ILogEntryDAO() {
+    private final LogEntryDAO store = new LogEntryDAO() {
         @Override
         public void put(LogEntry entry) {
             lastEntry = entry;
@@ -112,125 +113,95 @@ public class LogEntryAppenderTest {
     };
 
     private LogEntry lastEntry;
-    private ILoggingEvent lastInternalEvent;
-    private ILoggingEvent lastMailEvent;
-
-    private final Appender<ILoggingEvent> internal = new AppenderBase<ILoggingEvent>() {
-        @Override
-        public String getName() {
-            return "internal";
-        }
-
-        @Override
-        protected void append(ILoggingEvent eventObject) {
-            lastInternalEvent = eventObject;
-        }
-    };
-
-    private final Appender<ILoggingEvent> mail = new AppenderBase<ILoggingEvent>() {
-        @Override
-        public String getName() {
-            return "mail";
-        }
-
-        @Override
-        protected void append(ILoggingEvent eventObject) {
-            lastMailEvent = eventObject;
-        }
-    };
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         clearLast();
         LogEntryAppender appender = new LogEntryAppender();
         appender.setContext(new LoggerContext());
+        appender.setEmailEnabled(false);
+        appender.setHistoryEnabled(false);
+        appender.setRootLevel("ERROR");
+        XmlBackedAlarmDefinitionsMap dmap = new XmlBackedAlarmDefinitionsMap();
+        addDefinitions(dmap);
+        LoggingEventConverter converter = new LoggingEventConverter();
+        converter.setDefinitions(dmap);
+        converter.setServiceName("alarms");
+        FileBackedAlarmPriorityMap pmap = new FileBackedAlarmPriorityMap();
+        pmap.setDefinitions(dmap);
+        pmap.setPropertiesPath("dummy.properties");
+        pmap.initialize();
+        appender.setPriorityMap(pmap);
+        appender.setConverter(converter);
         appender.setStore(store);
-        addDefinitions(appender);
-        addDelegates(appender);
         appender.start();
         logger = new LoggerContext().getLogger(LogEntryAppenderTest.class);
         logger.addAppender(appender);
-        logger.setLevel(Level.WARN);
+        logger.setLevel(Level.ERROR);
     }
 
     @Test
     public void shouldCreateAlarmWhenDefinedErrorWithMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType("JVM_OUT_OF_MEMORY");
-        whenMessageIsLogged(AlarmMarkerFactory.getMarker(), Level.ERROR, message, null);
+        whenMessageIsLogged(AlarmMarkerFactory.getMarker(), message, null);
         assertThat(lastEntry.isAlarm(), is(true));
-        assertNotNull(lastInternalEvent);
-        assertNotNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateAlarmWhenDefinedErrorWithNoMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType("CHECKSUM");
-        whenMessageIsLogged(null, Level.ERROR, message, null);
+        whenMessageIsLogged(null, message, null);
         assertThat(lastEntry.isAlarm(), is(true));
-        assertNotNull(lastInternalEvent);
-        assertNotNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateAlarmWhenUndefinedErrorWithMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType(null);
-        whenMessageIsLogged(AlarmMarkerFactory.getMarker(), Level.ERROR, message, null);
+        whenMessageIsLogged(AlarmMarkerFactory.getMarker(), message, null);
         assertThat(lastEntry.isAlarm(), is(true));
-        assertNotNull(lastInternalEvent);
-        assertNotNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateAlarmWithDepthDefinedCorrectly() {
         String message = givenLoggingMessageWhichMatchesType("DB_UNAVAILABLE");
         Exception exception = givenExceptionWithMessageEmbeddedAt(1, message);
-        whenMessageIsLogged(null, Level.ERROR, exception.getMessage(),
+        whenMessageIsLogged(null, exception.getMessage(),
                         exception.getCause());
         assertThat(lastEntry.isAlarm(), is(true));
-        assertNotNull(lastInternalEvent);
-        assertNotNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateAlarmWithExceptionMatchDefined() {
         String message = givenLoggingMessageWhichMatchesType("OUT_OF_FILE_DESCRIPTORS");
         Exception exception = givenExceptionWithMessageEmbeddedAt(0, message);
-        whenMessageIsLogged(null, Level.ERROR, exception.getMessage(),
+        whenMessageIsLogged(null, exception.getMessage(),
                         exception.getCause());
         assertThat(lastEntry.isAlarm(), is(true));
-        assertNotNull(lastInternalEvent);
-        assertNotNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateNonAlarmWhenUndefinedErrorWithNoMarkerIsUsed() {
         String message = givenLoggingMessageWhichMatchesType(null);
-        whenMessageIsLogged(null, Level.ERROR, message, null);
+        whenMessageIsLogged(null, message, null);
         assertThat(lastEntry.isAlarm(), is(false));
-        assertNotNull(lastInternalEvent);
-        assertNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateNonAlarmWithDepthDefinedIncorrectly() {
         String message = givenLoggingMessageWhichMatchesType("DB_UNAVAILABLE");
         Exception exception = givenExceptionWithMessageEmbeddedAt(3, message);
-        whenMessageIsLogged(null, Level.ERROR, exception.getMessage(),
+        whenMessageIsLogged(null, exception.getMessage(),
                         exception.getCause());
         assertThat(lastEntry.isAlarm(), is(false));
-        assertNotNull(lastInternalEvent);
-        assertNull(lastMailEvent);
     }
 
     @Test
     public void shouldCreateNonAlarmWithoutExceptionMatchDefined() {
         String message = givenLoggingMessageWhichMatchesType("CHECKSUM");
         Exception exception = givenExceptionWithMessageEmbeddedAt(1, message);
-        whenMessageIsLogged(null, Level.ERROR, exception.getMessage(),
+        whenMessageIsLogged(null, exception.getMessage(),
                         exception.getCause());
         assertThat(lastEntry.isAlarm(), is(false));
-        assertNotNull(lastInternalEvent);
-        assertNull(lastMailEvent);
     }
 
     @After
@@ -238,38 +209,27 @@ public class LogEntryAppenderTest {
         logger.detachAndStopAllAppenders();
     }
 
-    private void addDefinitions(LogEntryAppender appender) {
-        appender.addAlarmType(givenAlarmDefinition(null,
+    private void addDefinitions(XmlBackedAlarmDefinitionsMap map) {
+        map.add(givenAlarmDefinition(
                         "Unable to open a test connection to the given database|"
                                         + "Connections could not be acquired "
                                         + "from the underlying database", true,
-                        1, "DB_UNAVAILABLE", "ERROR", "CRITICAL", "type host"));
-        appender.addAlarmType(givenAlarmDefinition(null, "OutOfMemory",
-                        false, null, "JVM_OUT_OF_MEMORY", "ERROR", "CRITICAL",
+                        1, "DB_UNAVAILABLE", "type host"));
+        map.add(givenAlarmDefinition("OutOfMemory",
+                        false, null, "JVM_OUT_OF_MEMORY",
                         "type host domain"));
-        appender.addAlarmType(givenAlarmDefinition(null,
+        map.add(givenAlarmDefinition(
                         "[Tt]oo many open files", true, null,
-                        "OUT_OF_FILE_DESCRIPTORS", "ERROR", "CRITICAL",
+                        "OUT_OF_FILE_DESCRIPTORS",
                         "type host domain"));
-        appender.addAlarmType(givenAlarmDefinition(
-                        null,
+        map.add(givenAlarmDefinition(
                         "Checksum mismatch detected for (.+) - marking as BROKEN",
-                        false, null, "CHECKSUM", "ERROR", "MODERATE",
+                        false, null, "CHECKSUM",
                         "group1 type host service domain"));
-    }
-
-    private void addDelegates(LogEntryAppender appender) {
-        internal.setContext(new LoggerContext());
-        appender.addAppender(internal);
-        mail.addFilter(new AlarmMarkerFilter());
-        mail.setContext(new LoggerContext());
-        appender.addAppender(mail);
     }
 
     private void clearLast() {
         lastEntry = null;
-        lastInternalEvent = null;
-        lastMailEvent = null;
     }
 
     private Exception givenExceptionWithMessageEmbeddedAt(int depth,
@@ -308,24 +268,11 @@ public class LogEntryAppenderTest {
         }
     }
 
-    private void whenMessageIsLogged(Marker marker, Level level,
-                    String message, Throwable e) {
-        if (level == Level.ERROR) {
+    private void whenMessageIsLogged(Marker marker, String message, Throwable e) {
             if (marker != null) {
                 logger.error(marker, message, e);
             } else {
                 logger.error(message, e);
             }
-        } else if (level == Level.WARN) {
-            if (marker != null) {
-                logger.warn(marker, message);
-            } else {
-                logger.warn(message);
-            }
-        } else if (level == Level.INFO) {
-            logger.info(message);
-        } else if (level == Level.DEBUG) {
-            logger.debug(message);
-        }
     }
 }

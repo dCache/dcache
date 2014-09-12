@@ -17,7 +17,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
@@ -407,8 +407,7 @@ class WriteHandleImpl implements ReplicaDescriptor
         } else {
             PnfsId id = _entry.getPnfsId();
             String pool = _repository.getPoolName();
-            _log.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
-                                                   "BROKEN_FILE",
+            _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                    id.toString(),
                                                    pool),
                       "Marking pool entry {} on {} as BROKEN",

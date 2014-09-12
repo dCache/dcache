@@ -70,17 +70,16 @@ import javax.jdo.Transaction;
 
 import java.util.Collection;
 
-import org.dcache.alarms.dao.ILogEntryDAO;
+import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.dao.LogEntry;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
  * <br>
- * Supports the logging appender.
  *
  * @author arossi
  */
-public class DataNucleusLogEntryStore implements ILogEntryDAO {
+public final class DataNucleusLogEntryStore implements LogEntryDAO {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final PersistenceManagerFactory pmf;
 

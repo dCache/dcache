@@ -57,32 +57,23 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms.logback;
-
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.spi.FilterReply;
-import org.slf4j.Marker;
-
-import org.dcache.alarms.IAlarms;
+package org.dcache.alarms.dao;
 
 /**
- * This filter can be added to the appender responsible for receiving
- * log messages. It will accept all events with any Marker containing
- * the parent "ALARM".  <br>
- * <br>
- * Note that there is no level requirement here.
+ * Interface for the logger to store entries.
  *
  * @author arossi
  */
-public class AlarmMarkerFilter extends Filter<ILoggingEvent> {
-
-    @Override
-    public FilterReply decide(ILoggingEvent event) {
-        Marker marker = event.getMarker();
-        if (marker.contains(IAlarms.ALARM_MARKER)) {
-            return FilterReply.ACCEPT;
-        }
-        return FilterReply.DENY;
-    }
+public interface LogEntryDAO {
+    /**
+     * As it is unlikely that the log service will be bombarded by error
+     * messages, a collection/batch method is not really necessary; single-insert
+     * should not create a bottleneck.<br>
+     * <br>
+     *
+     * It is the responsibility of the implementation to handle duplicates; in
+     * most cases this will involve a check for key equivalence and a subsequent
+     * update instead of insert.
+     */
+    void put(LogEntry alarm);
 }

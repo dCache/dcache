@@ -33,7 +33,7 @@ import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.webadmin.controller.ActiveTransfersService;
 import org.dcache.webadmin.controller.CellAdminService;
 import org.dcache.webadmin.controller.CellsService;
-import org.dcache.webadmin.controller.IAlarmDisplayService;
+import org.dcache.webadmin.controller.AlarmDisplayService;
 import org.dcache.webadmin.controller.IBillingService;
 import org.dcache.webadmin.controller.InfoService;
 import org.dcache.webadmin.controller.LinkGroupsService;
@@ -100,7 +100,7 @@ public class WebAdminInterface extends WebApplication {
     private PoolSelectionSetupService _poolSelectionSetupService;
     private TapeTransfersService _tapeTransfersService;
     private IBillingService _billingService;
-    private IAlarmDisplayService _alarmDisplayService;
+    private AlarmDisplayService _alarmDisplayService;
     private ThumbnailPanelProvider _thumbnailPanelProvider;
     private String _dcacheName;
     private String _authDestination;
@@ -119,7 +119,7 @@ public class WebAdminInterface extends WebApplication {
         return Collections.unmodifiableList(ADMIN_PAGES);
     }
 
-    public IAlarmDisplayService getAlarmDisplayService() {
+    public AlarmDisplayService getAlarmDisplayService() {
         return _alarmDisplayService;
     }
 
@@ -205,7 +205,7 @@ public class WebAdminInterface extends WebApplication {
     }
 
     @Required
-    public void setAlarmDisplayService(IAlarmDisplayService alarmDisplayService) {
+    public void setAlarmDisplayService(AlarmDisplayService alarmDisplayService) {
         _alarmDisplayService = alarmDisplayService;
     }
 

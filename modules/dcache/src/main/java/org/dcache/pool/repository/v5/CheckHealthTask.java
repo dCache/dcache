@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.MetaDataStore;
@@ -205,8 +205,7 @@ class CheckHealthTask implements Runnable
             }
 
             if (total < account.getTotal()) {
-                LOGGER.warn(AlarmMarkerFactory.getMarker(Severity.LOW,
-                                                         "POOL_SIZE",
+                LOGGER.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_SIZE,
                                                          _repository.getPoolName()),
                                 "The file system containing the data files "
                                 + "appears to be smaller {} than the configured "
@@ -218,8 +217,7 @@ class CheckHealthTask implements Runnable
             if (free < account.getFree()) {
                 long newSize =
                     account.getTotal() - (account.getFree() - free);
-                LOGGER.warn(AlarmMarkerFactory.getMarker(Severity.LOW,
-                                                         "POOL_FREE_SPACE",
+                LOGGER.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_FREE_SPACE,
                                                          _repository.getPoolName()),
                                 "The file system containing the data files "
                                 + "appears to have less free space {} than "

@@ -63,46 +63,35 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Map;
 
-import org.dcache.alarms.IAlarms;
+import org.dcache.alarms.Alarm;
+import org.dcache.util.NetworkUtils;
 
 /**
- * This filter can be added to the appender responsible for sending logging
- * messages. It will accept all events but adds "host", "domain" and "service"
- * to the MDC.  These need to be kept distinct from cell.cell and
- * cell.domain because the latter can get clobbered on the receiving end
- * if the messages are processed by a remote server running inside dCache
- * as a cell.<br>
+ * This filter can be added to the appender responsible for sending remote
+ * logging messages. It will accept all events but adds "host", "domain" and
+ * "service" to the MDC. These need to be kept distinct from cell.cell and
+ * cell.domain because the latter will get clobbered on the receiving end if the
+ * messages are processed by a remote server running inside dCache as a cell.<br>
  * <br>
- * Note that there is no level requirement here.
+ * Note that there is no event level requirement here.
  *
  * @author arossi
  */
-public class RemoteMDCFilter extends Filter<ILoggingEvent> {
-
-    private static String host;
-
-    static {
-        try {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            host = IAlarms.UNKNOWN_HOST;
-        }
-    }
-
-    public static String getHost() {
-        return host;
-    }
+public final class RemoteMDCFilter extends Filter<ILoggingEvent> {
+    /*
+     * These are defined elsewhere for use in the MDC.
+     */
+    public static final String CELL = "cells.cell";
+    public static final String DOMAIN = "cells.domain";
 
     @Override
     public FilterReply decide(ILoggingEvent event) {
-        Map<String,String> mdc = event.getMDCPropertyMap();
-        mdc.put(IAlarms.HOST_TAG, host);
-        mdc.put(IAlarms.SERVICE_TAG, mdc.get(IAlarms.CELL));
-        mdc.put(IAlarms.DOMAIN_TAG, mdc.get(IAlarms.DOMAIN));
+        Map<String, String> mdc = event.getMDCPropertyMap();
+        mdc.put(Alarm.HOST_TAG, NetworkUtils.getCanonicalHostName());
+        mdc.put(Alarm.SERVICE_TAG, mdc.get(CELL));
+        mdc.put(Alarm.DOMAIN_TAG, mdc.get(DOMAIN));
         return FilterReply.NEUTRAL;
     }
 }

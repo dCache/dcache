@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NetworkUtils;
 
 /**
@@ -49,8 +49,7 @@ public class HsmRunSystem extends RunSystem
                                                     + getErrorString());
             }
         } catch (CacheException e) {
-            LOGGER.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
-                                                      "HSM_SCRIPT_FAILURE",
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.HSM_SCRIPT_FAILURE,
                                                       NetworkUtils.getCanonicalHostName(),
                                                       storageName,
                                                       extractPossibleEnstoreIds(getErrorString())),

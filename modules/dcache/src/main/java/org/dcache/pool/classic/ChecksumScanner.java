@@ -30,7 +30,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellLifeCycleAware;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -432,8 +432,7 @@ public class ChecksumScanner
                     }
                 } catch (FileCorruptedCacheException e) {
                     _badCount++;
-                    _log.error(AlarmMarkerFactory.getMarker(Severity.MODERATE,
-                                                            "CHECKSUM",
+                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.CHECKSUM,
                                                             id.toString(),
                                                             poolName),
                                     "Marking {} on {} as BROKEN: {}",

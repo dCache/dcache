@@ -8,19 +8,17 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.InetAddress;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.logging.LogManager;
 
 import dmg.util.CommandException;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.Args;
-import org.dcache.util.NetworkUtils;
 import org.dcache.util.ConfigurationProperties.DefaultProblemConsumer;
 import org.dcache.util.ConfigurationProperties.ProblemConsumer;
+import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Throwables.getRootCause;
 
@@ -159,8 +157,7 @@ public class BootLoader
             }
 
             LoggerFactory.getLogger("root")
-                .error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
-                                                    "DOMAIN_STARTUP_FAILURE",
+                .error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DOMAIN_STARTUP_FAILURE,
                                                     NetworkUtils.getCanonicalHostName(),
                                                     args.toString()),
                         logMessage, message);

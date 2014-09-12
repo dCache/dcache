@@ -278,25 +278,36 @@ documentation is written as HTML to the output directory specified.
 .SH ALARM COMMANDS
 
 .TP
-.B alarm send [-s=SOURCE] [-l=LEVEL] [-t=TYPE] MESSAGE
-Command for sending an arbitrary alarm message to the alarm server.
+.B alarm send [-h=HOST] [-d=DOMAIN] [-s=SERVICE] [-t=TYPE] MESSAGE
+Command for sending an arbitrary alarm message to the alarm server.  The
+remote server address is taken from the local values for dcache.log.server.host
+and dcache.log.server.port.
 
 .TP.TP
-.B SOURCE
-the host, domain and service issuing the alarm, in the form:
-"src://[host]/[domain]/[service]"; if host is not given, it defaults
-to the hostname of the node where the command is issued; if domain is not
-given, it defaults to "NA"; if service is not given, it defaults to
-"command-line".
+.B HOST
+The host issuing the alarm; if not given, it defaults to the hostname
+of the node where the command is issued.
 
 .TP.TP
-.B LEVEL
-can be CRITICAL, HIGH (default), MODERATE, LOW.
+.B DOMAIN
+The domain issuing the alarm; if not given, it defaults to "<na>".
+
+.TP.TP
+.B SERVICE
+The service or cell issuing the alarm; if not given, it defaults to
+"user-command".
 
 .TP.TP
 .B TYPE
-additional subtype marker; all alarms are marked ALARM; with type defined,
-the marker becomes: ALARM [type].
+Additional subtype marker; all alarms are marked ALARM; with type defined,
+a submarker is added. The type must belong to the set of
+predefined (internal) alarms (use the 'alarm list' command to inspect them);
+if left undefined, an attempt will be made to match to any custom definitions
+by the server; failing that, the alarm will be marked as of type 'GENERIC'.
+
+.TP
+.B alarm list
+Displays list of all "marked" alarm types currently defined in dCache code.
 
 .TP
 .B alarm add

@@ -59,23 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.dao;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.google.common.base.Preconditions;
-import org.slf4j.Marker;
-
-import javax.annotation.Nonnull;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.UUID;
 
-import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.IAlarms;
-import org.dcache.alarms.Severity;
-import org.dcache.alarms.logback.AlarmDefinition;
 import org.dcache.util.IRegexFilterable;
 
 /**
@@ -87,18 +76,15 @@ import org.dcache.util.IRegexFilterable;
  *
  * @author arossi
  */
-public class LogEntry implements IAlarms, Comparable<LogEntry>,
-                IRegexFilterable {
+public class LogEntry implements Comparable<LogEntry>, IRegexFilterable {
 
     private static final long serialVersionUID = -8477649423971508910L;
     private static final String FORMAT = "E MMM dd HH:mm:ss zzz yyyy";
 
-    @Nonnull
     private String key;
     private Long firstArrived;
     private Long lastUpdate;
     private String type;
-    private Integer severity;
     private String host;
     private String domain;
     private String service;
@@ -107,6 +93,13 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
     private Boolean closed = false;
     private Boolean alarm = false;
     private Integer received = 1;
+
+    /*
+     *  No longer used, but maintained for backward compatibility.
+     *  All newly created entries now default to 4, which was
+     *  the previous "CRITICAL" value.
+     */
+    private Integer severity = 4;
 
     @Override
     public int compareTo(LogEntry o) {
@@ -178,10 +171,6 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
         return severity;
     }
 
-    public Severity getSeverityEnum() {
-        return Severity.fromOrdinal(severity);
-    }
-
     public String getType() {
         return type;
     }
@@ -201,41 +190,6 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
 
     public void setAlarm(Boolean alarm) {
         this.alarm = alarm;
-    }
-
-    /**
-     * When the alarm is generated at the origin usind a marker,
-     * its key is determined directly by the value of the key
-     * submarker.  This is distinct from the key generation
-     * based on attributes and/or regex groups used when the
-     * alarm is matched against a definition.
-     */
-    public void setAlarmMetadata(ILoggingEvent event,
-                                 AlarmDefinition definition) {
-        Level level = event.getLevel();
-        if (definition == null) {
-            Marker marker = event.getMarker();
-            if (marker != null) {
-                severity = getSeverityFromMarker(marker);
-                type = getTypeFromMarker(marker);
-                key = getKeyFromMarker(marker);
-                if (key == null) {
-                    key = UUID.randomUUID().toString();
-                }
-                /*
-                 * The key is type-specific in this case.
-                 */
-                key = type + ":" + key;
-            } else {
-                severity = getSeverityFromLogLevel(event);
-                type = level.toString();
-                key = UUID.randomUUID().toString();
-            }
-        } else {
-            severity = definition.getSeverityEnum().ordinal();
-            type = definition.getType();
-            key = definition.getKey(event, host, domain, service);
-        }
     }
 
     public void setClosed(Boolean closed) {
@@ -267,8 +221,7 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
     }
 
     public void setKey(String key) {
-        Preconditions.checkNotNull(key, "key is null");
-        this.key = key;
+        this.key = Preconditions.checkNotNull(key, "key is null");
     }
 
     public void setLastUpdate(Long lastUpdate) {
@@ -299,7 +252,7 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
     public String toFilterableString() {
         return getFormattedDateOfFirstArrival() + " "
                         + getFormattedDateOfLastUpdate() + " " + type + " "
-                        + getSeverityEnum() + " " + received + " " + host + " "
+                        + received + " " + host + " "
                         + domain + " " + info + " " + service + " " + notes;
     }
 
@@ -309,7 +262,8 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
     }
 
     /**
-     * Sets <code>closed</code> and <code>notes</code> fields.
+     * Sets <code>alarm</code>, <code>closed</code> and <code>notes</code> fields.
+     * <p> Entry can get unmarked as alarm if its definition has been removed.
      *
      * @param entry
      *            from which to get updatable values.
@@ -320,54 +274,12 @@ public class LogEntry implements IAlarms, Comparable<LogEntry>,
         }
         closed = entry.isClosed();
         notes = entry.getNotes();
+        alarm = entry.isAlarm();
     }
 
     private static String getFormattedDate(Date date) {
         DateFormat format = new SimpleDateFormat(FORMAT);
         format.setLenient(false);
         return format.format(date);
-    }
-
-    private static String getKeyFromMarker(Marker marker) {
-        Marker keyMarker
-            = AlarmMarkerFactory.getSubmarker(marker, IAlarms.ALARM_MARKER_KEY);
-        if (keyMarker == null) {
-            return null;
-        }
-
-        StringBuilder builder = new StringBuilder();
-        for (Iterator<Marker> it = keyMarker.iterator(); it.hasNext(); ) {
-            builder.append(it.next().getName());
-        }
-
-        return builder.toString();
-    }
-
-    private static Integer getSeverityFromLogLevel(ILoggingEvent event) {
-        Level level = event.getLevel();
-        switch(level.toInt()) {
-            case Level.ERROR_INT: return Severity.HIGH.ordinal();
-            case Level.WARN_INT : return Severity.MODERATE.ordinal();
-            default:
-                return Severity.LOW.ordinal();
-        }
-    }
-
-    private static int getSeverityFromMarker(Marker marker) {
-        Marker severityMarker
-            = AlarmMarkerFactory.getSubmarker(marker, IAlarms.ALARM_MARKER_SEVERITY);
-        Preconditions.checkNotNull(severityMarker);
-        Marker alarmSeverity = (Marker) severityMarker.iterator().next();
-        Preconditions.checkNotNull(alarmSeverity);
-        return Severity.valueOf(alarmSeverity.getName()).ordinal();
-    }
-
-    private static String getTypeFromMarker(Marker marker) {
-        Marker typeMarker
-            = AlarmMarkerFactory.getSubmarker(marker, IAlarms.ALARM_MARKER_TYPE);
-        Preconditions.checkNotNull(typeMarker);
-        Marker alarmType = (Marker) typeMarker.iterator().next();
-        Preconditions.checkNotNull(alarmType);
-        return alarmType.getName();
     }
 }

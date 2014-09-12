@@ -59,38 +59,85 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms;
 
-import com.google.common.collect.ImmutableList;
-
-import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Properties;
 
 /**
- * For marking alarm level.
+ * Defines the component responsible for mapping alarms or alerts to a priority
+ * level.
  *
  * @author arossi
  */
-public enum Severity {
-    LOW, MODERATE, HIGH, CRITICAL;
-
-    private static final List<String> labels = ImmutableList.of(
-                    LOW.toString(), MODERATE.toString(),
-                    HIGH.toString(), CRITICAL.toString());
-
-    public static List<String> asList() {
-        return labels;
-    }
-
-    /*
-     * It is cleaner to persist the enum as a number; this allows restoration of
-     * the enum from the underlying store.
+public interface AlarmPriorityMap {
+    /**
+     * In case the implementation uses a local path
      */
-    public static Severity fromOrdinal(Integer severity) {
-        if (severity != null) {
-            for (Severity value : Severity.values()) {
-                if (severity == value.ordinal()) {
-                    return value;
-                }
-            }
-        }
-        return MODERATE;
-    }
+    String PATH = "alarm-priorities-path";
+
+    /**
+     * @return current default priority.
+     */
+    AlarmPriority getDefaultPriority();
+
+    /**
+     * @param type
+     *            alarm name.
+     * @return priority to which this is mapped.
+     * @throws NoSuchElementException
+     *             if there is no current mapping.
+     */
+    AlarmPriority getPriority(String type) throws NoSuchElementException;
+
+    /**
+     * @return an object which can be included in a serializable message. The
+     *         map should be unmodifiable.
+     */
+    Map<String, AlarmPriority> getPriorityMap();
+
+    /**
+     * @return sorted string list of the entire alarms-to-priority map.
+     */
+    String getSortedList();
+
+    /**
+     * Should locate all internal and external alarm types and load their type
+     * names. It should then override the default priority with any saved
+     * settings.
+     *
+     * @param env
+     *            any special settings which should override current ones.
+     */
+    void load(Properties env) throws Exception;
+
+    /**
+     * Sets all currently loaded types to the current default.
+     */
+    void restoreAllToDefaultPriority();
+
+    /**
+     * Should save the current mapping to some form of persistent storage for
+     * future reloading.
+     *
+     * @param env
+     *            any special settings which should override current ones.
+     */
+    void save(Properties env) throws Exception;
+
+    /**
+     * @param priority
+     *            to use as default.
+     */
+    void setDefaultPriority(String priority);
+
+    /**
+     * @param alarm
+     *            defined via custom definition or predefined enum.
+     * @param priority
+     *            to which this is mapped.
+     * @throws NoSuchElementException
+     *             if there is no current mapping.
+     */
+    void setPriority(String alarm, AlarmPriority priority)
+                    throws NoSuchElementException;
 }

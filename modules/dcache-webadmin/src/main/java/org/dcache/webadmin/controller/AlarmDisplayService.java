@@ -57,53 +57,24 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess;
+package org.dcache.webadmin.controller;
 
-import java.util.Collection;
+import java.io.Serializable;
 
-import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
+import org.dcache.webadmin.controller.util.AlarmTableProvider;
 
 /**
- * API for the persistent storage to be used in connection with
- * {@link LogEntry} -based HTML pages. The {{@link #update(Collection)} and
- * {@link #remove(Collection)} methods assume in-memory selection of alarm
- * entries to be deleted or modified.
+ * Service which handles the model for the Alarms display page.
  *
  * @author arossi
  */
-public interface ILogEntryDAO {
-    /**
-     * It is assumed that any filtering beyond what the DAO filter takes
-     * will be done in memory.
-     */
-    Collection<LogEntry> get(AlarmDAOFilter filter);
+public interface AlarmDisplayService extends Serializable {
 
-    /**
-     * @return collection of unique entry types.
-     */
-    Collection<String> getEntryTypes();
+    AlarmTableProvider getDataProvider();
 
-    /**
-     * @return number of entries removed
-     */
-    long remove(Collection<LogEntry> selected);
-
-    /**
-     * The only properties which can be updated through this method are
-     * {@link LogEntry#setClosed()} and {@link LogEntry#setNotes(String)}.
-     * {@link LogEntry#setCount()} should only be called by an initializer
-     * (e.g., upon object dehydration).
-     *
-     * @return number of entries updated
-     */
-    long update(Collection<LogEntry> selected);
-
-    /**
-     * Indicate whether the DAO layer is actually "live" (that is, connected
-     * to a real data store).
-     */
     boolean isConnected();
+
+    void refresh();
 
     void shutDown();
 }

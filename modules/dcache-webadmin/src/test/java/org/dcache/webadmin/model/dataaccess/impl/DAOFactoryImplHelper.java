@@ -2,7 +2,7 @@ package org.dcache.webadmin.model.dataaccess.impl;
 
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.DomainsDAO;
-import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
+import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.model.dataaccess.InfoDAO;
 import org.dcache.webadmin.model.dataaccess.LinkGroupsDAO;
 import org.dcache.webadmin.model.dataaccess.MoverDAO;
@@ -23,12 +23,12 @@ public class DAOFactoryImplHelper implements DAOFactory {
     LinkGroupsDAOHelper _linkGroupsDao = new LinkGroupsDAOHelper();
     MoverDAO _moverDao = new MoverDAOHelper();
 
-    private ILogEntryDAO _logEntryDAO;
+    private LogEntryDAO _logEntryDAO;
 
     @Override
-    public synchronized ILogEntryDAO getLogEntryDAO() {
+    public synchronized LogEntryDAO getLogEntryDAO() {
         if (_logEntryDAO == null) {
-            _logEntryDAO = mock(ILogEntryDAO.class);
+            _logEntryDAO = mock(LogEntryDAO.class);
         }
         return _logEntryDAO;
     }

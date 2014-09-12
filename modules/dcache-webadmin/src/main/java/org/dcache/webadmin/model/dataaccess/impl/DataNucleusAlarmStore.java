@@ -75,7 +75,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
+import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 import org.dcache.webadmin.model.exceptions.DAOException;
 import org.dcache.webadmin.model.util.AlarmJDOUtils;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
@@ -91,7 +91,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author arossi
  */
-public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
+public class DataNucleusAlarmStore implements LogEntryDAO, Runnable {
     private static final Logger logger
         = LoggerFactory.getLogger(DataNucleusAlarmStore.class);
 
@@ -149,7 +149,7 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
         try {
             tx.begin();
             Collection<LogEntry> result = AlarmJDOUtils.execute(readManager,
-                            filter);
+                                                                filter);
 
             logger.debug("got collection {}", result);
             Collection<LogEntry> detached = readManager.detachCopyAll(result);
@@ -159,37 +159,6 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
             return detached;
         } catch (JDOException t) {
             logJDOException("get", filter, t);
-            return Collections.emptyList();
-        } finally {
-            try {
-                rollbackIfActive(tx);
-            } finally {
-                readManager.close();
-            }
-        }
-    }
-
-    /*
-     * Uses JPQL (JPA-type) DISTINCT query.
-     */
-    public Collection<String> getEntryTypes() {
-        PersistenceManager readManager = pmf.getPersistenceManager();
-        if (readManager == null) {
-            return Collections.emptyList();
-        }
-
-        Transaction tx = readManager.currentTransaction();
-
-        try {
-            tx.begin();
-            Collection<String> result
-                = (Collection<String>)AlarmJDOUtils.getTypeQuery(readManager)
-                                                   .execute();
-            logger.debug("got collection {}", result);
-            tx.commit();
-            return result;
-        } catch (JDOException t) {
-            logJDOException("get entry types", null, t);
             return Collections.emptyList();
         } finally {
             try {
@@ -257,8 +226,9 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
     public void run() {
         while (isRunning()) {
             Long currentThreshold
-                = System.currentTimeMillis() - alarmCleanerDeleteThresholdUnit
-                                               .toMillis(alarmCleanerDeleteThreshold);
+                = System.currentTimeMillis()
+                    - alarmCleanerDeleteThresholdUnit
+                      .toMillis(alarmCleanerDeleteThreshold);
 
             try {
                 long count = remove(currentThreshold);
@@ -344,9 +314,11 @@ public class DataNucleusAlarmStore implements ILogEntryDAO, Runnable {
          * be dealt with by the client nor be propagated up in this case
          */
         if (filter == null) {
-            logger.error("alarm data, failed to {}: {}", action, e.getMessage());
+            logger.error("alarm data, failed to {}: {}",
+                            action, e.getMessage());
         } else {
-            logger.error("alarm data, failed to {}, {}: {}", action, filter, e.getMessage());
+            logger.error("alarm data, failed to {}, {}: {}",
+                            action, filter, e.getMessage());
         }
 
         logger.debug("{}", action, e);

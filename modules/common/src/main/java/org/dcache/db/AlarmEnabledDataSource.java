@@ -72,7 +72,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -87,7 +87,6 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
 
     private static final org.slf4j.Logger LOGGER =
                     LoggerFactory.getLogger(DataSource.class);
-    private static final String DB_CONNECTION_FAILURE = "DB_CONNECTION_FAILURE";
 
     private final DataSource delegate;
     private final String connectorName;
@@ -138,8 +137,7 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
         try {
             return delegate.getConnection();
         } catch (SQLException sql) {
-            LOGGER.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
-                                                      DB_CONNECTION_FAILURE,
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DB_CONNECTION_FAILURE,
                                                       url,
                                                       connectorName,
                                                       NetworkUtils.getCanonicalHostName()),
@@ -160,8 +158,7 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
         try {
             return delegate.getConnection(username, password);
         } catch (SQLException sql) {
-            LOGGER.error(AlarmMarkerFactory.getMarker(Severity.CRITICAL,
-                                                      DB_CONNECTION_FAILURE,
+            LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DB_CONNECTION_FAILURE,
                                                       url,
                                                       connectorName,
                                                       NetworkUtils.getCanonicalHostName()),

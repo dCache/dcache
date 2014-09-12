@@ -106,7 +106,7 @@
     </encoder>
   </appender>
 
-  <!-- sends error/warn to a remote logback server -->
+  <!-- sends error/warn to a remote logback server (do not modify the name) -->
   <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
       <!-- adds a few properties to MDC -->
       <filter class="org.dcache.alarms.logback.RemoteMDCFilter"/>

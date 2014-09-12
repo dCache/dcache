@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder/>
+
+    <bean id="definitionsMap" class="org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap"
+        init-method="initialize">
+        <property name="definitionsPath" value="${alarms.custom-definitions.path}"/>
+    </bean>
+
+    <bean id="priorityMap" class="org.dcache.alarms.file.FileBackedAlarmPriorityMap"
+        init-method="initialize">
+        <property name="propertiesPath" value="${alarms.priority-mapping.path}"/>
+        <property name="defaultPriority" value="${alarms.priority-mapping.default}"/>
+        <property name="definitions" ref="definitionsMap"/>
+    </bean>
+
+    <bean id="logEventConverter" class="org.dcache.alarms.logback.LoggingEventConverter">
+        <property name="serviceName" value="${alarms.cell.name}"/>
+        <property name="definitions" ref="definitionsMap"/>
+    </bean>
+
+    <bean id="logEntryAppender" class="org.dcache.alarms.logback.LogEntryAppender">
+        <property name="rootLevel" value="${alarms.log.root-level}"/>
+        <property name="priorityMap" ref="priorityMap"/>
+        <property name="converter" ref="logEventConverter"/>
+        <property name="xmlPath" value="${alarms.db.xml.path}"/>
+        <property name="url" value="${alarms.db.url}"/>
+        <property name="user" value="${alarms.db.user}"/>
+        <property name="password" value="${alarms.db.password}"/>
+        <property name="dnPropertiesPath" value="${alarms.db.datanucleus-properties.path}"/>
+        <property name="emailEnabled" value="${alarms.enable.email}"/>
+        <property name="emailThreshold" value="${alarms.email.threshold}"/>
+        <property name="emailEncoding" value="${alarms.email.encoding-pattern}"/>
+        <property name="smtpHost" value="${alarms.email.smtp-host}"/>
+        <property name="smtpPort" value="${alarms.email.smtp-port}"/>
+        <property name="startTls" value="${alarms.email.start-tls}"/>
+        <property name="ssl" value="${alarms.email.ssl}"/>
+        <property name="emailUser" value="${alarms.email.user}"/>
+        <property name="emailPassword" value="${alarms.email.password}"/>
+        <property name="emailRecipients" value="${alarms.email.to}"/>
+        <property name="emailSender" value="${alarms.email.from}"/>
+        <property name="emailSubject" value="${alarms.email.subject}"/>
+        <property name="emailBufferSize" value="${alarms.email.buffer-size}"/>
+        <property name="historyEnabled" value="${alarms.enable.history}"/>
+        <property name="historyThreshold" value="${alarms.history.threshold}"/>
+        <property name="historyEncoding" value="${alarms.history.encoding-pattern}"/>
+        <property name="historyFile" value="${alarms.history.log-path}"/>
+        <property name="historyFileNamePattern" value="${alarms.history.log-file.pattern}"/>
+        <property name="historyMaxFileSize" value="${alarms.history.max-file-size}"/>
+        <property name="historyMaxIndex" value="${alarms.history.max-index}"/>
+        <property name="historyMinIndex" value="${alarms.history.min-index}"/>
+    </bean>
+
+    <bean id="server" class="org.dcache.alarms.logback.LogEntryServer"
+        init-method="start" destroy-method="stop">
+        <property name="port" value="${alarms.net.port}"/>
+        <property name="appender" ref="logEntryAppender"/>
+    </bean>
+
+    <bean id="admin" class="org.dcache.alarms.admin.AlarmCommandHandler">
+        <property name="alarmDefinitionsMap" ref="definitionsMap"/>
+        <property name="alarmPriorityMap" ref="priorityMap"/>
+        <property name="serverHost" value="${alarms.net.host}"/>
+        <property name="serverPort" value="${alarms.net.port}"/>
+    </bean>
+
+    <beans profile="rdbms">
+        <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+            <description>Database schema manager</description>
+            <property name="dataSource">
+                <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+                    <property name="url" value="${alarms.db.url}"/>
+                    <property name="username" value="${alarms.db.user}"/>
+                    <property name="password" value="${alarms.db.password}"/>
+                </bean>
+            </property>
+            <property name="changeLog" value="classpath:${alarms.db.schema.changelog}"/>
+        </bean>
+    </beans>
+</beans>

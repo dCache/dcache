@@ -57,26 +57,30 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.alarms.dao;
-
-import org.dcache.services.billing.db.impl.datanucleus.DataNucleusBillingInfo;
+package org.dcache.alarms;
 
 /**
- * Interface for the logger to store entries.
+ * All internally marked alarm types must be defined via this enum.
  *
  * @author arossi
  */
-public interface ILogEntryDAO {
-    /**
-     * As it is unlikely that the log service will be bombarded by error
-     * messages, a collection/batch method (such as used by
-     * {@link DataNucleusBillingInfo}) is not really necessary; single-insert
-     * should not create a bottleneck.<br>
-     * <br>
-     *
-     * It is the responsibility of the implementation to handle duplicates; in
-     * most cases this will involve a check for key equivalence and a subsequent
-     * update instead of insert.
-     */
-    void put(LogEntry alarm);
+public enum PredefinedAlarm implements Alarm {
+   GENERIC,
+   FATAL_JVM_ERROR,
+   DOMAIN_STARTUP_FAILURE,
+   OUT_OF_FILE_DESCRIPTORS,
+   LOCATION_MANAGER_FAILURE,
+   DB_CONNECTION_FAILURE,
+   HSM_SCRIPT_FAILURE,
+   POOL_DOWN,
+   POOL_DISABLED,
+   POOL_SIZE,
+   POOL_FREE_SPACE,
+   BROKEN_FILE,
+   CHECKSUM;
+
+   @Override
+   public String getType() {
+       return toString();
+    }
 }

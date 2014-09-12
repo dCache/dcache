@@ -153,6 +153,11 @@
                 <version>1.0.12</version>
             </dependency>
             <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>1.0.12</version>
+            </dependency>
+            <dependency>
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
                 <version>1.0</version>

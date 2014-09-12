@@ -63,13 +63,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.controller.util.AlarmTableProvider;
-import org.dcache.webadmin.model.dataaccess.ILogEntryDAO;
+import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
 
 /**
- * Session data bean, for use with {@link AlarmTableProvider}.
+ * Session data bean, for use with {@link getPriority}.
  *
  * @author arossi
  */
@@ -87,7 +86,7 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
      * give this a default value so that the drop-down box displays this instead
      * of the "SELECT ONE" message
      */
-    private String severity = Severity.MODERATE.toString();
+    private AlarmPriority priority = AlarmPriority.HIGH;
     private String type;
     private boolean showClosed;
     private Integer from;
@@ -101,7 +100,7 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         updated.add(toUpdate);
     }
 
-    public void delete(ILogEntryDAO access) {
+    public void delete(LogEntryDAO access) {
         if (!deleted.isEmpty()) {
             access.remove(deleted);
             deleted.clear();
@@ -126,8 +125,8 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         return from;
     }
 
-    public String getSeverity() {
-        return severity;
+    public AlarmPriority getPriority() {
+        return priority;
     }
 
     public String getTableTitle() {
@@ -183,8 +182,8 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         this.from = from;
     }
 
-    public void setSeverity(String severity) {
-        this.severity = severity;
+    public void setPriority(AlarmPriority priority) {
+        this.priority = priority;
     }
 
     public void setShowClosed(boolean showClosed) {
@@ -203,7 +202,7 @@ public class AlarmQueryBean extends AbstractRegexFilterBean<LogEntry> {
         return deleted.contains(entry);
     }
 
-    public void update(ILogEntryDAO access) {
+    public void update(LogEntryDAO access) {
         if (!updated.isEmpty()) {
             access.update(updated);
             updated.clear();

@@ -138,8 +138,6 @@ public class DisplayPanel extends Panel {
                         "formattedDateOfFirstArrival"));
         columns.add(new PropertyColumn<LogEntry, String>(Model.of("Last"), "last",
                         "formattedDateOfLastUpdate"));
-        columns.add(new PropertyColumn<LogEntry, String>(Model.of("Severity"),
-                        "severity", "severityEnum"));
         columns.add(new PropertyColumn<LogEntry, String>(Model.of("Type"), "type",
                         "type"));
         columns.add(new PropertyColumn<LogEntry, String>(Model.of("Count"), "received",

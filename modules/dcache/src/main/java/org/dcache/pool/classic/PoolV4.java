@@ -81,7 +81,7 @@ import dmg.cells.nucleus.Reply;
 import dmg.util.CommandSyntaxException;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -446,6 +446,9 @@ public class PoolV4
     public void init()
     {
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
+        /*
+         * Do not send alarm.
+         */
         disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
     }
@@ -465,16 +468,26 @@ public class PoolV4
                     enablePool();
                     _flushingThread.start();
                 } catch (RuntimeException e) {
-                    _log.error("Repository reported a problem. Please report this to support@dcache.org.", e);
+                    _log.error(AlarmMarkerFactory.getMarker
+                                    (PredefinedAlarm.POOL_DISABLED, _poolName),
+                                     "Pool {} initialization failed, repository "
+                                     + "reported a problem."
+                                     + "Please report this to support@dcache.org.",
+                                     _poolName, e);
                     _log.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                             666, "Init failed: " + e.getMessage());
                 } catch (Throwable e) {
-                    _log.error("Repository reported a problem: " + e.getMessage());
+                    _log.error(AlarmMarkerFactory.getMarker
+                                    (PredefinedAlarm.POOL_DISABLED, _poolName),
+                                     "Pool {} initialization failed, repository "
+                                     + "reported a problem ({}).",
+                                     _poolName, e.getMessage());
                     _log.warn("Pool not enabled {}", _poolName);
                     disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                                 666, "Init failed: " + e.getMessage());
                 }
+
                 _log.info("Repository finished");
             }
         }.start();
@@ -485,6 +498,10 @@ public class PoolV4
     {
         _flushingThread.stop();
         _pingThread.stop();
+
+        /*
+         * No need for alarm here.
+         */
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                 666, "Shutdown");
     }
@@ -496,29 +513,39 @@ public class PoolV4
     public void faultOccurred(FaultEvent event)
     {
         Throwable cause = event.getCause();
-        if (cause != null) {
-            _log.error("Fault occured in " + event.getSource() + ": "
-                       + event.getMessage(), cause);
-        } else {
-            _log.error("Fault occured in " + event.getSource() + ": "
-                       + event.getMessage());
-        }
-
+        String poolState;
         switch (event.getAction()) {
         case READONLY:
+            poolState = "Pool read-only: ";
             disablePool(PoolV2Mode.DISABLED_RDONLY, 99,
-                        "Pool read-only: " + event.getMessage());
+                        poolState + event.getMessage());
             break;
 
         case DISABLED:
+            poolState = "Pool disabled: ";
             disablePool(PoolV2Mode.DISABLED_STRICT, 99,
-                        "Pool disabled: " + event.getMessage());
+                        poolState + event.getMessage());
             break;
 
         default:
+            poolState = "Pool disabled: ";
             disablePool(PoolV2Mode.DISABLED_STRICT | PoolV2Mode.DISABLED_DEAD, 666,
-                        "Pool disabled: " + event.getMessage());
+                        poolState + event.getMessage());
             break;
+        }
+
+        String message = "Fault occured in " + event.getSource() + ": "
+                        + event.getMessage() +". " + poolState;
+
+        if (cause != null) {
+            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                            _poolName),
+                            message,
+                            cause);
+        } else {
+            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                            _poolName),
+                            message);
         }
     }
 
@@ -930,6 +957,11 @@ public class PoolV4
                 case 42:
                 case 43:
                     disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce.getMessage());
+                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.POOL_DISABLED,
+                                                            _poolName),
+                                    "Error encountered during fetch of {}",
+                                    pnfsId,
+                                    ce.getMessage());
                     _message.setFailed(errorCode, ce.getMessage());
                     break;
                 default:
@@ -1344,16 +1376,7 @@ public class PoolV4
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        if (errorString != null) {
-           _log.warn(AlarmMarkerFactory.getMarker(Severity.MODERATE,
-                                                  "POOL_DISABLED",
-                                                  _poolName),
-                     "Pool mode changed to {}: {}",
-                     _poolMode,
-                     _poolStatusMessage);
-        } else {
-            _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
-        }
+        _log.warn("Pool mode changed to {}: {}", _poolMode, _poolStatusMessage);
     }
 
     /**
@@ -1773,6 +1796,10 @@ public class PoolV4
         if (args.hasOption("rdonly")) {
             modeBits |= PoolV2Mode.DISABLED_RDONLY;
         }
+
+        /*
+         * No need for alarm here.
+         */
 
         disablePool(modeBits, rc, rm);
 

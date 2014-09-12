@@ -63,8 +63,8 @@ import org.apache.wicket.util.tester.WicketTester;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.dcache.webadmin.controller.IAlarmDisplayService;
-import org.dcache.webadmin.controller.impl.StandardAlarmDisplayService;
+import org.dcache.webadmin.controller.AlarmDisplayService;
+import org.dcache.webadmin.controller.impl.TestAlarmDisplayService;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.impl.DAOFactoryImplHelper;
 import org.dcache.webadmin.view.WebAdminInterface;
@@ -77,15 +77,15 @@ import org.dcache.webadmin.view.pages.login.LogIn;
  * @author arossi
  */
 public class AlarmsPageTest {
-    private IAlarmDisplayService alarmService;
+    private AlarmDisplayService alarmService;
     private WicketTester tester;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         WebAdminInterface authenticatedWebApp =
                 ApplicationFactoryHelper.createSignedInAsAdminApplication();
         DAOFactory daoFactory = new DAOFactoryImplHelper();
-        alarmService = new StandardAlarmDisplayService(daoFactory);
+        alarmService = new TestAlarmDisplayService(daoFactory);
         authenticatedWebApp.setAlarmDisplayService(alarmService);
         tester = new WicketTester(authenticatedWebApp);
         tester.startPage(AlarmsPage.class);

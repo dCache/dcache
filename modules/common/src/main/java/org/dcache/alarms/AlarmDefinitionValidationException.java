@@ -60,6 +60,9 @@ documents or software obtained from this server.
 package org.dcache.alarms;
 
 /**
+ * Used mainly during interactive sessions (shell and admin interface)
+ * when creating a new definition.
+ *
  * @author arossi
  */
 public class AlarmDefinitionValidationException extends Exception

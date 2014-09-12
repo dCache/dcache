@@ -66,7 +66,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.dcache.alarms.Severity;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
@@ -89,30 +88,27 @@ public class AlarmJDOUtilsTest {
     }
 
     @Test
-    public void shouldContainFourClausesForFourParams() {
+    public void shouldContainThreeClausesForThreeParams() {
         Date after = new Date(System.currentTimeMillis());
         Date before = new Date(System.currentTimeMillis());
-        givenFilterParametersAre(after, before, Severity.HIGH, "CHECKSUM");
+        givenFilterParametersAre(after, before, "CHECKSUM");
         assertThat(filter.getFilter().startsWith("&&"), is(false));
         assertThat(filter.getFilter().endsWith("&&"), is(false));
-        assertThat(occurrencesOf("&&", filter.getFilter()), is(3));
+        assertThat(occurrencesOf("&&", filter.getFilter()), is(2));
         assertThat(filter.getParameters().startsWith(","), is(false));
         assertThat(filter.getParameters().endsWith(","), is(false));
-        assertThat(occurrencesOf(",", filter.getParameters()), is(3));
-        assertThat(filter.getValues().length, is(4));
+        assertThat(occurrencesOf(",", filter.getParameters()), is(2));
+        assertThat(filter.getValues().length, is(3));
         assertThat((Long) filter.getValues()[0], is(after.getTime()));
         assertThat((Long) filter.getValues()[1], is(before.getTime()));
-        assertThat((Integer) filter.getValues()[2], is(Severity.HIGH.ordinal()));
-        assertThat((String) filter.getValues()[3], is("CHECKSUM"));
+        assertThat((String) filter.getValues()[2], is("CHECKSUM"));
     }
 
     @Test
-    public void shouldContainOneClauseForOneParam() {
-        givenFilterParametersAre(null, null, Severity.HIGH, null);
+    public void shouldContainNoClauseForNoParams() {
+        givenFilterParametersAre(null, null, null);
         assertThat(occurrencesOf("&&", filter.getFilter()), is(0));
         assertThat(occurrencesOf(",", filter.getParameters()), is(0));
-        assertThat(filter.getValues().length, is(1));
-        assertThat((Integer) filter.getValues()[0], is(Severity.HIGH.ordinal()));
     }
 
     @Test
@@ -128,7 +124,7 @@ public class AlarmJDOUtilsTest {
     @Test
     public void shouldContainTwoClausesForTwoParams() {
         Date before = new Date(System.currentTimeMillis());
-        givenFilterParametersAre(null, before, null, "CHECKSUM");
+        givenFilterParametersAre(null, before, "CHECKSUM");
         assertThat(filter.getFilter().startsWith("&&"), is(false));
         assertThat(filter.getFilter().endsWith("&&"), is(false));
         assertThat(occurrencesOf("&&", filter.getFilter()), is(1));
@@ -142,7 +138,7 @@ public class AlarmJDOUtilsTest {
 
     @Test
     public void shouldReturnEmptyFilterIfAllParamsAreNull() {
-        givenFilterParametersAre(null, null, null, null);
+        givenFilterParametersAre(null, null, null);
         assertThat(filter.getFilter(), is((String) null));
         assertThat(filter.getParameters(), is((String) null));
         assertThat(filter.getValues(), is((Object) null));
@@ -153,9 +149,8 @@ public class AlarmJDOUtilsTest {
         shouldContainNKeysForListOfSizeN(0);
     }
 
-    private void givenFilterParametersAre(Date after, Date before,
-                    Severity severity, String type) {
-        filter = AlarmJDOUtils.getFilter(after, before, severity, type,
+    private void givenFilterParametersAre(Date after, Date before, String type) {
+        filter = AlarmJDOUtils.getFilter(after, before, type,
                         null, null, null);
     }
 
@@ -170,6 +165,9 @@ public class AlarmJDOUtilsTest {
     }
 
     private int occurrencesOf(String subsequence, String sequence) {
+        if (sequence == null) {
+            return 0;
+        }
         int occurrences = 0;
         int index = 0;
         while (true) {

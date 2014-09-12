@@ -19,7 +19,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.alarms.AlarmMarkerFactory;
-import org.dcache.alarms.Severity;
+import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.ReplicaStatePolicy;
@@ -172,8 +172,7 @@ public class ConsistentStore
 
                 default:
                     entry.setState(EntryState.BROKEN);
-                    _log.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
-                                                            EntryState.BROKEN_FILE,
+                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                             id.toString(),
                                                             _poolName),
                                String.format(BAD_MSG, id, e.getMessage()));
@@ -181,8 +180,7 @@ public class ConsistentStore
                 }
             } catch (NoSuchAlgorithmException e) {
                 entry.setState(EntryState.BROKEN);
-                _log.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
-                                                        EntryState.BROKEN_FILE,
+                _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                         id.toString(),
                                                         _poolName),
                                 String.format(BAD_MSG, id, e.getMessage()));
@@ -239,8 +237,7 @@ public class ConsistentStore
                                                    id,
                                                    fileAttributes.getSize(),
                                                    length);
-                    _log.error(AlarmMarkerFactory.getMarker(Severity.HIGH,
-                                                            "BROKEN_FILE",
+                    _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                             id.toString(),
                                                             _poolName),
                                                             message);

@@ -63,36 +63,30 @@ COPYRIGHT STATUS:
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
-package org.dcache.alarms.commandline;
+package org.dcache.alarms.shell;
 
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Iterator;
-import java.util.List;
+import java.io.PrintWriter;
+import java.util.Properties;
 
+import org.dcache.alarms.AlarmDefinition;
 import org.dcache.alarms.AlarmDefinitionValidationException;
-import org.dcache.alarms.logback.AlarmDefinition;
+import org.dcache.alarms.jdom.JDomAlarmDefinition;
+import org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap;
 
 /**
- * Allows the user to add, modify or delete an alarm definition. <br>
- * <br>
- *
- * This command is interactive for ease of entry.
+ * Interactive shell command.
+ * <p>
+ * Allows the user to add, modify or delete an alarm definition.
  *
  * @author arossi
  */
-public class AlarmDefinitionManager {
+public final class AlarmDefinitionManager {
     public static final String ADD_CMD = "add";
     public static final String MODIFY_CMD = "modify";
     public static final String REMOVE_CMD = "remove";
@@ -105,8 +99,16 @@ public class AlarmDefinitionManager {
     private static final String ABORT_MSG = "quitting";
     private static final String REMOVE_MSG = "Alarm type to remove:";
     private static final String MODIFY_MSG = "Alarm type to modify:";
-    private static final String NO_SUCH_ELEMENT_MSG = "No such alarm definition";
-    private static final String INVALID_MSG = "incomplete or invalid definition";
+    private static final String NO_SUCH_ELEMENT_MSG = "No such alarm definition.";
+    private static final String INVALID_MSG = "Incomplete or invalid definition.";
+
+    private static final XmlBackedAlarmDefinitionsMap map
+        = new XmlBackedAlarmDefinitionsMap();
+    private static final BufferedReader reader
+        = new BufferedReader(new InputStreamReader(System.in));
+    private static final XMLOutputter outputter = new XMLOutputter();
+    private static final PrintWriter writer = new PrintWriter(System.out);
+    private static final Properties ENV = new Properties();
 
     public static void main(String[] args) {
         try {
@@ -116,11 +118,8 @@ public class AlarmDefinitionManager {
                                 + REMOVE_CMD + "] [path to xml]");
             }
 
-            BufferedReader reader
-                = new BufferedReader(new InputStreamReader(System.in));
-            File xmlFile = getXmlFile(args[1]);
-            Element root = getRootElement(xmlFile);
-            XMLOutputter outputter = new XMLOutputter();
+            map.setDefinitionsPath(args[1]);
+            map.load(ENV);
             outputter.setFormat(Format.getPrettyFormat());
 
             String input;
@@ -130,42 +129,41 @@ public class AlarmDefinitionManager {
              */
             switch(args[0]) {
                 case ADD_CMD:
-                    configure(new AlarmDefinition(), reader, outputter, root,
-                                    xmlFile);
+                    configure(new JDomAlarmDefinition());
                     break;
                 case MODIFY_CMD:
-                    input = getInput(MODIFY_MSG, reader);
+                    input = getInput(MODIFY_MSG);
                     if (input == null) {
                         break;
                     }
-                    Element toUpdate = remove(input, root);
+
+                    JDomAlarmDefinition toUpdate = map.getDefinition(input);
                     if (toUpdate == null) {
                         System.out.println(NO_SUCH_ELEMENT_MSG);
-                        if (proceedWith("Add", reader)) {
-                            configure(new AlarmDefinition(), reader, outputter,
-                                            root, xmlFile);
+                        if (proceedWith("Add")) {
+                            configure(new JDomAlarmDefinition());
                         } else {
                             System.out.println(ABORT_MSG);
                         }
                     } else {
-                        printDefinition(toUpdate, outputter);
-                        configure(new AlarmDefinition(toUpdate), reader,
-                                        outputter, root, xmlFile);
+                        toUpdate.toXML(outputter, writer);
+                        configure(toUpdate);
                     }
                     break;
                 case REMOVE_CMD:
-                    input = getInput(REMOVE_MSG, reader);
+                    input = getInput(REMOVE_MSG);
                     if (input == null) {
                         break;
                     }
-                    Element toRemove = remove(input, root);
+
+                    JDomAlarmDefinition toRemove = map.getDefinition(input);
                     if (toRemove == null) {
                         System.out.println(NO_SUCH_ELEMENT_MSG);
                         System.out.println(ABORT_MSG);
                     } else {
-                        printDefinition(toRemove, outputter);
-                        if (proceedWith("OK to delete", reader)) {
-                            update(outputter, root, xmlFile);
+                        toRemove.toXML(outputter, writer);
+                        if (proceedWith("OK to delete")) {
+                            map.removeDefinition(input);
                         } else {
                             System.out.println(ABORT_MSG);
                         }
@@ -175,6 +173,12 @@ public class AlarmDefinitionManager {
         } catch (Throwable e) {
             printError(e);
             System.exit(1);
+        } finally {
+            try {
+                map.save(ENV);
+            } catch (Exception t) {
+                printError(t);
+            }
         }
     }
 
@@ -184,6 +188,8 @@ public class AlarmDefinitionManager {
                 /*
                  * a bug, shouldn't happen
                  */
+                System.err.println("This is a bug; please report it "
+                                    + "to the dCache team.");
                 t.printStackTrace();
             } else {
                 System.err.println(t.getMessage());
@@ -196,28 +202,22 @@ public class AlarmDefinitionManager {
         }
     }
 
-    /**
+    /*
      * Upon successful completion of choices, will ask to proceed with write.
      */
-    private static void configure(AlarmDefinition definition,
-                                  BufferedReader reader,
-                                  XMLOutputter outputter,
-                                  Element rootNode,
-                                  File xmlFile) throws Exception {
+    private static void configure(JDomAlarmDefinition definition)
+                    throws Exception {
         while (true) {
-            definition = getDefinition(definition, reader);
+            definition = getDefinition(definition);
             if (definition == null) {
                 return;
             }
 
             try {
                 definition.validate();
-
-                Element alarmType = definition.toElement();
-                printDefinition(alarmType, outputter);
-
-                if (proceedWith("Add/Update definition", reader)) {
-                    update(alarmType, outputter, rootNode, xmlFile);
+                definition.toXML(outputter, writer);
+                if (proceedWith("Add/Update definition")) {
+                    map.add(definition);
                     break;
                 }
                 System.out.println("Quit? <q>:");
@@ -231,17 +231,44 @@ public class AlarmDefinitionManager {
         }
     }
 
-    /**
+    private static String getAttributeDescription(String attribute)
+                    throws AlarmDefinitionValidationException {
+        if (!AlarmDefinition.ATTRIBUTES.contains(attribute)) {
+            throw new AlarmDefinitionValidationException
+            ("unrecognized attribute: " + attribute);
+        }
+        return AlarmDefinition.DEFINITIONS.get(AlarmDefinition.ATTRIBUTES
+                                                .indexOf(attribute));
+    }
+
+    private static String getAttributesDescription() {
+        StringBuilder builder = new StringBuilder();
+        String newLine = System.getProperty("line.separator");
+        builder.append("ALARM DEFINITION ATTRIBUTES").append(newLine);
+        for (int i = 0; i < AlarmDefinition.ATTRIBUTES.size(); i++) {
+            builder .append("   (")
+                    .append(i)
+                    .append(") ")
+                    .append(AlarmDefinition.ATTRIBUTES.get(i))
+                    .append(":")
+                    .append(newLine)
+                    .append("       -- ")
+                    .append((AlarmDefinition.DEFINITIONS.get(i)))
+                    .append(newLine);
+        }
+        return builder.toString();
+    }
+
+    /*
      * Will iterate over the attribute choices until it receives a blank
      * line return.
      */
-    private static AlarmDefinition getDefinition(AlarmDefinition definition,
-                    BufferedReader reader)
+    private static JDomAlarmDefinition getDefinition(JDomAlarmDefinition definition)
                     throws IOException {
         while (true) {
             System.out.println(MAIN_MSG);
             String input = getInput("Attributes: "
-                            + AlarmDefinition.ATTRIBUTES, reader);
+                                     + AlarmDefinition.ATTRIBUTES);
             if (input == null) {
                 break;
             } else {
@@ -251,22 +278,21 @@ public class AlarmDefinitionManager {
             switch (input.toLowerCase()) {
                 case "h":
                 case "help":
-                    System.out.println(AlarmDefinition.getAttributesDescription());
+                    System.out.println(getAttributesDescription());
                     break;
                 case "q":
                 case "quit":
                     System.out.println(ABORT_MSG);
                     return null;
                 default:
-                    verifyInput(input, definition, reader);
+                    verifyInput(input, definition);
             }
         }
 
         return definition;
     }
 
-    private static String getInput(String message, BufferedReader reader)
-                    throws IOException {
+    private static String getInput(String message) throws IOException {
         System.out.println(message);
         System.out.print(PROMPT);
         String input = reader.readLine();
@@ -276,88 +302,22 @@ public class AlarmDefinitionManager {
         return input;
     }
 
-    private static Element getRootElement(File xmlFile)
-                    throws JDOMException, IOException {
-        SAXBuilder builder = new SAXBuilder();
-        Document document = builder.build(xmlFile);
-        return document.getRootElement();
-    }
-
-    private static File getXmlFile(String path) throws IOException {
-        File xmlFile = new File(path);
-        if (!xmlFile.exists()) {
-            throw new FileNotFoundException("not found: "
-                            + xmlFile.getAbsolutePath());
-        } else if (!xmlFile.isFile()) {
-            throw new IOException("not a file: " + xmlFile.getAbsolutePath());
-        }
-        return xmlFile;
-    }
-
-    private static void printDefinition(Element alarmType, XMLOutputter outputter)
-                    throws IOException {
-        System.out.println("Alarm Definition:");
-        System.out.println("----------------------------------");
-        outputter.output(alarmType, System.out);
-        System.out.println();
-        System.out.println("----------------------------------");
-    }
-
-    private static boolean proceedWith(String question, BufferedReader reader)
-                    throws IOException {
+    private static boolean proceedWith(String question) throws IOException {
         System.out.print(question);
         System.out.println("? <y/n> [n]:");
         String input = reader.readLine();
         return input.trim().equalsIgnoreCase("y");
     }
 
-    private static Element remove(String type, Element rootNode) {
-        List children = rootNode.getChildren();
-        for (Iterator i = children.iterator(); i.hasNext();) {
-            Element alarmType = (Element)i.next();
-            if (type.equals(alarmType.getChild("type").getTextTrim())) {
-                i.remove();
-                return alarmType;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Removes any definition of the same type first, then clones the children
-     * into a new root element, adding the new AlarmDefinition.
-     */
-    private static void update(Element definition,
-                              XMLOutputter outputter,
-                              Element rootNode,
-                              File xmlFile) throws JDOMException, IOException {
-        String type = definition.getChild("type").getTextTrim();
-        remove(type, rootNode);
-        Element newRoot = new Element("definitions");
-        newRoot.addContent(rootNode.cloneContent());
-        newRoot.addContent(definition);
-        writeToFile(newRoot, outputter, xmlFile);
-    }
-
-    /**
-     * Clones the children into a new root element.
-     */
-    private static void update(XMLOutputter outputter,
-                    Element rootNode,
-                    File xmlFile) throws JDOMException, IOException {
-        Element newRoot = new Element("definitions");
-        newRoot.addContent(rootNode.cloneContent());
-        writeToFile(newRoot, outputter, xmlFile);
-    }
-
-    /**
+    /*
      * Loops for a particular attribute if input does not validate.
      */
-    private static void verifyInput(String option, AlarmDefinition definition,
-                    BufferedReader reader) throws IOException {
+    private static void verifyInput(String option,
+                                    JDomAlarmDefinition definition)
+                                                    throws IOException {
         try {
             System.out.println("("
-                                + AlarmDefinition.getAttributeDescription(option)
+                                + getAttributeDescription(option)
                                 + ")");
         } catch (AlarmDefinitionValidationException e) {
             System.out.println(e.getMessage());
@@ -368,7 +328,7 @@ public class AlarmDefinitionManager {
             try {
                 String input = getInput("hit return to skip, "
                                 + AlarmDefinition.RM
-                                + " to remove value", reader);
+                                + " to remove value");
                 if (input == null) {
                     return;
                 }
@@ -377,18 +337,6 @@ public class AlarmDefinitionManager {
             } catch (AlarmDefinitionValidationException e) {
                 System.out.println(e.getMessage());
             }
-        }
-    }
-
-    /**
-     * Creates new document, sets root and writes to file without append.
-     */
-    private static void writeToFile(Element newRoot, XMLOutputter outputter,
-                    File xmlFile) throws IOException {
-        Document newDocument = new Document();
-        newDocument.setRootElement(newRoot);
-        try(FileOutputStream stream = new FileOutputStream(xmlFile, false)){
-            outputter.output(newDocument, stream);
         }
     }
 }

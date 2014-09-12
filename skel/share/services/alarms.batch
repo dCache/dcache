@@ -6,34 +6,34 @@ onerror shutdown
 
 check -strong alarms.cell.name
 check -strong alarms.net.port
-check -strong alarms.log.config.path
 check -strong alarms.db.type
 check -strong alarms.db.url
-check -strong alarms.log.root-level
-check -strong alarms.definitions.path
-check alarms.dir
+check -strong alarms.custom-definitions.path
+check -strong alarms.db.datanucleus-properties.path
 check alarms.db.xml.path
+check alarms.enable.email
+check alarms.email.smtp-host
+check alarms.email.smtp-port
+check alarms.email.start-tls
+check alarms.email.ssl
+check alarms.email.user
+check alarms.email.password
+check alarms.email.to
+check alarms.email.from
+check alarms.email.subject
+check alarms.email.buffer-size
+check alarms.email.threshold
+check alarms.email.encoding-pattern
+check alarms.enable.history
+check alarms.history.threshold
+check alarms.history.encoding-pattern
+check alarms.history.log-path
+check alarms.history.log-file.pattern
+check alarms.history.max-file-size
+check alarms.history.min-index
+check alarms.history.max-index
 
-define env dontStartService.exe enddefine
-    say -level=esay "You have configured this domain to host the alarms service together with one"
-    say -level=esay "or more other services. This is a configuration error as the alarms service"
-    say -level=esay "must be hosted in a domain by itself."
-    say -level=esay ""
-    say -level=esay "To fix this problem, either remove the alarms service or all other services"
-    say -level=esay "from the domain ${dcache.domain.name}."
-    say -level=esay ""
-    say -level=esay "The alarms service will not be started."
-enddefine
-
-define env startService.exe enddefine
-  create org.dcache.cells.UniversalSpringCell ${alarms.cell.name} \
-        "classpath:org/dcache/alarms/server/alarms.xml -profiles=${alarms.db.type}"
-enddefine
-
-onerror continue
-eval "${dcache.domain.cells}" "${alarms.cell.name}" ==
-set env isUnique ${rc}
-onerror shutdown
-
-exec env startService.exe -ifok=isUnique
-exec env dontStartService.exe -ifnotok=isUnique
+create org.dcache.cells.UniversalSpringCell ${alarms.cell.name} \
+        "classpath:org/dcache/alarms/logback/alarms.xml \
+        -profiles=${alarms.db.type} \
+        -export=true"
