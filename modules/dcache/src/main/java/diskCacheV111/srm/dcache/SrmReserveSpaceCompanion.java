@@ -72,6 +72,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.util.concurrent.Executor;
+
 import diskCacheV111.services.space.NoFreeSpaceException;
 import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.message.Reserve;
@@ -142,7 +144,8 @@ public final class SrmReserveSpaceCompanion
             String accessLatencyString,
             String description,
             SrmReserveSpaceCallback callback,
-            CellStub spaceManagerStub)
+            CellStub spaceManagerStub,
+            Executor executor)
     {
         LOGGER.trace(" SrmReserveSpaceCompanion.reserveSpace({} for {} bytes, access lat.={} retention pol.={} lifetime={})",
                 subject.getPrincipals(), sizeInBytes, accessLatencyString, retentionPolicyString, spaceReservationLifetime);
@@ -177,7 +180,7 @@ public final class SrmReserveSpaceCompanion
                         spaceReservationLifetime,
                         description);
         reserve.setSubject(subject);
-        CellStub.addCallback(spaceManagerStub.send(reserve), companion, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(spaceManagerStub.send(reserve), companion, executor);
     }
 }
 
