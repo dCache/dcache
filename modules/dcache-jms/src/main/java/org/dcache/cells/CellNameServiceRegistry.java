@@ -53,7 +53,7 @@ public class CellNameServiceRegistry
 
     public Collection<String> getDomains()
     {
-        long now = System.currentTimeMillis();
+        long now = currentTimeMillis();
         Collection<String> domains = new ArrayList<>();
         for (String domainName: _domains.keySet()) {
             if (isValid(now, domainName)) {
@@ -66,7 +66,7 @@ public class CellNameServiceRegistry
     public String getDomain(String cell)
     {
         String domain = _cells.get(cell);
-        if (domain != null && isValid(System.currentTimeMillis(), domain)) {
+        if (domain != null && isValid(currentTimeMillis(), domain)) {
             return domain;
         }
         return null;
@@ -99,7 +99,7 @@ public class CellNameServiceRegistry
         _domains.put(domainName, cells);
 
         /* Schedule new timeout */
-        _timeouts.put(domainName, System.currentTimeMillis() + timeout);
+        _timeouts.put(domainName, currentTimeMillis() + timeout);
     }
 
     /* Registration messages follow the format
@@ -167,5 +167,13 @@ public class CellNameServiceRegistry
     public CellInfo getCellInfo(CellInfo info)
     {
         return info;
+    }
+
+    /**
+     * Hook to allow unit-testing
+     */
+    protected long currentTimeMillis()
+    {
+        return System.currentTimeMillis();
     }
 }
