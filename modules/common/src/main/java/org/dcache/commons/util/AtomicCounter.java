@@ -1,5 +1,7 @@
 package org.dcache.commons.util;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.Date;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -21,6 +23,7 @@ public class AtomicCounter
     {
         _lock.lock();
         try {
+            inLock();
             _counter++;
             _updated.signalAll();
         } finally {
@@ -35,6 +38,7 @@ public class AtomicCounter
     {
         _lock.lock();
         try {
+            inLock();
             return _counter;
         } finally {
             _lock.unlock();
@@ -69,9 +73,15 @@ public class AtomicCounter
     {
         _lock.lock();
         try {
+            inLock();
             return _counter != value || _updated.awaitUntil(deadline);
         } finally {
             _lock.unlock();
         }
+    }
+
+    @VisibleForTesting
+    void inLock()
+    {
     }
 }
