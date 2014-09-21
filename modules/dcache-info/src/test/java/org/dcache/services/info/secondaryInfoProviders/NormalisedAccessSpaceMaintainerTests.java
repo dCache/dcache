@@ -1,6 +1,7 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
 
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -156,7 +157,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
-        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, new SpaceInfo( 0, 0, 0, 0));
+        assertNas( _update, PATH_NAS.newChild(linkName), expectedPools, new SpaceInfo( 0, 0, 0, 0));
     }
 
     /**
@@ -180,7 +181,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
-        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild(linkName), expectedPools, poolInfo);
     }
 
 
@@ -197,9 +198,6 @@ public class NormalisedAccessSpaceMaintainerTests {
         SpaceInfo pool1Info = new SpaceInfo( 10, 8, 1, 1);
         SpaceInfo pool2Info = new SpaceInfo( 20, 16, 2, 2);
 
-        SpaceInfo combinedInfo = new SpaceInfo( pool1Info);
-        combinedInfo.add( pool2Info);
-
         StateLocation.putPoolSpaceMetrics( _exhibitor, pool1Name, pool1Info);
         StateLocation.putPoolInLink( _exhibitor, linkName, pool1Name);
 
@@ -209,10 +207,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         assertEquals( "checking number of purges", 0, _update.countPurges());
 
-        Set<String> expectedPools = new HashSet<>();
-        expectedPools.add( pool1Name);
-        expectedPools.add( pool2Name);
-        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, combinedInfo);
+        assertNas( _update, PATH_NAS_INACCESSIBLE, Sets.newHashSet(pool2Name), pool2Info);
     }
 
     @Test
@@ -233,7 +228,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
-        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild(linkName), expectedPools, poolInfo);
     }
 
     @Test
@@ -254,7 +249,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
-        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild(linkName), expectedPools, poolInfo);
     }
 
 
@@ -277,7 +272,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
-        assertNas( _update, PATH_NAS_INACCESSIBLE, expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild(linkName), expectedPools, poolInfo);
     }
 
     @Test
@@ -300,7 +295,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
 
-        assertNas( _update, PATH_NAS.newChild("S{R:dcache@osm}"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild("link-1"), expectedPools, poolInfo);
     }
 
 
@@ -324,7 +319,7 @@ public class NormalisedAccessSpaceMaintainerTests {
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
 
-        assertNas( _update, PATH_NAS.newChild("S{RW:dcache@osm}"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild("link-1"), expectedPools, poolInfo);
     }
 
 
@@ -352,7 +347,7 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         Set<String> expectedPools = new HashSet<>();
         expectedPools.add( poolName);
-        assertNas( _update, PATH_NAS.newChild("S{R:atlas@osm,dcache@osm;W:dcache@osm}"), expectedPools, poolInfo);
+        assertNas( _update, PATH_NAS.newChild("link-1,link-2"), expectedPools, poolInfo);
     }
 
     /*
@@ -384,13 +379,8 @@ public class NormalisedAccessSpaceMaintainerTests {
 
         triggerWatcher();
 
-        Set<String> expectedPools = new HashSet<>();
-        expectedPools.add( pool1Name);
-        expectedPools.add( pool2Name);
-
-        SpaceInfo combinedSize = new SpaceInfo( pool1Info);
-        combinedSize.add( pool2Info);
-        assertNas( _update, PATH_NAS.newChild("S{R:dcache@osm}"), expectedPools, combinedSize);
+        assertNas(_update, PATH_NAS.newChild("link-1"), Sets.newHashSet(pool1Name), new SpaceInfo(pool1Info));
+        assertNas(_update, PATH_NAS.newChild("link-2"), Sets.newHashSet(pool2Name), new SpaceInfo(pool2Info));
     }
 
 

@@ -1,14 +1,23 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.SetMultimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,15 +40,13 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  * <ol>
  * <li>all pools are a member of precisely one NAS,
  * <li>all NAS have at least one member pool,
- * <li>all pools within a NAS have the same "access", where access is the set
- * of units that might select these pools and the set of operations permitted
- * through the link.
+ * <li>all pools within a NAS have the same "access", where access is the
+ * set of links that point to the pool (either directly or indirectly through
+ * a pool group),
+ * <li>two pools in two different NAS do not have the same access, meaning
+ * that one of them is in a link the other is not in.
  * </ol>
  *
- * Because of the way NAS are constructed, all pools of a single NAS have
- * well-defined relationship to the links: for each link, either all pools of
- * the same NAS are accessible or all pools are not accessible.
- * <p>
  * NAS association with a link is not exclusive. Pools in a NAS that is
  * accessible from one link may be accessible from a different link. Those
  * pools accessible in a NAS accessible through a link may share that link
@@ -56,12 +63,8 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      */
     @SuppressWarnings("serial")
     private static final Map<LinkInfo.UNIT_TYPE, String> UNIT_TYPE_STORAGE_NAME =
-            Collections.unmodifiableMap( new HashMap<LinkInfo.UNIT_TYPE, String>() {
-                {
-                    put( LinkInfo.UNIT_TYPE.DCACHE, "dcache");
-                    put( LinkInfo.UNIT_TYPE.STORE, "store");
-                }
-            });
+            ImmutableMap.of(LinkInfo.UNIT_TYPE.DCACHE, "dcache",
+                            LinkInfo.UNIT_TYPE.STORE, "store");
 
     /**
      * How we want to represent the different LinkInfo.OPERATION values as
@@ -69,13 +72,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      */
     @SuppressWarnings("serial")
     private static final Map<LinkInfo.OPERATION, String> OPERATION_STORAGE_NAME =
-            Collections.unmodifiableMap( new HashMap<LinkInfo.OPERATION, String>() {
-                {
-                    put( LinkInfo.OPERATION.READ, "read");
-                    put( LinkInfo.OPERATION.WRITE, "write");
-                    put( LinkInfo.OPERATION.CACHE, "stage");
-                }
-            });
+            ImmutableMap.of(LinkInfo.OPERATION.READ, "read",
+                            LinkInfo.OPERATION.WRITE, "write",
+                            LinkInfo.OPERATION.CACHE, "stage");
 
     private static final String PREDICATE_PATHS[] =
             { "links.*.pools.*", "links.*.units.store.*",
@@ -97,15 +96,14 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         /**
          * The Set of LinkInfo.OPERATIONS that we paint a pool on.
          */
-        private static final Set<LinkInfo.OPERATION> CONSIDERED_OPERATIONS = EnumSet.of( LinkInfo.OPERATION.READ,
-                                                                LinkInfo.OPERATION.WRITE,
-                                                                LinkInfo.OPERATION.CACHE);
+        private static final Set<LinkInfo.OPERATION> CONSIDERED_OPERATIONS =
+                EnumSet.of(LinkInfo.OPERATION.READ, LinkInfo.OPERATION.WRITE, LinkInfo.OPERATION.CACHE);
 
         /**
          * The Set of LinkInfo.UNIT_TYPES that we paint a pool on.
          */
-        private static final Set<LinkInfo.UNIT_TYPE> CONSIDERED_UNIT_TYPES = EnumSet.of( LinkInfo.UNIT_TYPE.DCACHE,
-                                                                LinkInfo.UNIT_TYPE.STORE);
+        private static final Set<LinkInfo.UNIT_TYPE> CONSIDERED_UNIT_TYPES =
+                EnumSet.of(LinkInfo.UNIT_TYPE.DCACHE, LinkInfo.UNIT_TYPE.STORE);
 
         private final String _poolId;
         private final Set<String> _links = new HashSet<>();
@@ -114,79 +112,40 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         private String _nasName;
 
         /** Store all units by unit-type and operation */
-        // FIXME the following is ugly
-        private final Map<LinkInfo.UNIT_TYPE, Map<LinkInfo.OPERATION, Set<String>>> _storedUnits;
+        private final Map<LinkInfo.UNIT_TYPE, Multimap<LinkInfo.OPERATION, String>> _storedUnits;
 
         public PaintInfo( String poolId) {
-
             _poolId = poolId;
 
-            Map<LinkInfo.UNIT_TYPE, Map<LinkInfo.OPERATION, Set<String>>> storedUnits =
-                    new HashMap<>();
-
-            _storedUnits = Collections.unmodifiableMap( storedUnits);
-
-            for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
-                Map<LinkInfo.OPERATION, Set<String>> storedUnitsForType =
-                        new HashMap<>();
-
-                storedUnits.put(
-                                 unitType,
-                                 Collections.unmodifiableMap( storedUnitsForType));
-
-                for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
-                    storedUnitsForType.put(operation, new HashSet<String>());
-                }
+            Map<LinkInfo.UNIT_TYPE, Multimap<LinkInfo.OPERATION, String>> storedUnits =
+                    new EnumMap<>(LinkInfo.UNIT_TYPE.class);
+            for (LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
+                SetMultimap<LinkInfo.OPERATION, String> map =
+                        MultimapBuilder.enumKeys(LinkInfo.OPERATION.class).hashSetValues().build();
+                storedUnits.put(unitType, map);
             }
+
+            _storedUnits = Collections.unmodifiableMap(storedUnits);
         }
 
         /**
-         * Add paint information for a set of units of the same type
-         * ("store", "network", etc) that select for the specific link.
-         * <p>
-         * We only care about "dcache" and "store" units; protocol and
-         * network ones are ignored. Pools that differ only in their access
-         * by network or protocol units are grouped together into a common
-         * NAS.
+         * Add paint information for a link. Pools accessible through
+         * the same set of links are part of the same NAS.
          *
          * @param link The LinkInfo object that describes the link
-         * @param unitTypeName the name given to these type of unit by
-         *            LinkInfoVisitor
-         * @param units the Set of unit names.
          */
-        synchronized void addAccess( LinkInfo link) {
+        synchronized void addLink(LinkInfo link) {
             invalidateNasNameCache();
-            for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
-                if( !link.isAccessableFor( operation)) {
-                    continue;
-                }
 
-                for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
-                    for (String unit : link.getUnits(unitType)) {
-                        addAccessForUnit(link.getId(), operation, unitType,
-                                unit);
+            _links.add(link.getId());
+
+            for (LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
+                if (link.isAccessableFor(operation)) {
+                    for (LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
+                        _storedUnits.get(unitType).putAll(operation, link.getUnits(unitType));
                     }
                 }
             }
-        }
-
-        /**
-         * Update paint information for a specific unit.
-         *
-         * @param linkName the String identifier for this link
-         * @param operation one of the LinkInfo.OPERATIONS {READ, WRITE,
-         *            CACHE, P2P}
-         * @param unitType one of LinkInfo.UNIT_TYPE {DCACHE, STORE, NETWORK,
-         *            PROTO}
-         * @param unitName the String identifier for this unit.
-         */
-        private void addAccessForUnit( String linkName,
-                                       LinkInfo.OPERATION operation,
-                                       LinkInfo.UNIT_TYPE unitType,
-                                       String unitName) {
-            // Remember this unit.
-            _storedUnits.get( unitType).get( operation).add( unitName);
-            _links.add( linkName);
         }
 
         /**
@@ -199,41 +158,28 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             _nasName = null;
         }
 
-	/**
-	 * Check whether the nasName cache is currently valid.
-	 */
+        /**
+         * Check whether the nasName cache is currently valid.
+         */
         private boolean isNasNameCacheValid() {
-	    return _nasName != null;
-	}
+            return _nasName != null;
+        }
 
-	/**
-	 *  Rebuild the nasName cached value.
-	 */
-	private void buildNasNameCache() {
-	    StringBuilder sb = new StringBuilder();
+        /**
+         *  Rebuild the nasName cached value.
+         */
+        private void buildNasNameCache() {
+            String name = Joiner.on(",").join(Ordering.natural().sortedCopy(_links));
 
-	    for( LinkInfo.UNIT_TYPE unitType : CONSIDERED_UNIT_TYPES) {
-		StringBuilder unitTypePart = getUnitTypeName( unitType);
-		if( unitTypePart != null) {
-		    if( sb.length() > 0) {
-                        sb.append(",");
-                    }
-		    sb.append( unitType.getNasNamePrefix());
-		    sb.append( "{");
-		    sb.append( unitTypePart);
-		    sb.append( "}");
-		}
-	    }
-
-	    if( sb.length() > NAS_NAME_MAX_LENGTH) {
+            if (name.length() > NAS_NAME_MAX_LENGTH) {
                 _nasName = NAS_NAME_TOO_LONG_PREFIX +
-                        Integer.toHexString(sb.toString().hashCode());
-            } else if( sb.length() > 0) {
-                _nasName = sb.toString();
+                        Integer.toHexString(name.hashCode());
+            } else if (!name.isEmpty()) {
+                _nasName = name;
             } else {
                 _nasName = NAS_NAME_INACCESSIBLE;
             }
-	}
+        }
 
 
         /**
@@ -251,97 +197,6 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             return _nasName;
         }
 
-        /**
-         * Build a string that describes the operations and units that select
-         * for that operation for the given UNIT_TYPE.
-         * @param unitType the UNIT_TYPE to generate a string about.
-         * @return a String describing the units that select this pool for the
-         * considered operations, or null if there is none.
-         */
-        private StringBuilder getUnitTypeName( LinkInfo.UNIT_TYPE unitType) {
-
-            //  Build mapping between an operation and the string
-            //  describing the units that select for that operation.
-            Map<LinkInfo.OPERATION,String> operationsUnitsDescription = new HashMap<>();
-
-            for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
-                String description = getUnitOperationTypeString(unitType, operation);
-                operationsUnitsDescription.put( operation, description);
-            }
-
-            EnumSet<LinkInfo.OPERATION> processedOperations = EnumSet.noneOf( LinkInfo.OPERATION.class);
-
-            // Now build the string describing this unit-type
-            StringBuilder sb = new StringBuilder();
-            for( LinkInfo.OPERATION operation : CONSIDERED_OPERATIONS) {
-                String unitsDescription = operationsUnitsDescription.get(operation);
-
-                if( processedOperations.contains( operation)) {
-                    continue;
-                }
-
-                processedOperations.add( operation);
-
-                if( unitsDescription == null) {
-                    continue;
-                }
-
-                if( sb.length() != 0) {
-                    sb.append(";");
-                }
-
-                sb.append(operation.getNasNamePrefix());
-
-                // Scan remaining operations, looking for those with
-                // the same units description
-                for( LinkInfo.OPERATION otherOperation : EnumSet.complementOf( processedOperations)) {
-                    String otherUnitsDescription = operationsUnitsDescription.get( otherOperation);
-                    if( unitsDescription.equals( otherUnitsDescription)) {
-                        processedOperations.add( otherOperation);
-                        sb.append( otherOperation.getNasNamePrefix());
-                    }
-                }
-
-                sb.append(":");
-
-                sb.append( unitsDescription);
-            }
-
-            return sb.length() != 0 ? sb : null;
-        }
-
-        /**
-         * Generate a comma-separated list of units of the specified type that can select for
-         * this pool when a user undertakes the given operation.
-         * @param unitType
-         * @param operation
-         * @return
-         */
-        private String getUnitOperationTypeString( LinkInfo.UNIT_TYPE unitType, LinkInfo.OPERATION operation) {
-            Set<String> units = _storedUnits.get( unitType).get(operation);
-
-            if( units.size() == 0) {
-                return null;
-            }
-
-            StringBuilder sb = new StringBuilder();
-
-            List<String> sortedUnits = new ArrayList<>(units);
-            Collections.sort( sortedUnits);
-
-            boolean isFirstUnit = true;
-            for( String unit : sortedUnits) {
-                if( isFirstUnit) {
-                    isFirstUnit = false;
-                } else {
-                    sb.append(",");
-                }
-                sb.append( unit);
-            }
-
-            return sb.toString();
-        }
-
         protected Set<String> getLinks() {
             return _links;
         }
@@ -351,47 +206,25 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
         }
 
         /**
-         * Return the Set of units that match for links that were painted to
-         * this pool's information.
-         *
-         * @param unitType the type of unit {DCACHE, STORE, NETWORK, PROTO}
-         * @param operation the type of operation {READ, WRITE, P2P, STAGE}
-         * @return the Set of units, or null if the selection is invalid.
-         */
-        public Set<String> getUnits( LinkInfo.UNIT_TYPE unitType,
-                                     LinkInfo.OPERATION operation) {
-            Map<LinkInfo.OPERATION, Set<String>> storedUnitsForType =
-                    getUnits( unitType);
-
-            if( storedUnitsForType == null ||
-                !storedUnitsForType.containsKey( operation)) {
-                return null;
-            }
-
-            return Collections.unmodifiableSet( storedUnitsForType.get( operation));
-        }
-
-        /**
-         * Obtain a Map between operations (such as read, write, ...) and the
-         * Set of units that select those operations for a given unitType
+         * Obtain a Multimap between operations (such as read, write, ...) and the
+         * units that select those operations for a given unitType
          * (such as dcache, store, ..)
          *
          * @param unitType a considered unit type.
-         * @return the corresponding Mapping or null if unit type isn't
+         * @return the corresponding mapping or null if unit type isn't
          *         considered.
          */
-        public Map<LinkInfo.OPERATION, Set<String>> getUnits(
-                                                              LinkInfo.UNIT_TYPE unitType) {
+        public Multimap<LinkInfo.OPERATION, String> getUnits(LinkInfo.UNIT_TYPE unitType) {
             if( !_storedUnits.containsKey( unitType)) {
                 return null;
             }
 
-            return Collections.unmodifiableMap( _storedUnits.get( unitType));
+            return Multimaps.unmodifiableMultimap(_storedUnits.get(unitType));
         }
 
         @Override
         public int hashCode() {
-            return _storedUnits.hashCode();
+            return _links.hashCode();
         }
 
         @Override
@@ -406,7 +239,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
 
             PaintInfo otherPI = (PaintInfo) otherObject;
 
-            if( !_storedUnits.equals( otherPI._storedUnits)) {
+            if (!_links.equals( otherPI._links)) {
                 return false;
             }
 
@@ -418,9 +251,6 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      * Information about a particular NAS. A NAS is something like a
      * poolgroup, but with the restriction that every pool is a member of
      * precisely one NAS.
-     * <p>
-     * The partitioning of NAS is via store and dcache units that potentially
-     * select the pools.
      */
     static private class NasInfo {
         private final SpaceInfo _spaceInfo = new SpaceInfo();
@@ -489,8 +319,8 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
             StatePath thisNasUnitsPath = thisNasPath.newChild( "units");
 
             for( LinkInfo.UNIT_TYPE type : PaintInfo.CONSIDERED_UNIT_TYPES) {
-                Map<LinkInfo.OPERATION, Set<String>> unitsMap =
-                        _representativePaintInfo.getUnits( type);
+                Multimap<LinkInfo.OPERATION, String> unitsMap =
+                        _representativePaintInfo.getUnits(type);
 
                 if( unitsMap == null) {
                     _log.error( "A considered unit-type query to getUnits() gave null reply.  This is unexpected.");
@@ -505,9 +335,9 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                 StatePath thisNasUnitTypePath =
                         thisNasUnitsPath.newChild( UNIT_TYPE_STORAGE_NAME.get( type));
 
-                for( Map.Entry<LinkInfo.OPERATION, Set<String>> entry : unitsMap.entrySet()) {
+                for( Map.Entry<LinkInfo.OPERATION, Collection<String>> entry : unitsMap.asMap().entrySet()) {
                     LinkInfo.OPERATION operation = entry.getKey();
-                    Set<String> units = entry.getValue();
+                    Collection<String> units = entry.getValue();
 
                     if( !OPERATION_STORAGE_NAME.containsKey( operation)) {
                         _log.error( "Unmapped operation " + operation);
@@ -548,9 +378,8 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
      *
      * @param links
      */
-    private Map<String, NasInfo> buildNas(
-                                           Map<String, SpaceInfo> poolSpaceInfo,
-                                           Map<String, LinkInfo> links) {
+    private Map<String, NasInfo> buildNas(Map<String, SpaceInfo> poolSpaceInfo,
+                                          Map<String, LinkInfo> links) {
 
         // Build initially "white" (unpainted) set of paint info.
         Map<String, PaintInfo> paintedPools = new HashMap<>();
@@ -579,7 +408,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher {
                     paintedPools.put( linkPool, poolPaintInfo);
                 }
 
-                poolPaintInfo.addAccess( linkInfo);
+                poolPaintInfo.addLink(linkInfo);
             }
         }
 

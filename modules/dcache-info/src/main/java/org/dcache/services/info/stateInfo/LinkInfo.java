@@ -1,7 +1,10 @@
 package org.dcache.services.info.stateInfo;
 
-import java.util.Collections;
-import java.util.HashMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,22 +20,16 @@ public class LinkInfo {
      * are dcache, store, protocol and network.
      */
     public static enum UNIT_TYPE {
-        DCACHE("dcache", "D"), STORE("store", "S"), PROTOCOL("protocol", "P"), NETWORK("net", "N");
+        DCACHE("dcache"), STORE("store"), PROTOCOL("protocol"), NETWORK("net");
 
         private String _pathElement;
-        private String _nasNamePrefix;
 
-        UNIT_TYPE( String pathElement, String nasNamePrefix) {
+        UNIT_TYPE( String pathElement) {
             _pathElement = pathElement;
-            _nasNamePrefix = nasNamePrefix;
         }
 
         public String getPathElement() {
             return _pathElement;
-        }
-
-        public String getNasNamePrefix() {
-            return _nasNamePrefix;
         }
     }
 
@@ -41,22 +38,16 @@ public class LinkInfo {
      * These are read, write, stage and pool-to-pool destination.
      */
     public static enum OPERATION {
-        READ("read", "R"), WRITE("write", "W"), CACHE("cache", "C"), P2P("p2p", "P");
+        READ("read"), WRITE("write"), CACHE("cache"), P2P("p2p");
 
         private String _pathElement;
-        private String _nasNamePrefix;
 
-        OPERATION( String pathElement, String nasNamePrefix) {
+        OPERATION( String pathElement) {
             _pathElement = pathElement;
-            _nasNamePrefix = nasNamePrefix;
         }
 
         public String getPathElement() {
             return _pathElement;
-        }
-
-        public String getNasNamePrefix() {
-            return _nasNamePrefix;
         }
     }
 
@@ -64,15 +55,7 @@ public class LinkInfo {
     private final Set<String> _pools = new HashSet<>();
     private final Set<String> _poolgroups = new HashSet<>();
     private final Set<String> _unitgroups = new HashSet<>();
-    private final Map<UNIT_TYPE, Set<String>> _units = Collections.unmodifiableMap( new HashMap<UNIT_TYPE, Set<String>>() {
-        private static final long serialVersionUID = -3626724207880413521L;
-        {
-            put( UNIT_TYPE.DCACHE, new HashSet<String>());
-            put( UNIT_TYPE.STORE, new HashSet<String>());
-            put( UNIT_TYPE.PROTOCOL, new HashSet<String>());
-            put( UNIT_TYPE.NETWORK, new HashSet<String>());
-        }
-    });
+    private final Multimap<UNIT_TYPE, String> _units = HashMultimap.create();
 
     private final Map<OPERATION, Long> _operationPref = new ConcurrentHashMap<>();
 
@@ -99,12 +82,8 @@ public class LinkInfo {
     }
 
     protected void addUnit( UNIT_TYPE type, String unitName) {
-        Set<String> units;
-
-        units = _units.get( type);
-
-        synchronized (units) {
-            units.add( unitName);
+        synchronized (_units) {
+            _units.put(type, unitName);
         }
     }
 
@@ -118,25 +97,25 @@ public class LinkInfo {
 
     public Set<String> getPools() {
         synchronized (_pools) {
-            return new HashSet<>( _pools);
+            return ImmutableSet.copyOf(_pools);
         }
     }
 
     public Set<String> getPoolgroups() {
         synchronized (_poolgroups) {
-            return new HashSet<>( _poolgroups);
+            return ImmutableSet.copyOf(_poolgroups);
         }
     }
 
     public Set<String> getUnitgroups() {
         synchronized (_unitgroups) {
-            return new HashSet<>( _unitgroups);
+            return ImmutableSet.copyOf(_unitgroups);
         }
     }
 
     public Set<String> getUnits( UNIT_TYPE unitType) {
         synchronized (_units) {
-            return new HashSet<>( _units.get( unitType));
+            return ImmutableSet.copyOf(_units.get(unitType));
         }
     }
 
@@ -240,7 +219,7 @@ public class LinkInfo {
 
         boolean haveUnits = false;
         for( UNIT_TYPE type : UNIT_TYPE.values()) {
-            if( _units.get( type).size() > 0) {
+            if( _units.containsKey(type)) {
                 haveUnits = true;
                 break;
             }
@@ -248,9 +227,9 @@ public class LinkInfo {
         if( haveUnits) {
             sb.append( "  Units:\n");
             for( UNIT_TYPE type : UNIT_TYPE.values()) {
-                Set<String> units = _units.get( type);
+                Collection<String> units = _units.get( type);
 
-                if( units.size() > 0) {
+                if( !units.isEmpty()) {
                     sb.append("    ").append(type).append(":\n");
 
                     for( String unitName : units) {
