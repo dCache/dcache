@@ -94,11 +94,11 @@ public interface JobStorage<J extends Job> {
     /**
      *
      * @param job Job to save
-     * @param saveIfMonitoringDisabled if this is false and monitoring jdbc login
+     * @param force if this is false and monitoring jdbc login
      *         disabled, this operation will be ignored
      * @throws SQLException
      */
-    void saveJob(J job, boolean saveIfMonitoringDisabled)
+    void saveJob(J job, boolean force)
             throws DataAccessException;
 
     boolean isJdbcLogRequestHistoryInDBEnabled();
