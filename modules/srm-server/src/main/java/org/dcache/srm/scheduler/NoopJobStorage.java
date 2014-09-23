@@ -41,7 +41,7 @@ public class NoopJobStorage<J extends Job> implements JobStorage<J> {
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) {
+    public void saveJob(J job, boolean force) {
     }
 
     @Override

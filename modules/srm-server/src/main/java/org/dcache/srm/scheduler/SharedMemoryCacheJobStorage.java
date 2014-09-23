@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.request.Job;
 
@@ -126,9 +125,9 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws DataAccessException
+    public void saveJob(J job, boolean force) throws DataAccessException
     {
-        storage.saveJob(job, saveIfMonitoringDisabled);
+        storage.saveJob(job, force);
         sharedMemoryCache.update(job);
         updateExpirationSet(job);
     }
