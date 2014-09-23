@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.dcache.srm.request.Job;
@@ -20,14 +20,14 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
 
     private final JobStorage<J> storage;
     private final ConcurrentMap<Long,UpdateState> states = new ConcurrentHashMap<>();
-    private final ExecutorService executor;
+    private final Executor executor;
 
     private static enum UpdateState
     {
-        QUEUED, PROCESSING
+        QUEUED_FORCED, QUEUED_NOT_FORCED, PROCESSING
     }
 
-    public AsynchronousSaveJobStorage(JobStorage<J> storage, ExecutorService executor)
+    public AsynchronousSaveJobStorage(JobStorage<J> storage, Executor executor)
     {
         this.storage = storage;
         this.executor = executor;
@@ -63,12 +63,21 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
         return storage.getJobs(scheduler, state);
     }
 
-    public void saveJob(final J job, final boolean saveIfMonitoringDisabled)
+    public void saveJob(final J job, final boolean force)
     {
-        if (!saveIfMonitoringDisabled && !isJdbcLogRequestHistoryInDBEnabled()) {
+        if (!force && !isJdbcLogRequestHistoryInDBEnabled()) {
             return;
         }
-        if (states.put(job.getId(), UpdateState.QUEUED) == null) {
+
+        UpdateState state;
+        if (force) {
+            state = states.put(job.getId(), UpdateState.QUEUED_FORCED);
+        } else {
+            while ((state = states.putIfAbsent(job.getId(), UpdateState.QUEUED_NOT_FORCED)) == UpdateState.PROCESSING &&
+                    !states.replace(job.getId(), UpdateState.PROCESSING, UpdateState.QUEUED_NOT_FORCED));
+        }
+
+        if (state == null) {
             boolean success = false;
             try {
                 Runnable task =
@@ -77,9 +86,9 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
                             @Override
                             public void run()
                             {
-                                states.put(job.getId(), UpdateState.PROCESSING);
+                                UpdateState state = states.put(job.getId(), UpdateState.PROCESSING);
                                 try {
-                                    storage.saveJob(job, saveIfMonitoringDisabled);
+                                    storage.saveJob(job, state == UpdateState.QUEUED_FORCED);
                                 } catch (DataAccessException e) {
                                     LOGGER.error("SQL statement failed: {}", e.getMessage());
                                 } catch (Throwable e) {
