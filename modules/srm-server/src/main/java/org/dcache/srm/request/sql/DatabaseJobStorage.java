@@ -465,9 +465,9 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
 
     @Override
-    public void saveJob(final Job job, boolean saveifmonitoringisdesabled) throws DataAccessException
+    public void saveJob(final Job job, boolean force) throws DataAccessException
     {
-        if (!saveifmonitoringisdesabled && !logHistory) {
+        if (!force && !logHistory) {
             return;
         }
 
