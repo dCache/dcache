@@ -457,7 +457,7 @@ public class RemoteNameSpaceProviderTests
 
 
 
-    @Test(timeout=10000)
+    @Test(timeout=60_000)
     public void shouldSucceedForSuccessfulListWithSingleReplyMessage() throws Exception
     {
         givenListResponses(
@@ -481,7 +481,7 @@ public class RemoteNameSpaceProviderTests
         assertThat(file2Attr.getPnfsId(), is(ANOTHER_PNFSID));
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=60_000)
     public void shouldSucceedForSuccessfulListWithTwoReplyMessage() throws Exception
     {
         givenListResponses(
