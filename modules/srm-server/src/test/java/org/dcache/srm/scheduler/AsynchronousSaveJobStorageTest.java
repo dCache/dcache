@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.dcache.srm.request.Job;
 
@@ -91,6 +92,17 @@ public class AsynchronousSaveJobStorageTest
         asyncStorage.saveJob(job, false);
         asyncStorage.saveJob(job, true);
         runTasks();
+        verify(storage).saveJob(job, true);
+    }
+
+    @Test
+    public void whenExecutionQueueIsFullForcedSaveIsStillExecuted() throws Exception
+    {
+        Executor executor = mock(Executor.class);
+        asyncStorage = new AsynchronousSaveJobStorage<>(storage, executor);
+        when(storage.isJdbcLogRequestHistoryInDBEnabled()).thenReturn(true);
+        doThrow(RejectedExecutionException.class).when(executor).execute(any(Runnable.class));
+        asyncStorage.saveJob(job, true);
         verify(storage).saveJob(job, true);
     }
 

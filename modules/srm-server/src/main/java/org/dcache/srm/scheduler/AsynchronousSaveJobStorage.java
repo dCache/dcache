@@ -69,44 +69,50 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
             return;
         }
 
-        UpdateState state;
+        UpdateState existingState;
         if (force) {
-            state = states.put(job.getId(), UpdateState.QUEUED_FORCED);
+            existingState = states.put(job.getId(), UpdateState.QUEUED_FORCED);
         } else {
-            while ((state = states.putIfAbsent(job.getId(), UpdateState.QUEUED_NOT_FORCED)) == UpdateState.PROCESSING &&
-                    !states.replace(job.getId(), UpdateState.PROCESSING, UpdateState.QUEUED_NOT_FORCED));
+            existingState = states.putIfAbsent(job.getId(), UpdateState.QUEUED_NOT_FORCED);
+            while (existingState == UpdateState.PROCESSING &&
+                    !states.replace(job.getId(), UpdateState.PROCESSING, UpdateState.QUEUED_NOT_FORCED)) {
+                existingState = states.putIfAbsent(job.getId(), UpdateState.QUEUED_NOT_FORCED);
+            }
         }
 
-        if (state == null) {
+        if (existingState == null) {
             boolean success = false;
-            try {
-                Runnable task =
-                        new Runnable()
+            Runnable task =
+                    new Runnable()
+                    {
+                        @Override
+                        public void run()
                         {
-                            @Override
-                            public void run()
-                            {
-                                UpdateState state = states.put(job.getId(), UpdateState.PROCESSING);
-                                try {
-                                    storage.saveJob(job, state == UpdateState.QUEUED_FORCED);
-                                } catch (DataAccessException e) {
-                                    LOGGER.error("SQL statement failed: {}", e.getMessage());
-                                } catch (Throwable e) {
-                                    Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-                                } finally {
-                                    if (!states.remove(job.getId(), UpdateState.PROCESSING)) {
-                                        executor.execute(this);
-                                    }
+                            UpdateState state = states.put(job.getId(), UpdateState.PROCESSING);
+                            try {
+                                storage.saveJob(job, state == UpdateState.QUEUED_FORCED);
+                            } catch (DataAccessException e) {
+                                LOGGER.error("SQL statement failed: {}", e.getMessage());
+                            } catch (Throwable e) {
+                                Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+                            } finally {
+                                if (!states.remove(job.getId(), UpdateState.PROCESSING)) {
+                                    executor.execute(this);
                                 }
                             }
-                        };
-
+                        }
+                    };
+            try {
                 executor.execute(task);
                 success = true;
             } catch (RejectedExecutionException e) {
-                // ignore the saving errors, this will affect monitoring and
-                // future status updates, but is not critical
-                LOGGER.error("Persistence of request {} failed, queue is too long.", job.getId());
+                if (force) {
+                    // Execute forced save synchronously, thus creating back pressure.
+                    task.run();
+                    success = true;
+                } else {
+                    LOGGER.warn("Persistence of request {} skipped, queue is too long.", job.getId());
+                }
             } finally {
                 if (!success) {
                     states.remove(job.getId());
