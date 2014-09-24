@@ -155,7 +155,7 @@ public class DiskSpaceAllocatorTest {
     }
 
 
-    @Test(timeout=500)
+    @Test(timeout=60_000)
     public void testAllocateWithFree() throws Exception {
 
         final Random random = new Random();
@@ -171,12 +171,8 @@ public class DiskSpaceAllocatorTest {
         assertEquals("used space do not match allocated space", allocSize, account.getUsed());
         assertEquals("free space do not match after alloc",space - allocSize, account.getFree());
 
-        final long timeout = 200; // 0.2 seconds
-        DiskSpaceAllocationTestHelper.delayedFreeEntry(account, allocSize, timeout);
-
-        // Should be true.
-        assertEquals("used space do not match allocated space", allocSize, account.getUsed());
-        assertEquals("free space do not match after alloc",space - allocSize, account.getFree());
+        long delay = 200; // 0.2 seconds
+        DiskSpaceAllocationTestHelper.delayedFreeEntry(account, allocSize, delay);
 
         // Should block until space is freed.
         account.allocate(space);
@@ -255,7 +251,7 @@ public class DiskSpaceAllocatorTest {
     }
 
 
-    @Test(timeout=400)
+    @Test(timeout=60_000)
     public void testAllocateWithSetTotalInc() throws Exception {
 
         final long initialTotalSize = 1000;
