@@ -234,7 +234,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
                       _maintainer.countPendingUpdates());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 60_000)
     public void testCountPendingUpdates() throws InterruptedException {
         // Create a caretaker that will take 10s to process each request.
         SlowCaretaker slowCaretaker = new SlowCaretaker( 1000);
@@ -256,7 +256,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
                       _maintainer.countPendingUpdates());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 60_000)
     public void testUpdateProcessed() throws InterruptedException {
         _caretaker.setProcessUpdateCount( 1);
 
@@ -275,7 +275,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
                       _maintainer.countPendingUpdates());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 60_000)
     public void testTwoUpdateProcessed() throws InterruptedException {
         _caretaker.setProcessUpdateCount( 2);
 
@@ -303,7 +303,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
      *
      */
 
-    @Test(timeout = 1000)
+    @Test(timeout = 60_000)
     public void testExpiring() throws InterruptedException {
 
         /**
@@ -322,7 +322,7 @@ public class StateMaintainerTests extends InfoBaseTestHelper {
 
     // See http://rt.dcache.org/Ticket/Display.html?id=7330
     @Ignore("Broken test: depends on timing on machine")
-    @Test(timeout = 1000)
+    @Test(timeout = 60_000)
     public void testExpiringDelayChanging() throws InterruptedException {
 
         /**
