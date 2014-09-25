@@ -35,8 +35,6 @@
             <fileMode>644</fileMode>
             <directoryMode>755</directoryMode>
             <includes>
-                <include>SRMServerV1.map</include>
-                <include>JHRM.map</include>
                 <include>logback*.xml</include>
             </includes>
         </fileSet>

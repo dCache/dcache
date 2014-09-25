@@ -14,9 +14,6 @@
 	or false to use plain http (no authentication or encryption)-->
 	<gsissl> true </gsissl>
 
-	<!-- OBSOLETE: path to the "glue" mapfile -->
-	<mapfile> /home/user/srm/conf/SRMServerV1.map </mapfile>
-
 	<!-- path to the  in the srm webservices server,
 	srm/managerv1" in case of srm in dcache
         This is different from java version: srm/managerv1.wsdl -->
