@@ -60,7 +60,7 @@ cp  $SRM_PATH/lib/axis/* $SRM_PATH/ups_release/lib/axis
 mkdir $SRM_PATH/ups_release/lib/xml
 cp  $SRM_PATH/lib/xml/*.jar $SRM_PATH/ups_release/lib/xml
 mkdir $SRM_PATH/ups_release/conf
-cp $SRM_PATH/conf/SRMServerV1.map $SRM_PATH/conf/logback-all.xml $SRM_PATH/ups_release/conf
+cp $SRM_PATH/conf/logback-all.xml $SRM_PATH/ups_release/conf
 cp $SRM_PATH/README $SRM_PATH/ups_release
 cp $SRM_PATH/README.SECURITY $SRM_PATH/ups_release
 cp $SRM_PATH/FNAL.LICENSE $SRM_PATH/ups_release
