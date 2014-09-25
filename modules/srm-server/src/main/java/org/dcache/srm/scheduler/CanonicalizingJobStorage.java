@@ -105,13 +105,13 @@ public class CanonicalizingJobStorage<J extends Job> implements JobStorage<J>
     }
 
     @Override
-    public void saveJob(J job, boolean saveIfMonitoringDisabled) throws DataAccessException
+    public void saveJob(J job, boolean force) throws DataAccessException
     {
         Job other = map.putIfAbsent(job.getId(), job);
         if (other != null && other != job) {
             throw new IllegalStateException("Duplicate job #" + job.getId());
         }
-        storage.saveJob(job, saveIfMonitoringDisabled);
+        storage.saveJob(job, force);
     }
 
     @Override
