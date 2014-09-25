@@ -96,6 +96,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     private static final int DEFAULT_FILESTATUS_FLAGS = 0;
     private static final int DEFAULT_FILESTATUS_MODTIME = 0;
 
+    private static final int MAX_JAVA_ARRAY = Integer.MAX_VALUE - 5;
+    private static final int READV_HEADER_LENGTH = 24;
+    private static final int READV_ELEMENT_LENGTH = 12;
+    private static final int READV_IOV_MAX = (MAX_JAVA_ARRAY - READV_HEADER_LENGTH) / READV_ELEMENT_LENGTH;
+
     /**
      * Store file descriptors of open files.
      */
@@ -557,10 +562,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     s.append(0);
                     break;
                 case "readv_ior_max":
-                    s.append(_server.getMaxFrameSize());
+                    s.append(_server.getMaxFrameSize() - ReadResponse.READ_LIST_HEADER_SIZE);
                     break;
                 case "readv_iov_max":
-                    s.append(Integer.MAX_VALUE);
+                    s.append(READV_IOV_MAX);
                     break;
                 case "version":
                     s.append("dCache ").append(Version.of(XrootdPoolRequestHandler.class).getVersion());
