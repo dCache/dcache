@@ -96,11 +96,11 @@ public class JdbcFs implements FileSystemProvider {
     /**
      * available space (1 Exabyte)
      */
-    private static final long AVAILABLE_SPACE = 1152921504606846976L;
+    static final long AVAILABLE_SPACE = 1152921504606846976L;
     /**
      * total files
      */
-    private static final long TOTAL_FILES = 62914560L;
+    static final long TOTAL_FILES = 62914560L;
 
     /**
      * maximal length of an object name in a directory.
@@ -142,54 +142,6 @@ public class JdbcFs implements FileSystemProvider {
     ////      Fs operations
     ////
     /////////////////////////////////////////////////////////
-    public long usedSpace() throws ChimeraFsException {
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        long usedSpace = 0;
-        try {
-            // read only
-            dbConnection.setAutoCommit(true);
-            usedSpace = _sqlDriver.usedSpace(dbConnection);
-        } catch (SQLException se) {
-            _log.error("usedSpace: ", se);
-            throw new IOHimeraFsException(se.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-        return usedSpace;
-    }
-
-    public long usedFiles() throws ChimeraFsException {
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        long usedFiles = 0;
-        try {
-            // read only
-            dbConnection.setAutoCommit(true);
-            usedFiles = _sqlDriver.usedFiles(dbConnection);
-        } catch (SQLException se) {
-            _log.error("usedFiles: ", se);
-            throw new IOHimeraFsException(se.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-        return usedFiles;
-    }
-
     @Override
     public FsInode createLink(String src, String dest) throws ChimeraFsException {
 
@@ -2742,13 +2694,18 @@ public class JdbcFs implements FileSystemProvider {
             _fs = fs;
         }
 
-        public synchronized FsStat getFsStat() throws ChimeraFsException {
+        public synchronized FsStat getFsStat(DataSource dbConnectionsPool, FsSqlDriver driver) throws ChimeraFsException {
 
             if (_fsStatLastUpdate == 0 || _fsStatLastUpdate + _fsStateLifetime < System.currentTimeMillis()) {
-                _fsStatCached = new FsStat(AVAILABLE_SPACE,
-                                           TOTAL_FILES,
-                                           _fs.usedSpace(),
-                                           _fs.usedFiles());
+                Connection dbConnection = null;
+                try {
+                    dbConnection = dbConnectionsPool.getConnection();
+                    _fsStatCached = driver.getFsStat(dbConnection);
+                } catch (SQLException e) {
+                    throw new IOHimeraFsException(e.getMessage());
+                } finally {
+                    tryToClose(dbConnection);
+                }
                 _log.debug("updateing cached value of FsStat");
                 _fsStatLastUpdate = System.currentTimeMillis();
             } else {
@@ -2761,7 +2718,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsStat getFsStat() throws ChimeraFsException {
-        return _fsStatCache.getFsStat();
+        return _fsStatCache.getFsStat(_dbConnectionsPool, _sqlDriver);
     }
 
     ///////////////////////////////////////////////////////////////
