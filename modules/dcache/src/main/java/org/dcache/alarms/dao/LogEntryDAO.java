@@ -76,4 +76,8 @@ public interface LogEntryDAO {
      * update instead of insert.
      */
     void put(LogEntry alarm);
+
+    void initialize();
+
+    void shutdown();
 }

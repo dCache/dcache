@@ -295,8 +295,7 @@
         </constructor-arg>
     </bean>
 
-    <bean id="AlarmDisplayService" class="org.dcache.webadmin.controller.impl.StandardAlarmDisplayService" 
-        destroy-method="shutDown">
+    <bean id="AlarmDisplayService" class="org.dcache.webadmin.controller.impl.StandardAlarmDisplayService">
         <constructor-arg>
             <ref bean="DAOFactory"/>
         </constructor-arg>
@@ -370,14 +369,8 @@
             <property name="connectionFactory" ref="dataSource"/>
         </bean>
 
-        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
-              init-method="initialize" destroy-method="shutDown">
+        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore">
             <property name="persistenceManagerFactory" ref="pmf"/>
-            <property name="alarmsCleanerEnabled" value="${httpd.enable.alarm-cleaner}"/>
-            <property name="alarmsCleanerSleepInterval" value="${httpd.alarm-cleaner.timeout}"/>
-            <property name="alarmsCleanerSleepIntervalUnit" value="${httpd.alarm-cleaner.timeout.unit}"/>
-            <property name="alarmsCleanerDeleteThreshold" value="${httpd.alarm-cleaner.delete-entries-before}"/>
-            <property name="alarmsCleanerDeleteThresholdUnit" value="${httpd.alarm-cleaner.delete-entries-before.unit}"/>
         </bean>
     </beans>
 
@@ -392,20 +385,13 @@
             </constructor-arg>
         </bean>
 
-        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
-              init-method="initialize" destroy-method="shutDown">
+        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore">
             <property name="persistenceManagerFactory" ref="pmf"/>
-            <property name="alarmsCleanerEnabled" value="${httpd.enable.alarm-cleaner}"/>
-            <property name="alarmsCleanerSleepInterval" value="${httpd.alarm-cleaner.timeout}"/>
-            <property name="alarmsCleanerSleepIntervalUnit" value="${httpd.alarm-cleaner.timeout.unit}"/>
-            <property name="alarmsCleanerDeleteThreshold" value="${httpd.alarm-cleaner.delete-entries-before}"/>
-            <property name="alarmsCleanerDeleteThresholdUnit" value="${httpd.alarm-cleaner.delete-entries-before.unit}"/>
         </bean>
     </beans>
 
     <beans profile="alarms-off">
-        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore"
-              init-method="initialize" destroy-method="shutDown">
+        <bean id="alarmStore" class="org.dcache.webadmin.model.dataaccess.impl.DataNucleusAlarmStore">
         </bean>
     </beans>
 </beans>

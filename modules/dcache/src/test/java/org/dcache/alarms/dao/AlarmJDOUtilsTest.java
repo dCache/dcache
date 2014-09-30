@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.util;
+package org.dcache.alarms.dao;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -66,8 +66,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
+import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;

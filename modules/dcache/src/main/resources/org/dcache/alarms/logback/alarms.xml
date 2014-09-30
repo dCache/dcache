@@ -33,6 +33,11 @@
         <property name="user" value="${alarms.db.user}"/>
         <property name="password" value="${alarms.db.password}"/>
         <property name="dnPropertiesPath" value="${alarms.db.datanucleus-properties.path}"/>
+        <property name="cleanerEnabled" value="${alarms.enable.cleaner}"/>
+        <property name="cleanerSleepInterval" value="${alarms.cleaner.timeout}"/>
+        <property name="cleanerSleepIntervalUnit" value="${alarms.cleaner.timeout.unit}"/>
+        <property name="cleanerDeleteThreshold" value="${alarms.cleaner.delete-entries-before}"/>
+        <property name="cleanerDeleteThresholdUnit" value="${alarms.cleaner.delete-entries-before.unit}"/>
         <property name="emailEnabled" value="${alarms.enable.email}"/>
         <property name="emailThreshold" value="${alarms.email.threshold}"/>
         <property name="emailEncoding" value="${alarms.email.encoding-pattern}"/>

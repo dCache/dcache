@@ -32,6 +32,18 @@ check alarms.history.log-file.pattern
 check alarms.history.max-file-size
 check alarms.history.min-index
 check alarms.history.max-index
+check alarms.enable.cleaner
+
+define env checkAlarmCleanerProperites end
+     check -strong alarms.cleaner.timeout
+     check -strong alarms.cleaner.timeout.unit
+     check -strong alarms.cleaner.delete-entries-before
+     check -strong alarms.cleaner.delete-entries-before.unit
+end
+
+onerror continue
+eval ${alarms.enable.cleaner} true ==
+exec env checkAlarmCleanerProperites -ifok
 
 create org.dcache.cells.UniversalSpringCell ${alarms.cell.name} \
         "classpath:org/dcache/alarms/logback/alarms.xml \

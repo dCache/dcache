@@ -57,7 +57,7 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.util;
+package org.dcache.alarms.dao;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -65,6 +65,7 @@ import com.google.common.base.Strings;
 import javax.jdo.FetchPlan;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
+import javax.jdo.Transaction;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,8 +73,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
-import org.dcache.alarms.dao.LogEntry;
 
 /**
  * Convenience methods for generating JDO queries from {@link LogEntry}
@@ -283,6 +282,12 @@ public class AlarmJDOUtils {
         filter.parameters = Strings.emptyToNull(p.toString());
         filter.values = emptyListToNull(values);
         return filter;
+    }
+
+    public static void rollbackIfActive(Transaction tx) {
+        if (tx.isActive()) {
+            tx.rollback();
+        }
     }
 
     /**

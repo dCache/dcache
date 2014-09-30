@@ -110,6 +110,12 @@ public class LogEntryAppenderTest {
         public void put(LogEntry entry) {
             lastEntry = entry;
         }
+
+        public void initialize() {
+        }
+
+        public void shutdown() {
+        }
     };
 
     private LogEntry lastEntry;

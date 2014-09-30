@@ -75,6 +75,4 @@ public interface AlarmDisplayService extends Serializable {
     boolean isConnected();
 
     void refresh();
-
-    void shutDown();
 }

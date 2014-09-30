@@ -86,6 +86,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
@@ -93,6 +94,8 @@ import org.dcache.alarms.dao.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
 import org.dcache.alarms.dao.impl.DataNucleusLogEntryStore;
 import org.dcache.db.AlarmEnabledDataSource;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * For server-side interception of log messages. Will store them to the LogEntry
@@ -143,6 +146,15 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     private HikariDataSource dataSource;
 
     /**
+     * Optional cleaner daemon.
+     */
+    private boolean cleanerEnabled;
+    private int cleanerSleepInterval;
+    private TimeUnit cleanerSleepIntervalUnit;
+    private int cleanerDeleteThreshold;
+    private TimeUnit cleanerDeleteThresholdUnit;
+
+    /**
      * Optional email appender configuration.
      */
     private SMTPAppender emailAppender;
@@ -172,6 +184,26 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     private String historyMaxFileSize;
     private int historyMinIndex;
     private int historyMaxIndex;
+
+    public void setCleanerDeleteThreshold(int cleanerDeleteThreshold) {
+        this.cleanerDeleteThreshold = cleanerDeleteThreshold;
+    }
+
+    public void setCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
+        cleanerDeleteThresholdUnit = checkNotNull(timeUnit);
+    }
+
+    public void setCleanerEnabled(boolean cleanerEnabled) {
+        this.cleanerEnabled = cleanerEnabled;
+    }
+
+    public void setCleanerSleepInterval(int cleanerSleepInterval) {
+        this.cleanerSleepInterval = cleanerSleepInterval;
+    }
+
+    public void setCleanerSleepIntervalUnit(TimeUnit timeUnit) {
+        cleanerSleepIntervalUnit = checkNotNull(timeUnit);
+    }
 
     public void setConverter(LoggingEventConverter converter) {
         this.converter = converter;
@@ -300,8 +332,7 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     public void start() {
         try {
             if (store == null) {
-                initPersistenceManagerFactory();
-                store = new DataNucleusLogEntryStore(pmf);
+                initializeStore();
             }
 
             if (emailEnabled) {
@@ -331,6 +362,10 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
         if (dataSource != null) {
             dataSource.shutdown();
             dataSource = null;
+        }
+
+        if (store != null) {
+            store.shutdown();
         }
 
         if (emailAppender != null) {
@@ -392,6 +427,18 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
      */
     void setStore(LogEntryDAO store) {
         this.store = store;
+    }
+
+    private void initializeStore() throws IOException {
+        initPersistenceManagerFactory();
+        DataNucleusLogEntryStore dnStore = new DataNucleusLogEntryStore(pmf);
+        dnStore.setCleanerDeleteThreshold(cleanerDeleteThreshold);
+        dnStore.setCleanerDeleteThresholdUnit(cleanerDeleteThresholdUnit);
+        dnStore.setCleanerEnabled(cleanerEnabled);
+        dnStore.setCleanerSleepInterval(cleanerSleepInterval);
+        dnStore.setCleanerSleepIntervalUnit(cleanerSleepIntervalUnit);
+        dnStore.initialize();
+        this.store = dnStore;
     }
 
     /*

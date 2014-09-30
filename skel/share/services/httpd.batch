@@ -12,7 +12,6 @@ check -strong httpd.net.port
 check -strong httpd.cell.name
 check -strong httpd.setup
 check -strong httpd.enable.authn
-check -strong httpd.enable.alarm-cleaner
 check -strong httpd.enable.plots.pool-queue
 
 check httpd.statistics.location
@@ -69,13 +68,6 @@ define env checkSecurityProperties end
      check -strong httpd.authn.ciphers
 end
 
-define env checkAlarmCleanerProperites end
-     check -strong httpd.alarm-cleaner.timeout
-     check -strong httpd.alarm-cleaner.timeout.unit
-     check -strong httpd.alarm-cleaner.delete-entries-before
-     check -strong httpd.alarm-cleaner.delete-entries-before.unit
-end
-
 define env checkAlarmProperties end
      onerror continue
      check -strong httpd.alarms.db.url
@@ -123,10 +115,6 @@ end
 onerror continue
 eval ${httpd.enable.authn} true ==
 exec env checkSecurityProperties -ifok
-
-onerror continue
-eval ${httpd.enable.alarm-cleaner} true ==
-exec env checkAlarmCleanerProperites -ifok
 
 onerror continue
 exec env checkAlarmProperties

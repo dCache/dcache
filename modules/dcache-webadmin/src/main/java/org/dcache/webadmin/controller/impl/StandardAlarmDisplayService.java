@@ -69,7 +69,9 @@ import java.util.Map;
 import diskCacheV111.util.CacheException;
 
 import org.dcache.alarms.AlarmPriority;
+import org.dcache.alarms.dao.AlarmJDOUtils;
 import org.dcache.alarms.dao.LogEntry;
+import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.cells.CellStub;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.alarms.AlarmPriorityMapRequestMessage;
@@ -77,8 +79,6 @@ import org.dcache.webadmin.controller.AlarmDisplayService;
 import org.dcache.webadmin.controller.util.AlarmTableProvider;
 import org.dcache.webadmin.model.dataaccess.DAOFactory;
 import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
-import org.dcache.webadmin.model.util.AlarmJDOUtils;
-import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -147,10 +147,6 @@ public class StandardAlarmDisplayService implements AlarmDisplayService {
 
         alarmTableProvider.setMap(getPriorityMap());
         alarmTableProvider.setEntries(refreshed);
-    }
-
-    public void shutDown() {
-        access.shutDown();
     }
 
     protected Map<String, AlarmPriority> getPriorityMap() {

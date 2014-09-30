@@ -62,7 +62,7 @@ package org.dcache.webadmin.model.dataaccess;
 import java.util.Collection;
 
 import org.dcache.alarms.dao.LogEntry;
-import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
+import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 
 /**
  * API for the persistent storage to be used in connection with
@@ -99,6 +99,4 @@ public interface LogEntryDAO {
      * to a real data store).
      */
     boolean isConnected();
-
-    void shutDown();
 }

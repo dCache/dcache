@@ -69,19 +69,13 @@ import javax.jdo.Transaction;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
+import org.dcache.alarms.dao.AlarmJDOUtils;
+import org.dcache.alarms.dao.AlarmJDOUtils.AlarmDAOFilter;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.webadmin.model.dataaccess.LogEntryDAO;
-import org.dcache.webadmin.model.exceptions.DAOException;
-import org.dcache.webadmin.model.util.AlarmJDOUtils;
-import org.dcache.webadmin.model.util.AlarmJDOUtils.AlarmDAOFilter;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * DataNucleus wrapper to underlying alarm store.<br>
@@ -91,47 +85,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author arossi
  */
-public class DataNucleusAlarmStore implements LogEntryDAO, Runnable {
+public class DataNucleusAlarmStore implements LogEntryDAO {
     private static final Logger logger
         = LoggerFactory.getLogger(DataNucleusAlarmStore.class);
 
-    private boolean alarmCleanerEnabled;
-    private int alarmCleanerSleepInterval;
-    private TimeUnit alarmCleanerSleepIntervalUnit;
-    private int alarmCleanerDeleteThreshold;
-    private TimeUnit alarmCleanerDeleteThresholdUnit;
-    private boolean active;
-
     private PersistenceManagerFactory pmf;
-    private Thread cleanerThread;
-
-    private static void rollbackIfActive(Transaction tx) {
-        if (tx.isActive()) {
-            tx.rollback();
-        }
-    }
-
-    public void setAlarmsCleanerDeleteThreshold(
-            int alarmCleanerDeleteThreshold) {
-        this.alarmCleanerDeleteThreshold = alarmCleanerDeleteThreshold;
-    }
-
-    public void setAlarmsCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
-        alarmCleanerDeleteThresholdUnit = checkNotNull(timeUnit);
-    }
-
-    public void setAlarmsCleanerEnabled(boolean alarmCleanerEnabled) {
-        this.alarmCleanerEnabled = alarmCleanerEnabled;
-    }
-
-    public void setAlarmsCleanerSleepInterval(
-            int alarmCleanerSleepInterval) {
-        this.alarmCleanerSleepInterval = alarmCleanerSleepInterval;
-    }
-
-    public void setAlarmsCleanerSleepIntervalUnit(TimeUnit timeUnit) {
-        alarmCleanerSleepIntervalUnit = checkNotNull(timeUnit);
-    }
 
     public void setPersistenceManagerFactory(PersistenceManagerFactory pmf) {
         this.pmf = pmf;
@@ -162,32 +120,15 @@ public class DataNucleusAlarmStore implements LogEntryDAO, Runnable {
             return Collections.emptyList();
         } finally {
             try {
-                rollbackIfActive(tx);
+                AlarmJDOUtils.rollbackIfActive(tx);
             } finally {
                 readManager.close();
             }
         }
     }
 
-    public void initialize() {
-        if (pmf == null) {
-            active = false;
-        } else {
-            active = true;
-
-            if (alarmCleanerEnabled) {
-                if (cleanerThread != null && !cleanerThread.isAlive()) {
-                    checkArgument(alarmCleanerSleepInterval > 0);
-                    checkArgument(alarmCleanerDeleteThreshold > 0);
-                    cleanerThread = new Thread(this, "alarm-cleanup-daemon");
-                    cleanerThread.start();
-                }
-            }
-        }
-    }
-
     public boolean isConnected() {
-        return active && (pmf.getPersistenceManager() != null);
+        return pmf != null && pmf.getPersistenceManager() != null;
     }
 
     @Override
@@ -215,41 +156,10 @@ public class DataNucleusAlarmStore implements LogEntryDAO, Runnable {
             return 0;
         } finally {
             try {
-                rollbackIfActive(tx);
+                AlarmJDOUtils.rollbackIfActive(tx);
             } finally {
                 deleteManager.close();
             }
-        }
-    }
-
-    @Override
-    public void run() {
-        while (isRunning()) {
-            Long currentThreshold
-                = System.currentTimeMillis()
-                    - alarmCleanerDeleteThresholdUnit
-                      .toMillis(alarmCleanerDeleteThreshold);
-
-            try {
-                long count = remove(currentThreshold);
-                logger.debug("removed {} closed alarms with timestamp prior to {}",
-                                count, new Date(currentThreshold));
-            } catch (DAOException e) {
-                logger.error("error in alarm cleanup: {}", e.getMessage());
-            }
-
-            try {
-                alarmCleanerSleepIntervalUnit.sleep(alarmCleanerSleepInterval);
-            } catch (InterruptedException ignored) {
-                logger.trace("cleaner thread interrupted ... exiting");
-                break;
-            }
-        }
-    }
-
-    public synchronized void shutDown() {
-        if (cleanerThread != null ) {
-            cleanerThread.interrupt();
         }
     }
 
@@ -295,15 +205,11 @@ public class DataNucleusAlarmStore implements LogEntryDAO, Runnable {
             return 0;
         } finally {
             try {
-                rollbackIfActive(tx);
+                AlarmJDOUtils.rollbackIfActive(tx);
             } finally {
                 updateManager.close();
             }
         }
-    }
-
-    private synchronized boolean isRunning() {
-        return active && cleanerThread != null && !cleanerThread.isInterrupted();
     }
 
     private void logJDOException(String action, AlarmDAOFilter filter,
@@ -322,35 +228,5 @@ public class DataNucleusAlarmStore implements LogEntryDAO, Runnable {
         }
 
         logger.debug("{}", action, e);
-    }
-
-    /**
-     * Used only internally by the cleaner daemon (run()).
-     */
-    private long remove(Long threshold) throws DAOException {
-        PersistenceManager deleteManager = pmf.getPersistenceManager();
-        if (deleteManager == null) {
-            return 0;
-        }
-
-        Transaction tx = deleteManager.currentTransaction();
-        AlarmDAOFilter filter = AlarmJDOUtils.getDeleteBeforeFilter(threshold);
-        try {
-            tx.begin();
-            long removed = AlarmJDOUtils.delete(deleteManager, filter);
-            tx.commit();
-            logger.debug("successfully removed {} entries", removed);
-            return removed;
-        } catch (Exception t) {
-            String message = "remove: " + filter + ": "
-                            + t.getLocalizedMessage();
-            throw new DAOException(message, t);
-        } finally {
-            try {
-                rollbackIfActive(tx);
-            } finally {
-                deleteManager.close();
-            }
-        }
     }
 }
