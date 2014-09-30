@@ -1024,6 +1024,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertEquals(inodeWithOldId, inodeWithNewId);
     }
 
+    @Test(expected = FileNotFoundHimeraFsException.class)
+    public void testGetParentOnRoot() throws Exception {
+        String id = _rootInode.toString();
+        _rootInode.inodeOf(".(parent)(" + id + ")");
+    }
+
     private void assertHasChecksum(Checksum expectedChecksum, FsInode inode) throws Exception {
         for(Checksum checksum: _fs.getInodeChecksums(inode)) {
             if (checksum.equals(expectedChecksum)) {

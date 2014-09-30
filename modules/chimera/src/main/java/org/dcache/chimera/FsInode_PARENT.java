@@ -66,7 +66,11 @@ public class FsInode_PARENT extends FsInode {
         Stat ret = super.stat();
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         if (_parent == null) {
-            _parent = _fs.getParentOf(this).toString();
+            FsInode parentInode = _fs.getParentOf(this);
+            if (parentInode == null) {
+                throw new FileNotFoundHimeraFsException();
+            }
+            _parent = parentInode.toString();
         }
 
         if (_parent.equals(this.toString())) {
