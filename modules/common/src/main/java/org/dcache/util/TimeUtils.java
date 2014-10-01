@@ -66,6 +66,13 @@ public class TimeUtils
 
 
     /**
+     * Returns short sting form for given {@ link TimeUnit}.
+     */
+    public static String unitStringOf(TimeUnit unit) {
+        return SHORT_TIMEUNIT_NAMES.get(unit);
+    }
+
+    /**
      * Provide a short, simple human understandable string describing the
      * supplied duration.  The duration is a non-negative value.  The output is
      * appended to the supplied StringBuilder and has the form
