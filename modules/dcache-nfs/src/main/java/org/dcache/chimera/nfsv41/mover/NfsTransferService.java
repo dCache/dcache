@@ -146,7 +146,7 @@ public class NfsTransferService extends AbstractCellComponent
 
         RequestExecutionTimeGauges<String> gauges = _nfsIO.getNFSServer().getStatistics();
         StringBuilder sb = new StringBuilder();
-        sb.append("Stats:").append("\n").append(gauges);
+        sb.append("Stats:").append("\n").append(gauges.toString("ns"));
 
         if (args.hasOption("c")) {
             gauges.reset();

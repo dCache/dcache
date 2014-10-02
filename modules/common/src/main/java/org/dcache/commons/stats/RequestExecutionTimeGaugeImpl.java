@@ -15,6 +15,8 @@ import java.lang.management.ManagementFactory;
 import java.util.Formatter;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.util.TimeUtils;
+
 /**
  * this class stores an average of the execution time of the request
  * if the num is the num of updates that took place before this update
@@ -114,10 +116,11 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
             return;
         }
 
+        minExecutionTime = updateNum == 0 ? nextExecTime : Math.min(getMinExecutionTime(), nextExecTime);
+        maxExecutionTime = Math.max(getMaxExecutionTime(), nextExecTime);
+
         averageExecutionTime
                 = (averageExecutionTime * updateNum + nextExecTime) / (updateNum + 1);
-        minExecutionTime = Math.min(getMinExecutionTime(), nextExecTime);
-        maxExecutionTime = Math.max(getMaxExecutionTime(), nextExecTime);
         executionTimeRMSS
                 = (executionTimeRMSS * updateNum + nextExecTime * nextExecTime)
                 / (updateNum + 1);
@@ -171,11 +174,11 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
                 startTime;
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
-            formatter.format("%-34s %12d\u00B1%10f %,12d %,12d %,12d %,12d %,12d",
+            formatter.format("%-34s %,12d\u00B1%,10.2f %,12d %,12d %,12d %,12d %12s",
                     aName, averageExecutionTime,getStandardError(),
                     minExecutionTime,maxExecutionTime,
                     getStandardDeviation(), updateNum,
-                    TimeUnit.MILLISECONDS.toSeconds(updatePeriod));
+                    TimeUtils.duration(updatePeriod, TimeUnit.MILLISECONDS, TimeUtils.TimeUnitFormat.SHORT));
         }
 
         return sb.toString();

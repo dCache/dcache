@@ -85,15 +85,23 @@ public class RequestExecutionTimeGauges<T> {
     /**
      * @return A string representation of the RequestExecutionTimeGauges
      * which is a name of the collection followed by the table of
-     *  gauges names and values
+     * gauges names and values. Units are prefixed by <i>ms</i>.
      */
-
     @Override
-    public String  toString() {
+    public String toString() {
+        return toString("ms");
+    }
+
+    public String  toString(String unitSymbol) {
        StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
-            formatter.format("%-36s %23s %12s %12s %12s %12s %12s", name, "average\u00B1stderr(ms)",
-                    "min(ms)", "max(ms)","STD(ms)", "Samples","Period(s)");
+            formatter.format("%-36s %23s %12s %12s %12s %12s %12s",
+                    name,
+                    "average\u00B1stderr(" + unitSymbol +")",
+                    "min(" + unitSymbol +")",
+                    "max(" + unitSymbol +")",
+                    "STD(" + unitSymbol +")",
+                    "Samples","Period");
         }
         synchronized(this) {
             for(T key: gauges.keySet()) {

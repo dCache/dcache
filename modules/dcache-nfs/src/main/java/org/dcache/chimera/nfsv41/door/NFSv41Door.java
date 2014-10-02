@@ -824,7 +824,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         public String call() {
             RequestExecutionTimeGauges<String> gauges = _nfs4.getStatistics();
             StringBuilder sb = new StringBuilder();
-            sb.append("Stats:").append("\n").append(gauges);
+            sb.append("Stats:").append("\n").append(gauges.toString("ns"));
 
             if (clean) {
                 gauges.reset();
