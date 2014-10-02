@@ -41,7 +41,8 @@ public class Pinboard
 
     public synchronized void dump(StringBuilder sb, int last)
     {
-        dump(sb, Iterables.skip(_entries, _entries.size() - last));
+        int skip = Math.max(0, _entries.size() - last);
+        dump(sb, Iterables.skip(_entries, skip));
     }
 
     public synchronized void dump(File file) throws IOException
@@ -51,7 +52,8 @@ public class Pinboard
 
     public synchronized void dump(File file, int last) throws IOException
     {
-        dump(file, Iterables.skip(_entries, _entries.size() - last));
+        int skip = Math.max(0, _entries.size() - last);
+        dump(file, Iterables.skip(_entries, skip));
     }
 
     private void dump(StringBuilder sb, Iterable<PinEntry> entries)
