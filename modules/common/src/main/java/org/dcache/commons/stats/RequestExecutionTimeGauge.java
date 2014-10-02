@@ -40,21 +40,6 @@ public interface RequestExecutionTimeGauge {
      */
     String getName();
 
-    /**
-     * @return the periodAverageExecutionTime
-     */
-    long getPeriodAverageExecutionTime();
-
-    /**
-     * @return the periodStartTime
-     */
-    long getPeriodStartTime();
-
-    /**
-     * @return the periodUpdateNum
-     */
-    long getPeriodUpdateNum();
-
     long getStandardDeviation();
 
     /**

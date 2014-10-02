@@ -25,9 +25,6 @@ import org.dcache.util.TimeUtils;
  *          (previousaverage*num +nextmeasurment) /(num+1);
  * there is a utility method to read an average(mean), max, mean, RMS, standard deviation
  * and error on mean.
- * Separate average is kept for feeding into the rrd database.
- * This average is reset to the value of the last measurement
- * when it is read and the new average is calculated when new updates come
  *
  * @author timur
  */
@@ -36,9 +33,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     private static final Logger LOG = LoggerFactory.getLogger(RequestExecutionTimeGaugeImpl.class);
 
     private final String name;
-    // These are the variables that keep the
-    // the average for the duration of the existance of the
-    // gauge
+
     /**
      * average
      */
@@ -65,18 +60,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      * last value fed to the gauge
      */
     private long lastExecutionTime=0;
-    private final long startTime;
-
-    // These are the variables that are reset every time
-    // getAndResetAverageExecutionTime is called
-    // for feeding into the RRD Database
-
-    /**
-     * TimeStamp of the beginning of the measurment period
-     */
-    private long periodStartTime;
-    private long periodAverageExecutionTime=0;
-    private long periodUpdateNum=0;
+    private long startTime;
 
     /**
      *
@@ -100,7 +84,6 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
             LOG.warn("Failed to create a MXBean: {}", ex.toString());
         }
         startTime = System.currentTimeMillis();
-        periodStartTime = startTime;
     }
 
     /**
@@ -127,12 +110,6 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
 
         updateNum++;
 
-        // period averages caclucations
-        periodAverageExecutionTime =
-            (periodAverageExecutionTime*periodUpdateNum +nextExecTime) /
-            (periodUpdateNum+1);
-        periodUpdateNum++;
-
         lastExecutionTime = nextExecTime;
     }
 
@@ -146,16 +123,14 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     }
 
     /**
-     * return average over the last period, and start new period
+     * Returns average over the last period and reset the gauge.
      * @return
      */
     @Override
     public synchronized long resetAndGetAverageExecutionTime() {
-        long periodAverageExecutionTime = this.periodAverageExecutionTime;
-        periodUpdateNum = 0;
-        this.periodAverageExecutionTime = lastExecutionTime;
-        periodStartTime = System.currentTimeMillis();
-        return periodAverageExecutionTime;
+        long avg = getAverageExecutionTime();
+        reset();
+        return  avg;
     }
 
     /**
@@ -255,35 +230,9 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         return startTime;
     }
 
-    /**
-     * @return the periodStartTime
-     */
-    @Override
-    public synchronized long getPeriodStartTime() {
-        return periodStartTime;
-    }
-
-    /**
-     * @return the periodAverageExecutionTime
-     */
-    @Override
-    public synchronized long getPeriodAverageExecutionTime() {
-        return periodAverageExecutionTime;
-    }
-
-    /**
-     * @return the periodUpdateNum
-     */
-    @Override
-    public synchronized long getPeriodUpdateNum() {
-        return periodUpdateNum;
-    }
-
     @Override
     public synchronized void reset() {
-        periodStartTime = System.currentTimeMillis();
-        periodAverageExecutionTime = 0;
-        periodUpdateNum = 0;
+        startTime = System.currentTimeMillis();
         averageExecutionTime=0;
         minExecutionTime=0;
         maxExecutionTime=0;
