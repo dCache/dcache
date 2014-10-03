@@ -1021,4 +1021,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertTrue(newId.length < oldId.length);
         assertEquals(inodeWithOldId, inodeWithNewId);
     }
+
+    @Test(expected = FileNotFoundHimeraFsException.class)
+    public void testGetParentOnRoot() throws Exception {
+        String id = _rootInode.toString();
+        _rootInode.inodeOf(".(parent)(" + id + ")");
+    }
 }
