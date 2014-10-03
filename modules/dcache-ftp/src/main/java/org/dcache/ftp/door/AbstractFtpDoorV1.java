@@ -85,6 +85,7 @@ import javax.security.auth.Subject;
 
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -709,11 +710,11 @@ public abstract class AbstractFtpDoorV1
             description = "Root path")
     protected String _root;
 
-    @Option(
-            name = "upload",
-            description = "Upload directory"
-    )
-    protected FsPath _uploadPath;
+    @Option(name = "upload",
+            description = "Upload directory")
+    protected File _uploadPath;
+
+    protected FsPath _absoluteUploadPath;
 
     protected PortRange _passiveModePortRange;
     protected ServerSocketChannel _passiveModeServerSocket;
@@ -1358,7 +1359,9 @@ public abstract class AbstractFtpDoorV1
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
-        _doorRootPath = new FsPath(_root);
+        if (_uploadPath.isAbsolute()) {
+            _absoluteUploadPath = new FsPath(_uploadPath.getPath());
+        }
 
         reply("220 " + ftpDoorName + " door ready");
     }
@@ -1407,8 +1410,8 @@ public abstract class AbstractFtpDoorV1
             doorRootPath = new FsPath(_root);
             if (userRootPath.startsWith(doorRootPath)) {
                 cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
-            } else if (_uploadPath != null && _uploadPath.startsWith(doorRootPath)) {
-                cwd = doorRootPath.relativize(_uploadPath).toString();
+            } else if (_absoluteUploadPath != null && _absoluteUploadPath.startsWith(doorRootPath)) {
+                cwd = doorRootPath.relativize(_absoluteUploadPath).toString();
             } else {
                 throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
             }
@@ -1999,7 +2002,7 @@ public abstract class AbstractFtpDoorV1
         relativePath.add(path);
         FsPath absolutePath = new FsPath(_doorRootPath, relativePath);
         if (!absolutePath.startsWith(_userRootPath) &&
-                (_uploadPath == null || !absolutePath.startsWith(_uploadPath))) {
+                (_absoluteUploadPath == null || !absolutePath.startsWith(_absoluteUploadPath))) {
             throw new FTPCommandException(550, "Permission denied");
         }
         return absolutePath;

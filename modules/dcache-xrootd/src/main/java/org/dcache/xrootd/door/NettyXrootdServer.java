@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -136,14 +137,14 @@ public class NettyXrootdServer
         return Objects.toString(_rootPath, null);
     }
 
-    public void setUploadPath(String uploadPath)
+    public void setUploadPath(File uploadPath)
     {
-        this._uploadPath = (isNullOrEmpty(uploadPath) ? null : new FsPath(uploadPath));
+        this._uploadPath = uploadPath.isAbsolute() ? new FsPath(uploadPath.getPath()) : null;
     }
 
-    public String getUploadPath()
+    public File getUploadPath()
     {
-        return Objects.toString(_uploadPath, null);
+        return (_uploadPath == null) ? null : new File(_uploadPath.toString());
     }
 
     public void init()
