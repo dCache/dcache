@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -67,7 +68,6 @@ import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 
 import org.dcache.acl.enums.AccessMask;
-import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -80,6 +80,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerPinMessage;
+import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
@@ -357,7 +358,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if (!_authorizationStrong ) {
             union.setAnonymousAccess(_anonymousAccessLevel);
         }
-        return new CachingLoginStrategy(union);
+        return new CachingLoginStrategy(union, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     }
 
     private LoginReply login(String user)

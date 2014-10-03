@@ -8,6 +8,7 @@ import javax.security.auth.Subject;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 
@@ -25,7 +26,7 @@ public class CachingLoginStrategyTests {
     @Before
     public void setUp() {
         _backEnd = new CountingLoginStrategy();
-        _cache = new CachingLoginStrategy( _backEnd);
+        _cache = new CachingLoginStrategy(_backEnd, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
         _subject = new Subject();
         _subject.getPrincipals().add( new UserNamePrincipal( "andrew"));

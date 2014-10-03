@@ -168,7 +168,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="login-strategy" class="org.dcache.services.login.CachingLoginStrategy">
+  <bean id="login-strategy" class="org.dcache.auth.CachingLoginStrategy">
     <description>Caching gPlazma client</description>
     <constructor-arg>
       <bean class="org.dcache.services.login.RemoteLoginStrategy">
