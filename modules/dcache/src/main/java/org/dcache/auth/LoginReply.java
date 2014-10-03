@@ -73,6 +73,29 @@ public class LoginReply
         return result;
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LoginReply that = (LoginReply) o;
+        return _attributes.equals(that._attributes) && _subject.equals(that._subject);
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _subject.hashCode();
+        result = 31 * result + _attributes.hashCode();
+        return result;
+    }
+
     public String toString()
     {
         String name = Subjects.getDisplayName(_subject);

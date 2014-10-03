@@ -5,125 +5,89 @@ import org.junit.Test;
 
 import javax.security.auth.Subject;
 
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 
 import org.dcache.auth.attributes.HomeDirectory;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
-public class CachingLoginStrategyTests {
-
-    CountingLoginStrategy _backEnd;
+public class CachingLoginStrategyTests
+{
+    LoginStrategy _backEnd;
     LoginStrategy _cache;
     Subject _subject;
     LoginReply _reply;
 
     @Before
-    public void setUp() {
-        _backEnd = new CountingLoginStrategy();
+    public void setUp()
+    {
+        _backEnd = mock(LoginStrategy.class);
         _cache = new CachingLoginStrategy(_backEnd, 1, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
 
         _subject = new Subject();
-        _subject.getPrincipals().add( new UserNamePrincipal( "andrew"));
+        _subject.getPrincipals().add(new UserNamePrincipal("andrew"));
 
         _reply = new LoginReply();
-        _reply.getSubject().getPrincipals().add( new UidPrincipal( 1000));
-        _reply.getLoginAttributes().add( new HomeDirectory( "/home/andrew"));
-        _backEnd.setLoginReply( _reply);
+        _reply.getSubject().getPrincipals().add(new UidPrincipal(1000));
+        _reply.getLoginAttributes().add(new HomeDirectory("/home/andrew"));
     }
 
     @Test
-    public void testFirstQueryTriggersQuery() {
-        doLoginAndAssert( 1);
+    public void testThatCachePreservesResponse() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenReturn(_reply);
+
+        LoginReply reply = _cache.login(_subject);
+
+        assertThat(reply, is(_reply));
     }
 
     @Test
-    public void testWithTwoQueriesOnlyFirstTriggersQuery() {
-        doLoginAndAssert( 1);
-        doLoginAndAssert( 1);
+    public void testThatCacheActuallyCachesOnTwoCalls() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenReturn(_reply);
+
+        _cache.login(_subject);
+        _cache.login(_subject);
+
+        verify(_backEnd).login(_subject);
     }
 
     @Test
-    public void testWithThreeQueriesOnlyFirstTriggersQuery() {
-        doLoginAndAssert( 1);
-        doLoginAndAssert( 1);
-        doLoginAndAssert( 1);
+    public void testThatCacheActuallyCachesOnThreeCalls() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenReturn(_reply);
+
+        _cache.login(_subject);
+        _cache.login(_subject);
+        _cache.login(_subject);
+
+        verify(_backEnd).login(_subject);
     }
 
     @Test
-    public void testWithTwoQueriesWithDiffSubjectsBothTriggerQuery() {
-        doLoginAndAssert( 1);
-
+    public void testWithTwoQueriesWithDiffSubjectsBothTriggerQuery() throws CacheException
+    {
         Subject newSubject = new Subject();
-        newSubject.getPrincipals().add( new UserNamePrincipal( "fred"));
+        newSubject.getPrincipals().add(new UserNamePrincipal("fred"));
 
         LoginReply newReply = new LoginReply();
-        newReply.getSubject().getPrincipals().add( new UidPrincipal( 1010));
-        newReply.getLoginAttributes().add( new HomeDirectory( "/home/fred"));
+        newReply.getSubject().getPrincipals().add(new UidPrincipal(1010));
+        newReply.getLoginAttributes().add(new HomeDirectory("/home/fred"));
 
-        _backEnd.setLoginReply( newReply);
+        // Prime the cache
+        when(_backEnd.login(any(Subject.class))).thenReturn(_reply);
+        _cache.login(_subject);
 
-        doLoginAndAssert( newSubject, newReply, 2);
-    }
+        // Check that a different subject doesn't return the cached reply
+        when(_backEnd.login(any(Subject.class))).thenReturn(newReply);
 
-    private void doLoginAndAssert( int expectedCount) {
-        doLoginAndAssert( _subject, _reply, expectedCount);
-    }
-
-    private void doLoginAndAssert( Subject subject, LoginReply expectedReply,
-                                   int expectedCount) {
-        LoginReply reply;
-
-        try {
-            reply = _cache.login( subject);
-        } catch (CacheException e) {
-            throw new RuntimeException( "Didn't expect that!", e);
-        }
-        assertEquals( "check queries", expectedCount, _backEnd.getCount());
-
-        assertEquals( "login attributes", expectedReply.getLoginAttributes(),
-                reply.getLoginAttributes());
-        assertEquals( "login subject", expectedReply.getSubject(), reply
-                .getSubject());
-    }
-
-    /**
-     * A simple LoginStrategy that returns a predefined LoginResult and keeps
-     * track of how often the login method it is called.
-     */
-    static class CountingLoginStrategy implements LoginStrategy {
-        private int _count;
-        private LoginReply _result;
-
-        @Override
-        public LoginReply login( Subject subject) throws CacheException {
-            _count++;
-            return _result;
-        }
-
-        @Override
-        public Principal map(Principal principal) throws CacheException
-        {
-            return null;
-        }
-
-        @Override
-        public Set<Principal> reverseMap(Principal principal) throws CacheException
-        {
-            return Collections.emptySet();
-        }
-
-        public void setLoginReply( LoginReply result) {
-            _result = result;
-        }
-
-        public int getCount() {
-            return _count;
-        }
+        LoginReply reply = _cache.login(newSubject);
+        assertThat(reply, is(newReply));
     }
 }
