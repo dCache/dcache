@@ -98,15 +98,15 @@ public class TimeUtils
                 units.compareTo(MILLISECONDS) <= 0) {
             sb.append(durationInMillis).append(' ').
                     append(unitsFormat.get(MILLISECONDS));
-        } else if (duration < MINUTES.toMillis(2) &&
+        } else if (durationInMillis < MINUTES.toMillis(2) &&
                 units.compareTo(SECONDS) <= 0) {
             sb.append(units.toSeconds(duration)).append(' ').
                     append(unitsFormat.get(SECONDS));
-        } else if (duration < HOURS.toMillis(2) &&
+        } else if (durationInMillis < HOURS.toMillis(2) &&
                 units.compareTo(MINUTES) <= 0) {
             sb.append(units.toMinutes(duration)).append(' ').
                     append(unitsFormat.get(MINUTES));
-        } else if (duration < DAYS.toMillis(2) &&
+        } else if (durationInMillis < DAYS.toMillis(2) &&
                 units.compareTo(HOURS) <= 0) {
             sb.append(units.toHours(duration)).append(' ').
                     append(unitsFormat.get(HOURS));
