@@ -759,22 +759,14 @@ public final class Storage
         }
     }
 
-    private boolean verifyUserPathIsRootSubpath(FsPath absolutePath, SRMUser user) {
-        if (absolutePath == null) {
+    private boolean verifyUserPathIsRootSubpath(FsPath absolutePath, SRMUser user)
+    {
+        FsPath user_root = ((DcacheUser) user).getRoot();
+        _log.trace("getTurl() user root is {}", user_root);
+        if (!absolutePath.startsWith(user_root)) {
+            _log.warn("verifyUserPathIsInTheRoot error: user's path {} is not subpath of the user's root {}",
+                    absolutePath, user_root);
             return false;
-        }
-        FsPath user_root = null;
-        if (user != null) {
-            DcacheUser duser = (DcacheUser) user;
-            user_root = duser.getRoot();
-        }
-        if (user_root!= null) {
-            _log.trace("getTurl() user root is {}", user_root);
-            if (!absolutePath.startsWith(user_root)) {
-                _log.warn("verifyUserPathIsInTheRoot error: user's path {} is not subpath of the user's root {}",
-                        absolutePath, user_root);
-                return false;
-            }
         }
         return true;
     }
@@ -1034,7 +1026,7 @@ public final class Storage
                 options.add(CreateOption.CREATE_PARENTS);
             }
             PnfsCreateUploadPath msg =
-                    new PnfsCreateUploadPath(subject, fullPath,
+                    new PnfsCreateUploadPath(subject, fullPath, ((DcacheUser) user).getRoot(),
                                              uid, gid, NameSpaceProvider.DEFAULT, size,
                                              al, rp, spaceToken,
                                              options);
@@ -2537,6 +2529,7 @@ public final class Storage
      * Given a path relative to the root path, this method returns a
      * full PNFS path.
      */
+    @Nonnull
     private FsPath getPath(String path)
     {
         return new FsPath(new FsPath(config.getSrm_root()), new FsPath(path));
@@ -2545,6 +2538,7 @@ public final class Storage
     /**
      * Given a surl, this method returns a full PNFS path.
      */
+    @Nonnull
     private FsPath getPath(URI surl)
         throws SRMInvalidPathException
     {

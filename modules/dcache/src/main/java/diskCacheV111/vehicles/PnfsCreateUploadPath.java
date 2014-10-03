@@ -52,9 +52,10 @@ public class PnfsCreateUploadPath extends PnfsMessage
     private final RetentionPolicy retentionPolicy;
     private final String spaceToken;
     private final Set<CreateOption> options;
+    private final String rootPath;
     private String uploadPath;
 
-    public PnfsCreateUploadPath(Subject subject, FsPath path, int uid, int gid, int mode, Long size,
+    public PnfsCreateUploadPath(Subject subject, FsPath path, FsPath rootPath, int uid, int gid, int mode, Long size,
                                 AccessLatency accessLatency, RetentionPolicy retentionPolicy, String spaceToken,
                                 Set<CreateOption> options)
     {
@@ -66,6 +67,7 @@ public class PnfsCreateUploadPath extends PnfsMessage
         this.retentionPolicy = retentionPolicy;
         this.spaceToken = spaceToken;
         this.options = options;
+        this.rootPath = rootPath.toString();
         setSubject(subject);
         setPnfsPath(path.toString());
         setReplyRequired(true);
@@ -116,9 +118,14 @@ public class PnfsCreateUploadPath extends PnfsMessage
         return new FsPath(getPnfsPath());
     }
 
+    public FsPath getRootPath()
+    {
+        return (rootPath == null) ? new FsPath() : new FsPath(rootPath);
+    }
+
     public FsPath getUploadPath()
     {
-        return uploadPath == null ? null : new FsPath(uploadPath);
+        return (uploadPath == null) ? null : new FsPath(uploadPath);
     }
 
     public void setUploadPath(FsPath uploadPath)

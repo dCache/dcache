@@ -145,8 +145,8 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public FsPath createUploadPath(Subject subject, FsPath path, int uid, int gid, int mode,
-                                   Long size,
+    public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
+                                   int uid, int gid, int mode, Long size,
                                    AccessLatency al, RetentionPolicy rp, String spaceToken,
                                    Set<CreateOption> options) throws CacheException
     {

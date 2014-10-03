@@ -88,7 +88,7 @@ public class ChimeraNameSpaceProvider
     private boolean _verifyAllLookups;
     private boolean _aclEnabled;
     private PermissionHandler _permissionHandler;
-    private FsPath _uploadDirectory;
+    private String _uploadDirectory;
 
     /**
      * A value of difference in seconds which controls file's access time updates.
@@ -134,7 +134,7 @@ public class ChimeraNameSpaceProvider
     @Required
     public void setUploadDirectory(String path)
     {
-        _uploadDirectory = new FsPath(path);
+        _uploadDirectory = path;
     }
 
     @Required
@@ -1097,7 +1097,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public FsPath createUploadPath(Subject subject, FsPath path,
+    public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
                                    int uid, int gid, int mode, Long size,
                                    AccessLatency al, RetentionPolicy rp, String spaceToken,
                                    Set<CreateOption> options)
@@ -1165,14 +1165,21 @@ public class ChimeraNameSpaceProvider
                 mode = parentOfPath.statCache().getMode() & UMASK_DIR;
             }
 
+            /* Upload directory may optionally be relative to the user's root path. Whether
+             * that's the case depends on if the configured upload directory is an absolute
+             * or relative path.
+             */
+            FsPath uploadDirectory = new FsPath(rootPath);
+            uploadDirectory.add(_uploadDirectory);
+
             /* Upload directory must exist and have the right permissions.
              */
-            FsInode inodeOfUploadDir = installDirectory(Subjects.ROOT, _uploadDirectory, 0, 0, 0711);
+            FsInode inodeOfUploadDir = installDirectory(Subjects.ROOT, uploadDirectory, 0, 0, 0711);
             if (inodeOfUploadDir.statCache().getUid() != 0) {
-                throw new CacheException("Owner must be root: " + _uploadDirectory);
+                throw new CacheException("Owner must be root: " + uploadDirectory);
             }
             if ((inodeOfUploadDir.statCache().getMode() & UnixPermission.S_PERMS) != 0711) {
-                throw new CacheException("File mode must be 0711: " + _uploadDirectory);
+                throw new CacheException("File mode must be 0711: " + uploadDirectory);
             }
 
             /* The temporary upload directory has the same tags as the real parent,
@@ -1199,7 +1206,7 @@ public class ChimeraNameSpaceProvider
             UUID uuid = UUID.randomUUID();
             _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, tags);
 
-            return new FsPath(_uploadDirectory, uuid.toString(), path.getName());
+            return new FsPath(uploadDirectory, uuid.toString(), path.getName());
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
