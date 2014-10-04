@@ -6,6 +6,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import javax.security.auth.Subject;
 
@@ -78,6 +79,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
+        } catch (UncheckedExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -88,6 +92,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
             throw new RuntimeException(e.getCause());
+        } catch (UncheckedExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause());
+            throw new RuntimeException(e.getCause());
         }
     }
 
@@ -97,6 +104,9 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
             return _reverseCache.get(principal).checkedGet();
         } catch (ExecutionException e) {
             Throwables.propagateIfPossible(e.getCause(), CacheException.class);
+            throw new RuntimeException(e.getCause());
+        } catch (UncheckedExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause());
             throw new RuntimeException(e.getCause());
         }
     }

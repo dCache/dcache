@@ -8,6 +8,7 @@ import javax.security.auth.Subject;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.auth.attributes.HomeDirectory;
@@ -94,9 +95,23 @@ public class CachingLoginStrategyTests
     }
 
     @Test(expected = TimeoutCacheException.class)
-    public void testThatExceptionsArePropagated() throws CacheException
+    public void testThatTimeoutCacheExceptionsArePropagated() throws CacheException
     {
         when(_backEnd.login(any(Subject.class))).thenThrow(TimeoutCacheException.class);
+        _cache.login(_subject);
+    }
+
+    @Test(expected = PermissionDeniedCacheException.class)
+    public void testThatPermissionDeniedCacheExceptionsArePropagated() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenThrow(PermissionDeniedCacheException.class);
+        _cache.login(_subject);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testThatIllegalArgumentExceptionsArePropagated() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenThrow(IllegalArgumentException.class);
         _cache.login(_subject);
     }
 
