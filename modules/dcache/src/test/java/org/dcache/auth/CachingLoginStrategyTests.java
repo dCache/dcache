@@ -8,6 +8,7 @@ import javax.security.auth.Subject;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.auth.attributes.HomeDirectory;
 
@@ -85,9 +86,32 @@ public class CachingLoginStrategyTests
         _cache.login(_subject);
 
         // Check that a different subject doesn't return the cached reply
+        reset(_backEnd);
         when(_backEnd.login(any(Subject.class))).thenReturn(newReply);
 
         LoginReply reply = _cache.login(newSubject);
         assertThat(reply, is(newReply));
+    }
+
+    @Test(expected = TimeoutCacheException.class)
+    public void testThatExceptionsArePropagated() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenThrow(TimeoutCacheException.class);
+        _cache.login(_subject);
+    }
+
+    @Test
+    public void testThatTimeoutsAreNotCached() throws CacheException
+    {
+        when(_backEnd.login(any(Subject.class))).thenThrow(TimeoutCacheException.class);
+        try {
+            _cache.login(_subject);
+        } catch (TimeoutCacheException ignored) {
+        }
+
+        reset(_backEnd);
+        when(_backEnd.login(any(Subject.class))).thenReturn(_reply);
+        LoginReply reply = _cache.login(_subject);
+        assertThat(reply, is(_reply));
     }
 }
