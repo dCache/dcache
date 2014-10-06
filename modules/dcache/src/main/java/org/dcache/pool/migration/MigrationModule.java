@@ -275,18 +275,18 @@ public class MigrationModule
                     "operation is retried indefinitely, unless the job is marked as " +
                     "eager.\n\n" +
 
-                    "Please notice that a job is only idempotent as long as the set of " +
-                    "target pools do not change. If pools go offline or are excluded as " +
+                    "Please note that a job is only idempotent as long as the set of " +
+                    "target pools does not change. If pools go offline or are excluded as " +
                     "a result of a an exclude or include expression, then the idempotent " +
                     "nature of a job may be lost.\n\n" +
 
-                    "Both the state of the local replica and that of the target replica " +
+                    "Both the new state of the local replica and that of the target replica " +
                     "can be specified. If the target replica already exists, the state " +
                     "is updated to be at least as strong as the specified target state, " +
                     "that is, the lifetime of sticky bits is extended, but never reduced, " +
                     "and cached can be changed to precious, but never the opposite.\n\n" +
 
-                    "Transfers are subject to the checksum computiton policy of the " +
+                    "Transfers are subject to the checksum computation policy of the " +
                     "target pool. Thus checksums are verified if and only if the target " +
                     "pool is configured to do so. For existing replicas, the checksum is " +
                     "only verified if the verify option was specified on the migration job.\n\n" +
