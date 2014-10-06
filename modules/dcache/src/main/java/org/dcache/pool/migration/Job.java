@@ -77,7 +77,7 @@ import org.dcache.util.expression.Expression;
  * FAILED         Job failed
  */
 public class Job
-    extends AbstractStateChangeListener
+    extends AbstractStateChangeListener implements TaskCompletionHandler
 {
     enum State { INITIALIZING, RUNNING, SLEEPING, PAUSED, SUSPENDED,
             STOPPING, CANCELLING, CANCELLED, FINISHED, FAILED }
@@ -593,7 +593,8 @@ public class Job
     }
 
     /** Callback from task: Task is dead, remove it. */
-    synchronized void taskCancelled(Task task)
+    @Override
+    public synchronized void taskCancelled(Task task)
     {
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);
@@ -603,7 +604,8 @@ public class Job
     }
 
     /** Callback from task: Task failed, reschedule it. */
-    synchronized void taskFailed(Task task, String msg)
+    @Override
+    public synchronized void taskFailed(Task task, String msg)
     {
         PnfsId pnfsId = task.getPnfsId();
         if (task == _running.remove(pnfsId)) {
@@ -621,7 +623,8 @@ public class Job
     }
 
     /** Callback from task: Task failed permanently, remove it. */
-    synchronized void taskFailedPermanently(Task task, String msg)
+    @Override
+    public synchronized void taskFailedPermanently(Task task, String msg)
     {
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);
@@ -633,7 +636,8 @@ public class Job
     }
 
     /** Callback from task: Task is done, remove it. */
-    synchronized void taskCompleted(Task task)
+    @Override
+    public synchronized void taskCompleted(Task task)
     {
         PnfsId pnfsId = task.getPnfsId();
         applySourceMode(pnfsId);

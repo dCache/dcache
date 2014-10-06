@@ -40,7 +40,7 @@ public class Task
 
     private final TaskContext _fsm;
 
-    private final Job _job;
+    private final TaskCompletionHandler _callbackHandler;
 
     private final CellStub _pool;
     private final CellStub _pnfs;
@@ -59,7 +59,7 @@ public class Task
     private List<String> _locations = Collections.emptyList();
     private CellPath _target;
 
-    public Task(Job job,
+    public Task(TaskCompletionHandler callbackHandler,
                 CellStub pool,
                 CellStub pnfs,
                 CellStub pinManager,
@@ -71,7 +71,7 @@ public class Task
         _id = _counter.getAndIncrement();
         _uuid = UUID.randomUUID();
         _fsm = new TaskContext(this);
-        _job = job;
+        _callbackHandler = callbackHandler;
         _pool = pool;
         _pnfs = pnfs;
         _pinManager = pinManager;
@@ -361,7 +361,7 @@ public class Task
                 @Override
                 public void run()
                 {
-                    _job.taskCancelled(Task.this);
+                    _callbackHandler.taskCancelled(Task.this);
                 }
             }));
     }
@@ -373,7 +373,7 @@ public class Task
                 @Override
                 public void run()
                 {
-                    _job.taskFailed(Task.this, message);
+                    _callbackHandler.taskFailed(Task.this, message);
                 }
             }));
     }
@@ -385,7 +385,7 @@ public class Task
                 @Override
                 public void run()
                 {
-                    _job.taskFailedPermanently(Task.this, message);
+                    _callbackHandler.taskFailedPermanently(Task.this, message);
                 }
             }));
     }
@@ -397,7 +397,7 @@ public class Task
                 @Override
                 public void run()
                 {
-                    _job.taskCompleted(Task.this);
+                    _callbackHandler.taskCompleted(Task.this);
                 }
             }));
     }
