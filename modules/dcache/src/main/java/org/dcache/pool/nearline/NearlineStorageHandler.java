@@ -776,20 +776,30 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             public ListenableFuture<Void> apply(Void ignored)
                     throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException
             {
-                PnfsId pnfsId = descriptor.getFileAttributes().getPnfsId();
+                final PnfsId pnfsId = descriptor.getFileAttributes().getPnfsId();
                 LOGGER.debug("Checking if {} still exists.", pnfsId);
                 try {
                     pnfs.getFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
                 } catch (FileNotFoundCacheException e) {
-                    try {
-                        repository.setState(pnfsId, EntryState.REMOVED);
-                        LOGGER.info("File not found in name space; removed {}.", pnfsId);
-                    } catch (CacheException f) {
-                        LOGGER.error("File not found in name space, but failed to remove {}: {}", pnfsId,
-                                     f.getMessage());
-                    } catch (InterruptedException | IllegalTransitionException f) {
-                        LOGGER.error("File not found in name space, but failed to remove {}: {}", pnfsId, f);
-                    }
+                    // Remove file asynchronously to prevent request cancellation from
+                    // interrupting the state update.
+                    executor.execute(
+                            new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    try {
+                                        repository.setState(pnfsId, EntryState.REMOVED);
+                                        LOGGER.info("File not found in name space; removed {}.", pnfsId);
+                                    } catch (CacheException f) {
+                                        LOGGER.error("File not found in name space, but failed to remove {}: {}", pnfsId,
+                                                     f.getMessage());
+                                    } catch (InterruptedException | IllegalTransitionException f) {
+                                        LOGGER.error("File not found in name space, but failed to remove {}: {}", pnfsId, f);
+                                    }
+                                }
+                            });
                     throw e;
                 }
                 checksumModule.enforcePreFlushPolicy(descriptor);
