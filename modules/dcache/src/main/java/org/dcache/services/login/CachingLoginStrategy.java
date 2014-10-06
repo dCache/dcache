@@ -1,5 +1,6 @@
 package org.dcache.services.login;
 
+import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -10,9 +11,11 @@ import javax.security.auth.Subject;
 
 import java.security.Principal;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
 
@@ -72,26 +75,44 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
 
     @Override
     public LoginReply login(Subject subject) throws CacheException {
-        return _loginCache.getUnchecked(subject).checkedGet();
+        try {
+            return _loginCache.get(subject).checkedGet();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause(), CacheException.class);
+            throw new RuntimeException(e.getCause());
+        }
     }
 
     @Override
     public Principal map(Principal principal) throws CacheException {
-        return _forwardCache.getUnchecked(principal).checkedGet();
+        try {
+            return _forwardCache.get(principal).checkedGet();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause(), CacheException.class);
+            throw new RuntimeException(e.getCause());
+        }
     }
 
     @Override
     public Set<Principal> reverseMap(Principal principal) throws CacheException {
-        return _reverseCache.getUnchecked(principal).checkedGet();
+        try {
+            return _reverseCache.get(principal).checkedGet();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause(), CacheException.class);
+            throw new RuntimeException(e.getCause());
+        }
     }
 
     private class ForwardFetcher extends CacheLoader<Principal, CheckedFuture<Principal, CacheException>> {
 
         @Override
-        public CheckedFuture<Principal, CacheException> load(Principal f) {
+        public CheckedFuture<Principal, CacheException> load(Principal f) throws TimeoutCacheException
+        {
             try {
                 Principal p = _inner.map(f);
                 return Futures.immediateCheckedFuture(p);
+            } catch (TimeoutCacheException e) {
+                throw e;
             } catch (CacheException e) {
                 return Futures.immediateFailedCheckedFuture(e);
             }
@@ -101,10 +122,13 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
     private class ReverseFetcher extends CacheLoader<Principal, CheckedFuture<Set<Principal>, CacheException>> {
 
         @Override
-        public CheckedFuture<Set<Principal>, CacheException> load(Principal f) {
+        public CheckedFuture<Set<Principal>, CacheException> load(Principal f) throws TimeoutCacheException
+        {
             try {
                 Set<Principal> s = _inner.reverseMap(f);
                 return  Futures.immediateCheckedFuture(s);
+            } catch (TimeoutCacheException e) {
+                throw e;
             } catch (CacheException e) {
                 return Futures.immediateFailedCheckedFuture(e);
             }
@@ -114,10 +138,13 @@ public class CachingLoginStrategy implements LoginStrategy, CellCommandListener 
     private class LoginFetcher extends CacheLoader<Subject, CheckedFuture<LoginReply, CacheException>> {
 
         @Override
-        public CheckedFuture<LoginReply, CacheException> load(Subject f) {
+        public CheckedFuture<LoginReply, CacheException> load(Subject f) throws TimeoutCacheException
+        {
             try {
                 LoginReply s = _inner.login(f);
                 return Futures.immediateCheckedFuture(s);
+            } catch (TimeoutCacheException e) {
+                throw e;
             } catch (CacheException e) {
                 return Futures.immediateFailedCheckedFuture(e);
             }
