@@ -465,17 +465,41 @@ public class PoolManagerV5
         return msg;
     }
 
+    private void getPoolInformation(
+            PoolSelectionUnit.SelectionPool pool,
+            Collection<PoolManagerPoolInformation> onlinePools,
+            Collection<String> offlinePools)
+    {
+        String name = pool.getName();
+        PoolCostInfo cost = _costModule.getPoolCostInfo(name);
+        if (!pool.isActive() || cost == null) {
+            offlinePools.add(name);
+        } else {
+            onlinePools.add(new PoolManagerPoolInformation(name, cost));
+        }
+    }
+
+    private void getPoolInformation(
+            Collection<PoolSelectionUnit.SelectionPool> pools,
+            Collection<PoolManagerPoolInformation> onlinePools,
+            Collection<String> offlinePools)
+    {
+        for (PoolSelectionUnit.SelectionPool pool: pools) {
+            getPoolInformation(pool, onlinePools, offlinePools);
+        }
+    }
+
     public PoolManagerGetPoolsByNameMessage
         messageArrived(PoolManagerGetPoolsByNameMessage msg)
     {
-        List<PoolManagerPoolInformation> pools = new ArrayList<>();
+        List<PoolManagerPoolInformation> onlinePools = new ArrayList<>();
+        List<String> offlinePools = new ArrayList<>();
         for (String name: msg.getPoolNames()) {
-            PoolManagerPoolInformation pool = _poolMonitor.getPoolInformation(name);
-            if (pool != null) {
-                pools.add(pool);
-            }
+            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
+            getPoolInformation(pool, onlinePools, offlinePools);
         }
-        msg.setPools(pools);
+        msg.setPools(onlinePools);
+        msg.setOfflinePools(offlinePools);
         msg.setSucceeded();
         return msg;
     }
@@ -484,7 +508,13 @@ public class PoolManagerV5
         messageArrived(PoolManagerGetPoolsByLinkMessage msg)
     {
         try {
-            msg.setPools(_poolMonitor.getPoolsByLink(msg.getLink()));
+            List<PoolManagerPoolInformation> onlinePools = new ArrayList<>();
+            List<String> offlinePools = new ArrayList<>();
+            PoolSelectionUnit.SelectionLink link =
+                    _selectionUnit.getLinkByName(msg.getLink());
+            getPoolInformation(link.getPools(), onlinePools, offlinePools);
+            msg.setPools(onlinePools);
+            msg.setOfflinePools(offlinePools);
             msg.setSucceeded();
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =
@@ -500,10 +530,12 @@ public class PoolManagerV5
     {
         try {
             List<PoolManagerPoolInformation> pools = new ArrayList<>();
+            List<String> offlinePools = new ArrayList<>();
             for (String poolGroup : msg.getPoolGroups()) {
-                pools.addAll(_poolMonitor.getPoolsByPoolGroup(poolGroup));
+                getPoolInformation(_selectionUnit.getPoolsByPoolGroup(poolGroup), pools, offlinePools);
             }
             msg.setPools(pools);
+            msg.setOfflinePools(offlinePools);
             msg.setSucceeded();
         } catch (NoSuchElementException e) {
             Collection<PoolManagerPoolInformation> empty =

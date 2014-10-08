@@ -20,9 +20,6 @@ public class PoolListFilter implements RefreshablePoolList
     private static final Logger _log =
         LoggerFactory.getLogger(PoolListFilter.class);
 
-    private static final ImmutableList<PoolManagerPoolInformation> EMPTY_LIST =
-        ImmutableList.of();
-
     private final Collection<Pattern> _exclude;
     private final Expression _excludeWhen;
     private final Collection<Pattern> _include;
@@ -32,6 +29,9 @@ public class PoolListFilter implements RefreshablePoolList
 
     private ImmutableList<PoolManagerPoolInformation> _cachedList;
     private ImmutableList<PoolManagerPoolInformation> _filteredList;
+
+    private ImmutableList<String> _cachedOfflinePools;
+    private ImmutableList<String> _filteredOfflinePools;
 
     public PoolListFilter(RefreshablePoolList poolList,
                           Collection<Pattern> exclude,
@@ -61,15 +61,41 @@ public class PoolListFilter implements RefreshablePoolList
     }
 
     @Override
-    synchronized public
-        ImmutableList<PoolManagerPoolInformation> getPools()
+    public ImmutableList<String> getOfflinePools()
     {
         if (!isValid()) {
-            return EMPTY_LIST;
+            return ImmutableList.of();
         }
         PoolManagerPoolInformation source = getSource();
         if (source == null) {
-            return EMPTY_LIST;
+            return ImmutableList.of();
+        }
+
+        ImmutableList<String> pools = _poolList.getOfflinePools();
+        if (!pools.equals(_cachedOfflinePools)) {
+            ImmutableList.Builder<String> filteredOfflinePools =
+                    ImmutableList.builder();
+            for (String pool: pools) {
+                if (!isExcluded(source, pool) && isIncluded(source, pool)) {
+                    filteredOfflinePools.add(pool);
+                }
+            }
+            _filteredOfflinePools = filteredOfflinePools.build();
+        }
+        _cachedOfflinePools = pools;
+        return _filteredOfflinePools;
+    }
+
+    @Override
+    public synchronized
+        ImmutableList<PoolManagerPoolInformation> getPools()
+    {
+        if (!isValid()) {
+            return ImmutableList.of();
+        }
+        PoolManagerPoolInformation source = getSource();
+        if (source == null) {
+            return ImmutableList.of();
         }
 
         ImmutableList<PoolManagerPoolInformation> list = _poolList.getPools();
@@ -95,6 +121,16 @@ public class PoolListFilter implements RefreshablePoolList
             }
         }
         return false;
+    }
+
+    private boolean isExcluded(PoolManagerPoolInformation source, String pool)
+    {
+        return matchesAny(_exclude, pool);
+    }
+
+    private boolean isIncluded(PoolManagerPoolInformation source, String pool)
+    {
+        return _include.isEmpty() || matchesAny(_include, pool);
     }
 
     private boolean isExcluded(PoolManagerPoolInformation source, PoolManagerPoolInformation pool)

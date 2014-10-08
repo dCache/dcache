@@ -1,6 +1,6 @@
 package org.dcache.pool.migration;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import statemap.TransitionUndefinedException;
 
 import java.io.PrintWriter;
@@ -36,11 +36,10 @@ import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.ReflectionUtils;
 
-import static com.google.common.base.Predicates.compose;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.*;
+import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Lists.*;
+import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Queues.newArrayDeque;
 
 /**
@@ -205,18 +204,6 @@ public class Task
     }
 
     /**
-     * Returns the pool names in the associated pool list.
-     */
-    private Collection<String> getPools()
-    {
-        Collection<String> pools = new HashSet<>();
-        for (PoolManagerPoolInformation pool: _definition.poolList.getPools()) {
-            pools.add(pool.getName());
-        }
-        return pools;
-    }
-
-    /**
      * Returns a pool from the pool list using the pool selection
      * strategy.
      */
@@ -280,7 +267,14 @@ public class Task
      */
     private synchronized void setLocations(List<String> locations)
     {
-        _locations = newArrayDeque(filter(locations, in(getPools())));
+        Collection<String> onlinePools =
+                transform(_definition.poolList.getPools(), PoolManagerPoolInformation.GET_NAME);
+        if (_definition.isEager) {
+            _locations = newArrayDeque(filter(locations, in(onlinePools)));
+        } else {
+            ImmutableList<String> offlinePools = _definition.poolList.getOfflinePools();
+            _locations = newArrayDeque(filter(locations, or(in(onlinePools), in(offlinePools))));
+        }
     }
 
     /**

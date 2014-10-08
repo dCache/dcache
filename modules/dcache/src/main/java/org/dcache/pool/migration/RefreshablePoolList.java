@@ -20,7 +20,12 @@ public interface RefreshablePoolList
     boolean isValid();
 
     /**
-     * Returns information about pools in the list.
+     * Returns the names of offline pools in the list.
+     */
+    ImmutableList<String> getOfflinePools();
+
+    /**
+     * Returns information about online pools in the list.
      */
     ImmutableList<PoolManagerPoolInformation> getPools();
 

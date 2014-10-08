@@ -478,58 +478,6 @@ public class PoolMonitorV5
         return list ;
     }
 
-    @Nullable
-    private PoolManagerPoolInformation getPoolInformation(@Nonnull PoolSelectionUnit.SelectionPool pool)
-    {
-        String name = pool.getName();
-        PoolCostInfo cost = _costModule.getPoolCostInfo(name);
-        if (!pool.isActive() || cost == null) {
-            return null;
-        }
-        return new PoolManagerPoolInformation(name, cost);
-    }
-
-    @Nonnull
-    private Collection<PoolManagerPoolInformation>
-        getPoolInformation(@Nonnull Collection<PoolSelectionUnit.SelectionPool> pools)
-    {
-        List<PoolManagerPoolInformation> result = new ArrayList<>();
-        for (PoolSelectionUnit.SelectionPool pool: pools) {
-            PoolManagerPoolInformation poolInformation = getPoolInformation(pool);
-            if (poolInformation != null) {
-                result.add(poolInformation);
-            }
-        }
-        return result;
-    }
-
-    @Override @Nullable
-    public PoolManagerPoolInformation getPoolInformation(@Nonnull String name)
-    {
-        PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
-        return (pool == null) ? null : getPoolInformation(pool);
-    }
-
-    @Override @Nonnull
-    public Collection<PoolManagerPoolInformation>
-        getPoolsByLink(@Nonnull String linkName)
-        throws NoSuchElementException
-    {
-        PoolSelectionUnit.SelectionLink link =
-            _selectionUnit.getLinkByName(linkName);
-        return new ArrayList<>(getPoolInformation(link.getPools()));
-    }
-
-    @Override @Nonnull
-    public Collection<PoolManagerPoolInformation>
-        getPoolsByPoolGroup(@Nonnull String poolGroup)
-        throws NoSuchElementException
-    {
-        Collection<PoolSelectionUnit.SelectionPool> pools =
-            _selectionUnit.getPoolsByPoolGroup(poolGroup);
-        return new ArrayList<>(getPoolInformation(pools));
-    }
-
     public static Set<FileAttribute> getRequiredAttributesForFileLocality()
     {
         return EnumSet.of(STORAGEINFO, SIZE, LOCATIONS);

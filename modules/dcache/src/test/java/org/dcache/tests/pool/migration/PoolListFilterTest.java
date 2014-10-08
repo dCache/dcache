@@ -24,7 +24,11 @@ import org.dcache.util.expression.ExpressionParser;
 import org.dcache.util.expression.TypeMismatchException;
 import org.dcache.util.expression.UnknownIdentifierException;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 public class PoolListFilterTest
@@ -52,7 +56,7 @@ public class PoolListFilterTest
     @Test
     public void testExclude()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list, "*1", "false", null, "true", SOURCE);
 
@@ -65,9 +69,22 @@ public class PoolListFilterTest
     }
 
     @Test
+    public void testExcludeOffline()
+    {
+        PoolList list = PoolList.newOfflineList("pool1", "pool2", "pool3");
+        PoolListFilter filter =
+            createFilter(list, "*1", "false", null, "true", SOURCE);
+
+        List<String> result = filter.getOfflinePools();
+
+        assertThat(result, hasSize(2));
+        assertThat(result, containsInAnyOrder("pool2", "pool3"));
+    }
+
+    @Test
     public void testExcludeWhen()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list,
                          null, "target.name=~'pool[12]'",
@@ -85,7 +102,7 @@ public class PoolListFilterTest
     @Test
     public void testInclude()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list, null, "false", "*1", "true", SOURCE);
 
@@ -98,9 +115,22 @@ public class PoolListFilterTest
     }
 
     @Test
+    public void testIncludeOffline()
+    {
+        PoolList list = PoolList.newOfflineList("pool1", "pool2", "pool3");
+        PoolListFilter filter =
+            createFilter(list, null, "false", "*1", "true", SOURCE);
+
+        List<String> result = filter.getOfflinePools();
+
+        assertThat(result, hasSize(1));
+        assertThat(result, contains("pool1"));
+    }
+
+    @Test
     public void testIncludeWhen()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list,
                          null, "false", null,
@@ -118,7 +148,7 @@ public class PoolListFilterTest
     @Test
     public void testBothIncludedAndExcluded()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list, "*1", "false", "*1", "true", SOURCE);
 
@@ -130,7 +160,7 @@ public class PoolListFilterTest
     @Test
     public void testBothIncludedWhenAndExcludedWhen()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list,
                          null, "target.name=='pool1'",
@@ -145,7 +175,7 @@ public class PoolListFilterTest
     @Test
     public void testFilterRefersToSource()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list,
                          null, "source.name=='source'",
@@ -158,7 +188,7 @@ public class PoolListFilterTest
     @Test
     public void testCacheInvalidation()
     {
-        PoolList list = new PoolList(POOL1, POOL2, POOL3);
+        PoolList list = PoolList.newOnlineList(POOL1, POOL2, POOL3);
         PoolListFilter filter =
             createFilter(list,
                          null, "false",
@@ -225,7 +255,7 @@ public class PoolListFilterTest
                                   createExpression(excludeWhen),
                                   createPatterns(include),
                                   createExpression(includeWhen),
-                                  new PoolList(source));
+                                  PoolList.newOnlineList(source));
     }
 
     private static boolean containsPool(String name, List<PoolManagerPoolInformation> list)
@@ -263,10 +293,22 @@ public class PoolListFilterTest
     static class PoolList implements RefreshablePoolList
     {
         private ImmutableList<PoolManagerPoolInformation> _list;
+        private ImmutableList<String> _offlinePools;
 
-        public PoolList(PoolManagerPoolInformation... pools)
+        public PoolList(PoolManagerPoolInformation[] pools, String[] offlinePools)
         {
             setPools(pools);
+            setOfflinePools(offlinePools);
+        }
+
+        public static PoolList newOfflineList(String... pools)
+        {
+            return new PoolList(new PoolManagerPoolInformation[0], pools);
+        }
+
+        public static PoolList newOnlineList(PoolManagerPoolInformation... pools)
+        {
+            return new PoolList(pools, new String[0]);
         }
 
         @Override
@@ -280,9 +322,20 @@ public class PoolListFilterTest
             _list = ImmutableList.copyOf(pools);
         }
 
+        public void setOfflinePools(String... pools)
+        {
+            _offlinePools = ImmutableList.copyOf(pools);
+        }
+
         @Override
         public void refresh()
         {
+        }
+
+        @Override
+        public ImmutableList<String> getOfflinePools()
+        {
+            return _offlinePools;
         }
 
         @Override

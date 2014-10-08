@@ -19,24 +19,34 @@ public abstract class PoolListFromPoolManager
     protected ImmutableList<PoolManagerPoolInformation> _pools =
         ImmutableList.of();
 
+    protected ImmutableList<String> _offlinePools =
+        ImmutableList.of();
+
     protected boolean _isValid;
 
     @Override
-    synchronized public boolean isValid()
+    public synchronized boolean isValid()
     {
         return _isValid;
     }
 
     @Override
-    synchronized public ImmutableList<PoolManagerPoolInformation> getPools()
+    public synchronized ImmutableList<String> getOfflinePools()
+    {
+        return _offlinePools;
+    }
+
+    @Override
+    public synchronized ImmutableList<PoolManagerPoolInformation> getPools()
     {
         return _pools;
     }
 
     @Override
-    synchronized public void success(PoolManagerGetPoolsMessage msg)
+    public synchronized void success(PoolManagerGetPoolsMessage msg)
     {
         _pools = ImmutableList.copyOf(msg.getPools());
+        _offlinePools = ImmutableList.copyOf(msg.getOfflinePools());
         _isValid = true;
     }
 
