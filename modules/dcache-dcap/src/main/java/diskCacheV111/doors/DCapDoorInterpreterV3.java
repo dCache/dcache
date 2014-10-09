@@ -2285,6 +2285,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
             poolMessage.setId( _sessionId ) ;
+            poolMessage.setSubject(_subject);
 
             // current request is a initiator for the pool request
             // we need this to trace back pool billing information
