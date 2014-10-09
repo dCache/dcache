@@ -1399,15 +1399,20 @@ public abstract class AbstractFtpDoorV1
             }
         }
         FsPath doorRootPath;
+        String cwd;
         if (_root == null) {
             doorRootPath = userRootPath;
+            cwd = userHomePath.toString();
         } else {
             doorRootPath = new FsPath(_root);
-            if (!userRootPath.startsWith(doorRootPath) && (_uploadPath == null || !_uploadPath.startsWith(doorRootPath))) {
+            if (userRootPath.startsWith(doorRootPath)) {
+                cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
+            } else if (_uploadPath != null && _uploadPath.startsWith(doorRootPath)) {
+                cwd = doorRootPath.relativize(_uploadPath).toString();
+            } else {
                 throw new PermissionDeniedCacheException("User's files are not visible through this FTP service.");
             }
         }
-        String cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
 
         _pnfs = new PnfsHandler(new CellStub(_cellEndpoint, new CellPath(_pnfsManager), _pnfsTimeout, _pnfsTimeoutUnit));
         _pnfs.setSubject(mappedSubject);
