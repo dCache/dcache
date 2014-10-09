@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import org.dcache.commons.util.NDC;
@@ -198,6 +199,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
             } else {
                 request.failed(new CancellationException());
             }
+            requests.remove(request.getId());
         }
 
         /**
@@ -213,31 +215,54 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
             return true;
         }
 
+        /**
+         * Binds task to a particular thread. When the request is cancelled, the thread
+         * is interrupted.
+         */
+        private synchronized void release() throws InterruptedException
+        {
+            this.thread = null;
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+        }
+
         public void run()
         {
             Thread thread = Thread.currentThread();
             if (bind(thread)) {
                 NDC.push(request.getId().toString());
                 try {
-                    T result;
-                    try {
-                        request.activate().get();
-                        result = call();
-                    } catch (InterruptedException e) {
-                        request.failed(new CancellationException());
-                        return;
-                    } catch (Exception cause) {
-                        request.failed(cause);
-                        return;
-                    }
-                    request.completed(result);
-                } catch (Error | RuntimeException e) {
+                    processRequest();
+                } catch (Throwable e) {
                     thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
                 } finally {
                     requests.remove(request.getId());
                     NDC.pop();
                 }
             }
+        }
+
+        private void processRequest() throws Throwable
+        {
+            T result;
+            try {
+                try {
+                    request.activate().get();
+                    result = call();
+                } catch (ExecutionException e) {
+                    throw e.getCause();
+                } finally {
+                    release();
+                }
+            } catch (InterruptedException e) {
+                request.failed(new CancellationException());
+                return;
+            } catch (Exception cause) {
+                request.failed(cause);
+                return;
+            }
+            request.completed(result);
         }
 
         protected abstract T call() throws Exception;
