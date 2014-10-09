@@ -71,7 +71,6 @@ Usage: srmcp [command line options] source(s) destination
 -debug=<true or false> true enables debug output, default is false 
 -srmcphome=<path to srmcp product dir>
 -gsissl=<true or false> true uses gsi https, default is false
--mapfile=<mapfile> to specify glue mapfile
 -wsdl_url=<full url to web service wsdl> this options overrides
 	 -webservice_path and -webservice_protocol options
 -webservice_path=<webservice_path> to specify web service path component

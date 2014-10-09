@@ -31,8 +31,6 @@
             <directory>${project.basedir}/src/main/conf</directory>
             <outputDirectory>usr/share/srm/conf</outputDirectory>
             <includes>
-                <include>SRMServerV1.map</include>
-                <include>JHRM.map</include>
                 <include>logback*.xml</include>
             </includes>
         </fileSet>
