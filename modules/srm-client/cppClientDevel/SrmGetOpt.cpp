@@ -63,7 +63,6 @@ void usage (std::string progname, int ret)
   std::cerr << "  --debug[=<true|false>]\n";
   std::cerr << "  --srmcphome=<path>            set path to 'srmcp' product directory\n";
   std::cerr << "  --gsissl[=<true|false>]       use gsi https, default is true\n";
-  //-mapfile=<mapfile> to specify glue mapfile
   std::cerr << "  --webservice_path=<webservice_path>   specify web service path component\n";
   std::cerr << "                                    of web service URL (e.g. ""srm/managerv1.wsdl"")\n";
   std::cerr << "  --webservice_protocol=<webservice_protocol>  specify the webservice protocol\n";

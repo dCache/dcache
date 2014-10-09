@@ -232,24 +232,6 @@ public class Configuration {
 
 
     @Option(
-            name = "mapfile",
-            description = "path to the \"glue\" mapfile",
-            defaultValue = "conf/SRMServerV1.map",
-            required=false,
-            log=true,
-            save=true
-    )
-    private String glue_mapfile;
-
-    public String getGlue_mapfile() {
-        return glue_mapfile;
-    }
-
-    public void setGlue_mapfile(String glue_mapfile) {
-        this.glue_mapfile = glue_mapfile;
-    }
-
-    @Option(
             name = "webservice_path",
             description = "path to wsdl in web service url",
             required=false,

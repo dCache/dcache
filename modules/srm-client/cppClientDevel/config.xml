@@ -14,9 +14,6 @@
 	or false to use plain http (no authentication or encryption)-->
 	<gsissl> false </gsissl>
 
-	<!-- path to the "glue" mapfile-->
-	<mapfile> X-/home/aik/srm/conf/SRMServerV1.map </mapfile>
-
 	<!-- path to the  in the srm webservices server,
 	srm/managerv1.wsdl" in case of srm in dcache-->
 	<webservice_path> X-srm/managerv1.wsdl </webservice_path>

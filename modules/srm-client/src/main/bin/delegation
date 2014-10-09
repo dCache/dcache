@@ -7,6 +7,8 @@ conf_dir=$(cd $jar_dir/../conf;pwd)
 if [ "$1" = "-debug" ]; then
     logbackDefn=-Dlogback.configurationFile=$conf_dir/logback-all.xml
     shift
+else
+    logbackDefn=-Dlogback.configurationFile=$conf_dir/logback.xml
 fi
 
 CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
