@@ -1034,7 +1034,6 @@ class FsSqlDriver {
             SqlHelper.tryToClose(ps);
         }
     }
-    private static final String sqlSetInodeAttributes = "UPDATE t_inodes SET iatime=?, imtime=?, ictime=?, icrtime=?, isize=?, iuid=?, igid=?, imode=?, itype=?,igeneration=igeneration+1 WHERE ipnfsid=?";
 
     void setInodeAttributes(Connection dbConnection, FsInode inode, int level, Stat stat) throws SQLException {
 
@@ -1048,19 +1047,7 @@ class FsSqlDriver {
              *  only level 0 , e.g. original file allowed to have faked file size
              */
             if (level == 0) {
-
-                ps = dbConnection.prepareStatement(sqlSetInodeAttributes);
-
-                ps.setTimestamp(1, new Timestamp(stat.getATime()));
-                ps.setTimestamp(2, new Timestamp(stat.getMTime()));
-                ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                ps.setTimestamp(4, new Timestamp(stat.getCrTime()));
-                ps.setLong(5, stat.getSize());
-                ps.setInt(6, stat.getUid());
-                ps.setInt(7, stat.getGid());
-                ps.setInt(8, stat.getMode() & UnixPermission.S_PERMS);
-                ps.setInt(9, stat.getMode() & UnixPermission.S_TYPE);
-                ps.setString(10, inode.toString());
+                ps = generateAttributeUpdateStatement(dbConnection, inode, stat);
             } else {
                 String fileSetModeQuery = "UPDATE t_level_" + level
                         + " SET iatime=?, imtime=?, iuid=?, igid=?, imode=? WHERE ipnfsid=?";
@@ -2701,5 +2688,72 @@ class FsSqlDriver {
         }
 
         return driver;
+    }
+
+    private PreparedStatement generateAttributeUpdateStatement(Connection dbConnection, FsInode inode, Stat stat)
+            throws SQLException {
+
+        final String attrUpdatePrefix = "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1";
+        final String attrUpdateSuffix = " WHERE ipnfsid=?";
+
+        StringBuilder sb = new StringBuilder(128);
+        long ctime = stat.isDefined(Stat.StatAttributes.CTIME) ? stat.getCTime() :
+                System.currentTimeMillis();
+
+        sb.append(attrUpdatePrefix);
+
+        if (stat.isDefined(Stat.StatAttributes.UID)) {
+            sb.append(",iuid=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.GID)) {
+            sb.append(",igid=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.SIZE)) {
+            sb.append(",isize=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.MODE)) {
+            sb.append(",imode=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.MTIME)) {
+            sb.append(",imtime=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.ATIME)) {
+            sb.append(",iatime=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
+            sb.append(",icrtime=?");
+        }
+
+        sb.append(attrUpdateSuffix);
+
+        String statement = sb.toString();
+        PreparedStatement preparedStatement = dbConnection.prepareStatement(statement);
+
+        int idx = 1;
+        preparedStatement.setTimestamp(idx++, new Timestamp(ctime));
+        // NOTICE: order here MUST match the order of processing attributes above.
+        if (stat.isDefined(Stat.StatAttributes.UID)) {
+            preparedStatement.setInt(idx++, stat.getUid());
+        }
+        if (stat.isDefined(Stat.StatAttributes.GID)) {
+            preparedStatement.setInt(idx++, stat.getGid());
+        }
+        if (stat.isDefined(Stat.StatAttributes.SIZE)) {
+            preparedStatement.setLong(idx++, stat.getSize());
+        }
+        if (stat.isDefined(Stat.StatAttributes.MODE)) {
+            preparedStatement.setInt(idx++, stat.getMode() & UnixPermission.S_PERMS);
+        }
+        if (stat.isDefined(Stat.StatAttributes.MTIME)) {
+            preparedStatement.setTimestamp(idx++, new Timestamp(stat.getMTime()));
+        }
+        if (stat.isDefined(Stat.StatAttributes.ATIME)) {
+            preparedStatement.setTimestamp(idx++, new Timestamp(stat.getATime()));
+        }
+        if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
+            preparedStatement.setTimestamp(idx++, new Timestamp(stat.getCrTime()));
+        }
+        preparedStatement.setString(idx++, inode.toString());
+        return preparedStatement;
     }
 }

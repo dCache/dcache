@@ -18,6 +18,7 @@ package org.dcache.chimera.posix;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.util.EnumSet;
 import java.util.Formatter;
 
 import org.dcache.chimera.UnixPermission;
@@ -28,6 +29,29 @@ import org.dcache.chimera.UnixPermission;
  *
  */
 public class Stat {
+
+    public enum StatAttributes {
+        DEV,
+        INO,
+        MODE,
+        NLINK,
+        UID,
+        GID,
+        RDEV,
+        SIZE,
+        FILEID,
+        GENERATION,
+        ATIME,
+        MTIME,
+        CTIME,
+        CRTIME,
+        BLK_SIZE
+    };
+
+    /**
+     * Set of attributes defined in this {@code stat} object.
+     */
+    private final EnumSet<StatAttributes> _definedAttrs = EnumSet.noneOf(StatAttributes.class);
 
     private int _dev; //
     private int _ino; //
@@ -58,90 +82,125 @@ public class Stat {
      * Creation time.
      */
     private long _crtime;
-    private int _blksize = 512; //
-
-    public void setDev(int newDev) {
-        _dev = newDev;
-    }
 
     public int getDev() {
+        guard(StatAttributes.DEV);
         return _dev;
     }
 
-    public void setIno(int newIno) {
-        _ino = newIno;
+    public void setDev(int dev) {
+        define(StatAttributes.DEV);
+        _dev = dev;
     }
 
     public int getIno() {
+        guard(StatAttributes.INO);
         return _ino;
     }
 
-    public void setMode(int newMode) {
-        _mode = newMode;
+    public void setIno(int ino) {
+        define(StatAttributes.INO);
+        _ino = ino;
     }
 
     public int getMode() {
+        guard(StatAttributes.MODE);
         return _mode;
     }
 
-    /**
-     * Set number of references (link count)
-     * @param newMTime
-     */
-    public void setNlink(int newNlink) {
-        _nlink = newNlink;
+    public void setMode(int mode) {
+        define(StatAttributes.MODE);
+        _mode = mode;
     }
 
     public int getNlink() {
+        guard(StatAttributes.NLINK);
         return _nlink;
     }
 
-    public void setUid(int newUid) {
-        _uid = newUid;
+    public void setNlink(int nlink) {
+        define(StatAttributes.NLINK);
+        _nlink = nlink;
     }
 
     public int getUid() {
+        guard(StatAttributes.UID);
         return _uid;
     }
 
-    public void setGid(int newGid) {
-        _gid = newGid;
+    public void setUid(int uid) {
+        define(StatAttributes.UID);
+        _uid = uid;
     }
 
     public int getGid() {
+        guard(StatAttributes.GID);
         return _gid;
     }
 
-    public void setRdev(int newRdev) {
-        _rdev = newRdev;
+    public void setGid(int gid) {
+        define(StatAttributes.GID);
+        _gid = gid;
     }
 
     public int getRdev() {
+        guard(StatAttributes.RDEV);
         return _rdev;
     }
 
-    public void setSize(long newSize) {
-        _size = newSize;
+    public void setRdev(int rdev) {
+        define(StatAttributes.RDEV);
+        _rdev = rdev;
     }
 
     public long getSize() {
+        guard(StatAttributes.SIZE);
         return _size;
     }
 
-    /**
-     * Set change time in milliseconds
-     * @param newCTime
-     */
-    public void setCTime(long newCTime) {
-        _ctime = newCTime;
+    public void setSize(long size) {
+        define(StatAttributes.SIZE);
+        _size = size;
     }
 
-    /**
-     *
-     * @return change time in milliseconds
-     */
+    public long getATime() {
+        guard(StatAttributes.ATIME);
+        return _atime;
+    }
+
+    public void setATime(long atime) {
+        define(StatAttributes.ATIME);
+        _atime = atime;
+    }
+
+    public long getMTime() {
+        guard(StatAttributes.MTIME);
+        return _mtime;
+    }
+
+    public void setMTime(long mtime) {
+        define(StatAttributes.MTIME);
+        _mtime = mtime;
+    }
+
     public long getCTime() {
+        guard(StatAttributes.CTIME);
         return _ctime;
+    }
+
+    public void setCTime(long ctime) {
+        define(StatAttributes.CTIME);
+        _ctime = ctime;
+    }
+
+    public long getGeneration() {
+        guard(StatAttributes.GENERATION);
+        return _generation;
+    }
+
+    public void setGeneration(long generation) {
+        define(StatAttributes.GENERATION);
+        _generation = generation;
     }
 
     /**
@@ -150,6 +209,7 @@ public class Stat {
      * @param newCrTime
      */
     public void setCrTime(long newCrTime) {
+        define(StatAttributes.CRTIME);
         _crtime = newCrTime;
     }
 
@@ -158,60 +218,8 @@ public class Stat {
      * @return creation time in milliseconds
      */
     public long getCrTime() {
+        guard(StatAttributes.CRTIME);
         return _crtime;
-    }
-
-    /**
-     * Set last accessed time in milliseconds
-     * @param newATime
-     */
-    public void setATime(long newATime) {
-        _atime = newATime;
-    }
-
-    /**
-     *
-     * @return last access time in milliseconds
-     */
-    public long getATime() {
-        return _atime;
-    }
-
-    /**
-     * Set last modification time in milliseconds
-     * @param newMTime
-     */
-    public void setMTime(long newMTime) {
-        _mtime = newMTime;
-    }
-
-    /**
-     *
-     * @return last modification time in milliseconds
-     */
-    public long getMTime() {
-        return _mtime;
-    }
-
-    public void setBlkSize(int newBlkSize) {
-        _blksize = newBlkSize;
-    }
-
-    public int getBlkSize() {
-        return _blksize;
-    }
-
-    public long getBlocks() {
-        return (_size + _blksize - 1) / _blksize;
-
-    }
-
-    public long getGeneration() {
-        return _generation;
-    }
-
-    public void setGeneration(long change) {
-        _generation = change;
     }
 
     @Override
@@ -250,7 +258,6 @@ public class Stat {
         hash = 79 * hash + (int) (this._ctime ^ (this._ctime >>> 32));
         hash = 79 * hash + (int) (this._crtime ^ (this._crtime >>> 32));
         hash = 79 * hash + (int) (this._generation ^ (this._generation >>> 32));
-        hash = 79 * hash + this._blksize;
         return hash;
     }
 
@@ -299,18 +306,29 @@ public class Stat {
         if (this._crtime != other._crtime) {
             return false;
         }
-        if (this._blksize != other._blksize) {
-            return false;
-        }
         return true;
     }
 
+    /**
+     * Check is attribute defined in this {@code stat} object;
+     *
+     * @param attr attribute to check
+     * @return true iff specified attribute is defined in this stat object.
+     */
+    public boolean isDefined(StatAttributes attr) {
+        return _definedAttrs.contains(attr);
+    }
 
-    public static void main(String[] args) {
+    /**
+     * Throws IllegalStateException if attribute is not defined.
+     */
+    private void guard(StatAttributes attr) throws IllegalStateException {
+        if (!isDefined(attr)) {
+            throw new IllegalStateException("Attribute is not defined: " + attr);
+        }
+    }
 
-        Stat stat = new Stat();
-        stat.setMTime(System.currentTimeMillis());
-        System.out.println(stat);
-
+    private void define(StatAttributes attr) throws IllegalStateException {
+        _definedAttrs.add(attr);
     }
 }
