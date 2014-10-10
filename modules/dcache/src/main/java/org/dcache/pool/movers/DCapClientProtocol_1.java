@@ -32,6 +32,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
 public class DCapClientProtocol_1 implements MoverProtocol
@@ -94,16 +95,16 @@ public class DCapClientProtocol_1 implements MoverProtocol
         say(" runIO() RemoteGsiftpTranferManager cellpath="+cellpath);
 
         ServerSocket serverSocket;
-        try
-            {
-                serverSocket = new ServerSocket(0,1);
-            }
-        catch(IOException ioe)
-            {
-                esay("exception while trying to create a server socket : "+ioe);
-                throw ioe;
-            }
-        int port = serverSocket.getLocalPort();
+        int port;
+        try {
+            String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
+            PortRange portRange = (dcachePorts != null) ? PortRange.valueOf(dcachePorts) : new PortRange(0);
+            serverSocket = new ServerSocket();
+            port = portRange.bind(serverSocket, 1);
+        } catch(IOException ioe) {
+            esay("exception while trying to create a server socket : "+ioe);
+            throw ioe;
+        }
 
         InetAddress localAddress = NetworkUtils.getLocalAddress(dcapClient.getSocketAddress().getAddress());
 
