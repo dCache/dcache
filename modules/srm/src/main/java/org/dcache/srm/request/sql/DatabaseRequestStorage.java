@@ -209,19 +209,19 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
 
     public Set<Long> getLatestDoneRequestIds(int maxNum)  throws SQLException {
         return getJobIdsByCondition("STATE ="+State.DONE.getStateId()+
-                " ORDERED BY ID"+
+                " ORDER BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
     public Set<Long> getLatestFailedRequestIds(int maxNum)  throws SQLException {
-        return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
-                " ORDERED BY ID"+
+        return getJobIdsByCondition("STATE ="+State.FAILED.getStateId()+
+                " ORDER BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
     public Set<Long> getLatestCanceledRequestIds(int maxNum)  throws SQLException {
-        return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
-                " ORDERED BY ID"+
+        return getJobIdsByCondition("STATE = "+State.CANCELED.getStateId()+
+                " ORDER BY ID"+
                 " LIMIT "+maxNum+" ");
     }
 
