@@ -594,23 +594,23 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     public Set<Long> getLatestDoneJobIds(int maxNum) throws DataAccessException
     {
         return getJobIdsByCondition("STATE =" + State.DONE.getStateId() +
-                " ORDERED BY ID DESC" +
+                " ORDER BY ID DESC" +
                 " LIMIT " + maxNum + " ");
     }
 
     @Override
     public Set<Long> getLatestFailedJobIds(int maxNum) throws DataAccessException
     {
-        return getJobIdsByCondition("STATE !="+State.FAILED.getStateId()+
-                " ORDERED BY ID DESC"+
+        return getJobIdsByCondition("STATE ="+State.FAILED.getStateId()+
+                " ORDER BY ID DESC"+
                 " LIMIT "+maxNum+" ");
     }
 
     @Override
     public Set<Long> getLatestCanceledJobIds(int maxNum) throws DataAccessException
     {
-        return getJobIdsByCondition("STATE != "+State.CANCELED.getStateId()+
-                " ORDERED BY ID DESC"+
+        return getJobIdsByCondition("STATE = "+State.CANCELED.getStateId()+
+                " ORDER BY ID DESC"+
                 " LIMIT "+maxNum+" ");
     }
 
