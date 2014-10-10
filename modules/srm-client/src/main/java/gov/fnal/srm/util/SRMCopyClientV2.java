@@ -261,9 +261,19 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if ( rs == null) {
                 throw new IOException(" null TReturnStatus ");
             }
-            if (RequestStatusTool.isFailedRequestStatus(rs)) {
-                throw new IOException("srmCopy submission failed, unexpected or failed return status : "+
-                        rs.getStatusCode()+" explanation="+rs.getExplanation());
+            TStatusCode statusCode = rs.getStatusCode();
+            if(statusCode == null) {
+                throw new IOException(" null status code");
+            }
+            if (RequestStatusTool.isFailedRequestStatus(rs) &&
+                    (statusCode != TStatusCode.SRM_FAILURE || resp.getArrayOfFileStatuses() == null)) {
+                String explanation = rs.getExplanation();
+                if (explanation != null) {
+                    throw new IOException("srmCopy submission failed, unexpected or failed status : " +
+                                                  statusCode + " explanation= " + explanation);
+                } else {
+                    throw new IOException("srmCopy submission failed, unexpected or failed status : " + statusCode);
+                }
             }
             if(resp.getArrayOfFileStatuses() == null) {
                 throw new IOException("srmCopy submission failed, arrayOfFileStatuses is null, status code :"+
@@ -382,7 +392,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 if ( status == null ) {
                     throw new IOException(" null return status");
                 }
-                TStatusCode statusCode = status.getStatusCode();
+                statusCode = status.getStatusCode();
                 if(statusCode == null) {
                     throw new IOException(" null status code");
                 }
