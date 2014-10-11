@@ -66,6 +66,7 @@ public class InfoMessage implements Serializable {
         template.add("cellType", getCellType());
         template.add("rc", getResultCode());
         template.add("subject", new SubjectWrapper(getSubject()));
+        template.add("session", getTransaction());
     }
 
    public void setResult( int resultCode , String resultMessage ){
