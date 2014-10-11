@@ -25,6 +25,7 @@ import diskCacheV111.admin.UserAdminShell;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
+import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
@@ -172,39 +173,32 @@ public class ConsoleReaderCommand implements Command, Runnable {
                     throw new CommandExitException();
                 }
                 result = _userAdminShell.executeCommand(str);
-            } catch (CommandSyntaxException e) {
-                result = e.getMessage()
-                + " Please enter \'help\' to see all commands that can be used.";
             } catch (IllegalArgumentException e) {
                 result = e.getMessage()
                 + " (Please check the spelling of your command or your config file(s)!)";
-            } catch (CommandExitException e) {
-                break;
             } catch (SerializationException e) {
                 result =
                     "There is a bug here, please report to support@dcache.org";
                 _logger.error("This must be a bug, please report to "
-                        + "support@dcache.org: {}" + e.getMessage());
+                        + "support@dcache.org: {}", e.getMessage());
+            } catch (CommandSyntaxException e) {
+                result = e.getMessage()
+                        + " Please enter \'help\' to see all commands that can be used.";
+            } catch (CommandEvaluationException e) {
+                result = e.getMessage();
+            } catch (CommandExitException e) {
+                break;
+            } catch (CommandPanicException e) {
+                _logger.warn("Something went wrong during the remote "
+                                     + "execution of the command: {}",
+                             e.getTargetException());
+                break;
+            } catch (CommandThrowableException e) {
+                _logger.warn("Something went wrong during the remote "
+                                     + "execution of the command: {}",
+                             e.getTargetException());
+                break;
             } catch (CommandException e) {
-                if (e instanceof CommandPanicException) {
-                    result =
-                        ((CommandPanicException) e)
-                                .getTargetException().getMessage();
-                    _logger.warn("Something went wrong during the remote "
-                            + "execution of the command: {}"
-                            + ((CommandPanicException) e).getTargetException());
-                    return;
-                }
-                if (e instanceof CommandThrowableException) {
-                    result =
-                        ((CommandThrowableException) e)
-                                .getTargetException().getMessage();
-                    _logger.warn("Something went wrong during the remote "
-                            + "execution of the command: {}"
-                            + ((CommandThrowableException) e)
-                            .getTargetException());
-                    return;
-                }
                 result =
                     "There is a bug here, please report to support@dcache.org: "
                     + e.getMessage();
