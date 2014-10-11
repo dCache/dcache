@@ -1734,6 +1734,8 @@ public class      CellShell
             }
 
             return args.hasOption("nooutput") ? "" : out.toString();
+        } catch (StackOverflowError e) {
+            throw new CommandExitException("Stack overflow", 2, e);
         } catch (FileNotFoundException e) {
             throw new CommandException(66, e.getMessage(), e);
         } catch (IOException e) {
