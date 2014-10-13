@@ -134,7 +134,7 @@ public class PortRange
     {
         int port = endpoint.getPort();
         PortRange range = (port > 0) ? new PortRange(port) : this;
-        return range.bind(socket, endpoint.getAddress());
+        return range.bind(socket, endpoint.getAddress(), 0);
     }
 
     /**
@@ -165,11 +165,25 @@ public class PortRange
     public int bind(ServerSocket socket, InetAddress address)
         throws IOException
     {
+        return bind(socket, address, 0);
+    }
+
+    /**
+     * Binds <code>socket</socket> to <code>address</code>. A port is
+     * chosen from this port range. If the port range is [0,0], then a
+     * free port is chosen by the OS.
+     *
+     * @throws IOException if the bind operation fails, or if the
+     * socket is already bound.
+     */
+    public int bind(ServerSocket socket, InetAddress address, int backlog)
+        throws IOException
+    {
         int start = random();
         int port = start;
         do {
             try {
-                socket.bind(new InetSocketAddress(address, port));
+                socket.bind(new InetSocketAddress(address, port), backlog);
                 return port;
             } catch (BindException e) {
             }
@@ -242,6 +256,20 @@ public class PortRange
         throws IOException
     {
         return bind(socket, (InetAddress) null);
+    }
+
+    /**
+     * Binds <code>socket</socket> to the wildcard
+     * <code>address</code>. A port is chosen from this port range. If
+     * the port range is [0,0], then a free port is chosen by the OS.
+     *
+     * @throws IOException if the bind operation fails, or if the
+     * socket is already bound.
+     */
+    public int bind(ServerSocket socket, int backlog)
+        throws IOException
+    {
+        return bind(socket, (InetAddress) null, backlog);
     }
 
     /**
