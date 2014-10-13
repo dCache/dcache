@@ -152,8 +152,16 @@ public class Indexer
                     SORTED_FILE_TREE_TRAVERSER
                             .preOrderTraversal(dir);
             if (args.hasOption("since") || args.hasOption("until")) {
-                Date since = args.hasOption("since") ? LOCALE_DATE_FORMAT.get().parse(args.getOption("since")) : new Date(0);
-                Date until = args.hasOption("until") ? LOCALE_DATE_FORMAT.get().parse(args.getOption("until")) : new Date();
+                Date since;
+                Date until;
+                try {
+                    since = args.hasOption("since") ? LOCALE_DATE_FORMAT.get().parse(args.getOption("since")) : new Date(0);
+                    until = args.hasOption("until") ? LOCALE_DATE_FORMAT.get().parse(args.getOption("until")) : new Date();
+                } catch (ParseException e) {
+                    throw new ParseException(e.getMessage() + ". Expected format is " +
+                                                     ((SimpleDateFormat) LOCALE_DATE_FORMAT.get()).toLocalizedPattern() + '.',
+                                             e.getErrorOffset());
+                }
                 filesWithPossibleMatch =
                         filesWithPossibleMatch.filter(inRange(since, until));
             }
@@ -671,10 +679,14 @@ public class Indexer
 
         try {
             new Indexer(new Args(arguments));
-        } catch (IllegalArgumentException | ParseException e) {
+        } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
             System.err.println();
             help(System.err);
+            System.exit(1);
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
             System.exit(1);
         } catch (IOException | URISyntaxException | ClassNotFoundException e) {
             System.err.println(e);
