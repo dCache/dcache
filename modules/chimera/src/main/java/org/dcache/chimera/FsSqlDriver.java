@@ -207,7 +207,7 @@ class FsSqlDriver {
         return list;
     }
     private static final String sqlListDirFull = "SELECT "
-            + "t_inodes.ipnfsid, t_dirs.iname, t_inodes.isize,t_inodes.inlink,t_inodes.imode,t_inodes.itype,t_inodes.iuid,t_inodes.igid,t_inodes.iatime,t_inodes.ictime,t_inodes.imtime  "
+            + "t_inodes.ipnfsid, t_dirs.iname, t_inodes.isize,t_inodes.inlink,t_inodes.imode,t_inodes.itype,t_inodes.iuid,t_inodes.igid,t_inodes.iatime,t_inodes.ictime,t_inodes.imtime,t_inodes.igeneration  "
             + "FROM t_inodes, t_dirs WHERE iparent=? AND t_inodes.ipnfsid = t_dirs.ipnfsid";
 
     /**
@@ -363,6 +363,7 @@ class FsSqlDriver {
                 ret.setNlink(statResult.getInt("inlink"));
                 ret.setIno((int) inode.id());
                 ret.setDev(17);
+                ret.setRdev(13);
             }
 
         } finally {

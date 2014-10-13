@@ -102,10 +102,12 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
             stat.setGid(_listResultSet.getInt("igid"));
             stat.setMode(_listResultSet.getInt("imode") | _listResultSet.getInt("itype"));
             stat.setNlink(_listResultSet.getInt("inlink"));
+            stat.setGeneration(_listResultSet.getInt("igeneration"));
             FsInode inode = new FsInode(_parent.getFs(), _listResultSet.getString("ipnfsid"));
             inode.setParent(_parent);
             stat.setIno((int) inode.id());
             stat.setDev(17);
+            stat.setRdev(13);
 
             inode.setStatCache(stat);
             _hasPendingElement = false;
