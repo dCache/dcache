@@ -17,5 +17,10 @@
         <outputDirectory>etc/security/limits.d</outputDirectory>
         <destName>92-dcache.conf</destName>
       </file>
+      <file>
+        <source>src/main/scripts/dcache.logrotate</source>
+        <outputDirectory>etc/logrotate.d</outputDirectory>
+        <destName>dcache</destName>
+      </file>
     </files>
 </assembly>
