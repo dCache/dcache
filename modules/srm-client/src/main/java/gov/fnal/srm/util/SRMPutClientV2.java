@@ -261,8 +261,9 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             if(statusCode == null) {
                 throw new IOException(" null status code");
             }
-            String explanation = status.getExplanation();
-            if(RequestStatusTool.isFailedRequestStatus(status)){
+            if(RequestStatusTool.isFailedRequestStatus(status) &&
+                    (statusCode != TStatusCode.SRM_FAILURE || response.getArrayOfFileStatuses() == null)) {
+                String explanation = status.getExplanation();
                 if(explanation != null){
                     throw new IOException("srmPrepareToPut submission failed, unexpected or failed status : "+ statusCode+" explanation= "+explanation);
                 }else{

@@ -229,9 +229,16 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             if(statusCode == null) {
                 throw new IOException(" null status code");
             }
-            if(RequestStatusTool.isFailedRequestStatus(status)){
-                throw new IOException("srmPrepareToGet submission failed, unexpected or failed status : "+
-                        statusCode+" explanation="+status.getExplanation());
+            if(RequestStatusTool.isFailedRequestStatus(status) &&
+                    (statusCode != TStatusCode.SRM_FAILURE || response.getArrayOfFileStatuses() == null)) {
+                String explanation = status.getExplanation();
+                if (explanation != null){
+                    throw new IOException("srmPrepareToGet submission failed, unexpected or failed status : " +
+                                                  statusCode + " explanation= " + explanation);
+                } else {
+                    throw new IOException(
+                            "srmPrepareToGet submission failed, unexpected or failed status : " + statusCode);
+                }
             }
             requestToken = response.getRequestToken();
             dsay(" srm returned requestToken = "+requestToken);
