@@ -921,7 +921,6 @@ case "$1" in
         fi
 
         . ${lib}/utils.sh
-        . ${lib}/services.sh
         . ${lib}/database.sh
         checkForNonMigratedDcache
         checkForPkcs8HostKey

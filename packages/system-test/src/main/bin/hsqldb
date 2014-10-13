@@ -4,7 +4,6 @@
 
 lib="$(getProperty dcache.paths.share.lib)"
 . ${lib}/utils.sh
-. ${lib}/services.sh
 
 classpath=$(printLimitedClassPath hsqldb)
 
