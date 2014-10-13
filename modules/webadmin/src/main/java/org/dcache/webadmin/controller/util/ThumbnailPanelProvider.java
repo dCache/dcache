@@ -68,7 +68,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.dcache.webadmin.model.dataaccess.util.RrdSettings;
+import org.dcache.webadmin.model.dataaccess.util.rrd4j.RrdSettings;
 import org.dcache.webadmin.view.beans.AbstractRegexFilterBean;
 import org.dcache.webadmin.view.beans.PoolPlotOptionBean;
 import org.dcache.webadmin.view.beans.ThumbnailPanelBean;

@@ -125,7 +125,7 @@
         <property name="quitAtMaxDelay" value="false"/>
     </bean>
 
-    <bean id="RoundRobinDbSettings" class="org.dcache.webadmin.model.dataaccess.util.RrdSettings" init-method="initialize">
+    <bean id="RoundRobinDbSettings" class="org.dcache.webadmin.model.dataaccess.util.RrdSettings">
         <property name="baseDirectory" ref="plotsDir"/>
         <property name="imgType" ref="rrdImgType"/>
         <property name="imgHeight" ref="rrdImgHeight"/>
@@ -148,10 +148,8 @@
         <property name="heartbeatFactor" ref="rrdHeartbeatFactor"/>
     </bean>
 
-    <bean id="RrdPoolInfoAgent" class="org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent">
+    <bean id="RrdPoolInfoAgent" class="org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent" init-method="initialize">
         <property name="settings" ref="RoundRobinDbSettings"/>
-        <property name="refreshInterval" ref="pqpRefreshInterval"/>
-        <property name="timeUnit" ref="pqpRefreshIntervalUnit"/>
     </bean>
 
     <bean id="BillingPlotProperties" class="org.dcache.services.billing.plots.util.PlotProperties">

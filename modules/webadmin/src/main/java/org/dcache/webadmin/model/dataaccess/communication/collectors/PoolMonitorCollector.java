@@ -9,7 +9,7 @@ import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
-import org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent;
+import org.dcache.webadmin.model.dataaccess.util.rrd4j.RrdPoolInfoAgent;
 
 /**
  *
