@@ -218,6 +218,7 @@ public class BillingParserBuilder
                 case "gid":
                     regex.append("-?\\d+");
                     break;
+                case "cached":
                 case "created":
                     regex.append("(true|false)");
                     break;
