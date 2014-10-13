@@ -81,8 +81,6 @@ end
 define env checkPoolQProperties end
      check -strong httpd.pool-queue.db.version
      check -strong httpd.pool-queue.db.heartbeat-factor
-     check -strong httpd.plots.pool-queue.refresh
-     check -strong httpd.plots.pool-queue.refresh.unit
      check -strong httpd.plots.pool-queue.type
      check -strong httpd.plots.pool-queue.height
      check -strong httpd.plots.pool-queue.width

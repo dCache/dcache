@@ -72,7 +72,7 @@ import java.io.File;
 import java.io.Serializable;
 
 import org.dcache.util.IRegexFilterable;
-import org.dcache.webadmin.model.dataaccess.util.RrdSettings;
+import org.dcache.webadmin.model.dataaccess.util.rrd4j.RrdSettings;
 
 /**
  * Data abstraction for the panel displayed in the pool queues grid view table.
@@ -109,7 +109,7 @@ public class ThumbnailPanelBean implements IRegexFilterable,
     public ThumbnailPanelBean(File file, int height, int width) {
         String name = file.getName();
         int end = name.indexOf(RrdSettings.FILE_SUFFIX);
-        this.name = name.substring(0, end).toUpperCase();
+        this.name = name.substring(0, end);
         IResource resource = new ResourceStreamResource(new FileResourceStream(
                         file));
         Image image = new Image("thumbnail", resource);
