@@ -90,7 +90,7 @@
         <property name="quitAtMaxDelay" value="false"/>
     </bean>
 
-    <bean id="RoundRobinDbSettings" class="org.dcache.webadmin.model.dataaccess.util.RrdSettings" init-method="initialize">
+    <bean id="RoundRobinDbSettings" class="org.dcache.webadmin.model.dataaccess.util.rrd4j.RrdSettings">
         <property name="baseDirectory" value="${httpd.static-content.plots}"/>
         <property name="imgType" value="${httpd.plots.pool-queue.type}"/>
         <property name="imgHeight" value="${httpd.plots.pool-queue.height}"/>
@@ -113,10 +113,8 @@
         <property name="heartbeatFactor" value="${httpd.pool-queue.db.heartbeat-factor}"/>
     </bean>
 
-    <bean id="RrdPoolInfoAgent" class="org.dcache.webadmin.model.dataaccess.util.RrdPoolInfoAgent">
+    <bean id="RrdPoolInfoAgent" class="org.dcache.webadmin.model.dataaccess.util.rrd4j.RrdPoolInfoAgent" init-method="initialize">
         <property name="settings" ref="RoundRobinDbSettings"/>
-        <property name="refreshInterval" value="${httpd.plots.pool-queue.refresh}"/>
-        <property name="timeUnit" value="${httpd.plots.pool-queue.refresh.unit}"/>
     </bean>
 
     <bean id="BillingPlotProperties" class="org.dcache.services.billing.plots.util.PlotProperties">
