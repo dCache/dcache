@@ -3,11 +3,11 @@ package org.dcache.services.billing.text;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeTraverser;
@@ -27,6 +27,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -131,6 +132,24 @@ public class Indexer
                     return new SimpleDateFormat("yyyy" + File.separator + "MM");
                 }
             };
+    private static final ThreadLocal<SimpleDateFormat> ISO8601_FORMAT =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssX");
+                }
+            };
+    private static final ThreadLocal<SimpleDateFormat> DEFAULT_DATE_FORMAT =
+            new ThreadLocal<SimpleDateFormat>()
+            {
+                @Override
+                protected SimpleDateFormat initialValue()
+                {
+                    return new SimpleDateFormat("MM.dd HH:mm:ss");
+                }
+            };
 
     private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException, ParseException
     {
@@ -180,11 +199,17 @@ public class Indexer
                     System.out.println(file);
                 }
             } else if (args.hasOption("yaml")) {
-                find(searchTerms, filesWithPossibleMatch, toYaml(System.out));
+                try (OutputWriter out = toYaml(System.out)) {
+                    find(searchTerms, filesWithPossibleMatch, out);
+                }
             } else if (args.hasOption("json")) {
-                find(searchTerms, filesWithPossibleMatch, toJson(System.out));
+                try (OutputWriter out = toJson(System.out)) {
+                    find(searchTerms, filesWithPossibleMatch, out);
+                }
             } else {
-                find(searchTerms, filesWithPossibleMatch, toText(System.out));
+                try (OutputWriter out = toText(System.out)) {
+                    find(searchTerms, filesWithPossibleMatch, out);
+                }
             }
         } else if (args.hasOption("all")) {
             for (File file : SORTED_FILE_TREE_TRAVERSER.preOrderTraversal(dir).filter(isFile())) {
@@ -232,28 +257,32 @@ public class Indexer
         }
     }
 
-    private LineProcessor<Void> toText(final PrintStream out)
+    private OutputWriter toText(final PrintStream out)
     {
-        return new LineProcessor<Void>()
+        return new OutputWriter()
         {
             @Override
-            public boolean processLine(String line) throws IOException
+            public void write(Date date, String line) throws IOException
             {
+                // Prepend year if the default timestamp format is used
+                try {
+                    DEFAULT_DATE_FORMAT.get().parse(line);
+                    out.append(String.valueOf(1900 + date.getYear())).append('.');
+                } catch (ParseException ignore) {
+                }
                 out.println(line);
-                return true;
             }
 
             @Override
-            public Void getResult()
+            public void close()
             {
-                return null;
             }
         };
     }
 
-    private LineProcessor<Void> toJson(final PrintStream out) throws IOException, URISyntaxException
+    private OutputWriter toJson(final PrintStream out) throws IOException, URISyntaxException
     {
-        return new LineProcessor<Void>()
+        return new OutputWriter()
         {
             Function<String, Map<String, String>> parser =
                     new BillingParserBuilder(configuration)
@@ -267,34 +296,32 @@ public class Indexer
             }
 
             @Override
-            public boolean processLine(String line) throws IOException
+            public void write(Date date, String line) throws IOException
             {
-                writer.beginObject();
-                for (Map.Entry<String, String> entry : parser.apply(line).entrySet()) {
-                    writer.name(entry.getKey()).value(entry.getValue());
+                Map<String, String> attributes = parser.apply(line);
+                if (!attributes.isEmpty()) {
+                    fixDate(date.getYear(), attributes);
+                    writer.beginObject();
+                    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                        writer.name(entry.getKey()).value(entry.getValue());
+                    }
+                    writer.endObject();
                 }
-                writer.endObject();
-                return true;
             }
 
             @Override
-            public Void getResult()
+            public void close() throws IOException
             {
-                try {
-                    writer.endArray();
-                    writer.flush();
-                    out.println();
-                } catch (IOException e) {
-                    Throwables.propagate(e);
-                }
-                return null;
+                writer.endArray();
+                writer.flush();
+                out.println();
             }
         };
     }
 
-    private LineProcessor<Void> toYaml(final PrintStream out) throws IOException, URISyntaxException
+    private OutputWriter toYaml(final PrintStream out) throws IOException, URISyntaxException
     {
-        return new LineProcessor<Void>()
+        return new OutputWriter()
         {
             Function<String, Map<String, String>> parser =
                     new BillingParserBuilder(configuration)
@@ -302,20 +329,25 @@ public class Indexer
                             .buildToMap();
 
             @Override
-            public boolean processLine(String line) throws IOException
+            public void write(Date date, String line) throws IOException
             {
-                String format = "- %-21s %s\n";
-                for (Map.Entry<String, String> entry : parser.apply(line).entrySet()) {
-                    out.printf(format, entry.getKey() + ':', entry.getValue());
-                    format = "  %-21s %s\n";
+                Map<String, String> attributes = parser.apply(line);
+                if (attributes.isEmpty()) {
+                    out.append("# Unknown: ").println(line);
+                } else {
+                    fixDate(date.getYear(), attributes);
+                    out.append("# ").println(line);
+                    String format = "- %-21s %s\n";
+                    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+                        out.printf(format, entry.getKey() + ':', entry.getValue());
+                        format = "  %-21s %s\n";
+                    }
                 }
-                return true;
             }
 
             @Override
-            public Void getResult()
+            public void close()
             {
-                return null;
             }
         };
     }
@@ -323,43 +355,57 @@ public class Indexer
     /**
      * Searches for searchTerm in files and writes any matching lines to out.
      */
-    private void find(final Collection<String> searchTerms, FluentIterable<File> files, LineProcessor<Void> out)
-            throws IOException
+    private static void find(final Collection<String> searchTerms, FluentIterable<File> files, final OutputWriter out)
+            throws IOException, ParseException
     {
         int threads = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         try {
-            List<Reader> readers = new ArrayList<>();
+            List<Map.Entry<Date,Reader>> readers = new ArrayList<>();
             for (final File file : files) {
-                final Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+                Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
                 if (matcher.matches()) {
                     PipedReader reader = new PipedReader(PIPE_SIZE);
                     final PipedWriter writer = new PipedWriter(reader);
                     executor.submit(new Callable<Void>() {
                         @Override
-                        public Void call() throws ParseException, IOException
+                        public Void call() throws IOException
                         {
                             try {
-                                Date date = FILE_NAME_DATE_FORMAT.get().parse(matcher.group(1));
-                                grep(searchTerms, file, DateFormat.getDateInstance().format(date) + ": ", new PrintWriter(writer));
+                                grep(searchTerms, file, new PrintWriter(writer));
                             } finally {
                                 writer.close();
                             }
                             return null;
                         }
                     });
-                    readers.add(reader);
+                    Date date = FILE_NAME_DATE_FORMAT.get().parse(matcher.group(1));
+                    readers.add(Maps.<Date, Reader>immutableEntry(date, reader));
                 }
             }
-            for (Reader reader : readers) {
-                CharStreams.readLines(reader, out);
+            for (final Map.Entry<Date, Reader> entry : readers) {
+                CharStreams.readLines(entry.getValue(), new LineProcessor<Void>()
+                {
+                    @Override
+                    public boolean processLine(String line) throws IOException
+                    {
+                        out.write(entry.getKey(), line);
+                        return true;
+                    }
+
+                    @Override
+                    public Void getResult()
+                    {
+                        return null;
+                    }
+                });
             }
         } finally {
             executor.shutdown();
         }
     }
 
-    private void grep(final Collection<String> searchTerms, File file, final String prefix, final PrintWriter out)
+    private static void grep(final Collection<String> searchTerms, File file, final PrintWriter out)
             throws IOException
     {
         CharStreams.readLines(newReaderSupplier(file, Charsets.UTF_8), new LineProcessor<Void>()
@@ -369,7 +415,7 @@ public class Indexer
             {
                 for (String term : searchTerms) {
                     if (line.contains(term)) {
-                        out.append(prefix).println(line);
+                        out.println(line);
                         break;
                     }
                 }
@@ -392,7 +438,7 @@ public class Indexer
         writeToFile(indexFile, filter);
     }
 
-    private void decompress(File compressedFile) throws IOException
+    private static void decompress(File compressedFile) throws IOException
     {
         String path = compressedFile.getPath();
         checkArgument(Files.getFileExtension(path).equals(BZ2), "File must have " + BZ2 + " extension.");
@@ -401,7 +447,7 @@ public class Indexer
         java.nio.file.Files.delete(compressedFile.toPath());
     }
 
-    private void compress(File file) throws IOException
+    private static void compress(File file) throws IOException
     {
         File compressedFile = new File(file.getPath() + "." + BZ2);
         Files.copy(file, new Bzip2CompressorOutputStreamSupplier(compressedFile));
@@ -440,7 +486,23 @@ public class Indexer
         out.println("          default is 0.01.");
     }
 
-    private Date getYesterday()
+    /**
+     * Completes the date field of billing entries by adding a year to it.
+     */
+    private static void fixDate(int year, Map<String,String> attributes)
+    {
+        String s = attributes.get("date");
+        if (s != null) {
+            try {
+                Date time = DEFAULT_DATE_FORMAT.get().parse(s);
+                time.setYear(year);
+                attributes.put("date", ISO8601_FORMAT.get().format(time));
+            } catch (ParseException ignore) {
+            }
+        }
+    }
+
+    private static Date getYesterday()
     {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DATE, -1);
@@ -467,7 +529,7 @@ public class Indexer
         return getIndexFile(getDirectory(date), FILE_NAME_DATE_FORMAT.get().format(date));
     }
 
-    private File getIndexFile(File dir, String date)
+    private static File getIndexFile(File dir, String date)
     {
         return new File(dir, "index-" + date);
     }
@@ -527,7 +589,7 @@ public class Indexer
         }
     }
 
-    private Predicate<File> isBillingFile()
+    private static Predicate<File> isBillingFile()
     {
         return new Predicate<File>()
         {
@@ -543,7 +605,7 @@ public class Indexer
         };
     }
 
-    private Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
+    private static Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
     {
         final List<String> searchTerms =
                 Lists.newArrayList(Iterables.transform(terms, new TrimTrailingSlash()));
@@ -581,7 +643,7 @@ public class Indexer
         };
     }
 
-    private Predicate<? super File> inRange(final Date since, final Date until)
+    private static Predicate<? super File> inRange(final Date since, final Date until)
     {
         return new Predicate<File>()
         {
@@ -735,5 +797,10 @@ public class Indexer
             }
             return str;
         }
+    }
+
+    private interface OutputWriter extends Closeable
+    {
+        void write(Date date, String line) throws IOException;
     }
 }
