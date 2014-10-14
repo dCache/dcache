@@ -1,6 +1,8 @@
 // $Id: PoolHitInfoMessage.java,v 1.3 2006-04-06 23:26:47 podstvkv Exp $
 package diskCacheV111.vehicles ;
 
+import org.stringtemplate.v4.ST;
+
 import diskCacheV111.util.PnfsId;
 
 public class PoolHitInfoMessage extends PnfsFileInfoMessage {
@@ -42,5 +44,13 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
 			_fileCached+" {"+
 			_protocolInfo+"} "+
 			getResult() ;
+    }
+
+    @Override
+    public void fillTemplate(ST template)
+    {
+        super.fillTemplate(template);
+        template.add("protocol", _protocolInfo);
+        template.add("cached", _fileCached);
     }
 }
