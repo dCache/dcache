@@ -129,3 +129,5 @@ By default Maven executes all unit tests while building. This can be
 time consuming and will fail if no internet connection is
 available. The unit tests can be disabled by appending the `-DskipTests`
 option to any mvn command.
+
+ANOTHER ONE BITES THE DUST
