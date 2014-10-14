@@ -2157,6 +2157,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                                 _readPoolSelectionContext,
                                                 allowedStates);
                getPoolMessage.setIoQueueName(_ioQueueName );
+
+                _info.setFileSize(_fileAttributes.getSize());
             }
 
             if( _verbose ) {
@@ -2382,6 +2384,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                 break ;
                             }
                         }
+                    }
+                    if (_ioMode.contains("w")) {
+                        _info.setFileSize(filesize);
                     }
                     sendReply( "doorTransferArrived" , 0 , "" ) ;
                 }else{
