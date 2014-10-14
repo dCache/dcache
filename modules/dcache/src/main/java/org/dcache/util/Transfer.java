@@ -974,6 +974,9 @@ public class Transfer implements Comparable<Transfer>
             msg.setTransaction(getTransaction());
             msg.setClient(_clientAddress.getAddress().getHostAddress());
             msg.setPnfsId(getPnfsId());
+            if (_fileAttributes.isDefined(SIZE)) {
+                msg.setFileSize(_fileAttributes.getSize());
+            }
             msg.setResult(code, error);
             if (_fileAttributes.isDefined(STORAGEINFO)) {
                 msg.setStorageInfo(_fileAttributes.getStorageInfo());
