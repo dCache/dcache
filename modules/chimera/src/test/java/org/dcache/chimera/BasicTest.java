@@ -1030,6 +1030,22 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _rootInode.inodeOf(".(parent)(" + id + ")");
     }
 
+    @Test
+    public void testGenerationOnReaddir() throws Exception {
+        FsInode inode = _rootInode.mkdir("junit");
+        inode.setUID(1); // to bump generation
+        try (DirectoryStreamB<HimeraDirectoryEntry> dirStream = _fs.newDirectoryStream(_rootInode)) {
+
+            for (HimeraDirectoryEntry entry : dirStream) {
+                if (entry.getName().equals("junit") && entry.getStat().getGeneration() == 1) {
+                    return;
+                }
+            }
+
+            fail();
+        }
+    }
+
     private void assertHasChecksum(Checksum expectedChecksum, FsInode inode) throws Exception {
         for(Checksum checksum: _fs.getInodeChecksums(inode)) {
             if (checksum.equals(expectedChecksum)) {
