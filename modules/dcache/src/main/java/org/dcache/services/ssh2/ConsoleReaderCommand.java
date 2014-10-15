@@ -232,7 +232,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
                         " located this message in log file and send an email" +
                         " to support@dcache.org with this line and the" +
                         " following stack-trace", str);
-                _logger.warn((String)result, e);
+                _logger.error((String)result, e);
             } catch (Exception e) {
                 result = e.getMessage();
                 if(result == null) {
