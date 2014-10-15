@@ -563,8 +563,8 @@ Entry
 Cancelling
 Entry
 {
-        cancelCopy();
         startTimer(ctxt.getTaskDeadTimeout());
+        cancelCopy();
 }
 Exit
 {
