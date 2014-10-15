@@ -577,16 +577,18 @@ public class JMSTunnel
         synchronized public void onMessage(Message message)
         {
             try (CDC ignored = CDC.reset(_nucleus)) {
-                TextMessage textMessage = (TextMessage) message;
-                String cell = textMessage.getJMSCorrelationID();
-                String domain = textMessage.getText();
-                addToCache(cell, domain);
-            } catch (ClassCastException e) {
-                LOGGER.error("Received unexpected reply to CNS request: {}",
-                        message);
-            } catch (JMSException e) {
-                LOGGER.error("Error while resolving well known cell: {}",
-                        e.getMessage());
+                try {
+                    TextMessage textMessage = (TextMessage) message;
+                    String cell = textMessage.getJMSCorrelationID();
+                    String domain = textMessage.getText();
+                    addToCache(cell, domain);
+                } catch (ClassCastException e) {
+                    LOGGER.error("Received unexpected reply to CNS request: {}",
+                                 message);
+                } catch (JMSException e) {
+                    LOGGER.error("Error while resolving well known cell: {}",
+                                 e.getMessage());
+                }
             }
         }
 
@@ -697,20 +699,22 @@ public class JMSTunnel
         synchronized public void onMessage(Message message)
         {
             try (CDC ignored = CDC.reset(_nucleus)) {
-                ObjectMessage objectMessage = (ObjectMessage) message;
-                Object object = objectMessage.getObject();
-                CellMessage envelope = (CellMessage) object;
                 try {
-                    sendMessage(envelope);
-                    _counter++;
-                } catch (NoRouteToCellException e) {
-                    returnToSender(envelope, e);
+                    ObjectMessage objectMessage = (ObjectMessage) message;
+                    Object object = objectMessage.getObject();
+                    CellMessage envelope = (CellMessage) object;
+                    try {
+                        sendMessage(envelope);
+                        _counter++;
+                    } catch (NoRouteToCellException e) {
+                        returnToSender(envelope, e);
+                    }
+                } catch (ClassCastException e) {
+                    LOGGER.warn("Dropping unknown message: {}", message);
+                } catch (JMSException e) {
+                    LOGGER.error("Failed to retrieve object from JMS message: {}",
+                                 e.getMessage());
                 }
-            } catch (ClassCastException e) {
-                LOGGER.warn("Dropping unknown message: {}", message);
-            } catch (JMSException e) {
-                LOGGER.error("Failed to retrieve object from JMS message: {}",
-                        e.getMessage());
             }
         }
 
