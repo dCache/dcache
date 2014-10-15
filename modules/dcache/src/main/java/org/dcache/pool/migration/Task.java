@@ -213,10 +213,14 @@ public class Task
         List<PoolManagerPoolInformation> pools =
                 newArrayList(filter(_definition.poolList.getPools(),
                                     compose(not(in(_replicas)), PoolManagerPoolInformation.GET_NAME)));
-        if (pools.isEmpty()) {
-            throw new NoSuchElementException("No pools available");
+        PoolManagerPoolInformation pool = _definition.selectionStrategy.select(pools);
+        if (pool == null) {
+            if (pools.isEmpty()) {
+                throw new NoSuchElementException("No pools available.");
+            }
+            throw new NoSuchElementException("All target pools are full.");
         }
-        return new CellPath(_definition.selectionStrategy.select(pools).getName());
+        return new CellPath(pool.getName());
     }
 
 
