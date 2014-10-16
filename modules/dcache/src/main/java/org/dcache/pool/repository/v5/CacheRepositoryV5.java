@@ -953,8 +953,14 @@ public class CacheRepositoryV5
             PnfsId id = entry.getPnfsId();
             if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
                 setState(entry, DESTROYED);
-                _account.free(entry.getSize());
                 _store.remove(id);
+
+                /* It is essential to free after we removed the file: This is the opposite
+                 * of what happens during allocation, in which we allocate before writing
+                 * to disk. We rely on never having anything on disk that we haven't accounted
+                 * for in the Account object.
+                 */
+                _account.free(entry.getSize());
             }
         }
     }
