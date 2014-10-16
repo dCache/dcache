@@ -1,5 +1,7 @@
 package org.dcache.pool.migration;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
@@ -9,5 +11,6 @@ import diskCacheV111.vehicles.PoolManagerPoolInformation;
  */
 public interface PoolSelectionStrategy
 {
+    @Nullable
     PoolManagerPoolInformation select(List<PoolManagerPoolInformation> pools);
 }
