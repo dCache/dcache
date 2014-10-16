@@ -4,6 +4,8 @@ import com.google.common.base.Objects;
 import com.google.common.base.Objects.ToStringHelper;
 import com.google.common.base.Optional;
 
+import javax.annotation.Nonnull;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -177,15 +179,18 @@ public class FileAttributes implements Serializable {
      * more entries.
      * @return set of defined attribute.
      */
+    @Nonnull
     public Set<FileAttribute> getDefinedAttributes() {
         return _definedAttributes;
     }
 
+    @Nonnull
     public AccessLatency getAccessLatency() {
         guard(ACCESS_LATENCY);
         return _accessLatency;
     }
 
+    @Nonnull
     public Optional<AccessLatency> getAccessLatencyIfPresent() {
         return toOptional(ACCESS_LATENCY, _accessLatency);
     }
@@ -196,17 +201,20 @@ public class FileAttributes implements Serializable {
         return _atime;
     }
 
+    @Nonnull
     public ACL getAcl()
     {
         guard(ACL);
         return _acl;
     }
 
+    @Nonnull
     public Set<Checksum> getChecksums() {
         guard(CHECKSUM);
         return _checksums;
     }
 
+    @Nonnull
     public Optional<Set<Checksum>> getChecksumsIfPresent() {
         return toOptional(CHECKSUM, _checksums);
     }
@@ -215,6 +223,7 @@ public class FileAttributes implements Serializable {
      * Get {@link FileType} corresponding to the file.
      * @return file type
      */
+    @Nonnull
     public FileType getFileType() {
         guard(TYPE);
         return _fileType;
@@ -271,11 +280,13 @@ public class FileAttributes implements Serializable {
         return _owner;
     }
 
+    @Nonnull
     public RetentionPolicy getRetentionPolicy() {
         guard(RETENTION_POLICY);
         return _retentionPolicy;
     }
 
+    @Nonnull
     public Optional<RetentionPolicy> getRetentionPolicyIfPresent() {
         return toOptional(RETENTION_POLICY, _retentionPolicy);
     }
@@ -285,12 +296,14 @@ public class FileAttributes implements Serializable {
         return _size;
     }
 
+    @Nonnull
     public PnfsId getPnfsId()
     {
         guard(PNFSID);
         return _pnfsId;
     }
 
+    @Nonnull
     public StorageInfo getStorageInfo()
     {
         guard(STORAGEINFO);
@@ -369,11 +382,13 @@ public class FileAttributes implements Serializable {
         _locations = pools;
     }
 
+    @Nonnull
     public Collection<String> getLocations() {
         guard(LOCATIONS);
         return _locations;
     }
 
+    @Nonnull
     public Map<String, String> getFlags() {
         guard(FLAGS);
         return _flags;
@@ -422,9 +437,10 @@ public class FileAttributes implements Serializable {
                 .toString();
     }
 
+    @Nonnull
     private <T> Optional<T> toOptional(FileAttribute attribute, T value)
     {
         return isDefined(attribute) ? Optional.of(value) :
-                (Optional<T>)Optional.absent();
+                Optional.<T>absent();
     }
 }
