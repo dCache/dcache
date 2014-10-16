@@ -18,6 +18,8 @@ import dmg.util.Args;
 import dmg.util.Formats;
 
 import org.dcache.cells.CellCommandListener;
+import org.dcache.namespace.FileAttribute;
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -173,10 +175,11 @@ public class RepositoryInterpreter
                         for (PnfsId id: _repository) {
                             try {
                                 CacheEntry entry = _repository.getEntry(id);
-                                StorageInfo info = entry.getFileAttributes().getStorageInfo();
-                                if (info == null) {
+                                FileAttributes fileAttributes = entry.getFileAttributes();
+                                if (!fileAttributes.isDefined(FileAttribute.STORAGEINFO)) {
                                     continue;
                                 }
+                                StorageInfo info = fileAttributes.getStorageInfo();
                                 String sc = info.getStorageClass()
                                     + "@" + info.getHsm();
 
