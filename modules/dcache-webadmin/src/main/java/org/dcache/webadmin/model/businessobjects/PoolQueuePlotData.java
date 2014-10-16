@@ -86,10 +86,6 @@ public class PoolQueuePlotData {
 
     public enum PoolQueueHistogram implements RoundRobinDatabaseDatasource {
         AMOVER {
-            public String getSourceName() {
-                return getSourceName(this);
-            }
-
             public String getLabel() {
                 return "active mover";
             }
@@ -99,10 +95,6 @@ public class PoolQueuePlotData {
             }
         },
         QMOVER {
-            public String getSourceName() {
-                return getSourceName(this);
-            }
-
             public String getLabel() {
                 return "queued mover";
             }
@@ -112,10 +104,6 @@ public class PoolQueuePlotData {
             }
         },
         ASTORE {
-            public String getSourceName() {
-                return getSourceName(this);
-            }
-
             public String getLabel() {
                 return "active store";
             }
@@ -125,10 +113,6 @@ public class PoolQueuePlotData {
             }
         },
         QSTORE {
-            public String getSourceName() {
-                return getSourceName(this);
-            }
-
             public String getLabel() {
                 return "queued store";
             }
@@ -138,10 +122,6 @@ public class PoolQueuePlotData {
             }
         },
         ARESTORE {
-            public String getSourceName() {
-                return getSourceName(this);
-            }
-
             public String getLabel() {
                 return "active restore";
             }
@@ -151,10 +131,6 @@ public class PoolQueuePlotData {
             }
         },
         QRESTORE {
-            public String getSourceName() {
-                return getSourceName(this);
-            }
-
             public String getLabel() {
                 return "queued restore";
             }
@@ -164,12 +140,12 @@ public class PoolQueuePlotData {
             }
         };
 
-        private static String getSourceName(PoolQueueHistogram histogram) {
+        public String getSourceName() {
             /*
              * "!" appended to the datasource name is the Rrd4j convention
              * for storing unknown values as 0.0 rather than as NaN.
              */
-            return histogram.toString() + "!";
+            return toString() + "!";
         }
     }
 
