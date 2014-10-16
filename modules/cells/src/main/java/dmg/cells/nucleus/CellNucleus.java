@@ -200,10 +200,12 @@ public class CellNucleus implements ThreadFactory
             public void run()
             {
                 try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    executeMaintenanceTasks();
-                } catch (Throwable e) {
-                    Thread t = Thread.currentThread();
-                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                    try {
+                        executeMaintenanceTasks();
+                    } catch (Throwable e) {
+                        Thread t = Thread.currentThread();
+                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                    }
                 }
             }
         };
@@ -997,10 +999,12 @@ public class CellNucleus implements ThreadFactory
         public void run ()
         {
             try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                innerRun();
-            } catch (Throwable e) {
-                Thread t = Thread.currentThread();
-                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                try {
+                    innerRun();
+                } catch (Throwable e) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                }
             }
         }
     }
