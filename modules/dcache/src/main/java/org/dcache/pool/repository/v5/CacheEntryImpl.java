@@ -5,6 +5,7 @@ import java.util.Collection;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.MetaDataRecord;
@@ -136,10 +137,11 @@ public class CacheEntryImpl implements CacheEntry
         sb.append("L(0)[").append(_linkCount).append("]");
         sb.append("> ");
 
-        StorageInfo info = _fileAttributes.getStorageInfo();
         sb.append(_size);
         sb.append(" si={")
-            .append(info == null ? "<unknown>" : info.getStorageClass())
+            .append(_fileAttributes.isDefined(FileAttribute.STORAGEINFO)
+                            ? _fileAttributes.getStorageInfo().getStorageClass()
+                            : "<unknown>")
             .append("}");
         return sb.toString();
     }
