@@ -61,6 +61,10 @@ package org.dcache.webadmin.controller;
 
 import java.io.File;
 
+import diskCacheV111.util.ServiceUnavailableException;
+
+import dmg.cells.nucleus.NoRouteToCellException;
+
 /**
  * Provides plot images to billing page.
  *
@@ -83,5 +87,5 @@ public interface IBillingService {
 
     void initialize();
 
-    void refresh();
+    void refresh() throws NoRouteToCellException, ServiceUnavailableException;
 }
