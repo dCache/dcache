@@ -205,10 +205,14 @@ public class Task
     {
         List<PoolManagerPoolInformation> pools =
             _definition.poolList.getPools();
-        if (pools.isEmpty()) {
-            throw new NoSuchElementException("No pools available");
+        PoolManagerPoolInformation pool = _definition.selectionStrategy.select(pools);
+        if (pool == null) {
+            if (pools.isEmpty()) {
+                throw new NoSuchElementException("No pools available.");
+            }
+            throw new NoSuchElementException("All target pools are full.");
         }
-        return new CellPath(_definition.selectionStrategy.select(pools).getName());
+        return new CellPath(pool.getName());
     }
 
 
