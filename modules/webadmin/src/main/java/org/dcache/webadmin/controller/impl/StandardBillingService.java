@@ -59,6 +59,9 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.controller.impl;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.RateLimiter;
+import org.apache.wicket.util.lang.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +79,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.histograms.ITimeFrameHistogramFactory;
@@ -106,6 +111,7 @@ import org.dcache.webadmin.controller.IBillingService;
  */
 public final class StandardBillingService implements IBillingService, Runnable {
     private static final Logger logger = LoggerFactory.getLogger(StandardBillingService.class);
+    private static final double ERRORS_PER_SECOND = 1.0 / 120.0;
 
     /**
      * injected
@@ -135,6 +141,8 @@ public final class StandardBillingService implements IBillingService, Runnable {
      * refreshing can be done periodically by the daemon, or forced
      * through the web interface directly
      */
+    private final RateLimiter rate = RateLimiter.create(ERRORS_PER_SECOND);
+
     private long timeout;
     private int popupWidth;
     private int popupHeight;
@@ -142,41 +150,69 @@ public final class StandardBillingService implements IBillingService, Runnable {
     private Thread refresher;
 
     public List<TimeFrameHistogramData> load(PlotType plotType,
-                    TimeFrame timeFrame) {
+                    TimeFrame timeFrame) throws NoRouteToCellException,
+                                                ServiceUnavailableException {
         logger.debug("remote fetch of {} {}", plotType, timeFrame);
         List<TimeFrameHistogramData> histograms = new ArrayList<>();
-        switch (plotType) {
-            case BYTES_READ:
-                add(client.getDcBytesHistogram(timeFrame, false), histograms);
-                add(client.getHsmBytesHistogram(timeFrame, false), histograms);
-                break;
-            case BYTES_WRITTEN:
-                add(client.getDcBytesHistogram(timeFrame, true), histograms);
-                add(client.getHsmBytesHistogram(timeFrame, true), histograms);
-                break;
-            case BYTES_P2P:
-                add(client.getP2pBytesHistogram(timeFrame), histograms);
-                break;
-            case TRANSFERS_READ:
-                add(client.getDcTransfersHistogram(timeFrame, false),
-                                histograms);
-                add(client.getHsmTransfersHistogram(timeFrame, false),
-                                histograms);
-                break;
-            case TRANSFERS_WRITTEN:
-                add(client.getDcTransfersHistogram(timeFrame, true), histograms);
-                add(client.getHsmTransfersHistogram(timeFrame, true),
-                                histograms);
-                break;
-            case TRANSFERS_P2P:
-                add(client.getP2pTransfersHistogram(timeFrame), histograms);
-                break;
-            case CONNECTION_TIME:
-                add(client.getDcConnectTimeHistograms(timeFrame), histograms);
-                break;
-            case CACHE_HITS:
-                add(client.getHitHistograms(timeFrame), histograms);
-                break;
+        try {
+            switch (plotType) {
+                case BYTES_READ:
+                    add(client.getDcBytesHistogram(timeFrame, false),
+                                    histograms);
+                    add(client.getHsmBytesHistogram(timeFrame, false),
+                                    histograms);
+                    break;
+                case BYTES_WRITTEN:
+                    add(client.getDcBytesHistogram(timeFrame, true),
+                                    histograms);
+                    add(client.getHsmBytesHistogram(timeFrame, true),
+                                    histograms);
+                    break;
+                case BYTES_P2P:
+                    add(client.getP2pBytesHistogram(timeFrame),
+                                    histograms);
+                    break;
+                case TRANSFERS_READ:
+                    add(client.getDcTransfersHistogram(timeFrame, false),
+                                    histograms);
+                    add(client.getHsmTransfersHistogram(timeFrame, false),
+                                    histograms);
+                    break;
+                case TRANSFERS_WRITTEN:
+                    add(client.getDcTransfersHistogram(timeFrame, true),
+                                    histograms);
+                    add(client.getHsmTransfersHistogram(timeFrame, true),
+                                    histograms);
+                    break;
+                case TRANSFERS_P2P:
+                    add(client.getP2pTransfersHistogram(timeFrame),
+                                    histograms);
+                    break;
+                case CONNECTION_TIME:
+                    add(client.getDcConnectTimeHistograms(timeFrame),
+                                    histograms);
+                    break;
+                case CACHE_HITS:
+                    add(client.getHitHistograms(timeFrame),
+                                    histograms);
+                    break;
+            }
+        } catch (UndeclaredThrowableException ute) {
+            Throwable cause
+                = Exceptions.findCause(ute, ServiceUnavailableException.class);
+            if (cause != null) {
+                throw (ServiceUnavailableException)cause;
+            }
+            cause = Exceptions.findCause(ute, NoRouteToCellException.class);
+            if (cause != null) {
+                throw (NoRouteToCellException)cause;
+            }
+            cause = ute.getCause();
+            Throwables.propagateIfPossible(cause);
+            throw new RuntimeException("Unexpected error: "
+                                        + "this is probably a bug. Please report "
+                                        + "to the dCache team.",
+                                        cause);
         }
         return histograms;
     }
@@ -288,7 +324,8 @@ public final class StandardBillingService implements IBillingService, Runnable {
     }
 
     @Override
-    public void refresh() {
+    public void refresh() throws NoRouteToCellException,
+                                 ServiceUnavailableException{
         TimeFrame[] timeFrames = generateTimeFrames();
         for (int tFrame = 0; tFrame < timeFrames.length; tFrame++) {
             Date low = timeFrames[tFrame].getLow();
@@ -304,29 +341,25 @@ public final class StandardBillingService implements IBillingService, Runnable {
     @Override
     public void run() {
         try {
-            while(true) {
-                refresh();
-                Thread.sleep(timeout);
+            while (true) {
+                try {
+                    refresh();
+                    Thread.sleep(timeout);
+                } catch (ServiceUnavailableException e) {
+                    logger.error("The billing database has been disabled."
+                                    + "  To generate plots, please restart the service when"
+                                    + " the billing database is once again available");
+                    break;
+                } catch (NoRouteToCellException e) {
+                    if (rate.tryAcquire()) {
+                        logger.warn("No route to the billing service yet; "
+                                        + "retrying every 10 seconds");
+                    }
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                }
             }
         } catch (InterruptedException interrupted) {
             logger.trace("{} interrupted; exiting ...", refresher);
-        } catch (UndeclaredThrowableException ute) {
-            Throwable cause = ute.getCause();
-            if (cause instanceof ServiceUnavailableException) {
-                logger.error("The billing database has been disabled.  "
-                                + "To generate plots, please restart the service when "
-                                + "the billing database is once again available");
-            } else if (cause instanceof Error) {
-                throw ute;
-            }
-
-            /*
-             * if the service can't handle the client's requests, then we
-             * back out here because there is nothing we can do
-             */
-            logger.error("fatal billing request exception; "
-                            + "client loop is exiting");
-            logger.debug("refresh", ute);
         }
     }
 
@@ -361,7 +394,8 @@ public final class StandardBillingService implements IBillingService, Runnable {
     }
 
     private void generatePlot(PlotType type, TimeFrame timeFrame,
-                              String fileName, String title) {
+                              String fileName, String title) throws ServiceUnavailableException,
+                                                                    NoRouteToCellException {
         List<TimeFrameHistogramData> data = load(type, timeFrame);
         List<HistogramWrapper<?>> config = new ArrayList<>();
         int i = 0;
