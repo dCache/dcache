@@ -1391,7 +1391,8 @@ public class UserAdminShell
            Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
            Throwables.propagateIfInstanceOf(cause, CacheException.class);
            Throwables.propagateIfInstanceOf(cause, CommandException.class);
-           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.getMessage(), cause);
+           Throwables.propagateIfPossible(cause);
+           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.toString(), cause);
        }
     }
 
