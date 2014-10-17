@@ -57,9 +57,11 @@ export control laws.  Anyone downloading information from this server is
 obligated to secure any necessary Government licenses before exporting
 documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.dataaccess.util;
+package org.dcache.webadmin.model.dataaccess.util.rrd4j;
 
 import org.rrd4j.graph.RrdGraphConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -109,7 +111,7 @@ public class RrdSettings {
      * RrdGraphConstants
      */
     int minorUnit = RrdGraphConstants.DAY;
-    int minorUnitCount = 0;
+    int minorUnitCount = 1;
     int majorUnit = RrdGraphConstants.DAY;
     int majorUnitCount = 1;
     int labelUnit = RrdGraphConstants.DAY;
@@ -136,40 +138,7 @@ public class RrdSettings {
         spanInSeconds = TimeUnit.MILLISECONDS.toSeconds(spanInMillis);
         numSteps = (int) (spanInSeconds / stepInSeconds);
         rightMarginInSeconds = rightMarginInSteps * stepInSeconds;
-    }
-
-    public String toString() {
-        String lb = System.getProperty("line.separator");
-        return new StringBuilder()
-        .append("RrdSettings:").append(lb)
-        .append("-------------------------------------").append(lb)
-        .append("baseDirectory").append("=").append(baseDirectory).append(lb)
-        .append("imgType").append("=").append(baseDirectory).append(lb)
-        .append("stepSize").append("=").append(stepSize).append(lb)
-        .append("spanSize").append("=").append(spanSize).append(lb)
-        .append("stepUnit").append("=").append(stepUnit).append(lb)
-        .append("spanUnit").append("=").append(spanUnit).append(lb)
-        .append("rightMarginInSteps").append("=").append(rightMarginInSteps).append(lb)
-        .append("yLabel").append("=").append(yLabel).append(lb)
-        .append("version").append("=").append(version).append(lb)
-        .append("imgWidth").append("=").append(imgWidth).append(lb)
-        .append("imgHeight").append("=").append(imgHeight).append(lb)
-        .append("minorUnit").append("=").append(minorUnit).append(lb)
-        .append("minorUnitCount").append("=").append(minorUnitCount).append(lb)
-        .append("majorUnit").append("=").append(majorUnit).append(lb)
-        .append("majorUnitCount").append("=").append(majorUnitCount).append(lb)
-        .append("labelUnit").append("=").append(labelUnit).append(lb)
-        .append("labelUnitCount").append("=").append(labelUnitCount).append(lb)
-        .append("labelSpan").append("=").append(labelSpan).append(lb)
-        .append("simpleDateFormat").append("=").append(simpleDateFormat).append(lb)
-        .append("stepInMillis").append("=").append(stepInMillis).append(lb)
-        .append("spanInMillis").append("=").append(spanInMillis).append(lb)
-        .append("stepInSeconds").append("=").append(stepInSeconds).append(lb)
-        .append("spanInSeconds").append("=").append(spanInSeconds).append(lb)
-        .append("numSteps").append("=").append(numSteps).append(lb)
-        .append("rightMarginInSeconds").append("=").append(rightMarginInSeconds).append(lb)
-        .append("heartbeatFactor").append("=").append(heartbeatFactor).append(lb)
-        .append("______________________________________").append(lb).toString();
+        adjustToPixels();
     }
 
     public void setBaseDirectory(String baseDirectory) {
@@ -250,5 +219,64 @@ public class RrdSettings {
 
     public void setYLabel(String yLabel) {
         this.yLabel = yLabel;
+    }
+
+    public String toString() {
+        String lb = System.getProperty("line.separator");
+        return new StringBuilder()
+        .append("RrdSettings:").append(lb)
+        .append("-------------------------------------").append(lb)
+        .append("baseDirectory").append("=").append(baseDirectory).append(lb)
+        .append("imgType").append("=").append(baseDirectory).append(lb)
+        .append("stepSize").append("=").append(stepSize).append(lb)
+        .append("spanSize").append("=").append(spanSize).append(lb)
+        .append("stepUnit").append("=").append(stepUnit).append(lb)
+        .append("spanUnit").append("=").append(spanUnit).append(lb)
+        .append("rightMarginInSteps").append("=").append(rightMarginInSteps).append(lb)
+        .append("yLabel").append("=").append(yLabel).append(lb)
+        .append("version").append("=").append(version).append(lb)
+        .append("imgWidth").append("=").append(imgWidth).append(lb)
+        .append("imgHeight").append("=").append(imgHeight).append(lb)
+        .append("minorUnit").append("=").append(minorUnit).append(lb)
+        .append("minorUnitCount").append("=").append(minorUnitCount).append(lb)
+        .append("majorUnit").append("=").append(majorUnit).append(lb)
+        .append("majorUnitCount").append("=").append(majorUnitCount).append(lb)
+        .append("labelUnit").append("=").append(labelUnit).append(lb)
+        .append("labelUnitCount").append("=").append(labelUnitCount).append(lb)
+        .append("labelSpan").append("=").append(labelSpan).append(lb)
+        .append("simpleDateFormat").append("=").append(simpleDateFormat).append(lb)
+        .append("stepInMillis").append("=").append(stepInMillis).append(lb)
+        .append("spanInMillis").append("=").append(spanInMillis).append(lb)
+        .append("stepInSeconds").append("=").append(stepInSeconds).append(lb)
+        .append("spanInSeconds").append("=").append(spanInSeconds).append(lb)
+        .append("numSteps").append("=").append(numSteps).append(lb)
+        .append("rightMarginInSeconds").append("=").append(rightMarginInSeconds).append(lb)
+        .append("heartbeatFactor").append("=").append(heartbeatFactor).append(lb)
+        .append("______________________________________").append(lb).toString();
+    }
+
+    /**
+     * Checks that there are enough pixels to accommodate the steps.
+     * Normalizes width/steps so that there are at least 2 pixels
+     * per step and the image width is an integral multiple of total steps.
+     */
+    private void adjustToPixels() {
+        double totalSteps = (double)(numSteps+rightMarginInSteps);
+        double stepRatio = ((double)imgWidth)/totalSteps;
+        double normalRatio = Math.max(2.0, Math.floor(stepRatio));
+        double delta = normalRatio/stepRatio;
+        int newWidth = (int)(imgWidth*delta);
+        if (newWidth != imgWidth) {
+            Logger logger = LoggerFactory.getLogger(this.getClass());
+            logger.warn("Rrd pool queue plots: "
+                            + "number of time steps ({}); "
+                            + "stepRatio ({}); " + "normalizedRatio ({}); "
+                            + "delta ({}); "
+                            + "original width in pixels ({}); "
+                            + "normalized width: ({}).",
+                            totalSteps, stepRatio, normalRatio,
+                            delta, imgWidth, newWidth);
+            imgWidth = newWidth;
+        }
     }
 }

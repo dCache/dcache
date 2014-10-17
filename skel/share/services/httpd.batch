@@ -91,8 +91,6 @@ define context webadmin.exe endDefine
      -alarmsCleanerSleepInterval=${webadmin.alarm.cleaner.timeout} \
      -alarmsCleanerDeleteThreshold=${webadmin.alarm.cleaner.delete-threshold} \
      -pqpEnabled=${poolqplots.enabled} \
-     -pqpRefreshInterval=${poolqplots.refresh-interval} \
-     -pqpRefreshIntervalUnit=${poolqplots.refresh-interval-unit} \
      -rrdHeartbeatFactor=${poolqplots.rrdb.plot.heartbeat-factor} \
      -rrdVersion=${poolqplots.rrdb.db.version} \
      -rrdYLabel=\"${poolqplots.rrdb.plot.y-label}\" \
