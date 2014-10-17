@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -307,13 +308,13 @@ public class SecurityFilter implements Filter
         return _rootPath.toString();
     }
 
-    public void setUploadPath(String uploadPath)
+    public void setUploadPath(File uploadPath)
     {
-        this._uploadPath = isNullOrEmpty(uploadPath) ? null : new FsPath(uploadPath);
+        this._uploadPath = uploadPath.isAbsolute() ? new FsPath(uploadPath.getPath()) : null;
     }
 
-    public String getUploadPath()
+    public File getUploadPath()
     {
-        return Objects.toString(_uploadPath, null);
+        return (_uploadPath == null) ? null : new File(_uploadPath.toString());
     }
 }

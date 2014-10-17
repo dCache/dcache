@@ -17,12 +17,15 @@
  */
 package diskCacheV111.srm.dcache;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * SRMUser adaptor for Subjects.
@@ -37,9 +40,9 @@ public class DcacheUser implements SRMUser
     public DcacheUser(long id, Subject subject, boolean isReadOnly, FsPath root)
     {
         this.id = id;
-        this.subject = subject;
+        this.subject = checkNotNull(subject);
         this.isReadOnly = isReadOnly;
-        this.root = root;
+        this.root = checkNotNull(root);
     }
 
     @Override
@@ -60,11 +63,13 @@ public class DcacheUser implements SRMUser
         return this.isReadOnly;
     }
 
+    @Nonnull
     public Subject getSubject()
     {
         return subject;
     }
 
+    @Nonnull
     public FsPath getRoot()
     {
         return root;

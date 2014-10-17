@@ -1124,6 +1124,7 @@ public class PnfsManagerV3
         try {
             FsPath uploadPath = _nameSpaceProvider.createUploadPath(message.getSubject(),
                                                                     message.getPath(),
+                                                                    message.getRootPath(),
                                                                     message.getUid(),
                                                                     message.getGid(),
                                                                     message.getMode(),

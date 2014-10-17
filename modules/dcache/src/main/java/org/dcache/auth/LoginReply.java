@@ -1,5 +1,6 @@
 package org.dcache.auth;
 
+import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
 import java.util.Arrays;
@@ -7,6 +8,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.auth.attributes.LoginAttribute;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Immutable encapsulation of a login result as provided by a
@@ -27,13 +30,14 @@ public class LoginReply
 
     public LoginReply(Subject subject, Set<LoginAttribute> attributes)
     {
-        _subject = subject;
-        _attributes = attributes;
+        _subject = checkNotNull(subject);
+        _attributes = checkNotNull(attributes);
     }
 
     /**
      * Returns the Subject of this LoginReply.
      */
+    @Nonnull
     public Subject getSubject()
     {
         return _subject;
@@ -48,6 +52,7 @@ public class LoginReply
      * login attributes Set. Any modification to the returned Set
      * affects the internal login attributes Set as well.
      */
+    @Nonnull
     public Set<LoginAttribute> getLoginAttributes()
     {
         return _attributes;
@@ -62,6 +67,7 @@ public class LoginReply
      * each method invocation. Modifications to the returned Set will
      * not affect the internal login attributes Set.
      */
+    @Nonnull
     public <T extends LoginAttribute> Set<T> getLoginAttributes(Class<T> type)
     {
         Set<T> result = new HashSet<>();
