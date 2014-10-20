@@ -69,7 +69,8 @@
       <property name="destination" value="${poolmanager.service.broadcast}"/>
   </bean>
 
-  <bean id="rc-pool" class="org.dcache.util.CDCExecutorServiceDecorator">
+  <bean id="rc-pool" class="org.dcache.util.CDCExecutorServiceDecorator"
+          destroy-method="shutdownNow">
       <constructor-arg>
           <bean class="diskCacheV111.poolManager.RequestContainerExecutor"/>
       </constructor-arg>
