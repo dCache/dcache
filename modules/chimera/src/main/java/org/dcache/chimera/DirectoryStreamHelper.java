@@ -30,7 +30,15 @@ public class DirectoryStreamHelper {
      */
     public static List<HimeraDirectoryEntry> listOf(FsInode inode) throws IOException, IOHimeraFsException {
 
-        List<HimeraDirectoryEntry> directoryList = new ArrayList<>(inode.statCache().getNlink());
+        List<HimeraDirectoryEntry> directoryList;
+
+        int estimatedListSize = inode.statCache().getNlink();
+        if (estimatedListSize < 0) {
+            throw new RuntimeException("Invalid nlink count for directory: " + inode);
+        } else {
+            directoryList = new ArrayList<>(estimatedListSize);
+        }
+
         try (DirectoryStreamB<HimeraDirectoryEntry> dirStream =
                 inode.newDirectoryStream()) {
             for (HimeraDirectoryEntry e : dirStream) {
