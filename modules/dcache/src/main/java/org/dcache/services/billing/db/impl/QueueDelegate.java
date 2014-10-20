@@ -75,6 +75,8 @@ import org.dcache.services.billing.db.data.StorageData;
 import org.dcache.services.billing.db.exceptions.RetryException;
 import org.dcache.services.billing.histograms.data.IHistogramData;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Abstraction for handling insert logic. Each type of object is given a
  * separate queue and mover. Allows the put() method to do special processing
@@ -115,8 +117,8 @@ public abstract class QueueDelegate {
         }
 
         public void run() {
-            try {
-                while (isRunning()) {
+            while (isRunning()) {
+                try {
                     Collection<IHistogramData> data = new ArrayList<IHistogramData>();
 
                     /*
@@ -147,51 +149,28 @@ public abstract class QueueDelegate {
                             logger.debug("exception in run(), commit", t1);
                         }
                     }
+                } catch (InterruptedException ignored) {
                 }
-            } catch (InterruptedException t) {
-                logger.warn("queue take() was interrupted; "
-                                + "this is probably due to cell shutdown; "
-                                + "exiting thread ...");
-            } finally {
-                setRunning(false);
             }
         }
     }
 
     public void close() {
+        checkState(isRunning());
+
         setRunning(false);
 
-        if (moverConsumer != null) {
-            moverConsumer.interrupt();
-            try {
-                moverConsumer.join();
-            } catch (InterruptedException e) {
-                logger.trace("join on moverConsumer interrupted");
-            }
-        }
-        if (doorConsumer != null) {
-            doorConsumer.interrupt();
-            try {
-                doorConsumer.join();
-            } catch (InterruptedException e) {
-                logger.trace("join on doorConsumer interrupted");
-            }
-        }
-        if (storageConsumer != null) {
-            storageConsumer.interrupt();
-            try {
-                storageConsumer.join();
-            } catch (InterruptedException e) {
-                logger.trace("join on storageConsumer interrupted");
-            }
-        }
-        if (hitConsumer != null) {
-            hitConsumer.interrupt();
-            try {
-                hitConsumer.join();
-            } catch (InterruptedException e) {
-                logger.trace("join on hitConsumer interrupted");
-            }
+        moverConsumer.interrupt();
+        doorConsumer.interrupt();
+        storageConsumer.interrupt();
+        hitConsumer.interrupt();
+        try {
+            moverConsumer.join();
+            doorConsumer.join();
+            storageConsumer.join();
+            hitConsumer.join();
+        } catch (InterruptedException e) {
+            logger.trace("join on consumers interrupted");
         }
 
         logger.trace("{} close exiting", this);
@@ -230,12 +209,12 @@ public abstract class QueueDelegate {
         storageQueue = new LinkedBlockingQueue(maxQueueSize);
         hitQueue = new LinkedBlockingQueue(maxQueueSize);
 
-        setRunning(true);
-
         moverConsumer = new Consumer("mover data consumer", moverQueue);
-        doorConsumer = new Consumer("door requeust data consumer", doorQueue);
+        doorConsumer = new Consumer("door request data consumer", doorQueue);
         storageConsumer = new Consumer("storage data consumer", storageQueue);
         hitConsumer = new Consumer("cache hit data consumer", hitQueue);
+
+        setRunning(true);
 
         moverConsumer.start();
         doorConsumer.start();
