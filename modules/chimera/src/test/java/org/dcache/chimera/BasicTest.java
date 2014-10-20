@@ -175,20 +175,15 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     }
 
-    /*
-     * For some reason, the mtime update fails for both of the delete
-     * tests when run with the rest of the test suite.  Reordering
-     * them by renaming seems to solve the problem.
-     *
-     * TODO investigate timing issue causing this.
-     */
     @Test
-    public void test0DeleteFile() throws Exception {
+    public void testDeleteFile() throws Exception {
 
         FsInode base = _rootInode.mkdir("junit");
 
         base.create("testCreateFile", 0, 0, 0644);
         Stat stat = base.stat();
+
+        Thread.sleep(1); // ensure updated directory mtime is distinct from creation mtime
 
         base.remove("testCreateFile");
 
@@ -198,12 +193,14 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
-    public void test0DeleteDir() throws Exception {
+    public void testDeleteDir() throws Exception {
 
         FsInode base = _rootInode.mkdir("junit");
 
         base.create("testCreateDir", 0, 0, 0644);
         Stat stat = base.stat();
+
+        Thread.sleep(1); // ensure updated directory mtime is distinct from creation mtime
 
         base.remove("testCreateDir");
 

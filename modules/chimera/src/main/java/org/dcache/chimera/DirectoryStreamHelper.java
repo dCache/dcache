@@ -16,11 +16,12 @@
  */
 package org.dcache.chimera;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DirectoryStreamHelper {
 
@@ -38,8 +39,7 @@ public class DirectoryStreamHelper {
 
         int estimatedListSize = inode.statCache().getNlink();
         if (estimatedListSize < 0) {
-            _log.error("Invalid nlink count for directory {}", inode);
-            directoryList = new ArrayList<>();
+            throw new RuntimeException("Invalid nlink count for directory: " + inode);
         } else {
             directoryList = new ArrayList<>(estimatedListSize);
         }

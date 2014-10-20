@@ -16,17 +16,20 @@
  */
 package org.dcache.chimera;
 
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+
 import org.dcache.chimera.posix.Stat;
-import org.junit.Test;
-import static org.mockito.Mockito.*;
+
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 public class DirectoryStreamHelperTest {
 
-    @Test
+    @Test(expected=RuntimeException.class)
     public void testNegativeNlink() throws ChimeraFsException, IOException {
 
         FsInode inode = mock(FsInode.class);
