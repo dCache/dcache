@@ -22,11 +22,9 @@ import dmg.cells.nucleus.CellTunnel;
 import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
-import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
-import dmg.util.Gate;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -62,7 +60,6 @@ public class      RetryTunnel2
    private StreamEngine    _engine;
    private ObjectInputStream  _input;
    private ObjectOutputStream _output;
-   private Gate               _finalGate = new Gate(false) ;
    //
    // some statistics
    //
@@ -256,9 +253,6 @@ public class      RetryTunnel2
                _log.warn( "Tunnel down : dumping : "+msg ) ;
            }
         }
-     }else if( me instanceof LastMessageEvent ){
-         _log.info( "messageArrived : opening final gate" ) ;
-        _finalGate.open() ;
      }else{
         _log.warn( "messageArrived : dumping junk message "+me ) ;
      }
@@ -362,10 +356,6 @@ public class      RetryTunnel2
      try{_input.close();}catch(IOException ee){}
      try{_output.close();}catch(IOException ee){}
      _log.info( "Streams  closed" ) ;
-     _finalGate.check() ;
-     _log.info( "Gate Opened. Bye Bye" ) ;
-
-
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){

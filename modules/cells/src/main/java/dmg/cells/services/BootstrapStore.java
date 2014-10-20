@@ -14,9 +14,7 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
-import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
-import dmg.util.Gate;
 
 import org.dcache.util.Args;
 import org.dcache.util.Version;
@@ -32,7 +30,6 @@ public class BootstrapStore implements Cell {
    private final static Logger _log =
        LoggerFactory.getLogger(BootstrapStore.class);
 
-   private Gate   _finalGate = new Gate( false ) ;
    private String _storeBase;
    private CellNucleus _nucleus  ;
    private int    _requests;
@@ -66,9 +63,6 @@ public class BootstrapStore implements Cell {
    }
    @Override
    public void   messageArrived( MessageEvent me ){
-     if( me instanceof LastMessageEvent ){
-        _finalGate.open() ;
-     }else{
         CellMessage msg  = me.getMessage() ;
         if( msg.isFinalDestination() ){
            Object      obj  = msg.getMessageObject() ;
@@ -97,7 +91,6 @@ public class BootstrapStore implements Cell {
 
            }
         }
-     }
    }
    public String [] readConfigDB( String name ) throws Exception {
       String filename = _storeBase+"/"+name+".conf" ;
@@ -121,7 +114,6 @@ public class BootstrapStore implements Cell {
    }
    @Override
    public void   prepareRemoval( KillEvent ce ){
-     _finalGate.check() ;
      // this will remove whatever was stored for us
    }
    @Override
