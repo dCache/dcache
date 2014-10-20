@@ -139,6 +139,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         base.create("testCreateFile", 0, 0, 0644);
         Stat stat = base.stat();
 
+        Thread.sleep(1); // ensure updated directory mtime is distinct from creation mtime
+
         base.remove("testCreateFile");
 
         assertEquals("remove have to decrease parents link count", base.stat().getNlink(), stat.getNlink() - 1);
@@ -153,6 +155,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         base.create("testCreateDir", 0, 0, 0644);
         Stat stat = base.stat();
+
+        Thread.sleep(1); // ensure updated directory mtime is distinct from creation mtime
 
         base.remove("testCreateDir");
 
