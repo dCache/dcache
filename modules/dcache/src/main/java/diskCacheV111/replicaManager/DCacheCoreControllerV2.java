@@ -113,6 +113,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(DCacheCoreControllerV2.class);
+    private final Thread messageProcessingThread;
 
    private String      _cellName;
    private Args        _args;
@@ -159,29 +160,33 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       useInterpreter( true ) ;
 
-      new MessageProcessThread();
+       messageProcessingThread =
+               _nucleus.newThread(new MessageProcessThread(), "DCacheCoreController-MessageProcessing");
+       messageProcessingThread.start();
 
       _nucleus.export() ;
-      _log.info("Starting");
-
    }
 
-   abstract protected
+    @Override
+    public void cleanUp()
+    {
+        if (messageProcessingThread != null) {
+            messageProcessingThread.interrupt();
+        }
+        super.cleanUp();
+    }
+
+    abstract protected
            List<String> getPoolListResilient ()
            throws Exception;
 
    // Thread to re-queue messages queue
 
    private class MessageProcessThread implements Runnable {
-     private final String _threadName = "DCacheCoreController-MessageProcessing";
-
-     public MessageProcessThread(){
-       _nucleus.newThread( this , _threadName ).start() ;
-     }
 
      @Override
      public void run() {
-       _log.info("Thread <" + Thread.currentThread().getName() + "> started");
+       _log.debug("Thread <" + Thread.currentThread().getName() + "> started");
 
        boolean done = false;
        while (!done) {
@@ -197,12 +202,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          try {
            processCellMessage(message);
          }
-         catch (Throwable ex) {
+         catch (RuntimeException ex) {
            _log.warn(Thread.currentThread().getName() + " : " +ex);
          }
 
        } // - while()
-       _log.info("Thread <" + Thread.currentThread().getName() + "> finished");
+       _log.debug("Thread <" + Thread.currentThread().getName() + "> finished");
      }  // - run()
    }
 
