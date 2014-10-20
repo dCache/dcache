@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
@@ -450,21 +451,24 @@ public final class SpaceManagerService
         {
             try {
                 boolean isSuccessful = false;
-                for (int attempts = 0; !isSuccessful; attempts++) {
+                int attempts = 0;
+                while (!isSuccessful) {
                     try {
                         if (message instanceof PoolRemoveFilesMessage) {
                             // fileRemoved does its own transaction management
                             fileRemoved((PoolRemoveFilesMessage) message);
-                        }
-                        else {
+                        } else {
                             processMessageTransactionally(message);
                         }
                         isSuccessful = true;
+                    } catch (DeadlockLoserDataAccessException e) {
+                        LOGGER.debug("Transaction lost deadlock race and will be retried: {}", e.toString());
                     } catch (TransientDataAccessException | RecoverableDataAccessException e) {
                         if (attempts >= 3) {
                             throw e;
                         }
                         LOGGER.warn("Retriable data access error: {}", e.toString());
+                        attempts++;
                     }
                 }
             } catch (SpaceAuthorizationException e) {
