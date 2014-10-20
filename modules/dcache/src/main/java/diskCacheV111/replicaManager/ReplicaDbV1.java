@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import javax.sql.DataSource;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,8 +23,6 @@ import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellAdapter;
 
-import org.dcache.chimera.JdbcFs;
-
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
 //import uk.org.primrose.GeneralException;
@@ -38,22 +34,28 @@ import static org.dcache.commons.util.SqlHelper.tryToClose;
  * This class works with replicas database
  */
 public class ReplicaDbV1 implements ReplicaDb1 {
-    private final static String _cvsId     = "$Id$";
 
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(ReplicaDbV1.class);
 
-    private CellAdapter         _cell;
-    private static DataSource   DATASOURCE;
-    private final static String ERRCODE_UNIQUE_VIOLATION = "23505";
+    private CellAdapter _cell;
+    private HikariDataSource dataSource;
+    private static final String ERRCODE_UNIQUE_VIOLATION = "23505";
 
-    /**
-     * Class constructor
-     * @throws SQLException
-     */
-    public ReplicaDbV1(CellAdapter cell)
+    public ReplicaDbV1(ReplicaManagerV2 cell, String jdbcUrl, String user, String pass)
     {
         _cell = cell;
+
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(new DriverManagerDataSource(jdbcUrl, user, pass));
+        config.setMinimumIdle(1);
+        config.setMaximumPoolSize(30);
+        dataSource = new HikariDataSource(config);
+    }
+
+    public void close()
+    {
+        dataSource.close();
     }
 
     /*
@@ -87,7 +89,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement pstmt = null;
         final String sql1 = "INSERT INTO replicas (pool,pnfsid,datestamp,poolid,bitmask,countable,excluded) SELECT ?, ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
 //1         stmt = (_conn == null) ? conn.createStatement() : _stmt;
 //1         stmt.executeUpdate(sql);
@@ -128,7 +130,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 "INSERT INTO replicas (pool,pnfsid,datestamp,poolid,bitmask,countable,excluded) SELECT ''{0}'', ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=''{0}''",
                 poolName);
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.createStatement();
             pstmt = conn.prepareStatement(sql);
@@ -189,7 +191,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement  stmt = null;
         String sql = "DELETE FROM replicas WHERE pool = ? and pnfsId = ?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.prepareStatement(sql);
             stmt.setString(1, poolName);
@@ -217,7 +219,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ResultSet  rset = null;
         String sql = "SELECT pool FROM replicas WHERE pnfsId = ?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
@@ -248,7 +250,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sqlDeleteFromFiles = "DELETE FROM files    WHERE pnfsId = ?";
         // If the file has been removed from PNFS, we also have to clean up "files" and "excluded" tables
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             conn.setAutoCommit(false);
             statement = conn.prepareStatement(sqlDeleteFromReplicas);
@@ -284,7 +286,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         protected ResultSet  rset;
 
         public DbIterator() throws SQLException {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
         }
 
@@ -486,7 +488,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
         Statement  stmt = null;
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             conn.setAutoCommit(false);
             stmt = conn.createStatement();
@@ -522,7 +524,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sqlDeleteReplicas = "DELETE FROM replicas WHERE pool=?";
         String sqlDeletePools = "DELETE FROM pools    WHERE pool=?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             conn.setAutoCommit(false);
             statement = conn.prepareStatement(sqlDeleteReplicas);
@@ -708,7 +710,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement  stmt = null;
         String sql = "DELETE FROM pools WHERE pool=?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
@@ -737,7 +739,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         String sql_u = "update pools set status=?, datestamp=now() where pool=?";
 
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql_i);
             stmt.setString(1, poolName);
@@ -771,7 +773,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ResultSet  rset = null;
         String sql = "SELECT status FROM pools WHERE pool=?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, poolName);
@@ -810,7 +812,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 op, "s", pnfsId.toString(), "d", timestamp);
 
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
@@ -837,7 +839,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 "s", pnfsId.toString(), timestamp, 0xFFFF, errcode, errmsg);
 
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
@@ -858,7 +860,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Statement  stmt = null;
         final String sql = MessageFormat.format("DELETE FROM actions WHERE pnfsId = ''{0}''", pnfsId.toString());
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
@@ -879,7 +881,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql = "DELETE FROM excluded WHERE \"timestamp\" < " + timestamp;
         int count = 0;
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.createStatement();
             count = stmt.executeUpdate(sql);
@@ -905,7 +907,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //      final String sql = "TRUNCATE actions";
 
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.createStatement();
             stmt.executeUpdate(sql);
@@ -927,7 +929,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         ResultSet  rset = null;
         String sql = "SELECT \"timestamp\" FROM actions WHERE pnfsId = ?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt = conn.prepareStatement(sql);
             stmt.setString(1, pnfsId.toString());
@@ -963,7 +965,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement statement = null;
         String sql = "DELETE FROM replicas WHERE pool=?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             conn.setAutoCommit(false);
             statement =  conn.prepareStatement(sql);
@@ -1094,7 +1096,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         final String sql_u = "update heartbeat set description=?, datestamp=now() where process=?";
 
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             try {
                 conn.setAutoCommit(true);
                 stmt =  conn.prepareStatement(sql_i);
@@ -1129,7 +1131,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         PreparedStatement  stmt = null;
         final String sql = "DELETE FROM heartbeat WHERE process = ?";
         try {
-            conn = DATASOURCE.getConnection();
+            conn = dataSource.getConnection();
             conn.setAutoCommit(true);
             stmt =  conn.prepareStatement(sql);
             stmt.setString(1, name);
@@ -1148,131 +1150,4 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         System.out.println("The class of " + obj + " is " + obj.getClass().getName());
     }
 
-    /**
-     * Setup method to create connection to the database and the datasource
-     *
-     * @param connectURI
-     * @param user
-     * @param password
-     */
-    public final static void setup(String connectURI, String user, String password) {
-        HikariConfig config = new HikariConfig();
-        config.setDataSource(new DriverManagerDataSource(connectURI, user, password));
-        config.setMinimumIdle(1);
-        config.setMaximumPoolSize(30);
-        final HikariDataSource ds = new HikariDataSource(config);
-
-        Runtime.getRuntime().addShutdownHook(new Thread("replica-hikaricp-shutdown-hook") {
-            @Override
-            public void run()
-            {
-                ds.shutdown();
-            }
-        });
-
-        DATASOURCE = ds;
-    }
-
-
-    public static void main(String[] args) throws SQLException
-    {
-        System.out.println("Test ReplicaDbV1, cvsId=" + _cvsId);
-
-        setup("jdbc:postgresql://localhost:5432/replicas", "enstore", "NoPassword");
-        ReplicaDbV1 db = new ReplicaDbV1(null);
-
-        System.out.println("List pnfsId's in all pools");
-        for (Iterator<String> i = db.getPnfsIds(); i.hasNext();) {
-            System.out.println(i.next());
-        }
-
-        for (Iterator<String> p = db.getPools(); p.hasNext();) {
-            String pool = p.next();
-            System.out.println("Pool : " + pool);
-            for (Iterator<String> j = db.getPnfsIds(pool); j.hasNext();) {
-                System.out.println(j.next());
-            }
-        }
-//        for ( Iterator j = db.pnfsIds("pool1") ; j.hasNext() ; ) {
-//            System.out.println( j.next().toString());
-//        }
-//        for ( Iterator j = db.pnfsIds("pool2") ; j.hasNext() ; ) {
-//            System.out.println( j.next().toString());
-//        }
-//        for ( Iterator j = db.pnfsIds("pool3") ; j.hasNext() ; ) {
-//            System.out.println( j.next().toString());
-//        }
-//        for ( Iterator j = db.pnfsIds("pool4") ; j.hasNext() ; ) {
-//            System.out.println( j.next().toString());
-//        }
-
-        PnfsId pnfsId = new PnfsId("1234");
-
-        System.out.println("WARNING: db.countPools(...) is depreciated and will not work with newer postgres release ");
-
-        db.addPool(pnfsId, "pool1");
-        db.addPool(pnfsId, "pool2");
-        db.addPool(pnfsId, "pool3");
-        System.out.println("pools: " + db.countPools(pnfsId));
-
-        db.removePool(pnfsId, "pool1");
-        System.out.println("pools: " + db.countPools(pnfsId));
-
-        db.addPool(pnfsId, "pool1");
-        System.out.println("pools: " + db.countPools(pnfsId));
-
-        db.clearPools(pnfsId);
-        System.out.println("pools: " + db.countPools(pnfsId));
-
-        // This has to generate an error: Cannot insert a duplicate key into
-        // unique index replicas_index
-//        for (int i = 0; i < 5; i++) {
-//            db.addPool( new PnfsId("2000"+i) , "pool1" ) ;
-//        }
-
-//        for (int i = 0; i < 5; i++) {
-//            db.addPool( new PnfsId("2000"+i) , "pool3" ) ;
-//        }
-
-        db.addPool(pnfsId, "pool2");
-        // db.addPool( pnfsId , "pool2" ) ; // This has to generate an error:
-        // Cannot insert a duplicate key into unique index replicas_index
-        System.out.println("pools: " + db.countPools(pnfsId));
-        for (Iterator<String> i = db.getPools(pnfsId); i.hasNext();) {
-            System.out.println(" pnfsid : " + pnfsId + ", pool : " + i.next());
-        }
-
-        db.removePool(pnfsId, "pool2");
-        System.out.println("pools: " + db.countPools(pnfsId));
-        for (Iterator<String> i = db.getPools(pnfsId); i.hasNext();) {
-            System.out.println(" pnfsid : " + pnfsId + ", pool : " + i.next());
-        }
-
-        for (Iterator<String> i = db.getMissing(); i.hasNext();) {
-            System.out.println(" Missing pnfsid : " + i.next());
-        }
-
-        for (Iterator<Object[]> i = db.getDeficient(2); i.hasNext();) {
-            Object[] r = (i.next());
-            // System.out.println(" Length : "+r.length);
-            System.out.println(" Deficient pnfsid : " + r[0] + ": " + r[1]);
-            // printClassName(i.next());
-            // printClassName(new int[] {1,2,3});
-        }
-
-        for (Iterator<Object[]> i = db.getRedundant(3); i.hasNext();) {
-            Object[] r = (i.next());
-            System.out.println(" Redundant pnfsid : " + r[0] + ": " + r[1]);
-        }
-
-        System.out.println("pool1: Status : '" + db.getPoolStatus("pool1") + "'");
-        System.out.println("pool11111111111: Status : '" + db.getPoolStatus("pool11111111111") + "'");
-
-        db.setPoolStatus("pool9", "offline");
-        System.out.println("pool9: Status : '" + db.getPoolStatus("pool9") + "'");
-
-        db.clearPool("pool9");
-
-        System.exit(0);
-    }
 }

@@ -389,20 +389,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     parseDBArgs();
 
     _log.debug("Setup database with: URL="+_jdbcUrl+" user="+_user+" passwd=********");
-    ReplicaDbV1.setup(_jdbcUrl, _user, _pass);
 
-    try {
-      _dbrmv2 = installReplicaDb();
-    }
-    catch ( Exception ex ) {
-      _log.warn( "ERROR, can not instantiate replica DB - got exception, now exiting\n"
-           +"=================================================================="
-           +"Check if DB server running and restart Replica Manager");
-      System.exit(1);
-    }
+    _dbrmv2 = new ReplicaDbV1(this, _jdbcUrl, _user, _pass);
 
-    _adj        = new Adjuster( _repMin, _repMax) ;
-    _watchPools = new WatchPools();
+    _adj        = new Adjuster( _repMin, _repMax, _dbrmv2);
+    _watchPools = new WatchPools(_dbrmv2);
 
     _log.info("Parse arguments");
     parseArgs();
@@ -456,6 +447,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       } catch (InterruptedException e) {
           _log.warn("Replica manager failed to shut down", e);
       }
+      _dbrmv2.close();
       super.cleanUp();
   }
 
@@ -497,12 +489,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     pw.println(" XXcheckPoolHost : " + getCheckPoolHost() );
   }
 
-  private ReplicaDbV1 installReplicaDb()
-  {
-      return new ReplicaDbV1(this) ;
-  }
-
-//  private ReplicaDbV1 installReplicaDb(boolean keep) throws SQLException {
+    //  private ReplicaDbV1 installReplicaDb(boolean keep) throws SQLException {
 //      return new ReplicaDbV1(this, keep) ;
 //  }
 
@@ -717,11 +704,11 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
    private Set<String> _poolsReadable = new HashSet<>(); // can be Source pools
    private ReplicaDbV1 _db;
 
-   public Adjuster(int min, int max)
+   public Adjuster(int min, int max, ReplicaDbV1 db)
    {
      _min = min;
      _max = max;
-     _db = installReplicaDb();
+     _db = db;
    }
    public void setMin( int min ){
      _min = min;
@@ -2442,9 +2429,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     private boolean _restarted;
     private ReplicaDbV1 _db;
 
-    public WatchPools()
+    public WatchPools(ReplicaDbV1 db)
     {
-        _db = installReplicaDb();
+        _db = db;
     }
 
     public void setPeriod( long p ) {
