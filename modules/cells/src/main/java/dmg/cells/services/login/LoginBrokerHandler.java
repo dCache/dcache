@@ -118,7 +118,7 @@ public class LoginBrokerHandler
             try {
                 sendMessage(new CellMessage(new CellPath(loginBroker), info));
             } catch (NoRouteToCellException e) {
-                _log.warn("Failed to send update to {}", loginBroker);
+                _log.warn("No route to {}", loginBroker);
                 newUpdateMode = UpdateMode.EAGER;
             }
         }
