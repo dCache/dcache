@@ -20,6 +20,7 @@ import org.dcache.pool.repository.SpaceRecord;
 class CheckHealthTask implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckHealthTask.class);
+    public static final int GRACE_PERIOD_ON_FREE = 60_000;
 
     private CacheRepositoryV5 _repository;
 
@@ -194,29 +195,42 @@ class CheckHealthTask implements Runnable
          */
         Account account = _account;
         synchronized (account) {
-            long free = _metaDataStore.getFreeSpace();
-            long total = _metaDataStore.getTotalSpace();
+            /* It is not uncommon that file system free space asynchronously from
+             * file deletion. Thus after we delete a file, it may take a while
+             * before the free space is reported as such by the operating system.
+             * To compensate, we suppress this check for a grace period after the
+             * last delete.
+             */
+            if (account.getTimeOfLastFree() > System.currentTimeMillis() - GRACE_PERIOD_ON_FREE) {
+                long free = _metaDataStore.getFreeSpace();
+                long total = _metaDataStore.getTotalSpace();
 
-            if (total == 0) {
-                LOGGER.debug("Java reported file system size as 0. Skipping file system size check.");
-                return;
-            }
+                if (total == 0) {
+                    LOGGER.debug("Java reported file system size as 0. Skipping file system size check.");
+                    return;
+                }
 
-            if (total < account.getTotal()) {
-                LOGGER.warn(String
-                        .format("The file system containing the data files appears to be smaller (%,d bytes) than the configured pool size (%,d bytes).", total, _account
-                                .getTotal()));
-            }
+                if (total < account.getTotal()) {
+                    LOGGER.warn(String.format("The file system containing the data files appears to be smaller " +
+                                                      "(%,d bytes) than the configured pool size (%,d bytes).",
+                                              total, _account.getTotal()));
+                }
 
-            if (free < account.getFree()) {
-                long newSize =
-                    account.getTotal() - (account.getFree() - free);
+                if (free < account.getFree()) {
+                    long newSize =
+                            account.getTotal() - (account.getFree() - free);
 
-                LOGGER.warn(String
-                        .format("The file system containing the data files appears to have less free space (%,d bytes) than expected (%,d bytes); reducing the pool size to %,d bytes to compensate. Notice that this does not leave any space for the meta data. If such data is stored on the same file system, then it is paramount that the pool size is reconfigured to leave enough space for the meta data.", free, _account
-                                .getFree(), newSize));
+                    LOGGER.warn(String.format("The file system containing the data files appears to have less free " +
+                                                      "space (%,d bytes) than expected (%,d bytes); reducing the " +
+                                                      "pool size to %,d bytes to compensate. Notice that this does " +
+                                                      "not leave any space for the meta data. If such data is " +
+                                                      "stored on the same file system, then it is paramount that " +
+                                                      "the pool size is reconfigured to leave enough space for the " +
+                                                      "meta data.",
+                                              free, _account.getFree(), newSize));
 
-                account.setTotal(newSize);
+                    account.setTotal(newSize);
+                }
             }
         }
     }

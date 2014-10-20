@@ -17,6 +17,7 @@ public class Account
     private long _precious;
     private long _removable;
     private long _requested;
+    private long _timeOfLastFree;
 
     public synchronized long getTotal()
     {
@@ -48,6 +49,11 @@ public class Account
         return _requested;
     }
 
+    public synchronized long getTimeOfLastFree()
+    {
+        return _timeOfLastFree;
+    }
+
     public synchronized void setTotal(long total)
     {
         if (total < _used) {
@@ -71,6 +77,7 @@ public class Account
 
         notifyAll();
         _used -= space;
+        _timeOfLastFree = System.currentTimeMillis();
     }
 
     /**
