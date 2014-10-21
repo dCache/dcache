@@ -130,7 +130,7 @@ public boolean equals( Object obj ){
     }
   }
 
-    private CellMessage()
+    public CellMessage()
     {
         _mode = DUMMY_MODE;
         _messageStream = null;
