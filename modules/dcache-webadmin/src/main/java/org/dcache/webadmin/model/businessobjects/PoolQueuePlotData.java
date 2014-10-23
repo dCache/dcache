@@ -63,7 +63,7 @@ COPYRIGHT STATUS:
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
-package org.dcache.webadmin.model.businessobjects.rrd4j;
+package org.dcache.webadmin.model.businessobjects;
 
 import java.awt.Color;
 import java.util.Date;
@@ -72,6 +72,8 @@ import java.util.Map;
 
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
+
+import org.dcache.webadmin.model.businessobjects.rrd4j.RoundRobinDatabaseDatasource;
 
 /**
  * Convenience data type for converting between pool cost info and the value set
