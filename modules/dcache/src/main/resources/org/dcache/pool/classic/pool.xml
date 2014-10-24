@@ -106,7 +106,8 @@
     <constructor-arg value="${pool.path}"/>
   </bean>
 
-  <bean id="sweeper" class="${pool.plugins.sweeper}">
+  <bean id="sweeper" class="${pool.plugins.sweeper}"
+          init-method="start" destroy-method="stop">
     <description>Pool garbage collector</description>
     <property name="repository" ref="rep"/>
     <property name="account" ref="account"/>

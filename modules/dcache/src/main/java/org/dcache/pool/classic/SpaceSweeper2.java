@@ -56,6 +56,7 @@ public class SpaceSweeper2
     private Repository _repository;
 
     private Account _account;
+    private Thread _thread;
 
     public SpaceSweeper2()
     {
@@ -70,7 +71,18 @@ public class SpaceSweeper2
     public void setAccount(Account account)
     {
         _account = account;
-        new Thread(this, "sweeper").start();
+    }
+
+    public void start()
+    {
+        _thread = new Thread(this, "sweeper");
+        _thread.start();
+    }
+
+    public void stop() throws InterruptedException
+    {
+        _thread.interrupt();
+        _thread.join(1000);
     }
 
     /**

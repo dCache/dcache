@@ -193,9 +193,6 @@ public class RepositorySubsystemTest
         repository.addListener(this);
         repository.setSpaceSweeperPolicy(sweeper);
         repository.setMaxDiskSpace(5120);
-
-        sweeper.setAccount(account);
-        sweeper.setRepository(repository);
     }
 
     @Before
@@ -263,12 +260,17 @@ public class RepositorySubsystemTest
         /* Create repository.
          */
         initRepository();
+
+        sweeper.setAccount(account);
+        sweeper.setRepository(repository);
+        sweeper.start();
     }
 
     @After
     public void tearDown()
         throws InterruptedException
     {
+        sweeper.stop();
         repository.shutdown();
         metaDataStore.close();
         if (root != null) {
