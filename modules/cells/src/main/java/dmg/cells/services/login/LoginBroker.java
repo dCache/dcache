@@ -14,7 +14,6 @@ import java.util.Set;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellVersion;
 
 import org.dcache.util.Args;
 
@@ -26,6 +25,7 @@ public class LoginBroker
 {
     private final static Logger _log =
         LoggerFactory.getLogger(LoginBroker.class);
+    private final Thread _cleanerThread;
 
     private int _delay = 3;
 
@@ -69,8 +69,18 @@ public class LoginBroker
     {
         super(name, argString, false);
 
-        getNucleus().newThread(this,"Cleaner").start();
+        _cleanerThread = getNucleus().newThread(this, "Cleaner");
+        _cleanerThread.start();
         start();
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        if (_cleanerThread != null) {
+            _cleanerThread.interrupt();
+        }
+        super.cleanUp();
     }
 
     public static final String hh_ls = "[-binary] [-protocol=<protocol_1,...,protocol_n>] [-time] [-all]";
