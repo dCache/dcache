@@ -124,6 +124,11 @@ public class CopyFilter implements Filter
             return SOURCE_FOR_HEADER.get(value);
         }
 
+        public static Iterable<String> headerValues()
+        {
+            return SOURCE_FOR_HEADER.keySet();
+        }
+
         CredentialSource(String value)
         {
             _headerValue = value;
@@ -261,7 +266,7 @@ public class CopyFilter implements Filter
             throw new ErrorResponseException(Status.SC_BAD_REQUEST,
                     "HTTP header 'Credential' has unknown value \"" +
                     headerValue + "\".  Valid values are: " +
-                    Joiner.on(',').join(CredentialSource.values()));
+                    Joiner.on(',').join(CredentialSource.headerValues()));
         }
 
         if (!type.isSupported(source)) {
