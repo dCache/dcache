@@ -43,13 +43,11 @@ skip=0
 ##  URL has the 'srm' schema.
 haveSrm=0
 
-##  haveRemote is a boolean variable that describes whether one of the
-##  transfers is remote to the SRM endpoint.  If so, the SRM will need
-##  to do a 3rd-party transfer.  A value of '0' indicates that the
-##  transfer is between the client-local machine and the SRM; a value
-##  of '1' indicates that the transfer is (likely) a third-party
-##  transfer.
-haveRemote=0
+##  delegationMakesSense is a boolean variable that describes whether
+##  the user-supplied URLs suggest that delegation would be useful.  A
+##  value of '0' indicates that delegation is not useful; a value of
+##  '1' indicates that the transfer will likely require delegation.
+delegationMakesSense=0
 
 ##  haveDelegate is a boolean variable that describes whether the user
 ##  has supplied the '-delegate' option.  A value of '0' indicates the
@@ -72,17 +70,17 @@ for arg in $args;
           if [ "$haveSrm" = 0 ]; then
 	      haveSrm=1
           else
-              haveRemote=1
+              delegationMakesSense=1
           fi
 	  skip=1
 	  continue
 	  ;;
-      file:*)
+      file:*|http:*)
 	  skip=1
 	  continue
 	  ;;
-      gsiftp:*|gridftp:*|http:*)
-	  haveRemote=1
+      gsiftp:*|gridftp:*|https:*)
+	  delegationMakesSense=1
 	  skip=1
 	  continue
 	  ;;
@@ -211,7 +209,7 @@ if [ "${skip}" -eq 0 ]
 	fi
     fi
 else
-    if [ "$haveSrm" = 1 ] && [ "$haveRemote" = 1 ] && [ "$haveDelegate" = 0 ]; then
+    if [ "$haveSrm" = 1 ] && [ "$delegationMakesSense" = 1 ] && [ "$haveDelegate" = 0 ]; then
         delegate=-delegate=true
     fi
     "${SRM_PATH}/lib/srm" -copy $delegate "$@"
