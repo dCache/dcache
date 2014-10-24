@@ -51,6 +51,7 @@ public class TransferObserverV1
     private final Args          _args;
     private final DoorHandler   _doors;
     private final String        _loginBroker;
+    private final Thread        _workerThread;
     private       List<IoEntry> _ioList;
     private       long          _update         = 120000L;
     private       long          _timeUsed;
@@ -293,7 +294,8 @@ public class TransferObserverV1
             //
             _fieldMap = new FieldMap(_args.getOpt("fieldMap"), _args);
             //
-            _nucleus.newThread(this, "worker").start();
+            _workerThread = _nucleus.newThread(this, "worker");
+            _workerThread.start();
             //
         } catch (Exception e) {
             start();
@@ -368,6 +370,15 @@ public class TransferObserverV1
         {
             return _olderThan;
         }
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        if (_workerThread != null) {
+            _workerThread.interrupt();
+        }
+        super.cleanUp();
     }
 
     public static final String hh_table_help = "";
