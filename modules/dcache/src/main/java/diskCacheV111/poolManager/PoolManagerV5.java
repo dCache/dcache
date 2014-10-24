@@ -151,7 +151,13 @@ public class PoolManagerV5
         } else {
             _watchdog = new WatchdogThread();
         }
-        _log.info("Watchdog : " + _watchdog);
+        _watchdog.start();
+        _log.info("Watchdog : {}", _watchdog);
+    }
+
+    public void shutdown() throws InterruptedException
+    {
+        _watchdog.interrupt();
     }
 
     @Override
@@ -181,17 +187,18 @@ public class PoolManagerV5
         writer.println("#");
     }
 
-    private class WatchdogThread implements Runnable {
+    private class WatchdogThread extends Thread {
         private long _deathDetected = 10L * 60L * 1000L; // 10 minutes
         private long _sleepTimer = 1L * 60L * 1000L; // 1 minute
         private long _watchdogSequenceCounter;
 
         public WatchdogThread() {
-            new Thread(this, "watchdog").start();
-            _log.info("WatchdogThread initialized with : " + this);
+            super("watchdog");
         }
 
         public WatchdogThread(String parameter) {
+            this();
+
             //
             // [<deathDetection>]:[<sleeper>]
             //
@@ -227,24 +234,20 @@ public class PoolManagerV5
             } catch (Exception ee) {
                 _log.warn("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
             }
-            new Thread(this, "watchdog").start();
-            _log.info("WatchdogThread initialized with : " + this);
         }
 
         @Override
         public void run() {
-            _log.info("watchdog thread activated");
-            while (true) {
-                try {
+            _log.debug("watchdog thread activated");
+            try {
+                while (true) {
                     Thread.sleep(_sleepTimer);
-                } catch (InterruptedException e) {
-                    _log.info("watchdog thread interrupted");
-                    break;
+                    runWatchdogSequence(_deathDetected);
+                    _watchdogSequenceCounter++;
                 }
-                runWatchdogSequence(_deathDetected);
-                _watchdogSequenceCounter++;
+            } catch (InterruptedException ignored) {
             }
-            _log.info("watchdog finished");
+            _log.debug("watchdog finished");
         }
 
         @Override
@@ -306,11 +309,7 @@ public class PoolManagerV5
         pw.println("           PoolUp : "+_counterPoolUp ) ;
         pw.println("   SelectReadPool : "+_counterSelectReadPool ) ;
         pw.println("  SelectWritePool : "+_counterSelectWritePool ) ;
-        if( _watchdog == null ){
-             pw.println("         Watchdog : disabled" ) ;
-        }else{
-             pw.println("         Watchdog : "+_watchdog ) ;
-        }
+        pw.println("         Watchdog : "+_watchdog ) ;
     }
     public final static String hh_set_max_threads = "# OBSOLETE";
     public String ac_set_max_threads_$_1(Args args)

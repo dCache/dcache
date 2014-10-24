@@ -11,7 +11,7 @@
   <context:annotation-config/>
 
   <bean id="poolManager" class="diskCacheV111.poolManager.PoolManagerV5"
-        init-method="init">
+        init-method="init" destroy-method="shutdown">
     <description>Pool manager</description>
     <property name="poolSelectionUnit" ref="psu"/>
     <property name="costModule" ref="cm"/>
