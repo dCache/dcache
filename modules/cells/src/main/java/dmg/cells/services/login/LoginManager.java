@@ -4,6 +4,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,6 +44,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEvent;
 import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
@@ -86,13 +89,13 @@ public class LoginManager
     private final ScheduledExecutorService _scheduledExecutor;
     private final ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
     private final CellPath _authenticator;
-    private final KeepAliveThread _keepAlive;
+    private final KeepAliveTask _keepAlive;
     private final LoginBrokerHandler _loginBrokerHandler;
     private final String _protocol;
     private final Class<?> _authClass;
     private final LoginCellFactory _loginCellFactory;
 
-    private volatile boolean _sending;
+    private volatile boolean _sending = true;
     private volatile int _maxLogin = -1;
 
     /**
@@ -171,10 +174,14 @@ public class LoginManager
                 LOGGER.info("Maximum logins set to: {}", _maxLogin);
             }
 
+            _scheduledExecutor = Executors.newSingleThreadScheduledExecutor(_nucleus);
+
             // keep alive
             long keepAlive = TimeUnit.SECONDS.toMillis(_args.getLongOption("keepAlive", 0L));
             LOGGER.info("Keep alive set to {} ms", keepAlive);
-            _keepAlive = new KeepAliveThread(keepAlive);
+            _keepAlive = new KeepAliveTask();
+            _keepAlive.schedule(keepAlive);
+
 
             // get the location manager
             _locationManager = _args.getOpt("lm");
@@ -185,8 +192,6 @@ public class LoginManager
                     .setArgs(childArgs)
                     .build();
             _version = new CellVersion(Version.of(_loginCellFactory));
-
-            _scheduledExecutor = Executors.newSingleThreadScheduledExecutor(_nucleus);
 
             String loginBroker = _args.getOpt("loginBroker");
             if (loginBroker != null) {
@@ -216,10 +221,11 @@ public class LoginManager
             }
 
             _listenThread = new ListenThread(listenPort);
-
             _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
-            _nucleus.newThread(new LocationThread(), getCellName() + "-location").start();
-            _nucleus.newThread(_keepAlive, getCellName() + "-keepalive").start();
+
+            if (_locationManager != null) {
+                new AsynchronousLocationRegistrationTask(_locationManager).run();
+            }
         } catch (IllegalArgumentException e) {
             start();
             kill();
@@ -346,94 +352,87 @@ public class LoginManager
     //
     // the 'send to location manager thread'
     //
-    private class LocationThread implements Runnable
+    private class AsynchronousLocationRegistrationTask implements CellMessageAnswerable, Runnable
     {
+        private final CellMessage _msg;
+        private final int _port;
+        private final CellPath _path;
+
+        public AsynchronousLocationRegistrationTask(String dest)
+        {
+            _port = _listenThread.getListenPort();
+            _path = new CellPath(dest);
+            _msg = new CellMessage(_path, "listening on " + getCellName() + " " + _port);
+        }
+
         @Override
         public void run()
         {
-            int listenPort = _listenThread.getListenPort();
-
-            LOGGER.info("Sending 'listeningOn {} {}'", getCellName(), listenPort);
-            _sending = true;
-            String dest = _locationManager;
-            if (dest == null) {
-                return;
-            }
-            CellPath path = new CellPath(dest);
-            CellMessage msg =
-                    new CellMessage(
-                            path,
-                            "listening on " + getCellName() + " " + listenPort);
-
-            for (int i = 0; !Thread.interrupted(); i++) {
-                LOGGER.info("Sending ({}) 'listening on {} {}'", i, getCellName(), listenPort);
-
-                try {
-                    if (getNucleus().sendAndWait(msg, 5000) != null) {
-                        LOGGER.info("Portnumber successfully sent to {}", dest);
-                        _sending = false;
-                        break;
-                    }
-                    LOGGER.warn("No reply from {}", dest);
-                } catch (InterruptedException ie) {
-                    LOGGER.warn("'send portnumber thread' interrupted");
-                    break;
-                } catch (Exception ee) {
-                    LOGGER.warn("Problem sending portnumber {}", ee.toString());
-                }
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException ie) {
-                    LOGGER.warn("'send portnumber thread' (sleep) interrupted");
-                    break;
-                }
-            }
-        }
-    }
-
-    private class KeepAliveThread implements Runnable
-    {
-        private long _keepAlive;
-
-        private KeepAliveThread(long keepAlive)
-        {
-            _keepAlive = keepAlive;
+            LOGGER.info("Sending 'listening on {} {}'", getCellName(), _port);
+            sendMessage(_msg, this, MoreExecutors.sameThreadExecutor(), 5000);
         }
 
         @Override
-        public synchronized void run()
+        public void answerArrived(CellMessage request, CellMessage answer)
         {
-            LOGGER.info("KeepAlive Thread started");
-            while (!Thread.interrupted()) {
-                try {
-                    if (_keepAlive < 1) {
-                        wait();
-                    } else {
-                        wait(_keepAlive);
-                    }
-                } catch (InterruptedException ie) {
-                    LOGGER.info("KeepAlive thread done (interrupted)");
-                    break;
-                }
+            LOGGER.info("Port number successfully sent to {}", _path);
+            _sending = false;
+        }
 
-                if (_keepAlive > 0) {
-                    try {
-                        runKeepAlive();
-                    } catch (Throwable t) {
-                        LOGGER.warn("runKeepAlive reported : {}", t.toString());
+        @Override
+        public void exceptionArrived(CellMessage request, Exception exception)
+        {
+            LOGGER.warn("Problem sending port number {}", exception.toString());
+            _scheduledExecutor.schedule(this, 10, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void answerTimedOut(CellMessage request)
+        {
+            LOGGER.warn("No reply from {}", _path);
+            _scheduledExecutor.schedule(this, 10, TimeUnit.SECONDS);
+        }
+    }
+
+    private class KeepAliveTask implements Runnable
+    {
+        private ScheduledFuture<?> _future;
+        private long _keepAlive;
+
+        @Override
+        public void run()
+        {
+            try {
+                for (Object o : _children.values()) {
+                    if (o instanceof KeepAliveListener) {
+                        try {
+                            ((KeepAliveListener) o).keepAlive();
+                        } catch (Throwable t) {
+                            LOGGER.warn("Problem reported by : {} : {}", o, t);
+                        }
                     }
                 }
+            } catch (Throwable t) {
+                LOGGER.warn("runKeepAlive reported : {}", t.toString());
             }
         }
 
-        private synchronized void setKeepAlive(long keepAlive)
+        public synchronized void schedule(long keepAlive)
         {
             _keepAlive = keepAlive;
+            if (_future != null) {
+                _future.cancel(false);
+            }
+            if (_keepAlive > 0) {
+                _future = _scheduledExecutor.scheduleWithFixedDelay(this, _keepAlive, _keepAlive,
+                                                                    TimeUnit.MILLISECONDS);
+            } else {
+                _future = null;
+            }
             LOGGER.info("Keep Alive value changed to {}", _keepAlive);
-            notifyAll();
         }
 
-        private long getKeepAlive()
+        public synchronized long getKeepAlive()
         {
             return _keepAlive;
         }
@@ -443,21 +442,8 @@ public class LoginManager
     public String ac_set_keepalive_$_1(Args args)
     {
         long keepAlive = Long.parseLong(args.argv(0));
-        _keepAlive.setKeepAlive(keepAlive * 1000L);
+        _keepAlive.schedule(keepAlive * 1000L);
         return "keepAlive value set to " + keepAlive + " seconds";
-    }
-
-    public void runKeepAlive()
-    {
-        for (Object o : _children.values()) {
-            if (o instanceof KeepAliveListener) {
-                try {
-                    ((KeepAliveListener) o).keepAlive();
-                } catch (Throwable t) {
-                    LOGGER.warn("Problem reported by : {} : {}", o, t);
-                }
-            }
-        }
     }
 
     // the cell implementation
