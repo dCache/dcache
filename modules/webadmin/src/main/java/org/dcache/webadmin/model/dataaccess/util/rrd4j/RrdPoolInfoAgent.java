@@ -59,7 +59,6 @@ documents or software obtained from this server.
  */
 package org.dcache.webadmin.model.dataaccess.util.rrd4j;
 
-import com.google.common.base.Preconditions;
 import org.rrd4j.core.RrdDb;
 import org.rrd4j.core.RrdDef;
 import org.rrd4j.core.Sample;
@@ -82,8 +81,8 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.webadmin.model.businessobjects.rrd4j.PoolQueuePlotData;
-import org.dcache.webadmin.model.businessobjects.rrd4j.PoolQueuePlotData.PoolQueueHistogram;
+import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData;
+import org.dcache.webadmin.model.businessobjects.PoolQueuePlotData.PoolQueueHistogram;
 
 import static org.rrd4j.ConsolFun.LAST;
 import static org.rrd4j.DsType.GAUGE;
