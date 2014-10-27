@@ -69,6 +69,7 @@ This package contains the client components.
 %attr(0755,root,root) /usr/bin/srm-abort-files
 %attr(0755,root,root) /usr/bin/srm-abort-request
 %attr(0755,root,root) /usr/bin/srm-release-files
+%attr(0755,root,root) /usr/bin/srmfs
 %attr(0755,root,root) /usr/share/srm/lib/srm
 %attr(0755,root,root) /usr/share/srm/lib/url-copy.sh
 /usr/share/srm/lib
