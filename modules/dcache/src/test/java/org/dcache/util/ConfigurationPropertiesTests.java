@@ -93,6 +93,8 @@ public class ConfigurationPropertiesTests {
 
     private static final String EXPANDING_PROPERTY_NAME = "expanding-key";
 
+    private static final String SCOPED_PROPERTY_NAME = "scoped/property";
+
     private ConfigurationProperties _properties;
     private ConfigurationProperties _initiallyEmptyProperties;
     private ConfigurationProperties _standardProperties;
@@ -293,6 +295,11 @@ public class ConfigurationPropertiesTests {
             assertEquals( "Property " + FORBIDDEN_PROPERTY_W_ERROR_NAME + ": " +
                           "may not be adjusted; " + FORBIDDEN_PROPERTY_W_ERROR_VALUE, e.getMessage());
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testScopedPropertyPut() {
+        _properties.put(SCOPED_PROPERTY_NAME, "some value");
     }
 
     @Test

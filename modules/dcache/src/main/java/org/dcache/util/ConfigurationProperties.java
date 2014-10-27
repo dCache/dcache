@@ -271,6 +271,9 @@ public class ConfigurationProperties
         if (existingKey != null) {
             checkKeyValid(existingKey, key);
             checkDataValid(existingKey, value);
+        } else if (name.indexOf('/') > -1) {
+            _problemConsumer.error(
+                    "Property " + name + " is a scoped property. Scoped properties are no longer supported.");
         } else if (!_usageChecker.isStandardProperty(defaults, name)) {
             // TODO: It would be nice if we could check whether the property is actually
             // used, ie if it appears as part of the value of a standard property. To do this
