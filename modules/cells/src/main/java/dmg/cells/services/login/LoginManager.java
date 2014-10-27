@@ -186,7 +186,7 @@ public class LoginManager
                     .build();
             _version = new CellVersion(Version.of(_loginCellFactory));
 
-            _scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+            _scheduledExecutor = Executors.newSingleThreadScheduledExecutor(_nucleus);
 
             String loginBroker = _args.getOpt("loginBroker");
             if (loginBroker != null) {
