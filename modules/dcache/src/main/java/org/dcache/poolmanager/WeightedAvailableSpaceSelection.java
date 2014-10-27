@@ -278,6 +278,10 @@ public class WeightedAvailableSpaceSelection implements Serializable
             }
         }
 
-        throw new RuntimeException("Unreachable statement");
+        if (sum == Double.POSITIVE_INFINITY) {
+            throw new IllegalStateException("WASS overflow: Configured space cost factor (" + spaceCostFactor + ") is too large.");
+        }
+
+        throw new RuntimeException("Unreachable statement.");
     }
 }
