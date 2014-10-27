@@ -1755,13 +1755,13 @@ public class JdbcFs implements FileSystemProvider {
 
             Stat destStat = _sqlDriver.stat(dbConnection, destDir);
             if ((destStat.getMode() & UnixPermission.S_IFDIR) == 0) {
-                throw new NotDirChimeraException();
+                throw new NotDirChimeraException(destDir);
             }
 
             FsInode destInode = _sqlDriver.inodeOf(dbConnection, destDir, dest);
             FsInode srcInode = _sqlDriver.inodeOf(dbConnection, srcDir, source);
             if (srcInode == null) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(source);
             }
 
             if (destInode != null) {
@@ -1777,7 +1777,7 @@ public class JdbcFs implements FileSystemProvider {
                 * renaming only into existing same type is allowed
                 */
                 if ((statSrc.getMode() & UnixPermission.S_TYPE) != (statDest.getMode() & UnixPermission.S_TYPE)) {
-                    throw new FileExistsChimeraFsException();
+                    throw new FileExistsChimeraFsException(dest);
                 }
 
                 _sqlDriver.remove(dbConnection, destDir, dest);
