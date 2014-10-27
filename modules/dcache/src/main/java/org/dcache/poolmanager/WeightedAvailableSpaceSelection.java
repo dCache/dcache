@@ -279,7 +279,7 @@ public class WeightedAvailableSpaceSelection implements Serializable
         }
 
         if (sum == Double.POSITIVE_INFINITY) {
-            throw new IllegalStateException("WASS overflow: Space cost factor is too large.");
+            throw new IllegalStateException("WASS overflow: Configured space cost factor (" + spaceCostFactor + ") is too large.");
         }
 
         throw new RuntimeException("Unreachable statement.");
