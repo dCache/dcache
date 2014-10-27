@@ -33,7 +33,7 @@
 
     <ciManagement>
         <system>jenkins</system>
-        <url>http://svn.dcache.org/build/job/dCache-master/</url>
+        <url>https://ci.dcache.org/job/dCache-master/</url>
     </ciManagement>
 
     <properties>
@@ -90,9 +90,9 @@
     </prerequisites>
 
     <scm>
+        <url>https://github.com/dCache/dcache</url>
         <connection>scm:git:https://github.com/dCache/dcache.git</connection>
-        <developerConnection>scm:git:git@github.com:dCache/dcache.git</developerConnection>
-        <url>https://github.com/dCache/dcache/tree/master</url>
+        <developerConnection>scm:git:ssh://git@github.com/dCache/dcache.git</developerConnection>
     </scm>
 
     <repositories>
@@ -1140,8 +1140,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
-                    <branchBase>svn+ssh://svn.dcache.org/data/svn/dCache/branches</branchBase>
-                    <tagBase>svn+ssh://svn.dcache.org/data/svn/dCache/tags</tagBase>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                 </configuration>
