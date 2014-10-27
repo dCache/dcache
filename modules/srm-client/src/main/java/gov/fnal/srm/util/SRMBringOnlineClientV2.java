@@ -382,8 +382,8 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             say(e.toString());
         } finally {
             report.dumpReport();
-            if(!report.everythingAllRight()){
-                System.err.println("srm bring online of at least one file failed or not completed");
+            if (!report.everythingAllRight()){
+                report.reportErrors(System.err);
                 System.exit(1);
             }
 

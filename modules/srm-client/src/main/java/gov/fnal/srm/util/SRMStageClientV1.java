@@ -223,7 +223,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
             report.dumpReport();
             if(!report.everythingAllRight()){
                 //This means that some failure occurred while staging file onto dCache
-                System.err.println("srm stage of at least one file failed or not completed");
+                report.reportErrors(System.err);
                 System.exit(1);
             }
         }
