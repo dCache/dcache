@@ -64,20 +64,17 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-
-/*
- * CopyJob.java
- *
- * Created on January 28, 2003, 1:37 PM
- */
-
 package gov.fnal.srm.util;
 
+import com.google.common.base.Strings;
 import org.apache.axis.types.URI;
 import org.globus.util.GlobusURL;
 
+import java.rmi.RemoteException;
+
 import org.dcache.srm.Logger;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
+import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
@@ -86,10 +83,9 @@ import org.dcache.srm.v2_2.SrmPutDoneResponse;
 import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
-/**
- *
- * @author  timur
- */
+import org.dcache.srm.v2_2.TStatusCode;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SRMV2CopyJob implements CopyJob {
     private GlobusURL from;
@@ -106,23 +102,14 @@ public class SRMV2CopyJob implements CopyJob {
 
 
     public SRMV2CopyJob(GlobusURL from, GlobusURL to, ISRM srm, String requestToken, Logger logger, GlobusURL surl, boolean isSrmPrepareToGet, SRMClient client) {
-        if(from == null || to == null) {
-            throw new IllegalArgumentException("both source and destination"+
-            "must be non-null");
-        }
-        this.from = from;
-        this.to = to;
-        this.srm = srm;
-        this.requestToken = requestToken;
-        this.logger = logger;
-        this.surl = surl;
+        this.from = checkNotNull(from);
+        this.to = checkNotNull(to);
+        this.srm = checkNotNull(srm);
+        this.requestToken = checkNotNull(requestToken);
+        this.logger = checkNotNull(logger);
+        this.surl = checkNotNull(surl);
         this.isSrmPrepareToGet = isSrmPrepareToGet;
-        this.client = client;
-    }
-
-    public SRMV2CopyJob(GlobusURL from, GlobusURL to, Logger logger, GlobusURL surl, boolean isSrmPrepareToGet, SRMClient client) {
-        this(from,to, null,null,logger,surl,isSrmPrepareToGet,client);
-
+        this.client = checkNotNull(client);
     }
 
     @Override
@@ -155,92 +142,88 @@ public class SRMV2CopyJob implements CopyJob {
 
     @Override
     public void done(boolean success, String error) {
-        synchronized(this) {
-            if(isDone) {
+        synchronized (this) {
+            if (isDone) {
                 return;
             }
+            isDone = true;
         }
-        if(success) {
-            if(isSrmPrepareToGet) {
-                client.setReportSucceeded(surl,null);
-            }
-            else {
-                client.setReportSucceeded(null,surl);
-            }
 
-        }
-        else
-        {
-            error = "received TURL but failed to copy: "+error;
-            if(isSrmPrepareToGet) {
-                client.setReportFailed(surl,null,error);
+        try {
+            URI surlArray[] = new URI[]{ new URI(surl.getURL()) };
+            if (!success) {
+                SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
+                srmAbortFilesRequest.setRequestToken(requestToken);
+                srmAbortFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
+                SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
+                if (srmAbortFilesResponse == null) {
+                    logger.elog("srmAbortFilesResponse is null");
+                } else {
+                    TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
+                    if (returnStatus == null) {
+                        logger.elog("srmAbortFiles return status is null");
+                    } else {
+                        logger.log("srmAbortFiles status code=" + returnStatus.getStatusCode());
+                    }
+                }
+            } else if (isSrmPrepareToGet) {
+                SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
+                srmReleaseFilesRequest.setRequestToken(requestToken);
+                srmReleaseFilesRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
+                SrmReleaseFilesResponse srmReleaseFilesResponse =
+                        srm.srmReleaseFiles(srmReleaseFilesRequest);
+                TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
+                if (returnStatus == null) {
+                    success = false;
+                    error = "srmReleaseFilesResponse return status is null";
+                } else {
+                    logger.log("srmReleaseFilesResponse status code=" + returnStatus.getStatusCode());
+                }
             } else {
-                client.setReportFailed(null,surl,error);
+                SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
+                srmPutDoneRequest.setRequestToken(requestToken);
+                srmPutDoneRequest.setArrayOfSURLs(new ArrayOfAnyURI(surlArray));
+                SrmPutDoneResponse srmPutDoneResponse =srm.srmPutDone(srmPutDoneRequest);
+                TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
+                if (returnStatus == null) {
+                    success = false;
+                    error = "srmPutDone return status is null";
+                } else if (returnStatus.getStatusCode() != TStatusCode.SRM_SUCCESS) {
+                    success = false;
+                    ArrayOfTSURLReturnStatus arrayOfFileStatuses = srmPutDoneResponse.getArrayOfFileStatuses();
+                    if (arrayOfFileStatuses != null &&
+                            arrayOfFileStatuses.getStatusArray() != null &&
+                            arrayOfFileStatuses.getStatusArray().length > 0 &&
+                            arrayOfFileStatuses.getStatusArray()[0].getStatus().getStatusCode() != TStatusCode.SRM_SUCCESS &&
+                            !Strings.isNullOrEmpty(arrayOfFileStatuses.getStatusArray()[0].getStatus().getExplanation())) {
+                        error = arrayOfFileStatuses.getStatusArray()[0].getStatus().getExplanation();
+                    } else {
+                        error = returnStatus.getExplanation();
+                    }
+                }
             }
-
-        }
-
-        if(srm != null) {
-            try {
-                URI surlArray[] = new URI[1];
-                surlArray[0] =
-                    new URI(surl.getURL());
-                if(success) {
-                    if(isSrmPrepareToGet) {
-                        SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();
-                        srmReleaseFilesRequest.setRequestToken(requestToken);
-                        srmReleaseFilesRequest.setArrayOfSURLs(
-                                new ArrayOfAnyURI(surlArray));
-                        SrmReleaseFilesResponse srmReleaseFilesResponse =
-                            srm.srmReleaseFiles(srmReleaseFilesRequest);
-                        TReturnStatus returnStatus = srmReleaseFilesResponse.getReturnStatus();
-                        if(returnStatus == null) {
-                            logger.elog("srmReleaseFilesResponse return status is null");
-                            return;
-                        }
-                        logger.log("srmReleaseFilesResponse status code="+returnStatus.getStatusCode());
-                    } else {
-                        SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();
-                        srmPutDoneRequest.setRequestToken(requestToken);
-                        srmPutDoneRequest.setArrayOfSURLs(
-                                new ArrayOfAnyURI(surlArray));
-                        SrmPutDoneResponse srmPutDoneResponse =
-                            srm.srmPutDone(srmPutDoneRequest);
-                        TReturnStatus returnStatus = srmPutDoneResponse.getReturnStatus();
-                        if(returnStatus == null) {
-                            logger.elog("srmPutDone return status is null");
-                            return;
-                        }
-                        logger.log("srmPutDone status code="+returnStatus.getStatusCode());
-
-                    }
-                }
-                else {
-                    SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
-                    srmAbortFilesRequest.setRequestToken(requestToken);
-                    srmAbortFilesRequest.setArrayOfSURLs(
-                            new ArrayOfAnyURI(surlArray));
-                    SrmAbortFilesResponse srmAbortFilesResponse = srm.srmAbortFiles(srmAbortFilesRequest);
-                    if(srmAbortFilesResponse == null) {
-                        logger.elog(" srmAbortFilesResponse is null");
-                    } else {
-                        TReturnStatus returnStatus = srmAbortFilesResponse.getReturnStatus();
-                        if(returnStatus == null) {
-                            logger.elog("srmAbortFiles return status is null");
-                            return;
-                        }
-                        logger.log("srmAbortFiles status code="+returnStatus.getStatusCode());
-                    }
-
-                }
-
-            } catch(Exception e) {
+        } catch (URI.MalformedURIException | RemoteException e) {
+            if (success) {
+                success = false;
+                error = e.toString();
+            } else {
                 logger.elog(e.toString());
             }
-
-        }
-        synchronized(this) {
-            isDone = true;
+        } finally {
+            if (success) {
+                if (isSrmPrepareToGet) {
+                    client.setReportSucceeded(surl, null);
+                } else {
+                    client.setReportSucceeded(null, surl);
+                }
+            } else {
+                error = "received TURL but failed to copy: " + error;
+                if (isSrmPrepareToGet) {
+                    client.setReportFailed(surl, null, error);
+                } else {
+                    client.setReportFailed(null, surl, error);
+                }
+            }
         }
     }
 }
