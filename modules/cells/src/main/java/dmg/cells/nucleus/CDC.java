@@ -1,5 +1,7 @@
 package dmg.cells.nucleus;
 
+import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.Longs;
 import org.slf4j.MDC;
 
 import dmg.util.TimebasedCounter;
@@ -42,12 +44,14 @@ import org.dcache.commons.util.NDC;
  */
 public class CDC implements AutoCloseable
 {
-    public final static String MDC_DOMAIN = "cells.domain";
-    public final static String MDC_CELL = "cells.cell";
-    public final static String MDC_SESSION = "cells.session";
+    public static final String MDC_DOMAIN = "cells.domain";
+    public static final String MDC_CELL = "cells.cell";
+    public static final String MDC_SESSION = "cells.session";
 
-    private final static TimebasedCounter _sessionCounter =
+    private static final TimebasedCounter _sessionCounter =
         new TimebasedCounter();
+
+    private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
 
     private final NDC _ndc;
     private final String _session;
@@ -151,13 +155,13 @@ public class CDC implements AutoCloseable
      * with a high probability unique in this JVM.
      *
      * As long as each JVM uses its own prefix, the identifier will be
-     * unique over multible JVMs.
+     * unique over multiple JVMs.
      *
-     * @see dmg.util.TimedbasedCounter
+     * @see dmg.util.TimebasedCounter
      */
     static public void createSession(String prefix)
     {
-        setSession(prefix + _sessionCounter.next());
+        setSession(prefix + SESSION_ENCODING.encode(Longs.toByteArray(_sessionCounter.next())));
     }
 
     /**
@@ -167,7 +171,7 @@ public class CDC implements AutoCloseable
      * documentation of TimebasedCounter for the limits).
      *
      * @throws IllegalStateException if domain name is not set in MDC
-     * @see dmg.util.TimedbasedCounter
+     * @see dmg.util.TimebasedCounter
      */
     static public void createSession()
     {
