@@ -307,6 +307,10 @@ public class WassPartition extends ClassicPartition
             }
         }
 
+        if (sum == Double.POSITIVE_INFINITY) {
+            throw new IllegalStateException("WASS overflow: Configured space cost factor (" + _spaceCostFactor + ") is too large.");
+        }
+
         throw new RuntimeException("Unreachable statement");
     }
 
