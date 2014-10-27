@@ -1120,7 +1120,8 @@ public class ChimeraNameSpaceProvider
              */
             try {
                 ExtendedInode inodeOfPath = parentOfPath.inodeOf(path.getName());
-                if (!options.contains(CreateOption.OVERWRITE_EXISTING)) {
+                if (!options.contains(CreateOption.OVERWRITE_EXISTING) ||
+                        (inodeOfPath.statCache().getMode() & UnixPermission.S_TYPE) != UnixPermission.S_IFREG) {
                     throw new FileExistsCacheException("File exists: " + path);
                 }
                 /* User must be authorized to delete existing file.
