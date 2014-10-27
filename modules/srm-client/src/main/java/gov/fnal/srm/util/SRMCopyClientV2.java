@@ -428,7 +428,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         } finally {
             report.dumpReport();
             if(!report.everythingAllRight()){
-                System.err.println("srm copy of at least one file failed or not completed");
+                report.reportErrors(System.err);
             }
         }
     }
