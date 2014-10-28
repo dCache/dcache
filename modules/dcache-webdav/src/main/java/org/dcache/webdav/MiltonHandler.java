@@ -33,6 +33,7 @@ public class MiltonHandler
     private HttpManager _httpManager;
     private String _cellName;
     private String _domainName;
+    private boolean _isNameSiteUnique;
 
     public void setHttpManager(HttpManager httpManager)
     {
@@ -45,6 +46,7 @@ public class MiltonHandler
         CellInfo info = endpoint.getCellInfo();
         _cellName = info.getCellName();
         _domainName = info.getDomainName();
+        _isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
     }
 
     @Override
@@ -53,7 +55,7 @@ public class MiltonHandler
         throws IOException, ServletException
     {
         try (CDC ignored = CDC.reset(_cellName, _domainName)) {
-            Transfer.initSession();
+            Transfer.initSession(_isNameSiteUnique, false);
             ServletContext context = ContextHandler.getCurrentContext();
             ServletRequest req = new DcacheServletRequest(request, context);
             ServletResponse resp = new DcacheServletResponse(response);

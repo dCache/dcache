@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 public class DcapProxyIoFactory extends AbstractCell {
 
     private static final Logger _log = LoggerFactory.getLogger(DcapProxyIoFactory.class);
+    private final boolean _isNameSiteUnique;
 
     private PnfsHandler _pnfsHandler;
     private CellStub _poolManagerStub;
@@ -92,8 +93,9 @@ public class DcapProxyIoFactory extends AbstractCell {
         _poolManagerStub = new CellStub(this, poolManager);
     }
 
-    public DcapProxyIoFactory(String cellName, String arguments) {
+    public DcapProxyIoFactory(String cellName, String arguments, boolean isNameSiteUnique) {
         super(cellName, arguments);
+        _isNameSiteUnique = isNameSiteUnique;
     }
 
     ProxyIoAdapter getAdapter(Inode inode, Subject subject, InetSocketAddress client, boolean isWrite) throws CacheException, InterruptedException, IOException {
@@ -105,7 +107,7 @@ public class DcapProxyIoFactory extends AbstractCell {
         final PnfsId  pnfsId = new PnfsId(_fileFileSystemProvider.inodeFromBytes(inode.getFileId()).toString());
 	NDC.push(pnfsId.toString());
         final DcapTransfer transfer = new DcapTransfer(_pnfsHandler, subject);
-        DcapTransfer.initSession();
+        DcapTransfer.initSession(_isNameSiteUnique, false);
 	final int session = (int)transfer.getId();
 	protocolInfo.setSessionId(session);
 

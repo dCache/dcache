@@ -278,7 +278,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                     break;
                 case V41:
                      final NFSv41DeviceManager _dm = this;
-                     _proxyIoFactory = new DcapProxyIoFactory(getCellAddress().getCellName() + "-dcap-proxy", "");
+                     _proxyIoFactory = new DcapProxyIoFactory(getCellAddress().getCellName() + "-dcap-proxy", "",
+                                                              getArgs().getBooleanOption("export"));
                      _proxyIoFactory.setBillingStub(_billingStub);
                      _proxyIoFactory.setFileSystemProvider(_fileFileSystemProvider);
                      _proxyIoFactory.setPnfsHandler(_pnfsHandler);
@@ -441,7 +442,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 final PnfsId pnfsId = new PnfsId(inode.toString());
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid));
 
-                Transfer.initSession();
+                Transfer.initSession(getArgs().getBooleanOption("export"), false);
                 NfsTransfer transfer = _ioMessages.get(stateid);
                 if (transfer == null) {
                     transfer = new NfsTransfer(_pnfsHandler, nfsInode,

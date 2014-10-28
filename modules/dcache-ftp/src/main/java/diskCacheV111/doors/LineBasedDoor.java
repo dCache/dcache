@@ -86,10 +86,9 @@ public class LineBasedDoor
     {
         super.init();
 
-        Transfer.initSession();
+        Transfer.initSession(getArgs().getBooleanOption("hasSiteUniqueName"), true);
 
-        LOGGER.debug("Client host: {}",
-                engine.getInetAddress().getHostAddress());
+        LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
         interpreter = interpreterClass.newInstance();
         parseOptions(interpreter);

@@ -1,6 +1,7 @@
 package org.dcache.util;
 
 import com.google.common.collect.Sets;
+import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
@@ -69,6 +71,8 @@ public class Transfer implements Comparable<Transfer>
 
     private static final TimebasedCounter _sessionCounter =
         new TimebasedCounter();
+
+    private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
 
     protected final PnfsHandler _pnfs;
     protected final long _startedAt;
@@ -398,21 +402,34 @@ public class Transfer implements Comparable<Transfer>
      * the transaction ID format as found in the
      * InfoMessage.getTransaction method.
      *
+     * @param isCellNameSiteUnique True if the cell name is unique throughout this
+     *                             dCache site, that is, it is well known or derived
+     *                             from a well known name.
+     * @param isCellNameTemporallyUnique True if the cell name is temporally unique,
+     *                                   that is, two invocations of initSession will
+     *                                   never have the same cell name.
+     *
      * @throws IllegalStateException when the thread is not already
-     *         associcated with a cell through the CDC.
+     *         associated with a cell through the CDC.
      */
-    public static void initSession()
+    public static void initSession(boolean isCellNameSiteUnique, boolean isCellNameTemporallyUnique)
     {
         Object domainName = MDC.get(CDC.MDC_DOMAIN);
-        if (domainName == null) {
-            throw new IllegalStateException("Missing domain name in MDC");
-        }
         Object cellName = MDC.get(CDC.MDC_CELL);
-        if (cellName == null) {
-            throw new IllegalStateException("Missing cell name in MDC");
+        checkState(domainName != null, "Missing domain name in MDC");
+        checkState(cellName != null, "Missing cell name in MDC");
+
+        StringBuilder session = new StringBuilder();
+        session.append("door:").append(cellName);
+        if (!isCellNameSiteUnique) {
+            session.append('@').append(domainName);
         }
-        CDC.createSession("door:" + cellName + "@" + domainName + ":");
-        NDC.push(CDC.getSession());
+        if (!isCellNameTemporallyUnique) {
+            session.append(':').append(SESSION_ENCODING.encode(Longs.toByteArray(_sessionCounter.next())));
+        }
+        String s = session.toString();
+        CDC.setSession(s);
+        NDC.push(s);
     }
 
     /**
@@ -422,9 +439,9 @@ public class Transfer implements Comparable<Transfer>
     public synchronized String getTransaction()
     {
         if (_session != null) {
-            return _session.toString() + "-" + _id;
+            return _session.toString() + ":" + _id;
         } else if (_cellName != null && _domainName != null) {
-            return "door:" + _cellName + "@" + _domainName + "-" + _id;
+            return "door:" + _cellName + "@" + _domainName + ":" + _id;
         } else {
             return String.valueOf(_id);
         }

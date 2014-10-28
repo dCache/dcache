@@ -48,11 +48,6 @@ public class CDC implements AutoCloseable
     public static final String MDC_CELL = "cells.cell";
     public static final String MDC_SESSION = "cells.session";
 
-    private static final TimebasedCounter _sessionCounter =
-        new TimebasedCounter();
-
-    private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
-
     private final NDC _ndc;
     private final String _session;
     private final String _cell;
@@ -147,40 +142,6 @@ public class CDC implements AutoCloseable
     static public void setSession(String session)
     {
         setMdc(MDC_SESSION, session);
-    }
-
-    /**
-     * Creates and sets a new session identifier. The session
-     * identifier is based on static TimedbasedCounter and is thus
-     * with a high probability unique in this JVM.
-     *
-     * As long as each JVM uses its own prefix, the identifier will be
-     * unique over multiple JVMs.
-     *
-     * @see dmg.util.TimebasedCounter
-     */
-    static public void createSession(String prefix)
-    {
-        setSession(prefix + SESSION_ENCODING.encode(Longs.toByteArray(_sessionCounter.next())));
-    }
-
-    /**
-     * Creates and sets a new session identifier. Uses the domain name
-     * stored in he MDC of the calling thread as a prefix. This
-     * guarantees uniqueness among a cells system (but see
-     * documentation of TimebasedCounter for the limits).
-     *
-     * @throws IllegalStateException if domain name is not set in MDC
-     * @see dmg.util.TimebasedCounter
-     */
-    static public void createSession()
-    {
-        Object domain = MDC.get(MDC_DOMAIN);
-        if (domain == null) {
-            throw new IllegalStateException("Missing domain name in MDC");
-        }
-
-        createSession(domain.toString() + "-");
     }
 
     /**
