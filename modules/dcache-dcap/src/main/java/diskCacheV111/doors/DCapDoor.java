@@ -46,7 +46,7 @@ public class      DCapDoor
     private PrintWriter    _out;
     private String         _host;
     private Subject         _subject;
-    private Thread         _workerThread , _anyThread ;
+    private Thread         _workerThread;
     private int            _commandCounter;
     private String         _lastCommand    = "<init>";
     private Reader         _reader;
@@ -96,8 +96,6 @@ public class      DCapDoor
 	_workerThread = _nucleus.newThread( this , "worker" );
 	_workerThread.start();
 
-//        _anyThread = _nucleus.newThread( this , "anyThread" ) ;
-//        _anyThread.start() ;
         start() ;
     }
 
@@ -121,81 +119,71 @@ public class      DCapDoor
     //       will be interrupted.
     //
     @Override
-    public void run(){
-	if( Thread.currentThread() == _workerThread ){
-            //
-            // check for lock
-            //
+    public void run()
+    {
+        //
+        // check for lock
+        //
 
-            Transfer.initSession();
+        Transfer.initSession();
 
-            _log.info( "Checking DCap lock" ) ;
-            try{
-               while( true ){
-                   String lock = (String)_nucleus.getDomainContext().get("dcapLock") ;
-                   if( lock == null ) {
-                       break;
-                   }
-                   TimeUnit.SECONDS.sleep(5);
-               }
-
-            }catch(InterruptedException iee){
-               _log.info("Interrupted the 'dcap' lock" ) ;
-               _log.info( "ComThread : Client communication Thread finished" );
-               _stateChanged( __connectionLostEvent ) ;
-               return ;
-            }
-            _log.info("DCapLock released");
-            _dcapLock = false ;
-
-            try {
-                while (true) {
-                    if ((_lastCommand = _in.readLine()) == null) {
-                        break;
-                    }
-
-                    if(_lastCommand.length() == 0) {
-                        continue;
-                    }
-
-                    _commandCounter++;
-                    _log.info("Executing command: " + _lastCommand);
-                    VspArgs args;
-                    try {
-                        args = new VspArgs(_lastCommand);
-                    }catch(IllegalArgumentException e) {
-                        println("protocol violation: " + e.getMessage());
-                        _log.debug("protocol violation [{}] from {}", e.getMessage(), _engine.getInetAddress());
-                        break;
-                    }
-
-                    if (execute(args) > 0) {
-                        println("0 0 server byebye");
-                        _log.info("ComThread : protocol ended");
-                        break;
-                    }
+        _log.info("Checking DCap lock");
+        try {
+            while (true) {
+                String lock = (String) _nucleus.getDomainContext().get("dcapLock");
+                if (lock == null) {
+                    break;
                 }
-            } catch (IOException e) {
-                _log.warn("Got IO exception " +e.toString() + " from: " + _engine.getInetAddress());
-            } catch (Exception e) {
-                _log.warn("ComThread : got " + e, e);
-            }finally{
-                _out.close();
+                TimeUnit.SECONDS.sleep(5);
             }
-
-	    _log.info( "ComThread : Client communication Thread finished" );
-            _stateChanged( __connectionLostEvent ) ;
-	}else if( Thread.currentThread() == _anyThread  ){
-            try{
-                 _log.info( "AnyThread : started" ) ;
-                 Thread.sleep( 60 * 60 * 1000 )  ;
-                 _log.info( "AnyThread : woke up" ) ;
-            }catch(InterruptedException ie ){
-                _log.info( "AnyThread : was interrupted" ) ;
-            }
-            _log.info( "AnyThread : finished" ) ;
+        } catch (InterruptedException iee) {
+            _log.info("Interrupted the 'dcap' lock");
+            _log.info("ComThread : Client communication Thread finished");
+            _stateChanged(__connectionLostEvent);
+            return;
         }
+        _log.info("DCapLock released");
+        _dcapLock = false;
+
+        try {
+            while (true) {
+                if ((_lastCommand = _in.readLine()) == null) {
+                    break;
+                }
+
+                if (_lastCommand.length() == 0) {
+                    continue;
+                }
+
+                _commandCounter++;
+                _log.info("Executing command: " + _lastCommand);
+                VspArgs args;
+                try {
+                    args = new VspArgs(_lastCommand);
+                } catch (IllegalArgumentException e) {
+                    println("protocol violation: " + e.getMessage());
+                    _log.debug("protocol violation [{}] from {}", e.getMessage(), _engine.getInetAddress());
+                    break;
+                }
+
+                if (execute(args) > 0) {
+                    println("0 0 server byebye");
+                    _log.info("ComThread : protocol ended");
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            _log.warn("Got IO exception " + e + " from: " + _engine.getInetAddress());
+        } catch (Exception e) {
+            _log.warn("ComThread : got " + e, e);
+        } finally {
+            _out.close();
+        }
+
+        _log.info("ComThread : Client communication Thread finished");
+        _stateChanged(__connectionLostEvent);
     }
+
     private static final int __connectionLostEvent = 1 ;
     private static final int __weWereKilledEvent   = 2 ;
     private static final int __abortCacheFinishedEvent = 3 ;
