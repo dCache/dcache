@@ -2,6 +2,8 @@ package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.util.CollectionFactory;
+import dmg.util.TimebasedCounter;
 
 /**
   *
@@ -41,7 +44,8 @@ class CellGlue {
        CollectionFactory.newConcurrentHashMap();
     private final Map<String, Object> _cellContext =
        CollectionFactory.newConcurrentHashMap();
-    private final AtomicInteger       _uniqueCounter       = new AtomicInteger(100) ;
+    private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
+    private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64().omitPadding();
     private CellNucleus          _systemNucleus;
     private ClassLoaderProvider  _classLoader;
     private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
@@ -286,7 +290,9 @@ class CellGlue {
         return new ArrayList<>(_cellList.keySet());
     }
 
-   int getUnique(){ return _uniqueCounter.incrementAndGet() ; }
+   String getUnique() {
+       return COUNTER_ENCODING.encode(Longs.toByteArray(_uniqueCounter.next()));
+   }
 
    CellInfo getCellInfo(String name) {
        CellNucleus nucleus = getCell(name);

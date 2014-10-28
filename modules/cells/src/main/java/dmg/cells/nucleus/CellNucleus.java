@@ -1,5 +1,6 @@
 package dmg.cells.nucleus;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -127,21 +128,18 @@ public class CellNucleus implements ThreadFactory
             // we don't accept more then one System.cells
             //
             if (cell instanceof SystemCell) {
-                throw new
-                    IllegalArgumentException("System already exists");
+                throw new IllegalArgumentException("System already exists");
             } else {
-                String cellName    = name.replace('@', '+');
+                String cellName = name.replace('@', '+');
 
-                if ((cellName == null) ||
-                   (cellName.equals(""))) {
+                if (cellName.isEmpty()) {
                     cellName = "*";
                 }
                 if (cellName.charAt(cellName.length() - 1) == '*') {
                     if (cellName.length() == 1) {
-                	cellName = "$-"+getUnique();
+                        cellName = "$-" + getUnique();
                     } else {
-                	cellName = cellName.substring(0,cellName.length()-1)+
-                            "-"+getUnique();
+                        cellName = cellName.substring(0, cellName.length() - 1) + "-" + getUnique();
                     }
                 }
 
@@ -761,7 +759,9 @@ public class CellNucleus implements ThreadFactory
         return ret;
     }
 
-    int  getUnique() { return __cellGlue.getUnique(); }
+    private String getUnique() {
+        return __cellGlue.getUnique();
+    }
 
     int getEventQueueSize()
     {
