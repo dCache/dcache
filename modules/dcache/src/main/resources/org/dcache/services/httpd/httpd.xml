@@ -11,21 +11,102 @@
     <context:property-placeholder/>
     <context:annotation-config/>
 
-    <bean id="serviceCell" class="org.dcache.services.httpd.HttpServiceCell"
-        init-method="initialize" destroy-method="cleanUp">
+    <bean id="serviceCell" class="org.dcache.services.httpd.HttpServiceCell">
         <property name="webappResourceUrl" value="${httpd.container.default-webapp}"/>
         <property name="tmpUnpackDir" value="${httpd.container.webapps.tmp-dir}"/>
-        <property name="authenticated" value="${httpd.enable.authn}"/>
-        <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
-        <property name="httpPort" value="${httpd.net.port}"/>
-        <property name="httpsPort" value="${httpd.net.https-port}"/>
-        <property name="keystore" value="${httpd.authn.keystore}"/>
-        <property name="keystorePassword" value="${httpd.authn.keystore.password}"/>
-        <property name="truststore" value="${httpd.authn.truststore}"/>
-        <property name="trustPassword" value="${httpd.authn.truststore.password}"/>
-        <property name="cipherFlags" value="${httpd.authn.ciphers}"/>
-        <property name="maxIdleTime" value="${httpd.limits.idle-time}"/>
-        <property name="maxIdleTimeUnit" value="${httpd.limits.idle-time.unit}"/>
-        <property name="maxThreads" value="${httpd.limits.threads}"/>
+        <property name="server" ref="jetty"/>
+        <property name="delegator" ref="delegator"/>
     </bean>
+
+    <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+        <description>Thread pool used by Jetty for request processing</description>
+        <constructor-arg value="${httpd.limits.threads}"/>
+        <property name="name" value="${httpd.cell.name}-jetty"/>
+    </bean>
+
+    <bean id="plain-connector" class="org.eclipse.jetty.server.ServerConnector">
+        <description>HTTP connector</description>
+        <constructor-arg ref="jetty"/>
+
+        <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
+        <property name="port" value="${httpd.net.port}"/>
+        <property name="idleTimeout"
+                  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                              ${httpd.limits.idle-time}, '${httpd.limits.idle-time.unit}')}" />
+    </bean>
+
+    <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"
+          destroy-method="shutdown"/>
+
+    <bean id="handler-collection" class="org.eclipse.jetty.server.handler.HandlerCollection">
+        <property name="handlers">
+            <list>
+                <ref bean="delegator"/>
+                <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                <bean class="org.eclipse.jetty.server.handler.RequestLogHandler">
+                    <property name="requestLog">
+                        <bean class="org.dcache.services.httpd.HttpdRequestLog"/>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+
+    <beans profile="authn-false">
+        <bean id="jetty" class="org.eclipse.jetty.server.Server"
+              init-method="start" destroy-method="stop">
+            <description>Embedded HTTP server</description>
+            <constructor-arg ref="thread-pool"/>
+            <property name="connectors">
+                <list>
+                    <ref bean="plain-connector"/>
+                </list>
+            </property>
+            <property name="handler" ref="handler-collection"/>
+        </bean>
+    </beans>
+
+    <beans profile="authn-true">
+        <bean id="jetty" class="org.eclipse.jetty.server.Server"
+              init-method="start" destroy-method="stop">
+            <description>Embedded HTTP server</description>
+            <constructor-arg ref="thread-pool"/>
+            <property name="connectors">
+                <list>
+                    <ref bean="plain-connector"/>
+                    <ref bean="ssl-connector"/>
+                </list>
+            </property>
+            <property name="handler" ref="handler-collection"/>
+        </bean>
+
+        <bean id="ssl-connector" class="org.eclipse.jetty.server.ServerConnector">
+            <description>HTTPS connector</description>
+            <constructor-arg ref="jetty"/>
+            <constructor-arg>
+                <bean class="org.eclipse.jetty.util.ssl.SslContextFactory">
+                    <property name="keyStorePath" value="${httpd.authn.keystore}"/>
+                    <property name="keyStoreType" value="PKCS12"/>
+                    <property name="keyStorePassword" value="${httpd.authn.keystore.password}"/>
+                    <property name="trustStorePath" value="${httpd.authn.truststore}"/>
+                    <property name="trustStorePassword" value="${httpd.authn.truststore.password}"/>
+                    <property name="wantClientAuth" value="true"/>
+                    <property name="needClientAuth" value="false"/>
+                    <property name="excludeCipherSuites">
+                        <bean id="banned-ciphers" class="org.dcache.util.Crypto"
+                              factory-method="getBannedCipherSuitesFromConfigurationValue">
+                            <constructor-arg value="${httpd.authn.ciphers}"/>
+                        </bean>
+                    </property>
+                </bean>
+            </constructor-arg>
+
+            <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
+            <property name="port" value="${httpd.net.https-port}"/>
+            <property name="idleTimeout"
+                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+                                 ${httpd.limits.idle-time}, '${httpd.limits.idle-time.unit}')}" />
+        </bean>
+    </beans>
 </beans>

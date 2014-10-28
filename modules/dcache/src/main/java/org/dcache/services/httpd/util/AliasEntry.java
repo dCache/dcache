@@ -4,6 +4,8 @@ import org.eclipse.jetty.plus.jndi.EnvEntry;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.webapp.WebAppContext;
 
+import javax.naming.NamingException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -30,7 +32,7 @@ public class AliasEntry {
     enum AliasType {
         FILE, DIR, CONTEXT, REDIRECT, ENGINE, WEBAPP, BADCONFIG;
 
-        public static AliasType fromType(String type) throws Exception {
+        public static AliasType fromType(String type) {
             if (TYPE_FILE.equalsIgnoreCase(type)) {
                 return FILE;
             } else if (TYPE_DIRECTORY.equalsIgnoreCase(type)) {
@@ -46,7 +48,7 @@ public class AliasEntry {
             } else if (TYPE_BAD_CONFIG.equalsIgnoreCase(type)) {
                 return BADCONFIG;
             }
-            throw new Exception("unknown Alias type: " + type);
+            throw new IllegalArgumentException("unknown Alias type: " + type);
         }
 
         public String toType() {
@@ -184,7 +186,8 @@ public class AliasEntry {
     }
 
     private static Handler createWebAppContext(String alias,
-                    String webappsPath, HttpServiceCell cell) throws Exception {
+                    String webappsPath, HttpServiceCell cell) throws Exception
+    {
         String context = "/" + alias;
         Map<String, Object> env = cell.getEnvironment();
 

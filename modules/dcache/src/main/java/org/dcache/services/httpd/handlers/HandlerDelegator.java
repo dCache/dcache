@@ -13,8 +13,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.util.HttpBasicAuthenticationException;
 import dmg.util.HttpException;
@@ -76,10 +77,12 @@ public class HandlerDelegator extends AbstractHandler {
         }
     }
 
-    private final Map<String, AliasEntry> aliases;
+    private final Map<String, AliasEntry> aliases = new ConcurrentHashMap<>();
 
-    public HandlerDelegator(ConcurrentMap<String, AliasEntry> aliases) {
-        this.aliases = aliases;
+    public void shutdown() {
+        for (AliasEntry entry : aliases.values()) {
+            entry.shutdown();
+        }
     }
 
     @Override
@@ -169,5 +172,25 @@ public class HandlerDelegator extends AbstractHandler {
         }
 
         logger.info("Finished");
+    }
+
+    public void removeAlias(String name)
+    {
+        aliases.remove(name);
+    }
+
+    public void addAlias(String name, AliasEntry entry)
+    {
+        aliases.put(name, entry);
+    }
+
+    public Map<String, AliasEntry> getAliases()
+    {
+        return Collections.unmodifiableMap(aliases);
+    }
+
+    public AliasEntry getAlias(String name)
+    {
+        return aliases.get(name);
     }
 }

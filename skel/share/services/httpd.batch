@@ -264,4 +264,4 @@ onerror shutdown
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${httpd.cell.name} \
-        "classpath:org/dcache/services/httpd/httpd.xml"
+        "classpath:org/dcache/services/httpd/httpd.xml -profiles=authn-${httpd.enable.authn}"
