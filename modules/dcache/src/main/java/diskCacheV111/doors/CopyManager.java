@@ -257,9 +257,9 @@ public class CopyManager extends AbstractCell
         public synchronized void messageNotify(DoorTransferFinishedMessage message)
         {
             long id = message.getId();
-            if (_source != null &&  _source.getSessionId() == id) {
+            if (_source != null &&  _source.getId() == id) {
                 _source.finished(message);
-            } else if (_target != null && _target.getSessionId() == id) {
+            } else if (_target != null && _target.getId() == id) {
                 _target.finished(message);
             }
         }
@@ -408,8 +408,8 @@ public class CopyManager extends AbstractCell
             // _target.setBillingStub();
 
             boolean success = false;
-            _activeTransfers.put(_target.getSessionId(), this);
-            _activeTransfers.put(_source.getSessionId(), this);
+            _activeTransfers.put(_target.getId(), this);
+            _activeTransfers.put(_source.getId(), this);
             try {
                 _source.readNameSpaceEntry();
                 _target.createNameSpaceEntry();
@@ -419,7 +419,7 @@ public class CopyManager extends AbstractCell
                 _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
                 _target.waitForRedirect(_moverTimeout);
 
-                _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getSessionId()));
+                _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getId()));
                 _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
 
                 if (!_source.waitForMover(_moverTimeout)) {
@@ -448,8 +448,8 @@ public class CopyManager extends AbstractCell
                 } else {
                     _source.setStatus("Success");
                 }
-                _activeTransfers.remove(_target.getSessionId());
-                _activeTransfers.remove(_source.getSessionId());
+                _activeTransfers.remove(_target.getId());
+                _activeTransfers.remove(_source.getId());
             }
         }
 
@@ -459,7 +459,7 @@ public class CopyManager extends AbstractCell
                                               1, 1, _localAddr,
                                               getCellName(),
                                               getCellDomainName(),
-                                              target.getSessionId(),
+                                              target.getId(),
                                               _bufferSize,
                                               _tcpBufferSize);
         }

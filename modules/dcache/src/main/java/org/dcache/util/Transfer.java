@@ -74,7 +74,7 @@ public class Transfer implements Comparable<Transfer>
     protected final long _startedAt;
     protected final FsPath _path;
     protected final Subject _subject;
-    protected final long _sessionId;
+    protected final long _id;
     protected final Object _session;
 
     protected CellStub _poolManager;
@@ -119,7 +119,7 @@ public class Transfer implements Comparable<Transfer>
         _subject = ioSubject;
         _path = path;
         _startedAt = System.currentTimeMillis();
-        _sessionId = _sessionCounter.next();
+        _id = _sessionCounter.next();
         _session = CDC.getSession();
         _checkStagePermission = new CheckStagePermission(null);
     }
@@ -179,31 +179,31 @@ public class Transfer implements Comparable<Transfer>
     @Override
     public int compareTo(Transfer o)
     {
-        return Longs.compare(o.getSessionId(), getSessionId());
+        return Longs.compare(o.getId(), getId());
     }
 
     /**
-     * Returns the session ID of this transfer. The session ID
+     * Returns the ID of this transfer. The transfer ID
      * uniquely identifies this transfer object within this VM
      * instance.
      *
-     * The session ID is used as the message ID for both the pool
+     * The transfer ID is used as the message ID for both the pool
      * selection message sent to PoolManager and the io file message
      * to the pool. The DoorTransferFinishedMessage from the pool will
      * have the same ID.
      *
      * IoDoorEntry instances provided for monitoring will contain the
-     * session ID and the active transfer page of the httpd service
-     * reports the session ID in the sequence column.
+     * transfer ID and the active transfer page of the httpd service
+     * reports the transfer ID in the sequence column.
      *
-     * The session ID is not to be confused with session string
+     * The transfer ID is not to be confused with session string
      * identifier used for logging. The former identifies a single
      * transfer while the latter identifies a user session and could
      * in theory span multiple transfers.
      */
-    public long getSessionId()
+    public long getId()
     {
-        return _sessionId;
+        return _id;
     }
 
     /**
@@ -422,11 +422,11 @@ public class Transfer implements Comparable<Transfer>
     public synchronized String getTransaction()
     {
         if (_session != null) {
-            return _session.toString() + "-" + _sessionId;
+            return _session.toString() + "-" + _id;
         } else if (_cellName != null && _domainName != null) {
-            return "door:" + _cellName + "@" + _domainName + "-" + _sessionId;
+            return "door:" + _cellName + "@" + _domainName + "-" + _id;
         } else {
-            return String.valueOf(_sessionId);
+            return String.valueOf(_id);
         }
     }
 
@@ -550,7 +550,7 @@ public class Transfer implements Comparable<Transfer>
      */
     public synchronized IoDoorEntry getIoDoorEntry()
     {
-        return new IoDoorEntry(_sessionId,
+        return new IoDoorEntry(_id,
                                getPnfsId(),
                                _poolName,
                                _status,
@@ -788,7 +788,7 @@ public class Transfer implements Comparable<Transfer>
                     new PoolMgrSelectWritePoolMsg(fileAttributes,
                                                   protocolInfo,
                                                   allocated);
-                request.setId(_sessionId);
+                request.setId(_id);
                 request.setSubject(_subject);
                 request.setPnfsPath(_path);
 
@@ -808,7 +808,7 @@ public class Transfer implements Comparable<Transfer>
                                                  protocolInfo,
                                                  getReadPoolSelectionContext(),
                                                  allowedStates);
-                request.setId(_sessionId);
+                request.setId(_id);
                 request.setSubject(_subject);
                 request.setPnfsPath(_path);
 
@@ -873,7 +873,7 @@ public class Transfer implements Comparable<Transfer>
             message.setPnfsPath(_path);
             message.setIoQueueName(queue);
             message.setInitiator(getTransaction());
-            message.setId(_sessionId);
+            message.setId(_id);
             message.setSubject(_subject);
 
             /* As always, PoolIoFileMessage has to be sent via the

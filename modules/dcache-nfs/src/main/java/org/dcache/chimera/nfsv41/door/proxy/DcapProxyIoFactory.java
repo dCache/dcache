@@ -106,7 +106,7 @@ public class DcapProxyIoFactory extends AbstractCell {
 	NDC.push(pnfsId.toString());
         final DcapTransfer transfer = new DcapTransfer(_pnfsHandler, subject);
         DcapTransfer.initSession();
-	final int session = (int)transfer.getSessionId();
+	final int session = (int)transfer.getId();
 	protocolInfo.setSessionId(session);
 
         transfer.setProtocolInfo(protocolInfo);

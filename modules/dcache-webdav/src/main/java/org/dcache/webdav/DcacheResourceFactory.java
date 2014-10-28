@@ -635,7 +635,7 @@ public class DcacheResourceFactory
         Subject subject = getSubject();
 
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, path);
-        _transfers.put((int) transfer.getSessionId(), transfer);
+        _transfers.put((int) transfer.getId(), transfer);
         try {
             boolean success = false;
             transfer.setProxyTransfer(true);
@@ -670,7 +670,7 @@ public class DcacheResourceFactory
                                    e.toString());
             throw e;
         } finally {
-            _transfers.remove((int) transfer.getSessionId());
+            _transfers.remove((int) transfer.getId());
         }
 
         return getResource(path);
@@ -684,7 +684,7 @@ public class DcacheResourceFactory
 
         String uri = null;
         WriteTransfer transfer = new WriteTransfer(_pnfs, subject, path);
-        _transfers.put((int) transfer.getSessionId(), transfer);
+        _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.createNameSpaceEntry();
             try {
@@ -716,7 +716,7 @@ public class DcacheResourceFactory
             throw e;
         } finally {
             if (uri == null) {
-                _transfers.remove((int) transfer.getSessionId());
+                _transfers.remove((int) transfer.getId());
             }
         }
         return uri;
@@ -748,7 +748,7 @@ public class DcacheResourceFactory
             throw e;
         } finally {
             transfer.killMover(_killTimeout, _killTimeoutUnit);
-            _transfers.remove((int) transfer.getSessionId());
+            _transfers.remove((int) transfer.getId());
         }
     }
 
@@ -941,7 +941,7 @@ public class DcacheResourceFactory
         ReadTransfer transfer = new ReadTransfer(_pnfs, subject, path, pnfsid,
                 disposition);
         transfer.setIsChecksumNeeded(isDigestRequested());
-        _transfers.put((int) transfer.getSessionId(), transfer);
+        _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.setProxyTransfer(isProxyTransfer);
             transfer.readNameSpaceEntry();
@@ -970,7 +970,7 @@ public class DcacheResourceFactory
         } finally {
             if (uri == null) {
                 transfer.killMover(_killTimeout, _killTimeoutUnit);
-                _transfers.remove((int) transfer.getSessionId());
+                _transfers.remove((int) transfer.getId());
             }
         }
         return transfer;
@@ -1191,7 +1191,7 @@ public class DcacheResourceFactory
                         _path.toString(),
                         _location,
                         _disposition);
-            protocolInfo.setSessionId((int) getSessionId());
+            protocolInfo.setSessionId((int) getId());
             return protocolInfo;
         }
 
@@ -1290,7 +1290,7 @@ public class DcacheResourceFactory
         {
             super.finished(error);
 
-            _transfers.remove((int) getSessionId());
+            _transfers.remove((int) getId());
 
             if (error == null) {
                 notifyBilling(0, "");
@@ -1369,7 +1369,7 @@ public class DcacheResourceFactory
         {
             super.finished(error);
 
-            _transfers.remove((int) getSessionId());
+            _transfers.remove((int) getId());
 
             if (error == null) {
                 notifyBilling(0, "");
