@@ -337,35 +337,6 @@
     </beans>
 
     <beans profile="connector-https">
-        <bean id="server-connector" class="org.eclipse.jetty.server.ServerConnector">
-            <description>HTTPS connector</description>
-            <constructor-arg ref="jetty"/>
-            <constructor-arg value="${webdav.limits.acceptors}"/>
-            <constructor-arg value="-1"/>
-            <constructor-arg>
-                <bean class="org.eclipse.jetty.util.ssl.SslContextFactory">
-                    <property name="keyStorePath" value="${webdav.authn.keystore}"/>
-                    <property name="keyStoreType" value="PKCS12"/>
-                    <property name="keyStorePassword" value="${webdav.authn.keystore.password}"/>
-                    <property name="trustStorePath" value="${webdav.authn.truststore}"/>
-                    <property name="trustStorePassword" value="${webdav.authn.truststore.password}"/>
-                    <property name="wantClientAuth" value="${webdav.authn.accept-client-cert}"/>
-                    <property name="needClientAuth" value="${webdav.authn.require-client-cert}"/>
-                    <property name="excludeCipherSuites" ref="banned-ciphers"/>
-                </bean>
-            </constructor-arg>
-
-            <property name="host" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
-            <property name="port" value="${webdav.net.port}"/>
-            <property name="acceptQueueSize" value="${webdav.limits.backlog}"/>
-            <property name="idleTimeout"
-                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                                  ${webdav.limits.idle-time},
-                                  '${webdav.limits.idle-time.unit}')}" />
-        </bean>
-    </beans>
-
-    <beans profile="connector-https-jglobus">
         <bean id="server-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
             <description>HTTPS connector supporting grid certificates</description>
 

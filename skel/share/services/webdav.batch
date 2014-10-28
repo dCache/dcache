@@ -40,7 +40,7 @@ check -strong webdav.mover.transfer-confirmation-timeout.unit
 check -strong webdav.authn.accept-client-cert
 check -strong webdav.authn.require-client-cert
 check -strong webdav.authn.basic
-check -strong webdav.authn.protocol
+check -strong webdav.authn.profile
 check -strong webdav.static-content.dir.local
 check -strong webdav.static-content.dir.default
 check -strong webdav.static-content.location
@@ -82,16 +82,6 @@ set env have_truststore ${rc}
 onerror shutdown
 
 define env verify-https.exe enddefine
-  check -strong webdav.authn.keystore
-  check webdav.authn.keystore.password
-  check -strong webdav.authn.truststore
-  check webdav.authn.truststore.password
-
-  exec env failMissingKeyStore.exe -ifnotok=have_keystore
-  exec env failMissingTrustStore.exe -ifnotok=have_truststore
-enddefine
-
-define env verify-https-jglobus.exe enddefine
   check -strong webdav.authn.hostcert.refresh
   check -strong webdav.authn.hostcert.refresh.unit
   check -strong webdav.authn.capath.refresh
@@ -101,22 +91,10 @@ define env verify-https-jglobus.exe enddefine
   check -strong webdav.authn.capath
 enddefine
 
-define env failMissingKeyStore.exe enddefine
-   say -level=esay "The key-store file ${webdav.authn.keystore} is missing.  Please generate it with:"
-   say -level=esay "     dcache import hostcert --out=${webdav.authn.keystore}"
-   exit 1
-enddefine
-
-define env failMissingTrustStore.exe enddefine
-   say -level=esay "The TrustStore file ${webdav.authn.truststore} is missing.  Please generate it with:"
-   say -level=esay "     dcache import cacerts --out=${webdav.authn.truststore}"
-   exit 1
-enddefine
-
-exec env verify-${webdav.authn.protocol}.exe
+exec env verify-${webdav.authn.profile}.exe
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
-    -profiles=connector-${webdav.authn.protocol},missing-files-${webdav.enable.missing-files} \
+    -profiles=connector-${webdav.authn.profile},missing-files-${webdav.enable.missing-files} \
     -export=${webdav.cell.export} -cellClass=WebDAVDoor"
