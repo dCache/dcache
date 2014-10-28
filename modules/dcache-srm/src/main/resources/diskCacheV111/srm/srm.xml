@@ -602,8 +602,8 @@
     <property name="srm" ref="srm"/>
   </bean>
 
-  <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool"
-        init-method="start" destroy-method="stop">
+  <bean id="thread-pool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+      <!-- Note that Jetty manages the lifecycle of this thread pool -->
       <description>Thread pool used by Jetty for request processing</description>
 
       <constructor-arg value="${srm.limits.jetty.threads.max}"/>
