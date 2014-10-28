@@ -74,8 +74,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
+import org.globus.gsi.bc.BouncyCastleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +84,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 
 import org.dcache.commons.stats.RequestCounters;
@@ -93,7 +94,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
@@ -823,11 +823,11 @@ public class SRMServerV2 implements ISRM  {
     private static String getDn(HttpServletRequest request)
     {
         try {
-            GSSContext gssContext = (GSSContext) request.getAttribute(GSI_CONTEXT);
-            if (gssContext != null) {
-                return gssContext.getSrcName().toString();
+            X509Certificate[] chain = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+            if (chain != null) {
+                return BouncyCastleUtil.getIdentity(BouncyCastleUtil.getIdentityCertificate(chain));
             }
-        } catch (GSSException ignored) {
+        } catch (CertificateException ignored) {
         }
         return "-";
     }
