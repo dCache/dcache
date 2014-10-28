@@ -122,8 +122,7 @@ public class Args implements Serializable
         String option = getOption(name);
 
         if (option == null) {
-            throw new NoSuchElementException("Argument "
-                                             + name + " does not exist.");
+            throw new NoSuchElementException("Option " + name + " does not exist.");
         }
 
         return Double.parseDouble(option);
@@ -136,8 +135,7 @@ public class Args implements Serializable
         if (option == null) {
             return defaultValue;
         } else if (option.isEmpty()) {
-            throw new IllegalArgumentException("Argument " + name +
-                                               " does not have a value.");
+            throw new IllegalArgumentException("Option " + name + " does not have a value.");
         } else {
             return Double.parseDouble(option);
         }
@@ -148,8 +146,7 @@ public class Args implements Serializable
         String option = getOption(name);
 
         if (option == null) {
-            throw new NoSuchElementException("Argument "
-                                             + name + " does not exist.");
+            throw new NoSuchElementException("Option " + name + " does not exist.");
         }
 
         return Integer.parseInt(option);
@@ -162,8 +159,7 @@ public class Args implements Serializable
         if (option == null) {
             return defaultValue;
         } else if (option.isEmpty()) {
-            throw new IllegalArgumentException("Argument " + name +
-                                               " does not have a value.");
+            throw new IllegalArgumentException("Option " + name + " does not have a value.");
         } else {
             return Integer.parseInt(option);
         }
@@ -174,8 +170,7 @@ public class Args implements Serializable
         String option = getOption(name);
 
         if (option == null) {
-            throw new NoSuchElementException("Argument "
-                                             + name + " does not exist.");
+            throw new NoSuchElementException("Option " + name + " does not exist.");
         }
 
         return Long.parseLong(option);
@@ -188,11 +183,21 @@ public class Args implements Serializable
         if (option == null) {
             return defaultValue;
         } else if (option.isEmpty()) {
-            throw new IllegalArgumentException("Argument " + name +
-                                               " does not have a value.");
+            throw new IllegalArgumentException("Option " + name + " does not have a value.");
         } else {
             return Long.parseLong(option);
         }
+    }
+
+    public boolean getBooleanOption(String name)
+    {
+        return getBooleanOption(name, false);
+    }
+
+    public boolean getBooleanOption(String name, boolean defaultValue)
+    {
+        String option = getOption(name);
+        return (option == null) ? defaultValue : (option.isEmpty() || Boolean.parseBoolean(option));
     }
 
     public String getOption(String name)

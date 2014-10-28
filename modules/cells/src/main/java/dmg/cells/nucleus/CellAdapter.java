@@ -137,11 +137,10 @@ public class   CellAdapter extends CommandInterpreter
             _definedSetup = null;
         }
 
-        if (_args.hasOption("export") && (_args.getOption("export").isEmpty() || Boolean.parseBoolean(_args.getOption("export")))) {
+        if (_args.getBooleanOption("export")) {
             export();
         }
-
-        if (_args.hasOption("replyObject") && _args.getOpt("replyObject").equals("false")) {
+        if (!_args.getBooleanOption("replyObject", true)) {
             setCommandExceptionEnabled(false);
         }
 
