@@ -22,6 +22,7 @@ import dmg.util.StreamEngine;
 
 import org.dcache.auth.Subjects;
 import org.dcache.util.Args;
+import org.dcache.util.Transfer;
 
 /**
   * @author Patrick Fuhrmann
@@ -125,6 +126,9 @@ public class      DCapDoor
             //
             // check for lock
             //
+
+            Transfer.initSession();
+
             _log.info( "Checking DCap lock" ) ;
             try{
                while( true ){
