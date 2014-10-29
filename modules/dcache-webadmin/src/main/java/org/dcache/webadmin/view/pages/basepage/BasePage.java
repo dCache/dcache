@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.MissingResourceException;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.util.Version;
 import org.dcache.webadmin.view.WebAdminInterface;
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.panels.header.HeaderPanel;
@@ -31,6 +32,14 @@ import org.dcache.webadmin.view.panels.userpanel.UserPanel;
  */
 public abstract class BasePage extends WebPage {
     private static final long serialVersionUID = 7817347486820155316L;
+
+    private static final String META_GENERATOR_TAG =
+            "<meta name=\"generator\" content=\"dCache v" +
+            Version.of(Version.class).getVersion() + "\" />";
+    private static final String META_VERSION_TAG =
+            "<meta name=\"version\" content=\"" +
+            Version.of(Version.class).getVersion() + "\" />";
+
 
     protected final Logger _log = LoggerFactory.getLogger(this.getClass());
 
@@ -105,6 +114,8 @@ public abstract class BasePage extends WebPage {
                         .getJavaScriptLibrarySettings()
                         .getJQueryReference()));
         response.render(JavaScriptHeaderItem.forUrl("js/infobox.js"));
+        response.render(StringHeaderItem.forString(META_GENERATOR_TAG));
+        response.render(StringHeaderItem.forString(META_VERSION_TAG));
     }
 
     protected Form<?> getAutoRefreshingForm(String name) {
