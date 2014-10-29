@@ -117,8 +117,7 @@ public class HandlerDelegator extends AbstractHandler {
              * The exclusion of POST used to be absolute; we allow it now only
              * on webapps.
              */
-            if (!request.getMethod().equals("GET")
-                            && !entry.getType().equals(AliasEntry.TYPE_WEBAPP)) {
+            if (!request.getMethod().equals("GET") && entry.getType() != AliasEntry.AliasType.WEBAPP) {
                 throw new HttpException(HttpServletResponse.SC_NOT_IMPLEMENTED,
                                 "Method not implemented: " + request.getMethod());
             }
@@ -174,9 +173,9 @@ public class HandlerDelegator extends AbstractHandler {
         logger.info("Finished");
     }
 
-    public void removeAlias(String name)
+    public AliasEntry removeAlias(String name)
     {
-        aliases.remove(name);
+        return aliases.remove(name);
     }
 
     public void addAlias(String name, AliasEntry entry)
