@@ -7,6 +7,8 @@ import org.apache.wicket.request.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.dcache.webadmin.view.util.Role;
+
 /**
  * The session-Object to store Session-Data like User-Credentials, and page
  * options.
@@ -25,6 +27,14 @@ public class WebAdminInterfaceSession extends WebSession {
 
     public static WebAdminInterfaceSession get() {
         return (WebAdminInterfaceSession) Session.get();
+    }
+
+    public static boolean hasUserRole(String role) {
+        WebAdminInterfaceSession session = get();
+        if (!session.isSignedIn()) {
+            return false;
+        }
+        return session.user.hasRole(role);
     }
 
     public static AlarmQueryBean getAlarmQueryBean() {

@@ -1,12 +1,8 @@
 <html>
 <head>
-<title></title>
 <wicket:head>
     <wicket:link>
-        <link
-            href="BasicNavigationPanel.css"
-            rel="stylesheet"
-            type="text/css" />
+        <link href="BasicNavigationPanel.css" rel="stylesheet" type="text/css" />
     </wicket:link>
 </wicket:head>
 </head>
@@ -14,10 +10,10 @@
     <wicket:panel>
         <!-- main navigation: horizontal list -->
         <ul>
-            <li wicket:id="linkList"><a
-                href="#"
-                wicket:id="link"> <span wicket:id="linkMessage"></span>
-            </a></li>
+            <li wicket:id="linkList">
+	      <a href="#" wicket:id="link"><span wicket:id="text"></span></a>
+	      <span wicket:id="disabled"></span>
+            </li>
         </ul>
     </wicket:panel>
 </body>

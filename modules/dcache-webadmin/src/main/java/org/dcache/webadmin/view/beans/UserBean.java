@@ -33,4 +33,8 @@ public class UserBean implements Serializable {
     public boolean hasAnyRole(Roles roles) {
         return _roles.hasAnyRole(roles);
     }
+
+    public boolean hasRole(String role) {
+        return _roles.hasRole(role);
+    }
 }

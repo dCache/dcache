@@ -66,7 +66,6 @@ import org.dcache.webadmin.view.pages.poolqueues.PoolQueuePlots;
 import org.dcache.webadmin.view.pages.poolqueues.PoolQueues;
 import org.dcache.webadmin.view.pages.poolselectionsetup.PoolSelectionSetup;
 import org.dcache.webadmin.view.pages.tapetransferqueue.TapeTransferQueue;
-import org.dcache.webadmin.view.pages.unavailable.UnavailablePage;
 import org.dcache.webadmin.view.panels.navigation.BasicNavigationPanel;
 import org.dcache.webadmin.view.util.Role;
 
@@ -357,18 +356,14 @@ public class WebAdminInterface extends WebApplication {
         if (_generatePlots) {
             _billingService.initialize();
             mountPage("billingplots", BillingPlots.class);
-            BasicNavigationPanel.addBillingPage();
         } else {
-            mountPage("billingplots", UnavailablePage.class);
-            BasicNavigationPanel.removeBillingPage();
+            BasicNavigationPanel.removeBillingPage("The httpd.enable.plots.billing property is false");
         }
 
         if (_poolQueuePlotsEnabled) {
             mountPage("poolqueueplots", PoolQueuePlots.class);
-            BasicNavigationPanel.addPoolQueuePlotsPage();
         } else {
-            mountPage("poolqueueplots", UnavailablePage.class);
-            BasicNavigationPanel.removePoolQueuePlotsPage();
+            BasicNavigationPanel.removePoolQueuePlotsPage("The httpd.enable.plots.pool-queue property is false");
         }
     }
 
