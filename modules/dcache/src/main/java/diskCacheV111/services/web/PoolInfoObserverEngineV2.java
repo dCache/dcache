@@ -13,16 +13,15 @@ import java.util.TreeMap;
 
 import diskCacheV111.util.HTMLWriter;
 
-import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.DomainContextAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
-public class PoolInfoObserverEngineV2 implements HttpResponseEngine
+public class PoolInfoObserverEngineV2 implements HttpResponseEngine, DomainContextAware
 {
     private static final int _menuColumns = 4;
 
-    private final CellEndpoint _endpoint;
     private final Map<String,String> _tableSelection =
         new LinkedHashMap<>();
     private boolean _showPoolGroupUsage;
@@ -31,11 +30,10 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
     private int _requestCounter;
 
     private PoolCellQueryContainer _container;
+    private Map<String, Object> _context;
 
-    public PoolInfoObserverEngineV2(CellEndpoint endpoint, String[] args)
+    public PoolInfoObserverEngineV2(String[] args)
     {
-        _endpoint = endpoint;
-
         for (String s : args) {
             if (s.startsWith("showPoolGroupUsage=")) {
                 _showPoolGroupUsage =
@@ -46,6 +44,12 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
         _tableSelection.put("Cell View"      , "cells");
         _tableSelection.put("Space Usage"    , "spaces");
         _tableSelection.put("Request Queues" , "queues");
+    }
+
+    @Override
+    public void setDomainContext(Map<String, Object> context)
+    {
+        _context = context;
     }
 
     @Override
@@ -72,7 +76,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 
         request.printHttpHeader(0);
 
-        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _context);
         try {
             html.addHeader("/styles/poolinfo.css", "Pool Property Tables");
 
@@ -81,7 +85,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
             }
 
             if (urlItems.length > 1 && urlItems[1].equals("list")) {
-                Object o = _endpoint.getDomainContext().get("poolgroup-map.ser");
+                Object o = _context.get("poolgroup-map.ser");
                 if (o ==  null) {
                     html.println("<h3>Information not yet available</h3>");
                     return;

@@ -8,17 +8,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
 
-import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.EnvironmentAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
 
-import org.dcache.services.httpd.HttpServiceCell;
 import org.dcache.services.httpd.util.StandardHttpRequest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -28,15 +23,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author arossi
  */
-public class ResponseEngineHandler extends AbstractHandler {
-
-    private final String className;
-    private final String[] args;
+public class ResponseEngineHandler extends AbstractHandler
+{
     private HttpResponseEngine engine;
 
-    public ResponseEngineHandler(String className, String[] args) {
-        this.className = className;
-        this.args = args;
+    public ResponseEngineHandler(HttpResponseEngine engine) {
+        this.engine = engine;
     }
 
     @Override
@@ -56,58 +48,17 @@ public class ResponseEngineHandler extends AbstractHandler {
         }
     }
 
-    public HttpResponseEngine getEngine() {
-        return engine;
-    }
-
-    public CellInfoProvider getCellInfoProvider() {
-        if (engine instanceof CellInfoProvider) {
-            return (CellInfoProvider) engine;
-        } else {
-            return null;
-        }
-    }
-
-    public void initialize(HttpServiceCell cell)
-                    throws Exception {
-        final Class<? extends HttpResponseEngine> c
-            = Class.forName(className).asSubclass(HttpResponseEngine.class);
-
-        /*
-         * find constructor: (a) <init>(CellNucleus nucleus, String [] args)
-         *                   (b) <init>(String [] args)
-         *                   (c) <init>()
-         */
-        try {
-            Class<?>[] argsClass = new Class<?>[2];
-            argsClass[0] = CellEndpoint.class;
-            argsClass[1] = String[].class;
-            Constructor<? extends HttpResponseEngine> constr
-                = c.getConstructor(argsClass);
-            Object[] args = new Object[2];
-            args[0] = cell.getEndpoint();
-            args[1] = this.args;
-            engine = constr.newInstance(args);
-        } catch (final Exception e) {
-            try {
-                Class<?>[] argsClass = new Class<?>[1];
-                argsClass[0] = String[].class;
-                Constructor<? extends HttpResponseEngine> constr
-                    = c.getConstructor(argsClass);
-                Object[] args = new Object[1];
-                args[0] = this.args;
-                engine = constr.newInstance(args);
-            } catch (final Exception ee) {
-                Class<?>[] argsClass = new Class<?>[0];
-                Constructor<? extends HttpResponseEngine> constr
-                    = c.getConstructor(argsClass);
-                engine = constr.newInstance();
-            }
-        }
-        cell.addCommandListener(engine);
-        if (engine instanceof EnvironmentAware) {
-            ((EnvironmentAware) engine).setEnvironment(cell.getEnvironment());
-        }
+    @Override
+    protected void doStart() throws Exception
+    {
         engine.startup();
+        super.doStart();
+    }
+
+    @Override
+    protected void doStop() throws Exception
+    {
+        super.doStop();
+        engine.shutdown();
     }
 }

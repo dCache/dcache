@@ -22,6 +22,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
@@ -55,8 +56,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * feature to reducing the impact on info of pathologically broken clients that
  * make many requests per second.
  */
-public class InfoHttpEngine implements HttpResponseEngine {
-
+public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
+{
 	private static final Logger LOG = LoggerFactory.getLogger(HttpResponseEngine.class);
 	private static final String INFO_CELL_NAME = "info";
 
@@ -86,7 +87,7 @@ public class InfoHttpEngine implements HttpResponseEngine {
                 put("pretty", prettyPrintSerialiser).
                 build();
 
-        private final CellStub _info;
+        private CellStub _info;
 
         /**
          * httpd-side class for each info-side serialiser.
@@ -156,11 +157,16 @@ public class InfoHttpEngine implements HttpResponseEngine {
 	/**
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
 	 */
-	public InfoHttpEngine(CellEndpoint endpoint, String[] args) {
-            _info = new CellStub(endpoint, new CellPath(INFO_CELL_NAME), 4000, MILLISECONDS);
+	public InfoHttpEngine(String[] args) {
 	}
 
-	/**
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _info = new CellStub(endpoint, new CellPath(INFO_CELL_NAME), 4000, MILLISECONDS);
+    }
+
+    /**
 	 * Handle a request for data.  This either returns the cached contents (if
 	 * still valid), or queries the info cell for information.
 	 */

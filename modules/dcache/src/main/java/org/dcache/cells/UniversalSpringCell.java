@@ -397,11 +397,11 @@ public class UniversalSpringCell
                     } else {
                         pw.println(String.format("--- %s ---", name));
                     }
-                    provider.getInfo(pw);
-                    pw.println();
                 } catch (NoSuchBeanDefinitionException e) {
-                    LOGGER.error("Failed to query bean definition for {}", name);
+                    pw.println(String.format("--- %s ---", name));
                 }
+                provider.getInfo(pw);
+                pw.println();
             }
         }
     }

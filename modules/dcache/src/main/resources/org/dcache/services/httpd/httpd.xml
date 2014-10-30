@@ -3,18 +3,18 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                            http://www.springframework.org/schema/beans/spring-beans.xsd
                            http://www.springframework.org/schema/context
-                           http://www.springframework.org/schema/context/spring-context.xsd">
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util
+                           http://www.springframework.org/schema/util/spring-util.xsd">
 
     <context:property-placeholder/>
     <context:annotation-config/>
 
-    <bean id="serviceCell" class="org.dcache.services.httpd.HttpServiceCell">
-        <property name="webappResourceUrl" value="${httpd.container.default-webapp}"/>
-        <property name="tmpUnpackDir" value="${httpd.container.webapps.tmp-dir}"/>
-        <property name="server" ref="jetty"/>
+    <bean id="cli" class="org.dcache.services.httpd.HttpdCommandLineInterface">
         <property name="delegator" ref="delegator"/>
     </bean>
 
@@ -24,7 +24,22 @@
         <property name="name" value="${httpd.cell.name}-jetty"/>
     </bean>
 
-    <bean id="plain-connector" class="org.eclipse.jetty.server.ServerConnector">
+    <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"/>
+
+    <bean id="webapp-handler" class="org.dcache.services.httpd.handlers.WebAppHandler" scope="prototype">
+        <property name="defaultsDescriptor" value="${httpd.container.default-webapp}"/>
+        <property name="extractWAR" value="false"/>
+    </bean>
+
+    <bean id="jetty" class="org.eclipse.jetty.server.Server"
+          init-method="start" destroy-method="stop">
+        <description>Embedded HTTP server</description>
+        <constructor-arg ref="thread-pool"/>
+        <property name="connectors" ref="connectors"/>
+        <property name="handler" ref="handler-collection"/>
+    </bean>
+
+    <bean id="plain-connector" class="org.eclipse.jetty.server.ServerConnector" depends-on="jetty">
         <description>HTTP connector</description>
         <constructor-arg ref="jetty"/>
 
@@ -34,9 +49,6 @@
                   value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                               ${httpd.limits.idle-time}, '${httpd.limits.idle-time.unit}')}" />
     </bean>
-
-    <bean id="delegator" class="org.dcache.services.httpd.handlers.HandlerDelegator"
-          destroy-method="shutdown"/>
 
     <bean id="handler-collection" class="org.eclipse.jetty.server.handler.HandlerCollection">
         <property name="handlers">
@@ -52,34 +64,17 @@
         </property>
     </bean>
 
-
     <beans profile="authn-false">
-        <bean id="jetty" class="org.eclipse.jetty.server.Server"
-              init-method="start" destroy-method="stop">
-            <description>Embedded HTTP server</description>
-            <constructor-arg ref="thread-pool"/>
-            <property name="connectors">
-                <list>
-                    <ref bean="plain-connector"/>
-                </list>
-            </property>
-            <property name="handler" ref="handler-collection"/>
-        </bean>
+        <util:list id="connectors">
+            <ref bean="plain-connector"/>
+        </util:list>
     </beans>
 
     <beans profile="authn-true">
-        <bean id="jetty" class="org.eclipse.jetty.server.Server"
-              init-method="start" destroy-method="stop">
-            <description>Embedded HTTP server</description>
-            <constructor-arg ref="thread-pool"/>
-            <property name="connectors">
-                <list>
-                    <ref bean="plain-connector"/>
-                    <ref bean="ssl-connector"/>
-                </list>
-            </property>
-            <property name="handler" ref="handler-collection"/>
-        </bean>
+        <util:list id="connectors">
+            <ref bean="plain-connector"/>
+            <ref bean="ssl-connector"/>
+        </util:list>
 
         <bean id="ssl-connector" class="org.eclipse.jetty.server.ServerConnector">
             <description>HTTPS connector</description>

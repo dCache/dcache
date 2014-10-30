@@ -25,10 +25,13 @@ import diskCacheV111.vehicles.RestoreHandlerInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
 
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.AgingHash;
 import dmg.util.HttpException;
@@ -44,8 +47,9 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
-        CellInfoProvider
+public class HttpPoolMgrEngineV3 implements
+        HttpResponseEngine, Runnable, CellInfoProvider, CellMessageSender, DomainContextAware,
+        CellCommandListener
 {
     private static final String PARAMETER_DCACHE = "dcache";
     private static final String PARAMETER_GREP = "grep";
@@ -61,11 +65,10 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private final static long TIMEOUT = 20000;
 
     private final Thread _restoreCollector;
-    private final CellStub _poolManager;
-    private final CellStub _pnfsManager;
-    private final CellStub _hsmController;
+    private CellStub _poolManager;
+    private CellStub _pnfsManager;
+    private CellStub _hsmController;
 
-    private final CellEndpoint _endpoint;
     private final AgingHash   _pnfsPathMap     = new AgingHash(500);
     private final AgingHash _fileAttributesMap = new AgingHash(500);
     private final boolean     _takeAll         = true;
@@ -88,15 +91,10 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
     private boolean     _addHsmInfo;
     private String[]    _siDetails;
     private String      _cssFile         = "/poolInfo/css/default.css";
+    private Map<String, Object> _context;
 
-    public HttpPoolMgrEngineV3(CellEndpoint endpoint, String[] argsString)
+    public HttpPoolMgrEngineV3(String[] argsString)
     {
-        _endpoint = endpoint;
-        // FIXME: Do not hardcode cell addresses
-        _poolManager = new CellStub(endpoint, new CellPath("PoolManager"), TIMEOUT, SECONDS);
-        _pnfsManager = new CellStub(endpoint, new CellPath("PnfsManager"), TIMEOUT, SECONDS);
-        _hsmController = new CellStub(endpoint, new CellPath("HsmManager"), TIMEOUT, SECONDS);
-
         for (int i = 0; i < argsString.length; i++) {
             _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
@@ -114,6 +112,21 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
         }
         _restoreCollector = new Thread(this, "restore-collector");
         _log.info("Using CSS file : "+_cssFile);
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        // FIXME: Do not hardcode cell addresses
+        _poolManager = new CellStub(endpoint, new CellPath("PoolManager"), TIMEOUT, SECONDS);
+        _pnfsManager = new CellStub(endpoint, new CellPath("PnfsManager"), TIMEOUT, SECONDS);
+        _hsmController = new CellStub(endpoint, new CellPath("HsmManager"), TIMEOUT, SECONDS);
+    }
+
+    @Override
+    public void setDomainContext(Map<String, Object> context)
+    {
+        _context = context;
     }
 
     @Override
@@ -720,7 +733,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
 
     private void printLazyRestoreInfo(OutputStream out, String sorting, String grep)
     {
-        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _context);
 
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor (Lazy)");
@@ -750,7 +763,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable,
 
     private void printRestoreInfo(OutputStream out, String sorting, String grep)
     {
-        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _context);
 
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor");

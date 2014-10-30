@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.SortedMap;
 
+import dmg.cells.nucleus.DomainContextAware;
 import dmg.util.CollectionFactory;
 import dmg.util.HttpRequest;
 
@@ -23,13 +24,18 @@ import org.dcache.services.httpd.util.StandardHttpRequest;
  *
  * @author arossi
  */
-public class ContextHandler extends AbstractHandler {
-
+public class ContextHandler extends AbstractHandler implements DomainContextAware
+{
     private final String specificName;
-    private final Map<String, Object> context;
+    private Map<String, Object> context;
 
-    public ContextHandler(String specificName, Map<String, Object> context) {
+    public ContextHandler(String specificName) {
         this.specificName = specificName;
+    }
+
+    @Override
+    public void setDomainContext(Map<String, Object> context)
+    {
         this.context = context;
     }
 

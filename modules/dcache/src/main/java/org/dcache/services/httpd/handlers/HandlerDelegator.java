@@ -79,12 +79,6 @@ public class HandlerDelegator extends AbstractHandler {
 
     private final Map<String, AliasEntry> aliases = new ConcurrentHashMap<>();
 
-    public void shutdown() {
-        for (AliasEntry entry : aliases.values()) {
-            entry.shutdown();
-        }
-    }
-
     @Override
     public void handle(String target, Request baseRequest,
                     HttpServletRequest request, HttpServletResponse response)
@@ -173,13 +167,36 @@ public class HandlerDelegator extends AbstractHandler {
         logger.info("Finished");
     }
 
-    public AliasEntry removeAlias(String name)
+    public AliasEntry removeAlias(String name) throws Exception
     {
-        return aliases.remove(name);
+        AliasEntry entry = aliases.remove(name);
+        if (entry != null) {
+            Handler handler = entry.getHandler();
+            removeBean(handler);
+            if (handler.isStarted()) {
+                handler.stop();
+            }
+        }
+        return entry;
     }
 
-    public void addAlias(String name, AliasEntry entry)
+    @Override
+    protected void doStart() throws Exception
     {
+        for (AliasEntry entry : aliases.values()) {
+            entry.getHandler().setServer(getServer());
+        }
+        super.doStart();
+    }
+
+    public void addAlias(String name, AliasEntry entry) throws Exception
+    {
+        Handler handler = entry.getHandler();
+        addBean(handler, true);
+        if (isStarted() && !handler.isStarted()) {
+            handler.setServer(getServer());
+            handler.start();
+        }
         aliases.put(name, entry);
     }
 

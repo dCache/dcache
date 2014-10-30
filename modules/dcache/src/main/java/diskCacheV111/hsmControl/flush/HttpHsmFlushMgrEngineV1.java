@@ -1,45 +1,43 @@
 package diskCacheV111.hsmControl.flush;
 
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
- import java.io.PrintWriter;
- import java.io.Serializable;
- import java.text.SimpleDateFormat;
- import java.util.ArrayList;
- import java.util.Collections;
- import java.util.Date;
- import java.util.HashMap;
- import java.util.Iterator;
- import java.util.List;
- import java.util.Map;
- import java.util.NoSuchElementException;
- import java.util.StringTokenizer;
- import java.util.concurrent.TimeUnit;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 
- import diskCacheV111.pools.PoolCellInfo;
- import diskCacheV111.pools.PoolCostInfo;
- import diskCacheV111.pools.StorageClassFlushInfo;
- import diskCacheV111.util.CacheException;
- import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.StorageClassFlushInfo;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.TimeoutCacheException;
 
- import dmg.cells.nucleus.CellEndpoint;
- import dmg.cells.nucleus.CellMessage;
- import dmg.cells.nucleus.CellPath;
- import dmg.util.HttpException;
- import dmg.util.HttpRequest;
- import dmg.util.HttpResponseEngine;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.CellPath;
+import dmg.util.HttpException;
+import dmg.util.HttpRequest;
+import dmg.util.HttpResponseEngine;
 
- import org.dcache.cells.CellStub;
+import org.dcache.cells.CellStub;
 
- import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
- public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine {
-
+public class HttpHsmFlushMgrEngineV1 implements HttpResponseEngine, CellMessageSender
+{
    private final static Logger _log =
        LoggerFactory.getLogger(HttpHsmFlushMgrEngineV1.class);
 
-   private final CellEndpoint _endpoint;
+   private CellEndpoint _endpoint;
    private long        _errorCounter;
    private long        _requestCounter;
    private String      _cssFile          = "/flushManager/css/default.css" ;
@@ -48,8 +46,7 @@ package diskCacheV111.hsmControl.flush;
    private final HttpFlushManagerHelper.PoolEntryComparator  _poolCompare;
    private final HttpFlushManagerHelper.FlushEntryComparator _flushCompare;
 
-   public HttpHsmFlushMgrEngineV1(CellEndpoint endpoint, String [] argsString ){
-       _endpoint = endpoint ;
+   public HttpHsmFlushMgrEngineV1(String [] argsString ){
 
        for( int i = 0 ; i < argsString.length ; i++ ){
           _log.info("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
@@ -73,6 +70,13 @@ package diskCacheV111.hsmControl.flush;
       _log.info("Using CSS file : "+_cssFile ) ;
 
    }
+
+     @Override
+     public void setCellEndpoint(CellEndpoint endpoint)
+     {
+         _endpoint = endpoint;
+     }
+
    private void decodeManager( String managers ){
 
       managers = managers.trim() ;

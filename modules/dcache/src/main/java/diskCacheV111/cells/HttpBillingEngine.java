@@ -9,7 +9,9 @@ import diskCacheV111.util.HTMLWriter;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.DomainContextAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -18,15 +20,14 @@ import org.dcache.cells.CellStub;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class HttpBillingEngine implements HttpResponseEngine
+public class HttpBillingEngine
+        implements HttpResponseEngine, CellMessageSender, DomainContextAware
 {
-    private final CellEndpoint _endpoint;
-    private final CellStub _billing;
+    private CellStub _billing;
+    private Map<String, Object> _context;
 
-    public HttpBillingEngine(CellEndpoint endpoint, String [] args)
+    public HttpBillingEngine(String [] args)
     {
-        _endpoint = endpoint;
-        _billing = new CellStub(_endpoint, new CellPath("billing"), 5, SECONDS);
     }
 
     @Override
@@ -39,6 +40,18 @@ public class HttpBillingEngine implements HttpResponseEngine
     public void shutdown()
     {
         // No background activity to shutdown
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _billing = new CellStub(endpoint, new CellPath("billing"), 5, SECONDS);
+    }
+
+    @Override
+    public void setDomainContext(Map<String, Object> context)
+    {
+        _context = context;
     }
 
     private void printTotalStatistics(HTMLWriter out, Object [][] x)
@@ -126,7 +139,7 @@ public class HttpBillingEngine implements HttpResponseEngine
 
     private void printPerPoolStatisticsPage(OutputStream out, String pool)
     {
-        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _context);
         try {
             html.addHeader("/styles/billing.css", "dCache Billing");
             Map<String, long[]> map = _billing.sendAndWait("get pool statistics " + pool, Map.class);
@@ -143,7 +156,7 @@ public class HttpBillingEngine implements HttpResponseEngine
     private void printMainStatisticsPage(OutputStream out)
         throws HttpException
     {
-        HTMLWriter html = new HTMLWriter(out, _endpoint.getDomainContext());
+        HTMLWriter html = new HTMLWriter(out, _context);
         try {
             Object[][] x = _billing.sendAndWait("get billing info", Object[][].class);
             html.addHeader("/styles/billing.css", "dCache Billing");

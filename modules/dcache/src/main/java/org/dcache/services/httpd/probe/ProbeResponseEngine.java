@@ -6,6 +6,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
@@ -23,11 +24,16 @@ import java.io.Writer;
  * Provides a simple interface to query bean properties of
  * UniversalSpringCells.
  */
-public class ProbeResponseEngine implements HttpResponseEngine
+public class ProbeResponseEngine implements HttpResponseEngine, CellMessageSender
 {
     private CellStub stub;
 
-    public ProbeResponseEngine(CellEndpoint endpoint, String[] someArgs)
+    public ProbeResponseEngine(String[] someArgs)
+    {
+    }
+
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
     {
         stub =  new CellStub(endpoint);
     }

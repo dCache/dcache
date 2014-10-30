@@ -10,8 +10,11 @@ import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Hashtable;
+import java.util.Map;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.DomainContextAware;
 import dmg.util.HttpException;
 import dmg.util.HttpRequest;
 import dmg.util.HttpResponseEngine;
@@ -33,20 +36,15 @@ public interface HttpRequest {
 }
 */
 
-public class ContextPictureEngine implements HttpResponseEngine {
-
+public class ContextPictureEngine implements HttpResponseEngine, DomainContextAware
+{
    private final static Logger _log =
        LoggerFactory.getLogger(ContextPictureEngine.class);
 
-   private CellEndpoint _endpoint;
-   private Hashtable   _domainHash = new Hashtable() ;
-   private String   [] _args;
-   private DateFormat  _dataFormat = new SimpleDateFormat("MMM d, hh.mm.ss" ) ;
+    private Map<String, Object> context;
 
-   public ContextPictureEngine(CellEndpoint endpoint, String [] args ){
-       _endpoint = endpoint;
-       _args    = args ;
-   }
+    public ContextPictureEngine(String [] args) {
+    }
 
    @Override
    public void startup()
@@ -60,7 +58,13 @@ public class ContextPictureEngine implements HttpResponseEngine {
        // No background activity to shutdown
    }
 
-   @Override
+    @Override
+    public void setDomainContext(Map<String, Object> context)
+    {
+        this.context = context;
+    }
+
+    @Override
    public void queryUrl( HttpRequest request )
           throws HttpException {
 
@@ -78,7 +82,7 @@ public class ContextPictureEngine implements HttpResponseEngine {
 
       String contextName = tokens[1] ;
 
-      Object obj = _endpoint.getDomainContext().get( contextName ) ;
+      Object obj = context.get( contextName ) ;
 
       if( ! ( obj instanceof byte [] ) ) {
           throw new

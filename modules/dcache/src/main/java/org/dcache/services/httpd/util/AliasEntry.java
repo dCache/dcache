@@ -2,12 +2,6 @@ package org.dcache.services.httpd.util;
 
 import org.eclipse.jetty.server.Handler;
 
-import java.io.PrintWriter;
-
-import dmg.cells.nucleus.CellInfoProvider;
-
-import org.dcache.services.httpd.handlers.ResponseEngineHandler;
-
 /**
  * Abstraction for httpd aliases.
  *
@@ -57,7 +51,6 @@ public class AliasEntry
     private final AliasType type;
     private final Handler handler;
     private final String spec;
-    private final CellInfoProvider info;
 
     private String onError;
     private String overwrite;
@@ -69,12 +62,6 @@ public class AliasEntry
         this.type = type;
         this.handler = handler;
         this.spec = spec;
-
-        if (handler instanceof ResponseEngineHandler) {
-            info = ((ResponseEngineHandler) handler).getCellInfoProvider();
-        } else {
-            info = null;
-        }
     }
 
     public void setStatusMessage(String statusMessage)
@@ -84,14 +71,6 @@ public class AliasEntry
 
     public Handler getHandler() {
         return handler;
-    }
-
-    public void getInfo(PrintWriter pw) {
-        if (info == null) {
-            pw.println(toString());
-        } else {
-            info.getInfo(pw);
-        }
     }
 
     public String getIntFailureMsg() {
@@ -132,12 +111,6 @@ public class AliasEntry
 
     public void setOverwrite(String entry) {
         overwrite = entry;
-    }
-
-    public void shutdown() {
-        if (handler instanceof ResponseEngineHandler) {
-            ((ResponseEngineHandler) handler).getEngine().shutdown();
-        }
     }
 
     @Override
