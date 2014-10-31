@@ -238,6 +238,10 @@ class FsSqlDriver {
 
     void remove(Connection dbConnection, FsInode parent, String name) throws ChimeraFsException, SQLException {
 
+        if (name.equals("..") || name.equals(".")) {
+            throw new InvalidNameChimeraException("bad name: '" + name + "'");
+        }
+
         FsInode inode = inodeOf(dbConnection, parent, name);
         if (inode == null || inode.type() != FsInodeType.INODE) {
             throw new FileNotFoundHimeraFsException("Not a file.");
