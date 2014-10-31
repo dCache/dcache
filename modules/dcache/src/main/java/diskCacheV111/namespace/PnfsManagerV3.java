@@ -1,8 +1,8 @@
-// $Id: PnfsManagerV3.java,v 1.42 2007-10-02 07:11:45 tigran Exp $
-
 package diskCacheV111.namespace;
 
 import com.google.common.base.Strings;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -22,7 +23,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -58,6 +62,7 @@ import diskCacheV111.vehicles.StorageInfos;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellExceptionMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
@@ -98,6 +103,8 @@ public class PnfsManagerV3
         LoggerFactory.getLogger(PnfsManagerV3.class);
 
     private static final int THRESHOLD_DISABLED = 0;
+
+    private static final CellMessage SHUTDOWN_SENTINEL = new CellMessage();
 
     private final Random _random = new Random(System.currentTimeMillis());
 
@@ -155,6 +162,12 @@ public class PnfsManagerV3
      * locations.
      */
     private BlockingQueue<CellMessage>[] _fifos;
+
+    /**
+     * Executor for ProcessThread instances.
+     */
+    private ExecutorService executor =
+            Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("proc-%d").build());
 
     private CellPath _cacheModificationRelay;
     private CellPath _pnfsDeleteNotificationRelay;
@@ -289,7 +302,7 @@ public class PnfsManagerV3
             } else {
                 _fifos[i] = new LinkedBlockingQueue<>();
             }
-            new Thread(new ProcessThread(_fifos[i]), "proc-" + i).start();
+            executor.execute(new ProcessThread(_fifos[i]));
         }
 
         if (_cacheLocationThreads > 0) {
@@ -297,8 +310,7 @@ public class PnfsManagerV3
             _locationFifos = new BlockingQueue[_cacheLocationThreads];
             for (int i = 0; i < _locationFifos.length; i++) {
                 _locationFifos[i] = new LinkedBlockingQueue<>();
-                new Thread(new ProcessThread(_locationFifos[i]),
-                           "proc-loc-" + i).start();
+                executor.execute(new ProcessThread(_locationFifos[i]));
             }
         } else {
             _locationFifos = _fifos;
@@ -313,8 +325,44 @@ public class PnfsManagerV3
         for (int i = 0; i < _threadGroups; i++) {
             _listQueues[i] = new LinkedBlockingQueue<>();
             for (int j = 0; j < _listThreads; j++) {
-                new Thread(new ProcessThread(_listQueues[i]), "proc-list-" + i + "-" + j).start();
+                executor.execute(new ProcessThread(_listQueues[i]));
             }
+        }
+    }
+
+    public void shutdown() throws InterruptedException
+    {
+        drainQueues(_fifos);
+        drainQueues(_listQueues);
+        if (_locationFifos != _fifos) {
+            drainQueues(_locationFifos);
+        }
+        MoreExecutors.shutdownAndAwaitTermination(executor, 1, TimeUnit.SECONDS);
+    }
+
+    private void drainQueues(BlockingQueue<CellMessage>[] queues)
+    {
+        CellPath self = new CellPath(getCellAddress());
+        String error = "Name space is shutting down.";
+
+        for (BlockingQueue<CellMessage> queue : queues) {
+            ArrayList<CellMessage> drained = new ArrayList<>();
+            queue.drainTo(drained);
+            for (CellMessage envelope : drained) {
+                Message msg = (Message) envelope.getMessageObject();
+                if (msg.getReplyRequired()) {
+                    try {
+                        UOID uoid = envelope.getUOID();
+                        CellExceptionMessage ret =
+                                new CellExceptionMessage(envelope.getSourcePath().revert(),
+                                                         new NoRouteToCellException(uoid, self, error));
+                        ret.setLastUOID(uoid);
+                        sendMessage(ret);
+                    } catch (NoRouteToCellException ignored) {
+                    }
+                }
+            }
+            queue.offer(SHUTDOWN_SENTINEL);
         }
     }
 
@@ -1485,51 +1533,45 @@ public class PnfsManagerV3
         }
     }
 
-    private class ProcessThread implements Runnable {
+    private class ProcessThread implements Runnable
+    {
         private final BlockingQueue<CellMessage> _fifo ;
-        private ProcessThread( BlockingQueue<CellMessage> fifo ){ _fifo = fifo ; }
+
+        private ProcessThread(BlockingQueue<CellMessage> fifo)
+        {
+            _fifo = fifo;
+        }
+
         @Override
-        public void run(){
+        public void run()
+        {
+            try {
+                for (CellMessage message = _fifo.take(); message != SHUTDOWN_SENTINEL; message = _fifo.take()) {
+                    CDC.setMessageContext(message);
+                    try {
+                        /* Discard messages if we are close to their
+                         * timeout (within 10% of the TTL or 10 seconds,
+                         * whatever is smaller)
+                         */
+                        PnfsMessage pnfs = (PnfsMessage) message.getMessageObject();
+                        if (message.getLocalAge() > message.getAdjustedTtl() && useEarlyDiscard(pnfs)) {
+                            _log.warn("Discarding {} because its time to live has been exceeded.",
+                                      pnfs.getClass().getSimpleName());
+                            sendTimeout(message, "TTL exceeded");
+                            continue;
+                        }
 
-            _log.info("Thread <"+Thread.currentThread().getName()+"> started");
-
-            boolean done = false;
-            while( !done ){
-                CellMessage message;
-                try {
-                    message = _fifo.take();
-                } catch (InterruptedException e) {
-                    done = true;
-                    continue;
-                }
-
-                CDC.setMessageContext(message);
-                try {
-                    /* Discard messages if we are close to their
-                     * timeout (within 10% of the TTL or 10 seconds,
-                     * whatever is smaller)
-                     */
-                    PnfsMessage pnfs =
-                        (PnfsMessage)message.getMessageObject();
-                    if (message.getLocalAge() > message.getAdjustedTtl()
-                        && useEarlyDiscard(pnfs)) {
-                        _log.warn("Discarding " + pnfs.getClass().getSimpleName() +
-                                  " because its time to live has been exceeded.");
-                        sendTimeout(message, "TTL exceeded");
-                        continue;
+                        processPnfsMessage(message, pnfs);
+                        fold(pnfs);
+                    } catch (Throwable e) {
+                        _log.warn("processPnfsMessage: {} : {}", Thread.currentThread().getName(), e);
+                    } finally {
+                        CDC.clearMessageContext();
                     }
-
-                    processPnfsMessage(message, pnfs);
-                    fold(pnfs);
-                } catch(Throwable processException) {
-                    _log.warn( "processPnfsMessage : "+
-                               Thread.currentThread().getName()+" : "+
-                               processException );
-                } finally {
-                    CDC.clearMessageContext();
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-            _log.info("Thread <"+Thread.currentThread().getName()+"> finished");
         }
 
         protected void fold(PnfsMessage message)

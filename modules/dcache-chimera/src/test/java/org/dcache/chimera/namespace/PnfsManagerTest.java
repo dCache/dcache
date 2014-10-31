@@ -132,7 +132,6 @@ public class PnfsManagerTest
 
         _fs.setTag(baseInode, "sGroup",sGroupTagData, 0, sGroupTagData.length);
         _fs.setTag(baseInode, "OSMTemplate",osmTemplateTagData, 0, osmTemplateTagData.length);
-
     }
 
     @Test
@@ -543,6 +542,7 @@ public class PnfsManagerTest
     @After
     public void tearDown() throws Exception
     {
+        _pnfsManager.shutdown();
         _fs.close();
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();
