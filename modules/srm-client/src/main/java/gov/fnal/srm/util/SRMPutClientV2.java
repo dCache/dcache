@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import com.google.common.base.Strings;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.util.GlobusURL;
@@ -109,6 +110,8 @@ import org.dcache.srm.v2_2.TRetentionPolicyInfo;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TTransferParameters;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  *
@@ -305,14 +308,14 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         throw new IOException(" null file status code");
                     }
                     if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
-                        String error ="retrieval of surl "+surl_string+" failed, status = "+fileStatusCode+" explanation="+fileStatus.getExplanation();
-                        esay(error);
+                        String explanation = fileStatus.getExplanation();
+                        String error = isNullOrEmpty(explanation) ? fileStatusCode.toString() : fileStatusCode + ": " + explanation;
+                        say(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx],to[indx],error);
                         continue;
                     }
-                    if(putRequestFileStatus.getTransferURL() != null &&
-                            putRequestFileStatus.getTransferURL() != null) {
+                    if(putRequestFileStatus.getTransferURL() != null) {
                         GlobusURL globusTURL = new GlobusURL(putRequestFileStatus.getTransferURL().toString());
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
@@ -425,7 +428,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             }
             report.dumpReport();
             if(!report.everythingAllRight()){
-                System.err.println("srm copy of at least one file failed or not completed");
+                report.reportErrors(System.err);
             }
         }
     }
