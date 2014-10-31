@@ -350,7 +350,7 @@ public final class SpaceManagerService
         {
                 return (message instanceof PoolMgrSelectWritePoolMsg && !message.isReply())
                        || message instanceof DoorTransferFinishedMessage
-                       || (message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey("LinkGroup") != null && (!message.isReply() || message.getReturnCode() != 0));
+                       || (message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey("LinkGroupId") != null && (!message.isReply() || message.getReturnCode() != 0));
         }
 
         public void messageArrived(final CellMessage envelope,
@@ -608,50 +608,38 @@ public final class SpaceManagerService
             LOGGER.trace("transferStarting({})", message);
             PnfsId pnfsId = checkNotNull(message.getPnfsId());
             FileAttributes fileAttributes = message.getFileAttributes();
-            Subject subject = message.getSubject();
-            String linkGroupName = checkNotNull(fileAttributes.getStorageInfo().getKey("LinkGroup"));
+            VOInfo owner = getVoInfo(message.getSubject());
+            long sizeInBytes = message.getPreallocated();
+            long spaceId;
             String spaceToken = fileAttributes.getStorageInfo().getKey("SpaceToken");
             if (spaceToken != null) {
-                LOGGER.trace("transferStarting: file is not " +
-                                     "found, found default space " +
-                                     "token, calling insertFile()");
-                useSpace(Long.parseLong(spaceToken),
-                         subject,
-                         message.getPreallocated(),
-                         pnfsId,
-                         FileState.TRANSFERRING);
+                spaceId = Long.parseLong(spaceToken);
             } else {
                 LOGGER.trace("transferStarting: file is not found, no prior reservations for this file");
 
-                long sizeInBytes = message.getPreallocated();
-                long lifetime    = 1000*60*60;
+                long lifetime = 1000 * 60 * 60;
                 String description = null;
-                LinkGroup linkGroup = db.getLinkGroupByName(linkGroupName);
-                VOInfo voInfo = authorizationPolicy.checkReservePermission(subject, linkGroup);
 
-                Space space = db.insertSpace(voInfo.getVoGroup(),
-                                             voInfo.getVoRole(),
+                long linkGroupId = Long.parseLong(fileAttributes.getStorageInfo().getKey("LinkGroupId"));
+                Space space = db.insertSpace(owner.getVoGroup(),
+                                             owner.getVoRole(),
                                              fileAttributes.getRetentionPolicy(),
                                              fileAttributes.getAccessLatency(),
-                                             linkGroup.getId(),
+                                             linkGroupId,
                                              sizeInBytes,
                                              lifetime,
                                              description,
                                              SpaceState.RESERVED,
                                              0,
                                              0);
-                db.insertFile(space.getId(),
-                              voInfo.getVoGroup(),
-                              voInfo.getVoRole(),
-                              sizeInBytes,
-                              pnfsId,
-                              FileState.TRANSFERRING);
-
-                /* One could inject SpaceToken and SpaceTokenDescription into storage
-                 * info at this point, but since the space reservation is implicit and
-                 * short lived, this information will not be of much use.
-                 */
+                spaceId = space.getId();
             }
+            db.insertFile(spaceId,
+                          owner.getVoGroup(),
+                          owner.getVoRole(),
+                          sizeInBytes,
+                          pnfsId,
+                          FileState.TRANSFERRING);
         }
 
         private void transferStarted(PnfsId pnfsId,boolean success)
@@ -935,33 +923,23 @@ public final class SpaceManagerService
                 return outputLinkGroups;
         }
 
-        private long useSpace(long reservationId,
-                              Subject subject,
-                              long sizeInBytes,
-                              PnfsId pnfsId,
-                              FileState state)
-                throws DataAccessException, SpaceException
-        {
-            String effectiveGroup;
-            String effectiveRole;
-            String primaryFqan = Subjects.getPrimaryFqan(subject);
-            if (primaryFqan != null) {
-                FQAN fqan = new FQAN(primaryFqan);
-                effectiveGroup = fqan.getGroup();
-                effectiveRole = fqan.getRole();
-            } else {
-                effectiveGroup = Subjects.getUserName(subject);
-                effectiveRole = null;
-            }
-            return db.insertFile(reservationId,
-                                 effectiveGroup,
-                                 effectiveRole,
-                                 sizeInBytes,
-                                 pnfsId,
-                                 state);
+    private VOInfo getVoInfo(Subject subject)
+    {
+        String effectiveGroup;
+        String effectiveRole;
+        String primaryFqan = Subjects.getPrimaryFqan(subject);
+        if (primaryFqan != null) {
+            FQAN fqan = new FQAN(primaryFqan);
+            effectiveGroup = fqan.getGroup();
+            effectiveRole = fqan.getRole();
+        } else {
+            effectiveGroup = Subjects.getUserName(subject);
+            effectiveRole = null;
         }
+        return new VOInfo(effectiveGroup, effectiveRole);
+    }
 
-        /**
+    /**
          * Called upon intercepting PoolMgrSelectWritePoolMsg requests.
          *
          * Injects the link group name into the request message. Also adds SpaceToken and
@@ -993,7 +971,7 @@ public final class SpaceManagerService
 
                 StorageInfo storageInfo = selectWritePool.getStorageInfo();
                 storageInfo.setKey("SpaceToken", Long.toString(space.getId()));
-                storageInfo.setKey("LinkGroup", linkGroupName);
+                storageInfo.setKey("LinkGroupId", Long.toString(linkGroup.getId()));
                 if (!fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
                     fileAttributes.setAccessLatency(space.getAccessLatency());
                 } else if (fileAttributes.getAccessLatency() != space.getAccessLatency()) {
@@ -1021,7 +999,7 @@ public final class SpaceManagerService
                 if (linkGroup != null) {
                     String linkGroupName = linkGroup.getName();
                     selectWritePool.setLinkGroup(linkGroupName);
-                    fileAttributes.getStorageInfo().setKey("LinkGroup", linkGroupName);
+                    fileAttributes.getStorageInfo().setKey("LinkGroupId", Long.toString(linkGroup.getId()));
                     LOGGER.trace("selectPool: found linkGroup = {}, " +
                                          "forwarding message", linkGroupName);
                 } else {
