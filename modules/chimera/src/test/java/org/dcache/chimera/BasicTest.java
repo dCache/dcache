@@ -962,4 +962,25 @@ public class BasicTest extends ChimeraTestCaseHelper {
         String id = _rootInode.toString();
         _rootInode.inodeOf(".(parent)(" + id + ")");
     }
+
+    @Test(expected = InvalidNameChimeraException.class)
+    public void testDeleteDot() throws Exception {
+
+        FsInode base = _rootInode.mkdir("dir1");
+        base.remove(".");
+    }
+
+    @Test(expected = InvalidNameChimeraException.class)
+    public void testDeleteDotAtEnd() throws Exception {
+
+        FsInode base = _rootInode.mkdir("dir1");
+        _fs.remove("/dir1/.");
+    }
+
+    @Test(expected = InvalidNameChimeraException.class)
+    public void testDeleteDotDot() throws Exception {
+
+        FsInode base = _rootInode.mkdir("dir1");
+        base.remove("..");
+    }
 }
