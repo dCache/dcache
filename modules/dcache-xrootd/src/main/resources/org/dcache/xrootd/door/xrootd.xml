@@ -74,6 +74,11 @@
     <constructor-arg value="${xrootd.limits.threads}"/>
     <constructor-arg value="${xrootd.max-channel-memory-size}"/>
     <constructor-arg value="${xrootd.max-total-memory-size}"/>
+    <constructor-arg value="30"/>
+    <constructor-arg value="SECONDS"/>
+    <constructor-arg>
+        <bean class="org.dcache.util.CDCThreadFactory"/>
+    </constructor-arg>
   </bean>
 
   <bean id="accept-thread-pool"
