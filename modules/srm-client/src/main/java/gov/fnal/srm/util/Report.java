@@ -11,6 +11,7 @@ import org.globus.util.GlobusURL;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  *
@@ -160,15 +161,27 @@ public class Report {
     }
 
     public void dumpReport() {
-        if(reportFile != null) {
-            try {
-                FileWriter fw = new FileWriter(reportFile);
+        if (reportFile != null) {
+            try (FileWriter fw = new FileWriter(reportFile)) {
                 fw.write(toString());
-                fw.close();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public void reportErrors(PrintStream out) {
+        for (int i = 0; i < length; ++i) {
+            if (rc [i] != 0) {
+                out.append(from[i].getURL());
+                if (to[i] != from[i]) {
+                    out.append(" -> ");
+                    out.append(to[i].getURL());
+                }
+                out.append(": ");
+                out.append(error[i].replace('\n', ' '));
+            }
+            out.println();
         }
     }
 
