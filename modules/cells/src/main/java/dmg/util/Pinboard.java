@@ -1,23 +1,26 @@
 package dmg.util;
 
 import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.text.DateFormat;
 import java.util.Queue;
-
-import static java.lang.Math.max;
 
 public class Pinboard
 {
-    private static final DateTimeFormatter TIMESTAMP_FORMAT =
-            DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault());
+    private static final ThreadLocal<DateFormat> TIMESTAMP_FORMAT =
+            new ThreadLocal<DateFormat>()
+            {
+                @Override
+                protected DateFormat initialValue()
+                {
+                    return DateFormat.getTimeInstance();
+                }
+            };
 
     private final Queue<PinEntry> _entries;
 
@@ -33,25 +36,41 @@ public class Pinboard
 
     public synchronized void dump(StringBuilder sb)
     {
-        _entries.stream().forEach(e -> sb.append(e).append('\n'));
+        dump(sb, _entries);
     }
 
     public synchronized void dump(StringBuilder sb, int last)
     {
-        _entries.stream().skip(max(0, _entries.size() - last)).forEach(e -> sb.append(e).append('\n'));
+        int skip = Math.max(0, _entries.size() - last);
+        dump(sb, Iterables.skip(_entries, skip));
     }
 
     public synchronized void dump(File file) throws IOException
     {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            _entries.stream().forEach(pw::println);
-        }
+        dump(file, _entries);
     }
 
     public synchronized void dump(File file, int last) throws IOException
     {
+        int skip = Math.max(0, _entries.size() - last);
+        dump(file, Iterables.skip(_entries, skip));
+    }
+
+    private void dump(StringBuilder sb, Iterable<PinEntry> entries)
+    {
+        DateFormat format = TIMESTAMP_FORMAT.get();
+        for (PinEntry entry : entries) {
+            sb.append(format.format(entry.timestamp)).append(' ').append(entry.message).append('\n');
+        }
+    }
+
+    private void dump(File file, Iterable<PinEntry> entries) throws IOException
+    {
+        DateFormat format = TIMESTAMP_FORMAT.get();
         try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            _entries.stream().skip(max(0, _entries.size() - last)).forEach(pw::println);
+            for (PinEntry entry : entries) {
+                pw.append(format.format(entry.timestamp)).append(' ').println(entry.message);
+            }
         }
     }
 
@@ -64,12 +83,6 @@ public class Pinboard
         {
             this.message = message;
             this.timestamp = System.currentTimeMillis();
-        }
-
-        @Override
-        public String toString()
-        {
-            return TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(timestamp)) + ' ' + message;
         }
     }
 }
