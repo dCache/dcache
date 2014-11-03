@@ -825,7 +825,7 @@ public class ChimeraNameSpaceProvider
             }
 
             StorageInfo dir = null;
-            Stat stat = null;
+            Stat stat = new Stat();
 
             for (FileAttribute attribute : attr.getDefinedAttributes()) {
 
@@ -837,55 +837,27 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case SIZE:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setSize(attr.getSize());
                         break;
                     case MODE:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
-                        // FIXME this is temporary work-around: we must
-                        // preserve file type (high-order bits) that
-                        // the end-user doesn't provide.  This should
-                        // be fixed in Chimera.
-                        setModeOf(stat, attr.getMode());
+                        stat.setMode(attr.getMode());
                         break;
                     case CREATION_TIME:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setCrTime(attr.getCreationTime());
                         break;
                     case CHANGE_TIME:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setCTime(attr.getChangeTime());
                         break;
                     case MODIFICATION_TIME:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setMTime(attr.getModificationTime());
                         break;
                     case ACCESS_TIME:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setATime(attr.getAccessTime());
                         break;
                     case OWNER:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setUid(attr.getOwner());
                         break;
                     case OWNER_GROUP:
-                        if (stat == null) {
-                            stat = inode.statCache();
-                        }
                         stat.setGid(attr.getGroup());
                         break;
                     case CHECKSUM:
@@ -929,7 +901,7 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            if (stat != null) {
+            if (stat.isDefinedAny()) {
                 inode.setStat(stat);
             }
 
@@ -942,21 +914,6 @@ public class ChimeraNameSpaceProvider
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
 
-    }
-
-    /**
-     * Update provided Stat object with supplied Unix permission.
-     * FIXME This method is a work-around for a bug in Chimera's
-     * Stat.setMode where the client (us) must preserve the high-
-     * order bits (that encode the inode type).
-     * See RT ticket 5575
-     *         http://rt.dcache.org/Ticket/Display.html?id=5575
-     */
-    private static void setModeOf(Stat stat, int mode)
-    {
-        int newMode = (mode & UnixPermission.S_PERMS) |
-                (stat.getMode() & ~UnixPermission.S_PERMS);
-        stat.setMode(newMode);
     }
 
     @Override

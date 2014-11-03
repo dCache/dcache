@@ -331,4 +331,13 @@ public class Stat {
     private void define(StatAttributes attr) throws IllegalStateException {
         _definedAttrs.add(attr);
     }
+
+    /**
+     * Returns <tt>true</tt> iff at least one attribute is set.
+     * @return <tt>true</tt> iff at least one attribute is set.
+     */
+    public boolean isDefinedAny() {
+        return !_definedAttrs.isEmpty();
+    }
+
 }
