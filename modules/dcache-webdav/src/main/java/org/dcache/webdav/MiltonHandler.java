@@ -55,10 +55,16 @@ public class MiltonHandler
         try (CDC ignored = CDC.reset(_cellName, _domainName)) {
             Transfer.initSession();
             ServletContext context = ContextHandler.getCurrentContext();
-            ServletRequest req = new DcacheServletRequest(request, context);
-            ServletResponse resp = new DcacheServletResponse(response);
-            baseRequest.setHandled(true);
-            _httpManager.process(req, resp);
+            switch (request.getMethod()) {
+            case "USERINFO":
+                response.sendError(501, "Not implemented");
+                break;
+            default:
+                ServletRequest req = new DcacheServletRequest(request, context);
+                ServletResponse resp = new DcacheServletResponse(response);
+                baseRequest.setHandled(true);
+                _httpManager.process(req, resp);
+            }
             response.getOutputStream().flush();
             response.flushBuffer();
         }
