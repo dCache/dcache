@@ -576,7 +576,7 @@ public class PoolV4
         @Override
         public void accessTimeChanged(EntryChangeEvent event) {
             FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setAccessTime(System.currentTimeMillis());
+            fileAttributes.setAccessTime(event.getNewEntry().getLastAccessTime());
             _pnfs.notify(new PnfsSetFileAttributes(event.getPnfsId(), fileAttributes));
         }
     }
