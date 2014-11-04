@@ -136,12 +136,7 @@ public class NettyXrootdServer implements CellMessageSender
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         CellInfo info = endpoint.getCellInfo();
-        boolean isNameSiteUnique = endpoint.getArgs().getBooleanOption("export");
-        if (isNameSiteUnique) {
-            sessionPrefix = "door:" + info.getCellName() + ":";
-        } else {
-            sessionPrefix = "door:" + info.getCellName() + "@" + info.getDomainName() + ":";
-        }
+        sessionPrefix = "door:" + info.getCellName() + "@" + info.getDomainName() + ":";
     }
 
     @Required
