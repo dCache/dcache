@@ -1,10 +1,15 @@
 package org.dcache.xrootd.door;
 
+import com.google.common.io.BaseEncoding;
 import com.google.common.net.InetAddresses;
+import com.google.common.primitives.Longs;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.logging.LoggingHandler;
 import org.jboss.netty.logging.InternalLoggerFactory;
@@ -23,23 +28,33 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.util.FsPath;
 
+import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessageSender;
+import dmg.util.TimebasedCounter;
+
+import org.dcache.commons.util.NDC;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
  * spring configuration once we move to Netty 3.1.
  */
-public class NettyXrootdServer
+public class NettyXrootdServer implements CellMessageSender
 {
     private static final Logger _log =
         LoggerFactory.getLogger(NettyXrootdServer.class);
+
+    private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
+
+    private static final TimebasedCounter sessionCounter = new TimebasedCounter();
 
     private int _port;
     private int _backlog;
@@ -51,6 +66,7 @@ public class NettyXrootdServer
     private FsPath _rootPath;
     private FsPath _uploadPath;
     private InetAddress _address;
+    private String sessionPrefix;
 
     /**
      * Switch Netty to slf4j for logging.
@@ -116,6 +132,13 @@ public class NettyXrootdServer
         _door = door;
     }
 
+    @Override
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        CellInfo info = endpoint.getCellInfo();
+        sessionPrefix = "door:" + info.getCellName() + "@" + info.getDomainName() + ":";
+    }
+
     @Required
     public void setChannelHandlerFactories(
             List<ChannelHandlerFactory> channelHandlerFactories)
@@ -158,7 +181,10 @@ public class NettyXrootdServer
                 @Override
                 public ChannelPipeline getPipeline()
                 {
+                    String session = sessionPrefix + SESSION_ENCODING.encode(Longs.toByteArray(sessionCounter.next()));
+
                     ChannelPipeline pipeline = pipeline();
+                    pipeline.addLast("session-1", new SessionHandler(session));
                     pipeline.addLast("tracker", _connectionTracker);
                     pipeline.addLast("encoder", new XrootdEncoder());
                     pipeline.addLast("decoder", new XrootdDecoder());
@@ -167,6 +193,7 @@ public class NettyXrootdServer
                     }
                     pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                     pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
+                    pipeline.addLast("session-2", new SessionHandler(session));
                     for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                         pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                     }
@@ -176,5 +203,28 @@ public class NettyXrootdServer
             });
 
         bootstrap.bind(new InetSocketAddress(_address, _port));
+    }
+
+    private static class SessionHandler implements ChannelUpstreamHandler
+    {
+        private final String session;
+
+        private SessionHandler(String session)
+        {
+            this.session = session;
+        }
+
+        @Override
+        public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.sendUpstream(e);
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package org.dcache.util;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import dmg.cells.nucleus.CDC;
@@ -23,6 +24,16 @@ public class CDCThreadFactory implements ThreadFactory
     private final ThreadFactory _factory;
     private final String _cellName;
     private final String _domainName;
+
+    public CDCThreadFactory()
+    {
+        this(Executors.defaultThreadFactory());
+    }
+
+    public CDCThreadFactory(ThreadFactory factory)
+    {
+        this(factory, CDC.getCellName(), CDC.getDomainName());
+    }
 
     public CDCThreadFactory(ThreadFactory factory, String cellName, String domainName)
     {
