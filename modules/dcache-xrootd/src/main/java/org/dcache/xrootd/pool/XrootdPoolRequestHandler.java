@@ -183,7 +183,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     {
         Throwable t = e.getCause();
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection unexpectedly closed");
+            _log.info("Connection {} unexpectedly closed.", ctx.getChannel());
         } else if (t instanceof RuntimeException || t instanceof Error) {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
@@ -238,9 +238,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 FileDescriptor descriptor;
                 IoMode mode = file.getIoMode();
                 if (msg.isNew() && mode != IoMode.WRITE) {
-                    throw new XrootdException(kXR_ArgInvalid, "File exists");
+                    throw new XrootdException(kXR_ArgInvalid, "File exists.");
                 } else if (msg.isDelete() && mode != IoMode.WRITE) {
-                    throw new XrootdException(kXR_Unsupported, "File exists");
+                    throw new XrootdException(kXR_Unsupported, "File exists.");
                 } else if ((msg.isNew() || msg.isReadWrite()) && mode == IoMode.WRITE) {
                     descriptor = new WriteDescriptor(file);
                 } else {
@@ -393,7 +393,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         int fd = msg.getFileHandle();
 
         if (!isValidFileDescriptor(fd)) {
-            _log.error("Could not find a file descriptor for handle {}", fd);
+            _log.warn("Could not find a file descriptor for handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
                                       "The file handle does not refer to an open " +
                                       "file.");
@@ -431,7 +431,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             int fd = req.getFileHandle();
 
             if (!isValidFileDescriptor(fd)) {
-                _log.error("Could not find file descriptor for handle {}!", fd);
+                _log.warn("Could not find file descriptor for handle {}", fd);
                 throw new XrootdException(kXR_FileNotOpen,
                                           "Descriptor for the embedded read request "
                                           + "does not refer to an open file.");
@@ -444,7 +444,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 _log.warn("Vector read of {} bytes requested, exceeds " +
                           "maximum frame size of {} bytes!", totalBytesToRead,
                           _server.getMaxFrameSize());
-                throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large");
+                throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large.");
             }
         }
 
@@ -467,7 +467,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         int fd = msg.getFileHandle();
 
         if ((!isValidFileDescriptor(fd))) {
-            _log.info("No file descriptor for file handle {}", fd);
+            _log.warn("No file descriptor for file handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
                                       "The file descriptor does not refer to " +
                                       "an open file.");
@@ -475,8 +475,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 
         FileDescriptor descriptor = _descriptors.get(fd);
         if (!(descriptor instanceof WriteDescriptor)) {
-            _log.info("File descriptor for handle {} is read-only, user " +
-                      "tried to write.", fd);
+            _log.warn("File descriptor for handle {} is read-only, user " +
+                              "tried to write.", fd);
             throw new XrootdException(kXR_IOError,
                                       "Tried to write on read only file.");
         }
@@ -485,7 +485,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             descriptor.write(msg);
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
-                    "The file was forcefully closed by the server");
+                    "The file was forcefully closed by the server.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
@@ -507,7 +507,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         int fd = msg.getFileHandle();
 
         if (!isValidFileDescriptor(fd)) {
-            _log.error("Could not find file descriptor for handle {}", fd);
+            _log.warn("Could not find file descriptor for handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
                                       "The file descriptor does not refer to an " +
                                       "open file.");
@@ -518,7 +518,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             descriptor.sync(msg);
         } catch (ClosedChannelException e) {
             throw new XrootdException(kXR_FileNotOpen,
-                    "The file was forcefully closed by the server");
+                    "The file was forcefully closed by the server.");
         } catch (IOException e) {
             throw new XrootdException(kXR_IOError, e.getMessage());
         }
@@ -540,7 +540,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         int fd = msg.getFileHandle();
 
         if (!isValidFileDescriptor(fd)) {
-            _log.error("Could not find file descriptor for handle {}", fd);
+            _log.warn("Could not find file descriptor for handle {}", fd);
             throw new XrootdException(kXR_FileNotOpen,
                              "The file descriptor does not refer to an " +
                              "open file.");
