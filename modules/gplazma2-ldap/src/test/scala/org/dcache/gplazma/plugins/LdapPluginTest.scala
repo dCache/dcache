@@ -32,6 +32,7 @@ class LdapPluginTest extends FlatSpec with Matchers {
     properties.put(Ldap.LDAP_GROUP_TREE, "Groups")
     properties.put(Ldap.LDAP_USER_HOME, "/root")
     properties.put(Ldap.LDAP_USER_ROOT, "/root%homeDirectory%/home")
+    properties.put(Ldap.LDAP_GROUP_MEMBER, "uniqueMember")
     properties
   }
 
