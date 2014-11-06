@@ -32,7 +32,6 @@ check -strong httpd.limits.idle-time.unit
 check -strong httpd.limits.threads
 check -strong httpd.container.default-webapp
 check -strong httpd.container.webapps.dir
-check -strong httpd.container.webapps.tmp-dir
 check httpd.html.dcache-instance-name
 
 check -strong httpd.service.pool.timeout

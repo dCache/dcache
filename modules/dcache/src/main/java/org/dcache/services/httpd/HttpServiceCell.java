@@ -57,11 +57,6 @@ public class HttpServiceCell extends CommandInterpreter
     private String webappResourceUrl;
 
     /**
-     * Where the war should be unpacked
-     */
-    private String tmpUnpackDir;
-
-    /**
      * Enablement of secure connection (HTTPS)
      */
     private boolean authenticated;
@@ -232,10 +227,6 @@ public class HttpServiceCell extends CommandInterpreter
         return server;
     }
 
-    public String getTmpUnpackDir() {
-        return tmpUnpackDir;
-    }
-
     public boolean getAuthenticated() {
         return authenticated;
     }
@@ -303,11 +294,6 @@ public class HttpServiceCell extends CommandInterpreter
     @Required
     public void setKeystorePassword(String keystorePassword) {
         this.keystorePassword = keystorePassword;
-    }
-
-    @Required
-    public void setTmpUnpackDir(String tmpUnpackDir) {
-        this.tmpUnpackDir = tmpUnpackDir;
     }
 
     @Required
