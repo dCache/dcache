@@ -24,7 +24,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.CompoundContext;
@@ -34,6 +33,7 @@ import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.util.RedirectedTransfer;
+import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.xdr.RpcCall;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
@@ -65,7 +65,7 @@ public class DcapProxyIoFactory extends AbstractCell {
 
     private JdbcFs _fileFileSystemProvider;
 
-    private final Cache<stateid4, ProxyIoAdapter> _prioxyIO
+    private final Cache<stateid4, ProxyIoAdapter> _proxyIO
             = CacheBuilder.newBuilder()
             .build();
 
@@ -123,18 +123,25 @@ public class DcapProxyIoFactory extends AbstractCell {
 
         _pendingIO.put(session, transfer);
         transfer.setWrite(isWrite);
-        transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-        PoolPassiveIoFileMessage<byte[]> redirect = transfer.waitForRedirect(NFS_RETRY_PERIOD);
+        try {
 
-        return new DcapChannelImpl(redirect.socketAddress(), session,
-                Base64.byteArrayToBase64(redirect.challange()).getBytes(Charsets.US_ASCII),
-                transfer.getFileAttributes().getSize());
+            transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
+            PoolPassiveIoFileMessage<byte[]> redirect = transfer.waitForRedirect(NFS_RETRY_PERIOD);
+
+            return new DcapChannelImpl(redirect.socketAddress(), session,
+                    Base64.byteArrayToBase64(redirect.challange()).getBytes(Charsets.US_ASCII),
+                    transfer.getFileAttributes().getSize());
+        } catch (CacheException | InterruptedException | IOException e) {
+            // remove the pending mover if exists
+            transfer.killMover(0);
+            throw e;
+        }
     }
 
     ProxyIoAdapter getOrCreateProxy(final Inode inode, final stateid4 stateid, final CompoundContext context, final boolean isWrite) throws ChimeraNFSException {
 
         try {
-            ProxyIoAdapter adapter = _prioxyIO.get(stateid,
+            ProxyIoAdapter adapter = _proxyIO.get(stateid,
                     new Callable<ProxyIoAdapter>() {
 
                         @Override
@@ -155,7 +162,12 @@ public class DcapProxyIoFactory extends AbstractCell {
                                 @Override
                                 public void notifyDisposed(NFS4State state) {
                                     tryToClose(adapter);
-                                    _prioxyIO.invalidate(state.stateid());
+                                    Transfer transfer = _pendingIO.remove(adapter.getSessionId());
+                                    if (transfer != null) {
+                                        // kill the mover if it did not started yet (queued)
+                                        transfer.killMover(0);
+                                    }
+                                    _proxyIO.invalidate(state.stateid());
                                 }
                             });
 
@@ -170,7 +182,7 @@ public class DcapProxyIoFactory extends AbstractCell {
             if (t instanceof ChimeraNFSException) {
                 throw (ChimeraNFSException) t;
             }
-            int status = nfsstat.NFSERR_IO;
+
             if ((t instanceof CacheException) && ((CacheException) t).getRc() != CacheException.BROKEN_ON_TAPE) {
                 throw new DelayException();
             }

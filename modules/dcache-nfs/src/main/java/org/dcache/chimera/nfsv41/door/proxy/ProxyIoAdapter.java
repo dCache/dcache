@@ -39,4 +39,6 @@ public interface ProxyIoAdapter extends Closeable {
      * @return size of the files,  measured in bytes
      */
     long size();
+
+    int getSessionId();
 }
