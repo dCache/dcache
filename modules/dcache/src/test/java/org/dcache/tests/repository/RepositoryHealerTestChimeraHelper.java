@@ -4,6 +4,7 @@ import com.google.common.io.Resources;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -42,7 +43,9 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
 
     public RepositoryHealerTestChimeraHelper() throws Exception {
         Properties dbProperties = new Properties();
-        dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
+        try (InputStream input = Resources.asByteSource(DB_TEST_PROPERTIES).openStream()) {
+            dbProperties.load(input);
+        }
 
         DataSource ds = getDataSource(
                 dbProperties.getProperty("chimera.db.url") + ":" + UUID.randomUUID(),

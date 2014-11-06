@@ -9,6 +9,7 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,7 +28,9 @@ public abstract class ChimeraTestCaseHelper {
     public void setUp() throws Exception {
 
         Properties dbProperties = new Properties();
-        dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
+        try (InputStream input = Resources.asByteSource(DB_TEST_PROPERTIES).openStream()) {
+            dbProperties.load(input);
+        }
 
         _conn = DriverManager.getConnection(dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"), dbProperties.getProperty("chimera.db.password"));

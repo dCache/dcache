@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.sql.Connection;
@@ -74,7 +75,9 @@ public class PnfsManagerTest
          */
 
         Properties dbProperties = new Properties();
-        dbProperties.load(Resources.newInputStreamSupplier(DB_TEST_PROPERTIES).getInput());
+        try (InputStream input = Resources.asByteSource(DB_TEST_PROPERTIES).openStream()) {
+            dbProperties.load(input);
+        }
 
         _conn = DriverManager.getConnection(dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"), dbProperties.getProperty("chimera.db.password"));
