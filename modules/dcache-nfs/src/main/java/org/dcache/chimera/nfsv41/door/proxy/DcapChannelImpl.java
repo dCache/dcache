@@ -32,6 +32,7 @@ public class DcapChannelImpl implements ProxyIoAdapter {
 
     private final SocketChannel _channel;
     private final long _size;
+    private final int _sessionId;
 
     public DcapChannelImpl(InetSocketAddress addr, int session, byte[] challange, long size) throws IOException {
         _channel = SocketChannel.open(addr);
@@ -43,6 +44,12 @@ public class DcapChannelImpl implements ProxyIoAdapter {
         buf.flip();
         writeFully(_channel, buf);
         _size = size;
+        _sessionId = session;
+    }
+
+    @Override
+    public int getSessionId() {
+        return _sessionId;
     }
 
     @Override
