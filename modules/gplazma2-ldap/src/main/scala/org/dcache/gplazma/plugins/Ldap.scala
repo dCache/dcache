@@ -162,15 +162,16 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   private def mapSearchGroupByMemberUid(principal: Principal) = JEnumerationWrapper {
     retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
       ctx.search(groupOU,
-        new BasicAttributes(Ldap.MEMBER_UID_ATTRIBUTE, principal.getName))
+        String.format("%s=%s",Ldap.MEMBER_UID_ATTRIBUTE, principal.getName),
+        getSimpleSearchControls(Ldap.GID_NUMBER_ATTRIBUTE))
     })
   }
 
   private def mapSearchGroupByUniqueMember(principal: Principal) = JEnumerationWrapper {
     retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
       ctx.search(groupOU,
-        new BasicAttributes(Ldap.UNIQUE_MEMBER_ATTRIBUTE,
-         String.format("uid=%s,%s",principal.getName,peopleOU)))
+         String.format("%s=uid=%s,%s",Ldap.UNIQUE_MEMBER_ATTRIBUTE, principal.getName,peopleOU),
+         getSimpleSearchControls(Ldap.GID_NUMBER_ATTRIBUTE))
     })
   }
 
