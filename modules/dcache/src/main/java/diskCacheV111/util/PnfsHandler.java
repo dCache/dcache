@@ -339,15 +339,15 @@ public class PnfsHandler
             return pnfsRequest(new PnfsGetParentMessage(pnfsId)).getParent();
     }
 
-    public void deletePnfsEntry(String path) throws CacheException
+    public PnfsId deletePnfsEntry(String path) throws CacheException
     {
-        deletePnfsEntry(null, path);
+        return deletePnfsEntry(path, EnumSet.allOf(FileType.class));
     }
 
-    public void deletePnfsEntry(String path, Set<FileType> allowed)
+    public PnfsId deletePnfsEntry(String path, Set<FileType> allowed)
         throws CacheException
     {
-        deletePnfsEntry(null, path, allowed);
+        return pnfsRequest(new PnfsDeleteEntryMessage(null, path, allowed)).getPnfsId();
     }
 
     public void deletePnfsEntry(PnfsId pnfsid)  throws CacheException
