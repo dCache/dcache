@@ -83,6 +83,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 
@@ -134,7 +135,7 @@ public class PinCompanion extends AbstractFuture<AbstractStorageElement.Pin>
         return Objects.equal(pinId, DISK_PIN_ID);
     }
 
-    private abstract class CallbackState<T>
+    private abstract class CallbackState<T extends Message>
         extends AbstractMessageCallback<T>
     {
         @Override

@@ -36,6 +36,7 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 
@@ -602,7 +603,7 @@ class Companion
      * delivery (SMC state machines do not allow transitions to be
      * triggered from within transitions).
      */
-    class Callback<T> extends AbstractMessageCallback<T>
+    class Callback<T extends Message> extends AbstractMessageCallback<T>
     {
         @Override
         public void success(T message)

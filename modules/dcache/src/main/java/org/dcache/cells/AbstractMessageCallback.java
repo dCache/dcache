@@ -1,6 +1,7 @@
 package org.dcache.cells;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellPath;
 
@@ -8,7 +9,7 @@ import dmg.cells.nucleus.CellPath;
 /**
  * Abstract base class for MessageCallback implementations.
  */
-public abstract class AbstractMessageCallback<T> implements MessageCallback<T>
+public abstract class AbstractMessageCallback<T extends Message> implements MessageCallback<T>
 {
     private T _reply;
 
