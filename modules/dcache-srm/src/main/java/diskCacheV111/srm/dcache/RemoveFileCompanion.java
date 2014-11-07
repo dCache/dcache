@@ -93,6 +93,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.srm.RemoveFileCallback;
@@ -196,6 +197,7 @@ public class RemoveFileCompanion
             msg.setSubject(_subject);
             msg.setPath(_path);
             msg.setPnfsId(pnfsid);
+            msg.setClient(Subjects.getOrigin(_subject).getAddress().getHostAddress());
 
             _endpoint.sendMessage(new CellMessage(BILLING_PATH, msg));
         } catch (NoRouteToCellException e) {

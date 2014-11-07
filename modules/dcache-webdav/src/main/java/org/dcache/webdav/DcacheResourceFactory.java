@@ -849,16 +849,15 @@ public class DcacheResourceFactory
     /**
      * Deletes a file.
      */
-    public void deleteFile(PnfsId pnfsid, FsPath path)
+    public void deleteFile(FileAttributes attributes, FsPath path)
         throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
-        pnfs.deletePnfsEntry(pnfsid, path.toString(),
-                EnumSet.of(REGULAR, LINK));
-        sendRemoveInfoToBilling(path);
+        pnfs.deletePnfsEntry(attributes.getPnfsId(), path.toString(), EnumSet.of(REGULAR, LINK));
+        sendRemoveInfoToBilling(attributes, path);
     }
 
-    private void sendRemoveInfoToBilling(FsPath path)
+    private void sendRemoveInfoToBilling(FileAttributes attributes, FsPath path)
     {
         try {
             DoorRequestInfoMessage infoRemove =
@@ -866,6 +865,8 @@ public class DcacheResourceFactory
             Subject subject = getSubject();
             infoRemove.setSubject(subject);
             infoRemove.setPath(path);
+            infoRemove.setPnfsId(attributes.getPnfsId());
+            infoRemove.setFileSize(attributes.getSize());
             infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
             _billingStub.notify(infoRemove);
         } catch (NoRouteToCellException e) {
