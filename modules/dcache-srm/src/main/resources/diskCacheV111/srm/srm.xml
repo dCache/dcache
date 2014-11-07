@@ -635,7 +635,6 @@
                 <description>Database connection pool</description>
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="driverClassName" value="java.lang.String"/>
                         <property name="jdbcUrl" value="${srm.db.url}"/>
                         <property name="username" value="${srm.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${srm.db.password.file}', '${srm.db.url}', '${srm.db.user}', '${srm.db.password}') }"/>

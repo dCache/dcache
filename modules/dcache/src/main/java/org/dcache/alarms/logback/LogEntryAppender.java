@@ -78,7 +78,6 @@ import com.google.common.io.Files;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -473,7 +472,9 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
             properties.setProperty("datanucleus.ConnectionURL", url);
         } else if (url.startsWith("jdbc:")) {
             HikariConfig config = new HikariConfig();
-            config.setDataSource(new DriverManagerDataSource(url, user, password));
+            config.setJdbcUrl(url);
+            config.setUsername(user);
+            config.setPassword(password);
             dataSource = new HikariDataSource(config);
             properties.setProperty("datanucleus.connectionPoolingType", "None");
         }

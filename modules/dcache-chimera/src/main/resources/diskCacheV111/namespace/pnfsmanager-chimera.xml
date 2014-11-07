@@ -45,7 +45,6 @@
                 <description>Database connection pool</description>
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="driverClassName" value="java.lang.String"/>
                         <property name="jdbcUrl" value="${pnfsmanager.db.url}"/>
                         <property name="username" value="${pnfsmanager.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${pnfsmanager.db.password.file}', '${pnfsmanager.db.url}', '${pnfsmanager.db.user}', '${pnfsmanager.db.password}') }"/>

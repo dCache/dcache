@@ -345,13 +345,9 @@
             <description>Database connection pool</description>
             <constructor-arg>
                 <bean class="com.zaxxer.hikari.HikariConfig">
-                    <property name="dataSource">
-                        <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                            <property name="url" value="${httpd.alarms.db.url}"/>
-                            <property name="username" value="${httpd.alarms.db.user}"/>
-                            <property name="password" value="${httpd.alarms.db.password}"/>
-                        </bean>
-                    </property>
+                    <property name="jdbcUrl" value="${httpd.alarms.db.url}"/>
+                    <property name="username" value="${httpd.alarms.db.user}"/>
+                    <property name="password" value="${httpd.alarms.db.password}"/>
                 </bean>
             </constructor-arg>
         </bean>

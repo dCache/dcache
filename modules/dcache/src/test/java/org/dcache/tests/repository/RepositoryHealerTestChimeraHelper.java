@@ -1,21 +1,6 @@
 package org.dcache.tests.repository;
 
 import com.google.common.io.Resources;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
-import diskCacheV111.util.PnfsId;
-import java.net.URL;
-import java.util.Properties;
-import java.util.UUID;
-import javax.sql.DataSource;
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import liquibase.Liquibase;
@@ -23,7 +8,21 @@ import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+import javax.sql.DataSource;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+
+import diskCacheV111.util.PnfsId;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
@@ -68,9 +67,8 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     public void shutdown()
     {
         try {
-            _fs.close();
             _conn.createStatement().execute("SHUTDOWN;");
-            //_conn.close();
+            _fs.close();
         } catch (SQLException | IOException ignored) {
         }
     }
@@ -130,7 +128,9 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
 
     public static HikariDataSource getDataSource(String url, String user, String pass) {
         HikariConfig config = new HikariConfig();
-        config.setDataSource(new DriverManagerDataSource(url, user, pass));
+        config.setJdbcUrl(url);
+        config.setUsername(user);
+        config.setPassword(pass);
         config.setMinimumIdle(0);
         config.setMaximumPoolSize(3);
         return new HikariDataSource(config);

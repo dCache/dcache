@@ -8,7 +8,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Transaction;
@@ -257,7 +256,9 @@ public abstract class TransferManager extends AbstractCell
 // below is default, supported are "LowerCase", "MixedCase"
 //                properties.setProperty("datanucleus.identifier.case","UpperCase");
         HikariConfig config = new HikariConfig();
-        config.setDataSource(new DriverManagerDataSource(_jdbcUrl, _user, _pass));
+        config.setJdbcUrl(_jdbcUrl);
+        config.setUsername(_user);
+        config.setPassword(_pass);
         JDOPersistenceManagerFactory pmf = new JDOPersistenceManagerFactory(
                 Maps.<String, Object>newHashMap(Maps.fromProperties(properties)));
         pmf.setConnectionFactory(new AlarmEnabledDataSource(_jdbcUrl,

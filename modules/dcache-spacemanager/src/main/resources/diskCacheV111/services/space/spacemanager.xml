@@ -57,7 +57,6 @@
             <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
-                        <property name="driverClassName" value="java.lang.String"/>
                         <property name="jdbcUrl" value="${spacemanager.db.url}"/>
                         <property name="username" value="${spacemanager.db.user}"/>
                         <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${spacemanager.db.password.file}', '${spacemanager.db.url}', '${spacemanager.db.user}', '${spacemanager.db.password}') }"/>

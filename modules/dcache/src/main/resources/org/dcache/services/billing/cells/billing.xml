@@ -39,21 +39,13 @@
             destroy-method="shutdown">
           <constructor-arg>
               <bean class="com.zaxxer.hikari.HikariConfig">
-                  <constructor-arg type="java.util.Properties">
-                      <value>
-                          minimumIdle = ${billing.db.connections.idle}
-                          maximumPoolSize = ${billing.db.connections.max}
-                          autoCommit = true
-                          transactionIsolation = TRANSACTION_READ_COMMITTED
-                      </value>
-                  </constructor-arg>
-                  <property name="dataSource">
-                      <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-                          <property name="url" value="${billing.db.url}"/>
-                          <property name="username" value="${billing.db.user}"/>
-                          <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
-                      </bean>
-                  </property>
+                  <property name="jdbcUrl" value="${billing.db.url}"/>
+                  <property name="username" value="${billing.db.user}"/>
+                  <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${billing.db.password.file}', '${billing.db.url}', '${billing.db.user}', '${billing.db.password}') }"/>
+                  <property name="autoCommit" value="true"/>
+                  <property name="transactionIsolation" value="TRANSACTION_READ_COMMITTED"/>
+                  <property name="minimumIdle" value="${billing.db.connections.idle}"/>
+                  <property name="maximumPoolSize" value="${billing.db.connections.max}"/>
               </bean>
           </constructor-arg>
       </bean>

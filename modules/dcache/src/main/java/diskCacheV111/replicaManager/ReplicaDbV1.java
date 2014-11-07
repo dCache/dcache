@@ -6,7 +6,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,7 +46,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         _cell = cell;
 
         HikariConfig config = new HikariConfig();
-        config.setDataSource(new DriverManagerDataSource(jdbcUrl, user, pass));
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(user);
+        config.setPassword(pass);
         config.setMinimumIdle(1);
         config.setMaximumPoolSize(30);
         dataSource = new HikariDataSource(config);

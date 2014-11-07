@@ -11,7 +11,6 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -274,7 +273,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
 
         HikariConfig config = new HikariConfig();
-        config.setDataSource(new DriverManagerDataSource(jdbcUrl, user, pass));
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(user);
+        config.setPassword(pass);
         config.setMinimumIdle(1);
         config.setMaximumPoolSize(10);
 
