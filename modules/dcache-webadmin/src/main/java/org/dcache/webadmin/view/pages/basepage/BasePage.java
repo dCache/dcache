@@ -114,6 +114,8 @@ public abstract class BasePage extends WebPage {
                         .getJavaScriptLibrarySettings()
                         .getJQueryReference()));
         response.render(JavaScriptHeaderItem.forUrl("js/infobox.js"));
+	response.render(JavaScriptHeaderItem.forScript("CLOSURE_NO_DEPS = true;",
+                        "nodeps"));
         response.render(StringHeaderItem.forString(META_GENERATOR_TAG));
         response.render(StringHeaderItem.forString(META_VERSION_TAG));
     }
