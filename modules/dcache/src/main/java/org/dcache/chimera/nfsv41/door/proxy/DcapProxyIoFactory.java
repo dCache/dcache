@@ -101,11 +101,16 @@ public class DcapProxyIoFactory extends AbstractCell {
 
         _pendingIO.put(session, transfer);
         transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
-        PoolPassiveIoFileMessage<byte[]> redirect = transfer.waitForRedirect(NFS_RETRY_PERIOD);
+        try {
+            PoolPassiveIoFileMessage<byte[]> redirect = transfer.waitForRedirect(NFS_RETRY_PERIOD);
 
-        return new DcapChannelImpl(redirect.socketAddress(), session,
-                Base64.byteArrayToBase64(redirect.challange()).getBytes(Charsets.US_ASCII),
-                transfer.getFileAttributes().getSize());
+            return new DcapChannelImpl(redirect.socketAddress(), session,
+                    Base64.byteArrayToBase64(redirect.challange()).getBytes(Charsets.US_ASCII),
+                    transfer.getFileAttributes().getSize());
+        } catch (CacheException | InterruptedException | IOException e) {
+            transfer.killMover(0);
+            throw e;
+        }
     }
 
     public void startAdapter() throws InterruptedException, ExecutionException {
