@@ -45,6 +45,7 @@ import scala.collection.convert.WrapAsJava
  * gplazma.ldap.tree.groups = Groups
  * gplazma.ldap.home-dir = "/"
  * gplazma.ldap.root-dir = "%homeDirectory%" evaluates to the users home directory
+ * gplazma.ldap.group-member = "memberUid" or "uniqueMember"
  * </pre>
  *
  * @since 2.3
@@ -57,6 +58,7 @@ object Ldap {
   val COMMON_NAME_ATTRIBUTE = "cn"
   val USER_ID_ATTRIBUTE = "uid"
   val MEMBER_UID_ATTRIBUTE = "memberUid"
+  val UNIQUE_MEMBER_ATTRIBUTE = "uniqueMember"
   val LDAP_URL = "gplazma.ldap.url"
   val LDAP_ORG = "gplazma.ldap.organization"
   val LDAP_PEOPLE_TREE = "gplazma.ldap.tree.people"
@@ -64,6 +66,7 @@ object Ldap {
   val LDAP_USER_FILTER = "gplazma.ldap.userfilter"
   val LDAP_USER_HOME = "gplazma.ldap.home-dir"
   val LDAP_USER_ROOT = "gplazma.ldap.root-dir"
+  val LDAP_GROUP_MEMBER = "gplazma.ldap.group-member"
 }
 
 class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSessionPlugin with GPlazmaMappingPlugin {
@@ -81,6 +84,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
   private var ctx = newContext
 
   private val userFilter = properties.getProperty(Ldap.LDAP_USER_FILTER)
+  private val groupMember = properties.getProperty(Ldap.LDAP_GROUP_MEMBER)
 
   private val peopleOU = {
     val organization = properties.getProperty(Ldap.LDAP_ORG)
@@ -142,7 +146,7 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
         principals.addAll(SeqWrapper(groupMaps))
       } catch {
         case e: NamingException => {
-          log.debug("Failed to get mapping: {}", e.toString)
+          log.info("Failed to get mapping: {}", e.toString)
           throw new AuthenticationException("no mapping")
         }
       }
@@ -150,10 +154,24 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
     }
   }
 
-  private def mapSearchGroupByName(principal: Principal) = JEnumerationWrapper {
+  private def mapSearchGroupByName(principal: Principal) = groupMember match  {
+      case Ldap.UNIQUE_MEMBER_ATTRIBUTE => mapSearchGroupByUniqueMember(principal)
+      case Ldap.MEMBER_UID_ATTRIBUTE => mapSearchGroupByMemberUid(principal)
+  }
+
+  private def mapSearchGroupByMemberUid(principal: Principal) = JEnumerationWrapper {
     retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
       ctx.search(groupOU,
-        new BasicAttributes(Ldap.MEMBER_UID_ATTRIBUTE, principal.getName))
+        String.format("%s=%s",Ldap.MEMBER_UID_ATTRIBUTE, principal.getName),
+        getSimpleSearchControls(Ldap.GID_NUMBER_ATTRIBUTE))
+    })
+  }
+
+  private def mapSearchGroupByUniqueMember(principal: Principal) = JEnumerationWrapper {
+    retryWithNewContextOnException[NamingEnumeration[SearchResult]]( () => {
+      ctx.search(groupOU,
+         String.format("%s=uid=%s,%s",Ldap.UNIQUE_MEMBER_ATTRIBUTE, principal.getName,peopleOU),
+         getSimpleSearchControls(Ldap.GID_NUMBER_ATTRIBUTE))
     })
   }
 
