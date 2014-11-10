@@ -10,3 +10,7 @@ p {
     background: #d2dddd;
     padding: 15px;
 }
+
+.output {
+    font-family: "Lucida Console", Monaco, monospace
+}
