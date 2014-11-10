@@ -28,7 +28,6 @@ import javax.security.auth.Subject;
 
 import java.net.InetSocketAddress;
 import java.security.Principal;
-import java.time.Instant;
 
 import dmg.cells.nucleus.CDC;
 
@@ -195,8 +194,6 @@ public class AccessLogHandler extends SimpleChannelHandler
                     log.add("token", emptyToNull(((RedirectResponse) response).getToken()));
                 } else if (response instanceof StatResponse) {
                     log.add("flags", ((StatResponse) response).getFlags());
-                    log.add("modtime",
-                            Instant.ofEpochSecond(((StatResponse) response).getModificationTime()));
                     log.add("size", ((StatResponse) response).getSize());
                 } else if (response instanceof LoginResponse) {
                     log.add("sessionId", ((LoginResponse) response).getSessionId());
@@ -205,7 +202,6 @@ public class AccessLogHandler extends SimpleChannelHandler
                     FileStatus fs = ((OpenResponse) response).getFileStatus();
                     if (fs != null) {
                         log.add("flags", fs.getFlags());
-                        log.add("modtime", Instant.ofEpochSecond(fs.getModificationTime()));
                         log.add("size", fs.getSize());
                     }
                 }
