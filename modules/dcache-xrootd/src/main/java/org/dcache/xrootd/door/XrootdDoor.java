@@ -49,6 +49,7 @@ import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoDoorEntry;
@@ -472,17 +473,18 @@ public class XrootdDoor
         }
 
         Set<FileType> allowedSet = EnumSet.of(FileType.REGULAR);
-        pnfsHandler.deletePnfsEntry(path.toString(), allowedSet);
-        sendRemoveInfoToBilling(path, subject);
+        PnfsId pnfsId = pnfsHandler.deletePnfsEntry(path.toString(), allowedSet);
+        sendRemoveInfoToBilling(pnfsId, path, subject);
     }
 
-    private void sendRemoveInfoToBilling(FsPath path, Subject subject)
+    private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path, Subject subject)
     {
         try {
             DoorRequestInfoMessage infoRemove =
                     new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
             infoRemove.setSubject(subject);
             infoRemove.setPath(path);
+            infoRemove.setPnfsId(pnfsId);
             Origin origin = Subjects.getOrigin(subject);
             if (origin != null) {
                 infoRemove.setClient(origin.getAddress().getHostAddress());

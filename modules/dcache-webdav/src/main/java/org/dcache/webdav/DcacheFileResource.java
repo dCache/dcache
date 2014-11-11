@@ -178,7 +178,7 @@ public class DcacheFileResource
         throws NotAuthorizedException, ConflictException, BadRequestException
     {
         try {
-            _factory.deleteFile(_attributes.getPnfsId(), _path);
+            _factory.deleteFile(_attributes, _path);
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (CacheException e) {

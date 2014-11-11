@@ -1367,11 +1367,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 //
                 // we are not called if the pnfs request failed.
                 //
-                String path = _message.getPnfsPath();
                 if (_fileAttributes.getFileType() != DIR) {
-                    _pnfs.deletePnfsEntry(path);
+                    String path = _message.getPnfsPath();
+                    PnfsId pnfsId = _fileAttributes.getPnfsId();
+                    _pnfs.deletePnfsEntry(pnfsId, path);
                     sendReply("fileAttributesAvailable", 0, "");
-                    sendRemoveInfoToBilling(path);
+                    sendRemoveInfoToBilling(_fileAttributes, path);
                 } else {
                     sendReply("fileAttributesAvailable", 17, "Path is a Directory", "EISDIR");
                 }
@@ -1382,14 +1383,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
         }
 
-        private void sendRemoveInfoToBilling(String path)
+        private void sendRemoveInfoToBilling(FileAttributes attributes, String path)
         {
             CellInfo cellInfo = _cell.getCellInfo();
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(cellInfo.getCellName() + "@"
                                            + cellInfo.getDomainName(), "remove");
             infoRemove.setSubject(_subject);
+            infoRemove.setPnfsId(attributes.getPnfsId());
+            infoRemove.setFileSize(attributes.getSize());
             infoRemove.setPath(path);
+            infoRemove.setClient(_clientAddress.getHostAddress());
 
             postToBilling(infoRemove);
         }
