@@ -39,20 +39,28 @@ import org.dcache.util.NetLoggerBuilder;
 import org.dcache.xrootd.door.LoginEvent;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
+import org.dcache.xrootd.protocol.messages.EndSessionRequest;
 import org.dcache.xrootd.protocol.messages.ErrorResponse;
 import org.dcache.xrootd.protocol.messages.LocateRequest;
+import org.dcache.xrootd.protocol.messages.LoginRequest;
+import org.dcache.xrootd.protocol.messages.LoginResponse;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
 import org.dcache.xrootd.protocol.messages.MvRequest;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
+import org.dcache.xrootd.protocol.messages.OpenResponse;
 import org.dcache.xrootd.protocol.messages.PathRequest;
 import org.dcache.xrootd.protocol.messages.PrepareRequest;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
+import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.SetRequest;
+import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.XrootdRequest;
+import org.dcache.xrootd.util.FileStatus;
 
+import static com.google.common.base.Strings.emptyToNull;
 import static org.dcache.util.NetLoggerBuilder.Level.DEBUG;
 import static org.dcache.util.NetLoggerBuilder.Level.ERROR;
 import static org.dcache.util.NetLoggerBuilder.Level.INFO;
@@ -87,8 +95,8 @@ public class AccessLogHandler extends SimpleChannelHandler
     {
         NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.xrootd.connection.start").omitNullValues();
         log.add("session", CDC.getSession());
-        log.add("host.remote", getAddress((InetSocketAddress) e.getChannel().getRemoteAddress()));
-        log.add("host.local", getAddress((InetSocketAddress) e.getChannel().getLocalAddress()));
+        log.add("socket.remote", getAddress((InetSocketAddress) e.getChannel().getRemoteAddress()));
+        log.add("socket.local", getAddress((InetSocketAddress) e.getChannel().getLocalAddress()));
         log.toLogger(logger);
         super.channelConnected(ctx, e);
     }
@@ -127,13 +135,25 @@ public class AccessLogHandler extends SimpleChannelHandler
                 if (request instanceof PathRequest) {
                     log.add("path", ((PathRequest) request).getPath());
                     if (request instanceof OpenRequest) {
-                        log.add("mode", "0" + Integer.toOctalString(((OpenRequest) request).getUMask()));
+                        if (!((OpenRequest) request).isReadOnly()) {
+                            int mode = ((OpenRequest) request).getUMask();
+                            if (mode == 0) {
+                                log.add("mode", "0");
+                            } else {
+                                log.add("mode", "0" + Integer.toOctalString(mode));
+                            }
+                        }
                         log.add("options", "0x" + Integer.toHexString(((OpenRequest) request).getOptions()));
                     } else if (request instanceof LocateRequest) {
                         log.add("options", "0x" + Integer.toHexString(((LocateRequest) request).getOptions()));
                     } else if (request instanceof MkDirRequest) {
                         log.add("options", "0x" + Integer.toHexString(((MkDirRequest) request).getOptions()));
                     }
+                } else if (request instanceof LoginRequest) {
+                    log.add("username", ((LoginRequest) request).getUserName());
+                    log.add("capver", ((LoginRequest) request).getClientProtocolVersion());
+                    log.add("pid", ((LoginRequest) request).getPID());
+                    log.add("token", emptyToNull(((LoginRequest) request).getToken()));
                 } else if (request instanceof MvRequest) {
                     log.add("source", ((MvRequest) request).getSourcePath());
                     log.add("target", ((MvRequest) request).getTargetPath());
@@ -160,12 +180,30 @@ public class AccessLogHandler extends SimpleChannelHandler
                                                         Math.min(APPID_PREFIX_LENGTH + APPID_MSG_LENGTH,
                                                                  data.length())));
                     }
+                } else if (request instanceof EndSessionRequest) {
+                    log.add("sessionId", ((EndSessionRequest) request).getSessionId());
                 }
 
                 log.add("response", getStatusCode(response));
                 if (response instanceof ErrorResponse) {
-                    log.add("error.code", ((ErrorResponse) response).getErrorNumber());
+                    log.add("error.code", getErrorCode((ErrorResponse) response));
                     log.add("error.msg", ((ErrorResponse) response).getErrorMessage());
+                } else if (response instanceof RedirectResponse) {
+                    log.add("host", ((RedirectResponse) response).getHost());
+                    log.add("port", ((RedirectResponse) response).getPort());
+                    log.add("token", emptyToNull(((RedirectResponse) response).getToken()));
+                } else if (response instanceof StatResponse) {
+                    log.add("flags", ((StatResponse) response).getFlags());
+                    log.add("size", ((StatResponse) response).getSize());
+                } else if (response instanceof LoginResponse) {
+                    log.add("sessionId", ((LoginResponse) response).getSessionId());
+                    log.add("sec", emptyToNull(((LoginResponse) response).getSec()));
+                } else if (response instanceof OpenResponse) {
+                    FileStatus fs = ((OpenResponse) response).getFileStatus();
+                    if (fs != null) {
+                        log.add("flags", fs.getFlags());
+                        log.add("size", fs.getSize());
+                    }
                 }
 
                 log.toLogger(logger);
@@ -173,6 +211,59 @@ public class AccessLogHandler extends SimpleChannelHandler
         }
 
         super.writeRequested(ctx, e);
+    }
+
+    private String getErrorCode(ErrorResponse response)
+    {
+        int errorNumber = response.getErrorNumber();
+        switch (errorNumber) {
+        case kXR_ArgInvalid:
+            return "ArgInvalid";
+        case kXR_ArgMissing:
+            return "ArgMissing";
+        case kXR_ArgTooLong:
+            return "ArgTooLong";
+        case kXR_FileLocked:
+            return "FileLocked";
+        case kXR_FileNotOpen:
+            return "FileNotOpen";
+        case kXR_FSError:
+            return "FSError";
+        case kXR_InvalidRequest:
+            return "InvalidRequest";
+        case kXR_IOError:
+            return "IOError";
+        case kXR_NoMemory:
+            return "NoMemory";
+        case kXR_NoSpace:
+            return "NoSpace";
+        case kXR_NotAuthorized:
+            return "NotAuhorized";
+        case kXR_NotFound:
+            return "NotFound";
+        case kXR_ServerError:
+            return "ServerError";
+        case kXR_Unsupported:
+            return "Unsupported";
+        case kXR_noserver:
+            return "noserver";
+        case kXR_NotFile:
+            return "NotFile";
+        case kXR_isDirectory:
+            return "isDirectory";
+        case kXR_Cancelled:
+            return "Cancelled";
+        case kXR_ChkLenErr:
+            return "ChkLenErr";
+        case kXR_ChkSumErr:
+            return "ChkSumErr";
+        case kXR_inProgress:
+            return "inProgress";
+        case kXR_noErrorYet:
+            return "noErrorYet";
+        default:
+            return String.valueOf(errorNumber);
+        }
     }
 
     private static String getStatusCode(AbstractResponseMessage response)
@@ -201,46 +292,66 @@ public class AccessLogHandler extends SimpleChannelHandler
     private static String getRequestId(XrootdRequest request)
     {
         switch (request.getRequestId()) {
+        case kXR_handshake:
+            return "handshake";
         case kXR_auth:
             return "auth";
-        case kXR_login:
-            return "login";
-        case kXR_open:
-            return "open";
-        case kXR_stat:
-            return "stat";
-        case kXR_statx:
-            return "statx";
-        case kXR_read:
-            return "read";
-        case kXR_readv:
-            return "readv";
-        case kXR_write:
-            return "write";
-        case kXR_sync:
-            return "sync";
+        case kXR_query:
+            return "query";
+        case kXR_chmod:
+            return "chdmod";
         case kXR_close:
             return "close";
+        case kXR_dirlist:
+            return "dirlist";
+        case kXR_getfile:
+            return "getfile";
         case kXR_protocol:
             return "protocol";
-        case kXR_rm:
-            return "rm";
-        case kXR_rmdir:
-            return "rmdir";
+        case kXR_login:
+            return "login";
         case kXR_mkdir:
             return "mkdir";
         case kXR_mv:
             return "mv";
-        case kXR_dirlist:
-            return "dirlist";
+        case kXR_open:
+            return "open";
+        case kXR_ping:
+            return "ping";
+        case kXR_putfile:
+            return "putfile";
+        case kXR_read:
+            return "read";
+        case kXR_rm:
+            return "rm";
+        case kXR_rmdir:
+            return "rmdir";
+        case kXR_sync:
+            return "sync";
+        case kXR_stat:
+            return "stat";
+        case kXR_set:
+            return "set";
+        case kXR_write:
+            return "write";
+        case kXR_admin:
+            return "admin";
         case kXR_prepare:
             return "prepare";
-        case kXR_locate :
+        case kXR_statx:
+            return "statx";
+        case kXR_endsess:
+            return "endsess";
+        case kXR_bind:
+            return "bind";
+        case kXR_readv:
+            return "readv";
+        case kXR_verifyw:
+            return "verifyw";
+        case kXR_locate:
             return "locate";
-        case kXR_query :
-            return "query";
-        case kXR_set :
-            return "set";
+        case kXR_truncate:
+            return "truncate";
         default:
             return String.valueOf(request.getRequestId());
         }
