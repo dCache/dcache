@@ -94,9 +94,9 @@
     <alarmType>
         <logger>org.dcache.pool.classic.ChecksumScanner</logger>
         <type>CHECKSUM</type>
-        <regex>Marking (.+) as BROKEN</regex>
+        <regex>Marking ([0-9A-F]+{24}) as BROKEN</regex>
         <level>ERROR</level>
-        <severity>MODERATE</severity>
+        <severity>HIGH</severity>
         <includeInKey>group1 type host service domain</includeInKey>
     </alarmType>
 </definitions>
