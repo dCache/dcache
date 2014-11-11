@@ -105,7 +105,9 @@ public abstract class BasePage extends WebPage {
                         .getJavaScriptLibrarySettings()
                         .getJQueryReference()));
         response.render(JavaScriptHeaderItem.forUrl("js/infobox.js"));
-    }
+	response.render(JavaScriptHeaderItem.forScript("CLOSURE_NO_DEPS = true;",
+                        "nodeps"));  
+  }
 
     protected Form<?> getAutoRefreshingForm(String name) {
         return getAutoRefreshingForm(name, 1, TimeUnit.MINUTES);
