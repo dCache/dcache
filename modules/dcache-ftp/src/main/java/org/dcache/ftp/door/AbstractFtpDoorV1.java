@@ -141,6 +141,7 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -1889,10 +1890,10 @@ public abstract class AbstractFtpDoorV1
 
         FsPath path = absolutePath(arg);
         try {
-            _pnfs.deletePnfsEntry(path.toString(),
-                                  EnumSet.of(FileType.REGULAR, FileType.LINK));
+            PnfsId pnfsId =
+                    _pnfs.deletePnfsEntry(path.toString(), EnumSet.of(FileType.REGULAR, FileType.LINK));
             reply("250 OK");
-            sendRemoveInfoToBilling(path);
+            sendRemoveInfoToBilling(pnfsId, path);
         }
         catch (PermissionDeniedCacheException e) {
             throw new FTPCommandException(550,"Permission denied");
@@ -4209,12 +4210,13 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void sendRemoveInfoToBilling(FsPath path) {
+    private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path) {
         try {
             DoorRequestInfoMessage infoRemove =
                 new DoorRequestInfoMessage(_cellAddress.toString(), "remove");
             infoRemove.setSubject(_subject);
             infoRemove.setPath(path);
+            infoRemove.setPnfsId(pnfsId);
             infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 
             _billingStub.notify(infoRemove);
