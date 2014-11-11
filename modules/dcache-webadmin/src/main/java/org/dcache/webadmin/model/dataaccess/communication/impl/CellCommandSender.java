@@ -1,5 +1,8 @@
 package org.dcache.webadmin.model.dataaccess.communication.impl;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,9 +14,7 @@ import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.MessageCallback;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator;
 import org.dcache.webadmin.model.dataaccess.communication.CellMessageGenerator.CellMessageRequest;
 import org.dcache.webadmin.model.dataaccess.communication.CommandSender;
@@ -45,13 +46,13 @@ public class CellCommandSender implements CommandSender {
 
     private void sendMessages() {
         for (CellMessageRequest<? extends Serializable> messageRequest : _messageGenerator) {
-            MessageCallback callback = new CellMessageCallback(messageRequest);
+            CellMessageCallback callback = new CellMessageCallback(messageRequest);
             _log.debug("sending to: {}", messageRequest.getDestination());
             Serializable message = messageRequest.getPayload();
             CellPath destination = messageRequest.getDestination();
-            Class payloadType = messageRequest.getPayloadType();
-            CellStub.addCallback(_cellStub.send(destination, message, payloadType),
-                                 callback, MoreExecutors.sameThreadExecutor());
+            Class<? extends Serializable> payloadType = messageRequest.getPayloadType();
+            ListenableFuture<? extends Serializable> future = _cellStub.send(destination, message, payloadType);
+            Futures.addCallback(future, callback, MoreExecutors.sameThreadExecutor());
         }
         _log.debug("messages send");
     }
@@ -78,29 +79,22 @@ public class CellCommandSender implements CommandSender {
      * Callback to handle answer of a Cell to a Message.
      * @author jans
      */
-    private class CellMessageCallback extends AbstractMessageCallback<Serializable>
+    private class CellMessageCallback implements FutureCallback<Serializable>
     {
         private CellMessageRequest<? extends Serializable> _messageRequest;
 
-        public CellMessageCallback(
-                CellMessageRequest<? extends Serializable> messageRequest) {
+        public CellMessageCallback(CellMessageRequest<? extends Serializable> messageRequest)
+        {
             _messageRequest = messageRequest;
-//            considered sending as not successful until replied
+            // considered sending as not successful until replied
             _messageRequest.setSuccessful(false);
         }
 
-        private void evaluateReply(Message answer) {
-            if ((answer != null) && (answer.getReturnCode() == 0)) {
-                _messageRequest.setSuccessful(true);
-            } else {
-                processFailure();
-            }
-        }
-
         @Override
-        public void success(Serializable message) {
-            if (message instanceof Message) {
-                evaluateReply((Message) message);
+        public void onSuccess(Serializable message)
+        {
+            if (message instanceof Message && ((Message) message).getReturnCode() != 0) {
+                processFailure();
             } else {
                 _messageRequest.setSuccessful(true);
             }
@@ -109,27 +103,17 @@ public class CellCommandSender implements CommandSender {
         }
 
         @Override
-        public void failure(int rc, Object error) {
+        public void onFailure(Throwable error)
+        {
             _log.debug("error object: {}", error.toString());
             processFailure();
             setAnswered();
         }
 
-        @Override
-        public void noroute(CellPath path) {
-            processFailure();
-            setAnswered();
-        }
-
-        @Override
-        public void timeout(String error) {
-            processFailure();
-            setAnswered();
-        }
-
-        private void setAnswered() {
+        private void setAnswered()
+        {
             _log.debug("{} answered {}", _messageRequest.getDestination(),
-                    System.currentTimeMillis());
+                       System.currentTimeMillis());
             processAnswered();
         }
     }
