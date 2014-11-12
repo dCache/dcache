@@ -105,4 +105,33 @@ public class WeightedAvailableSpaceSelectionTest
                                             Functions.<PoolCostInfo>identity());
         assertThat(selected, is(busy));
     }
+
+    @Test
+    public void testYoungLruDoesNotPreventPoolSelection()
+    {
+        int total = 100_000_000;
+        int free = 100;
+        int precious = 0;
+        int removable = 1_000_000;
+        int lru = 10;
+        double breakEven = 0.5;
+        int gap = 1000;
+        double moverCostFactor = 0.5;
+        int moverActive = 0;
+        int moverMaxActive = 10;
+        int moverQueued = 0;
+        int moverReaders = 0;
+        int moverWriters = 0;
+        int filesize = 1000;
+
+        PoolCostInfo info = new PoolCostInfo("pool");
+        info.setSpaceUsage(total, free, precious, removable, lru);
+        info.getSpaceInfo().setParameter(breakEven, gap);
+        info.setMoverCostFactor(moverCostFactor);
+        info.addExtendedMoverQueueSizes("movers", moverActive, moverMaxActive, moverQueued, moverReaders, moverWriters);
+        PoolCostInfo selected =
+                wass.selectByAvailableSpace(singletonList(info), filesize,
+                                            Functions.<PoolCostInfo>identity());
+        assertThat(selected, is(info));
+    }
 }
