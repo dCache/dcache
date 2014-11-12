@@ -13,9 +13,12 @@ import org.dcache.xrootd.protocol.messages.WriteRequest;
  */
 public class WriteDescriptor extends ReadDescriptor
 {
-    public WriteDescriptor(MoverChannel<XrootdProtocolInfo> channel)
+    private boolean posc;
+
+    public WriteDescriptor(MoverChannel<XrootdProtocolInfo> channel, boolean posc)
     {
         super(channel);
+        this.posc = posc;
     }
 
     @Override
@@ -35,5 +38,11 @@ public class WriteDescriptor extends ReadDescriptor
                 position += _channel.write(buffer, position);
             }
         }
+    }
+
+    @Override
+    public boolean isPersistOnSuccessfulClose()
+    {
+        return posc;
     }
 }
