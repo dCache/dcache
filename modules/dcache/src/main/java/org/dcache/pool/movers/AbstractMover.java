@@ -205,7 +205,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
                     setTransferStatus(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
                 } catch (CacheException e) {
                     LOGGER.error("Transfer failed: {}", e.getMessage());
-                    setTransferStatus(e.getRc(), "Internal problem: " + e.getMessage());
+                    setTransferStatus(e.getRc(), e.getMessage());
                 } catch (InterruptedIOException | InterruptedException e) {
                     LOGGER.error("Transfer was forcefully killed");
                     setTransferStatus(CacheException.DEFAULT_ERROR_CODE, "Transfer was forcefully killed");
