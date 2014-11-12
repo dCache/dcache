@@ -190,17 +190,20 @@ public class WassPartition extends ClassicPartition
     {
         long free = space.getFreeSpace();
         long gap = space.getGap();
+
+        /* If the pool cannot hold the file without eating into the gap, the
+         * pool is considered full.
+         */
+        if (free + space.getRemovableSpace() - filesize <= gap) {
+            return 0;
+        }
+
         double removable = getAvailableRemovable(space);
 
         /* The amount of available space on a pool is the sum of
          * whatever is free and decayed removable space.
          */
-        double available = free + removable;
-
-        /* If available space is less than the gap then the pool is
-         * considered full.
-         */
-        return (available - filesize > gap) ? available : 0;
+        return free + removable;
     }
 
     /**
