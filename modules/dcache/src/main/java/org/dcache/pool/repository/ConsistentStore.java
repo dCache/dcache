@@ -312,10 +312,6 @@ public class ConsistentStore
     public MetaDataRecord create(PnfsId id)
         throws DuplicateEntryException, CacheException
     {
-        if (_log.isInfoEnabled()) {
-            _log.info("Creating new entry for " + id);
-        }
-
         /* Fail if file already exists.
          */
         File dataFile = _fileStore.get(id);

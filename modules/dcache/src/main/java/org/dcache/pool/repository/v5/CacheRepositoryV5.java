@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -452,6 +453,8 @@ public class CacheRepositoryV5
                 throw new IllegalArgumentException("Invalid target state");
             }
 
+            _log.info("Creating new entry for {}", id);
+
             MetaDataRecord entry = _store.create(id);
             synchronized (entry) {
                 entry.setFileAttributes(fileAttributes);
@@ -523,7 +526,13 @@ public class CacheRepositoryV5
             /* Somebody got the idea that we have the file, so we make
              * sure to remove any stray pointers.
              */
-            _pnfs.clearCacheLocation(id);
+            MetaDataRecord entry;
+            try {
+                entry = _store.create(id);
+            } catch (DuplicateEntryException concurrentCreation) {
+                return openEntry(id, flags);
+            }
+            setState(entry, REMOVED);
             throw e;
         } catch (DiskErrorCacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
@@ -545,8 +554,6 @@ public class CacheRepositoryV5
                 }
                 return new CacheEntryImpl(entry);
             }
-        } catch (FileNotInCacheException e) {
-            throw e;
         } catch (DiskErrorCacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw e;
@@ -573,7 +580,13 @@ public class CacheRepositoryV5
             /* Attempts to set a sticky bit on a missing file may
              * indicate a stale registration in the name space.
              */
-            _pnfs.clearCacheLocation(id);
+            try {
+                entry = _store.create(id);
+            } catch (DuplicateEntryException concurrentCreation) {
+                setSticky(id, owner, expire, overwrite);
+                return;
+            }
+            setState(entry, REMOVED);
             throw e;
         }
 
@@ -844,11 +857,14 @@ public class CacheRepositoryV5
             }
 
             CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-            stateChanged(oldEntry, newEntry, oldState, state);
+
+            if (oldState != NEW || state != REMOVED) {
+                stateChanged(oldEntry, newEntry, oldState, state);
+            }
 
             if (state == REMOVED) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("remove entry for: " + entry.getPnfsId().toString());
+                if (oldState != NEW) {
+                    _log.info("remove entry for: {}", entry.getPnfsId());
                 }
 
                 PnfsId id = entry.getPnfsId();
@@ -858,9 +874,9 @@ public class CacheRepositoryV5
                 if (oldTask != null) {
                     oldTask.cancel(false);
                 }
-            }
 
-            destroyWhenRemovedAndUnused(entry);
+                destroyWhenRemovedAndUnused(entry);
+            }
         }
     }
 
