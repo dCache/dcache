@@ -549,15 +549,16 @@ public class ChimeraNameSpaceProvider
 
             _fs.clearInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
 
-            if( removeIfLast ) {
-            List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
-                if( locations.isEmpty() ) {
+            if (removeIfLast) {
+                List<StorageLocatable> locations = _fs.getInodeLocations(inode, StorageGenericLocation.DISK);
+                if (locations.isEmpty()) {
 
-                        _log.debug("last location cleaned. removing file {}", inode) ;
+                    _log.debug("last location cleaned. removing file {}", inode);
                     _fs.remove(inode);
                 }
             }
-
+        } catch (FileNotFoundHimeraFsException e) {
+            throw new FileNotFoundCacheException("No such file or directory: " + pnfsId, e);
         } catch (ChimeraFsException e){
             _log.error("Exception in clearCacheLocation for {} : {}", pnfsId, e);
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());

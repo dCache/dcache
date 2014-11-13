@@ -168,11 +168,13 @@ public class RemoteNameSpaceProviderTests
     @Test
     public void shouldSucceedWhenClearCacheLocationRemoveLast() throws Exception
     {
+        givenSuccessfulResponse();
+
         _namespace.clearCacheLocation(ROOT, A_PNFSID, "pool-1", true);
 
         PnfsClearCacheLocationMessage sent =
-                getSingleSentMessage(PnfsClearCacheLocationMessage.class);
-        assertThat(sent.getReplyRequired(), is(false));
+                getSingleSendAndWaitMessage(PnfsClearCacheLocationMessage.class);
+        assertThat(sent.getReplyRequired(), is(true));
         assertThat(sent.getSubject(), is(ROOT));
         assertThat(sent.getPnfsId(), is(A_PNFSID));
         assertThat(sent.getPoolName(), is("pool-1"));
@@ -184,11 +186,13 @@ public class RemoteNameSpaceProviderTests
     public void shouldSucceedWhenClearCacheLocationWithoutRemoveLast()
             throws Exception
     {
+        givenSuccessfulResponse();
+
         _namespace.clearCacheLocation(ROOT, A_PNFSID, "pool-1", false);
 
         PnfsClearCacheLocationMessage sent =
-                getSingleSentMessage(PnfsClearCacheLocationMessage.class);
-        assertThat(sent.getReplyRequired(), is(false));
+                getSingleSendAndWaitMessage(PnfsClearCacheLocationMessage.class);
+        assertThat(sent.getReplyRequired(), is(true));
         assertThat(sent.getSubject(), is(ROOT));
         assertThat(sent.getPnfsId(), is(A_PNFSID));
         assertThat(sent.getPoolName(), is("pool-1"));

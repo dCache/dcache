@@ -17,6 +17,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PnfsCancelUpload;
+import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCommitUpload;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
@@ -171,7 +172,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
             boolean removeIfLast) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        pnfs.clearCacheLocation(id, pool, removeIfLast);
+        pnfs.pnfsRequest(new PnfsClearCacheLocationMessage(id, pool, removeIfLast));
     }
 
     @Override

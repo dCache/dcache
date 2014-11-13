@@ -161,26 +161,12 @@ public class PnfsHandler
 
    public void clearCacheLocation(PnfsId id)
    {
-       clearCacheLocation(id, _poolName, false);
+       clearCacheLocation(id, false);
    }
 
    public void clearCacheLocation(PnfsId id, boolean removeIfLast)
    {
-       clearCacheLocation(id, _poolName, removeIfLast);
-   }
-
-   public void clearCacheLocation(PnfsId id, String pool, boolean removeIfLast)
-   {
-       notify(new PnfsClearCacheLocationMessage(id, pool, removeIfLast));
-   }
-
-   public void clearCacheLocation( PnfsId pnfsId , String poolName ){
-
-       notify( new PnfsClearCacheLocationMessage(
-                           pnfsId,
-                           poolName)
-           ) ;
-
+       notify(new PnfsClearCacheLocationMessage(id, _poolName, removeIfLast));
    }
 
    public void addCacheLocation(PnfsId id) throws CacheException
