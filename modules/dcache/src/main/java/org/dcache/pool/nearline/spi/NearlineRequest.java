@@ -24,7 +24,7 @@ import java.util.UUID;
 /**
  * A request to a nearline storage.
  *
- * The request is parametrised with type of the result of the request.
+ * The request is parametrised with the type of the result of the request.
  *
  * A request has a lifetime containing three stages: queued, activated and
  * completed/failed. Activation is signalled by calling activated, while
