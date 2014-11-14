@@ -31,6 +31,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
 
 import org.dcache.pool.classic.Cancellable;
+import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
@@ -121,11 +122,13 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         _diskExecutor =
             new OrderedMemoryAwareThreadPoolExecutor(
                     threadPoolSize, memoryPerConnection, maxMemory, 30, TimeUnit.SECONDS,
-                    new ThreadFactoryBuilder().setNameFormat(name + "-disk-%d").build());
+                    new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-disk-%d").build()));
         _acceptExecutor =
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build());
+                Executors.newCachedThreadPool(
+                        new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build()));
         _socketExecutor =
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat(name + "-net-%d").build());
+                Executors.newCachedThreadPool(
+                        new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-net-%d").build()));
         _socketThreads = socketThreads;
     }
 
@@ -292,8 +295,8 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
                 @Override
                 public void run()
                 {
-                    if (_sync.timeout()) {
-                        try (CDC ignored = _cdc.restore()) {
+                    try (CDC ignored = _cdc.restore()) {
+                        if (_sync.timeout()) {
                             _completionHandler.failed(new TimeoutCacheException("No connection from client after " +
                                     TimeUnit.MILLISECONDS.toSeconds(connectTimeout) + " seconds. Giving up."), null);
                         }
@@ -311,8 +314,8 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         }
 
         void close(Exception exception) {
-            if (_sync.close(exception)) {
-                try (CDC ignored = _cdc.restore()) {
+            try (CDC ignored = _cdc.restore()) {
+                if (_sync.close(exception)) {
                     if (exception != null) {
                         _completionHandler.failed(exception, null);
                     } else {
@@ -325,8 +328,8 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         @Override
         public void cancel()
         {
-            if (_sync.cancel()) {
-                try (CDC ignored = _cdc.restore()) {
+            try (CDC ignored = _cdc.restore()) {
+                if (_sync.cancel()) {
                     _completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
                 }
             }
