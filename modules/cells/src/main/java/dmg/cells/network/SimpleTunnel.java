@@ -78,6 +78,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
       _socket  = new Socket( address , port ) ;
       _mode    = "Connection" ;
       _nucleus = new CellNucleus( this , cellName ) ;
+      _nucleus.start();
 
       _connectorThread = _nucleus.newThread( this , "Connector" ) ;
       _connectorThread.start() ;
@@ -88,6 +89,7 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
 
       _mode    = "Acception" ;
       _nucleus = new CellNucleus( this , cellName ) ;
+      _nucleus.start();
 
 
       _socket  = socket ;

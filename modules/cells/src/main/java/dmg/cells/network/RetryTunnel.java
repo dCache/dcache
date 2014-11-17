@@ -103,6 +103,7 @@ public class RetryTunnel implements Cell,
       _mode     = "Accepted" ;
       _socket   = socket ;
       _nucleus  = new CellNucleus( this , cellName ) ;
+      _nucleus.start();
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
@@ -135,6 +136,7 @@ public class RetryTunnel implements Cell,
       _port    = port ;
 
       _nucleus = new CellNucleus( this , cellName ) ;
+      _nucleus.start();
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
@@ -148,6 +150,7 @@ public class RetryTunnel implements Cell,
       _port    = port ;
 
       _nucleus = new CellNucleus( this , cellName ) ;
+      _nucleus.start();
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
