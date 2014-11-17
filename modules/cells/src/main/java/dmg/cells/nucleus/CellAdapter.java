@@ -1,5 +1,6 @@
 package dmg.cells.nucleus;
 
+import com.google.common.base.Ascii;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -800,8 +801,9 @@ public class   CellAdapter extends CommandInterpreter
 
             if (msg.isFinalDestination()) {
                 if (!msg.isReply() && msg.getLocalAge() > msg.getAdjustedTtl()) {
-                    _log.warn("Discarding " + obj.getClass().getSimpleName() +
-                                      " because its time to live has been exceeded.");
+                    _log.warn("Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
+                              (obj instanceof CharSequence) ? '\'' + Ascii.truncate((CharSequence) obj, 50, "...") + '\'' : obj.getClass().getSimpleName(),
+                              msg.getLocalAge(), msg.getAdjustedTtl());
                     return;
                 }
 
