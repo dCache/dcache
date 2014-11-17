@@ -189,14 +189,12 @@ public class AliasEntry {
         Map<String, Object> env = cell.getEnvironment();
 
         File war = new File(webappsPath, context + ".war");
-        File tmpDir = new File(cell.getTmpUnpackDir(), alias);
 
         WebAppContext webappContext = new WebAppContext();
         webappContext.setDefaultsDescriptor(cell.getDefaultWebappsXml());
         webappContext.setContextPath(context);
         webappContext.setWar(war.getAbsolutePath());
-        webappContext.setExtractWAR(true);
-        webappContext.setTempDirectory(tmpDir);
+        webappContext.setExtractWAR(false);
         webappContext.setConfigurationClasses(configClasses);
 
         /*
