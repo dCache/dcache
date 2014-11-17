@@ -61,10 +61,13 @@
   </bean>
 
   <bean id="dirlist-timeout-executor"
-        class="java.util.concurrent.Executors"
-        factory-method="newSingleThreadScheduledExecutor"
+        class="org.dcache.util.CDCScheduledExecutorServiceDecorator"
         destroy-method="shutdown">
-    <description>Thread pool for dirlist callback timeouts</description>
+      <description>Thread pool for dirlist callback timeouts</description>
+      <constructor-arg>
+          <bean class="java.util.concurrent.Executors"
+                factory-method="newSingleThreadScheduledExecutor"/>
+      </constructor-arg>
   </bean>
 
   <bean id="request-thread-pool"
