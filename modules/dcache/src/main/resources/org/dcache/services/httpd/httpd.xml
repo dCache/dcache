@@ -14,7 +14,6 @@
     <bean id="serviceCell" class="org.dcache.services.httpd.HttpServiceCell"
         init-method="initialize" destroy-method="cleanUp">
         <property name="webappResourceUrl" value="${httpd.container.default-webapp}"/>
-        <property name="tmpUnpackDir" value="${httpd.container.webapps.tmp-dir}"/>
         <property name="authenticated" value="${httpd.enable.authn}"/>
         <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
         <property name="httpPort" value="${httpd.net.port}"/>
