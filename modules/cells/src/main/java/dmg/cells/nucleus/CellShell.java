@@ -101,10 +101,10 @@ public class CellShell extends CommandInterpreter
       }
    }
 
-    public CellShell(CellAdapter cell)
+    public CellShell(CellNucleus nucleus, CommandInterpreter interpreter)
     {
-        this(cell.getNucleus());
-        _externalInterpreter = cell;
+        this(nucleus);
+        _externalInterpreter = interpreter;
     }
 
     /**

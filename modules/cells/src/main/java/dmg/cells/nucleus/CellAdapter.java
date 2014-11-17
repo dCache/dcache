@@ -66,24 +66,54 @@ import org.dcache.util.Version;
  * @version 0.2.11, 10/22/1998
  */
 
-public class   CellAdapter extends CommandInterpreter
+public class CellAdapter
     implements Cell, CellEventListener, CellEndpoint
 {
     private final static Logger _log =
-        LoggerFactory.getLogger(CellAdapter.class);
+            LoggerFactory.getLogger(CellAdapter.class);
 
     private final CellVersion _version = new CellVersion(Version.of(this));
 
     private final static ThreadLocal<CellMessage> CURRENT_MESSAGE = new ThreadLocal<>();
 
     private final CellNucleus _nucleus;
-    private final Gate        _startGate = new Gate(false);
-    private final Args        _args;
-    private boolean     _useInterpreter = true;
-    private boolean     _returnCommandException = true;
-    private boolean     _answerPing     = true;
-    private String      _autoSetup;
-    private String      _definedSetup;
+    private final Gate _startGate = new Gate(false);
+    private final Args _args;
+    private boolean _useInterpreter = true;
+    private boolean _returnCommandException = true;
+    private boolean _answerPing = true;
+    private String _autoSetup;
+    private String _definedSetup;
+
+    private CommandInterpreter _commandInterpreter = new CommandInterpreter(this)
+    {
+        @Override
+        protected Serializable doExecute(CommandEntry entry, Args args,
+                                         String[] acls) throws CommandException
+        {
+            if (args instanceof Authorizable) {
+                checkAclPermission((Authorizable) args, args, acls);
+            }
+            return super.doExecute(entry, args, acls);
+        }
+
+        @Override
+        public Serializable command(Args args) throws CommandException
+        {
+            if (args.argc() == 0) {
+                return "";
+            }
+
+            //
+            // check for the NOOP command.
+            //
+            if (args.argc() > 0 && args.argv(0).equals("xyzzy")) {
+                return "Nothing happens.";
+            }
+
+            return super.command(args);
+        }
+    };
 
     /**
      * Creates a Cell and the corresponding CellNucleus with the
@@ -93,44 +123,51 @@ public class   CellAdapter extends CommandInterpreter
      *
      * @param cellName is the name of the newly created cell. The name
      *                 has to be unique within the context of this CellDomain.
-     * @param args an arbitrary argument string with can be obtained
-     *        by getArgs later on.
+     * @param args     an arbitrary argument string with can be obtained
+     *                 by getArgs later on.
      * @param startNow the arrival of messages is enabled.
-     * @exception IllegalArgumentException is thrown if the name is
-     *            not unique within this CellDomain.
+     * @throws IllegalArgumentException is thrown if the name is
+     *                                  not unique within this CellDomain.
      */
     public CellAdapter(String cellName,
                        String args,
-                       boolean startNow) {
+                       boolean startNow)
+    {
 
-        this(cellName,  new Args(args == null ? "" : args), startNow);
+        this(cellName, new Args(args == null ? "" : args), startNow);
 
     }
+
     public CellAdapter(String cellName,
                        String cellType,
                        String args,
-                       boolean startNow) {
+                       boolean startNow)
+    {
 
-        this(cellName,  cellType, new Args(args == null ? "" : args), startNow);
+        this(cellName, cellType, new Args(args == null ? "" : args), startNow);
 
     }
-    public CellAdapter(String  cellName,
-                       Args    args,
-                       boolean startNow) {
+
+    public CellAdapter(String cellName,
+                       Args args,
+                       boolean startNow)
+    {
         this(cellName, "Generic", args, startNow);
     }
-    public CellAdapter(String  cellName,
-                       String  cellType,
-                       Args    args,
-                       boolean startNow) {
-        _args      = args;
-        _nucleus   = new CellNucleus(this, cellName, cellType);
+
+    public CellAdapter(String cellName,
+                       String cellType,
+                       Args args,
+                       boolean startNow)
+    {
+        _args = args;
+        _nucleus = new CellNucleus(this, cellName, cellType);
         _nucleus.start();
         _autoSetup = cellName + "Setup";
 
         if ((_args.argc() > 0) &&
-            ((_definedSetup = _args.argv(0)).length() > 1) &&
-            (_definedSetup.startsWith("!"))) {
+                ((_definedSetup = _args.argv(0)).length() > 1) &&
+                (_definedSetup.startsWith("!"))) {
 
             _definedSetup = _definedSetup.substring(1);
             _args.shift();
@@ -147,7 +184,7 @@ public class   CellAdapter extends CommandInterpreter
         }
 
         addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
-        addCommandListener(new HelpCommands());
+        addCommandListener(_commandInterpreter.new HelpCommands());
 
         if (startNow) {
             start();
@@ -155,33 +192,32 @@ public class   CellAdapter extends CommandInterpreter
     }
 
     /**
-     *  starts the delivery of messages to this cell and
-     *  executes the auto and defined Setup context.
-     *  (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
-     *  This method has to be called if the
-     *  contructor has been used with the startNow
-     *  argument set to 'false'.
-     *
+     * starts the delivery of messages to this cell and
+     * executes the auto and defined Setup context.
+     * (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
+     * This method has to be called if the
+     * contructor has been used with the startNow
+     * argument set to 'false'.
      */
-    public void start() {
+    public void start()
+    {
         executeSetupContext();
         _startGate.open();
     }
 
-    @Override
-    public Serializable command(Args args) throws CommandException {
-        if (args.argc() == 0) {
-            return "";
-        }
+    public void addCommandListener(Object commandListener)
+    {
+        _commandInterpreter.addCommandListener(commandListener);
+    }
 
-        //
-        // check for the NOOP command.
-        //
-        if (args.argc() > 0 && args.argv(0).equals("xyzzy")) {
-            return "Nothing happens.";
-        }
+    public String command(String command) throws CommandExitException
+    {
+        return _commandInterpreter.command(command);
+    }
 
-        return super.command(args);
+    public Serializable command(Args args) throws CommandException
+    {
+        return _commandInterpreter.command(args);
     }
 
     /**
@@ -206,7 +242,7 @@ public class   CellAdapter extends CommandInterpreter
         if (name != null) {
             try {
                 try (Reader in = _nucleus.getDomainContextReader(name)) {
-                    CellShell shell = new CellShell(this);
+                    CellShell shell = new CellShell(_nucleus, _commandInterpreter);
                     shell.execute("context:" + name, in, new Args(""));
                 }
 
@@ -939,17 +975,6 @@ public class   CellAdapter extends CommandInterpreter
         } catch (Exception e) {
             return "??? : "+e.toString();
         }
-    }
-
-    @Override
-    protected Serializable doExecute(CommandEntry entry, Args args,
-            String[] acls) throws CommandException
-    {
-        if (args instanceof Authorizable) {
-            checkAclPermission((Authorizable) args, args, acls);
-        }
-
-        return super.doExecute(entry, args, acls);
     }
 
     private CellPath _aclPath    = new CellPath("acm");
