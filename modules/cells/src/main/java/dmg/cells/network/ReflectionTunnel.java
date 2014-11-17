@@ -36,7 +36,7 @@ public class ReflectionTunnel implements Cell,
    {
 
       _nucleus  = new CellNucleus( this , cellName ) ;
-
+      _nucleus.start();
    }
 
    @Override
