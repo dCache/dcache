@@ -148,7 +148,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    public DCacheCoreControllerV2( String cellName , String args )
    {
 
-      super( cellName , args , false ) ;
+      super(cellName, args);
 
       _cellName = cellName ;
       _args     = getArgs() ;

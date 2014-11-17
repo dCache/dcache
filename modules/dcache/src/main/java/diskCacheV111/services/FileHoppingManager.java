@@ -52,7 +52,7 @@ public class FileHoppingManager extends CellAdapter {
 
    public FileHoppingManager( String name , String args )throws Exception {
 
-      super( name , FileHoppingManager.class.getName(), args , false );
+      super( name , FileHoppingManager.class.getName(), args);
 
       _args    = getArgs() ;
       _nucleus = getNucleus() ;

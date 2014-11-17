@@ -42,11 +42,13 @@ public class LocationManagerConnector
 
     public LocationManagerConnector(String cellName, String args)
     {
-        super(cellName, "System", args, true);
+        super(cellName, "System", args);
 
         Args a = getArgs();
         _domain = a.getOpt("domain");
         _lm = a.getOpt("lm");
+
+        start();
 
         _thread = getNucleus().newThread(this, "TunnelConnector");
         _thread.start();

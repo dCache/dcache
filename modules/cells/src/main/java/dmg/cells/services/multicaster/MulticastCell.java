@@ -101,7 +101,7 @@ public class MulticastCell extends CellAdapter {
    }
    public MulticastCell( String name , String args )
    {
-       super( name , args , false ) ;
+       super(name, args);
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
 

@@ -54,7 +54,7 @@ public class      LoginCell
 
   public LoginCell( String name , StreamEngine engine , Args args )
          throws Exception {
-     super( name , args , false ) ;
+     super(name, args);
      _engine  = engine ;
 
      try{

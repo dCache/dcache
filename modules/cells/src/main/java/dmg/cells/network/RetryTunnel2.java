@@ -71,11 +71,13 @@ public class      RetryTunnel2
    public RetryTunnel2( String cellName , StreamEngine engine , Args args )
    {
 
-     super( cellName , "System" , args , true ) ;
+     super( cellName , "System" , args) ;
 
       _engine   = engine ;
       _mode     = "Accepted" ;
       _nucleus  = getNucleus() ;
+
+       start();
 
       _ioThread = _nucleus.newThread( this , "IoThread" ) ;
       _ioThread.start() ;
@@ -87,7 +89,7 @@ public class      RetryTunnel2
    public RetryTunnel2( String cellName , String argString )
    {
 
-      super( cellName , "System" , argString , false ) ;
+      super( cellName , "System" , argString) ;
       _log.info( "CellName : "+cellName+ " ; args : "+argString ) ;
 
       _args    = getArgs() ;
@@ -111,8 +113,9 @@ public class      RetryTunnel2
    public RetryTunnel2( String cellName , String host , int port )
    {
 
-      super( cellName , "System" ,  host+" "+port , true ) ;
+      super( cellName , "System" ,  host+" "+port);
       _args = getArgs() ;
+       start();
       _RetryTunnel2( cellName , host , port ) ;
    }
    private void _RetryTunnel2( String cellName , String host , int port )

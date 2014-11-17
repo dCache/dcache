@@ -61,7 +61,7 @@ public class      SystemCell
       }
    }
    public SystemCell( String cellDomainName  ){
-       super( cellDomainName ) ;
+       super(cellDomainName, "");
 
        _nucleus   = getNucleus() ;
        _cellShell = new CellShell( getNucleus() ) ;
@@ -74,6 +74,8 @@ public class      SystemCell
        _runtime.addShutdownHook( new TheKiller() ) ;
 
        Thread.setDefaultUncaughtExceptionHandler(this);
+
+       start();
 //       setPrintoutLevel(0xff);
 
 //      addCellEventListener() ;

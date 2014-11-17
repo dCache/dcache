@@ -75,7 +75,7 @@ public class StreamObjectCell
     public StreamObjectCell(String name, StreamEngine engine, Args args)
         throws Exception
     {
-        super(name, args, false);
+        super(name, args);
 
         _engine = engine;
         _nucleus = getNucleus();

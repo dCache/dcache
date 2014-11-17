@@ -43,7 +43,7 @@ public class       UserSecurityCell
 
   public UserSecurityCell( String name , String argString ) throws Exception {
 
-      super( name , argString , false ) ;
+      super(name, argString);
 
       _cellName  = name ;
       _args      = getArgs() ;

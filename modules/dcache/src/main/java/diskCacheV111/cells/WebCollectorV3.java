@@ -183,7 +183,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     public WebCollectorV3(String name, String args) throws Exception
     {
-        super(name, WebCollectorV3.class.getName(), args, false);
+        super(name, WebCollectorV3.class.getName(), args);
         _args    = getArgs();
         _nucleus = getNucleus();
         try {

@@ -47,7 +47,7 @@ public class       AclCell
   private Crypt            _crypt        = new Crypt() ;
   public AclCell( String name , String argString ) throws Throwable {
 
-      super( name , argString , false ) ;
+      super(name, argString);
 
       _cellName  = name ;
       _args      = getArgs() ;

@@ -28,8 +28,8 @@ public class DataProviderCell extends CellAdapter {
     private Hashtable<String, byte[]> _classHash      = new Hashtable<>() ;
     private int         _requestCounter;
     private int         _errorCounter;
-    public DataProviderCell( String cellName , String args ){
-        super( cellName , args ,false ) ;
+    public DataProviderCell(String cellName, String args) {
+        super(cellName, args);
 
         _nucleus = getNucleus() ;
         _args    = getArgs() ;

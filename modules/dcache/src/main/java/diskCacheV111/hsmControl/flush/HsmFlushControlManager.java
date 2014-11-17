@@ -85,7 +85,7 @@ public class HsmFlushControlManager  extends CellAdapter {
       *                 Options are forwarded to the driver as well.
       */
     public HsmFlushControlManager( String name , String  args ) throws Exception {
-       super( name , args , false ) ;
+       super(name, args);
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
        _poolManager = new CellStub(this, new CellPath("PoolManager"), 30, SECONDS);

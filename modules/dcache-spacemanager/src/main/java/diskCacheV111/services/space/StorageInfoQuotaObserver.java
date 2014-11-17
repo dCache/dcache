@@ -182,7 +182,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
      */
    public StorageInfoQuotaObserver( String name , String args )throws Exception {
 
-      super( name ,StorageInfoQuotaObserver.class.getName(), args , false ) ;
+      super(name, StorageInfoQuotaObserver.class.getName(), args);
 
       _args    = getArgs() ;
       _nucleus = getNucleus() ;

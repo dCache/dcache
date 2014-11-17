@@ -33,7 +33,7 @@ public class MemoryWatch extends CellAdapter implements Runnable {
 
    public MemoryWatch( String name , String args ) throws Exception {
 
-      super( name , args , false ) ;
+      super(name, args);
       _nucleus  = getNucleus() ;
       try{
          _args     = getArgs() ;

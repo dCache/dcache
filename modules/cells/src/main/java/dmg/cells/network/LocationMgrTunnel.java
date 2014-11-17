@@ -76,7 +76,7 @@ public class LocationMgrTunnel
     public LocationMgrTunnel(String cellName, StreamEngine engine, Args args)
         throws IOException
     {
-        super(cellName, "System", args, false);
+        super(cellName, "System", args);
 
         try {
             _nucleus = getNucleus();

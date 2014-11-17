@@ -252,7 +252,7 @@ public class TransferObserverV1
 
     public TransferObserverV1(String name, String  args) throws Exception
     {
-        super(name, TransferObserverV1.class.getName(), args, false);
+        super(name, TransferObserverV1.class.getName(), args);
 
         _nucleus = getNucleus();
         _cellStub = new CellStub(this, null, 30, SECONDS);

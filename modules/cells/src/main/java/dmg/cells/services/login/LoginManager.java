@@ -118,7 +118,7 @@ public class LoginManager
      */
     public LoginManager(String name, String argString) throws Exception
     {
-        super(name, argString, false);
+        super(name, argString);
 
         _nucleus = getNucleus();
         _args = getArgs();

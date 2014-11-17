@@ -223,7 +223,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      */
     public AbstractCell(String cellName, String cellType, Args arguments)
     {
-        super(cellName, cellType, stripDefinedSetup(arguments), false);
+        super(cellName, cellType, stripDefinedSetup(arguments));
         _definedSetup = getDefinedSetup(arguments);
     }
 

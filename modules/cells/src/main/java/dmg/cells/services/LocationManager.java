@@ -30,7 +30,6 @@ import java.util.StringTokenizer;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.DelayedReply;
@@ -1213,7 +1212,7 @@ public class LocationManager extends CellAdapter {
      *
      */
    public LocationManager( String name , String args )throws Exception {
-       super( name , "System", args , false ) ;
+       super(name, "System", args);
        _args      = getArgs() ;
        _nucleus   = getNucleus() ;
        try{

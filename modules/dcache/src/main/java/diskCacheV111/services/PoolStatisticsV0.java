@@ -248,7 +248,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private static String  _bodyString           = "<body bgcolor=white>" ;
 
    public PoolStatisticsV0( String name , String args )throws Exception {
-      super( name , args , false ) ;
+      super(name, args);
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
       _poolManager = new CellStub(this, new CellPath("PoolManager"), 20000);

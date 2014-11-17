@@ -53,7 +53,7 @@ public class      StreamLoginCell
   private Reader         _reader;
   private CellNucleus    _nucleus;
   public StreamLoginCell( String name , StreamEngine engine ){
-     super( name ) ;
+     super(name, "");
 
      _engine  = engine ;
      _nucleus = getNucleus() ;
@@ -65,10 +65,13 @@ public class      StreamLoginCell
 
      _shell        = new CellShell( _nucleus ) ;
      _destination  = getCellName() ;
+
+      useInterpreter(false) ;
+
+      start();
+
      _workerThread = _nucleus.newThread( this , "worker" ) ;
      _workerThread.start() ;
-
-     useInterpreter(false) ;
   }
   @Override
   public void run(){

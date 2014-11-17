@@ -37,7 +37,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     private SyncFifo2   _fifo = new SyncFifo2() ;
 
     public HsmControlOsm( String name , String  args ) throws Exception {
-       super( name , args , false ) ;
+       super(name, args);
        _nucleus = getNucleus() ;
        _args    = getArgs() ;
        try{

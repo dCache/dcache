@@ -45,7 +45,7 @@ public class      ObjectLoginCell
   private CellNucleus    _nucleus ;
 
   public ObjectLoginCell( String name , StreamEngine engine ){
-     super( name , "" , false ) ;
+     super(name, "");
 
      _engine  = engine ;
      _nucleus = getNucleus() ;

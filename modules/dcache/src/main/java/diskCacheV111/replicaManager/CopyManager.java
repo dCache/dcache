@@ -87,7 +87,7 @@ public class CopyManager extends CellAdapter {
 
    public CopyManager( String cellName , String args )
    {
-      super( cellName , args ) ;
+      super(cellName, args);
       _poolStub = new CellStub(this, null, 10, MINUTES);
       start() ;
    }

@@ -67,7 +67,7 @@ public class LoginBroker
   }
     public LoginBroker(String name, String argString)
     {
-        super(name, argString, false);
+        super(name, argString);
 
         _cleanerThread = getNucleus().newThread(this, "Cleaner");
         _cleanerThread.start();

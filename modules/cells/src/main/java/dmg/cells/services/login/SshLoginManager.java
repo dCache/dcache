@@ -72,7 +72,7 @@ public class       SshLoginManager
   */
   public SshLoginManager( String name , String argString ) throws Exception {
 
-      super( name , argString , false ) ;
+      super(name, argString);
 
       _cellName      = name ;
       try{

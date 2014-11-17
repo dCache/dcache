@@ -76,7 +76,7 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
    public WebPicturesV0( String name , String args )throws Exception {
 
-      super( name , args , false ) ;
+      super(name, args);
       _log.info("WebPictures started");
       try{
          _args        = getArgs() ;

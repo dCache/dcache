@@ -66,7 +66,7 @@ public class      SshKeyManager
     private final Map<String,Object> _cellContext;
 
    public SshKeyManager( String name , String args ){
-       super(  name , args , false ) ;
+       super(name, args);
 
        _nucleus     = getNucleus() ;
        _cellContext = _nucleus.getDomainContext() ;

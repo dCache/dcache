@@ -144,7 +144,7 @@ public class BroadcastCell extends CellAdapter {
 
     /** Creates a new instance of BroadcastCell */
     public BroadcastCell(String name , String args ) {
-        super( name , "System", args , false ) ;
+        super(name, "System", args);
         _args    = getArgs() ;
         _nucleus = getNucleus() ;
 

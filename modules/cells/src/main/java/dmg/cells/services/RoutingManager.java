@@ -64,7 +64,7 @@ public class RoutingManager
 
     public RoutingManager(String name, String arguments)
     {
-        super(name,"System", arguments, false);
+        super(name,"System", arguments);
         _nucleus = getNucleus();
         _nucleus.addCellEventListener(this);
         Args args = getArgs();

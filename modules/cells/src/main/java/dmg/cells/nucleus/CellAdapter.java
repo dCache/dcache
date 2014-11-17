@@ -123,40 +123,30 @@ public class CellAdapter
      *                 has to be unique within the context of this CellDomain.
      * @param args     an arbitrary argument string with can be obtained
      *                 by getArgs later on.
-     * @param startNow the arrival of messages is enabled.
      * @throws IllegalArgumentException is thrown if the name is
      *                                  not unique within this CellDomain.
      */
-    public CellAdapter(String cellName,
-                       String args,
-                       boolean startNow)
+    public CellAdapter(String cellName, String args)
     {
-
-        this(cellName, new Args(args == null ? "" : args), startNow);
-
+        this(cellName, new Args(args == null ? "" : args));
     }
 
     public CellAdapter(String cellName,
                        String cellType,
-                       String args,
-                       boolean startNow)
+                       String args)
     {
-
-        this(cellName, cellType, new Args(args == null ? "" : args), startNow);
-
+        this(cellName, cellType, new Args(args == null ? "" : args));
     }
 
     public CellAdapter(String cellName,
-                       Args args,
-                       boolean startNow)
+                       Args args)
     {
-        this(cellName, "Generic", args, startNow);
+        this(cellName, "Generic", args);
     }
 
     public CellAdapter(String cellName,
                        String cellType,
-                       Args args,
-                       boolean startNow)
+                       Args args)
     {
         _args = args;
         _nucleus = new CellNucleus(this, cellName, cellType);
@@ -183,10 +173,6 @@ public class CellAdapter
 
         addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
         addCommandListener(_commandInterpreter.new HelpCommands());
-
-        if (startNow) {
-            start();
-        }
     }
 
     /**
@@ -252,30 +238,6 @@ public class CellAdapter
         }
     }
 
-    /**
-     * Creates a Cell and the corresponding CellNucleus with the
-     * specified name.
-     *
-     * @param cellName is the name of the newly created cell. The name
-     *                 has to be unique within the context of this CellDomain.
-     * @exception IllegalArgumentException is thrown if the name is
-     *            not unique within this CellDomain.
-     */
-    public CellAdapter(String cellName) {
-        this(cellName, "", true);
-    }
-    /**
-     * Creates a Cell and the corresponding CellNucleus with the
-     * specified name and a set of arguments.
-     *
-     * @param cellName is the name of the newly created cell. The name
-     *                 has to be unique within the context of this CellDomain.
-     * @exception IllegalArgumentException is thrown if the name is
-     *            not unique within this CellDomain.
-     */
-    public CellAdapter(String cellName, String args) {
-        this(cellName, args, true);
-    }
     //
     // adapter to the nucleus
     //

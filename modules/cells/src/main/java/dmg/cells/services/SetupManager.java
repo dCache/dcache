@@ -39,7 +39,7 @@ public class SetupManager extends CellAdapter {
    //
    public SetupManager( String cellName , String args ) throws Exception {
 
-      super( cellName , args , false ) ;
+      super(cellName, args);
 
       _cellName = cellName ;
       _args     = getArgs() ;

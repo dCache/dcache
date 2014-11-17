@@ -29,7 +29,7 @@ public class BatchCell extends CellAdapter implements Runnable
     public BatchCell(String name, String [] argStrings)
         throws Exception
     {
-        super(name, "", true);
+        super(name, "");
 
         try {
             useInterpreter(false);
@@ -40,18 +40,20 @@ public class BatchCell extends CellAdapter implements Runnable
 
             _in = new StringReader(input.toString());
             _source = name;
-            Thread worker = new Thread(this);
-            worker.start();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            start();
             kill();
             throw e;
         }
+        start();
+        Thread worker = new Thread(this);
+        worker.start();
     }
 
     public BatchCell(String name, String argString)
         throws Exception
     {
-        super(name, argString, true);
+        super(name, argString);
 
         try {
             Args args = getArgs();
@@ -69,12 +71,14 @@ public class BatchCell extends CellAdapter implements Runnable
             } else {
                 _in = new FileReader(_source);
             }
-            Thread worker = new Thread(this);
-            worker.start();
         } catch (Exception e) {
+            start();
             kill();
             throw e;
         }
+        start();
+        Thread worker = new Thread(this);
+        worker.start();
     }
 
     @Override

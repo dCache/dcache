@@ -55,7 +55,7 @@ public class       UserMgrCell
   */
   public UserMgrCell( String name , String argString ) throws Exception {
 
-      super( name , argString , false ) ;
+      super(name, argString);
 
       _cellName      = name ;
 

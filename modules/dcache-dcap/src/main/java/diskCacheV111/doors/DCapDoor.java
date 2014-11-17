@@ -67,7 +67,7 @@ public class      DCapDoor
 	//
         // the cell stuff
         //
-        super( name , DCapDoor.class.getName(), args , false );
+        super(name , DCapDoor.class.getName(), args);
         _nucleus = getNucleus() ;
 
         try{
