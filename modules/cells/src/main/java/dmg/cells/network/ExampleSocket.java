@@ -39,6 +39,7 @@ public class ExampleSocket implements Cell, Runnable {
    public ExampleSocket( String cellName , Socket socket ){
 
       _nucleus = new CellNucleus( this , cellName ) ;
+      _nucleus.start();
       _nucleus.export() ;
 
       _worker = _nucleus.newThread( this , "I/O Engine" ) ;
