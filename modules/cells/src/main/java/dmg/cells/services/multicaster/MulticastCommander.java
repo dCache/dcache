@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.Reply;
 
 import org.dcache.util.Args;
 
@@ -16,17 +16,13 @@ public class MulticastCommander extends CellAdapter {
    private final static Logger _log =
        LoggerFactory.getLogger(MulticastCommander.class);
 
-   private CellNucleus _nucleus;
-   private Args        _args;
    private CellPath    _path    = new CellPath("mc") ;
    public MulticastCommander( String name , String args )
    {
        super( name , args , false ) ;
-       _nucleus = getNucleus() ;
-       _args    = getArgs() ;
-
        start() ;
    }
+
    @Override
    public void messageToForward( CellMessage msg ){
         CellPath source = msg.getSourcePath() ;
@@ -52,35 +48,36 @@ public class MulticastCommander extends CellAdapter {
        _path = new CellPath(args.argv(0)) ;
        return "" ;
    }
-   public static final String hh_register = "<className> <instanceName>" ;
-   public String ac_register_$_2( Args args )throws Exception {
-      String className    = args.argv(0) ;
-      String instanceName = args.argv(1) ;
-      MulticastRegister register =
-         new MulticastRegister(  className , instanceName  ) ;
 
-      CellMessage thisMsg = getThisMessage() ;
-      thisMsg.getDestinationPath().add( _path ) ;
-      thisMsg.nextDestination() ;
-      thisMsg.setMessageObject( register ) ;
-      sendMessage( thisMsg ) ;
-      return ""  ;
+   public static final String hh_register = "<className> <instanceName>";
+   public Reply ac_register_$_2(Args args)
+   {
+      String className = args.argv(0);
+      String instanceName = args.argv(1);
+      MulticastRegister register = new MulticastRegister(className, instanceName);
+      return (endpoint, envelope) -> {
+         envelope.getDestinationPath().add(_path);
+         envelope.nextDestination();
+         envelope.setMessageObject(register);
+         endpoint.sendMessage(envelope);
+      };
    }
+
    public static final String hh_send = "<className> <instanceName> <message>" ;
-   public String ac_send_$_3( Args args )throws Exception {
-      String className    = args.argv(0) ;
-      String instanceName = args.argv(1) ;
-      String info         = args.argv(2) ;
-      MulticastMessage message =
-         new MulticastMessage(  className , instanceName , info ) ;
-
-      CellMessage thisMsg = getThisMessage() ;
-      thisMsg.getDestinationPath().add( _path ) ;
-      thisMsg.nextDestination() ;
-      thisMsg.setMessageObject( message ) ;
-      sendMessage( thisMsg ) ;
-      return ""  ;
+   public Reply ac_send_$_3( Args args )
+   {
+      String className = args.argv(0);
+      String instanceName = args.argv(1);
+      String info = args.argv(2);
+      MulticastMessage message = new MulticastMessage(className, instanceName, info);
+      return (endpoint, envelope) -> {
+         envelope.getDestinationPath().add(_path);
+         envelope.nextDestination();
+         envelope.setMessageObject(message);
+         endpoint.sendMessage(envelope);
+      };
    }
+
    public static final String hh_close = "<className> <instanceName>" ;
    public String ac_close_$_2( Args args )throws Exception {
       String className    = args.argv(0) ;
@@ -103,25 +100,20 @@ public class MulticastCommander extends CellAdapter {
    }
    public static final String hh_open =
      "<className> <instanceName> [<detail>] [-overwrite]" ;
-   public String ac_open_$_2_3( Args args )throws Exception {
-      String className    = args.argv(0) ;
-      String instanceName = args.argv(1) ;
-      String detail       = args.argc() == 2 ? null : args.argv(2) ;
-      boolean overwrite   = args.hasOption("overwrite") ;
-      MulticastOpen open = new MulticastOpen(
-             className , instanceName , detail ) ;
+   public Reply ac_open_$_2_3(Args args)
+   {
+      String className = args.argv(0);
+      String instanceName = args.argv(1);
+      String detail = (args.argc() == 2) ? null : args.argv(2);
+      boolean overwrite = args.hasOption("overwrite");
+      MulticastOpen open = new MulticastOpen(className, instanceName, detail);
       open.setOverwrite(overwrite);
 
-      CellMessage thisMsg = getThisMessage() ;
-      thisMsg.getDestinationPath().add( _path ) ;
-      thisMsg.nextDestination() ;
-      thisMsg.setMessageObject( open ) ;
-       CellMessage reply = getNucleus().sendAndWait(thisMsg, (long) 5000);
-      if( reply == null ){
-          return "Reply timed out" ;
-      }else{
-          return reply.getMessageObject().toString() ;
-      }
-
+      return (endpoint, envelope) -> {
+         envelope.getDestinationPath().add(_path);
+         envelope.nextDestination();
+         envelope.setMessageObject(open);
+         endpoint.sendMessage(envelope);
+      };
    }
 }

@@ -291,12 +291,11 @@ public class      SystemCell
             _packetsAnswered++;
         }
 
-        msg.revertDirection();
-
         try {
             if (processed && reply instanceof Reply) {
                 ((Reply)reply).deliver(this, msg);
             } else {
+                msg.revertDirection();
                 if(processed) {
                     msg.setMessageObject(reply);
                 }

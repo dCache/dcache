@@ -688,11 +688,11 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
         }
 
         try {
-            envelope.revertDirection();
             if (result instanceof Reply) {
                 Reply reply = (Reply)result;
                 reply.deliver(endpoint, envelope);
             } else {
+                envelope.revertDirection();
                 envelope.setMessageObject((Serializable) result);
                 endpoint.sendMessage(envelope);
             }

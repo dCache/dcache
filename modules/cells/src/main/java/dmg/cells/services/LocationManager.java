@@ -33,6 +33,8 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellRoute;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.Reply;
 
 import org.dcache.util.Args;
 
@@ -945,46 +947,38 @@ public class LocationManager extends CellAdapter {
       public String toString(){
          return ""+(_state>-1?("Client<init>("+_state+")"):"ClientReady") ;
       }
-      private class BackgroundServerRequest implements Runnable {
 
-         private String      _request;
-         private CellMessage _message;
+       private class BackgroundServerRequest extends DelayedReply implements Runnable
+       {
+           private final String _request;
 
-         private BackgroundServerRequest( String request , CellMessage message ){
-            _request = request ;
-            _message = message ;
-         }
-         @Override
-         public void run(){
-           try{
-
-              String reply = _lmHandler.askServer( _request , 4000 ) ;
-
-              _message.setMessageObject( reply ) ;
-              _message.revertDirection() ;
-              sendMessage(_message);
-
-              _repliesSent++;
-
-           }catch(Exception ee){
-              _log.warn("Problem in 'whereIs' request : "+ee ) ;
-              _totalExceptions ++ ;
+           private BackgroundServerRequest(String request)
+           {
+               _request = request;
            }
-         }
 
+           @Override
+           public void run()
+           {
+               try {
+                   reply(_lmHandler.askServer(_request, 4000));
+                   _repliesSent++;
+               } catch (IOException | InterruptedException ee) {
+                   _log.warn("Problem in 'whereIs' request : " + ee);
+                   _totalExceptions++;
+               }
+           }
+       }
+
+      public Reply ac_where_is_$_1(Args args)
+      {
+          _requestsReceived++;
+          String domainName = args.argv(0);
+          BackgroundServerRequest request = new BackgroundServerRequest("whereIs " + domainName);
+          _nucleus.newThread(request, "where-is").start();
+          return request;
       }
-      public String ac_where_is_$_1( Args args ){
 
-         _requestsReceived++ ;
-
-         String domainName = args.argv(0) ;
-
-         _nucleus.newThread(
-              new BackgroundServerRequest( "whereIs "+domainName , getThisMessage() ) ,
-              "where-is"   ).start()  ;
-
-         return null ;
-      }
       //
       //
       //  create dmg.cells.services.LocationManager lm "11111"
@@ -994,26 +988,25 @@ public class LocationManager extends CellAdapter {
       //  create dmg.cells.services.login.LoginManager listen
       //                    "0 dmg.cells.network.LocationMgrTunnel -prot=raw -lm=lm"
       //
-      public String ac_listening_on_$_2( Args args ){
+      public Reply ac_listening_on_$_2(Args args)
+      {
+          String portString = args.argv(1);
 
-         CellMessage   msg = getThisMessage() ;
-         String portString = args.argv(1) ;
+          try {
+              _registered = InetAddress.getLocalHost().getHostName() + ":" + portString;
+          } catch (UnknownHostException uhe) {
+              _log.warn("Couldn't resolve hostname : " + uhe);
+              return null;
+          }
 
-         try{
-             _registered  = InetAddress.getLocalHost().getHostName()+":"+portString ;
-         }catch( UnknownHostException uhe ){
-             _log.warn("Couldn't resolve hostname : "+uhe);
-             return null ;
-         }
+          _requestsReceived++;
 
-         String request = "listeningOn "+getCellDomainName()+" "+_registered ;
-
-         _requestsReceived++ ;
-
-         _nucleus.newThread( new BackgroundServerRequest( request , msg ) ).start() ;
-
-         return null ;
+          BackgroundServerRequest request = new BackgroundServerRequest(
+                  "listeningOn " + getCellDomainName() + " " + _registered);
+          _nucleus.newThread(request).start();
+          return request;
       }
+
       private void startListener( int port , String securityContext ) throws Exception {
          String cellName  = "l*" ;
          String inetClass = "dmg.cells.services.login.LoginManager" ;

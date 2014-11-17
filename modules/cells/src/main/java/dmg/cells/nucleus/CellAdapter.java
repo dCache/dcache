@@ -74,8 +74,6 @@ public class CellAdapter
 
     private final CellVersion _version = new CellVersion(Version.of(this));
 
-    private final static ThreadLocal<CellMessage> CURRENT_MESSAGE = new ThreadLocal<>();
-
     private final CellNucleus _nucleus;
     private final Gate _startGate = new Gate(false);
     private final Args _args;
@@ -478,15 +476,6 @@ public class CellAdapter
         getNucleus().sendMessage(msg, true, true, callback, executor, timeout);
     }
 
-    /**
-     *  Returns the message object which caused a
-     *  Command Interpreter client method to trigger.
-     *  The result object is only 'non-zero' inside
-     *  a ac_xxx method.
-     */
-    public final static CellMessage getThisMessage() {
-        return CURRENT_MESSAGE.get();
-    }
     //
     // methods which may be overwriten
     //
@@ -846,7 +835,6 @@ public class CellAdapter
                     UOID uoid = msg.getUOID();
                     EventLogger.deliverBegin(msg);
                     try {
-                        CURRENT_MESSAGE.set(msg);
                         o =  executeLocalCommand(obj);
                         if (o == null) {
                             return;
@@ -857,15 +845,14 @@ public class CellAdapter
                         o = ce;
                     } finally {
                         EventLogger.deliverEnd(msg.getSession(), uoid);
-                        CURRENT_MESSAGE.remove();
                     }
 
                     try {
-                        msg.revertDirection();
                         if (o instanceof Reply) {
-                            Reply reply = (Reply)o;
+                            Reply reply = (Reply) o;
                             reply.deliver(this, msg);
                         } else {
+                            msg.revertDirection();
                             msg.setMessageObject(o);
                             _nucleus.sendMessage(msg, true, true);
                         }

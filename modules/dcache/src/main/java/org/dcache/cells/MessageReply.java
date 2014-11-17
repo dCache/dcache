@@ -91,6 +91,7 @@ public class MessageReply<T extends Message>
     protected synchronized void send()
     {
         try {
+            _envelope.revertDirection();
             _envelope.setMessageObject(_msg);
             _endpoint.sendMessage(_envelope);
         } catch (NoRouteToCellException e) {

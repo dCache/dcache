@@ -724,21 +724,21 @@ public class PoolManagerV5
               return ;
            }
 
+           PoolInfo pool;
            try {
-               PoolInfo pool =
-                   _poolMonitor
-                   .getPoolSelector(fileAttributes, protocolInfo, _request.getLinkGroup())
-                   .selectWritePool(_request.getPreallocated());
-
-              _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
-                      System.currentTimeMillis() - started);
-              requestSucceeded(pool);
-
-           }catch(CacheException ce ){
-              requestFailed( ce.getRc() , ce.getMessage() ) ;
-           }catch(Exception ee ){
-              requestFailed( 17 , ee.getMessage() ) ;
+               pool = _poolMonitor
+                       .getPoolSelector(fileAttributes, protocolInfo, _request.getLinkGroup())
+                       .selectWritePool(_request.getPreallocated());
+               _log.info("{} write handler selected {} after {} ms", _pnfsId, pool.getName(),
+                         System.currentTimeMillis() - started);
+           } catch (CacheException ce) {
+               requestFailed(ce.getRc(), ce.getMessage());
+               return;
+           } catch (Exception ee) {
+               requestFailed(17, ee.getMessage());
+               return;
            }
+           requestSucceeded(pool);
        }
 
         protected void requestFailed(int errorCode, String errorMessage)

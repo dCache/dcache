@@ -36,8 +36,11 @@ public class DelayedReply implements Reply
     protected synchronized void send()
     {
         try {
+            _envelope.revertDirection();
             _envelope.setMessageObject(_msg);
             _endpoint.sendMessage(_envelope);
+            _envelope = null;
+            _endpoint = null;
         } catch (NoRouteToCellException e) {
             onNoRouteToCell(e);
         }
@@ -45,6 +48,6 @@ public class DelayedReply implements Reply
 
     protected void onNoRouteToCell(NoRouteToCellException e)
     {
-        LOGGER.error("Failed to send reply: " + e.getMessage());
+        LOGGER.error("Failed to send reply: {}", e.getMessage());
     }
 }
