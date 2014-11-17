@@ -6,8 +6,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -173,37 +173,37 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine, DomainConte
 
     private void printClassMenu(HTMLWriter pw, String className)
     {
-        Set<String> classSet = _container.getPoolClassSet();
+        List<String> classes = _container.getPoolClasses();
         pw.println("<h3>Pool Views</h3>");
-        printMenuTable(pw, classSet, "/pools/list/", className);
+        printMenuTable(pw, classes, "/pools/list/", className);
     }
 
     private void printGroupMenu(HTMLWriter pw, String className, String groupName)
     {
-        Set<String> groupSet =
+        List<String> groups =
             _container.getPoolGroupSetByClassName(className);
 
-        if (groupSet != null) {
+        if (groups != null) {
             pw.println("<h3>Pool groups of <emph>"
                        + className + "</emph></h3>");
-            printMenuTable(pw, groupSet,
+            printMenuTable(pw, groups,
                            "/pools/list/" + className + "/", groupName);
         }
     }
 
     private void printGroupList(HTMLWriter html, String className)
     {
-        Set<String> groupSet =
+        List<String> groups =
             _container.getPoolGroupSetByClassName(className);
 
-        if (groupSet != null) {
+        if (groups != null) {
             html.println("<h3>Pool groups of <emph>"
                        + className + "</emph></h3>");
 
             SortedMap<String, Collection<Object>> info =
                 new TreeMap<>();
 
-            for (String group : groupSet) {
+            for (String group : groups) {
                 info.put(group,
                          _container.getPoolMap(className, group).values());
             }
@@ -214,15 +214,15 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine, DomainConte
         }
     }
 
-    private void printMenuTable(HTMLWriter html, Set<?> itemSet,
+    private void printMenuTable(HTMLWriter html, Collection<?> items,
                                 String linkBase, String currentItem)
     {
         html.beginTable("menu");
-        if (!itemSet.isEmpty()) {
+        if (!items.isEmpty()) {
             html.beginRow();
 
             int n = 0;
-            for (Object o: itemSet) {
+            for (Object o: items) {
                 if (n > 0 && (n % _menuColumns) == 0) {
                     html.endRow();
                     html.beginRow();

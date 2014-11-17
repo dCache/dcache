@@ -2,7 +2,11 @@
 
 package diskCacheV111.services.web;
 
+import com.google.common.collect.Ordering;
+
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -48,40 +52,39 @@ class PoolCellQueryInfo implements Serializable
 public class PoolCellQueryContainer implements Serializable
 {
     private static final long serialVersionUID = 1883299694718571158L;
-    private SortedMap<String,PoolCellQueryInfo> _infoMap  =
-        new TreeMap<>();
+    private Map<String,PoolCellQueryInfo> _infoMap = new HashMap<>();
     private Map<String,Map<String,Map<String,Object>>> _topology;
 
-    public void put(String name, PoolCellQueryInfo info)
+    public synchronized void put(String name, PoolCellQueryInfo info)
     {
         _infoMap.put(name, info);
     }
 
-    public PoolCellQueryInfo getInfoByName(String name)
+    public synchronized PoolCellQueryInfo getInfoByName(String name)
     {
         return _infoMap.get(name);
     }
 
-    public void setTopology(Map<String,Map<String,Map<String,Object>>> topology)
+    public synchronized void setTopology(Map<String,Map<String,Map<String,Object>>> topology)
     {
         _topology = topology;
     }
 
-    public Set<String> getPoolClassSet()
+    public synchronized List<String> getPoolClasses()
     {
-        return _topology.keySet();
+        return Ordering.natural().sortedCopy(_topology.keySet());
     }
 
-    public Set<String> getPoolGroupSetByClassName(String className)
+    public synchronized List<String> getPoolGroupSetByClassName(String className)
     {
         Map<String, Map<String, Object>> map = _topology.get(className);
         if (map == null) {
             return null;
         }
-        return map.keySet();
+        return Ordering.natural().sortedCopy(map.keySet());
     }
 
-    public Map<String,Object>
+    public synchronized Map<String,Object>
         getPoolMap(String className, String groupName)
     {
         Map<String, Map<String, Object>> groupMap =
@@ -94,13 +97,7 @@ public class PoolCellQueryContainer implements Serializable
         return groupMap.get(groupName);
     }
 
-    public Map<String,Map<String,Map<String,Object>>>
-        getTopology()
-    {
-        return _topology;
-    }
-
-    public String toString()
+    public synchronized String toString()
     {
         StringBuilder sb = new StringBuilder();
 
