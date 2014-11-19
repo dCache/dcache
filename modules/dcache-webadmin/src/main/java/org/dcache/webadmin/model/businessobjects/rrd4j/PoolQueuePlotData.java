@@ -141,11 +141,7 @@ public class PoolQueuePlotData {
         };
 
         public String getSourceName() {
-            /*
-             * "!" appended to the datasource name is the Rrd4j convention
-             * for storing unknown values as 0.0 rather than as NaN.
-             */
-            return toString() + "!";
+            return getLabel().replaceAll(" ", "_");
         }
     }
 
