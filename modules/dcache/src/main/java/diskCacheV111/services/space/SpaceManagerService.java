@@ -252,9 +252,12 @@ public final class SpaceManagerService
         {
                 LOGGER.trace("expireSpaceReservations()...");
 
-                /* Remove file reservations for files no longer in the name space. Under normal
-                 * circumstances this should never be necessary, but since notifications from
-                 * PnfsManager about deleted files may be lost, we need to recover in some way.
+                /* Recover files from lost notifications. Space manager receives notifications
+                 * on file transfer finishing (DoorTransferFinished), name space deletion
+                 * (PnfsDeleteEntryNotification), pool location cleaning (PoolRemoveFiles),
+                 * and flush (PoolFileFlushed). These notifications are however lossy, and we
+                 * need to recover from lost messages in some way.
+                 *
                  * We ought to do this with any kind of file reservation, but that would be rather
                  * expensive. This code is currently limited to reservations in the TRANSFERRING
                  * state: It is easy to miss the notification for such files if space manager
@@ -266,21 +269,35 @@ public final class SpaceManagerService
                 final int maximumNumberFilesToLoadAtOnce = 1000;
                 for (File file: db.get(oldTransfers, maximumNumberFilesToLoadAtOnce)) {
                     try {
-                        if (!isRegularFile(file)) {
+                        EnumSet<FileAttribute> attributes =
+                                EnumSet.of(FileAttribute.TYPE,
+                                           FileAttribute.SIZE,
+                                           FileAttribute.LOCATIONS,
+                                           FileAttribute.STORAGEINFO,
+                                           FileAttribute.ACCESS_LATENCY);
+                        FileAttributes fileAttributes = pnfs.getFileAttributes(file.getPnfsId(), attributes);
+                        if (fileAttributes.getFileType() != FileType.REGULAR) {
                             db.removeFile(file.getId());
+                        } else if (fileAttributes.getStorageInfo().isStored()) {
+                            boolean isRemovable = !fileAttributes.getAccessLatency().equals(AccessLatency.ONLINE);
+                            fileFlushed(file.getPnfsId(), fileAttributes.getSize(), isRemovable);
+                        } else if (!fileAttributes.getLocations().isEmpty()) {
+                            transferFinished(file.getPnfsId(), fileAttributes.getSize());
                         }
+                    } catch (FileNotFoundCacheException e) {
+                        db.removeFile(file.getId());
                     } catch (TransientDataAccessException e) {
-                            LOGGER.warn("Transient data access failure while deleting expired file {}: {}",
-                                         file, e.getMessage());
+                        LOGGER.warn("Transient data access failure while deleting expired file {}: {}",
+                                    file, e.getMessage());
                     } catch (DataAccessException e) {
-                            LOGGER.error("Data access failure while deleting expired file {}: {}",
-                                         file, e.getMessage());
-                            break;
+                        LOGGER.error("Data access failure while deleting expired file {}: {}",
+                                     file, e.getMessage());
+                        break;
                     } catch (TimeoutCacheException e) {
-                            LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
-                            break;
+                        LOGGER.error("Failed to lookup file {} in name space: {}", file.getPnfsId(), e.getMessage());
+                        break;
                     } catch (CacheException e) {
-                            LOGGER.error("Failed to delete file {}: {}", file.getPnfsId(), e.getMessage());
+                        LOGGER.error("Failed to lookup file {} in name space: {}", file.getPnfsId(), e.getMessage());
                     }
                 }
 
@@ -296,16 +313,6 @@ public final class SpaceManagerService
                 db.remove(db.spaces()
                                   .whereStateIsIn(SpaceState.EXPIRED, SpaceState.RELEASED)
                                   .thatHaveNoFiles());
-        }
-
-        private boolean isRegularFile(File file) throws CacheException
-        {
-                try {
-                        FileAttributes fileAttributes = pnfs.getFileAttributes(file.getPnfsId(), EnumSet.of(FileAttribute.TYPE));
-                        return (fileAttributes.getFileType() == FileType.REGULAR);
-                } catch (FileNotFoundCacheException e) {
-                        return false;
-                }
         }
 
         private void getValidSpaceTokens(GetSpaceTokensMessage msg) throws DataAccessException {
@@ -674,11 +681,14 @@ public final class SpaceManagerService
         private void transferFinished(DoorTransferFinishedMessage finished)
                 throws DataAccessException
         {
-                boolean weDeleteStoredFileRecord = shouldDeleteStoredFileRecord;
-                PnfsId pnfsId = finished.getPnfsId();
-                long size = finished.getFileAttributes().getSize();
-                boolean success = finished.getReturnCode() == 0;
-                LOGGER.trace("transferFinished({},{})", pnfsId, success);
+                transferFinished(finished.getPnfsId(), finished.getFileAttributes().getSize());
+        }
+
+        @Transactional
+        private void transferFinished(PnfsId pnfsId, long size)
+                throws DataAccessException
+        {
+                LOGGER.trace("transferFinished({})", pnfsId);
                 File f;
                 try {
                         f = db.selectFileForUpdate(pnfsId);
@@ -688,81 +698,57 @@ public final class SpaceManagerService
                                      e.getMessage());
                         return;
                 }
-                long spaceId = f.getSpaceId();
-                if(f.getState() == FileState.TRANSFERRING) {
-                        if(success) {
-                                if(shouldReturnFlushedSpaceToReservation && weDeleteStoredFileRecord) {
-                                        RetentionPolicy rp = db.getSpace(spaceId).getRetentionPolicy();
-                                        if(rp.equals(RetentionPolicy.CUSTODIAL)) {
-                                                //we do not delete it here, since the
-                                                // file will get flushed and we will need
-                                                // to account for that
-                                                weDeleteStoredFileRecord = false;
-                                        }
-                                }
-                                if(weDeleteStoredFileRecord) {
-                                        LOGGER.trace("file transferred, deleting file record");
-                                        db.removeFile(f.getId());
-                                }
-                                else {
-                                        f.setSizeInBytes(size);
-                                        f.setState(FileState.STORED);
-                                        db.updateFile(f);
-                                }
-                        }
-                        else {
-                            db.removeFile(f.getId());
-
-                            /* TODO: If we also created the reservation, we should
-                             * release it at this point, but at the moment we cannot
-                             * know who created it. It will eventually expire
-                             * automatically.
-                             */
-                        }
-                }
-                else {
+                if (f.getState() != FileState.TRANSFERRING) {
                         LOGGER.trace("transferFinished({}): file state={}",
                                      pnfsId, f.getState());
+                } else if (shouldDeleteStoredFileRecord) {
+                        LOGGER.trace("file transferred, deleting file record");
+                        db.removeFile(f.getId());
+                } else {
+                        f.setSizeInBytes(size);
+                        f.setState(FileState.STORED);
+                        db.updateFile(f);
                 }
         }
 
-    private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws DataAccessException
+        private void fileFlushed(PoolFileFlushedMessage fileFlushed)
+                throws DataAccessException
         {
-                if(!shouldReturnFlushedSpaceToReservation) {
-                        return;
-                }
-                PnfsId pnfsId = fileFlushed.getPnfsId();
-                LOGGER.trace("fileFlushed({})", pnfsId);
                 FileAttributes fileAttributes = fileFlushed.getFileAttributes();
-                AccessLatency ac = fileAttributes.getAccessLatency();
-                if (ac.equals(AccessLatency.ONLINE)) {
-                        LOGGER.trace("File Access latency is ONLINE " +
-                                             "fileFlushed does nothing");
+                boolean isRemovable = !fileAttributes.getAccessLatency().equals(AccessLatency.ONLINE);
+                fileFlushed(fileFlushed.getPnfsId(), fileAttributes.getSize(), isRemovable);
+        }
+
+        @Transactional
+        private void fileFlushed(PnfsId pnfsId, long size, boolean isRemovable)
+                throws DataAccessException
+        {
+                LOGGER.trace("fileFlushed({})", pnfsId);
+                File f;
+                try {
+                        f = db.selectFileForUpdate(pnfsId);
+                } catch (EmptyResultDataAccessException e) {
+                        LOGGER.trace("failed to find file {}: {}", pnfsId, e.getMessage());
                         return;
                 }
-                long size = fileAttributes.getSize();
-                try {
-                        File f = db.selectFileForUpdate(pnfsId);
-                        if(f.getState() == FileState.STORED) {
-                                if(shouldDeleteStoredFileRecord) {
-                                        LOGGER.trace("returnSpaceToReservation, " +
-                                                             "deleting file record");
-                                        db.removeFile(f.getId());
-                                }
-                                else {
-                                        f.setSizeInBytes(size);
-                                        f.setState(FileState.FLUSHED);
-                                        db.updateFile(f);
-                                }
+                if (shouldDeleteStoredFileRecord) {
+                        /* A file must have been stored for it to be flushed. If we didn't do
+                         * it during DoorTransferFinished, we do it now.
+                         */
+                        db.removeFile(f.getId());
+                } else if (f.getState() != FileState.FLUSHED) {
+                        if (shouldReturnFlushedSpaceToReservation && isRemovable) {
+                                f.setSizeInBytes(size);
+                                f.setState(FileState.FLUSHED);
+                                db.updateFile(f);
+                        } else if (f.getState() == FileState.TRANSFERRING) {
+                                /* A file must have been stored for it to be flushed. If we didn't do
+                                 * it during DoorTransferFinished, we do it now.
+                                 */
+                                f.setSizeInBytes(size);
+                                f.setState(FileState.STORED);
+                                db.updateFile(f);
                         }
-                        else {
-                                LOGGER.trace("returnSpaceToReservation({}): " +
-                                                     "file state={}", pnfsId, f.getState());
-                        }
-
-                }
-                catch (EmptyResultDataAccessException e) {
-                    /* if this file is not in srmspacefile table, silently quit */
                 }
         }
 
@@ -1038,8 +1024,8 @@ public final class SpaceManagerService
         {
             try {
                 File f = db.selectFileForUpdate(msg.getPnfsId());
-                LOGGER.trace("Marking file as deleted {}", f);
-                if (f.getState() == FileState.FLUSHED) {
+                if (f.getState() != FileState.STORED) {
+                    LOGGER.trace("Deleting file reservation {}", f);
                     db.removeFile(f.getId());
                 }
             } catch (EmptyResultDataAccessException ignored) {
