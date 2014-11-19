@@ -34,6 +34,7 @@ import javax.annotation.PostConstruct;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.channels.CompletionHandler;
@@ -184,6 +185,27 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         repository.addListener(this);
     }
 
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append(" Restore Timeout  : ").print(stageTimeout / 1000L);
+        pw.println(" seconds");
+        pw.append("   Store Timeout  : ").print(flushTimeout / 1000L);
+        pw.println(" seconds");
+        pw.append("  Remove Timeout  : ").print(removeTimeout / 1000L);
+        pw.println(" seconds");
+        pw.println("  Job Queues (active/queued)");
+        pw.append("    to store   ").print(getActiveStoreJobs());
+        pw.append("/").print(getStoreQueueSize());
+        pw.println();
+        pw.append("    from store ").print(getActiveFetchJobs());
+        pw.append("/").print(getFetchQueueSize());
+        pw.println();
+        pw.append("    delete     " + "").print(getActiveRemoveJobs());
+        pw.append("/").print(getRemoveQueueSize());
+        pw.println();
+    }
+
     /**
      * Flushes a set of files to nearline storage.
      *
@@ -252,7 +274,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
     public int getActiveFetchJobs()
     {
-        return stageRequests.getCount(AbstractRequest.State.ACTIVE);
+        return stageRequests.getCount(AbstractRequest.State.ACTIVE) + stageRequests.getCount(AbstractRequest.State.CANCELED);
     }
 
     public int getFetchQueueSize()
@@ -262,12 +284,22 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
     public int getActiveStoreJobs()
     {
-        return flushRequests.getCount(AbstractRequest.State.ACTIVE);
+        return flushRequests.getCount(AbstractRequest.State.ACTIVE) + flushRequests.getCount(AbstractRequest.State.CANCELED);
     }
 
     public int getStoreQueueSize()
     {
         return flushRequests.getCount(AbstractRequest.State.QUEUED);
+    }
+
+    public int getActiveRemoveJobs()
+    {
+        return removeRequests.getCount(AbstractRequest.State.ACTIVE) + removeRequests.getCount(AbstractRequest.State.CANCELED);
+    }
+
+    public int getRemoveQueueSize()
+    {
+        return removeRequests.getCount(AbstractRequest.State.QUEUED);
     }
 
     @Override
