@@ -176,6 +176,11 @@ public class PnfsManagerV3
     private NameSpaceProvider _nameSpaceProvider;
     private NameSpaceProvider _cacheLocationProvider;
 
+    /**
+     * A value of difference in seconds which controls file's access time
+     * updates.
+     */
+    private long _atimeGap;
 
     private void populateRequestMap()
     {
@@ -292,6 +297,11 @@ public class PnfsManagerV3
         _directoryListLimit = limit;
     }
 
+    @Required
+    public void setAtimeGap(long gap) {
+        _atimeGap = TimeUnit.SECONDS.toMillis(gap);
+    }
+
     public void init()
     {
         _fifos = new BlockingQueue[_threads * _threadGroups];
@@ -373,6 +383,12 @@ public class PnfsManagerV3
         pw.println( _nameSpaceProvider.toString() );
         pw.println( "CacheLocation Provider: ");
         pw.println( _cacheLocationProvider.toString() );
+        pw.print("atime precision: ");
+        if (_atimeGap < 0 ) {
+            pw.println("Disabled");
+        } else {
+            pw.println(TimeUnit.MILLISECONDS.toSeconds(_atimeGap));
+        }
         pw.println();
         pw.println("List queues (" + _listQueues.length + ")");
         for (int i = 0; i < _listQueues.length; i++) {
@@ -1967,6 +1983,9 @@ public class PnfsManagerV3
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             Set<FileAttribute> requested = message.getRequestedAttributes();
+            if (message.getUpdateAtime() && _atimeGap != -1) {
+                requested.add(ACCESS_TIME);
+            }
             if(requested.contains(FileAttribute.STORAGEINFO)) {
                 /*
                  * TODO: The 'classic' result of getFileAttributes was a
@@ -1998,6 +2017,14 @@ public class PnfsManagerV3
 
             message.setFileAttributes(attrs);
             message.setSucceeded();
+            if (message.getUpdateAtime() && _atimeGap != -1) {
+                long now = System.currentTimeMillis();
+                if (attrs.getFileType() == FileType.REGULAR && Math.abs(now - attrs.getAccessTime()) > _atimeGap) {
+                    FileAttributes atimeUpdateAttr = new FileAttributes();
+                    atimeUpdateAttr.setAccessTime(now);
+                    _nameSpaceProvider.setFileAttributes(Subjects.ROOT, pnfsId, atimeUpdateAttr, EnumSet.noneOf(FileAttribute.class));
+                }
+            }
         } catch (FileNotFoundCacheException e){
             message.setFailed(e.getRc(), e);
         } catch (CacheException e) {
@@ -2012,7 +2039,12 @@ public class PnfsManagerV3
     public void setFileAttributes(PnfsSetFileAttributes message)
     {
         try {
+
             FileAttributes attr = message.getFileAttributes();
+            if (attr.getDefinedAttributes().size() == 1 && attr.isDefined(ACCESS_TIME) && message.getAcquire().isEmpty()) {
+                // access time only update (legacy pools). We assume that the doors already have update atime.
+                return;
+           }
             PnfsId pnfsId = populatePnfsId(message);
             checkMask(message);
             if (attr.getDefinedAttributes().contains(FileAttribute.LOCATIONS)) {

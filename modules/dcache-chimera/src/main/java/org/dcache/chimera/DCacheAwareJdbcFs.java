@@ -180,7 +180,7 @@ public class DCacheAwareJdbcFs extends JdbcFs {
             Set<AccessMask> accessMask = EnumSet.of(AccessMask.READ_DATA);
             FileAttributes attributes
                 = pnfsHandler.getFileAttributes(filePath, requestedAttributes,
-                                                accessMask);
+                                                accessMask, false);
             /*
              * TODO improve code to pass in the actual InetAddress of the
              * client so that link net masks do not interfere; note that SRM uses

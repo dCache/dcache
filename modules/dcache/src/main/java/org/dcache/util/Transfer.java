@@ -660,9 +660,9 @@ public class Transfer implements Comparable<Transfer>
             PnfsId pnfsId = getPnfsId();
             FileAttributes attributes;
             if (pnfsId != null) {
-                attributes = _pnfs.getFileAttributes(pnfsId, request, mask);
+                attributes = _pnfs.getFileAttributes(pnfsId, request, mask, true);
             } else {
-                attributes = _pnfs.getFileAttributes(_path.toString(), request, mask);
+                attributes = _pnfs.getFileAttributes(_path.toString(), request, mask, true);
             }
 
             /* We can only read regular files.

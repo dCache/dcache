@@ -384,7 +384,7 @@ public class CopyFilter implements Filter
         FileAttributes attributes;
         try {
             attributes = pnfs.getFileAttributes(path.toString(),
-                    EnumSet.of(PNFSID, TYPE), READ_ACCESS_MASK);
+                    EnumSet.of(PNFSID, TYPE), READ_ACCESS_MASK, false);
         } catch (FileNotFoundCacheException e) {
             _log.debug("No such file: {}", e.getMessage());
             throw new ErrorResponseException(Response.Status.SC_NOT_FOUND, "no such file");

@@ -335,7 +335,6 @@ public class PoolV4
         _repository.addListener(new NotifyBillingOnRemoveListener());
         _repository.addListener(new HFlagMaintainer());
         _repository.addListener(_replicationHandler);
-        _repository.addListener(new ATimeMaintainer());
     }
 
     @Required
@@ -565,19 +564,6 @@ public class PoolV4
                     _pnfs.putPnfsFlag(id, "h", "no");
                 }
             }
-        }
-    }
-
-    /**
-     * Update file's atime in the namespace
-     */
-    private class ATimeMaintainer extends AbstractStateChangeListener {
-
-        @Override
-        public void accessTimeChanged(EntryChangeEvent event) {
-            FileAttributes fileAttributes = new FileAttributes();
-            fileAttributes.setAccessTime(event.getNewEntry().getLastAccessTime());
-            _pnfs.notify(new PnfsSetFileAttributes(event.getPnfsId(), fileAttributes));
         }
     }
 

@@ -1887,6 +1887,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             if (_vargs.argv(1).equals("r")) {
                 _message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
+                _message.setUpdateAtime(true);
             }
         }
 

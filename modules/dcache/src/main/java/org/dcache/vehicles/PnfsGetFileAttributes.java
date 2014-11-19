@@ -20,6 +20,7 @@ public class PnfsGetFileAttributes extends PnfsMessage {
 
     protected FileAttributes _fileAttributes;
     protected Set<FileAttribute> _attributes;
+    private boolean _updateAtime = false;
 
     /**
      * Construct request by PnfsId.
@@ -100,6 +101,24 @@ public class PnfsGetFileAttributes extends PnfsMessage {
         }
 
         return false;
+    }
+
+    /**
+     * Tell namespace to update file's last access time on when file attributes are read.
+     * @param update <tt>true</tt> if last access time must be updated.
+     */
+    public void setUpdateAtime(boolean update)
+    {
+        _updateAtime = update;
+    }
+
+    /**
+     * Returns <tt>true</tt> if file's last access time must be updated.
+     * @return <tt>true</tt> if file's last access time must be updated.
+     */
+    public boolean getUpdateAtime()
+    {
+        return _updateAtime;
     }
 
     @Override

@@ -470,13 +470,15 @@ public class PnfsHandler
      * @param pnfsid
      * @param attr array of requested attributes.
      * @param mask Additional AccessMask access rights to check
+     * @param updateAtime update file's last access time
      * @return requested attributes
      */
-    public FileAttributes getFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr, Set<AccessMask> mask)
+    public FileAttributes getFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr, Set<AccessMask> mask, boolean updateAtime)
         throws CacheException
     {
         PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsid, attr);
         msg.setAccessMask(mask);
+        msg.setUpdateAtime(updateAtime);
         return pnfsRequest(msg).getFileAttributes();
     }
 
@@ -509,15 +511,17 @@ public class PnfsHandler
      * @param path
      * @param attr array of requested attributes.
      * @param mask Additional AccessMask access rights to check
+     * @param updateAtime update file's last access time
      * @return requested attributes
      */
     public FileAttributes getFileAttributes(String path,
                                             Set<FileAttribute> attr,
-                                            Set<AccessMask> mask)
+                                            Set<AccessMask> mask, boolean updateAtime)
         throws CacheException
     {
         PnfsGetFileAttributes msg = new PnfsGetFileAttributes(path, attr);
         msg.setAccessMask(mask);
+        msg.setUpdateAtime(updateAtime);
         return pnfsRequest(msg).getFileAttributes();
     }
 

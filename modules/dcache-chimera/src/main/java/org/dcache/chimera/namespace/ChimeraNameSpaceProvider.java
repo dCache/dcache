@@ -90,11 +90,6 @@ public class ChimeraNameSpaceProvider
     private PermissionHandler _permissionHandler;
     private String _uploadDirectory;
 
-    /**
-     * A value of difference in seconds which controls file's access time updates.
-     */
-    private long _atimeGap;
-
     @Required
     public void setExtractor(ChimeraStorageInfoExtractable extractor)
     {
@@ -135,11 +130,6 @@ public class ChimeraNameSpaceProvider
     public void setUploadDirectory(String path)
     {
         _uploadDirectory = path;
-    }
-
-    @Required
-    public void setAtimeGap(long gap) {
-        _atimeGap = TimeUnit.SECONDS.toMillis(gap);
     }
 
     private FsInode pathToInode(Subject subject, String path)
@@ -634,7 +624,6 @@ public class ChimeraNameSpaceProvider
 
        sb.append("$Id: ChimeraNameSpaceProvider.java,v 1.7 2007-10-01 12:28:03 tigran Exp $ \n");
        sb.append("Acl Enabled: ").append(_aclEnabled).append("\n");
-       sb.append("atime precision: ").append(_atimeGap < 0 ? "Disabled" : TimeUnit.MILLISECONDS.toSeconds(_atimeGap)).append("\n");
        sb.append(_fs.getInfo() );
         return sb.toString();
 
@@ -882,19 +871,10 @@ public class ChimeraNameSpaceProvider
                         stat.setMTime(attr.getModificationTime());
                         break;
                     case ACCESS_TIME:
-                        if (_atimeGap >= 0) {
-                            Stat atimeStat;
-                            if (stat == null) {
-                                atimeStat = inode.statCache();
-                            } else {
-                                atimeStat = stat;
-                            }
-                            if (Math.abs(atimeStat.getATime() - attr.getAccessTime()) > _atimeGap) {
-                                atimeStat.setATime(attr.getAccessTime());
-                                // propagate update only if there is a change
-                                stat = atimeStat;
-                            }
+                        if (stat == null) {
+                            stat = inode.statCache();
                         }
+                        stat.setATime(attr.getAccessTime());
                         break;
                     case OWNER:
                         if (stat == null) {

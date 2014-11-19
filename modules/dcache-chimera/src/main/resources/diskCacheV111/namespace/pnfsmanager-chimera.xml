@@ -34,6 +34,7 @@
       <property name="nameSpaceProvider" ref="name-space-provider"/>
       <property name="cacheLocationProvider" ref="name-space-provider"/>
       <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
+      <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
   </bean>
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource">
@@ -85,7 +86,6 @@
       <property name="fileSystem" ref="file-system"/>
       <property name="extractor" ref="extractor"/>
       <property name="aclEnabled" value="${pnfsmanager.enable.acl}"/>
-      <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
       <property name="uploadDirectory" value="${pnfsmanager.upload-directory}"/>
   </bean>
 

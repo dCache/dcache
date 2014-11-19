@@ -1213,7 +1213,7 @@ public final class Storage
             FileAttributes attributes =
                 handler.getFileAttributes(path.toString(),
                                           requestedAttributes,
-                                          accessMask);
+                                          accessMask, false);
             FileMetaData fmd = new DcacheFileMetaData(attributes);
 
             /* Determine file locality.
@@ -2402,7 +2402,7 @@ public final class Storage
             PnfsHandler handler = new PnfsHandler(_pnfs, subject);
             handler.getFileAttributes(path.toString(),
                                       EnumSet.noneOf(FileAttribute.class),
-                                      EnumSet.of(AccessMask.WRITE_DATA));
+                                      EnumSet.of(AccessMask.WRITE_DATA), false);
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
         } catch (NotInTrashCacheException | FileNotFoundCacheException e) {
