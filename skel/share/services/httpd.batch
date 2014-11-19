@@ -69,7 +69,6 @@ define context webadmin.exe endDefine
      -srmSpaceManagerEnabled=${srmSpaceManagerEnabled} \
      -collectorTimeout=${collectorTimeout} \
      -transfersCollectorUpdate=${transfersCollectorUpdate} \
-     -tempUnpackDir=${webadminWarunpackdir} \
      -billingCell=${billing} \
      -generatePlots=${plotBillingData} \
      -profiles=plotting-${billingToDb} \

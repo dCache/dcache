@@ -141,7 +141,7 @@ public class HttpServiceCell extends AbstractCell implements EnvironmentAware {
                     + "   class              <fullClassName> <...>\n"
                     + "   context            [options] <context> or  <contextNameStart>*\n"
                     + "                       options : -overwrite=<alias> -onError=<alias>\n"
-                    + "   webapp             <webappsContext> <webappsPath> <tempUnpackDir> <...> \n"
+                    + "   webapp             <webappsContext> <webappsPath> <...> \n"
                     + "   redirect           <forward-to-context>\n"
                     + "   predefined alias : <home>    =  default for http://host:port/ \n"
                     + "                      <default> =  default for any type or error \n";
