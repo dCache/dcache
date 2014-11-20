@@ -225,13 +225,13 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             UUID uuid = getUuid(msg.getOpaque());
             if (uuid == null) {
                 _log.warn("Request contains no UUID: {}", msg);
-                return redirectToDoor(ctx, event, msg);
+                throw new XrootdException(kXR_NotAuthorized, "Request lacks the " + UUID_PREFIX + " property.");
             }
 
             MoverChannel<XrootdProtocolInfo> file = _server.open(uuid, false);
             if (file == null) {
                 _log.warn("No mover found for {}", msg);
-                return redirectToDoor(ctx, event, msg);
+                throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid.");
             }
 
             try {
