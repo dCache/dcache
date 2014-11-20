@@ -89,7 +89,6 @@ public class AliasEntry {
     public static final String TYPE_BAD_CONFIG = "badconfig";
     public static final String CELL_ENDPOINT = "serviceCellEndpoint";
     public static final String CELL_NUCLEUS = "serviceCellNucleus";
-    public static final String OPT_UNPACK_DIR = "tempUnpackDir";
 
     public static AliasEntry createEntry(Args args, HttpServiceCell cell)
                     throws Exception {
@@ -186,17 +185,13 @@ public class AliasEntry {
     private static Handler createWebAppContext(String alias, String webappsPath,
                     Args args, HttpServiceCell cell) throws Exception {
             final String context = "/" + alias;
-            final String tmp = args.getOpt(OPT_UNPACK_DIR);
 
             final File war = new File(webappsPath, context + ".war");
-            final File tmpDir = new File(tmp, alias);
 
             final WebAppContext webappContext = new WebAppContext();
             webappContext.setDefaultsDescriptor(cell.getDefaultWebappsXml());
             webappContext.setContextPath(context);
             webappContext.setWar(war.getAbsolutePath());
-            webappContext.setExtractWAR(true);
-            webappContext.setTempDirectory(tmpDir);
             webappContext.setConfigurationClasses(configClasses);
 
             /*
