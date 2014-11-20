@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
 
@@ -26,7 +28,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSv41Session;
-import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
@@ -57,6 +58,7 @@ public class NfsTransferService extends AbstractCellComponent
     private PostTransferService _postTransferService;
 
     private FaultListener _faultListener;
+    private boolean _sortMultipathList;
 
     public void init() throws ChimeraFsException, IOException, GSSException, OncRpcException {
 
@@ -71,6 +73,18 @@ public class NfsTransferService extends AbstractCellComponent
         _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName());
         _localSocketAddresses =
                 localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
+
+        /*
+         * we assume, that client's can't handle multipath list correctly
+         * if data server has multiple IPv4 addresses. (RHEL6 and clones)
+         */
+        int ipv4Count = 0;
+        for (InetSocketAddress addr : _localSocketAddresses) {
+            if (addr.getAddress() instanceof Inet4Address) {
+                ipv4Count++;
+            }
+        }
+        _sortMultipathList = ipv4Count > 1;
 
         _door = new CellStub(getCellEndpoint());
     }
@@ -103,7 +117,8 @@ public class NfsTransferService extends AbstractCellComponent
 
             CellPath directDoorPath = new CellPath(mover.getPathToDoor().getDestinationAddress());
             final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateId));
+            final InetSocketAddress[] localSocketAddresses = localSocketAddresses(mover);
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), localSocketAddresses, legacyStateId));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).
@@ -113,7 +128,7 @@ public class NfsTransferService extends AbstractCellComponent
             _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
                     e.getMessage(), e));
             completionHandler.failed(e, null);
-        } catch (NoRouteToCellException e) {
+        } catch (NoRouteToCellException | SocketException e) {
             completionHandler.failed(e, null);
         }
         return null;
@@ -135,6 +150,24 @@ public class NfsTransferService extends AbstractCellComponent
             i++;
         }
         return socketAddresses;
+    }
+
+    private InetSocketAddress[] localSocketAddresses(NfsMover mover) throws SocketException {
+
+        InetSocketAddress[] addressesToUse;
+        if (_sortMultipathList) {
+            addressesToUse = new InetSocketAddress[_localSocketAddresses.length + 1];
+            System.arraycopy(_localSocketAddresses, 0, addressesToUse, 1, _localSocketAddresses.length);
+
+            InetSocketAddress preferredInterface = new InetSocketAddress(
+                    NetworkUtils.getLocalAddress(mover.getProtocolInfo().getSocketAddress().getAddress()),
+                    _nfsIO.getLocalAddress().getPort());
+            addressesToUse[0] = preferredInterface;
+        } else {
+            addressesToUse = _localSocketAddresses;
+        }
+
+        return addressesToUse;
     }
 
     public final static String fh_nfs_stats =
