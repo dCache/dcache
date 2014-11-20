@@ -84,6 +84,7 @@ public class GNLCell implements Cell, Runnable  {
   private void _GNLCell( String name , String cellClass , int port ){
 
        _nucleus    = new CellNucleus( this , name ) ;
+       _nucleus.start();
        _cellName   = name ;
        _cellClass  = cellClass ;
        _listenPort = port ;
