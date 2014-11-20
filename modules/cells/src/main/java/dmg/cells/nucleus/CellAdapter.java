@@ -128,6 +128,7 @@ public class   CellAdapter
 
         _args      = args;
         _nucleus   = new CellNucleus(this, cellName, cellType);
+        _nucleus.start();
         _autoSetup = cellName + "Setup";
 
         if ((_args.argc() > 0) &&
