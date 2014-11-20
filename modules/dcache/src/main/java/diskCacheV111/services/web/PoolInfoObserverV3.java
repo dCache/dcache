@@ -5,8 +5,6 @@ import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-
 import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +19,6 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractCell;
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.Option;
 import org.dcache.util.Args;
