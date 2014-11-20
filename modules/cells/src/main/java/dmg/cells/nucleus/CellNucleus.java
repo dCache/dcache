@@ -42,6 +42,8 @@ import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholds;
 import dmg.util.logback.RootFilterThresholds;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
@@ -69,7 +71,7 @@ public class CellNucleus implements ThreadFactory
     private final  Cell      _cell;
     private final  Date      _creationTime   = new Date();
 
-    private        int       _state          = INITIAL;
+    private final AtomicInteger _state = new AtomicInteger(INITIAL);
 
     //  have to be synchronized map
     private final  Map<UOID, CellLock> _waitHash = new HashMap<>();
@@ -170,15 +172,6 @@ public class CellNucleus implements ThreadFactory
                         0L, TimeUnit.MILLISECONDS,
                         new LinkedBlockingQueue<Runnable>(),
                         this);
-
-        _state = ACTIVE;
-
-        //
-        // make ourself known to the world
-        //
-        __cellGlue.addCell(_cellName, this);
-
-        startTimeoutTask();
 
         LOGGER.info("Created {}", name);
     }
@@ -316,7 +309,7 @@ public class CellNucleus implements ThreadFactory
         info.setCellClass(_cellClass);
         try {
             info.setEventQueueSize(getEventQueueSize());
-            info.setState(_state);
+            info.setState(_state.get());
             info.setThreadCount(_threads.activeCount());
         } catch(Exception e) {
             info.setEventQueueSize(0);
@@ -351,9 +344,10 @@ public class CellNucleus implements ThreadFactory
      */
     public synchronized void setMessageExecutor(ExecutorService executor)
     {
-        if (executor == null) {
-            throw new IllegalArgumentException("null is not allowed");
-        }
+        checkNotNull(executor);
+        int state = _state.get();
+        checkState(state != REMOVING && state != DEAD);
+
         if (_isPrivateMessageExecutor) {
             _messageExecutor.shutdown();
         }
@@ -846,12 +840,23 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
+    public void start()
+    {
+        checkState(_state.compareAndSet(INITIAL, ACTIVE));
+
+        //
+        // make ourself known to the world
+        //
+        __cellGlue.addCell(_cellName, this);
+        startTimeoutTask();
+    }
+
     void shutdown(KillEvent event)
     {
         LOGGER.trace("Received {}", event);
 
         try (CDC ignored = CDC.reset(CellNucleus.this)) {
-            _state = REMOVING;
+            checkState(_state.compareAndSet(INITIAL, REMOVING) || _state.compareAndSet(ACTIVE, REMOVING));
             addToEventQueue(LAST_MESSAGE_EVENT);
             try {
                 _cell.prepareRemoval(event);
@@ -885,7 +890,7 @@ public class CellNucleus implements ThreadFactory
             }
 
             __cellGlue.destroy(CellNucleus.this);
-            _state = DEAD;
+            _state.set(DEAD);
         }
     }
 
