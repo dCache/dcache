@@ -244,6 +244,11 @@ public class MigrationModuleServer
             return false;
         }
 
+        private synchronized void disableInterrupt()
+        {
+            _updateTask = null;
+        }
+
         protected synchronized void finished(Throwable e)
         {
             PoolMigrationCopyFinishedMessage message =
@@ -293,6 +298,8 @@ public class MigrationModuleServer
                         handle.close();
                     }
                 }
+
+                disableInterrupt();
 
                 EntryState state = _repository.getState(_pnfsId);
                 switch (state) {
