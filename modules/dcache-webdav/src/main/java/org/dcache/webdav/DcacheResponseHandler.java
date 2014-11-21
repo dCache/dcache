@@ -263,6 +263,14 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     }
 
     @Override
+    public void respondPartialContent(GetableResource resource, Response response, Request request, Map<String, String> params, List<Range> ranges)
+            throws NotAuthorizedException, BadRequestException, NotFoundException
+    {
+        super.respondPartialContent(resource, response, request, params, ranges);
+        rfc3230(resource, response);
+    }
+
+    @Override
     public void respondPartialContent(GetableResource resource,
             Response response, Request request, Map<String,String> params,
             Range range) throws NotAuthorizedException, BadRequestException,
