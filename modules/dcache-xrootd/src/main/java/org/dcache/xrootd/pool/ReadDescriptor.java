@@ -56,5 +56,11 @@ public class ReadDescriptor implements FileDescriptor
     {
         return _channel;
     }
+
+    @Override
+    public boolean isPersistOnSuccessfulClose()
+    {
+        return false;
+    }
 }
 
