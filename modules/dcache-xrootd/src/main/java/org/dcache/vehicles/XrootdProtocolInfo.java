@@ -1,6 +1,9 @@
 package org.dcache.vehicles;
 
+import com.google.common.collect.Sets;
+
 import java.net.InetSocketAddress;
+import java.util.EnumSet;
 import java.util.UUID;
 
 import diskCacheV111.util.PnfsId;
@@ -8,120 +11,121 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
+import static java.util.Arrays.asList;
+
 public class XrootdProtocolInfo implements IpProtocolInfo {
 
-	private static final long serialVersionUID = -7070947404762513894L;
+    private static final long serialVersionUID = -7070947404762513894L;
 
-	private String _name;
+    public enum Flags
+    {
+        POSC
+    }
 
-	private int _minor;
+    private final String _name;
 
-	private int _major;
+    private final int _minor;
 
-        private InetSocketAddress _clientSocketAddress;
+    private final int _major;
 
-	private CellPath _pathToDoor;
+    private final InetSocketAddress _clientSocketAddress;
 
-	private PnfsId _pnfsId;
+    private final CellPath _pathToDoor;
 
-	private int _xrootdFileHandle;
+    private final PnfsId _pnfsId;
 
-	private String _path;
+    private final int _xrootdFileHandle;
 
-	private UUID _uuid;
+    private String _path;
 
-	private InetSocketAddress _doorAddress;
+    private final UUID _uuid;
 
-	public XrootdProtocolInfo(String protocol,  int major,int minor,
-		InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
-			int xrootdFileHandle, UUID uuid,
-			InetSocketAddress doorAddress) {
+    private final InetSocketAddress _doorAddress;
 
-		_name = protocol;
-		_minor = minor;
-		_major = major;
-                _clientSocketAddress = clientAddress;
-		_pathToDoor = pathToDoor;
-		_pnfsId = pnfsID;
-		_xrootdFileHandle = xrootdFileHandle;
-		_uuid = uuid;
-		_doorAddress = doorAddress;
-	}
+    private final EnumSet<Flags> _flags;
 
-	@Override
-        public String getProtocol() {
-		return _name;
-	}
+    public XrootdProtocolInfo(String protocol,  int major,int minor,
+        InetSocketAddress clientAddress, CellPath pathToDoor, PnfsId pnfsID,
+            int xrootdFileHandle, UUID uuid,
+            InetSocketAddress doorAddress, Flags... flags)
+    {
+        _name = protocol;
+        _minor = minor;
+        _major = major;
+        _clientSocketAddress = clientAddress;
+        _pathToDoor = pathToDoor;
+        _pnfsId = pnfsID;
+        _xrootdFileHandle = xrootdFileHandle;
+        _uuid = uuid;
+        _doorAddress = doorAddress;
+        _flags = Sets.newEnumSet(asList(flags), Flags.class);
+    }
 
-	@Override
-        public int getMinorVersion() {
-		return _minor;
-	}
+    @Override
+    public String getProtocol() {
+        return _name;
+    }
 
-	@Override
-        public int getMajorVersion() {
-		return _major;
-	}
+    @Override
+    public int getMinorVersion() {
+        return _minor;
+    }
 
-	@Override
-        public String getVersionString() {
-		return _name + "-" + _major + "." + _minor;
-	}
+    @Override
+    public int getMajorVersion() {
+        return _major;
+    }
 
-        @Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getVersionString());
-                sb.append(':');
-                sb.append(_clientSocketAddress.getAddress().getHostAddress());
-		sb.append(":").append(_clientSocketAddress.getPort());
+    @Override
+    public String getVersionString() {
+        return _name + "-" + _major + "." + _minor;
+    }
 
-		return sb.toString();
-	}
+    @Override
+    public String toString()
+    {
+        return getVersionString() + ':' + _clientSocketAddress.getAddress().getHostAddress() + ":" + _clientSocketAddress.getPort();
+    }
 
-	public CellPath getXrootdDoorCellPath() {
-		return _pathToDoor;
-	}
+    public CellPath getXrootdDoorCellPath() {
+        return _pathToDoor;
+    }
 
-	public void setXrootdDoorCellPath(CellPath toDoor) {
-		_pathToDoor = toDoor;
-	}
+    public PnfsId getPnfsId() {
+        return _pnfsId;
+    }
 
-	public PnfsId getPnfsId() {
-		return _pnfsId;
-	}
+    public int getXrootdFileHandle() {
+        return _xrootdFileHandle;
+    }
 
-	public int getXrootdFileHandle() {
-		return _xrootdFileHandle;
-	}
+    public UUID getUUID() {
+        return _uuid;
+    }
 
-	public boolean isFileCheckRequired() {
-//		we do it the fast way. The PoolMgr will not check whether a file is really on the pool where
-//		it is supposed to be. This saves one message.
-		return false;
-	}
+    public InetSocketAddress getDoorAddress() {
+        return _doorAddress;
+    }
 
-	public UUID getUUID() {
-		return _uuid;
-	}
+    public void setPath(String path)
+    {
+        _path = path;
+    }
 
-	public InetSocketAddress getDoorAddress() {
-		return _doorAddress;
-	}
+    public String getPath()
+    {
+        return _path;
+    }
 
-	public void setPath(String path)
-	{
-		_path = path;
-	}
+    @Override
+    public InetSocketAddress getSocketAddress()
+    {
+        return _clientSocketAddress;
+    }
 
-	public String getPath()
-	{
-		return _path;
-	}
-
-        @Override
-        public InetSocketAddress getSocketAddress()
-        {
-            return _clientSocketAddress;
-        }
+    public EnumSet<Flags> getFlags()
+    {
+        // Check null for backwards compatibility with 2.11
+        return (_flags == null) ? EnumSet.noneOf(Flags.class) : _flags;
+    }
 }

@@ -32,8 +32,9 @@ public class CacheException extends Exception
     public final static int FILESIZE_UNKNOWN = 10003;
 
     /**
-     * File size or checksum in name space does not match actual size or checksum of
-     * the data file.
+     * The data file is corrupted. Typically this is detected because file size or checksum in
+     * name space does not match actual size or checksum of the data file, but other means of
+     * detecting corrupted files may exist for some protocols.
      */
     public final static int FILE_CORRUPTED = 10004;
 

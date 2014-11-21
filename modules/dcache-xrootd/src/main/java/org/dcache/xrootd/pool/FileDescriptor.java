@@ -45,4 +45,9 @@ public interface FileDescriptor
      * Returns the FileChannel of this descriptor.
      */
     MoverChannel<XrootdProtocolInfo> getChannel();
+
+    /**
+     * Whether the file was opened with kXR_posc.
+     */
+    boolean isPersistOnSuccessfulClose();
 }

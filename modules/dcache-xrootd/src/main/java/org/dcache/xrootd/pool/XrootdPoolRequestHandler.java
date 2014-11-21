@@ -32,8 +32,10 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
+
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.IoMode;
@@ -170,7 +172,13 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
-                _server.close(descriptor.getChannel());
+                if (descriptor.isPersistOnSuccessfulClose()) {
+                    _server.close(descriptor.getChannel(), new FileCorruptedCacheException(
+                            "File was opened with Persist On Successful Close and not closed."));
+                } else {
+                    _server.close(descriptor.getChannel(), new CacheException(
+                            "Client disconnected without closing file."));
+                }
             }
         }
 
@@ -183,15 +191,26 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     {
         Throwable t = e.getCause();
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection unexpectedly closed");
-        } else if (t instanceof RuntimeException || t instanceof Error) {
+            _log.info("Connection {} unexpectedly closed.", ctx.getChannel());
+        } else if (t instanceof Exception) {
+            for (FileDescriptor descriptor : _descriptors) {
+                if (descriptor != null) {
+                    if (descriptor.isPersistOnSuccessfulClose()) {
+                        _server.close(descriptor.getChannel(), new FileCorruptedCacheException(
+                                "File was opened with Persist On Successful Close and client was disconnected due to an error: " +
+                                        t.getMessage(), t));
+                    } else {
+                        _server.close(descriptor.getChannel(), (Exception) t);
+                    }
+                }
+            }
+            _descriptors.clear();
+            ctx.getChannel().close();
+        } else {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
-        } else {
-            _log.warn(t.toString());
+            ctx.getChannel().close();
         }
-        // TODO: If not already closed, we should probably close the
-        // channel.
     }
 
     @Override
@@ -242,7 +261,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 } else if (msg.isDelete() && mode != IoMode.WRITE) {
                     throw new XrootdException(kXR_Unsupported, "File exists");
                 } else if ((msg.isNew() || msg.isReadWrite()) && mode == IoMode.WRITE) {
-                    descriptor = new WriteDescriptor(file);
+                    descriptor = new WriteDescriptor(file, (msg.getOptions() & kXR_posc) == kXR_posc ||
+                            file.getProtocolInfo().getFlags().contains(XrootdProtocolInfo.Flags.POSC));
                 } else {
                     descriptor = new ReadDescriptor(file);
                 }
