@@ -14,6 +14,7 @@ import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 
@@ -59,6 +60,7 @@ public class NfsTransferService extends AbstractCellComponent
     private FaultListener _faultListener;
     private final long _bootVerifier = System.currentTimeMillis();
     private boolean _sortMultipathList;
+    private PnfsHandler _pnfsHandler;
 
     public void init() throws IOException, GSSException, OncRpcException {
 
@@ -98,6 +100,11 @@ public class NfsTransferService extends AbstractCellComponent
         _postTransferService = postTransferService;
     }
 
+    @Required
+    public void setPnfsHandler(PnfsHandler pnfsHandler) {
+        _pnfsHandler = pnfsHandler;
+    }
+
     public void shutdown() throws IOException {
         _nfsIO.shutdown();
         _nfsIO.getNFSServer().getStateHandler().shutdown();
@@ -106,7 +113,7 @@ public class NfsTransferService extends AbstractCellComponent
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
     {
-        return new NfsMover(handle, message, pathToDoor, this, _postTransferService);
+        return new NfsMover(handle, message, pathToDoor, this, _postTransferService, _pnfsHandler);
     }
 
     @Override
