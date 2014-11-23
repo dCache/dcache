@@ -9,6 +9,7 @@ import java.util.Map;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.BadStateidException;
+import org.dcache.nfs.status.BadXdrException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
@@ -62,10 +63,25 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             _args.opwrite.data.rewind();
             int bytesWritten = fc.write(_args.opwrite.data, offset);
 
+            int stable = _args.opwrite.stable;
+            switch (stable) {
+                case stable_how4.FILE_SYNC4:
+                    mover.commitFileSize(fc.size());
+                    // FILE_SYNC includes DATA_SYNC
+                case stable_how4.DATA_SYNC4:
+                    fc.sync();
+                    break;
+                case stable_how4.UNSTABLE4:
+                    // nop
+                    break;
+                default:
+                    throw new BadXdrException();
+            }
+
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
             res.resok4.count = new count4(bytesWritten);
-            res.resok4.committed = stable_how4.FILE_SYNC4;
+            res.resok4.committed = stable;
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
 

@@ -17,6 +17,7 @@
  */
 package org.dcache.chimera.nfsv41.mover;
 
+import diskCacheV111.util.CacheException;
 import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import diskCacheV111.util.DiskErrorCacheException;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -39,6 +41,7 @@ import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
+import org.dcache.vehicles.FileAttributes;
 
 public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
@@ -46,14 +49,16 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private NFSv41Session _session;
     private final NFSv4MoverHandler _nfsIO;
     private final NFS4State _state;
+    private final PnfsHandler _namespace;
     private volatile CompletionHandler<Void, Void> _completionHandler;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
             NfsTransferService nfsTransferService,
-            PostTransferService postTransferService) {
+            PostTransferService postTransferService, PnfsHandler pnfsHandler) {
         super(handle, message, pathToDoor, nfsTransferService, postTransferService, MoverChannel.AllocatorMode.SOFT);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         _state = new MoverState();
+        _namespace = pnfsHandler;
     }
 
     @Override
@@ -156,5 +161,11 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         protected void dispose() {
             disable(new InterruptedException("Killing mover due to client inactivity"));
         }
+    }
+
+    public void commitFileSize(long size) throws CacheException {
+        FileAttributes attributes = new FileAttributes();
+        attributes.setSize(size);
+        _namespace.setFileAttributes(getFileAttributes().getPnfsId(), attributes);
     }
 }
