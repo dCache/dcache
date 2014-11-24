@@ -1370,7 +1370,9 @@ class FsSqlDriver {
 
             if (rs.next()) {
                 InputStream in = rs.getBinaryStream(1);
-
+                if (in == null) {
+                    return count;
+                }
                 in.skip(beginIndex);
                 int c;
                 while (((c = in.read()) != -1) && (count < len)) {
