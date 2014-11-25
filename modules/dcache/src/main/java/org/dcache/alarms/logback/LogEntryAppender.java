@@ -469,6 +469,7 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
 
         if (url.startsWith("xml:")) {
             initializeXmlFile(xmlPath);
+            properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsXML");
             properties.setProperty("datanucleus.ConnectionURL", url);
         } else if (url.startsWith("jdbc:")) {
             HikariConfig config = new HikariConfig();
@@ -476,6 +477,7 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
             config.setUsername(user);
             config.setPassword(password);
             dataSource = new HikariDataSource(config);
+            properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsRDBMS");
             properties.setProperty("datanucleus.connectionPoolingType", "None");
         }
 

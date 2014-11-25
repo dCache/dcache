@@ -357,6 +357,7 @@
             <description>Database persistence manager</description>
             <constructor-arg>
                 <util:properties location="file:${httpd.alarms.db.config.path}" local-override="true">
+                    <prop key="datanucleus.PersistenceUnitName">WebAlarmsRDBMS</prop>
                     <prop key="datanucleus.connectionPoolingType">None</prop>
                 </util:properties>
             </constructor-arg>
@@ -374,6 +375,7 @@
             <description>Database persistence manager</description>
             <constructor-arg>
                 <util:properties location="file:${httpd.alarms.db.config.path}" local-override="true">
+                    <prop key="datanucleus.PersistenceUnitName">WebAlarmsXML</prop>
                     <prop key="datanucleus.ConnectionURL">${httpd.alarms.db.url}</prop>
                 </util:properties>
             </constructor-arg>

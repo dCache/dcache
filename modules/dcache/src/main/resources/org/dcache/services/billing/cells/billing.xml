@@ -55,6 +55,7 @@
           <description>Database persistence manager</description>
           <constructor-arg>
               <util:properties location="${billing.db.config.path}" local-override="true">
+                  <prop key="datanucleus.PersistenceUnitName">Billing</prop>
                   <prop key="datanucleus.connectionPoolingType">None</prop>
               </util:properties>
           </constructor-arg>

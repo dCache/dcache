@@ -243,6 +243,7 @@ public abstract class TransferManager extends AbstractCell
     {
         // FIXME: Close connection pool and pmf
         Properties properties = new Properties();
+        properties.setProperty("datanucleus.PersistenceUnitName", "TransferManager");
         properties.setProperty("javax.jdo.option.DetachAllOnCommit", "true");
         properties.setProperty("javax.jdo.option.Optimistic", "true");
         properties.setProperty("javax.jdo.option.NontransactionalRead", "true");
