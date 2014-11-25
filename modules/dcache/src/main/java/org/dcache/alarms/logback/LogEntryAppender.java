@@ -470,11 +470,13 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
 
         if (url.startsWith("xml:")) {
             initializeXmlFile(xmlPath);
+            properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsXML");
             properties.setProperty("datanucleus.ConnectionURL", url);
         } else if (url.startsWith("jdbc:")) {
             HikariConfig config = new HikariConfig();
             config.setDataSource(new DriverManagerDataSource(url, user, password));
             dataSource = new HikariDataSource(config);
+            properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsRDBMS");
             properties.setProperty("datanucleus.connectionPoolingType", "None");
         }
 
