@@ -655,7 +655,7 @@ public class Job
 
     /** Callback from task: Task failed, reschedule it. */
     @Override
-    public synchronized void taskFailed(Task task, String msg)
+    public synchronized void taskFailed(Task task, int rc, String msg)
     {
         PnfsId pnfsId = task.getPnfsId();
         if (task == _running.remove(pnfsId)) {
@@ -674,7 +674,7 @@ public class Job
 
     /** Callback from task: Task failed permanently, remove it. */
     @Override
-    public synchronized void taskFailedPermanently(Task task, String msg)
+    public synchronized void taskFailedPermanently(Task task, int rc, String msg)
     {
         PnfsId pnfsId = task.getPnfsId();
         _running.remove(pnfsId);

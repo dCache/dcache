@@ -327,49 +327,26 @@ public class Task
     /** FSM Action */
     void notifyCancelled()
     {
-        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
-                @Override
-                public void run()
-                {
-                    _callbackHandler.taskCancelled(Task.this);
-                }
-            }));
+        _parameters.executor.execute(new FireAndForgetTask(() -> _callbackHandler.taskCancelled(Task.this)));
     }
 
     /** FSM Action */
-    void fail(final String message)
+    void fail(int rc, String message)
     {
-        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
-                @Override
-                public void run()
-                {
-                    _callbackHandler.taskFailed(Task.this, message);
-                }
-            }));
+        _parameters.executor.execute(new FireAndForgetTask(() -> _callbackHandler.taskFailed(Task.this, rc, message)));
     }
 
     /** FSM Action */
-    void failPermanently(final String message)
+    void failPermanently(int rc, String message)
     {
-        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
-                @Override
-                public void run()
-                {
-                    _callbackHandler.taskFailedPermanently(Task.this, message);
-                }
-            }));
+        _parameters.executor.execute(new FireAndForgetTask(
+                () -> _callbackHandler.taskFailedPermanently(Task.this, rc, message)));
     }
 
     /** FSM Action */
     void notifyCompleted()
     {
-        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
-                @Override
-                public void run()
-                {
-                    _callbackHandler.taskCompleted(Task.this);
-                }
-            }));
+        _parameters.executor.execute(new FireAndForgetTask(() -> _callbackHandler.taskCompleted(Task.this)));
     }
 
     /** FSM Action */

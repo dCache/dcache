@@ -27,17 +27,17 @@ Entry
         query_timeout
                 Failed
                 {
-                        fail("PnfsManager failed (no response)");
+                        fail(TIMEOUT, "PnfsManager failed (no response)");
                 }
         query_noroute
                 Failed
                 {
-                        fail("PnfsManager failed (no route to cell)");
+                        fail(SERVICE_UNAVAILABLE, "PnfsManager failed (no route to cell)");
                 }
         query_failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        fail("PnfsManager failed (" + cause + ")");
+                        fail(rc, "PnfsManager failed (" + cause + ")");
                 }
         cancel
                 Cancelled
@@ -75,7 +75,7 @@ Entry
         copy_timeout
                 Failed
                 {
-                        fail("Remote pool failed (no response)");
+                        fail(TIMEOUT, "Remote pool failed (no response)");
                 }
         copy_noroute
                 [ ctxt.hasMoreLocations() ]
@@ -91,13 +91,13 @@ Entry
         copy_noroute
                 Failed
                 {
-                        fail("Remote pool failed (no route to cell)");
+                        fail(SERVICE_UNAVAILABLE, "Remote pool failed (no route to cell)");
                 }
         copy_failure(rc: Integer, cause: Object)
                 [ rc == LOCKED ]
                 Failed
                 {
-                        fail("Replica is locked on target pool");
+                        fail(rc, "Replica is locked on target pool");
                 }
         copy_failure(rc: Integer, cause: Object)
                 [ ctxt.hasMoreLocations() ]
@@ -121,7 +121,8 @@ Entry
                 [ message.getReturnCode() == FILE_NOT_FOUND ]
                 Failed
                 {
-                        failPermanently(String.format("Transfer to %s failed (%s); will not be retried",
+                        failPermanently(message.getReturnCode(),
+                                        String.format("Transfer to %s failed (%s); will not be retried",
                                                       ctxt.getTarget(),
                                                       message.getErrorObject()));
                 }
@@ -129,7 +130,8 @@ Entry
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
-                        fail(String.format("Transfer to %s failed (%s)",
+                        fail(message.getReturnCode(),
+                             String.format("Transfer to %s failed (%s)",
                                            ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
@@ -164,18 +166,20 @@ Entry
         copy_nopools
                 Failed
                 {
-                        fail(String.format("No targets"));
+                        fail(NO_POOL_ONLINE, "No targets");
                 }
         copy_noroute
                 Failed
                 {
-                        fail(String.format("Pool %s failed (no route to cell)",
+                        fail(SERVICE_UNAVAILABLE,
+                             String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
         copy_failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        fail(String.format("Pool %s failed (%s)",
+                        fail(rc,
+                             String.format("Pool %s failed (%s)",
                                            ctxt.getTarget(), cause));
                 }
         copy_timeout
@@ -193,7 +197,8 @@ Entry
                 [ message.getReturnCode() == FILE_NOT_FOUND ]
                 Failed
                 {
-                        failPermanently(String.format("Transfer to %s failed (%s); will not be retried",
+                        failPermanently(message.getReturnCode(),
+                                        String.format("Transfer to %s failed (%s); will not be retried",
                                                       ctxt.getTarget(),
                                                       message.getErrorObject()));
                 }
@@ -201,7 +206,8 @@ Entry
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
-                        fail(String.format("Transfer to %s failed (%s)",
+                        fail(message.getReturnCode(),
+                             String.format("Transfer to %s failed (%s)",
                                            ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
@@ -237,24 +243,27 @@ WaitingForCopyReplicaReply
         copy_nopools
                 Failed
                 {
-                        fail(String.format("No targets"));
+                        fail(NO_POOL_ONLINE, "No targets");
                 }
         copy_noroute
                 Failed
                 {
-                        fail(String.format("Pool %s failed (no route to cell)",
+                        fail(SERVICE_UNAVAILABLE,
+                             String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
         copy_failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        fail(String.format("Pool %s failed (%s)",
+                        fail(rc,
+                             String.format("Pool %s failed (%s)",
                                            ctxt.getTarget(), cause));
                 }
         copy_timeout
                 Failed
                 {
-                        fail(String.format("Pool %s failed (no response)",
+                        fail(TIMEOUT,
+                             String.format("Pool %s failed (no response)",
                                            ctxt.getTarget()));
                 }
         cancel
@@ -283,7 +292,8 @@ Exit
                 [ message.getReturnCode() == FILE_NOT_FOUND ]
                 Failed
                 {
-                        failPermanently(String.format("Transfer to %s failed (%s); will not be retried",
+                        failPermanently(message.getReturnCode(),
+                                        String.format("Transfer to %s failed (%s); will not be retried",
                                                       ctxt.getTarget(),
                                                       message.getErrorObject()));
                 }
@@ -291,7 +301,8 @@ Exit
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
-                        fail(String.format("Transfer to %s failed (%s)",
+                        fail(message.getReturnCode(),
+                             String.format("Transfer to %s failed (%s)",
                                            ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
@@ -351,7 +362,8 @@ Entry
                 [ message.getReturnCode() == FILE_NOT_FOUND ]
                 Failed
                 {
-                        failPermanently(String.format("Transfer to %s failed (%s); will not be retried",
+                        failPermanently(message.getReturnCode(),
+                                        String.format("Transfer to %s failed (%s); will not be retried",
                                                       ctxt.getTarget(),
                                                       message.getErrorObject()));
                 }
@@ -359,7 +371,8 @@ Entry
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
-                        fail(String.format("Transfer to %s failed (%s)",
+                        fail(message.getReturnCode(),
+                             String.format("Transfer to %s failed (%s)",
                                            ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
@@ -419,21 +432,24 @@ Exit
                 Failed
                 {
                         // We still cannot talk to the pool
-                        fail(String.format("Pool %s failed (no route to cell)",
+                        fail(SERVICE_UNAVAILABLE,
+                             String.format("Pool %s failed (no route to cell)",
                                            ctxt.getTarget()));
                 }
         ping_timeout
                 Failed
                 {
                         // Message timed out again
-                        fail(String.format("Pool %s failed (no response)",
+                        fail(TIMEOUT,
+                             String.format("Pool %s failed (no response)",
                                            ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == FILE_NOT_FOUND ]
                 Failed
                 {
-                        failPermanently(String.format("Transfer to %s failed (%s); will not be retried",
+                        failPermanently(message.getReturnCode(),
+                                        String.format("Transfer to %s failed (%s); will not be retried",
                                                       ctxt.getTarget(),
                                                       message.getErrorObject()));
                 }
@@ -441,7 +457,8 @@ Exit
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
-                        fail(String.format("Transfer to %s failed (%s)",
+                        fail(message.getReturnCode(),
+                             String.format("Transfer to %s failed (%s)",
                                            ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
@@ -485,14 +502,16 @@ Exit
         timer
                 Failed
                 {
-                        fail(String.format("Pool %s failed (no response)",
+                        fail(TIMEOUT,
+                             String.format("Pool %s failed (no response)",
                                            ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == FILE_NOT_FOUND ]
                 Failed
                 {
-                        failPermanently(String.format("Transfer to %s failed (%s); will not be retried",
+                        failPermanently(message.getReturnCode(),
+                                        String.format("Transfer to %s failed (%s); will not be retried",
                                                       ctxt.getTarget(),
                                                       message.getErrorObject()));
                 }
@@ -500,7 +519,8 @@ Exit
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
-                        fail(String.format("Transfer to %s failed (%s)",
+                        fail(message.getReturnCode(),
+                             String.format("Transfer to %s failed (%s)",
                                            ctxt.getTarget(),
                                            message.getErrorObject()));
                 }
@@ -538,22 +558,22 @@ Entry
         move_failure(rc: Integer, cause: Object)
                 Failed
                 {
-                        fail("Pin manager failed (" + cause + ")");
+                        fail(rc, "Pin manager failed (" + cause + ")");
                 }
         move_noroute
                 Failed
                 {
-                        fail("Pin manager failed (no route to cell)");
+                        fail(SERVICE_UNAVAILABLE, "Pin manager failed (no route to cell)");
                 }
         move_timeout
                 Failed
                 {
-                        fail("Pin manager failed (timeout)");
+                        fail(TIMEOUT, "Pin manager failed (timeout)");
                 }
         cancel
                 Failed
                 {
-                        fail("Failed to cancel task");
+                        fail(DEFAULT_ERROR_CODE, "Failed to cancel task");
                 }
 }
 
@@ -574,7 +594,8 @@ Exit
         timer
                 Failed
                 {
-                        fail(String.format("Failed to cancel task (no response from %s)",
+                        fail(TIMEOUT,
+                             String.format("Failed to cancel task (no response from %s)",
                                            ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -586,7 +607,7 @@ Exit
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
                 Failed
                 {
-                        fail("Failed to cancel task");
+                        fail(DEFAULT_ERROR_CODE, "Failed to cancel task");
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 ]
@@ -604,7 +625,7 @@ Exit
         cancel_noroute
                 Failed
                 {
-                        fail("Failed to cancel task (no route)");
+                        fail(SERVICE_UNAVAILABLE, "Failed to cancel task (no route)");
                 }
         cancel_timeout
                 nil
