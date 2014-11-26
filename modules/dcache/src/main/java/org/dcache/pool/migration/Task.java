@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,12 +27,12 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.ReflectionUtils;
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Collections2.transform;
@@ -60,51 +58,48 @@ public class Task
 
     private final TaskCompletionHandler _callbackHandler;
 
-    private final CellStub _pool;
-    private final CellStub _pnfs;
-    private final CellStub _pinManager;
-    private final ScheduledExecutorService _executor;
     private final String _source;
-    private final String _pinPrefix;
-    private final JobDefinition _definition;
 
     private final long _id;
     private final UUID _uuid;
 
-    private final CacheEntry _entry;
+    private final TaskParameters _parameters;
+    private final PnfsId _pnfsId;
+    private final EntryState _targetState;
+    private final List<StickyRecord> _targetStickyRecords;
+    private final List<StickyRecord> _pinsToMove;
+    private final FileAttributes _fileAttributes;
 
     private ScheduledFuture<?> _timerTask;
     private Deque<String> _locations = new ArrayDeque<>(0);
     private Set<String> _replicas = new HashSet<>();
     private CellPath _target;
 
-    public Task(TaskCompletionHandler callbackHandler,
-                CellStub pool,
-                CellStub pnfs,
-                CellStub pinManager,
-                ScheduledExecutorService executor,
+    public Task(TaskParameters parameters,
+                TaskCompletionHandler callbackHandler,
                 String source,
-                CacheEntry entry,
-                JobDefinition definition)
+                PnfsId pnfsId,
+                EntryState targetState,
+                List<StickyRecord> targetStickyRecords,
+                List<StickyRecord> pinsToMove,
+                FileAttributes fileAttributes)
     {
+        _parameters = parameters;
+        _pnfsId = pnfsId;
+        _targetState = targetState;
+        _targetStickyRecords = targetStickyRecords;
+        _pinsToMove = pinsToMove;
+        _fileAttributes = fileAttributes;
         _id = _counter.getAndIncrement();
         _uuid = UUID.randomUUID();
         _fsm = new TaskContext(this);
         _callbackHandler = callbackHandler;
-        _pool = pool;
-        _pnfs = pnfs;
-        _pinManager = pinManager;
-        _executor = executor;
         _source = source;
-        _entry = entry;
-        _definition = definition;
-        _pinPrefix =
-            _pinManager.getDestinationPath().getDestinationAddress().getCellName();
     }
 
     public boolean getMustMovePins()
     {
-        return _definition.mustMovePins;
+        return !_pinsToMove.isEmpty();
     }
 
     public long getId()
@@ -114,18 +109,13 @@ public class Task
 
     public PnfsId getPnfsId()
     {
-        return _entry.getPnfsId();
-    }
-
-    public long getFileSize()
-    {
-        return _entry.getReplicaSize();
+        return _pnfsId;
     }
 
     /** Time in milliseconds between pings. */
     public long getPingPeriod()
     {
-        return _pool.getTimeoutInMillis() * 2;
+        return _parameters.pool.getTimeoutInMillis() * 2;
     }
 
     /**
@@ -134,7 +124,7 @@ public class Task
      */
     public long getNoResponseTimeout()
     {
-        return _pool.getTimeoutInMillis() * 2;
+        return _parameters.pool.getTimeoutInMillis() * 2;
     }
 
     /**
@@ -143,7 +133,7 @@ public class Task
      */
     public long getTaskDeadTimeout()
     {
-        return _pool.getTimeoutInMillis();
+        return _parameters.pool.getTimeoutInMillis();
     }
 
     /**
@@ -153,7 +143,7 @@ public class Task
      */
     public boolean isEager()
     {
-        return _definition.isEager;
+        return _parameters.isEager;
     }
 
     /**
@@ -165,45 +155,6 @@ public class Task
     }
 
     /**
-     * Returns true if and only if <code>record</code> is owned by the
-     * pin manager.
-     */
-    private boolean isPin(StickyRecord record)
-    {
-        return record.owner().startsWith(_pinPrefix);
-    }
-
-    /** Returns the intended entry state of the target replica. */
-    private EntryState getTargetState()
-    {
-        switch (_definition.targetMode.state) {
-        case SAME:
-            return _entry.getState();
-        case CACHED:
-            return EntryState.CACHED;
-        case PRECIOUS:
-            return EntryState.PRECIOUS;
-        default:
-            throw new IllegalStateException("Unsupported target mode");
-        }
-    }
-
-    /** Returns the intended sticky records of the target replica. */
-    private List<StickyRecord> getTargetStickyRecords()
-    {
-        List<StickyRecord> result = new ArrayList<>();
-        if (_definition.targetMode.state == CacheEntryMode.State.SAME) {
-            for (StickyRecord record: _entry.getStickyRecords()) {
-                if (!isPin(record)) {
-                    result.add(record);
-                }
-            }
-        }
-        result.addAll(_definition.targetMode.stickyRecords);
-        return result;
-    }
-
-    /**
      * Returns a pool from the pool list using the pool selection
      * strategy.
      */
@@ -211,9 +162,9 @@ public class Task
         throws NoSuchElementException
     {
         List<PoolManagerPoolInformation> pools =
-                newArrayList(filter(_definition.poolList.getPools(),
+                newArrayList(filter(_parameters.poolList.getPools(),
                                     compose(not(in(_replicas)), PoolManagerPoolInformation.GET_NAME)));
-        PoolManagerPoolInformation pool = _definition.selectionStrategy.select(pools);
+        PoolManagerPoolInformation pool = _parameters.selectionStrategy.select(pools);
         if (pool == null) {
             if (pools.isEmpty()) {
                 throw new NoSuchElementException("No pools available.");
@@ -230,13 +181,13 @@ public class Task
         if (_target != null) {
             pw.println(String.format("[%d] %s: %s -> %s",
                                      _id,
-                                     _entry.getPnfsId(),
+                                     _pnfsId,
                                      _fsm.getState(),
                                      _target.toSmallString()));
         } else {
             pw.println(String.format("[%d] %s: %s",
                                      _id,
-                                     _entry.getPnfsId(),
+                                     _pnfsId,
                                      _fsm.getState()));
         }
     }
@@ -253,7 +204,7 @@ public class Task
     /** FSM Action */
     synchronized void queryLocations()
     {
-        CellStub.addCallback(_pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId())),
+        CellStub.addCallback(_parameters.pnfs.send(new PnfsGetCacheLocationsMessage(getPnfsId())),
                              new Callback<PnfsGetCacheLocationsMessage>("query_")
                              {
                                  @Override
@@ -262,7 +213,7 @@ public class Task
                                      setLocations(msg.getCacheLocations());
                                      super.success(msg);
                                  }
-                             }, _executor);
+                             }, _parameters.executor);
     }
 
     /**
@@ -272,11 +223,11 @@ public class Task
     private synchronized void setLocations(List<String> locations)
     {
         Collection<String> onlinePools =
-                transform(_definition.poolList.getPools(), PoolManagerPoolInformation.GET_NAME);
-        if (_definition.isEager) {
+                transform(_parameters.poolList.getPools(), PoolManagerPoolInformation.GET_NAME);
+        if (_parameters.isEager) {
             _locations = newArrayDeque(filter(locations, in(onlinePools)));
         } else {
-            ImmutableList<String> offlinePools = _definition.poolList.getOfflinePools();
+            ImmutableList<String> offlinePools = _parameters.poolList.getOfflinePools();
             _locations = newArrayDeque(filter(locations, or(in(onlinePools), in(offlinePools))));
         }
     }
@@ -296,7 +247,7 @@ public class Task
      */
     synchronized boolean needsMoreReplicas()
     {
-        return _replicas.size() < _definition.replicas;
+        return _replicas.size() < _parameters.replicas;
     }
 
     /** FSM Action */
@@ -314,14 +265,16 @@ public class Task
             initiateCopy(selectPool());
         } catch (NoSuchElementException e) {
             _target = null;
-            _executor.execute(new FireAndForgetTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (Task.this) {
-                            _fsm.copy_nopools();
-                        }
+            _parameters.executor.execute(new FireAndForgetTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    synchronized (Task.this) {
+                        _fsm.copy_nopools();
                     }
-                }));
+                }
+            }));
         }
     }
 
@@ -335,12 +288,12 @@ public class Task
         PoolMigrationCopyReplicaMessage copyReplicaMessage =
                 new PoolMigrationCopyReplicaMessage(_uuid,
                                                     _source,
-                                                    _entry.getFileAttributes(),
-                                                    getTargetState(),
-                                                    getTargetStickyRecords(),
-                                                    _definition.computeChecksumOnUpdate,
-                                                    _definition.forceSourceMode);
-        CellStub.addCallback(_pool.send(_target, copyReplicaMessage),
+                                                    _fileAttributes,
+                                                    _targetState,
+                                                    _targetStickyRecords,
+                                                    _parameters.computeChecksumOnUpdate,
+                                                    _parameters.forceSourceMode);
+        CellStub.addCallback(_parameters.pool.send(_target, copyReplicaMessage),
                              new Callback<PoolMigrationCopyReplicaMessage>("copy_") {
                                  @Override
                                  public void success(PoolMigrationCopyReplicaMessage message)
@@ -348,44 +301,33 @@ public class Task
                                      _replicas.add(_target.getCellName());
                                      super.success(message);
                                  }
-                             }, _executor);
+                             }, _parameters.executor);
     }
 
     /** FSM Action */
     synchronized void cancelCopy()
     {
-        CellStub.addCallback(_pool.send(_target,
+        CellStub.addCallback(_parameters.pool.send(_target,
                                         new PoolMigrationCancelMessage(_uuid,
                                                                        _source,
                                                                        getPnfsId())),
-                             new Callback<PoolMigrationCancelMessage>("cancel_"), _executor);
+                             new Callback<PoolMigrationCancelMessage>("cancel_"), _parameters.executor);
     }
 
     /** FSM Action */
     synchronized void movePin()
     {
-        Collection<StickyRecord> records = new ArrayList<>();
-        for (StickyRecord record: _entry.getStickyRecords()) {
-            if (isPin(record)) {
-                records.add(record);
-            }
-        }
-
         Callback<PinManagerMovePinMessage> callback = new Callback<>("move_");
-        if (records.isEmpty()) {
-            callback.success(null);
-        } else {
-            String target = _target.getDestinationAddress().getCellName();
-            PinManagerMovePinMessage message =
-                new PinManagerMovePinMessage(getPnfsId(), records, _source, target);
-            CellStub.addCallback(_pinManager.send(message), callback, _executor);
-        }
+        String target = _target.getDestinationAddress().getCellName();
+        PinManagerMovePinMessage message =
+            new PinManagerMovePinMessage(getPnfsId(), _pinsToMove, _source, target);
+        CellStub.addCallback(_parameters.pinManager.send(message), callback, _parameters.executor);
     }
 
     /** FSM Action */
     void notifyCancelled()
     {
-        _executor.execute(new FireAndForgetTask(new Runnable() {
+        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -397,7 +339,7 @@ public class Task
     /** FSM Action */
     void fail(final String message)
     {
-        _executor.execute(new FireAndForgetTask(new Runnable() {
+        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -409,7 +351,7 @@ public class Task
     /** FSM Action */
     void failPermanently(final String message)
     {
-        _executor.execute(new FireAndForgetTask(new Runnable() {
+        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -421,7 +363,7 @@ public class Task
     /** FSM Action */
     void notifyCompleted()
     {
-        _executor.execute(new FireAndForgetTask(new Runnable() {
+        _parameters.executor.execute(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run()
                 {
@@ -448,7 +390,7 @@ public class Task
                 }
             };
         _timerTask =
-            _executor.schedule(new FireAndForgetTask(task),
+            _parameters.executor.schedule(new FireAndForgetTask(task),
                                delay, TimeUnit.MILLISECONDS);
     }
 
@@ -464,12 +406,12 @@ public class Task
     /** FSM Action */
     synchronized void ping()
     {
-        CellStub.addCallback(_pool.send(_target,
+        CellStub.addCallback(_parameters.pool.send(_target,
                                         new PoolMigrationPingMessage(_uuid,
                                                                      _source,
                                                                      getPnfsId())),
                              new Callback<PoolMigrationPingMessage>("ping_"),
-                             _executor);
+                             _parameters.executor);
     }
 
     /**

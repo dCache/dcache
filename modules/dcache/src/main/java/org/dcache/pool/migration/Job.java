@@ -95,6 +95,8 @@ public class Job
     private final JobStatistics _statistics = new JobStatistics();
     private final MigrationContext _context;
     private final JobDefinition _definition;
+    private final TaskParameters _taskParameters;
+    private final String _pinPrefix;
 
     private State _state;
     private int _concurrency;
@@ -108,6 +110,14 @@ public class Job
         _definition = definition;
         _concurrency = 1;
         _state = State.INITIALIZING;
+
+        _taskParameters = new TaskParameters(context.getPoolStub(), context.getPnfsStub(), context.getPinManagerStub(),
+                                             context.getExecutor(), definition.selectionStrategy,
+                                             definition.poolList, definition.isEager,
+                                             definition.computeChecksumOnUpdate, definition.forceSourceMode,
+                                             definition.replicas);
+
+        _pinPrefix = context.getPinManagerStub().getDestinationPath().getDestinationAddress().getCellName();
 
         _refreshTask =
             executor.scheduleWithFixedDelay(new FireAndForgetTask(new Runnable() {
@@ -463,14 +473,11 @@ public class Job
                     i.remove();
                     Repository repository = _context.getRepository();
                     CacheEntry entry = repository.getEntry(pnfsId);
-                    Task task = new Task(this,
-                                         _context.getPoolStub(),
-                                         _context.getPnfsStub(),
-                                         _context.getPinManagerStub(),
-                                         _context.getExecutor(),
-                                         _context.getPoolName(),
-                                         entry,
-                                         _definition);
+
+                    Task task = new Task(_taskParameters, this, _context.getPoolName(),
+                                         entry.getPnfsId(),
+                                         getTargetState(entry), getTargetStickyRecords(entry),
+                                         getPins(entry), entry.getFileAttributes());
                     _running.put(pnfsId, task);
                     _statistics.addAttempt();
                     task.run();
@@ -501,6 +508,49 @@ public class Job
                 }
             }
         }
+    }
+
+    private EntryState getTargetState(CacheEntry entry)
+    {
+        switch (_definition.targetMode.state) {
+        case SAME:
+            return entry.getState();
+        case CACHED:
+            return EntryState.CACHED;
+        case PRECIOUS:
+            return EntryState.PRECIOUS;
+        default:
+            throw new IllegalStateException("Unsupported target mode");
+        }
+    }
+
+    private List<StickyRecord> getPins(CacheEntry entry)
+    {
+        if (!_definition.mustMovePins) {
+            return Collections.emptyList();
+        }
+
+        List<StickyRecord> pins = new ArrayList<>();
+        for (StickyRecord record: entry.getStickyRecords()) {
+            if (isPin(record)) {
+                pins.add(record);
+            }
+        }
+        return pins;
+    }
+
+    private List<StickyRecord> getTargetStickyRecords(CacheEntry entry)
+    {
+        List<StickyRecord> result = new ArrayList<>();
+        if (_definition.targetMode.state == CacheEntryMode.State.SAME) {
+            for (StickyRecord record: entry.getStickyRecords()) {
+                if (!isPin(record)) {
+                    result.add(record);
+                }
+            }
+        }
+        result.addAll(_definition.targetMode.stickyRecords);
+        return result;
     }
 
     /**
@@ -705,9 +755,7 @@ public class Job
      */
     private synchronized boolean isPin(StickyRecord record)
     {
-        String prefix = _context.getPinManagerStub()
-            .getDestinationPath().getDestinationAddress().getCellName();
-        return record.owner().startsWith(prefix);
+        return record.owner().startsWith(_pinPrefix);
     }
 
     /**
