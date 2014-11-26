@@ -19,11 +19,11 @@ public class CellInfoDga extends SkelListBasedActivity {
 
 	/**
 	 *  Use our own list timings.  Enforce a minimum delay of two minutes between successive
-	 *  getcellinfos requests to the *same* domain, and a delay of at least two seconds between
+	 *  getcellinfos requests to the *same* domain, and a delay of at least 100 ms between
 	 *  successive requests of information from any domain.
 	 */
 	private static int MIN_LIST_REFRESH_PERIOD = 120000;
-	private static int SUCC_MSG_DELAY = 2000;
+	private static int SUCC_MSG_DELAY = 100;
 
 	private final CellMessageAnswerable _handler;
 
