@@ -56,8 +56,6 @@ import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
-import org.dcache.webadmin.view.pages.info.Info;
-import org.dcache.webadmin.view.pages.infoxml.InfoXml;
 import org.dcache.webadmin.view.pages.login.LogIn;
 import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
@@ -340,14 +338,12 @@ public class WebAdminInterface extends WebApplication {
          * changes
          */
         mountPage("login", LogIn.class);
-        mountPage("info", Info.class);
         mountPage("cellinfo", CellServices.class);
         mountPage("queueinfo", PoolQueues.class);
         mountPage("usageinfo", PoolList.class);
         mountPage("poolgroups", PoolGroupView.class);
         mountPage("pooladmin", PoolAdmin.class);
         mountPage("celladmin", CellAdmin.class);
-        mountPage("infoxml", InfoXml.class);
         mountPage("transfers", ActiveTransfersPage.class);
         mountPage("poolinfo", PoolSelectionSetup.class);
         mountPage("tapetransfers", TapeTransferQueue.class);

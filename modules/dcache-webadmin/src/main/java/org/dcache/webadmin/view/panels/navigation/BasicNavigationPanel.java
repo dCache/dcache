@@ -27,7 +27,6 @@ import org.dcache.webadmin.view.pages.billingplots.BillingPlots;
 import org.dcache.webadmin.view.pages.celladmin.CellAdmin;
 import org.dcache.webadmin.view.pages.cellservices.CellServices;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
-import org.dcache.webadmin.view.pages.infoxml.InfoXml;
 import org.dcache.webadmin.view.pages.pooladmin.PoolAdmin;
 import org.dcache.webadmin.view.pages.poolgroupview.PoolGroupView;
 import org.dcache.webadmin.view.pages.poollist.PoolList;
@@ -67,7 +66,6 @@ public class BasicNavigationPanel extends BasePanel {
             add(NavLink.builder().to(PoolAdmin.class).withId("pooladmin")).
             add(NavLink.builder().to(CellAdmin.class).withId("celladmin")).
             add(NavLink.builder().to(SpaceTokens.class).withId("space")).
-            add(NavLink.builder().to(InfoXml.class).withId("info")).
             add(NavLink.builder().to(AlarmsPage.class).withId("alarms")).
             build();
 
