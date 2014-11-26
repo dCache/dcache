@@ -27,11 +27,11 @@ public class StaticDomainDga extends SkelListBasedActivity
 
     /**
      * Minimum of two minutes between successive calls to the same domain, and
-     * a delay of at least two seconds between successive requests of
+     * a delay of at least 100 ms between successive requests of
      * information from any domain.
      */
     private static final int MIN_LIST_REFRESH_PERIOD = 120000;
-    private static final int SUCC_MSG_DELAY = 2000;
+    private static final int SUCC_MSG_DELAY = 100;
 
     public StaticDomainDga(StateExhibitor exhibitor, MessageSender sender,
             CellMessageAnswerable handler)
