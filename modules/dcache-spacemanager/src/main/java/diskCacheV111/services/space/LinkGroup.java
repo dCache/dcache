@@ -5,6 +5,8 @@ import com.google.common.base.Function;
 import java.io.Serializable;
 import java.util.Date;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.VOInfo;
 
 public class LinkGroup implements Serializable{
@@ -137,6 +139,19 @@ public class LinkGroup implements Serializable{
 
     public long getAvailableSpace() {
         return availableSpace;
+    }
+
+    public boolean isAllowed(AccessLatency al)
+    {
+        return (al == AccessLatency.NEARLINE && isNearlineAllowed()) ||
+                (al == AccessLatency.ONLINE && isOnlineAllowed());
+    }
+
+    public boolean isAllowed(RetentionPolicy rp)
+    {
+        return (rp == RetentionPolicy.CUSTODIAL && isCustodialAllowed()) ||
+                (rp == RetentionPolicy.REPLICA && isReplicaAllowed()) ||
+                (rp == RetentionPolicy.OUTPUT && isOutputAllowed());
     }
 
     public static final Function<LinkGroup, Long> getId =
