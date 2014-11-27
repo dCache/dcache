@@ -106,8 +106,6 @@
 
   <bean id="cli" class="diskCacheV111.services.space.SpaceManagerCommandLineInterface">
     <property name="database" ref="database"/>
-    <property name="defaultRetentionPolicy" value="#{T(diskCacheV111.util.RetentionPolicy).getRetentionPolicy('${spacemanager.default-retention-policy}')}" />
-    <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
     <property name="linkGroupLoader" ref="linkgroup-loader"/>
     <property name="pnfs" ref="pnfs"/>
     <property name="executor" ref="executor"/>
@@ -132,7 +130,6 @@
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${spacemanager.expire-space-reservation.period},
                      '${spacemanager.expire-space-reservation.period.unit}')}" />
-    <property name="defaultAccessLatency" value="#{T(diskCacheV111.util.AccessLatency).getAccessLatency('${spacemanager.default-access-latency}')}" />
     <property name="allowUnreservedUploadsToLinkGroups" value="${spacemanager.enable.unreserved-uploads-to-linkgroups}" />
     <property name="shouldDeleteStoredFileRecord" value="false" />
     <property name="shouldReturnFlushedSpaceToReservation" value="true" />

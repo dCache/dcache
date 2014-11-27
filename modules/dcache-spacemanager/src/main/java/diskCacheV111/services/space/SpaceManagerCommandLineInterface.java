@@ -42,8 +42,6 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 {
     private SpaceManagerDatabase db;
     private PnfsHandler pnfs;
-    private AccessLatency defaultAccessLatency;
-    private RetentionPolicy defaultRetentionPolicy;
     private LinkGroupLoader linkGroupLoader;
     private Executor executor;
 
@@ -63,18 +61,6 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     public void setPnfs(PnfsHandler pnfs)
     {
         this.pnfs = pnfs;
-    }
-
-    @Required
-    public void setDefaultAccessLatency(AccessLatency defaultAccessLatency)
-    {
-        this.defaultAccessLatency = defaultAccessLatency;
-    }
-
-    @Required
-    public void setDefaultRetentionPolicy(RetentionPolicy defaultRetentionPolicy)
-    {
-        this.defaultRetentionPolicy = defaultRetentionPolicy;
     }
 
     @Required
@@ -685,13 +671,13 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         @Option(name = "owner", usage = "User name or FQAN.", valueSpec="USER|FQAN")
         String owner;
 
-        @Option(name = "al", usage = "Access latency.",
+        @Option(name = "al", usage = "Access latency.", required = true,
                 values = { "online", "nearline" })
-        AccessLatency al = defaultAccessLatency;
+        AccessLatency al;
 
-        @Option(name = "rp", usage = "Retention policy.",
+        @Option(name = "rp", usage = "Retention policy.", required = true,
                 values = { "replica", "custodial"})
-        RetentionPolicy rp  = defaultRetentionPolicy;
+        RetentionPolicy rp;
 
         @Option(name = "desc")
         String description;
@@ -720,6 +706,15 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 return "Link group " + lg + " has existed, but it is no longer published by pool manager.";
             }
 
+            if (!linkGroup.isAllowed(al)) {
+                return "Link group " + lg + " cannot accommodate " + al + " reservations.";
+            }
+            if (!linkGroup.isAllowed(rp)) {
+                return "Link group " + lg + " cannot accommodate " + rp + " reservations.";
+            }
+            if (sizeInBytes > linkGroup.getAvailableSpace()) {
+                return "Link group " + lg + " only has " + linkGroup.getAvailableSpace() + " bytes available.";
+            }
 
             String group = null;
             String role = null;
@@ -727,20 +722,6 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 FQAN fqan = new FQAN(owner);
                 group = fqan.getGroup();
                 role = emptyToNull(fqan.getRole());
-            }
-            List<Long> linkGroups = db.findLinkGroupIds(sizeInBytes,
-                                                        group,
-                                                        role,
-                                                        al,
-                                                        rp,
-                                                        linkGroupLoader.getLatestUpdateTime());
-
-            if (!linkGroups.contains(linkGroup.getId())) {
-                return "Link group " + lg + " cannot accommodate the reservation requested, \n"+
-                        "check that the link group satisfies the following criteria: \n"+
-                        "\t it can fit the size you are requesting ("+sizeInBytes+"),\n"+
-                        "\t owner you specified (" + owner +") is authorized, and \n"+
-                        "\t retention policy and access latency you specified (" + rp +  ',' + al + ") are allowed.";
             }
 
             Space space = db.insertSpace(group,

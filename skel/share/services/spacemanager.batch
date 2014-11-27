@@ -13,7 +13,6 @@ check -strong spacemanager.db.password
 check -strong spacemanager.db.connections.idle
 check -strong spacemanager.db.connections.max
 check -strong spacemanager.limits.threads
-check -strong spacemanager.default-access-latency
 check -strong spacemanager.enable.unreserved-uploads-to-linkgroups
 check spacemanager.authz.link-group-file-name
 check -strong spacemanager.enable.space-reservation
