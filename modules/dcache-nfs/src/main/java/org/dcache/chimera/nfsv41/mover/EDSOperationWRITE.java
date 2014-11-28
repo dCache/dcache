@@ -16,13 +16,11 @@ import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.WRITE4res;
 import org.dcache.nfs.v4.xdr.WRITE4resok;
 import org.dcache.nfs.v4.xdr.count4;
-import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stable_how4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -82,8 +80,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             res.resok4 = new WRITE4resok();
             res.resok4.count = new count4(bytesWritten);
             res.resok4.committed = stable;
-            res.resok4.writeverf = new verifier4();
-            res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
+            res.resok4.writeverf = mover.getBootVerifier();
 
             _log.debug("MOVER: {}@{} written, {} requested.", bytesWritten, offset, bytesWritten);
 

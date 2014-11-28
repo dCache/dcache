@@ -29,6 +29,8 @@ import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFSv41Session;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -41,6 +43,7 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Args;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
+import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
 
 /**
@@ -59,6 +62,7 @@ public class NfsTransferService extends AbstractCellComponent
     private PostTransferService _postTransferService;
     private FaultListener _faultListener;
     private final long _bootVerifier = System.currentTimeMillis();
+    private final verifier4 _bootVerifierBytes = toVerifier(_bootVerifier);
     private boolean _sortMultipathList;
     private PnfsHandler _pnfsHandler;
 
@@ -214,5 +218,16 @@ public class NfsTransferService extends AbstractCellComponent
             }
         }
         return sb.toString();
+    }
+
+    public verifier4 getBootVerifier() {
+        return _bootVerifierBytes;
+    }
+
+    private static verifier4 toVerifier(long v) {
+        verifier4 verifier = new verifier4();
+        verifier.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
+        Bytes.putLong(verifier.value, 0, v);
+        return verifier;
     }
 }
