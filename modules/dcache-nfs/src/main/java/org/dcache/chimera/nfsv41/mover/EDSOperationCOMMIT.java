@@ -14,16 +14,13 @@ import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.COMMIT4res;
 import org.dcache.nfs.v4.xdr.COMMIT4resok;
-import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
-import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.xdr.OncRpcException;
 
-import static org.dcache.chimera.JdbcFs.toHexString;
 
 public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
 
@@ -51,8 +48,7 @@ public class EDSOperationCOMMIT extends AbstractNFSv4Operation {
             final COMMIT4res res = result.opcommit;
             res.status = nfsstat.NFS_OK;
             res.resok4 = new COMMIT4resok();
-            res.resok4.writeverf = new verifier4();
-            res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
+            res.resok4.writeverf = mover.getBootVerifier();
         } catch (CacheException e) {
             throw new NfsIoException(e.getMessage());
         }

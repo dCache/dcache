@@ -35,6 +35,7 @@ import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.uint32_t;
+import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.MoverChannel;
@@ -51,6 +52,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private final NFS4State _state;
     private final PnfsHandler _namespace;
     private volatile CompletionHandler<Void, Void> _completionHandler;
+    private final verifier4 _bootVerifier;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
             NfsTransferService nfsTransferService,
@@ -59,6 +61,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         _state = new MoverState();
         _namespace = pnfsHandler;
+        _bootVerifier = nfsTransferService.getBootVerifier();
     }
 
     @Override
@@ -167,5 +170,9 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         FileAttributes attributes = new FileAttributes();
         attributes.setSize(size);
         _namespace.setFileAttributes(getFileAttributes().getPnfsId(), attributes);
+    }
+
+    public verifier4 getBootVerifier() {
+        return _bootVerifier;
     }
 }
