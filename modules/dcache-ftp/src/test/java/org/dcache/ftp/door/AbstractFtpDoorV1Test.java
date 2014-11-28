@@ -410,15 +410,6 @@ public class AbstractFtpDoorV1Test {
     }
 
     @Test
-    public void EPRTshouldReply500WhenRequestedOnIpV4()
-            throws FTPCommandException {
-        doCallRealMethod().when(door).ftp_eprt(anyString());
-        door._localAddress = new InetSocketAddress(forString("127.0.0.1"), 21);
-        thrown.expectCode(502);
-        door.ftp_eprt("|3|127.0.0.1|22|");
-    }
-
-    @Test
     public void whenMkdSuccessfulReply257() throws Exception {
         doCallRealMethod().when(door).ftp_mkd(anyString());
         door.ftp_mkd(NEW_DIR);
