@@ -32,6 +32,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -1221,6 +1222,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             return false;
         }
 
+	protected final void checkUrl() throws CacheException {
+	    if (!_isUrl) {
+		throw new InvalidMessageCacheException("not an url");
+	    }
+	}
+
         @Override
         public String toString(){
             return "["+((_fileAttributes == null) ? "null" : _fileAttributes.getPnfsId())+"]"+" {timer="+
@@ -1365,6 +1372,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
+		checkUrl();
                 //
                 // we are not called if the pnfs request failed.
                 //
@@ -1568,6 +1576,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
+		checkUrl();
                 _pnfs.renameEntry(_fileAttributes.getPnfsId(), _newName);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1611,6 +1620,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
+		checkUrl();
                 _pnfs.deletePnfsEntry(_message.getPnfsPath(), EnumSet.of(DIR));
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
