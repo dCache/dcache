@@ -214,6 +214,7 @@
         <property name="enableExpectContinue" value="false"/>
         <property name="enableCompression" value="false"/>
         <property name="enableFormAuth" value="false"/>
+        <property name="enableCookieAuth" value="false"/>
         <property name="resourceFactory" ref="resource-factory"/>
         <property name="buffering" value="never"/>
         <property name="staticContentPath" value="${webdav.static-content.location}"/>
