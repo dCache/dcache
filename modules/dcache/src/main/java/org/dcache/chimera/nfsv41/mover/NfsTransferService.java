@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
 
@@ -52,6 +54,7 @@ public class NfsTransferService extends AbstractCellComponent
     private InetSocketAddress[] _localSocketAddresses;
     private CellStub _door;
     private PostTransferService _postTransferService;
+    private boolean _sortMultipathList;
 
     public void init() throws ChimeraFsException, IOException, GSSException, OncRpcException {
 
@@ -64,8 +67,18 @@ public class NfsTransferService extends AbstractCellComponent
         }
 
         _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName());
-        _localSocketAddresses =
-                localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
+        _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
+        /*
+         * we assume, that client's can't handle multipath list correctly
+         * if data server has multiple IPv4 addresses. (RHEL6 and clones)
+         */
+        int ipv4Count = 0;
+        for (InetSocketAddress addr : _localSocketAddresses) {
+            if (addr.getAddress() instanceof Inet4Address) {
+                ipv4Count++;
+            }
+        }
+        _sortMultipathList = ipv4Count > 1;
 
         _door = new CellStub(getCellEndpoint());
     }
@@ -104,7 +117,8 @@ public class NfsTransferService extends AbstractCellComponent
             _nfsIO.addHandler(moverBridge);
 
             CellPath directDoorPath = new CellPath(transfer.getPathToDoor().getDestinationAddress());
-            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), _localSocketAddresses, legacyStateid));
+            final InetSocketAddress[] localSocketAddresses = localSocketAddresses(nfs4ProtocolInfo.getSocketAddress().getAddress());
+            _door.send(directDoorPath, new PoolPassiveIoFileMessage<>(getCellName(), localSocketAddresses, legacyStateid));
 
             /* An NFS mover doesn't complete until it is cancelled (the door sends a mover kill
              * message when the file is closed).
@@ -139,6 +153,20 @@ public class NfsTransferService extends AbstractCellComponent
             i++;
         }
         return socketAddresses;
+    }
+
+    private InetSocketAddress[] localSocketAddresses(InetAddress remote) throws SocketException {
+        InetSocketAddress[] addressesToUse;
+        if (_sortMultipathList) {
+            addressesToUse = new InetSocketAddress[_localSocketAddresses.length + 1];
+            System.arraycopy(_localSocketAddresses, 0, addressesToUse, 1, _localSocketAddresses.length);
+            InetSocketAddress preferredInterface = new InetSocketAddress(
+                    NetworkUtils.getLocalAddress(remote), _nfsIO.getLocalAddress().getPort());
+            addressesToUse[0] = preferredInterface;
+        } else {
+            addressesToUse = _localSocketAddresses;
+        }
+        return addressesToUse;
     }
 
     public final static String hh_nfs_stats = " # show nfs mover statstics";
