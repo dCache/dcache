@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.nearline;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
 import java.net.URI;
@@ -37,6 +38,7 @@ import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.filter;
 
 /**
@@ -183,7 +185,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     {
         protected final R request;
         private Thread thread;
-        private boolean isCancelled;
+        private boolean isDone;
 
         protected Task(R request)
         {
@@ -193,13 +195,15 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
 
         public synchronized void cancel()
         {
-            isCancelled = true;
-            if (thread != null) {
-                thread.interrupt();
-            } else {
-                request.failed(new CancellationException());
+            if (!isDone) {
+                isDone = true;
+                if (thread != null) {
+                    thread.interrupt();
+                } else {
+                    request.failed(new CancellationException());
+                }
+                requests.remove(request.getId());
             }
-            requests.remove(request.getId());
         }
 
         /**
@@ -208,7 +212,8 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
          */
         private synchronized boolean bind(Thread thread)
         {
-            if (this.thread != null || isCancelled) {
+            checkState(this.thread == null);
+            if (isDone) {
                 return false;
             }
             this.thread = thread;
@@ -216,12 +221,13 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
         }
 
         /**
-         * Binds task to a particular thread. When the request is cancelled, the thread
-         * is interrupted.
+         * Releases task from its thread. If the thread was interrupted, InterruptedException
+         * is thrown.
          */
         private synchronized void release() throws InterruptedException
         {
-            this.thread = null;
+            thread = null;
+            isDone = true;
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
