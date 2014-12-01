@@ -45,7 +45,7 @@ public class DataGatheringScheduler implements Runnable {
 
 
 		/** Min. delay (in ms). We prevent Schedulables from triggering more frequently than this */
-		private static final long MINIMUM_DGA_DELAY = 400;
+		private static final long MINIMUM_DGA_DELAY = 50;
 
 		private final Schedulable _dga;
 

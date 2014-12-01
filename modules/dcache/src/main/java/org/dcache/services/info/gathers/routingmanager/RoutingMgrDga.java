@@ -30,11 +30,11 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 
 	/**
 	 *  Use our own list timings.  Enforce a minimum delay of 5 minutes between successive
-	 *  "ls -x" requests to the *same* domain, and a delay of at least 5 seconds between
+	 *  "ls -x" requests to the *same* domain, and a delay of at least 100 ms between
 	 *  successive requests of information from any domain.
 	 */
 	private static int MIN_LIST_REFRESH_PERIOD = 300000;
-	private static int SUCC_MSG_DELAY = 5000;
+	private static int SUCC_MSG_DELAY = 100;
 
 	private final CellMessageAnswerable _handler;
 
