@@ -330,6 +330,7 @@
       <description>NFSv4.1 transfer service</description>
       <property name="enableGss" value="${pool.mover.nfs.rpcsec_gss}" />
       <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="pnfsHandler" ref="pnfs"/>
       <property name="faultListener" ref="pool"/>
   </bean>
 

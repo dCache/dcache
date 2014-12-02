@@ -14,12 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import diskCacheV111.util.PnfsId;
+
 import org.dcache.auth.Subjects;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4OperationFactory;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
-import org.dcache.nfs.v4.OperationCOMMIT;
 import org.dcache.nfs.v4.OperationCREATE_SESSION;
 import org.dcache.nfs.v4.OperationDESTROY_CLIENTID;
 import org.dcache.nfs.v4.OperationDESTROY_SESSION;
@@ -43,6 +44,7 @@ import org.dcache.nfs.vfs.Stat;
 import org.dcache.nfs.vfs.Stat.Type;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
+import org.dcache.pool.movers.IoMode;
 import org.dcache.util.PortRange;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
@@ -176,8 +178,14 @@ public class NFSv4MoverHandler {
     private final OncRpcSvc _rpcService;
 
     private final Map<stateid4, NfsMover> _activeIO = new ConcurrentHashMap<>();
-    private final NFSv4OperationFactory _operationFactory =
-            new EDSNFSv4OperationFactory(_activeIO);
+    private final NFSv4OperationFactory _operationFactory = new EDSNFSv4OperationFactory();
+
+    /**
+     * for The nfs commit operation comes without a stateid. We need a different way to
+     * wind corresponding mover. The assumption, is that nor now we have only one writer and,
+     * as a result, pnfsid will point only to a single mover.
+     */
+    private final Map<PnfsId, NfsMover> _activeWrites = new ConcurrentHashMap<>();
     private final NFSServerV41 _embededDS;
 
     public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId)
@@ -218,6 +226,9 @@ public class NFSv4MoverHandler {
     public void add(NfsMover mover) {
         _log.debug("registering new mover {}", mover);
         _activeIO.put(mover.getStateId(), mover );
+        if (mover.getIoMode() == IoMode.WRITE) {
+            _activeWrites.put(mover.getFileAttributes().getPnfsId(), mover);
+        }
     }
 
     /**
@@ -228,22 +239,19 @@ public class NFSv4MoverHandler {
     public void remove(NfsMover mover) {
         _log.debug("un-removing io handler for stateid {}", mover);
         _activeIO.remove(mover.getStateId());
+        if (mover.getIoMode() == IoMode.WRITE) {
+            _activeWrites.remove(mover.getFileAttributes().getPnfsId());
+        }
     }
 
-    private static class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
-
-        private final Map<stateid4, NfsMover> _activeIO;
-
-        EDSNFSv4OperationFactory(Map<stateid4, NfsMover> activeIO) {
-            _activeIO = activeIO;
-        }
+    private class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
 
         @Override
         public AbstractNFSv4Operation getOperation(nfs_argop4 op) {
 
             switch (op.argop) {
                 case nfs_opnum4.OP_COMMIT:
-                    return new OperationCOMMIT(op);
+                    return new EDSOperationCOMMIT(op, _activeWrites);
                 case nfs_opnum4.OP_GETATTR:
                     return new OperationGETATTR(op);
                 case nfs_opnum4.OP_PUTFH:
