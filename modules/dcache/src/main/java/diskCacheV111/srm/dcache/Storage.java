@@ -71,6 +71,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
 import com.google.common.collect.Ranges;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
@@ -2480,8 +2481,9 @@ public final class Storage
             Subject subject = ((AuthorizationRecord) user).toSubject();
             FmdListPrinter printer =
                 verbose ? new VerboseListPrinter() : new FmdListPrinter();
-            _listSource.printDirectory(subject, printer, path, null,
-                                       Ranges.closedOpen(offset, offset + count));
+            Range<Integer> range = offset < Integer.MAX_VALUE - count ?
+                    Range.closedOpen(offset, offset + count) : Range.atLeast(offset);
+            _listSource.printDirectory(subject, printer, path, null, range);
             return printer.getResult();
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
