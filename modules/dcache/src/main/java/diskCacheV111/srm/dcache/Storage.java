@@ -1909,8 +1909,9 @@ public final class Storage
             Subject subject = ((DcacheUser) user).getSubject();
             FmdListPrinter printer =
                 verbose ? new VerboseListPrinter() : new FmdListPrinter();
-            _listSource.printDirectory(subject, printer, path, null,
-                                       Range.closedOpen(offset, offset + count));
+            Range<Integer> range = offset < Integer.MAX_VALUE - count ?
+                    Range.closedOpen(offset, offset + count) : Range.atLeast(offset);
+            _listSource.printDirectory(subject, printer, path, null, range);
             return printer.getResult();
         } catch (TimeoutCacheException e) {
             throw new SRMInternalErrorException("Internal name space timeout", e);
