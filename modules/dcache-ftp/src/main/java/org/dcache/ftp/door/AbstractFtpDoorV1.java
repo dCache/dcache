@@ -773,12 +773,29 @@ public abstract class AbstractFtpDoorV1
      */
     protected boolean _sessionAllPassive = false;
 
+    /**
+     * Defines passive replies that have been delayed.
+     */
     private enum DelayedPassiveReply
     {
-        NONE, PASV, EPSV
+        /** No passive reply was delayed. */
+        NONE,
+
+        /** A 127/227 reply was delayed. */
+        PASV,
+
+        /** A 129/229 reply was delayed. */
+        EPSV
     }
 
+    /**
+     * Whether the FTP client has enabled delayed passive.
+     */
     private boolean _allowDelayed;
+
+    /**
+     * Indicates whether and which passive reply has been delayed.
+     */
     private DelayedPassiveReply _delayedPassive = DelayedPassiveReply.NONE;
 
     //These are the number of parallel streams to have
@@ -2438,7 +2455,6 @@ public abstract class AbstractFtpDoorV1
     public void ftp_eprt(String arg)
             throws FTPCommandException
     {
-        checkIpV6();
         checkLoggedIn();
 
         setActive(getExtendedAddressOf(arg));
@@ -2451,7 +2467,9 @@ public abstract class AbstractFtpDoorV1
     public void ftp_epsv(String arg)
         throws FTPCommandException
     {
-        checkIpV6();
+        if (!_allowDelayed) {
+            checkIpV6();
+        }
         checkLoggedIn();
 
         if  ("ALL".equalsIgnoreCase(arg)) {
