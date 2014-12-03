@@ -111,13 +111,17 @@ public final class LogEntryServer implements LifeCycle {
         server.start();
     }
 
+    @Override
     public void stop() {
         if (started.getAndSet(false)) {
             server.close();
+            Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+            root.detachAppender(appender);
             appender.stop();
         }
     }
 
+    @Override
     public boolean isStarted() {
         return started.get();
     }
