@@ -53,7 +53,6 @@ import dmg.util.AuthorizedString;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
-import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 
@@ -1284,17 +1283,6 @@ public class UserAdminShell
         }
     }
 
-    protected Object executeLocalCommand( Args args ) throws Exception {
-       _log.info( "Local command "+args ) ;
-       try{
-          return  command( args ) ;
-       }catch( CommandThrowableException cte ){
-          throw (Exception)cte.getTargetException() ;
-       }catch( CommandPanicException cpe ){
-          throw (Exception)cpe.getTargetException() ;
-       }
-    }
-
     @Override
     public int complete(String buffer, int cursor, List candidates)
     {
@@ -1313,7 +1301,7 @@ public class UserAdminShell
         }
     }
 
-    public Object executeCommand(String str) throws Exception
+    public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
     {
        _log.info( "String command (super) "+str ) ;
 
@@ -1355,8 +1343,10 @@ public class UserAdminShell
        }
     }
 
-    private Object localCommand( Args args ) throws Exception {
-           Object or = executeLocalCommand( args ) ;
+    private Object localCommand( Args args ) throws CommandException
+    {
+           _log.info("Local command {}", args);
+           Object or = command(args);
            if( or == null ) {
                return "";
            }
@@ -1373,13 +1363,13 @@ public class UserAdminShell
 
     }
     private Object sendObject(String cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, CacheException, CommandException
+            throws NoRouteToCellException, InterruptedException, CommandException
     {
         return sendObject(new CellPath(cellPath), object);
     }
 
     private Object sendObject(CellPath cellPath, Serializable object)
-            throws NoRouteToCellException, InterruptedException, CacheException, CommandException
+            throws NoRouteToCellException, InterruptedException, CommandException
     {
        try {
            return _cellStub.send(cellPath, object, Object.class).get();
@@ -1388,10 +1378,10 @@ public class UserAdminShell
            if (_fullException) {
                return getStackTrace(cause);
            }
+           Throwables.propagateIfInstanceOf(cause, Error.class);
            Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
-           Throwables.propagateIfInstanceOf(cause, CacheException.class);
            Throwables.propagateIfInstanceOf(cause, CommandException.class);
-           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, cause.getMessage(), cause);
+           throw new CommandThrowableException(cause.toString(), cause);
        }
     }
 

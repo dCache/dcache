@@ -815,6 +815,9 @@ public class   CellAdapter extends CommandInterpreter
                         }
                     } catch (CommandThrowableException e) {
                         o = e.getCause();
+                    } catch (CommandPanicException e) {
+                        o = e;
+                        _log.error("Command failed due to a bug, please contact support@dcache.org.", e);
                     } catch (CommandException ce) {
                         o = ce;
                     } finally {
@@ -897,9 +900,7 @@ public class   CellAdapter extends CommandInterpreter
                 return autoCommand(command);
             }
         } else {
-            throw new
-                    CommandPanicException("Illegal CommandClass detected",
-                    new Exception("PANIC"));
+            throw new CommandPanicException("Illegal CommandClass detected");
         }
 
 
