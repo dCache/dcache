@@ -25,12 +25,14 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.Monitor;
 import com.google.common.util.concurrent.Striped;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -55,6 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -129,6 +131,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     private long stageTimeout;
     private long flushTimeout;
     private long removeTimeout;
+    private ScheduledFuture<?> timeoutFuture;
 
     @Required
     public void setScheduledExecutor(ScheduledExecutorService executor)
@@ -181,9 +184,44 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     @PostConstruct
     public void init()
     {
-        scheduledExecutor.scheduleWithFixedDelay(new TimeoutTask(), 30, 30, TimeUnit.SECONDS);
+        timeoutFuture = scheduledExecutor.scheduleWithFixedDelay(new TimeoutTask(), 30, 30, TimeUnit.SECONDS);
         repository.addListener(this);
     }
+
+    @Override
+    public void beforeStop()
+    {
+        /* Marks the containers as being shut down and cancels all requests, but
+         * doesn't wait for termination.
+         */
+        flushRequests.shutdown();
+        stageRequests.shutdown();
+        removeRequests.shutdown();
+    }
+
+    @PreDestroy
+    public void shutdown() throws InterruptedException
+    {
+        flushRequests.shutdown();
+        stageRequests.shutdown();
+        removeRequests.shutdown();
+
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+        }
+        repository.removeListener(this);
+
+        /* Waits for all requests to have finished. This is blocking to avoid that the
+         * repository gets closed nearline storage requests have had a chance to finish.
+         */
+        long deadline = System.currentTimeMillis() + 3000;
+        if (flushRequests.awaitTermination(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS)) {
+            if (stageRequests.awaitTermination(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS)) {
+                removeRequests.awaitTermination(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
 
     @Override
     public void getInfo(PrintWriter pw)
@@ -365,8 +403,11 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
         protected synchronized <T> ListenableFuture<T> register(ListenableFuture<T> future)
         {
-            // TODO: What if we are already cancelled?
-            asyncTasks.add(future);
+            if (state.get() == State.CANCELED) {
+                future.cancel(true);
+            } else {
+                asyncTasks.add(future);
+            }
             return future;
         }
 
@@ -442,6 +483,8 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
         private final Striped<Lock> locks = Striped.lock(16);
 
+        private final ContainerState state = new ContainerState();
+
         public void addAll(NearlineStorage storage,
                            Iterable<F> files,
                            CompletionHandler<Void,K> callback)
@@ -454,9 +497,14 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 try {
                     request = requests.get(key);
                     if (request == null) {
+                        if (!state.increment()) {
+                            callback.failed(new CacheException("Nearline storage has been shut down."), key);
+                            continue;
+                        }
                         try {
                             request = checkNotNull(createRequest(storage, file));
                         } catch (Exception e) {
+                            state.decrement();
                             callback.failed(e, key);
                             continue;
                         }
@@ -469,8 +517,18 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 request.addCallback(callback);
             }
             submit(storage, newRequests);
+
+            /* If the container shut down before the requests were added to the map,
+             * the shutdown call might have missed them when cancelling requests.
+             */
+            if (state.isShutdown()) {
+                cancelRequests(0);
+            }
         }
 
+        /**
+         * Cancels the request identified by {@code key}.
+         */
         public void cancel(K key)
         {
             R request = requests.get(key);
@@ -479,14 +537,36 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             }
         }
 
-        public void cancelOldRequests(long timeout)
+        /**
+         * Cancels requests older than {@code age}.
+         */
+        public void cancelRequests(long age)
         {
             long now = System.currentTimeMillis();
             for (R request : requests.values()) {
-                if (now - request.getCreatedAt() > timeout) {
+                if (now - request.getCreatedAt() >= age) {
                     request.cancel();
                 }
             }
+        }
+
+        /**
+         * Shuts down the container, preventing new requests from being added and cancels
+         * all existing requests.
+         */
+        public void shutdown()
+        {
+            state.shutdown();
+            cancelRequests(0);
+        }
+
+        /**
+         * Waits for the container to terminate. It is terminated when it has been shut down and
+         * all requests have finished.
+         */
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException
+        {
+            return state.awaitTermination(timeout, unit);
         }
 
         public int getCount(AbstractRequest.State state)
@@ -531,7 +611,11 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         private Iterable<CompletionHandler<Void,K>> remove(K key)
         {
             R actualRequest = requests.remove(key);
-            return (actualRequest != null) ? actualRequest.callbacks() : Collections.<CompletionHandler<Void,K>>emptyList();
+            if (actualRequest == null) {
+                return Collections.<CompletionHandler<Void, K>>emptyList();
+            }
+            state.decrement();
+            return actualRequest.callbacks();
         }
 
         /** Returns a key identifying the request for a particular replica. */
@@ -1212,9 +1296,86 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public void run()
         {
-            flushRequests.cancelOldRequests(flushTimeout);
-            stageRequests.cancelOldRequests(stageTimeout);
-            removeRequests.cancelOldRequests(removeTimeout);
+            flushRequests.cancelRequests(flushTimeout);
+            stageRequests.cancelRequests(stageTimeout);
+            removeRequests.cancelRequests(removeTimeout);
+        }
+    }
+
+    /**
+     * Thread safe class to maintain the container lifecycle state, in particular
+     * the number of requests and whether the container has been shut down.
+     */
+    private static class ContainerState
+    {
+        private int count;
+
+        private boolean isShutdown;
+
+        private final Monitor monitor = new Monitor();
+
+        private final Monitor.Guard isTerminated = new Monitor.Guard(monitor)
+        {
+            @Override
+            public boolean isSatisfied()
+            {
+                return isShutdown && count == 0;
+            }
+        };
+
+        public boolean increment()
+        {
+            monitor.enter();
+            try {
+                if (isShutdown) {
+                    return false;
+                } else {
+                    count++;
+                    return true;
+                }
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        public void decrement()
+        {
+            monitor.enter();
+            try {
+                count--;
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        public void shutdown()
+        {
+            monitor.enter();
+            try {
+                isShutdown = true;
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        public boolean awaitTermination(long time, TimeUnit unit) throws InterruptedException
+        {
+            monitor.enter();
+            try {
+                return monitor.waitFor(isTerminated, time, unit);
+            } finally {
+                monitor.leave();
+            }
+        }
+
+        public boolean isShutdown()
+        {
+            monitor.enter();
+            try {
+                return isShutdown;
+            } finally {
+                monitor.leave();
+            }
         }
     }
 }
