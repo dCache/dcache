@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.Arrays;
 
 import diskCacheV111.admin.UserAdminShell;
 
@@ -32,7 +31,6 @@ import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-import dmg.util.RequestTimeOutException;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.commons.util.Strings;
@@ -192,8 +190,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
             } catch (SerializationException e) {
                 result =
                     "There is a bug here, please report to support@dcache.org";
-                _logger.error("This must be a bug, please report to "
-                        + "support@dcache.org: {}", e.getMessage());
+                _logger.error("This must be a bug, please report to support@dcache.org.", e);
             } catch (CommandSyntaxException e) {
                 result = e;
             } catch (CommandEvaluationException e) {
@@ -201,15 +198,14 @@ public class ConsoleReaderCommand implements Command, Runnable {
             } catch (CommandExitException e) {
                 break;
             } catch (CommandPanicException e) {
-                _logger.warn("Something went wrong during the remote "
-                                     + "execution of the command: {}",
-                             e.getTargetException());
-                break;
+                result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
+                         "); the service log file contains additional information. Please " +
+                         "contact support@dcache.org.";
             } catch (CommandThrowableException e) {
-                _logger.warn("Something went wrong during the remote "
-                                     + "execution of the command: {}",
-                             e.getTargetException());
-                break;
+                result = e.getTargetException().getMessage();
+                if(result == null) {
+                    result = e.getTargetException().getClass().getSimpleName() + ": (null)";
+                }
             } catch (CommandException e) {
                 result =
                     "There is a bug here, please report to support@dcache.org: "
@@ -224,15 +220,12 @@ public class ConsoleReaderCommand implements Command, Runnable {
                         + "longer there: {}", e.getMessage());
             } catch (InterruptedException e) {
                 result = e.getMessage();
-            } catch (RequestTimeOutException e) {
-                result = e.getMessage();
-                _logger.warn(e.getMessage());
             } catch (RuntimeException e) {
-                result = String.format("Command '%s' triggered bug; please" +
-                        " located this message in log file and send an email" +
-                        " to support@dcache.org with this line and the" +
-                        " following stack-trace", str);
-                _logger.error((String)result, e);
+                result = String.format("Command '%s' triggered a bug (%s); please" +
+                                       " locate this message in the log file of the admin service and" +
+                                       " send an email to support@dcache.org with this line and the" +
+                                       " following stack-trace", str, e);
+                _logger.error((String) result, e);
             } catch (Exception e) {
                 result = e.getMessage();
                 if(result == null) {
