@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import dmg.util.CommandException;
+import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.AnnotatedCommandHelpPrinter;
@@ -143,7 +144,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 }
 
                 if (!declared) {
-                    throw e;
+                    throw new CommandPanicException("Command failed: " + e.toString(),  e);
                 }
                 throw new CommandThrowableException(
                         e.toString() + " from " + _command.name(), e);
