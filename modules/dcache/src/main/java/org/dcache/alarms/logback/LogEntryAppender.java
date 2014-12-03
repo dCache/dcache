@@ -85,7 +85,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
@@ -349,9 +351,13 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     @Override
-    public void stop()
+    public synchronized void stop()
     {
         super.stop();
+
+        if (store != null) {
+            store.shutdown();
+        }
 
         if (pmf != null) {
             pmf.close();
@@ -361,10 +367,6 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
         if (dataSource != null) {
             dataSource.shutdown();
             dataSource = null;
-        }
-
-        if (store != null) {
-            store.shutdown();
         }
 
         if (emailAppender != null) {
@@ -380,45 +382,43 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent eventObject) {
-        if (isStarted()) {
-            if (eventObject.getLevel().levelInt < rootLevel.levelInt) {
-                return;
-            }
+        if (eventObject.getLevel().levelInt < rootLevel.levelInt) {
+            return;
+        }
 
-            LogEntry entry = converter.createEntryFromEvent(eventObject);
+        LogEntry entry = converter.createEntryFromEvent(eventObject);
 
-            if (entry == LoggingEventConverter.ALARM_SERVICE_EVENT) {
-                return;
-            }
+        if (entry == LoggingEventConverter.ALARM_SERVICE_EVENT) {
+            return;
+        }
 
-            if (entry.isAlarm()) {
-                int priority = priorityMap.getPriority(entry.getType()).ordinal();
+        if (entry.isAlarm()) {
+            int priority = priorityMap.getPriority(entry.getType()).ordinal();
 
-                /*
-                 * The history log parses out all alerts above a certain
-                 * priority. This is just a convenience for sifting messages
-                 * from the normal domain log and recording them them using the
-                 * more specific alert pattern. We exclude events from the alarm
-                 * service itself.
-                 */
-                if (historyEnabled && priority >= historyThreshold.ordinal()) {
-                    historyAppender.doAppend(eventObject);
-                }
-
-                /*
-                 * Remote messages which are indeed alarms/alerts can be sent as
-                 * email.
-                 */
-                if (emailEnabled && priority >= emailThreshold.ordinal()) {
-                    emailAppender.doAppend(eventObject);
-                }
+            /*
+             * The history log parses out all alerts above a certain
+             * priority. This is just a convenience for sifting messages
+             * from the normal domain log and recording them them using the
+             * more specific alert pattern. We exclude events from the alarm
+             * service itself.
+             */
+            if (historyEnabled && priority >= historyThreshold.ordinal()) {
+                historyAppender.doAppend(eventObject);
             }
 
             /*
-             * Now store the remote event.
+             * Remote messages which are indeed alarms/alerts can be sent as
+             * email.
              */
-            store.put(entry);
+            if (emailEnabled && priority >= emailThreshold.ordinal()) {
+                emailAppender.doAppend(eventObject);
+            }
         }
+
+        /*
+         * Now store the remote event.
+         */
+        store.put(entry);
     }
 
     /*
@@ -479,6 +479,7 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
             dataSource = new HikariDataSource(config);
             properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsRDBMS");
             properties.setProperty("datanucleus.connectionPoolingType", "None");
+            properties.setProperty("datanucleus.cache.level2.type", "none");
         }
 
         pmf = new JDOPersistenceManagerFactory(
