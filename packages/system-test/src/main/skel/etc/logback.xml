@@ -69,9 +69,9 @@
   </appender>
 
   <appender name="pinboard" class="dmg.util.PinboardAppender">
-    <layout>
+    <encoder>
       <pattern>${dcache.log.format.pinboard}</pattern>
-    </layout>
+    </encoder>
   </appender>
 
   <appender name="events" class="ch.qos.logback.core.FileAppender">
