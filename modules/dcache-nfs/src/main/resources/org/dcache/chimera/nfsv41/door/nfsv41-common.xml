@@ -176,7 +176,8 @@
     </bean>
 
     <beans  profile="portmap-true">
-        <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"/>
+        <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap"
+	    destroy-method="shutdown"/>
     </beans>
 
     <beans  profile="portmap-false">
