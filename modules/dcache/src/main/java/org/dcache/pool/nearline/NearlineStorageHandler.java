@@ -26,7 +26,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.Monitor;
-import com.google.common.util.concurrent.Striped;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -46,7 +45,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
@@ -59,7 +57,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -479,9 +476,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
      */
     private abstract static class AbstractRequestContainer<K, F, R extends AbstractRequest<K> & NearlineRequest<?>>
     {
-        private final Map<K, R> requests = new ConcurrentHashMap<>();
-
-        private final Striped<Lock> locks = Striped.lock(16);
+        private final ConcurrentHashMap<K, R> requests = new ConcurrentHashMap<>();
 
         private final ContainerState state = new ContainerState();
 
@@ -492,29 +487,28 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             List<R> newRequests = new ArrayList<>();
             for (F file : files) {
                 K key = extractKey(file);
-                R request;
-                locks.get(key).lock();
-                try {
-                    request = requests.get(key);
-                    if (request == null) {
-                        if (!state.increment()) {
-                            callback.failed(new CacheException("Nearline storage has been shut down."), key);
-                            continue;
-                        }
-                        try {
-                            request = checkNotNull(createRequest(storage, file));
-                        } catch (Exception e) {
-                            state.decrement();
-                            callback.failed(e, key);
-                            continue;
-                        }
-                        requests.put(key, request);
-                        newRequests.add(request);
+                R request = requests.computeIfAbsent(key, (k) -> {
+                    if (!state.increment()) {
+                        callback.failed(new CacheException("Nearline storage has been shut down."), k);
+                        return null;
                     }
-                } finally {
-                    locks.get(key).unlock();
+                    try {
+                        R newRequest = createRequest(storage, file);
+                        newRequests.add(newRequest);
+                        return newRequest;
+                    } catch (Exception e) {
+                        state.decrement();
+                        callback.failed(e, k);
+                        return null;
+                    } catch (Error e) {
+                        state.decrement();
+                        callback.failed(e, k);
+                        throw e;
+                    }
+                });
+                if (request != null) {
+                    request.addCallback(callback);
                 }
-                request.addCallback(callback);
             }
             submit(storage, newRequests);
 
