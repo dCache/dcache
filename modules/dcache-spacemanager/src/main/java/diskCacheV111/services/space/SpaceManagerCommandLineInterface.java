@@ -1,5 +1,6 @@
 package diskCacheV111.services.space;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -431,7 +432,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
 
             Map<Long,String> linkGroups =
-                    Maps.transformValues(Maps.uniqueIndex(db.get(db.linkGroups()), LinkGroup.getId), LinkGroup.getName);
+                    Maps.transformValues(Maps.uniqueIndex(db.get(db.linkGroups()), LinkGroup::getId), LinkGroup::getName);
 
             for (Space space : spaces) {
                 char status;

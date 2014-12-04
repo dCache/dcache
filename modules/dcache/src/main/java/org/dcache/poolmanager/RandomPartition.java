@@ -52,14 +52,11 @@ public class RandomPartition extends Partition
 
     private Predicate<PoolInfo> canHoldFile(final long size)
     {
-        return new Predicate<PoolInfo>() {
-            @Override
-            public boolean apply(PoolInfo pool) {
-                PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
-                long available =
-                    space.getFreeSpace() + space.getRemovableSpace();
-                return available - size > space.getGap();
-            }
+        return pool -> {
+            PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
+            long available =
+                space.getFreeSpace() + space.getRemovableSpace();
+            return available - size > space.getGap();
         };
     }
 

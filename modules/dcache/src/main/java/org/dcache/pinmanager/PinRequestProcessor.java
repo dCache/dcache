@@ -231,18 +231,13 @@ public class PinRequestProcessor
         if (!task.isValidIn(delay)) {
             fail(task, CacheException.TIMEOUT, "Pin request TTL exceeded");
         } else {
-            _scheduledExecutor.schedule(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try {
-                        rereadNameSpaceEntry(task);
-                    } catch (CacheException e) {
-                        fail(task, e.getRc(), e.getMessage());
-                    } catch (RuntimeException e) {
-                        fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
-                    }
+            _scheduledExecutor.schedule(() -> {
+                try {
+                    rereadNameSpaceEntry(task);
+                } catch (CacheException e) {
+                    fail(task, e.getRc(), e.getMessage());
+                } catch (RuntimeException e) {
+                    fail(task, CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.toString());
                 }
             }, delay, MILLISECONDS);
         }

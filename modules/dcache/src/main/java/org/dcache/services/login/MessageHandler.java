@@ -56,14 +56,8 @@ public class MessageHandler
      */
     private ScheduledFuture<?> scheduleTimeoutTask(CellMessage envelope)
     {
-        final Thread self = Thread.currentThread();
-        Runnable timeoutTask = new Runnable() {
-                @Override
-                public void run() {
-                    self.interrupt();
-                }
-            };
-        return _executor.schedule(timeoutTask,
+        Thread self = Thread.currentThread();
+        return _executor.schedule(self::interrupt,
                                   envelope.getTtl() - envelope.getLocalAge(),
                                   TimeUnit.MILLISECONDS);
     }

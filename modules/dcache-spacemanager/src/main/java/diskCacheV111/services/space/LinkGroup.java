@@ -153,23 +153,4 @@ public class LinkGroup implements Serializable{
                 (rp == RetentionPolicy.REPLICA && isReplicaAllowed()) ||
                 (rp == RetentionPolicy.OUTPUT && isOutputAllowed());
     }
-
-    public static final Function<LinkGroup, Long> getId =
-            new Function<LinkGroup, Long>()
-            {
-                @Override
-                public Long apply(LinkGroup linkGroup)
-                {
-                    return linkGroup.getId();
-                }
-            };
-    public static final Function<LinkGroup, String> getName =
-            new Function<LinkGroup, String>()
-            {
-                @Override
-                public String apply(LinkGroup linkGroup)
-                {
-                    return linkGroup.getName();
-                }
-            };
 }

@@ -1,6 +1,5 @@
 package org.dcache.pool.movers;
 
-import com.google.common.base.Function;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -129,15 +128,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     protected static final String USER_AGENT = "dCache/" +
             Version.of(RemoteHttpDataTransferProtocol_1.class).getVersion();
 
-    private static final Function<Checksum,ChecksumType> GET_TYPE =
-            new Function<Checksum,ChecksumType>() {
-                @Override
-                public ChecksumType apply(Checksum f)
-                {
-                    return f.getType();
-                }
-            };
-
     // Pool-supplied factory for on-transfer checksums, null if disabled.
     private ChecksumFactory _onTransfer;
 
@@ -224,7 +214,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
 
             String rfc3230 = headerValue(response, "Digest");
             Map<ChecksumType,Checksum> checksums =
-                    uniqueIndex(Checksums.decodeRfc3230(rfc3230), GET_TYPE);
+                    uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
 
             if (!checksums.isEmpty()) {
                 if (_onTransfer != null && checksums.containsKey(_onTransfer.getType())) {
@@ -365,7 +355,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
 
             String rfc3230 = headerValue(response, "Digest");
             Map<ChecksumType,Checksum> checksums =
-                    uniqueIndex(Checksums.decodeRfc3230(rfc3230), GET_TYPE);
+                    uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
 
             boolean verified = false;
             if (attributes.isDefined(CHECKSUM)) {

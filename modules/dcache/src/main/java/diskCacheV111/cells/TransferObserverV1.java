@@ -543,13 +543,7 @@ public class TransferObserverV1
     public String ac_go(Args args )
     {
         if (args.hasOption("parallel")) {
-            _nucleus.newThread(new Runnable(){
-                    @Override
-                    public void run()
-                    {
-                        collectDataSequentially();
-                    }
-                }, "worker").start();
+            _nucleus.newThread(this::collectDataSequentially, "worker").start();
             return "Started";
         } else {
             synchronized (this) {

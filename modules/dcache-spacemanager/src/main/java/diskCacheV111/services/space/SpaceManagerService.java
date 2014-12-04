@@ -27,6 +27,7 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
+import com.google.common.base.Function;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -314,7 +315,7 @@ public final class SpaceManagerService
         }
 
         private void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws DataAccessException {
-                msg.setLinkGroupNames(newArrayList(transform(db.get(db.linkGroups()), LinkGroup.getName)));
+                msg.setLinkGroupNames(newArrayList(transform(db.get(db.linkGroups()), LinkGroup::getName)));
         }
 
     /** Returns true if message is of a type processed exclusively by SpaceManager */
@@ -1042,7 +1043,7 @@ public final class SpaceManagerService
         {
                 PnfsId pnfsId = getFileTokens.getPnfsId();
                 List<File> files = db.get(db.files().wherePnfsIdIs(pnfsId), null);
-                getFileTokens.setSpaceToken(Longs.toArray(transform(files, File.getSpaceToken)));
+                getFileTokens.setSpaceToken(Longs.toArray(transform(files, File::getSpaceId)));
         }
 
         private void extendLifetime(ExtendLifetime extendLifetime) throws DataAccessException

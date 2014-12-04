@@ -90,12 +90,7 @@ public class StorageInfos
         String cFlag = info.getKey("flag-c");
         if (cFlag != null) {
             attributes.setChecksums(Sets.newHashSet(transform(Splitter.on(',').trimResults().omitEmptyStrings().split(cFlag),
-                    new Function<String, Checksum>() {
-                        @Override
-                        public Checksum apply(String digest) {
-                            return Checksum.parseChecksum(digest);
-                        }
-                    })));
+                                                              Checksum::parseChecksum)));
         }
         String uid = info.getKey("uid");
         if (uid != null) {

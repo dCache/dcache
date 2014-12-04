@@ -45,16 +45,13 @@ public class MetaDataRepositoryDatabase
         envConfig.setReadOnly(readonly);
         envConfig.setConfigParam(EnvironmentConfig.MAX_MEMORY_PERCENT, "20");
         envConfig.setConfigParam(EnvironmentConfig.STATS_COLLECT, "false");
-        envConfig.setExceptionListener(new ExceptionListener() {
-                @Override
-                public void exceptionThrown(ExceptionEvent event) {
-                    if (event.getException() instanceof RunRecoveryException) {
-                        setFailed();
-                        _log.error("Pool restart required due to Berkeley DB failure: "
-                                   + event.getException().getMessage());
-                    }
-                }
-            });
+        envConfig.setExceptionListener(event -> {
+            if (event.getException() instanceof RunRecoveryException) {
+                setFailed();
+                _log.error("Pool restart required due to Berkeley DB failure: "
+                           + event.getException().getMessage());
+            }
+        });
 
         env = new Environment(homeDirectory, envConfig);
 

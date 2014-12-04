@@ -454,16 +454,9 @@ public class PoolMonitorV5
     public Collection<PoolCostInfo>
         queryPoolsByLinkName(String linkName)
     {
-        Function<PoolSelectionUnit.SelectionPool,String> getName =
-            new Function<PoolSelectionUnit.SelectionPool,String>() {
-                @Override
-                public String apply(PoolSelectionUnit.SelectionPool pool) {
-                    return pool.getName();
-                }
-            };
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return queryPoolsForCost(transform(link.getPools(), getName));
+        return queryPoolsForCost(transform(link.getPools(), PoolSelectionUnit.SelectionEntity::getName));
     }
 
     private List<PoolCostInfo> queryPoolsForCost(Iterable<String> pools)

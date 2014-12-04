@@ -1,6 +1,5 @@
 package org.dcache.missingfiles.plugins;
 
-import com.google.common.base.Function;
 import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,17 +39,6 @@ public class PluginChain implements EnvironmentAware
             new ConfigurationProperties();
 
 
-    private final static Function<PluginFactory,String> getName =
-        new Function<PluginFactory,String>()
-        {
-            @Override
-            public String apply(PluginFactory factory)
-            {
-                return factory.getName();
-            }
-        };
-
-
     /**
      *  Accept a comma-separated list of plugin names.  These will be
      *  instantiated to form the chain of plugins to process.
@@ -83,7 +71,7 @@ public class PluginChain implements EnvironmentAware
     {
         try {
             PluginFactory factory = find(_factories, compose(equalTo(name),
-                    getName));
+                                                             PluginFactory::getName));
             Plugin plugin = factory.createPlugin(_properties);
             PluginInstance pi = new PluginInstance(name, plugin);
             _plugins.add(pi);

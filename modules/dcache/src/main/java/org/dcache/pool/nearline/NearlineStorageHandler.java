@@ -870,15 +870,9 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         {
             LOGGER.debug("Allocating space for stage of {}.", getFileAttributes().getPnfsId());
             return register(executor.submit(
-                    new Callable<Void>()
-                    {
-                        @Override
-                        public Void call()
-                                throws InterruptedException
-                        {
-                            descriptor.allocate(descriptor.getFileAttributes().getSize());
-                            return null;
-                        }
+                    () -> {
+                        descriptor.allocate(descriptor.getFileAttributes().getSize());
+                        return null;
                     }
             ));
         }
@@ -1188,19 +1182,14 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             /* We need to fetch the storage info and we don't want to
              * block the message thread while waiting for the reply.
              */
-            executor.submit(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    try {
-                        FileAttributes attributes = pnfs.getFileAttributes(pnfsId,
-                                                                           EnumSet.of(PNFSID, SIZE, STORAGEINFO));
-                        String hsm = hsmSet.getInstanceName(attributes);
-                        stage(hsm, attributes, block ? RestoreCommand.this : new NopCompletionHandler<Void, PnfsId>());
-                    } catch (CacheException e) {
-                        failed(e, pnfsId);
-                    }
+            executor.submit(() -> {
+                try {
+                    FileAttributes attributes = pnfs.getFileAttributes(pnfsId,
+                                                                       EnumSet.of(PNFSID, SIZE, STORAGEINFO));
+                    String hsm = hsmSet.getInstanceName(attributes);
+                    stage(hsm, attributes, block ? RestoreCommand.this : new NopCompletionHandler<Void, PnfsId>());
+                } catch (CacheException e) {
+                    failed(e, pnfsId);
                 }
             });
             return block ? this : "Fetch request queued.";

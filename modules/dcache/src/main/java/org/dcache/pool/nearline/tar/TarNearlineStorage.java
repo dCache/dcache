@@ -82,14 +82,7 @@ public class TarNearlineStorage implements NearlineStorage
     protected Iterable<URI> getLocations(FileAttributes fileAttributes)
     {
         return filter(fileAttributes.getStorageInfo().locations(),
-                      new Predicate<URI>()
-                      {
-                          @Override
-                          public boolean apply(URI uri)
-                          {
-                              return uri.getScheme().equals(type) && uri.getAuthority().equals(name);
-                          }
-                      });
+                      uri -> uri.getScheme().equals(type) && uri.getAuthority().equals(name));
     }
 
     @Override

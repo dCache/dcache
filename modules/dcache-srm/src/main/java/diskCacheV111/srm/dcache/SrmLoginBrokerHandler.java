@@ -77,12 +77,7 @@ public class SrmLoginBrokerHandler extends LoginBrokerHandler
     @Required
     public void setSrm(final SRM srm)
     {
-        setLoad(new LoginBrokerHandler.LoadProvider() {
-            @Override
-            public double getLoad() {
-                return srm.getLoad();
-            }
-        });
+        setLoadProvider(srm::getLoad);
     }
 
     @Override

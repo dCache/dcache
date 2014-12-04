@@ -56,6 +56,7 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 
@@ -1032,13 +1033,8 @@ public class UniversalSpringCell
         try {
             context = new ClassPathXmlApplicationContext();
             context.setConfigLocations(new String[]{args.argv(0)});
-            context.addBeanFactoryPostProcessor(new BeanFactoryPostProcessor()
-            {
-                @Override
-                public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException
-                {
-                    beanFactory.addBeanPostProcessor(UniversalSpringCell.this);            }
-            });
+            context.addBeanFactoryPostProcessor(
+                    beanFactory -> beanFactory.addBeanPostProcessor(UniversalSpringCell.this));
 
             ConfigurableEnvironment environment = context.getEnvironment();
             environment.getPropertySources().addFirst(

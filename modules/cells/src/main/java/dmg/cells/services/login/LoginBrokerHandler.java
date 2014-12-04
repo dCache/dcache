@@ -52,7 +52,7 @@ public class LoginBrokerHandler
     private TimeUnit _brokerUpdateTimeUnit = MILLISECONDS;
     private double _brokerUpdateThreshold = 0.1;
     private UpdateMode _currentUpdateMode = UpdateMode.NORMAL;
-    private LoadProvider _load = new FixedLoad(0.0);
+    private LoadProvider _load = () -> 0.0;
     private String[] _hosts;
     private int _port;
     private ScheduledExecutorService _executor;
@@ -198,10 +198,10 @@ public class LoginBrokerHandler
     {
         double load =
             (maxChildren > 0) ? (double)children / (double)maxChildren : 0.0;
-        setLoad(new FixedLoad(load));
+        setLoadProvider(() -> load);
     }
 
-    public synchronized void setLoad(LoadProvider load)
+    public synchronized void setLoadProvider(LoadProvider load)
     {
         double diff = Math.abs(_load.getLoad() - load.getLoad());
         if (diff > _brokerUpdateThreshold) {
@@ -357,19 +357,4 @@ public class LoginBrokerHandler
         double getLoad();
     }
 
-    private static class FixedLoad implements LoadProvider
-    {
-        private double _load;
-
-        public FixedLoad(double load)
-        {
-            _load = load;
-        }
-
-        @Override
-        public double getLoad()
-        {
-            return _load;
-        }
-    }
 }

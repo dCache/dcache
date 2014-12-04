@@ -17,7 +17,7 @@
  */
 package org.dcache.xrootd.door;
 
-import com.google.common.collect.Iterables;
+import com.google.common.base.Function;
 import com.google.common.net.InetAddresses;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
@@ -55,7 +55,7 @@ import org.dcache.cells.MessageCallback;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
 import org.dcache.util.Version;
-import org.dcache.util.list.DirectoryEntries;
+import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
@@ -715,7 +715,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
         public void success(PnfsListDirectoryMessage message)
         {
             Iterable<String> directories =
-                transform(message.getEntries(), DirectoryEntries.GET_NAME);
+                transform(message.getEntries(), DirectoryEntry::getName);
 
             if (message.isFinal()) {
                 _log.debug("XrootdRedirectHandler: Received final listing " +

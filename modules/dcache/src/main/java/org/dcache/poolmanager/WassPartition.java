@@ -1,6 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.poolManager.CostModule;
-import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CostException;
 import diskCacheV111.util.DestinationCostException;
@@ -36,34 +34,6 @@ public class WassPartition extends ClassicPartition
     static final String TYPE = "wass";
 
     private static final long serialVersionUID = -3587599095801229561L;
-
-    private static final Function<PoolInfo,PoolCostInfo> GET_COST =
-            new Function<PoolInfo, PoolCostInfo>()
-            {
-                @Override
-                public PoolCostInfo apply(PoolInfo pool)
-                {
-                    return pool.getCostInfo();
-                }
-            };
-
-    private static final Function<PoolInfo,String> GET_HOST =
-            new Function<PoolInfo,String>()
-            {
-                @Override
-                public String apply(PoolInfo pool) {
-                    return pool.getHostName();
-                }
-            };
-
-    private static final Function<PoolInfo,String> GET_NAME =
-            new Function<PoolInfo,String>()
-            {
-                @Override
-                public String apply(PoolInfo pool) {
-                    return pool.getName();
-                }
-            };
 
     private final WeightedAvailableSpaceSelection wass;
 
@@ -104,7 +74,7 @@ public class WassPartition extends ClassicPartition
                                     long preallocated)
         throws CacheException
     {
-        PoolInfo pool = wass.selectByAvailableSpace(pools, preallocated, GET_COST);
+        PoolInfo pool = wass.selectByAvailableSpace(pools, preallocated, PoolInfo::getCostInfo);
         if (pool == null) {
             throw new CacheException(21, "All pools are full");
         }
@@ -179,12 +149,12 @@ public class WassPartition extends ClassicPartition
                     destinations = dst;
                 } else {
                     Predicate<PoolInfo> notSameHost =
-                        compose(not(equalTo(source.host)), GET_HOST);
+                        compose(not(equalTo(source.host)), PoolInfo::getHostName);
                     destinations = Lists.newArrayList(filter(dst, notSameHost));
                 }
 
                 PoolInfo destination =
-                        wass.selectByAvailableSpace(destinations, attributes.getSize(), GET_COST);
+                        wass.selectByAvailableSpace(destinations, attributes.getSize(), PoolInfo::getCostInfo);
                 if (destination != null) {
                     return new P2pPair(source.pool, destination);
                 }
@@ -197,7 +167,7 @@ public class WassPartition extends ClassicPartition
             }
         }
 
-        PoolInfo destination = wass.selectByAvailableSpace(dst, attributes.getSize(), GET_COST);
+        PoolInfo destination = wass.selectByAvailableSpace(dst, attributes.getSize(), PoolInfo::getCostInfo);
         if (destination == null) {
             throw new DestinationCostException("All pools are full");
         }
@@ -210,14 +180,14 @@ public class WassPartition extends ClassicPartition
                                       FileAttributes attributes)
     {
         Predicate<PoolInfo> notSamePool =
-            compose(not(equalTo(previousPool)), GET_NAME);
+            compose(not(equalTo(previousPool)), PoolInfo::getName);
         if (previousHost != null && _allowSameHostRetry != SameHost.NOTCHECKED) {
             Predicate<PoolInfo> notSameHost =
-                compose(not(equalTo(previousHost)), GET_HOST);
+                compose(not(equalTo(previousHost)), PoolInfo::getHostName);
             List<PoolInfo> filteredPools =
                 Lists.newArrayList(filter(pools, and(notSamePool, notSameHost)));
             PoolInfo pool = wass
-                    .selectByAvailableSpace(filteredPools, attributes.getSize(), GET_COST);
+                    .selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
             if (pool != null) {
                 return pool;
             }
@@ -229,13 +199,13 @@ public class WassPartition extends ClassicPartition
         if (previousPool != null) {
             List<PoolInfo> filteredPools =
                 Lists.newArrayList(filter(pools, notSamePool));
-            PoolInfo pool = wass.selectByAvailableSpace(filteredPools, attributes.getSize(), GET_COST);
+            PoolInfo pool = wass.selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
             if (pool != null) {
                 return pool;
             }
         }
 
-        return wass.selectByAvailableSpace(pools, attributes.getSize(), GET_COST);
+        return wass.selectByAvailableSpace(pools, attributes.getSize(), PoolInfo::getCostInfo);
     }
 
     @Override

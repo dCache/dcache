@@ -132,14 +132,9 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
         {
             return Futures.transform(
                     _poolManagerStub.send(new PoolManagerGetPoolMonitor()),
-                    new Function<PoolManagerGetPoolMonitor, PoolMonitor>()
-                    {
-                        @Override
-                        public PoolMonitor apply(PoolManagerGetPoolMonitor reply)
-                        {
-                            _lastRefreshTime = System.currentTimeMillis();
-                            return reply.getPoolMonitor();
-                        }
+                    (PoolManagerGetPoolMonitor reply) -> {
+                        _lastRefreshTime = System.currentTimeMillis();
+                        return reply.getPoolMonitor();
                     }
             );
         }

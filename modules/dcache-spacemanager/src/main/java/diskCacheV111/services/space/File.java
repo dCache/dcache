@@ -107,14 +107,4 @@ public class File implements Serializable {
 	public void setVoRole(String voRole) {
 		this.voRole = voRole;
 	}
-
-    public static Function<File, Long> getSpaceToken =
-            new Function<File, Long>()
-            {
-                @Override
-                public Long apply(File file)
-                {
-                    return file.getSpaceId();
-                }
-            };
 }

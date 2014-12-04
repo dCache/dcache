@@ -441,18 +441,10 @@ public class PoolManagerV5
         String linkName = msg.getLinkName();
         long filesize = msg.getFilesize();
 
-        Function<PoolSelectionUnit.SelectionPool,String> getName =
-            new Function<PoolSelectionUnit.SelectionPool,String>() {
-                @Override
-                public String apply(PoolSelectionUnit.SelectionPool pool) {
-                    return pool.getName();
-                }
-            };
-
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
         List<PoolInfo> pools =
-            _costModule.getPoolInfo(transform(link.getPools(), getName));
+            _costModule.getPoolInfo(transform(link.getPools(), PoolSelectionUnit.SelectionEntity::getName));
         if (pools.isEmpty()) {
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }

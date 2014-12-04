@@ -873,7 +873,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public SpaceCriterion whereStateIsIn(SpaceState... states)
         {
-            addClause("state IN (" + Joiner.on(",").join(transform(asList(states), SpaceState.getStateId)) + ')');
+            addClause("state IN (" + Joiner.on(",").join(transform(asList(states), SpaceState::getStateId)) + ')');
             return this;
         }
 
@@ -995,7 +995,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public FileCriterion whereStateIsIn(FileState... states)
         {
-            addClause("state in (" + Joiner.on(",").join(transform(asList(states), FileState.getStateId)) + ')');
+            addClause("state in (" + Joiner.on(",").join(transform(asList(states), FileState::getStateId)) + ')');
             return this;
         }
 

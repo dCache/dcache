@@ -1,6 +1,5 @@
 package org.dcache.pool.classic;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -273,15 +272,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             if (!_semaphore.tryAcquire(_semaphore.getMaxPermits(), 2000L, TimeUnit.MILLISECONDS)) {
                 // This is often due to a mover not reacting to interrupt or the transfer
                 // doing a lengthy checksum calculation during post processing.
+                Iterable<String> versions =
+                        transform(_jobs.values(),
+                                  request -> request.getMover().getProtocolInfo().getVersionString());
                 _log.warn("Failed to terminate some movers prior to shutdown: {}",
-                        Joiner.on(",").join(transform(_jobs.values(), new Function<PrioritizedRequest, String>()
-                        {
-                            @Override
-                            public String apply(PrioritizedRequest input)
-                            {
-                                return input.getMover().getProtocolInfo().getVersionString();
-                            }
-                        })));
+                          Joiner.on(",").join(versions));
             }
         }
     }

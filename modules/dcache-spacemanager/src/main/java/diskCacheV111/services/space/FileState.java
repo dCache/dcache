@@ -112,14 +112,4 @@ public enum FileState
         }
         throw new IllegalArgumentException("Unknown state id: " + stateId);
     }
-
-    public static final Function<FileState, Integer> getStateId =
-            new Function<FileState, Integer>()
-            {
-                @Override
-                public Integer apply(FileState state)
-                {
-                    return state.getStateId();
-                }
-            };
 }

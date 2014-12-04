@@ -22,16 +22,6 @@ import static org.dcache.boot.Properties.*;
 
 public class LayoutBuilder
 {
-    private static final Function<File, String> QUOTE_FILE =
-            new Function<File, String>()
-            {
-                @Override
-                public String apply(File input)
-                {
-                    return '"' + input.getPath() + '"';
-                }
-            };
-
     private final Set<File> _sourceFiles = Sets.newHashSet();
     private final Set<File> _sourceDirectories = Sets.newHashSet();
     private ConfigurationProperties.ProblemConsumer problemConsumer =
@@ -165,9 +155,9 @@ public class LayoutBuilder
             layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_CACHE, "false");
         }
         layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_FILES,
-                Joiner.on(" ").join(transform(_sourceFiles, QUOTE_FILE)));
+                Joiner.on(" ").join(transform(_sourceFiles, file -> '"' + file.getPath() + '"')));
         layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_DIRS,
-                Joiner.on(" ").join(transform(_sourceDirectories, QUOTE_FILE)));
+                Joiner.on(" ").join(transform(_sourceDirectories, file -> '"' + file.getPath() + '"')));
         return layout;
     }
 

@@ -1,6 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Ordering;
 
@@ -45,16 +44,6 @@ public class PartitionManager
 
     private static final ServiceLoader<PartitionFactory> _factories =
         ServiceLoader.load(PartitionFactory.class);
-
-    private static final Function<PartitionFactory,String> getType =
-        new Function<PartitionFactory,String>()
-        {
-            @Override
-            public String apply(PartitionFactory factory)
-            {
-                return factory.getType();
-            }
-        };
 
     /**
      * Properties inherited by all partitions. Each partition may
@@ -107,18 +96,7 @@ public class PartitionManager
     private PartitionFactory getFactory(String type)
         throws NoSuchElementException
     {
-        return find(_factories, compose(equalTo(type), getType));
-    }
-
-    private Function<Partition,Partition>
-        updateInherited(final Map<String,String> properties)
-    {
-        return new Function<Partition,Partition>() {
-            @Override
-            public Partition apply(Partition partition) {
-                return partition.updateInherited(properties);
-            }
-        };
+        return find(_factories, compose(equalTo(type), PartitionFactory::getType));
     }
 
     public synchronized void setProperties(String name,
@@ -133,7 +111,8 @@ public class PartitionManager
                 .putAll(filterValues(properties, notNull()))
                 .build();
             _partitions =
-                ImmutableMap.copyOf(transformValues(_partitions, updateInherited(_inheritedProperties)));
+                ImmutableMap.copyOf(transformValues(_partitions,
+                                                    partition -> partition.updateInherited(_inheritedProperties)));
         } else if (_partitions.containsKey(name)) {
             _partitions =
                 ImmutableMap.<String,Partition>builder()

@@ -215,13 +215,7 @@ public class Job
         pw.println("Concurrency: " + _concurrency);
         pw.println("Running tasks:");
         List<Task> tasks = new ArrayList<>(_running.values());
-        Collections.sort(tasks, new Comparator<Task>() {
-                @Override
-                public int compare(Task t1, Task t2)
-                {
-                    return (int)Math.signum(t1.getId() - t2.getId());
-                }
-            });
+        Collections.sort(tasks, (t1, t2) -> Long.compare(t1.getId(), t2.getId()));
         for (Task task: tasks) {
             task.getInfo(pw);
         }

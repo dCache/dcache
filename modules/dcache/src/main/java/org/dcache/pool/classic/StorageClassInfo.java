@@ -202,15 +202,7 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
             _callbackExecutor.execute(new CallbackTask(this, flushCallback));
         } else {
             _storageHandler.flush(_hsmName,
-                    transform(entries.subList(0, maxCount),
-                            new Function<Entry, PnfsId>()
-                            {
-                                @Override
-                                public PnfsId apply(Entry entry)
-                                {
-                                    return entry.pnfsId();
-                                }
-                            }), this);
+                    transform(entries.subList(0, maxCount), Entry::pnfsId), this);
         }
 
         return _recentFlushId;

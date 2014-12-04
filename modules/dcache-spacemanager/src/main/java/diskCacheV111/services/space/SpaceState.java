@@ -118,14 +118,4 @@ public enum SpaceState
         }
         throw new IllegalArgumentException("Unknown state id: " + stateId);
     }
-
-    public static final Function<SpaceState, Integer> getStateId =
-            new Function<SpaceState, Integer>()
-            {
-                @Override
-                public Integer apply(SpaceState state)
-                {
-                    return state.getStateId();
-                }
-            };
 }

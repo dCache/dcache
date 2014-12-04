@@ -60,22 +60,19 @@ class StateChangeListeners
     public void stateChanged(final StateChangeEvent event)
     {
         try {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    for (StateChangeListener listener: _listeners) {
-                        try {
-                            listener.stateChanged(event);
-                        } catch (RuntimeException e) {
-                            /* State change notifications are
-                             * important for proper functioning of the
-                             * pool and we cannot risk a problem in an
-                             * event handler causing other event
-                             * handlers not to be called. We therefore
-                             * catch, log and ignore these problems.
-                             */
-                            _log.error("Unexpected failure during state change notification", e);
-                        }
+            _executor.execute(() -> {
+                for (StateChangeListener listener: _listeners) {
+                    try {
+                        listener.stateChanged(event);
+                    } catch (RuntimeException e) {
+                        /* State change notifications are
+                         * important for proper functioning of the
+                         * pool and we cannot risk a problem in an
+                         * event handler causing other event
+                         * handlers not to be called. We therefore
+                         * catch, log and ignore these problems.
+                         */
+                        _log.error("Unexpected failure during state change notification", e);
                     }
                 }
             });
@@ -88,22 +85,19 @@ class StateChangeListeners
     public void accessTimeChanged(final EntryChangeEvent event)
     {
         try {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    for (StateChangeListener listener: _listeners) {
-                        try {
-                            listener.accessTimeChanged(event);
-                        } catch (RuntimeException e) {
-                            /* State change notifications are
-                             * important for proper functioning of the
-                             * pool and we cannot risk a problem in an
-                             * event handler causing other event
-                             * handlers not to be called. We therefore
-                             * catch, log and ignore these problems.
-                             */
-                            _log.error("Unexpected failure during state change notification", e);
-                        }
+            _executor.execute(() -> {
+                for (StateChangeListener listener: _listeners) {
+                    try {
+                        listener.accessTimeChanged(event);
+                    } catch (RuntimeException e) {
+                        /* State change notifications are
+                         * important for proper functioning of the
+                         * pool and we cannot risk a problem in an
+                         * event handler causing other event
+                         * handlers not to be called. We therefore
+                         * catch, log and ignore these problems.
+                         */
+                        _log.error("Unexpected failure during state change notification", e);
                     }
                 }
             });
@@ -116,22 +110,19 @@ class StateChangeListeners
     public void stickyChanged(final StickyChangeEvent event)
     {
         try {
-            _executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    for (StateChangeListener listener: _listeners) {
-                        try {
-                            listener.stickyChanged(event);
-                        } catch (RuntimeException e) {
-                            /* State change notifications are
-                             * important for proper functioning of the
-                             * pool and we cannot risk a problem in an
-                             * event handler causing other event
-                             * handlers not to be called. We therefore
-                             * catch, log and ignore these problems.
-                             */
-                            _log.error("Unexpected failure during state change notification", e);
-                        }
+            _executor.execute(() -> {
+                for (StateChangeListener listener: _listeners) {
+                    try {
+                        listener.stickyChanged(event);
+                    } catch (RuntimeException e) {
+                        /* State change notifications are
+                         * important for proper functioning of the
+                         * pool and we cannot risk a problem in an
+                         * event handler causing other event
+                         * handlers not to be called. We therefore
+                         * catch, log and ignore these problems.
+                         */
+                        _log.error("Unexpected failure during state change notification", e);
                     }
                 }
             });

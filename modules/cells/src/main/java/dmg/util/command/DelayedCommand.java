@@ -17,20 +17,12 @@ public abstract class DelayedCommand<T extends Serializable>
         extends DelayedReply
         implements Callable<Reply>, Runnable
 {
-    private static final Executor NEW_THREAD_EXECUTOR = new Executor()
-    {
-        @Override
-        public void execute(Runnable command)
-        {
-            new Thread(command).start();
-        }
-    };
 
     private final Executor executor;
 
     protected DelayedCommand()
     {
-        this(NEW_THREAD_EXECUTOR);
+        this(command -> new Thread(command).start());
     }
 
     protected DelayedCommand(Executor executor)

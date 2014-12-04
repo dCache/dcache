@@ -915,12 +915,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
    }
    public static final String hh_query_pools = "" ;
    public String ac_query_pools_$_0(Args args ){
-      new Thread( new Runnable(){
-          @Override
-          public void run(){
-             queryPools() ;
-          }
-      } ).start() ;
+      new Thread(this::queryPools).start() ;
       return "" ;
    }
    public static final String hh_set_poolmanager_query_interval = "<PoolQueryInterval/seconds> # must be > 0 ";

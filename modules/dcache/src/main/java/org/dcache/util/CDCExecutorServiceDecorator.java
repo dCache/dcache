@@ -125,13 +125,6 @@ public class CDCExecutorServiceDecorator<E extends ExecutorService> extends Forw
 
     protected <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks)
     {
-        return Lists.newArrayList(transform(tasks, new Function<Callable<T>, Callable<T>>()
-                {
-                    @Override
-                    public Callable<T> apply(Callable<T> task)
-                    {
-                        return wrap(task);
-                    }
-                }));
+        return Lists.newArrayList(transform(tasks, task -> wrap(task)));
     }
 }
