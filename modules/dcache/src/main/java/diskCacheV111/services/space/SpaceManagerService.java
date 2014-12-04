@@ -116,8 +116,6 @@ public final class SpaceManagerService
 
         private Thread expireSpaceReservations;
 
-        private AccessLatency defaultAccessLatency;
-
         private boolean shouldDeleteStoredFileRecord;
         private boolean allowUnreservedUploadsToLinkGroups;
         private boolean shouldReturnFlushedSpaceToReservation;
@@ -163,12 +161,6 @@ public final class SpaceManagerService
         public void setExpireSpaceReservationsPeriod(long expireSpaceReservationsPeriod)
         {
                 this.expireSpaceReservationsPeriod = expireSpaceReservationsPeriod;
-        }
-
-        @Required
-        public void setDefaultAccessLatency(AccessLatency defaultAccessLatency)
-        {
-                this.defaultAccessLatency = defaultAccessLatency;
         }
 
         @Required
@@ -240,8 +232,6 @@ public final class SpaceManagerService
                                     + expireSpaceReservationsPeriod);
                 printWriter.println("shouldDeleteStoredFileRecord="
                                     + shouldDeleteStoredFileRecord);
-                printWriter.println("defaultLatencyForSpaceReservations="
-                                            + defaultAccessLatency);
                 printWriter.println("allowUnreservedUploadsToLinkGroups="
                                             + allowUnreservedUploadsToLinkGroups);
                 printWriter.println("shouldReturnFlushedSpaceToReservation="
@@ -593,20 +583,12 @@ public final class SpaceManagerService
         private void reserveSpace(Reserve reserve)
                 throws DataAccessException, SpaceException
         {
-                if (reserve.getRetentionPolicy()==null) {
-                        throw new IllegalArgumentException("reserveSpace : retentionPolicy=null is not supported");
-                }
-
                 Space space = reserveSpace(reserve.getSubject(),
                                            reserve.getSizeInBytes(),
-                                           (reserve.getAccessLatency() == null ?
-                                                   defaultAccessLatency : reserve.getAccessLatency()),
+                                           reserve.getAccessLatency(),
                                            reserve.getRetentionPolicy(),
                                            reserve.getLifetime(),
-                                           reserve.getDescription(),
-                                           null,
-                                           null,
-                                           null);
+                                           reserve.getDescription());
                 reserve.setSpaceToken(space.getId());
         }
 
@@ -773,86 +755,63 @@ public final class SpaceManagerService
 
         private Space reserveSpace(Subject subject,
                                    long sizeInBytes,
-                                   AccessLatency latency ,
+                                   AccessLatency latency,
                                    RetentionPolicy policy,
                                    long lifetime,
-                                   String description,
-                                   ProtocolInfo protocolInfo,
-                                   FileAttributes fileAttributes,
-                                   PnfsId pnfsId)
+                                   String description)
                 throws DataAccessException, SpaceException
         {
-                LOGGER.trace("reserveSpace( subject={}, sz={}, latency={}, " +
-                                     "policy={}, lifetime={}, description={}", subject.getPrincipals(),
-                             sizeInBytes, latency, policy, lifetime, description);
-                List<LinkGroup> linkGroups = db.findLinkGroups(sizeInBytes, latency, policy, linkGroupLoader.getLatestUpdateTime());
-                if(linkGroups.isEmpty()) {
-                        LOGGER.warn("failed to find matching linkgroup");
-                        throw new NoFreeSpaceException(" no space available");
+                LOGGER.trace("reserveSpace(subject={}, sz={}, latency={}, policy={}, lifetime={}, description={})",
+                             subject.getPrincipals(), sizeInBytes, latency, policy, lifetime, description);
+                List<LinkGroup> linkGroups =
+                        db.findLinkGroups(sizeInBytes, latency, policy, linkGroupLoader.getLatestUpdateTime());
+                if (linkGroups.isEmpty()) {
+                        LOGGER.warn("Failed to find matching linkgroup for reservation request.");
+                        throw new NoFreeSpaceException("No space available.");
                 }
-                //
-                // filter out groups we are not authorized to use
-                //
-                Map<String,VOInfo> linkGroupNameVoInfoMap = new HashMap<>();
-                for (LinkGroup linkGroup : linkGroups) {
-                        try {
-                                VOInfo voInfo =
-                                        authorizationPolicy.checkReservePermission(subject,
-                                                                                   linkGroup);
-                                linkGroupNameVoInfoMap.put(linkGroup.getName(),voInfo);
-                        }
-                        catch (SpaceAuthorizationException ignored) {
-                        }
-                }
-                if(linkGroupNameVoInfoMap.isEmpty()) {
-                        LOGGER.warn("failed to find linkgroup where user is " +
-                                            "authorized to reserve space.");
-                        throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
-                }
-                List<String> linkGroupNames = new ArrayList<>(linkGroupNameVoInfoMap.keySet());
-                LOGGER.trace("Found {} linkgroups protocolInfo={}, " +
-                                     "storageInfo={}, pnfsId={}", linkGroups.size(),
-                             protocolInfo, fileAttributes, pnfsId);
-                if (linkGroupNameVoInfoMap.size()>1 &&
-                    protocolInfo != null &&
-                    fileAttributes != null) {
-                        try {
-                                linkGroupNames = findLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
-                                if(linkGroupNames.isEmpty()) {
-                                        throw new SpaceAuthorizationException("PoolManagerSelectLinkGroupForWriteMessage: Failed to find LinkGroup where user is authorized to reserve space.");
-                                }
-                        }
-                        catch (SpaceAuthorizationException e)  {
-                                LOGGER.warn("authorization problem: {}",
-                                            e.getMessage());
-                                throw e;
-                        }
-                        catch(Exception e) {
-                                throw new SpaceException("Internal error : Failed to get list of link group ids from Pool Manager "+e.getMessage());
-                        }
-
-                }
-                String linkGroupName = linkGroupNames.get(0);
-                VOInfo voInfo        = linkGroupNameVoInfoMap.get(linkGroupName);
-                LinkGroup linkGroup  = null;
                 for (LinkGroup lg : linkGroups) {
-                        if (lg.getName().equals(linkGroupName) ) {
-                                linkGroup = lg;
-                                break;
+                        try {
+                                VOInfo voInfo = authorizationPolicy.checkReservePermission(subject, lg);
+                                if (latency == null) {
+                                        /* If a specific latency was not requested, we prefer nearline for
+                                         * custodial and online for other retention policies, but fall
+                                         * back to whatever is allowed by the link group if necessary.
+                                         */
+                                        if (policy == RetentionPolicy.CUSTODIAL) {
+                                                if (lg.isNearlineAllowed()) {
+                                                        latency = AccessLatency.NEARLINE;
+                                                } else if (lg.isOnlineAllowed()) {
+                                                        latency = AccessLatency.ONLINE;
+                                                } else {
+                                                        continue;
+                                                }
+                                        } else {
+                                                if (lg.isOnlineAllowed()) {
+                                                        latency = AccessLatency.ONLINE;
+                                                } else if (lg.isNearlineAllowed()) {
+                                                        latency = AccessLatency.NEARLINE;
+                                                } else {
+                                                        continue;
+                                                }
+                                        }
+                                }
+                                LOGGER.trace("Chose linkgroup {}", lg);
+                                return db.insertSpace(voInfo.getVoGroup(),
+                                                      voInfo.getVoRole(),
+                                                      policy,
+                                                      latency,
+                                                      lg.getId(),
+                                                      sizeInBytes,
+                                                      lifetime,
+                                                      description,
+                                                      SpaceState.RESERVED,
+                                                      0,
+                                                      0);
+                        } catch (SpaceAuthorizationException ignored) {
                         }
-                }
-                LOGGER.trace("Chose linkgroup {}", linkGroup);
-                return db.insertSpace(voInfo.getVoGroup(),
-                                      voInfo.getVoRole(),
-                                      policy,
-                                      latency,
-                                      linkGroup.getId(),
-                                      sizeInBytes,
-                                      lifetime,
-                                      description,
-                                      SpaceState.RESERVED,
-                                      0,
-                                      0);
+                    }
+                LOGGER.warn("Failed to find linkgroup where user is authorized to reserve space.");
+                throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
         }
 
         private LinkGroup findLinkGroupForWrite(Subject subject, ProtocolInfo protocolInfo,
