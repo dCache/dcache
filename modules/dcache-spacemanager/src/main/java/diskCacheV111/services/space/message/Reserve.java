@@ -9,9 +9,13 @@
 
 package diskCacheV111.services.space.message;
 
+import javax.annotation.Nonnull;
+
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.Message;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
@@ -21,15 +25,12 @@ import diskCacheV111.vehicles.Message;
 public class Reserve extends Message{
     private static final long serialVersionUID = 8295404238593418916L;
     private long spaceToken;
-    private long sizeInBytes;
-    private RetentionPolicy retentionPolicy;
-    private AccessLatency accessLatency;
-    private long lifetime;
+    private final long sizeInBytes;
+    private final RetentionPolicy retentionPolicy;
+    private final AccessLatency accessLatency;
+    private final long lifetime;
     private long expirationTime;
-    private String description;
-    /** Creates a new instance of Reserve */
-    public Reserve() {
-    }
+    private final String description;
 
     public Reserve(
             long sizeInBytes,
@@ -40,7 +41,7 @@ public class Reserve extends Message{
         this.sizeInBytes = sizeInBytes;
         this.lifetime = lifetime;
         this.accessLatency = accessLatency;
-        this.retentionPolicy = retentionPolicy;
+        this.retentionPolicy = checkNotNull(retentionPolicy);
         this.description = description;
         setReplyRequired(true);
     }
@@ -57,32 +58,17 @@ public class Reserve extends Message{
         return sizeInBytes;
     }
 
-    public void setSizeInBytes(long sizeInBytes) {
-        this.sizeInBytes = sizeInBytes;
-    }
-
+    @Nonnull
     public RetentionPolicy getRetentionPolicy() {
         return retentionPolicy;
-    }
-
-    public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-        this.retentionPolicy = retentionPolicy;
     }
 
     public AccessLatency getAccessLatency() {
         return accessLatency;
     }
 
-    public void setAccessLatency(AccessLatency accessLatency) {
-        this.accessLatency = accessLatency;
-    }
-
     public long getLifetime() {
         return lifetime;
-    }
-
-    public void setLifetime(long lifetime) {
-        this.lifetime = lifetime;
     }
 
     public long getExpirationTime() {
@@ -95,9 +81,5 @@ public class Reserve extends Message{
 
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }

@@ -70,16 +70,8 @@ public interface SpaceManagerDatabase
 
     LinkGroup getLinkGroupByName(String name) throws DataAccessException;
 
-    List<Long> findLinkGroupIds(long sizeInBytes,
-                                String voGroup,
-                                String voRole,
-                                AccessLatency al,
-                                RetentionPolicy rp,
-                                long lastUpdateTime)
-            throws DataAccessException;
-
     List<LinkGroup> findLinkGroups(long sizeInBytes,
-                                   AccessLatency al,
+                                   @Nullable AccessLatency al,
                                    RetentionPolicy rp,
                                    long lastUpdateTime)
             throws DataAccessException;

@@ -528,79 +528,32 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     private static final String custodialSelectionCondition =
             "lg.custodialAllowed = 1 ";
 
-    private static final String voGroupSelectionCondition =
-            " ( lgvo.VOGroup = ? OR lgvo.VOGroup = '*' ) ";
-    private static final String voRoleSelectionCondition =
-            " ( lgvo.VORole = ? OR lgvo.VORole = '*' ) ";
-
     private static final String spaceCondition =
             " lg.availablespaceinbytes >= ? ";
     private static final String orderBy =
             " ORDER BY lg.availablespaceinbytes DESC ";
 
-    private static final String selectLinkGroupIdPart1 =
-            "SELECT lg.id FROM " + LINKGROUP_TABLE + " lg, " + LINKGROUP_VO_TABLE + " lgvo " +
-                    "WHERE lg.id = lgvo.linkGroupId  AND  lg.lastUpdateTime >= ? ";
-
     private static final String selectLinkGroupInfoPart1 =
             "SELECT lg.* FROM " + LINKGROUP_TABLE + " lg " +
                     "WHERE lg.lastUpdateTime >= ? ";
 
-    private static final String selectOnlineReplicaLinkGroup =
-            selectLinkGroupIdPart1 + " and " +
-                    onlineSelectionCondition + " and " +
+    private static final String selectAllReplicaLinkGroup =
+            selectLinkGroupInfoPart1 + " and " +
                     replicaSelectionCondition + " and " +
-                    voGroupSelectionCondition + " and " +
-                    voRoleSelectionCondition + " and " +
                     spaceCondition +
                     orderBy;
 
-    private static final String selectOnlineOutputLinkGroup =
-            selectLinkGroupIdPart1 + " and " +
-                    onlineSelectionCondition + " and " +
+    private static final String selectAllOutputLinkGroup =
+            selectLinkGroupInfoPart1 + " and " +
                     outputSelectionCondition + " and " +
-                    voGroupSelectionCondition + " and " +
-                    voRoleSelectionCondition + " and " +
                     spaceCondition +
                     orderBy;
 
-    private static final String selectOnlineCustodialLinkGroup =
-            selectLinkGroupIdPart1 + " and " +
-                    onlineSelectionCondition + " and " +
+    private static final String selectAllCustodialLinkGroup =
+            selectLinkGroupInfoPart1 + " and " +
                     custodialSelectionCondition + " and " +
-                    voGroupSelectionCondition + " and " +
-                    voRoleSelectionCondition + " and " +
                     spaceCondition +
                     orderBy;
-
-    private static final String selectNearlineReplicaLinkGroup =
-            selectLinkGroupIdPart1 + " and " +
-                    nearlineSelectionCondition + " and " +
-                    replicaSelectionCondition + " and " +
-                    voGroupSelectionCondition + " and " +
-                    voRoleSelectionCondition + " and " +
-                    spaceCondition +
-                    orderBy;
-
-    private static final String selectNearlineOutputLinkGroup =
-            selectLinkGroupIdPart1 + " and " +
-                    nearlineSelectionCondition + " and " +
-                    outputSelectionCondition + " and " +
-                    voGroupSelectionCondition + " and " +
-                    voRoleSelectionCondition + " and " +
-                    spaceCondition +
-                    orderBy;
-
-
-    private static final String selectNearlineCustodialLinkGroup =
-            selectLinkGroupIdPart1 + " and " +
-                    nearlineSelectionCondition + " and " +
-                    custodialSelectionCondition + " and " +
-                    voGroupSelectionCondition + " and " +
-                    voRoleSelectionCondition + " and " +
-                    spaceCondition +
-                    orderBy;
-
     private static final String selectAllOnlineReplicaLinkGroup =
             selectLinkGroupInfoPart1 + " and " +
                     onlineSelectionCondition + " and " +
@@ -645,44 +598,6 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                     orderBy;
 
     @Override
-    public List<Long> findLinkGroupIds(long sizeInBytes,
-                                       String voGroup,
-                                       String voRole,
-                                       AccessLatency al,
-                                       RetentionPolicy rp,
-                                       long lastUpdateTime)
-            throws DataAccessException
-    {
-        LOGGER.trace("findLinkGroups(sizeInBytes={}, " +
-                             "voGroup={} voRole={}, AccessLatency={}, " +
-                             "RetentionPolicy={})", sizeInBytes, voGroup,
-                     voRole, al, rp);
-        String select;
-        if (al.equals(AccessLatency.ONLINE)) {
-            if (rp.equals(RetentionPolicy.REPLICA)) {
-                select = selectOnlineReplicaLinkGroup;
-            } else if (rp.equals(RetentionPolicy.OUTPUT)) {
-                select = selectOnlineOutputLinkGroup;
-            } else {
-                select = selectOnlineCustodialLinkGroup;
-            }
-        } else {
-            if (rp.equals(RetentionPolicy.REPLICA)) {
-                select = selectNearlineReplicaLinkGroup;
-            } else if (rp.equals(RetentionPolicy.OUTPUT)) {
-                select = selectNearlineOutputLinkGroup;
-            } else {
-                select = selectNearlineCustodialLinkGroup;
-            }
-        }
-        return getJdbcTemplate().queryForList(select, Long.class,
-                                              lastUpdateTime,
-                                              voGroup,
-                                              voRole,
-                                              sizeInBytes);
-    }
-
-    @Override
     public List<LinkGroup> findLinkGroups(long sizeInBytes,
                                           AccessLatency al,
                                           RetentionPolicy rp,
@@ -692,7 +607,15 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         LOGGER.trace("findLinkGroups(sizeInBytes={}, AccessLatency={}, RetentionPolicy={})",
                      sizeInBytes, al, rp);
         String select;
-        if (al.equals(AccessLatency.ONLINE)) {
+        if (al == null) {
+            if (rp.equals(RetentionPolicy.REPLICA)) {
+                select = selectAllReplicaLinkGroup;
+            } else if (rp.equals(RetentionPolicy.OUTPUT)) {
+                select = selectAllOutputLinkGroup;
+            } else {
+                select = selectAllCustodialLinkGroup;
+            }
+        } else if (al.equals(AccessLatency.ONLINE)) {
             if (rp.equals(RetentionPolicy.REPLICA)) {
                 select = selectAllOnlineReplicaLinkGroup;
             } else if (rp.equals(RetentionPolicy.OUTPUT)) {
@@ -700,7 +623,6 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             } else {
                 select = selectAllOnlineCustodialLinkGroup;
             }
-
         } else {
             if (rp.equals(RetentionPolicy.REPLICA)) {
                 select = selectAllNearlineReplicaLinkGroup;
