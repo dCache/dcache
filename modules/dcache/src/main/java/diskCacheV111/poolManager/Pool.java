@@ -33,12 +33,12 @@ public class Pool extends PoolCore implements SelectionPool {
 
     @Override
     public Collection<SelectionLink> getLinksTargetingPool() {
-        return new ArrayList<SelectionLink>(_linkList.values());
+        return new ArrayList<>(_linkList.values());
     }
 
     @Override
     public Collection<SelectionPoolGroup> getPoolGroupsMemberOf() {
-        return new ArrayList<SelectionPoolGroup>(_pGroupList.values());
+        return new ArrayList<>(_pGroupList.values());
     }
 
     @Override

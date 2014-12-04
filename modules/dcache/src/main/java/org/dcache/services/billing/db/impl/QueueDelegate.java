@@ -119,7 +119,7 @@ public abstract class QueueDelegate {
         public void run() {
             while (isRunning()) {
                 try {
-                    Collection<IHistogramData> data = new ArrayList<IHistogramData>();
+                    Collection<IHistogramData> data = new ArrayList<>();
 
                     /*
                      * blocks until non-empty

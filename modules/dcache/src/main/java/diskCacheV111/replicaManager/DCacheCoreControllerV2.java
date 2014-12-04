@@ -966,7 +966,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         List<String> pnfsidPoolList = getCacheLocationList(pnfsId, false);
 
         // Get list of all pools
-        Set<Object> allPools       = new HashSet<Object>(getPoolListResilient());
+        Set<Object> allPools       = new HashSet<>(getPoolListResilient());
 
         // Get Source pool
         // ---------------

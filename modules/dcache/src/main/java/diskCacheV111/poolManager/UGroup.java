@@ -29,12 +29,12 @@ class UGroup implements Serializable, SelectionUnitGroup {
 
     @Override
     public Collection<SelectionUnit> getMemeberUnits() {
-        return new ArrayList<SelectionUnit>(_unitList.values());
+        return new ArrayList<>(_unitList.values());
     }
 
     @Override
     public Collection<SelectionLink> getLinksPointingTo() {
-        return new ArrayList<SelectionLink>(_linkList.values());
+        return new ArrayList<>(_linkList.values());
     }
 
     @Override

@@ -367,7 +367,7 @@ public class HsmFlushControlManager  extends CellAdapter {
         }
         @Override
         public List<HsmFlushControlCore.FlushInfoDetails> getFlushInfos(){
-           return new ArrayList<HsmFlushControlCore.FlushInfoDetails>( flushInfos.values() ) ;
+           return new ArrayList<>( flushInfos.values() ) ;
         }
         @Override
         public PoolCellInfo getCellInfo(){ return cellInfo ; }
@@ -477,7 +477,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            return new HashSet<>( _configuredPoolList.keySet() ) ;
        }
        private synchronized List<HsmFlushControlCore.Pool> getConfiguredPools(){
-           return new ArrayList<HsmFlushControlCore.Pool>( _configuredPoolList.values() ) ;
+           return new ArrayList<>( _configuredPoolList.values() ) ;
        }
        private synchronized void runCollector( Collection<String> list ){
            if( _active ){

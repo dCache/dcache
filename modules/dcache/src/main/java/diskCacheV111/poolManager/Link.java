@@ -45,7 +45,7 @@ class Link implements SelectionLink, Serializable {
 
     @Override
     public Collection<SelectionUnitGroup> getUnitGroupsTargetedBy() {
-        return new ArrayList<SelectionUnitGroup>(_uGroupList.values());
+        return new ArrayList<>(_uGroupList.values());
     }
 
     @Override

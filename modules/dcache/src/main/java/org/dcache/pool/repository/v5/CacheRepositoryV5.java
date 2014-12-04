@@ -114,7 +114,7 @@ public class CacheRepositoryV5
      * Collection of removable entries.
      */
     private final Set<PnfsId> _removable =
-        Collections.newSetFromMap(new ConcurrentHashMap<PnfsId,Boolean>());
+        Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     /** Executor for periodic tasks. */
     private ScheduledExecutorService _executor;

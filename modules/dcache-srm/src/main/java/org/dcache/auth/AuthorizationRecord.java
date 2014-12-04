@@ -106,7 +106,7 @@ public class AuthorizationRecord {
 
         GroupList primaryGroupList = new GroupList();
         primaryGroupList.setAuthRecord(this);
-        primaryGroupList.setGroups(new ArrayList<Group>());
+        primaryGroupList.setGroups(new ArrayList<>());
         groupLists.add(primaryGroupList);
 
         /* Identity is not allowed to be null. However both user name
@@ -130,7 +130,7 @@ public class AuthorizationRecord {
                     GroupList groupList = new GroupList();
                     groupList.setAuthRecord(this);
                     groupList.setAttribute(fqanPrincipal.getName());
-                    groupList.setGroups(new ArrayList<Group>());
+                    groupList.setGroups(new ArrayList<>());
                     groupLists.add(groupList);
                 }
             } else if (principal instanceof GidPrincipal) {

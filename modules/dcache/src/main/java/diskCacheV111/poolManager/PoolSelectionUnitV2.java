@@ -118,7 +118,7 @@ public class PoolSelectionUnitV2
             if (group == null) {
                 throw new NoSuchElementException("No such pool group: " + poolGroup);
             }
-            return new ArrayList<SelectionLink>(group._linkList.values());
+            return new ArrayList<>(group._linkList.values());
         } finally {
             _psuReadLock.unlock();
         }
@@ -2563,7 +2563,7 @@ public class PoolSelectionUnitV2
     {
         _psuReadLock.lock();
         try {
-            return new HashMap<String, SelectionPool>(_pools);
+            return new HashMap<>(_pools);
         } finally {
             _psuReadLock.unlock();
         }
@@ -2574,7 +2574,7 @@ public class PoolSelectionUnitV2
     {
         _psuReadLock.lock();
         try {
-            return new HashMap<String, SelectionLinkGroup>(_linkGroups);
+            return new HashMap<>(_linkGroups);
         } finally {
             _psuReadLock.unlock();
         }
@@ -2598,7 +2598,7 @@ public class PoolSelectionUnitV2
         try {
             Pool pool = _pools.get(PoolName);
             if (pool != null) {
-                return new ArrayList<SelectionPoolGroup>(pool._pGroupList.values());
+                return new ArrayList<>(pool._pGroupList.values());
             } else {
                 throw new NoSuchElementException(PoolName);
             }
@@ -2637,7 +2637,7 @@ public class PoolSelectionUnitV2
         if (group == null) {
             throw new NoSuchElementException("No such pool group: " + poolGroup);
         }
-        return new ArrayList<SelectionPool>(group._poolList.values());
+        return new ArrayList<>(group._poolList.values());
     }
 
     @Override

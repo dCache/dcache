@@ -311,7 +311,7 @@ public class Task
                                         new PoolMigrationCancelMessage(_uuid,
                                                                        _source,
                                                                        getPnfsId())),
-                             new Callback<PoolMigrationCancelMessage>("cancel_"), _parameters.executor);
+                             new Callback<>("cancel_"), _parameters.executor);
     }
 
     /** FSM Action */
@@ -387,7 +387,7 @@ public class Task
                                         new PoolMigrationPingMessage(_uuid,
                                                                      _source,
                                                                      getPnfsId())),
-                             new Callback<PoolMigrationPingMessage>("ping_"),
+                             new Callback<>("ping_"),
                              _parameters.executor);
     }
 

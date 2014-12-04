@@ -36,7 +36,7 @@ public class RequestContainerExecutor
     {
         super(Runtime.getRuntime().availableProcessors(), Integer.MAX_VALUE,
               60L, TimeUnit.SECONDS,
-              new LinkedBlockingQueue<Runnable>(128));
+              new LinkedBlockingQueue<>(128));
     }
 
     @Command(name = "rc set max threads", hint = "set request container thread limit",

@@ -41,7 +41,7 @@ public class FlushControlCellInfo extends CellInfo implements Serializable {
       _driverProperties    = new HashMap<>( properties ) ;
    }
    public long getDriverPropertiesAge(){ return _driverPropertiesAge ; }
-   public Map<String,Object> getDriverProperties(){ return _driverProperties == null ? new HashMap<String,Object>() : _driverProperties ; }
+   public Map<String,Object> getDriverProperties(){ return _driverProperties == null ? new HashMap<>() : _driverProperties ; }
 
     public boolean   getIsControlled(){ return  _control ; }
    public String    getDriverName(){ return _driverName ; }

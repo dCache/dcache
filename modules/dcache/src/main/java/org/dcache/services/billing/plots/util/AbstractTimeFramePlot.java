@@ -99,7 +99,7 @@ public abstract class AbstractTimeFramePlot<H> implements ITimeFramePlot<H> {
             extension = properties.getProperty(TimeFramePlotProperties.EXPORT_EXTENSION);
         }
         histograms = Collections.synchronizedMap
-                        (new HashMap<String, List<HistogramWrapper<H>>>());
+                        (new HashMap<>());
     }
 
     @Override

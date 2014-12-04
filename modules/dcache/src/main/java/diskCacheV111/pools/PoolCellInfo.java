@@ -29,7 +29,7 @@ public class PoolCellInfo
       return _costInfo ;
    }
    public void setTagMap( Map<String,String> tagMap ){ _tagMap = new HashMap<>(tagMap); }
-   public Map<String,String> getTagMap(){ return _tagMap == null ? new HashMap<String,String>() : _tagMap ; }
+   public Map<String,String> getTagMap(){ return _tagMap == null ? new HashMap<>() : _tagMap ; }
    public void setErrorStatus( int errorCode , String errorMessage ){
       _errorCode    = errorCode ;
       _errorMessage = errorMessage ;

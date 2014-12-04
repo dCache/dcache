@@ -807,7 +807,7 @@ public class PoolV4
             try {
                 message.setMoverId(queueIoRequest(message, mover));
             } catch (Throwable t) {
-                mover.postprocess(new NopCompletionHandler<Void, Void>());
+                mover.postprocess(new NopCompletionHandler<>());
                 throw Throwables.propagate(t);
             }
             message.setSucceeded();

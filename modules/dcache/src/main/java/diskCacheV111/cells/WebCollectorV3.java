@@ -459,7 +459,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private TreeMap<String,int[]> _map;  // TreeMap because we need it sorted
         private ActionHeaderExtension(TreeMap<String,int[]> map)
         {
-            _map = map == null ? new TreeMap<String,int[]>() : map;
+            _map = map == null ? new TreeMap<>() : map;
         }
 
         @Override

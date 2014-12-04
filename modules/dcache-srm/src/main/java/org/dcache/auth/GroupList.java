@@ -223,7 +223,7 @@ public class GroupList implements Serializable{
                 authRecord.getHome(),
                 authRecord.getRoot(),
                 "/",
-                new HashSet<String>());
+                new HashSet<>());
 
     }
 }
