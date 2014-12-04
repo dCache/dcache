@@ -66,16 +66,7 @@ public class StorageClassContainer
 
     public synchronized StorageClassFlushInfo[] getFlushInfos()
     {
-        return toArray(transform(
-                _storageClasses.values(),
-                new Function<StorageClassInfo, StorageClassFlushInfo>()
-                {
-                    @Override
-                    public StorageClassFlushInfo apply(StorageClassInfo storageClassInfo)
-                    {
-                        return storageClassInfo.getFlushInfo();
-                    }
-                }), StorageClassFlushInfo.class);
+        return _storageClasses.values().stream().map(StorageClassInfo::getFlushInfo).toArray(StorageClassFlushInfo[]::new);
     }
 
     public synchronized boolean poolStatusChanged()

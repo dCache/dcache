@@ -46,6 +46,8 @@ import dmg.util.CellCron;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 
+import static java.util.Arrays.asList;
+
 /**
   *  @Author: Patrick Fuhrmann
   *
@@ -737,19 +739,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       printTotal( new File( dir , "total.raw") , total, new Date() ) ;
    }
-   private File [] resortFileList( File [] list , final int direction ){
-      Set<File> sorted = new TreeSet<>(
-                  new Comparator<File>(){
-                     @Override
-                     public int compare(File f1 , File f2 ){
-                        return direction *
-                             f1.getName().compareTo( f2.getName() )  ;
-                     }
-                  }   ) ;
-       Collections.addAll(sorted, list);
 
-      return sorted.toArray( new File[sorted.size()] ) ;
+   private File[] resortFileList(File[] list, int direction)
+   {
+       Comparator<File> comparator = (f1, f2) -> direction * f1.getName().compareTo(f2.getName());
+       return asList(list).stream().sorted(comparator).toArray(File[]::new);
    }
+
    private static class MonthFileFilter implements FileFilter {
        @Override
        public boolean accept( File file ){

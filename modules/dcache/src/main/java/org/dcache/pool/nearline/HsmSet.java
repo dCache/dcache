@@ -263,25 +263,6 @@ public class HsmSet
     }
 
 
-    /**
-     * Returns an unmodifiable view of the HSMs of a given type.
-     *
-     * @param type an HSM type name.
-     */
-    public Collection<HsmInfo> getHsmInfoByType(final String type)
-    {
-        return unmodifiableCollection(
-                Collections2.filter(_hsm.values(),
-                                    new Predicate<HsmInfo>()
-                                    {
-                                        @Override
-                                        public boolean apply(HsmInfo hsm)
-                                        {
-                                            return hsm.getType().equals(type);
-                                        }
-                                    }));
-    }
-
     public NearlineStorage getNearlineStorageByName(String name)
     {
         HsmInfo info = getHsmInfoByName(name);
@@ -290,8 +271,11 @@ public class HsmSet
 
     public NearlineStorage getNearlineStorageByType(String type)
     {
-        HsmInfo info = Iterables.getFirst(getHsmInfoByType(type), null);
-        return (info != null) ? info.getNearlineStorage() : null;
+        Collection<HsmInfo> infos = _hsm.values();
+        return infos.stream()
+                .filter(hsm -> hsm.getType().equals(type))
+                .map(HsmInfo::getNearlineStorage)
+                .findFirst().orElse(null);
     }
 
     /**
