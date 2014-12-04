@@ -43,19 +43,20 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.MonthDay;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -75,11 +76,25 @@ public class Indexer
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(Indexer.class);
 
-    private static final Pattern BILLING_NAME_PATTERN = Pattern.compile("^billing-(\\d\\d\\d\\d.\\d\\d.\\d\\d)(\\.bz2)?$");
+    private static final Pattern BILLING_NAME_PATTERN =
+            Pattern.compile("^billing-(\\d\\d\\d\\d.\\d\\d.\\d\\d)(\\.bz2)?$");
     private static final String BILLING_TEXT_FLAT_DIR = "billing.text.flat-dir";
     private static final String BILLING_TEXT_DIR = "billing.text.dir";
     private static final String BZ2 = "bz2";
     private static final int PIPE_SIZE = 2048;
+
+    private static final DateTimeFormatter CLI_DATE_FORMAT =
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM);
+    private static final DateTimeFormatter DEFAULT_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("MM.dd");
+    private static final DateTimeFormatter DEFAULT_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter FILE_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu.MM.dd");
+    private static final DateTimeFormatter DIRECTORY_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu" + File.separator + "MM");
+    private static final DateTimeFormatter ISO8601_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssX");
 
     /**
      * Almost identical to the file tree traverser from Guava, sorts directory entries
@@ -104,53 +119,7 @@ public class Indexer
     private final boolean isFlat;
     private final File dir;
 
-    private static final ThreadLocal<DateFormat> LOCALE_DATE_FORMAT =
-            new ThreadLocal<DateFormat>()
-            {
-                @Override
-                protected DateFormat initialValue()
-                {
-                    return DateFormat.getDateInstance();
-                }
-            };
-    private static final ThreadLocal<SimpleDateFormat> FILE_NAME_DATE_FORMAT =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("yyyy.MM.dd");
-                }
-            };
-    private static final ThreadLocal<SimpleDateFormat> DIRECTORY_NAME_FORMAT =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("yyyy" + File.separator + "MM");
-                }
-            };
-    private static final ThreadLocal<SimpleDateFormat> ISO8601_FORMAT =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssX");
-                }
-            };
-    private static final ThreadLocal<SimpleDateFormat> DEFAULT_DATE_FORMAT =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("MM.dd HH:mm:ss");
-                }
-            };
-
-    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException, ParseException
+    private Indexer(Args args) throws IOException, URISyntaxException, ClassNotFoundException
     {
         double fpp = args.getDoubleOption("fpp", 0.01);
 
@@ -172,22 +141,16 @@ public class Indexer
                     SORTED_FILE_TREE_TRAVERSER
                             .preOrderTraversal(dir);
             if (args.hasOption("since") || args.hasOption("until")) {
-                Date since;
-                Date until;
-                try {
-                    since = args.hasOption("since") ? LOCALE_DATE_FORMAT.get().parse(args.getOption("since")) : new Date(0);
-                    until = args.hasOption("until") ? LOCALE_DATE_FORMAT.get().parse(args.getOption("until")) : new Date();
-                } catch (ParseException e) {
-                    throw new ParseException(e.getMessage() + ". Expected format is " +
-                                                     ((SimpleDateFormat) LOCALE_DATE_FORMAT.get()).toLocalizedPattern() + '.',
-                                             e.getErrorOffset());
-                }
+                LocalDate since = args.hasOption("since")
+                        ? LocalDate.parse(args.getOption("since"), CLI_DATE_FORMAT) : LocalDate.ofEpochDay(0);
+                LocalDate until = args.hasOption("until")
+                        ? LocalDate.parse(args.getOption("until"), CLI_DATE_FORMAT) : LocalDate.now().plusDays(1);
                 filesWithPossibleMatch =
-                        filesWithPossibleMatch.filter(inRange(since, until));
+                        filesWithPossibleMatch.filter(file -> isInRange(file, since, until));
             }
             if (searchTerms.contains("")) {
                 filesWithPossibleMatch =
-                        filesWithPossibleMatch.filter(isBillingFile());
+                        filesWithPossibleMatch.filter(file -> isBillingFile(file));
             } else {
                 filesWithPossibleMatch =
                         filesWithPossibleMatch.filter(isBillingFileAndMightContain(searchTerms));
@@ -219,7 +182,7 @@ public class Indexer
                 }
             }
         } else if (args.hasOption("yesterday")) {
-            Date yesterday = getYesterday();
+            LocalDate yesterday = LocalDate.now().minusDays(1);
             File billingFile = getBillingFile(yesterday);
             File errorFile = getErrorFile(yesterday);
             File indexFile = getIndexFile(yesterday);
@@ -260,16 +223,16 @@ public class Indexer
     {
         return new OutputWriter()
         {
-            private final DateFormat prefix = DateFormat.getDateInstance();
-
             @Override
-            public void write(Date date, String line) throws IOException
+            public void write(LocalDate date, String line) throws IOException
             {
                 // Prepend year if the default timestamp format is used
                 try {
-                    DEFAULT_DATE_FORMAT.get().parse(line);
-                    out.append(String.valueOf(1900 + date.getYear())).append('.');
-                } catch (ParseException ignore) {
+                    int year = date.getYear();
+                    parseDefaultTimestamp(year, line);
+                    out.append(String.valueOf(year)).append('.');
+                } catch (DateTimeParseException ignore) {
+                    ignore.printStackTrace();
                 }
                 out.println(line);
             }
@@ -297,7 +260,7 @@ public class Indexer
             }
 
             @Override
-            public void write(Date date, String line) throws IOException
+            public void write(LocalDate date, String line) throws IOException
             {
                 Map<String, String> attributes = parser.apply(line);
                 if (!attributes.isEmpty()) {
@@ -330,7 +293,7 @@ public class Indexer
                             .buildToMap();
 
             @Override
-            public void write(Date date, String line) throws IOException
+            public void write(LocalDate date, String line) throws IOException
             {
                 Map<String, String> attributes = parser.apply(line);
                 if (attributes.isEmpty()) {
@@ -357,34 +320,30 @@ public class Indexer
      * Searches for searchTerm in files and writes any matching lines to out.
      */
     private static void find(final Collection<String> searchTerms, FluentIterable<File> files, final OutputWriter out)
-            throws IOException, ParseException
+            throws IOException
     {
         int threads = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         try {
-            List<Map.Entry<Date,Reader>> readers = new ArrayList<>();
-            for (final File file : files) {
+            List<Map.Entry<LocalDate,Reader>> readers = new ArrayList<>();
+            for (File file : files) {
                 Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
                 if (matcher.matches()) {
+                    LocalDate date = LocalDate.parse(matcher.group(1), FILE_DATE_FORMAT);
                     PipedReader reader = new PipedReader(PIPE_SIZE);
-                    final PipedWriter writer = new PipedWriter(reader);
-                    executor.submit(new Callable<Void>() {
-                        @Override
-                        public Void call() throws IOException
-                        {
-                            try {
-                                grep(searchTerms, file, new PrintWriter(writer));
-                            } finally {
-                                writer.close();
-                            }
-                            return null;
+                    PipedWriter writer = new PipedWriter(reader);
+                    executor.submit(() -> {
+                        try {
+                            grep(searchTerms, file, new PrintWriter(writer));
+                        } finally {
+                            writer.close();
                         }
+                        return null;
                     });
-                    Date date = FILE_NAME_DATE_FORMAT.get().parse(matcher.group(1));
-                    readers.add(Maps.<Date, Reader>immutableEntry(date, reader));
+                    readers.add(Maps.immutableEntry(date, reader));
                 }
             }
-            for (final Map.Entry<Date, Reader> entry : readers) {
+            for (final Map.Entry<LocalDate, Reader> entry : readers) {
                 CharStreams.readLines(entry.getValue(), new LineProcessor<Void>()
                 {
                     @Override
@@ -406,7 +365,7 @@ public class Indexer
         }
     }
 
-    private static void grep(final Collection<String> searchTerms, File file, final PrintWriter out)
+    private static void grep(final Collection<String> searchTerms, File file, PrintWriter out)
             throws IOException
     {
         asCharSource(file, Charsets.UTF_8).readLines(new LineProcessor<Void>()
@@ -491,6 +450,14 @@ public class Indexer
         out.println("          default is 0.01.");
     }
 
+    private static LocalDateTime parseDefaultTimestamp(int year, String s)
+            throws DateTimeParseException
+    {
+        MonthDay monthDay = MonthDay.parse(s.substring(0, 5), DEFAULT_DATE_FORMAT);
+        LocalTime time = LocalTime.parse(s.substring(6, 14), DEFAULT_TIME_FORMAT);
+        return monthDay.atYear(year).atTime(time);
+    }
+
     /**
      * Completes the date field of billing entries by adding a year to it.
      */
@@ -499,39 +466,31 @@ public class Indexer
         String s = attributes.get("date");
         if (s != null) {
             try {
-                Date time = DEFAULT_DATE_FORMAT.get().parse(s);
-                time.setYear(year);
-                attributes.put("date", ISO8601_FORMAT.get().format(time));
-            } catch (ParseException ignore) {
+                LocalDateTime timestamp = parseDefaultTimestamp(year, s);
+                attributes.put("date", ISO8601_FORMAT.format(timestamp.atZone(ZoneId.systemDefault())));
+            } catch (DateTimeParseException ignore) {
             }
         }
     }
 
-    private static Date getYesterday()
+    private File getDirectory(LocalDate date)
     {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DATE, -1);
-        return cal.getTime();
+        return isFlat ? dir : new File(this.dir, DIRECTORY_DATE_FORMAT.format(date));
     }
 
-    private File getDirectory(Date date)
+    private File getBillingFile(LocalDate date)
     {
-        return isFlat ? dir : new File(this.dir, DIRECTORY_NAME_FORMAT.get().format(date));
+        return new File(getDirectory(date), "billing-" + FILE_DATE_FORMAT.format(date));
     }
 
-    private File getBillingFile(Date date)
+    private File getErrorFile(LocalDate date)
     {
-        return new File(getDirectory(date), "billing-" + FILE_NAME_DATE_FORMAT.get().format(date));
+        return new File(getDirectory(date), "billing-error-" + FILE_DATE_FORMAT.format(date));
     }
 
-    private File getErrorFile(Date date)
+    private File getIndexFile(LocalDate date)
     {
-        return new File(getDirectory(date), "billing-error-" + FILE_NAME_DATE_FORMAT.get().format(date));
-    }
-
-    private File getIndexFile(Date date)
-    {
-        return getIndexFile(getDirectory(date), FILE_NAME_DATE_FORMAT.get().format(date));
+        return getIndexFile(getDirectory(date), FILE_DATE_FORMAT.format(date));
     }
 
     private static File getIndexFile(File dir, String date)
@@ -577,9 +536,7 @@ public class Indexer
     {
         BloomFilter<CharSequence> filter =
                 BloomFilter.create(Funnels.stringFunnel(Charsets.UTF_8), index.size(), fpp);
-        for (String element : index) {
-            filter.put(element);
-        }
+        index.forEach(filter::put);
         return filter;
     }
 
@@ -599,20 +556,13 @@ public class Indexer
         }
     }
 
-    private static Predicate<File> isBillingFile()
+    private static boolean isBillingFile(File file)
     {
-        return new Predicate<File>()
-        {
-            @Override
-            public boolean apply(File file)
-            {
-                if (!file.isFile()) {
-                    return false;
-                }
-                Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
-                return matcher.matches();
-            }
-        };
+        if (!file.isFile()) {
+            return false;
+        }
+        Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+        return matcher.matches();
     }
 
     private static Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
@@ -653,26 +603,16 @@ public class Indexer
         };
     }
 
-    private static Predicate<? super File> inRange(final Date since, final Date until)
+    private static boolean isInRange(File file, LocalDate since, LocalDate until)
     {
-        return new Predicate<File>()
-        {
-            @Override
-            public boolean apply(File file)
-            {
-                try {
-                    Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
-                    if (matcher.matches()) {
-                        Date date = FILE_NAME_DATE_FORMAT.get().parse(matcher.group(1));
-                        if ((date.equals(since) || date.after(since)) && date.before(until)) {
-                            return true;
-                        }
-                    }
-                } catch (ParseException ignore) {
-                }
-                return false;
+        Matcher matcher = BILLING_NAME_PATTERN.matcher(file.getName());
+        if (matcher.matches()) {
+            LocalDate date = LocalDate.parse(matcher.group(1), FILE_DATE_FORMAT);
+            if ((date.isEqual(since) || date.isAfter(since)) && date.isBefore(until)) {
+                return true;
             }
-        };
+        }
+        return false;
     }
 
     /**
@@ -733,14 +673,7 @@ public class Indexer
     {
         LogManager.getLogManager().reset();
         SLF4JBridgeHandler.install();
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                LOGGER.error("Uncaught exception", e);
-            }
-        });
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> LOGGER.error("Uncaught exception", e));
 
         try {
             new Indexer(new Args(arguments));
@@ -749,7 +682,7 @@ public class Indexer
             System.err.println();
             help(System.err);
             System.exit(1);
-        } catch (ParseException e) {
+        } catch (DateTimeParseException e) {
             System.err.println(e.getMessage());
             System.err.println();
             System.exit(1);
@@ -773,6 +706,6 @@ public class Indexer
 
     private interface OutputWriter extends Closeable
     {
-        void write(Date date, String line) throws IOException;
+        void write(LocalDate date, String line) throws IOException;
     }
 }
