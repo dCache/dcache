@@ -1,7 +1,5 @@
 package diskCacheV111.services.space;
 
-import com.google.common.base.Function;
-
 import java.io.Serializable;
 
 import diskCacheV111.util.PnfsId;

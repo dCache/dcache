@@ -17,7 +17,7 @@ import org.dcache.auth.Subjects;
  */
 public class SimpleSpaceManagerAuthorizationPolicy
         implements SpaceManagerAuthorizationPolicy {
-	private static Logger logger =
+	private static final Logger logger =
             LoggerFactory.getLogger(SimpleSpaceManagerAuthorizationPolicy.class);
 
     @Override

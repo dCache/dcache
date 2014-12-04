@@ -27,7 +27,6 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
-import com.google.common.base.Function;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -361,20 +360,15 @@ public final class SpaceManagerService
                 if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
                     messageToForward(envelope, message);
                 } else if (isSpaceManagerEnabled) {
-                    executor.execute(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            processMessage(message);
-                            if (message.getReplyRequired()) {
-                                try {
-                                    envelope.revertDirection();
-                                    sendMessage(envelope);
-                                }
-                                catch (NoRouteToCellException e) {
-                                    LOGGER.error("Failed to send reply: {}", e.getMessage());
-                                }
+                    executor.execute(() -> {
+                        processMessage(message);
+                        if (message.getReplyRequired()) {
+                            try {
+                                envelope.revertDirection();
+                                sendMessage(envelope);
+                            }
+                            catch (NoRouteToCellException e) {
+                                LOGGER.error("Failed to send reply: {}", e.getMessage());
                             }
                         }
                     });
@@ -406,19 +400,14 @@ public final class SpaceManagerService
 
             if (envelope.nextDestination()) {
                 if (isSpaceManagerEnabled && isInterceptedMessage(message)) {
-                    executor.execute(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            processMessage(message);
+                    executor.execute(() -> {
+                        processMessage(message);
 
-                            if (message.getReturnCode() != 0 && !isEnRouteToDoor) {
-                                envelope.revertDirection();
-                            }
-
-                            forwardMessage(envelope, isEnRouteToDoor);
+                        if (message.getReturnCode() != 0 && !isEnRouteToDoor) {
+                            envelope.revertDirection();
                         }
+
+                        forwardMessage(envelope, isEnRouteToDoor);
                     });
                 } else {
                     forwardMessage(envelope, isEnRouteToDoor);
@@ -892,7 +881,7 @@ public final class SpaceManagerService
          * LinkGroup flags to StorageInfo. These are accessed when space manager intercepts
          * the subsequent PoolAcceptFileMessage.
          */
-        private void selectPool(PoolMgrSelectWritePoolMsg selectWritePool) throws DataAccessException, SpaceException
+        private void selectPool(PoolMgrSelectWritePoolMsg selectWritePool) throws DataAccessException
         {
             LOGGER.trace("selectPool({})", selectWritePool);
             FileAttributes fileAttributes = selectWritePool.getFileAttributes();

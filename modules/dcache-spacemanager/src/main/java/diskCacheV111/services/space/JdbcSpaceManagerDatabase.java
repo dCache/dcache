@@ -7,9 +7,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -17,7 +14,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -108,82 +104,6 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     */
     private static final String SPACEFILE_TABLE = "srmspacefile";
 
-    private <T> T toNull(T value, boolean makeNull)
-    {
-        return makeNull ? null : value;
-    }
-
-    private final RowMapper<Space> spaceReservationMapper = new RowMapper<Space>()
-    {
-        @Override
-        public Space mapRow(ResultSet set, int rowNum) throws SQLException
-        {
-            return new Space(set.getLong("id"),
-                             set.getString("vogroup"),
-                             set.getString("vorole"),
-                             RetentionPolicy.getRetentionPolicy(set.getInt("retentionPolicy")),
-                             AccessLatency.getAccessLatency(set.getInt("accessLatency")),
-                             set.getLong("linkgroupid"),
-                             set.getLong("sizeinbytes"),
-                             set.getLong("creationtime"),
-                             toNull(set.getLong("expirationtime"), set.wasNull()),
-                             set.getString("description"),
-                             SpaceState.valueOf(set.getInt("state")),
-                             set.getLong("usedspaceinbytes"),
-                             set.getLong("allocatedspaceinbytes"));
-        }
-    };
-
-    private final RowMapper<LinkGroup> linkGroupMapper = new RowMapper<LinkGroup>()
-    {
-        @Override
-        public LinkGroup mapRow(ResultSet set, int rowNum) throws SQLException
-        {
-            LinkGroup lg = new LinkGroup();
-            lg.setId(set.getLong("id"));
-            lg.setName(set.getString("name"));
-            lg.setAvailableSpace(set.getLong("availablespaceinbytes"));
-            lg.setUpdateTime(set.getLong("lastupdatetime"));
-            lg.setOnlineAllowed(set.getBoolean("onlineallowed"));
-            lg.setNearlineAllowed(set.getBoolean("nearlineallowed"));
-            lg.setReplicaAllowed(set.getBoolean("replicaallowed"));
-            lg.setOutputAllowed(set.getBoolean("outputallowed"));
-            lg.setCustodialAllowed(set.getBoolean("custodialallowed"));
-            lg.setReservedSpace(set.getLong("reservedspaceinbytes"));
-            List<VOInfo> vos = getJdbcTemplate().query(
-                    "SELECT voGroup,voRole FROM " + LINKGROUP_VO_TABLE + " WHERE linkGroupId=?", voInfoMapper,
-                    lg.getId());
-            lg.setVOs(vos.toArray(new VOInfo[vos.size()]));
-            return lg;
-        }
-    };
-
-    private final RowMapper<File> fileMapper = new RowMapper<File>()
-    {
-        @Override
-        public File mapRow(ResultSet set, int rowNum) throws SQLException
-        {
-            String pnfsId = set.getString("pnfsId");
-            return new File(set.getLong("id"),
-                            set.getString("vogroup"),
-                            set.getString("vorole"),
-                            set.getLong("spacereservationid"),
-                            set.getLong("sizeinbytes"),
-                            set.getLong("creationtime"),
-                            (pnfsId != null) ? new PnfsId(pnfsId) : null,
-                            FileState.valueOf(set.getInt("state")));
-        }
-    };
-
-    private final RowMapper<VOInfo> voInfoMapper = new RowMapper<VOInfo>()
-    {
-        @Override
-        public VOInfo mapRow(ResultSet rs, int rowNum) throws SQLException
-        {
-            return new VOInfo(rs.getString("vogroup"), rs.getString("vorole"));
-        }
-    };
-
     public void init() throws DataAccessException
     {
         insertRetentionPolicies();
@@ -242,7 +162,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         try {
             return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + SPACE_TABLE + " WHERE id = ? FOR UPDATE", spaceReservationMapper, id);
+                    "SELECT * FROM " + SPACE_TABLE + " WHERE id = ? FOR UPDATE", this::toSpace, id);
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("No such space reservation: " + id, 1, e);
         }
@@ -253,7 +173,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         try {
             return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfsid = ? FOR UPDATE ", fileMapper,
+                    "SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfsid = ? FOR UPDATE ", this::toFile,
                     pnfsId.toString());
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("Space reservation for " + pnfsId + " not found.", 1, e);
@@ -265,7 +185,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         try {
             return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + SPACEFILE_TABLE + " WHERE id = ? FOR UPDATE ", fileMapper, id);
+                    "SELECT * FROM " + SPACEFILE_TABLE + " WHERE id = ? FOR UPDATE ", this::toFile, id);
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("No such file id: " + id, 1, e);
         }
@@ -310,7 +230,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             LinkGroup group =
                     getJdbcTemplate().queryForObject(
                             "SELECT * FROM " + LINKGROUP_TABLE + " WHERE  name = ? FOR UPDATE",
-                            linkGroupMapper,
+                            this::toLinkGroup,
                             linkGroupName);
             id = group.getId();
             getJdbcTemplate().update(
@@ -328,31 +248,26 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             try {
                 KeyHolder keyHolder = new GeneratedKeyHolder();
                 getJdbcTemplate().update(
-                        new PreparedStatementCreator()
-                        {
-                            @Override
-                            public PreparedStatement createPreparedStatement(Connection con) throws SQLException
-                            {
-                                /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
-                                 * work for us: The former suffers from different interpretations of case in HSQLDB and
-                                 * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
-                                 */
-                                PreparedStatement stmt = con.prepareStatement(
-                                        "INSERT INTO " + LINKGROUP_TABLE
-                                                + " (name, availableSpaceInBytes, lastUpdateTime, onlineAllowed,"
-                                                + " nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"
-                                                + " VALUES (?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
-                                stmt.setString(1, linkGroupName);
-                                stmt.setLong(2, freeSpace);
-                                stmt.setLong(3, updateTime);
-                                stmt.setInt(4, (onlineAllowed ? 1 : 0));
-                                stmt.setInt(5, (nearlineAllowed ? 1 : 0));
-                                stmt.setInt(6, (replicaAllowed ? 1 : 0));
-                                stmt.setInt(7, (outputAllowed ? 1 : 0));
-                                stmt.setInt(8, (custodialAllowed ? 1 : 0));
-                                stmt.setLong(9, (long) 0);
-                                return stmt;
-                            }
+                        con -> {
+                            /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
+                             * work for us: The former suffers from different interpretations of case in HSQLDB and
+                             * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
+                             */
+                            PreparedStatement stmt = con.prepareStatement(
+                                    "INSERT INTO " + LINKGROUP_TABLE
+                                            + " (name, availableSpaceInBytes, lastUpdateTime, onlineAllowed,"
+                                            + " nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed,reservedspaceinbytes)"
+                                            + " VALUES (?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+                            stmt.setString(1, linkGroupName);
+                            stmt.setLong(2, freeSpace);
+                            stmt.setLong(3, updateTime);
+                            stmt.setInt(4, (onlineAllowed ? 1 : 0));
+                            stmt.setInt(5, (nearlineAllowed ? 1 : 0));
+                            stmt.setInt(6, (replicaAllowed ? 1 : 0));
+                            stmt.setInt(7, (outputAllowed ? 1 : 0));
+                            stmt.setInt(8, (custodialAllowed ? 1 : 0));
+                            stmt.setLong(9, (long) 0);
+                            return stmt;
                         },
                         keyHolder);
                 id = (Long) keyHolder.getKeys().get("id");
@@ -370,17 +285,12 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         }
 
         getJdbcTemplate().query("SELECT VOGroup,VORole FROM " + LINKGROUP_VO_TABLE + " WHERE linkGroupId=?",
-                                new RowCallbackHandler()
-                                {
-                                    @Override
-                                    public void processRow(ResultSet rs) throws SQLException
-                                    {
-                                        String nextVOGroup = rs.getString(1);
-                                        String nextVORole = rs.getString(2);
-                                        VOInfo nextVO = new VOInfo(nextVOGroup, nextVORole);
-                                        if (!insertVOs.remove(nextVO)) {
-                                            deleteVOs.add(nextVO);
-                                        }
+                                (ResultSet rs) -> {
+                                    String nextVOGroup = rs.getString(1);
+                                    String nextVORole = rs.getString(2);
+                                    VOInfo nextVO = new VOInfo(nextVOGroup, nextVORole);
+                                    if (!insertVOs.remove(nextVO)) {
+                                        deleteVOs.add(nextVO);
                                     }
                                 }, id);
 
@@ -418,34 +328,29 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         final long creationTime = System.currentTimeMillis();
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rc = getJdbcTemplate().update(
-                new PreparedStatementCreator()
-                {
-                    @Override
-                    public PreparedStatement createPreparedStatement(Connection con) throws SQLException
-                    {
-                        /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
-                         * work for us: The former suffers from different interpretations of case in HSQLDB and
-                         * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
-                         */
-                        PreparedStatement stmt = con.prepareStatement(
-                                "INSERT INTO " + SPACE_TABLE
-                                        + " (vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"
-                                        + "sizeinbytes,creationtime,expirationtime,description,state,usedspaceinbytes,allocatedspaceinbytes)"
-                                        + " VALUES  (?,?,?,?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
-                        stmt.setString(1, voGroup);
-                        stmt.setString(2, voRole);
-                        stmt.setInt(3, retentionPolicy == null ? 0 : retentionPolicy.getId());
-                        stmt.setInt(4, accessLatency == null ? 0 : accessLatency.getId());
-                        stmt.setLong(5, linkGroupId);
-                        stmt.setLong(6, sizeInBytes);
-                        stmt.setLong(7, creationTime);
-                        stmt.setObject(8, (lifetime == -1) ? null : creationTime + lifetime);
-                        stmt.setString(9, description);
-                        stmt.setInt(10, state.getStateId());
-                        stmt.setLong(11, used);
-                        stmt.setLong(12, allocated);
-                        return stmt;
-                    }
+                con -> {
+                    /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
+                     * work for us: The former suffers from different interpretations of case in HSQLDB and
+                     * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
+                     */
+                    PreparedStatement stmt = con.prepareStatement(
+                            "INSERT INTO " + SPACE_TABLE
+                                    + " (vogroup,vorole,retentionpolicy,accesslatency,linkgroupid,"
+                                    + "sizeinbytes,creationtime,expirationtime,description,state,usedspaceinbytes,allocatedspaceinbytes)"
+                                    + " VALUES  (?,?,?,?,?,?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+                    stmt.setString(1, voGroup);
+                    stmt.setString(2, voRole);
+                    stmt.setInt(3, retentionPolicy == null ? 0 : retentionPolicy.getId());
+                    stmt.setInt(4, accessLatency == null ? 0 : accessLatency.getId());
+                    stmt.setLong(5, linkGroupId);
+                    stmt.setLong(6, sizeInBytes);
+                    stmt.setLong(7, creationTime);
+                    stmt.setObject(8, (lifetime == -1) ? null : creationTime + lifetime);
+                    stmt.setString(9, description);
+                    stmt.setInt(10, state.getStateId());
+                    stmt.setLong(11, used);
+                    stmt.setLong(12, allocated);
+                    return stmt;
                 },
                 keyHolder);
         if (rc != 1) {
@@ -471,7 +376,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         try {
             return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + SPACE_TABLE + " WHERE id=?", spaceReservationMapper, id);
+                    "SELECT * FROM " + SPACE_TABLE + " WHERE id=?", this::toSpace, id);
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("No such space reservation: " + id, 1, e);
         }
@@ -482,7 +387,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         try {
             return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + LINKGROUP_TABLE + " WHERE  id = ?", linkGroupMapper, id);
+                    "SELECT * FROM " + LINKGROUP_TABLE + " WHERE  id = ?", this::toLinkGroup, id);
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("No such link group: " + id, 1, e);
         }
@@ -493,7 +398,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         try {
             return getJdbcTemplate().queryForObject(
-                    "SELECT * FROM " + LINKGROUP_TABLE + " WHERE  name = ?", linkGroupMapper, name);
+                    "SELECT * FROM " + LINKGROUP_TABLE + " WHERE  name = ?", this::toLinkGroup, name);
         } catch (EmptyResultDataAccessException e) {
             throw new EmptyResultDataAccessException("No such link group: " + name, 1, e);
         }
@@ -632,14 +537,14 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
                 select = selectAllNearlineCustodialLinkGroup;
             }
         }
-        return getJdbcTemplate().query(select, linkGroupMapper, lastUpdateTime, sizeInBytes);
+        return getJdbcTemplate().query(select, this::toLinkGroup, lastUpdateTime, sizeInBytes);
     }
 
     @Override
     public File findFile(PnfsId pnfsId) throws DataAccessException
     {
         List<File> results = getJdbcTemplate().query("SELECT * FROM " + SPACEFILE_TABLE + " WHERE pnfsId=?",
-                                                     fileMapper, pnfsId.toString());
+                                                     this::toFile, pnfsId.toString());
         return DataAccessUtils.singleResult(results);
     }
 
@@ -654,7 +559,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
-                "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), linkGroupMapper);
+                "SELECT * from " + LINKGROUP_TABLE + " WHERE " + c.getPredicate(), c.getArguments(), this::toLinkGroup);
     }
 
     @Override
@@ -669,7 +574,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
                 "SELECT * FROM " + SPACE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
-                c.getArguments(), spaceReservationMapper);
+                c.getArguments(), this::toSpace);
     }
 
     @Override
@@ -700,7 +605,7 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         JdbcCriterion c = (JdbcCriterion) criterion;
         return getJdbcTemplate().query(
                 "SELECT * FROM " + SPACEFILE_TABLE + " WHERE " + c.getPredicate() + (limit != null ? " LIMIT " + limit : ""),
-                c.getArguments(), fileMapper);
+                c.getArguments(), this::toFile);
     }
 
     @Override
@@ -756,29 +661,25 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        int rc = getJdbcTemplate().update(new PreparedStatementCreator()
-        {
-            @Override
-            public PreparedStatement createPreparedStatement(Connection con) throws SQLException
-            {
-                /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
-                 * work for us: The former suffers from different interpretations of case in HSQLDB and
-                 * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
-                 */
-                PreparedStatement stmt = con.prepareStatement(
-                        "INSERT INTO " + SPACEFILE_TABLE
-                                + " (vogroup,vorole,spacereservationid,sizeinbytes,creationtime,pnfsid,state) "
-                                + " VALUES  (?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
-                stmt.setString(1, voGroup);
-                stmt.setString(2, voRole);
-                stmt.setLong(3, reservationId);
-                stmt.setLong(4, sizeInBytes);
-                stmt.setLong(5, creationTime);
-                stmt.setString(6, Objects.toString(pnfsId, null));
-                stmt.setInt(7, state.getStateId());
-                return stmt;
-            }
-        }, keyHolder);
+        int rc = getJdbcTemplate().update(
+                con -> {
+                    /* Note that neither prepareStatement(String, String[]) nor prepareStatement(String, int[])
+                     * work for us: The former suffers from different interpretations of case in HSQLDB and
+                     * PostgreSQL and the latter is not support by the PostgreSQL JDBC driver.
+                     */
+                    PreparedStatement stmt = con.prepareStatement(
+                            "INSERT INTO " + SPACEFILE_TABLE
+                                    + " (vogroup,vorole,spacereservationid,sizeinbytes,creationtime,pnfsid,state) "
+                                    + " VALUES  (?,?,?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS);
+                    stmt.setString(1, voGroup);
+                    stmt.setString(2, voRole);
+                    stmt.setLong(3, reservationId);
+                    stmt.setLong(4, sizeInBytes);
+                    stmt.setLong(5, creationTime);
+                    stmt.setString(6, Objects.toString(pnfsId, null));
+                    stmt.setInt(7, state.getStateId());
+                    return stmt;
+                }, keyHolder);
         if (rc != 1) {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("insert returned row count =" + rc, 1, rc);
         }
@@ -1020,5 +921,61 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
             addClause("creationtime < ?", millis);
             return this;
         }
+    }
+
+    private Space toSpace(ResultSet set, int rowNum) throws SQLException
+    {
+        return new Space(set.getLong("id"),
+                         set.getString("vogroup"),
+                         set.getString("vorole"),
+                         RetentionPolicy.getRetentionPolicy(set.getInt("retentionPolicy")),
+                         AccessLatency.getAccessLatency(set.getInt("accessLatency")),
+                         set.getLong("linkgroupid"),
+                         set.getLong("sizeinbytes"),
+                         set.getLong("creationtime"),
+                         toNull(set.getLong("expirationtime"), set.wasNull()),
+                         set.getString("description"),
+                         SpaceState.valueOf(set.getInt("state")),
+                         set.getLong("usedspaceinbytes"),
+                         set.getLong("allocatedspaceinbytes"));
+    }
+
+    private LinkGroup toLinkGroup(ResultSet set, int rowNum) throws SQLException
+    {
+        LinkGroup lg = new LinkGroup();
+        lg.setId(set.getLong("id"));
+        lg.setName(set.getString("name"));
+        lg.setAvailableSpace(set.getLong("availablespaceinbytes"));
+        lg.setUpdateTime(set.getLong("lastupdatetime"));
+        lg.setOnlineAllowed(set.getBoolean("onlineallowed"));
+        lg.setNearlineAllowed(set.getBoolean("nearlineallowed"));
+        lg.setReplicaAllowed(set.getBoolean("replicaallowed"));
+        lg.setOutputAllowed(set.getBoolean("outputallowed"));
+        lg.setCustodialAllowed(set.getBoolean("custodialallowed"));
+        lg.setReservedSpace(set.getLong("reservedspaceinbytes"));
+        List<VOInfo> vos = getJdbcTemplate().query(
+                "SELECT voGroup,voRole FROM " + LINKGROUP_VO_TABLE + " WHERE linkGroupId=?",
+                (vo, i) -> new VOInfo(vo.getString("vogroup"), vo.getString("vorole")),
+                lg.getId());
+        lg.setVOs(vos.toArray(new VOInfo[vos.size()]));
+        return lg;
+    }
+
+    private File toFile(ResultSet set, int rowNum) throws SQLException
+    {
+        String pnfsId = set.getString("pnfsId");
+        return new File(set.getLong("id"),
+                        set.getString("vogroup"),
+                        set.getString("vorole"),
+                        set.getLong("spacereservationid"),
+                        set.getLong("sizeinbytes"),
+                        set.getLong("creationtime"),
+                        (pnfsId != null) ? new PnfsId(pnfsId) : null,
+                        FileState.valueOf(set.getInt("state")));
+    }
+
+    private static <T> T toNull(T value, boolean makeNull)
+    {
+        return makeNull ? null : value;
     }
 }

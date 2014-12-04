@@ -66,8 +66,6 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.space;
 
-import com.google.common.base.Function;
-
 public enum FileState
 {
     /**

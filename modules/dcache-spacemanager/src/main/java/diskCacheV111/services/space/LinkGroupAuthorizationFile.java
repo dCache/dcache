@@ -18,7 +18,7 @@ import diskCacheV111.util.VOInfo;
 
 public class LinkGroupAuthorizationFile  {
 
-	private Map<String,LinkGroupAuthorizationRecord> records =
+	private final Map<String,LinkGroupAuthorizationRecord> records =
             new HashMap<>();
 
 	public LinkGroupAuthorizationFile(java.io.File file)

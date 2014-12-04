@@ -22,8 +22,8 @@ import org.dcache.util.Glob;
 public class VOInfo implements Serializable{
     private static final long serialVersionUID = -8014669884189610627L;
 
-    private static Pattern p1 = Pattern.compile( "(.*)/Role=(.*)");
-    private static Pattern p2 = Pattern.compile( "(.*)()");
+    private static final Pattern p1 = Pattern.compile( "(.*)/Role=(.*)");
+    private static final Pattern p2 = Pattern.compile( "(.*)()");
 
     private String voGroup;
     private String voRole;

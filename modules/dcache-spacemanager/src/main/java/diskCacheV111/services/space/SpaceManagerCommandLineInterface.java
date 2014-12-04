@@ -1,6 +1,5 @@
 package diskCacheV111.services.space;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
@@ -93,14 +92,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 throws SpaceException, CacheException, CommandSyntaxException, DataAccessException, IllegalArgumentException
         {
             try {
-                return callInTransaction(new Callable<String>()
-                {
-                    @Override
-                    public String call() throws Exception
-                    {
-                        return executeInTransaction();
-                    }
-                });
+                return callInTransaction(this::executeInTransaction);
             } catch (EmptyResultDataAccessException e) {
                 // These are usually a result of the user querying for an object that doesn't exist.
                 return e.getMessage();
@@ -113,7 +105,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         }
 
         protected abstract String executeInTransaction()
-                throws SpaceException, CacheException, CommandSyntaxException, DataAccessException, IllegalArgumentException;
+                throws SpaceException, CacheException, DataAccessException, IllegalArgumentException;
     }
 
     @Command(name = "release space", hint = "release reservation",
@@ -753,7 +745,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
         PnfsId pnfsId;
 
         @Override
-        public String executeInTransaction() throws DataAccessException, CommandSyntaxException
+        public String executeInTransaction() throws DataAccessException
         {
             File f = db.findFile(pnfsId);
             if (f == null) {

@@ -6,8 +6,8 @@ import java.util.List;
 import diskCacheV111.util.VOInfo;
 
 public class LinkGroupAuthorizationRecord {
-	private String linkGroupName;
-	List<VOInfo> voinfos;
+	private final String linkGroupName;
+	final List<VOInfo> voinfos;
 
 
 	public LinkGroupAuthorizationRecord(String linkGroupName,
