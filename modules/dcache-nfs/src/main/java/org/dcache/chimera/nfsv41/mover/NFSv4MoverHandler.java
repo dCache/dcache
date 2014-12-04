@@ -184,17 +184,12 @@ public class NFSv4MoverHandler {
             throws IOException , GSSException, OncRpcException {
 
         _embededDS = new NFSServerV41(_operationFactory, null, _fs, new SimpleIdMap(), null);
-        _rpcService = new OncRpcSvcBuilder()
+        OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withMinPort(portRange.getLower())
                 .withMaxPort(portRange.getUpper())
                 .withTCP()
                 .withoutAutoPublish()
-                .withWorkerThreadIoStrategy()
-                .build();
-
-        final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<>();
-        programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
-        _rpcService.setPrograms(programs);
+                .withWorkerThreadIoStrategy();
 
         if(withGss) {
             RpcLoginService rpcLoginService = new RpcLoginService() {
@@ -205,8 +200,13 @@ public class NFSv4MoverHandler {
                 }
             };
             GssSessionManager gss = new GssSessionManager(rpcLoginService);
-            _rpcService.setGssSessionManager(gss);
+            oncRpcSvcBuilder.withGssSessionManager(gss);
         }
+
+	_rpcService = oncRpcSvcBuilder.build();
+	final Map<OncRpcProgram, RpcDispatchable> programs = new HashMap<>();
+	programs.put(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _embededDS);
+	_rpcService.setPrograms(programs);
         _rpcService.start();
     }
 
