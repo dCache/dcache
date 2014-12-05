@@ -225,7 +225,7 @@ public class PnfsHandler
             return _cellStub.sendAndWait(msg);
         } catch (InterruptedException e) {
             throw  new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Sending message to PnafsManager intterupted");
+                    "Sending message to " + _cellStub.getDestinationPath() + " interrupted");
         }
    }
 
