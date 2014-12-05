@@ -4,6 +4,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -55,6 +55,7 @@ import dmg.util.UserValidatable;
 
 import org.dcache.auth.Subjects;
 import org.dcache.util.Args;
+import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -520,7 +521,6 @@ public class LoginManager
         private final Constructor<?> _ssfConstructor;
         private final String[] _farctoryArgs;
         private final long _acceptErrorTimeout;
-        private final boolean _isDedicated;
 
         private volatile boolean _shutdown;
         private ServerSocket _serverSocket;
@@ -539,10 +539,8 @@ public class LoginManager
             String listen = _args.getOpt("listen");
             if (listen == null || listen.equals("any")) {
                 _socketAddress = new InetSocketAddress(listenPort);
-                _isDedicated = false;
             } else {
                 _socketAddress = new InetSocketAddress(InetAddress.getByName(listen), listenPort);
-                _isDedicated = true;
             }
 
             String ssf = _args.getOpt("socketfactory");
@@ -607,8 +605,7 @@ public class LoginManager
             _serverSocket.bind(_socketAddress);
 
             if (_loginBrokerHandler != null) {
-                _loginBrokerHandler.setPort(getListenPort());
-                _loginBrokerHandler.setAddresses(getInetAddresses());
+                _loginBrokerHandler.setSocketAddress(_socketAddress);
             }
 
             LOGGER.info("Listening on {}", _serverSocket.getLocalSocketAddress());
@@ -618,37 +615,6 @@ public class LoginManager
         public int getListenPort()
         {
             return _serverSocket.getLocalPort();
-        }
-
-        public List<InetAddress> getInetAddresses()
-        {
-            if (!_isDedicated) {
-                // put all local Ip addresses, except loopback
-                List<InetAddress> addresses = new ArrayList<>();
-                try {
-                    Enumeration<NetworkInterface> ifList = NetworkInterface.getNetworkInterfaces();
-                    while (ifList.hasMoreElements()) {
-                        NetworkInterface ne = ifList.nextElement();
-                        Enumeration<InetAddress> ipList = ne.getInetAddresses();
-                        while (ipList.hasMoreElements()) {
-                            InetAddress ia = ipList.nextElement();
-                            // Currently we do not handle ipv6
-                            if (!(ia instanceof Inet4Address)) {
-                                continue;
-                            }
-                            if (!ia.isLoopbackAddress()) {
-                                addresses.add(ia);
-                            }
-                        }
-                    }
-                } catch (SocketException ignored) {
-                }
-                return addresses;
-            } else if (_serverSocket != null) {
-                return Collections.singletonList(_serverSocket.getInetAddress());
-            } else {
-                return Collections.emptyList();
-            }
         }
 
         @Override

@@ -1,20 +1,29 @@
 package dmg.cells.services.login;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
@@ -25,6 +34,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.util.Args;
 import org.dcache.util.NetworkUtils;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
@@ -35,7 +46,7 @@ public class LoginBrokerHandler
     implements CellCommandListener
 {
     private final static Logger _log =
-        LoggerFactory.getLogger(LoginBrokerHandler.class);
+            LoggerFactory.getLogger(LoginBrokerHandler.class);
 
     enum UpdateMode
     {
@@ -48,26 +59,16 @@ public class LoginBrokerHandler
     private String _protocolFamily;
     private String _protocolVersion;
     private String _protocolEngine;
-    private long   _brokerUpdateTime = MINUTES.toMillis(5);
+    private long _brokerUpdateTime = MINUTES.toMillis(5);
     private TimeUnit _brokerUpdateTimeUnit = MILLISECONDS;
     private double _brokerUpdateThreshold = 0.1;
     private UpdateMode _currentUpdateMode = UpdateMode.NORMAL;
     private LoadProvider _load = () -> 0.0;
-    private String[] _hosts;
+    private Supplier<List<InetAddress>> _addresses = createAnyAddressSupplier();
     private int _port;
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _task;
     private String _root;
-
-    public LoginBrokerHandler()
-    {
-        try {
-            setAddresses(NetworkUtils.getLocalAddressesV4());
-        } catch (SocketException e) {
-            _log.error("Failed to obtain the IP addresses of this host: " +
-                       e.getMessage());
-        }
-    }
 
     public static final String hh_lb_set_update = "<updateTime/sec>";
     public synchronized String ac_lb_set_update_$_1(Args args)
@@ -92,29 +93,32 @@ public class LoginBrokerHandler
     }
 
     protected LoginBrokerInfo newInfo(String cell, String domain,
-            String protocolFamily, String protocolVersion,
-            String protocolEngine, String root)
+                                      String protocolFamily, String protocolVersion,
+                                      String protocolEngine, String root, List<InetAddress> addresses, int port,
+                                      double load, long updateTime)
     {
         return new LoginBrokerInfo(cell, domain, protocolFamily, protocolVersion,
-                protocolEngine, root);
-
+                                   protocolEngine, root, addresses, port, load, updateTime);
     }
 
     private synchronized void sendUpdate()
     {
-        if (_loginBrokers == null || _hosts == null) {
+        if (_loginBrokers == null) {
             return;
         }
 
-        LoginBrokerInfo info = newInfo(getCellName(), getCellDomainName(),
-                _protocolFamily, _protocolVersion, _protocolEngine, _root);
-        info.setUpdateTime(_brokerUpdateTimeUnit.toMillis(_brokerUpdateTime));
-        info.setHosts(_hosts);
-        info.setPort(_port);
-        info.setLoad(_load.getLoad());
+        List<InetAddress> addresses = _addresses.get();
+        if (addresses.isEmpty()) {
+            return;
+        }
+
+        LoginBrokerInfo info =
+                newInfo(getCellName(), getCellDomainName(),
+                        _protocolFamily, _protocolVersion, _protocolEngine, _root, addresses, _port, _load.getLoad(),
+                        _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime));
 
         UpdateMode newUpdateMode = UpdateMode.NORMAL;
-        for (String loginBroker: _loginBrokers) {
+        for (String loginBroker : _loginBrokers) {
             try {
                 sendMessage(new CellMessage(new CellPath(loginBroker), info));
             } catch (NoRouteToCellException e) {
@@ -139,53 +143,58 @@ public class LoginBrokerHandler
         pw.println("    LoginBroker      : " + Arrays.toString(_loginBrokers));
         pw.println("    Protocol Family  : " + _protocolFamily);
         pw.println("    Protocol Version : " + _protocolVersion);
+        pw.println("    Port             : " + _port);
+        pw.println("    Hosts            : " + _addresses.get());
         pw.println("    Update Time      : " + _brokerUpdateTime + " " + _brokerUpdateTimeUnit);
         pw.println("    Update Threshold : " +
-                   ((int)(_brokerUpdateThreshold * 100.0)) + " %");
-
+                   ((int) (_brokerUpdateThreshold * 100.0)) + " %");
     }
 
-    public synchronized void setAddresses(List<InetAddress> addresses)
-    {
-        _hosts = new String[addresses.size()];
-
-        /**
-         *  Add addresses ensuring preferred ordering: external
-         *  addresses are before any internal interface addresses.
-         */
-        int nextExternalIfIndex = 0;
-        int nextInternalIfIndex = addresses.size() - 1;
-
-        for (InetAddress addr: addresses) {
-            String host = addr.getCanonicalHostName();
-            if (!addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
-                !addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
-                _hosts[nextExternalIfIndex++] = host;
-            } else {
-                _hosts[nextInternalIfIndex--] = host;
-            }
-        }
-
-        rescheduleTask();
-    }
-
-    public synchronized void setAddress(String host)
-        throws SocketException, UnknownHostException
+    /**
+     * Sets the address of the door being published. If null or a wildcard address is provided,
+     * all interfaces of the door are published. If an address is provided, the canonical
+     * host is resolved and published with the address. If a name is provided, the name
+     * is resolved to an address and published together with the name.
+     */
+    public void setAddress(@Nullable String host) throws UnknownHostException
     {
         if (host == null) {
-            // FIXME: this should include IPv6 addresses
-            setAddresses(NetworkUtils.getLocalAddressesV4());
-        } else {
-            InetAddress address = InetAddress.getByName(host);
-
+            setAddressSupplier(createAnyAddressSupplier());
+        } else if (NetworkUtils.isInetAddress(host)) {
+            InetAddress address = InetAddresses.forString(host);
+            checkArgument(!address.isMulticastAddress());
             if (address.isAnyLocalAddress()) {
-                // FIXME: this should check if reporting IPv6 addresses is
-                //        appropriate
-                setAddresses(NetworkUtils.getLocalAddressesV4());
+                setAddressSupplier(createAnyAddressSupplier());
             } else {
-                setAddresses(Collections.singletonList(address));
+                setAddressSupplier(createSingleAddressSupplier(address));
             }
+        } else {
+            setAddressSupplier(createSingleAddressSupplier(InetAddress.getByName(host)));
         }
+    }
+
+    /**
+     * Sets both the port and address from the given socket address.
+     */
+    public synchronized void setSocketAddress(InetSocketAddress socketAddress)
+    {
+        InetAddress address = socketAddress.getAddress();
+        checkArgument(!address.isMulticastAddress());
+        _port = socketAddress.getPort();
+        if (address.isAnyLocalAddress()) {
+            setAddressSupplier(createAnyAddressSupplier());
+        } else if (NetworkUtils.isInetAddress(socketAddress.getHostString())) {
+            InetAddress canonicalAddress = NetworkUtils.withCanonicalAddress(address);
+            setAddressSupplier(() -> Collections.singletonList(canonicalAddress));
+        } else {
+            setAddressSupplier(() -> Collections.singletonList(address));
+        }
+    }
+
+    public synchronized void setAddressSupplier(Supplier<List<InetAddress>> addresses)
+    {
+        _addresses = addresses;
+        rescheduleTask();
     }
 
     public synchronized void setPort(int port)
@@ -197,7 +206,7 @@ public class LoginBrokerHandler
     public synchronized void setLoad(int children, int maxChildren)
     {
         double load =
-            (maxChildren > 0) ? (double)children / (double)maxChildren : 0.0;
+                (maxChildren > 0) ? (double) children / (double) maxChildren : 0.0;
         setLoadProvider(() -> load);
     }
 
@@ -324,20 +333,21 @@ public class LoginBrokerHandler
 
     private void scheduleTask()
     {
-        Runnable command = new Runnable() {
-                @Override
-                public void run()
-                {
-                    try {
-                        sendUpdate();
-                    } catch (Throwable e) {
-                        Thread thisThread = Thread.currentThread();
-                        UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
-                        ueh.uncaughtException(thisThread, e);
-                        Throwables.propagateIfPossible(e);
-                    }
+        Runnable command = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    sendUpdate();
+                } catch (Throwable e) {
+                    Thread thisThread = Thread.currentThread();
+                    UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
+                    ueh.uncaughtException(thisThread, e);
+                    Throwables.propagateIfPossible(e);
                 }
-            };
+            }
+        };
         switch (_currentUpdateMode) {
         case EAGER:
             _task = _executor.scheduleWithFixedDelay(command, EAGER_UPDATE_TIME, EAGER_UPDATE_TIME, MILLISECONDS);
@@ -349,6 +359,25 @@ public class LoginBrokerHandler
         }
     }
 
+    public static Supplier<List<InetAddress>> createSingleAddressSupplier(InetAddress address)
+    {
+        return () -> Collections.singletonList(NetworkUtils.withCanonicalAddress(address));
+    }
+
+    public static Supplier<List<InetAddress>> createAnyAddressSupplier()
+    {
+        String localHostAddresses = System.getProperty(NetworkUtils.LOCAL_HOST_ADDRESS_PROPERTY);
+        if (!isNullOrEmpty(localHostAddresses)) {
+            List<InetAddress> address = new ArrayList<>();
+            for (String s : Splitter.on(',').omitEmptyStrings().trimResults().split(localHostAddresses)) {
+                address.add(NetworkUtils.withCanonicalAddress(InetAddresses.forString(s)));
+            }
+            return () -> address;
+        }
+
+        return new AnyAddressSupplier();
+    }
+
     /**
      * Callback interface to query the current load.
      */
@@ -357,4 +386,32 @@ public class LoginBrokerHandler
         double getLoad();
     }
 
+    public static class AnyAddressSupplier implements Supplier<List<InetAddress>>
+    {
+        @Override
+        public List<InetAddress> get()
+        {
+            ArrayList<InetAddress> addresses = new ArrayList<>();
+            try {
+                Enumeration<NetworkInterface> interfaces =
+                        NetworkInterface.getNetworkInterfaces();
+                while (interfaces.hasMoreElements()) {
+                    NetworkInterface i = interfaces.nextElement();
+                    try {
+                        if (i.isUp() && !i.isLoopback()) {
+                            Enumeration<InetAddress> e = i.getInetAddresses();
+                            while (e.hasMoreElements()) {
+                                addresses.add(NetworkUtils.withCanonicalAddress(e.nextElement()));
+                            }
+                        }
+                    } catch (SocketException e) {
+                        _log.warn("Not publishing NIC {}: {}", i.getName(), e.getMessage());
+                    }
+                }
+            } catch (SocketException e) {
+                _log.warn("Not publishing NICs: {}", e.getMessage());
+            }
+            return addresses;
+        }
+    }
 }

@@ -94,7 +94,7 @@ public class NettyXrootdServer implements CellMessageSender
 
     public void setAddress(String address) throws UnknownHostException
     {
-        _address = (address == null) ? null : InetAddresses.forString(address);
+        _address = (address == null) ? null : InetAddress.getByName(address);
     }
 
     public int getBacklog()

@@ -8,9 +8,11 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,6 +38,7 @@ import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
+import org.dcache.util.NetworkUtils;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -712,12 +715,14 @@ public class TransferObserverV1
                         "load",     "Load");
 
         for (LoginBrokerInfo info : infos) {
+            InetAddress address =
+                    info.getAddresses().stream().max(Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
             page.beginRow(null, "odd");
             page.td("cell",     info.getCellName());
             page.td("domain",   info.getDomainName());
             page.td("protocol", info.getProtocolFamily());
             page.td("version",  info.getProtocolVersion());
-            page.td("host",     info.getHost());
+            page.td("host",     address.getHostName());
             page.td("port",     info.getPort());
             page.td("load",     (int)(info.getLoad()*100.0));
             page.endRow();

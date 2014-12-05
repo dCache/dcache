@@ -6,7 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.Comparator;
+import java.util.List;
 
 import dmg.cells.nucleus.UOID;
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -19,6 +20,9 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
+import org.dcache.util.NetworkUtils;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Parse the reply messages from sending the LoginBroker CellMessages with "ls -binary".
@@ -100,14 +104,12 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 		StatePath pathToInterfaces = pathToDoor.newChild("interfaces");
 
-		String[] interfaceNames = info.getHosts();
-
-		if( interfaceNames != null) {
-			for( int i = 0; i < interfaceNames.length; i++) {
-				if( interfaceNames[i] != null) {
-                                    addInterfaceInfo(update, pathToInterfaces, interfaceNames[i], i + 1, lifetime);
-                                }
-			}
+		List<InetAddress> interfaceNames =
+				info.getAddresses().stream()
+						.sorted(Comparator.comparing(NetworkUtils.InetAddressScope::of).reversed())
+						.collect(toList());
+		for (int i = 0; i < interfaceNames.size(); i++) {
+			addInterfaceInfo(update, pathToInterfaces, interfaceNames.get(i), i + 1, lifetime);
 		}
 	}
 
@@ -136,46 +138,29 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 *       |
 	 *       +--[ id ] (branch)
 	 *       |   |
-	 *       |   +-- "name" (string metric: the host's name, as presented by the door)
 	 *       |   +-- "order"  (integer metric: 1 .. 2 ..)
-	 *       |   +-- "FQDN" (string metric: the host's FQDN)
+	 *       |   +-- "FQDN" (string metric: the host's FQDN, as presented by the door)
 	 *       |   +-- "address" (string metric: the host's address; e.g., "127.0.0.1")
 	 *       |   +-- "address-type"    (string metric: "IPv4", "IPv6" or "unknown")
+	 *       |   +-- "scope"    (string metric: "IPv4", "IPv6" or "unknown")
 	 *       |
 	 * </pre>
 	 * @param update The StateUpdate to append the new metrics.
 	 * @param parentPath the path that the id branch will be added.
-	 * @param name something that identifies the interface (e.g., IP address or simple name).
 	 * @param order the order in which the interfaces should be considered: 1 is the lowest number.
 	 * @param lifetime how long the created metrics should last.
 	 */
-	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, String name, int order, long lifetime) {
+	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, InetAddress address, int order, long lifetime) {
 
-		String id = name + "-" + order;
+		StatePath pathToInterfaceBranch = parentPath.newChild(address.getHostAddress());
 
-		StatePath pathToInterfaceBranch = parentPath.newChild(id);
+		update.appendUpdate( pathToInterfaceBranch.newChild( "FQDN"), new StringStateValue( address.getHostName(), lifetime));
 
-		// Always add the name
-		update.appendUpdate( pathToInterfaceBranch.newChild( "name"), new StringStateValue( name, lifetime));
+		update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
+		update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
+							new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
 
-		// Attempt to add information after resolving the interface
-		try {
-			InetAddress address = InetAddress.getByName(name);
-
-			update.appendUpdate( pathToInterfaceBranch.newChild( "FQDN"), new StringStateValue( address.getCanonicalHostName(), lifetime));
-
-			update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
-			update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
-								new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
-
-			update.appendUpdate( pathToInterfaceBranch.newChild( "order"), new IntegerStateValue( order, lifetime));
-
-		} catch( UnknownHostException e) {
-			/**
-			 *  If interface is (for whatever reason) unknown, simply skip publishing the
-			 *  related information.
-			 */
-		}
+		update.appendUpdate( pathToInterfaceBranch.newChild( "order"), new IntegerStateValue( order, lifetime));
+		update.appendUpdate( pathToInterfaceBranch.newChild( "scope"), new StringStateValue(NetworkUtils.InetAddressScope.of(address).toString().toLowerCase()));
 	}
-
 }

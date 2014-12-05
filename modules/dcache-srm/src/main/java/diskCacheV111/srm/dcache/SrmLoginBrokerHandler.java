@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
+import java.util.List;
 
 import dmg.cells.services.login.LoginBrokerHandler;
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -35,7 +35,6 @@ import dmg.cells.services.login.LoginBrokerInfo;
 import org.dcache.srm.SRM;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
 
 public class SrmLoginBrokerHandler extends LoginBrokerHandler
 {
@@ -45,11 +44,6 @@ public class SrmLoginBrokerHandler extends LoginBrokerHandler
     private int _httpsPort;
     private String _delegationEndpoint;
     private String _host;
-
-    public SrmLoginBrokerHandler() throws UnknownHostException
-    {
-        setAddresses(asList(InetAddress.getAllByName(InetAddress.getLocalHost().getHostName())));
-    }
 
     @Required
     public void setHttpsPort(int port)
@@ -96,13 +90,13 @@ public class SrmLoginBrokerHandler extends LoginBrokerHandler
 
     @Override
     protected LoginBrokerInfo newInfo(String cell, String domain,
-            String protocolFamily, String protocolVersion,
-            String protocolEngine, String root)
+                                      String protocolFamily, String protocolVersion,
+                                      String protocolEngine, String root, List<InetAddress> addresses, int port,
+                                      double load, long updateTime)
     {
         return new SrmLoginBrokerInfo(cell, domain, protocolFamily,
-                protocolVersion, protocolEngine, root, _delegationEndpoint);
+                protocolVersion, protocolEngine, root, _delegationEndpoint, addresses, port, load, updateTime);
     }
-
 
 
     /**
@@ -115,11 +109,12 @@ public class SrmLoginBrokerHandler extends LoginBrokerHandler
         private final String _delegationEndpoint;
 
         public SrmLoginBrokerInfo(String cell, String domain,
-                String protocolFamily, String protocolVersion,
-                String protocolEngine, String root, String endpoint)
+                                  String protocolFamily, String protocolVersion,
+                                  String protocolEngine, String root, String endpoint, List<InetAddress> addresses,
+                                  int port, double load, long updateTime)
         {
             super(cell, domain, protocolFamily, protocolVersion, protocolEngine,
-                    root);
+                    root, addresses, port, load, updateTime);
             _delegationEndpoint = endpoint;
         }
 

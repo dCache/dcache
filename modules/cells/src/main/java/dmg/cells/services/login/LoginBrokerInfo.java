@@ -1,96 +1,187 @@
-// $Id: LoginBrokerInfo.java,v 1.4 2006-12-15 09:56:43 tigran Exp $
+package dmg.cells.services.login;
 
-package dmg.cells.services.login ;
+import com.google.common.base.Joiner;
+
+import javax.annotation.Nonnull;
 
 import java.io.Serializable;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.ProtocolFamily;
+import java.net.StandardProtocolFamily;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
-public class LoginBrokerInfo implements Serializable {
+import diskCacheV111.util.FsPath;
 
-   private static final long serialVersionUID = 4077557054990432737L;
+import org.dcache.util.NetworkUtils.InetAddressScope;
 
-   private String _cellName ;
-   private String _domainName ;
-   private String _protocolFamily ;
-   private String _protocolVersion ;
-   private String _protocolEngine ;
-   private String _root;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-   private String [] _hosts = new String[0] ;
-   private int       _port;
+/**
+ * Immutable object to capture information about a door.
+ *
+ * By convention, network addresses in LoginBrokerInfo should have been
+ * resolved, that is, the host name should be cached within the InetAddress
+ * object. This should preferably be the FQDN. The exception to this
+ * rule is when the IP addresses doesn't have a corresponding name.
+ */
+public class LoginBrokerInfo implements Serializable
+{
+    private static final long serialVersionUID = 4077557054990432737L;
 
-   private double _load;
+    private final String _cellName;
+    private final String _domainName;
+    private final String _protocolFamily;
+    private final String _protocolVersion;
+    private final String _protocolEngine;
+    private final String _root;
+    private final List<InetAddress> _addresses;
+    private final int _port;
+    private final double _load;
+    private final long _update;
 
-   private long   _update = -1 ;
-
-   public LoginBrokerInfo( String cellName ,
-                           String domainName ,
-                           String protocolFamily ,
-                           String protocolVersion ,
+    public LoginBrokerInfo(String cellName,
+                           String domainName,
+                           String protocolFamily,
+                           String protocolVersion,
                            String protocolEngine,
-                           String root){
-      _cellName        = cellName ;
-      _domainName      = domainName ;
-      _protocolFamily  = protocolFamily ;
-      _protocolVersion = protocolVersion ;
-      _protocolEngine  = protocolEngine ;
-      _root            = root;
-   }
+                           String root,
+                           List<InetAddress> addresses,
+                           int port,
+                           double load,
+                           long updateTime)
+    {
+        _cellName = checkNotNull(cellName);
+        _domainName = checkNotNull(domainName);
+        _protocolFamily = checkNotNull(protocolFamily);
+        _protocolVersion = checkNotNull(protocolVersion);
+        _protocolEngine = checkNotNull(protocolEngine);
+        _root = root;
+        _addresses = checkNotNull(addresses);
+        _port = port;
+        _load = load;
+        _update = updateTime;
+        checkArgument(!addresses.isEmpty());
+    }
 
-   public String getHost(){ return _hosts.length == 0 ? "" : _hosts[0] ; }
-   public String [] getHosts(){ return _hosts ; }
-   public int getPort(){ return _port ; }
-   public String getCellName(){ return _cellName ; }
-   public String getDomainName(){ return _domainName ; }
-   public String getProtocolFamily(){ return _protocolFamily ; }
-   public String getProtocolVersion(){ return _protocolVersion  ; }
-   public String getProtocolEngine(){ return _protocolEngine ; }
-   public String getRoot() { return _root; }
-   public double getLoad(){ return _load ; }
-   public long   getUpdateTime(){ return _update ; }
+    public boolean supports(InetAddressScope scope)
+    {
+        return _addresses.stream().anyMatch(a -> InetAddressScope.of(a).ordinal() >= scope.ordinal());
+    }
 
-   public void setUpdateTime( long update ){ _update = update ; }
-   public void setLoad( double load ){ _load = load ; }
-   public void setHosts( String [] hosts ){ _hosts = hosts ; }
-   public void setPort( int port ){ _port = port ; }
-   public String getIdentifier(){
-     return _cellName + "@" + _domainName ;
-   }
-   public boolean equals( Object obj ){
+    public boolean supports(ProtocolFamily family)
+    {
+        if (family == StandardProtocolFamily.INET) {
+            return _addresses.stream().anyMatch(a -> a instanceof Inet4Address);
+        } else if (family == StandardProtocolFamily.INET6) {
+            return _addresses.stream().anyMatch(a -> a instanceof Inet6Address);
+        }
+        return true;
+    }
 
-	  if( !(obj instanceof LoginBrokerInfo) ) {
-              return false;
-          }
-      LoginBrokerInfo info = (LoginBrokerInfo)obj ;
-      return _cellName.equals(info._cellName) &&  _domainName.equals(info._domainName ) ;
-   }
-   public int hashCode(){
-     return ( _cellName + "@" + _domainName ).hashCode() ;
-   }
-   public String toString(){
-     int          pos    = _protocolEngine.lastIndexOf('.') ;
-     String       engine =
-        ( pos < 0 ) || ( pos == ( _protocolEngine.length() - 1 ) ) ?
-        _protocolEngine : _protocolEngine.substring(pos+1) ;
+    @Nonnull
+    public List<InetAddress> getAddresses()
+    {
+        return Collections.unmodifiableList(_addresses);
+    }
 
-     StringBuilder sb     = new StringBuilder() ;
+    public int getPort()
+    {
+        return _port;
+    }
 
-     sb.append(_cellName).append("@").append(_domainName).append(";") ;
-     sb.append(engine).append(";") ;
-     sb.append("{").append(_protocolFamily).append(",").
-        append(_protocolVersion).append("};");
+    @Nonnull
+    public String getCellName()
+    {
+        return _cellName;
+    }
 
-     sb.append("[");
-     for( int i = 0 ; i < (_hosts.length-1) ; i++ ) {
-         sb.append(_hosts[i]).append(",");
-     }
-     if( _hosts.length > 0 ) {
-         sb.append(_hosts[_hosts.length - 1]);
-     }
-     sb.append(":").append(_port).append("]").append(";");
-     sb.append("<");
-     sb.append((int)(_load*100.)).append(",") ;
-     sb.append(_update).append(">;") ;
+    @Nonnull
+    public String getDomainName()
+    {
+        return _domainName;
+    }
 
-     return sb.toString();
-   }
+    @Nonnull
+    public String getProtocolFamily()
+    {
+        return _protocolFamily;
+    }
+
+    @Nonnull
+    public String getProtocolVersion()
+    {
+        return _protocolVersion;
+    }
+
+    @Nonnull
+    public String getProtocolEngine()
+    {
+        return _protocolEngine;
+    }
+
+    public FsPath getRoot(FsPath userRoot)
+    {
+        return (_root == null) ? userRoot : new FsPath(_root);
+    }
+
+    public double getLoad()
+    {
+        return _load;
+    }
+
+    public long getUpdateTime()
+    {
+        return _update;
+    }
+
+    @Nonnull
+    public String getIdentifier()
+    {
+        return _cellName + "@" + _domainName;
+    }
+
+    public boolean equals(Object that)
+    {
+        if (this == that) {
+            return true;
+        }
+        if (!(that instanceof LoginBrokerInfo)) {
+            return false;
+        }
+        LoginBrokerInfo info = (LoginBrokerInfo) that;
+        return _cellName.equals(info._cellName) && _domainName.equals(info._domainName);
+    }
+
+    public int hashCode()
+    {
+        return Objects.hash(_cellName, _domainName);
+    }
+
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(_cellName).append("@").append(_domainName).append(";");
+        int pos = _protocolEngine.lastIndexOf('.');
+        if (pos < 0 || pos == _protocolEngine.length() - 1) {
+            sb.append(_protocolEngine).append(";");
+        } else {
+            sb.append(_protocolEngine.substring(pos + 1)).append(";");
+        }
+        sb.append("{").append(_protocolFamily).append(",").
+                append(_protocolVersion).append("};");
+
+        sb.append("[");
+        Joiner.on(",").appendTo(sb, _addresses);
+        sb.append(":").append(_port).append("]").append(";");
+        sb.append("<");
+        sb.append((int) (_load * 100.)).append(",");
+        sb.append(_update).append(">;");
+
+        return sb.toString();
+    }
 }

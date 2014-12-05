@@ -25,6 +25,7 @@ import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -32,9 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Predicates.and;
-import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.ImmutableList.copyOf;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterators.*;
 
@@ -80,13 +79,6 @@ public abstract class NetworkUtils {
             return FAKED_ADDRESSES;
         }
         return filter(LOCAL_ADDRESS_SUPPLIER.get(), isNotMulticast());
-    }
-
-    /**
-     * Returns the list of IP V4 addresses of this host.
-     */
-    public static List<InetAddress> getLocalAddressesV4() throws SocketException {
-        return copyOf(filter(getLocalAddresses(), instanceOf(Inet4Address.class)));
     }
 
     /**
@@ -250,7 +242,7 @@ public abstract class NetworkUtils {
         };
     }
 
-    private static ProtocolFamily getProtocolFamily(InetAddress address)
+    public static ProtocolFamily getProtocolFamily(InetAddress address)
     {
         if (address instanceof Inet4Address) {
             return StandardProtocolFamily.INET;
@@ -292,6 +284,24 @@ public abstract class NetworkUtils {
             return hostName.substring(0, i);
         }
         return hostName;
+    }
+
+    public static boolean isInetAddress(String hostname) {
+        return InetAddresses.isInetAddress(stripScope(hostname));
+    }
+
+    /**
+     * Returns an InetAddress with the result of InetAddress#getCanonicalHostName
+     * filled in as the hostname. Subsequent calls to InetAddress#getHostName
+     * will return the canonical name without further lookups.
+     */
+    public static InetAddress withCanonicalAddress(InetAddress address)
+    {
+        try {
+            return InetAddress.getByAddress(address.getCanonicalHostName(), address.getAddress());
+        } catch (UnknownHostException e) {
+            return address;
+        }
     }
 
     /**
