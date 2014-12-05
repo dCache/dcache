@@ -266,6 +266,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     {
         StringBuilder sb = new StringBuilder();
         sb.append(getFileAttributes().getPnfsId());
+        sb.append(" IoMode=").append(getIoMode());
         sb.append(" h={").append(getStatus()).append("} bytes=").append(getBytesTransferred()).append(
                 " time/sec=").append(getTransferTime() / 1000L).append(" LM=");
         long lastTransferTime = getLastTransferred();
