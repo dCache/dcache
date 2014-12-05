@@ -14,7 +14,7 @@ public class ModeS extends Mode
     /* Implements MODE S send operation. */
     private class Sender extends AbstractMultiplexerListener
     {
-        protected SocketChannel _socket;
+        protected final SocketChannel _socket;
         protected long _position;
         protected long _count;
 
@@ -53,7 +53,7 @@ public class ModeS extends Mode
     /* Implements MODE S receive operation. */
     private class Receiver extends AbstractMultiplexerListener
     {
-        protected SocketChannel _socket;
+        protected final SocketChannel _socket;
         protected long          _position;
 
         public Receiver(SocketChannel socket)

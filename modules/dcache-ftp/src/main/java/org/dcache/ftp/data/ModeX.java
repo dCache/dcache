@@ -96,17 +96,17 @@ public class ModeX extends Mode
     /**
      *
      */
-    private static Charset _ascii = Charset.forName("ascii");
+    private static final Charset _ascii = Charset.forName("ascii");
 
     /**
      *
      */
-    private static CharsetEncoder _encoder = _ascii.newEncoder();
+    private static final CharsetEncoder _encoder = _ascii.newEncoder();
 
     /**
      *
      */
-    private static CharsetDecoder _decoder = _ascii.newDecoder();
+    private static final CharsetDecoder _decoder = _ascii.newDecoder();
 
     /**
      * Implementation of send in mode X. There will be an instance per
@@ -117,7 +117,7 @@ public class ModeX extends Mode
     private class Sender extends AbstractMultiplexerListener
     {
         /** The data channel. */
-        protected SocketChannel _socket;
+        protected final SocketChannel _socket;
 
         /** Current state of the sender. */
         protected SenderState   _state;
@@ -132,15 +132,15 @@ public class ModeX extends Mode
         protected boolean       _closeAtNextBlock;
 
         /** Buffer for representing a block header. */
-        protected ByteBuffer _header =
+        protected final ByteBuffer _header =
                 ByteBuffer.allocate(HEADER_LENGTH);
 
         /** Buffer for reading commands from the receiver. */
-        protected ByteBuffer _command =
+        protected final ByteBuffer _command =
                 ByteBuffer.allocate(128);
 
         /** Buffer for reading commands from the receiver. */
-        protected CharBuffer _decodedCommand =
+        protected final CharBuffer _decodedCommand =
                 CharBuffer.allocate(128);
 
         public Sender(SocketChannel socket)
@@ -315,7 +315,7 @@ public class ModeX extends Mode
     class Receiver extends AbstractMultiplexerListener
     {
         /** The data channel. */
-        protected SocketChannel _socket;
+        protected final SocketChannel _socket;
 
         /** Current state of the receiver. */
         protected ReceiverState _state;
@@ -330,11 +330,11 @@ public class ModeX extends Mode
         protected int           _flags;
 
         /** Buffer for representing a block header. */
-        protected ByteBuffer _header =
+        protected final ByteBuffer _header =
                 ByteBuffer.allocate(HEADER_LENGTH);
 
         /** Buffer for reading commands from the receiver. */
-        protected ByteBuffer _command =
+        protected final ByteBuffer _command =
                 ByteBuffer.allocate(128);
 
         public Receiver(SocketChannel socket)

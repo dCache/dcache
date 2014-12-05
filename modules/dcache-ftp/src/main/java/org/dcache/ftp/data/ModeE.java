@@ -67,7 +67,7 @@ public class ModeE extends Mode
         protected static final int SEND_DATA = 2;
 
         /** Socket used for data channel. */
-        protected SocketChannel _socket;
+        protected final SocketChannel _socket;
 
         /** State of the sender. */
         protected int           _state;
@@ -79,10 +79,10 @@ public class ModeE extends Mode
         protected long          _count;
 
         /** True if this sender must send the EOF. */
-        protected boolean       _sendEOF;
+        protected final boolean       _sendEOF;
 
         /** Buffer for sending the block header. */
-        protected ByteBuffer _header =
+        protected final ByteBuffer _header =
             ByteBuffer.allocate(HEADER_LENGTH);
 
         public Sender(SocketChannel socket) {
@@ -188,7 +188,7 @@ public class ModeE extends Mode
     class Receiver extends AbstractMultiplexerListener
     {
         /** Socket used for data channel. */
-        protected SocketChannel _socket;
+        protected final SocketChannel _socket;
 
         /** Number of bytes left of current block. */
         protected long          _count;
@@ -203,7 +203,7 @@ public class ModeE extends Mode
         protected boolean       _used;
 
         /** Buffer for receiving the block header. */
-        protected ByteBuffer _header =
+        protected final ByteBuffer _header =
             ByteBuffer.allocate(HEADER_LENGTH);
 
         public Receiver(SocketChannel socket) {

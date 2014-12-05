@@ -74,8 +74,8 @@ import java.net.StandardProtocolFamily;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
-    private int    _minor;
-    private int    _major;
+    private final int    _minor;
+    private final int    _major;
     private InetSocketAddress _addr;
     private long   _transferTime;
     private long   _bytesTransferred;
@@ -84,8 +84,8 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     private int _parallelMin = 5;
     private int _parallelMax = 5;
     private int _bufferSize;
-    private long _offset;
-    private long _size;
+    private final long _offset;
+    private final long _size;
     private String _checksumType = "Unknown";
 
     /**

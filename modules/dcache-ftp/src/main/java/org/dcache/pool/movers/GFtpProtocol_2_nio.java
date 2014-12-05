@@ -85,7 +85,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     public final static int MODE_X_DEFAULT_BLOCK_SIZE = 128 * 1024;
 
     /** The cell owning this mover. Log messages are sent to it. */
-    protected CellEndpoint  _cell;
+    protected final CellEndpoint  _cell;
 
     /** A channel to the file we read from or write to. */
     protected RepositoryChannel  _fileChannel;
@@ -162,7 +162,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     /**
      * Port range for passive transfers.
      */
-    protected PortRange _portRange;
+    protected final PortRange _portRange;
 
     /**
      * The chunk size used when transferring files.

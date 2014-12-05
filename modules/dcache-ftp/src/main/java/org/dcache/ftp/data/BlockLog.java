@@ -15,13 +15,13 @@ import java.util.TreeMap;
  */
 public class BlockLog
 {
-    private SortedMap<Long,Long> _blocks = new TreeMap<>();
+    private final SortedMap<Long,Long> _blocks = new TreeMap<>();
     private boolean _eof;
 
     private static final String _overlapMsg
             = "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
 
-    private ErrorListener _errorListener;
+    private final ErrorListener _errorListener;
 
     private long _limit;
 

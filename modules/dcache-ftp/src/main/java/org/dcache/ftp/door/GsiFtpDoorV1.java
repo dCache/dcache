@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
-import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -31,7 +30,6 @@ import org.dcache.auth.Subjects;
 import org.dcache.auth.util.X509Utils;
 import org.dcache.cells.Option;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.util.CertPaths;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
 

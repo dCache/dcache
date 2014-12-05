@@ -4,9 +4,9 @@ import java.net.InetSocketAddress;
 
 public class GFtpTransferStartedMessage extends Message
 {
-    private String            _pnfsId;
-    private boolean           _passive;
-    private InetSocketAddress _address;
+    private final String            _pnfsId;
+    private final boolean           _passive;
+    private final InetSocketAddress _address;
 
     private static final long serialVersionUID = -829883739386394165L;
 

@@ -185,17 +185,7 @@ public class	EDataBlock {
             size = (size << 8) | ((int) header[i] & 0xFF);
         }
 
-
-        try
-        {
-            data = new byte[(int)size];
-        }
-        catch( OutOfMemoryError e )
-        {
-            //System.out.println("EDataBlock(" + _myName + ").read(): exception: " + e);
-            throw e;
-        }
-
+        data = new byte[(int)size];
 
         int n = 0;
         while( n < size ) {

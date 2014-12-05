@@ -40,7 +40,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     private   long              _fileSize;
 
     /** Buffer for transferTo and transferFrom. */
-    private   ByteBuffer        _buffer = ByteBuffer.allocate(8192);
+    private final ByteBuffer        _buffer = ByteBuffer.allocate(8192);
 
     /** The address to connect to for outgoing connections. */
     private   SocketAddress     _address;
@@ -55,7 +55,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     protected int               _parallelism = 1;
 
     /** Disabled keys. The value is the interest set of the key. */
-    protected Map<SelectionKey, Integer> disabled
+    protected final Map<SelectionKey, Integer> disabled
         = new HashMap<>();
 
     /** Number of connections for which connect failed. */
@@ -270,7 +270,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      * fail. Failures to create a SocketChannel are propagated to the
      * caller.
      *
-     * @see setParallelism(), SocketChannel.open()
+     * @see setParallellism(), SocketChannel.open()
      */
     protected void registerOutgoing(Multiplexer multiplexer)
         throws Exception
@@ -440,7 +440,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     /**
      * Reestablishes notification for all disabled keys.
      *
-     * @see disableKey
+     * @see Mode#disableKey
      */
     private void enableDisabledKeys()
     {
@@ -453,7 +453,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     /**
      * Disables notification for a key.
      *
-     * @see enableDisabledKeys
+     * @see Mode#enableDisabledKeys
      */
     private void disableKey(SelectionKey key)
     {

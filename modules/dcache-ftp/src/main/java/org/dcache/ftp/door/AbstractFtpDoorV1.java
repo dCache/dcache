@@ -202,6 +202,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.*;
 import static java.lang.Math.min;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -222,10 +223,10 @@ import static org.dcache.util.NetLoggerBuilder.Level.INFO;
 class FTPCommandException extends Exception
 {
     /** FTP reply code. */
-    protected int    _code;
+    protected final int    _code;
 
     /** Human readable part of FTP reply. */
-    protected String _reply;
+    protected final String _reply;
 
     /**
      * Constructs a command exception with the given ftp reply code and
@@ -2336,13 +2337,9 @@ public abstract class AbstractFtpDoorV1
                 if (!Protocol.fromAddress(_localAddress.getAddress()).equals(_preferredProtocol)) {
                     Iterable<InterfaceAddress> addresses = getLocalAddressInterfaces();
                     int port = _localAddress.getPort();
-                    InterfaceAddress newAddress = Iterables.find(addresses, new Predicate<InterfaceAddress>() {
-                        @Override
-                        public boolean apply(@Nullable InterfaceAddress input) {
-                            return Protocol.fromAddress(input.getAddress()).equals(_preferredProtocol);
-                        }
-                    });
-                    _localAddress = new InetSocketAddress((newAddress).getAddress(), port);
+                    InterfaceAddress newAddress =
+                            find(addresses, (a) -> Protocol.fromAddress(a.getAddress()).equals(_preferredProtocol));
+                    _localAddress = new InetSocketAddress(newAddress.getAddress(), port);
                 }
                 _passiveModeServerSocket = ServerSocketChannel.open();
                 _passiveModePortRange.bind(_passiveModeServerSocket.socket(), _localAddress.getAddress());

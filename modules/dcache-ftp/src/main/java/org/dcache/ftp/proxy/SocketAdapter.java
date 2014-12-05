@@ -77,9 +77,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-
-import org.dcache.cells.AbstractCell;
 
 /**
  * Data channel proxy for FTP door. The proxy will run at the GridFTP
@@ -173,7 +170,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     class StreamRedirector extends Thread
     {
-        private SocketChannel _input, _output;
+        private final SocketChannel _input;
+        private final SocketChannel _output;
 
         public StreamRedirector(SocketChannel input, SocketChannel output)
         {
@@ -222,7 +220,8 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      */
     class ModeERedirector extends Thread
     {
-        private SocketChannel _input, _output;
+        private final SocketChannel _input;
+        private final SocketChannel _output;
 
         public ModeERedirector(SocketChannel input, SocketChannel output)
         {

@@ -6,9 +6,9 @@ import org.dcache.pool.repository.RepositoryChannel;
 
 public abstract class DigestThread extends Thread
 {
-    protected RepositoryChannel   _channel;
-    protected MessageDigest _digest;
-    protected BlockLog      _log;
+    protected final RepositoryChannel   _channel;
+    protected final MessageDigest _digest;
+    protected final BlockLog      _log;
     protected Exception     _error;
     protected long          _readahead;
 

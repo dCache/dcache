@@ -174,14 +174,8 @@ public class EDataBlockNio {
     }
 
     public long readData(SocketChannel socketChannel, long size) {
-        try {
-            if (data == null || data.capacity() < (int) size) {
-                data = ByteBuffer.allocate((int) size);
-            }
-        } catch (OutOfMemoryError e) {
-            // System.out.println("EDataBlock(" + _myName + ").read():
-            // exception: " + e);
-            throw e;
+        if (data == null || data.capacity() < (int) size) {
+            data = ByteBuffer.allocate((int) size);
         }
 
         data.clear();
