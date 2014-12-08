@@ -1,7 +1,7 @@
 package org.dcache.services.ssh2;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
+import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.NamedFactory;
@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.security.auth.Subject;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -24,20 +23,14 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import java.util.concurrent.TimeUnit;
+import org.dcache.auth.*;
 
-import org.dcache.auth.LoginReply;
-import org.dcache.auth.LoginStrategy;
-import org.dcache.auth.PasswordCredential;
-import org.dcache.auth.Subjects;
-import org.dcache.auth.UnionLoginStrategy;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellLifeCycleAware;
-
+import static java.util.stream.Collectors.toList;
 import static org.dcache.util.Files.checkFile;
 
 /**
@@ -247,6 +240,8 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private class AdminPublickeyAuthenticator implements PublickeyAuthenticator {
 
+        private final Logger _logger = LoggerFactory.getLogger(AdminPublickeyAuthenticator.class);
+
         @Override
         public boolean authenticate(String userName, PublicKey key,
                 ServerSession session) {
@@ -254,8 +249,10 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     userName, key);
             try {
                 AuthorizedKeyParser decoder = new AuthorizedKeyParser();
-                List<String> keyLines =
-                        Files.readLines(_authorizedKeyList, Charsets.UTF_8);
+                List<String> keyLines = java.nio.file.Files.lines(_authorizedKeyList.toPath())
+                        .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
+                        .collect(toList());
+
                 for (String keyLine : keyLines) {
                     PublicKey decodedKey = decoder.decodePublicKey(keyLine);
                     if (decodedKey.equals(key)) {
