@@ -2177,6 +2177,7 @@ public abstract class AbstractFtpDoorV1
                     } else {
                         pw.print("214 " + line);
                     }
+                    isFirstLine = false;
                 }
             } else {
                 pw.print("501 Unknown command " + command);
