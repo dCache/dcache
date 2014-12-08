@@ -1,19 +1,22 @@
 #!/bin/sh
 #
 #  Wait for dCache to have certain cells present.  The function will time-out if
-#  dCache takes too long.
+#  dCache takes too long to respond that all requested cells have started.
 #
 
-ourHomeDir=${ourHomeDir:-/opt/d-cache}
+@DCACHE_LOAD_CONFIG@
 
+set -e
 
 # Default polling frequency, in seconds.
-poll=5
+poll=$(getProperty wait-for-cells.poll)
 
 # Our return code; default is 0 (=> OK)
 rc=0
 
-xslt_dir=$ourHomeDir/share/xml/xslt
+xslt_dir=$(getProperty dcache.paths.xslt)
+host=$(getProperty wait-for-cells.http.host)
+port=$(getProperty wait-for-cells.http.port)
 
 usage()
 {
@@ -22,27 +25,21 @@ usage()
     echo "                     [-H <host>] [-P <port>] <timeout> <cell> [<cell> ...]"
     echo
     echo "Checks every <poll freq> seconds (${poll}s by default) whether the listed cells are up."
-    echo "Obtains dCache current status by querying the web interface.  This is assumed to be"
-    echo "running on the local machine, but the -H option can be set for remote queries.  If"
-    echo "the dCache web interface is using a non-default port, the -P option is needed."
+    echo "Obtains dCache current status by querying the web interface.  By default, this is"
+    echo "assumed to be running on the local machine, but the location may be configured in"
+    echo "dcache.conf; the local may also be set explicitly using the -H and -P options."
     echo
     echo "All <cell>s are specified as <cell-name>@<domain-name> or <well-known-cell-name>"
     echo
-    echo "The -d and -l options alter what output the script provides on stdout.  If neither is"
-    echo "specified then no output is emitted."
+    echo "If -d is specified then a dot is printed each time the info service is queried without"
+    echo "finding all cells.  If -l is specified then the list of missing cells is listed if the"
+    echo "timeout is reached without all cells being found."
     echo
     echo "Returns:"
     echo "    0 if all cells are up,"
     echo "    1 if at least one cell was not after waiting for <timeout> seconds,"
     echo "    5 if parameters to this script are wrong."
 }
-
-# Minimum timeout, in seconds
-min_timeout=$poll
-
-#  Default values of host and port
-host=localhost
-port=2288
 
 while [ $# -gt 1 ]; do
     case $1 in
@@ -104,8 +101,8 @@ shift
 
 cells="$@"
 
-if [ "$timeout" -lt $min_timeout ]; then
-  echo Timeout $timeout is less that minimum $min_timeout
+if [ "$timeout" -lt $poll ]; then
+  echo Timeout $timeout is less that minimum $poll
   exit 5
 fi
 
@@ -114,13 +111,8 @@ fi
 #
 list_missing_cells()
 {
-    xsltproc --stringparam cells "$cells" $xslt_dir/wait-for-cells.xsl "http://$host:$port/info/domains"
+    xsltproc --stringparam cells "$cells" $xslt_dir/wait-for-cells.xsl "http://$host:$port/info/domains" 2>/dev/null || echo "Missing: $cells"
 }
-
-
-
-
-
 
 #
 #  Loop, waiting for either timeout or cells to come up.
@@ -133,18 +125,14 @@ while :; do
   if [ $now -gt $timeout ]; then
       # One or more cells were not up by timeout, exit with rc=1
       rc=1
-      break;
+      break
   fi
 
-  list_missing_cells | grep "Missing:" >/dev/null
-
-  if [ $? -eq 1 ]; then
-      # All cells are present, exit with rc=0
-      break; 
-  fi
+  list_missing_cells | grep "Missing:" >/dev/null || break
 
   if [ "x$dots" = "x1" ]; then
       echo -n "."
+      have_dots=1
   fi
 
   sleep $poll
@@ -155,7 +143,7 @@ done
 # Tidy up and exit.
 #
 
-if [ "x$dots" = "x1" ]; then
+if [ "x$have_dots" = "x1" ]; then
     echo
 fi
 
