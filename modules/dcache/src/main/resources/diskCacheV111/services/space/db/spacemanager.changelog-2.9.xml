@@ -11,6 +11,7 @@
     </changeSet>
 
     <changeSet id="5" author="behrmann">
+        <comment>Delete file reservations marked as deleted</comment>
         <sql>DELETE FROM srmspacefile WHERE deleted = 1</sql>
         <dropColumn tableName="srmspacefile" columnName="deleted"/>
         <rollback>
@@ -399,6 +400,7 @@
     </changeSet>
 
     <changeSet id="4" author="behrmann">
+        <comment>Drop expirtationtime column</comment>
         <dropIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
         <dropColumn tableName="srmspacefile" columnName="expirationtime"/>
         <rollback>
