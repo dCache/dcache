@@ -33,6 +33,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
 import diskCacheV111.util.FsPath;
+import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -1061,6 +1062,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected Set<FileAttribute> _attributes;
         protected PnfsGetFileAttributes _message;
         protected PnfsHandler _pnfs;
+        protected final boolean _isUrl;
 
         protected PnfsSessionHandler(int sessionId, int commandId, VspArgs args,
                                      boolean metaDataOnly, boolean resolvePath)
@@ -1085,6 +1087,27 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     /* 'bad' strings silently ignored */
                 }
             }
+
+            String fileId = _vargs.argv(0);
+            if( PnfsId.isValid(fileId)) {
+                PnfsId pnfsId = new PnfsId(fileId);
+                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
+                _isUrl = false;
+                _path = _vargs.getOpt("path");
+            } else {
+                DCapUrl url = new DCapUrl(fileId);
+                String fileName = url.getFilePart();
+                _message = new PnfsGetFileAttributes(fileName, _attributes);
+                _isUrl = true;
+                _path = fileName;
+            }
+
+            if (_path != null) {
+                _info.setPath(_path);
+            }
+
+            _message.setId(_sessionId);
+            _message.setReplyRequired(true);
         }
 
         @Override
@@ -1093,7 +1116,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super.doLogin();
             _pnfs = new PnfsHandler(_cell, new CellPath(_pnfsManagerName));
-            _pnfs.setSubject(_subject);
+            if (_isUrl || _authorizationRequired) {
+                _pnfs.setSubject(_subject);
+            }
+
         }
 
         @Override
@@ -1146,31 +1172,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             setTimer(60 * 1000);
 
-            String fileIdentifier = _vargs.argv(0);
-
-            if( PnfsId.isValid(fileIdentifier)) {
-                PnfsId pnfsId = new PnfsId(fileIdentifier);
-                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
-            } else {
-                DCapUrl url = new DCapUrl(fileIdentifier);
-                String fileName = url.getFilePart();
-                _message = new PnfsGetFileAttributes(fileName, _attributes);
-                _path = fileName;
-            }
-
             _log.debug("Requesting file attributes for {}", _message);
-
-            _message.setId(_sessionId) ;
-            _message.setReplyRequired(true);
-
-            /* if is url, _path is already pointing to to correct path */
-            if (_path == null) {
-                _path = _vargs.getOpt("path");
-            }
-            if (_path != null) {
-                _info.setPath(_path);
-            }
-
             _pnfs.send(_message);
             setStatus("WaitingForPnfs");
         }
@@ -1219,6 +1221,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             sendReply("fileAttributesNotAvailable", _message);
             return false;
         }
+
+	protected final void checkUrl() throws CacheException {
+	    if (!_isUrl) {
+		throw new InvalidMessageCacheException("not an url");
+	    }
+	}
 
         @Override
         public String toString(){
@@ -1364,6 +1372,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
+		checkUrl();
                 //
                 // we are not called if the pnfs request failed.
                 //
@@ -1567,6 +1576,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
+		checkUrl();
                 _pnfs.renameEntry(_fileAttributes.getPnfsId(), _newName);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1610,6 +1620,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
+		checkUrl();
                 _pnfs.deletePnfsEntry(_message.getPnfsPath(), EnumSet.of(DIR));
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
@@ -1831,7 +1842,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         private boolean          _passive;
         private String            _accessLatency;
         private String            _retentionPolicy;
-        private boolean _isUrl;
         private PoolMgrSelectReadPoolMsg.Context _readPoolSelectionContext;
         private InetSocketAddress _clientSocketAddress;
 
@@ -1885,52 +1895,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     _cell.getCellInfo().getDomainName()) ) ;
 
             _attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-        }
-
-        @Override
-        protected void askForFileAttributes()
-            throws IllegalArgumentException, NoRouteToCellException
-        {
-            setTimer(60 * 1000);
-
-            try {
-                PnfsId pnfsId = new PnfsId(_vargs.argv(0));
-                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
-            } catch (IllegalArgumentException e) {
-                /* Seems not to be a pnfsId, might be a url.
-                 */
-                DCapUrl url = new DCapUrl(_vargs.argv(0));
-                String fileName = url.getFilePart();
-                _message = new PnfsGetFileAttributes(fileName, _attributes);
-                _isUrl = true;
-                _path = fileName;
-            }
-
-            _log.debug("Requesting file attributes for {}", _message);
-
             if (_vargs.argv(1).equals("r")) {
                 _message.setAccessMask(EnumSet.of(AccessMask.READ_DATA));
             }
-            _message.setId(_sessionId);
-            _message.setReplyRequired(true);
-
-            /* If _authorizationRequired is false then non-url based
-             * access bypasses authorization.
-             */
-            if (!_isUrl && !_authorizationRequired) {
-                _pnfs = new PnfsHandler(_pnfs, null);
-            }
-
-            /* if is url, _path is already pointing to to correct path */
-            if (_path == null) {
-                _path = _vargs.getOpt("path");
-            }
-            if (_path != null) {
-                _info.setPath(_path);
-            }
-
-            _pnfs.send(_message);
-            setStatus("WaitingForPnfs");
         }
 
         public IoDoorEntry getIoDoorEntry(){
@@ -2444,43 +2411,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if( pool != null ) {
                 _pool = pool;
             }
-
-        }
-
-        @Override
-        protected void askForFileAttributes()
-            throws IllegalArgumentException, NoRouteToCellException
-        {
-            setTimer(60 * 1000);
-
-            try {
-                PnfsId pnfsId = new PnfsId(_vargs.argv(0));
-                _message = new PnfsGetFileAttributes(pnfsId, _attributes);
-            } catch (IllegalArgumentException e) {
-                /* Seems not to be a pnfsId, might be a url.
-                 */
-                DCapUrl url = new DCapUrl(_vargs.argv(0));
-                String fileName = url.getFilePart();
-                _message = new PnfsGetFileAttributes(fileName, _attributes);
-                _path = fileName;
-            }
-
-            _log.debug("Requesting file attributes for {}", _message);
-
             _message.setAccessMask(EnumSet.of(AccessMask.LIST_DIRECTORY));
-            _message.setId(_sessionId);
-            _message.setReplyRequired(true);
-
-            /* if is url, _path is already pointing to to correct path */
-            if (_path == null) {
-                _path = _vargs.getOpt("path");
-            }
-            if (_path != null) {
-                _info.setPath(_path);
-            }
-
-            _pnfs.send(_message);
-            setStatus("WaitingForPnfs");
         }
 
         @Override
