@@ -345,6 +345,39 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="5.1" author="behrmannn">
+        <preConditions onFailMessage="Space manager database contains unexpected NULL values. Please contact support@dcache.org.">
+            <or>
+                <changeSetExecuted id="5" author="behrmann" changeLogFile="diskCacheV111/services/space/db/spacemanager.changelog-2.8.xml"/>
+                <and>
+                    <sqlCheck expectedResult="0">SELECT COUNT(*) FROM srmspace WHERE linkgroupid IS NULL</sqlCheck>
+                    <sqlCheck expectedResult="0">SELECT COUNT(*) FROM srmspace WHERE state IS NULL</sqlCheck>
+                    <sqlCheck expectedResult="0">SELECT COUNT(*) FROM srmspacefile WHERE spacereservationid IS NULL</sqlCheck>
+                    <sqlCheck expectedResult="0">SELECT COUNT(*) FROM srmspacefile WHERE state IS NULL</sqlCheck>
+                </and>
+            </or>
+        </preConditions>
+    </changeSet>
+
+    <changeSet id="5.2" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not adding unique constraints as they have already been added (this is not an error)">
+            <not>
+                <changeSetExecuted id="5" author="behrmann" changeLogFile="diskCacheV111/services/space/db/spacemanager.changelog-2.8.xml"/>
+            </not>
+        </preConditions>
+        <comment>Add non-null constraints to required fields</comment>
+        <addNotNullConstraint tableName="srmlinkgroup" columnName="freespaceinbytes" defaultNullValue="0"/>
+        <addNotNullConstraint tableName="srmlinkgroup" columnName="reservedspaceinbytes" defaultNullValue="0"/>
+        <addNotNullConstraint tableName="srmspace" columnName="sizeinbytes" defaultNullValue="0"/>
+        <addNotNullConstraint tableName="srmspace" columnName="usedspaceinbytes" defaultNullValue="0"/>
+        <addNotNullConstraint tableName="srmspace" columnName="allocatedspaceinbytes" defaultNullValue="0"/>
+        <addNotNullConstraint tableName="srmspace" columnName="linkgroupid"/>
+        <addNotNullConstraint tableName="srmspace" columnName="state"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="sizeinbytes" defaultNullValue="0"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="spacereservationid"/>
+        <addNotNullConstraint tableName="srmspacefile" columnName="state"/>
+    </changeSet>
+
     <changeSet id="hsqldb.trigger.1" author="behrmann" dbms="hsqldb">
         <comment>Not used any more</comment>
         <sql>DROP TRIGGER tgr_srmlinkgroup_update IF EXISTS</sql>
@@ -816,20 +849,6 @@
         <addUniqueConstraint tableName="srmspacefile" columnNames="pnfspath" constraintName="srmspacefile_pnfspath_unique"/>
     </changeSet>
 
-    <changeSet id="5" author="behrmann">
-        <comment>Add non-null constraints to required fields</comment>
-        <addNotNullConstraint tableName="srmlinkgroup" columnName="freespaceinbytes"/>
-        <addNotNullConstraint tableName="srmlinkgroup" columnName="reservedspaceinbytes"/>
-        <addNotNullConstraint tableName="srmspace" columnName="sizeinbytes"/>
-        <addNotNullConstraint tableName="srmspace" columnName="usedspaceinbytes"/>
-        <addNotNullConstraint tableName="srmspace" columnName="allocatedspaceinbytes"/>
-        <addNotNullConstraint tableName="srmspace" columnName="linkgroupid"/>
-        <addNotNullConstraint tableName="srmspace" columnName="state"/>
-        <addNotNullConstraint tableName="srmspacefile" columnName="sizeinbytes"/>
-        <addNotNullConstraint tableName="srmspacefile" columnName="spacereservationid"/>
-        <addNotNullConstraint tableName="srmspacefile" columnName="state"/>
-    </changeSet>
-
     <changeSet id="13" author="behrmann">
         <comment>Add not-null and uniqueness constraints to linkgroup name</comment>
         <addNotNullConstraint tableName="srmlinkgroup" columnName="name"/>
@@ -842,11 +861,33 @@
         <addNotNullConstraint tableName="srmspacefile" columnName="creationtime"/>
     </changeSet>
 
+    <changeSet id="24.1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Site local srmspace_expirationtime_idx index not found (this is not an error)">
+            <not>
+                <changeSetExecuted id="24" author="behrmann" changeLogFile="diskCacheV111/services/space/db/spacemanager.changelog-2.8.xml"/>
+            </not>
+            <indexExists tableName="srmspace" indexName="srmspace_expirationtime_idx"/>
+        </preConditions>
+        <comment>Drop existing site local index on expirationtime</comment>
+        <dropIndex tableName="srmspace" indexName="srmspace_expirationtime_idx"/>
+    </changeSet>
+
     <changeSet id="24" author="behrmann">
         <comment>Create index on expirationtime</comment>
         <createIndex tableName="srmspace" indexName="srmspace_expirationtime_idx">
             <column name="expirationtime"/>
         </createIndex>
+    </changeSet>
+
+    <changeSet id="25.1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Site local srmspacefile_expirationtime_idx index not found (this is not an error)">
+            <not>
+                <changeSetExecuted id="25" author="behrmann" changeLogFile="diskCacheV111/services/space/db/spacemanager.changelog-2.8.xml"/>
+            </not>
+            <indexExists tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
+        </preConditions>
+        <comment>Drop existing site local index on expirationtime</comment>
+        <dropIndex tableName="srmspacefile" indexName="srmspacefile_expirationtime_idx"/>
     </changeSet>
 
     <changeSet id="25" author="behrmann">
