@@ -44,6 +44,7 @@ import javax.security.auth.Subject;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,6 +104,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Lists.newArrayList;
+import static java.util.stream.Collectors.toList;
 
 public final class SpaceManagerService
         extends AbstractCellComponent
@@ -317,7 +319,7 @@ public final class SpaceManagerService
                 msg.setLinkGroupNames(newArrayList(transform(db.get(db.linkGroups()), LinkGroup::getName)));
         }
 
-    /** Returns true if message is of a type processed exclusively by SpaceManager */
+        /** Returns true if message is of a type processed exclusively by SpaceManager */
         private boolean isSpaceManagerMessage(Message message)
         {
                 return message instanceof Reserve
@@ -754,11 +756,20 @@ public final class SpaceManagerService
                 LOGGER.trace("reserveSpace(subject={}, sz={}, latency={}, policy={}, lifetime={}, description={})",
                              subject.getPrincipals(), sizeInBytes, latency, policy, lifetime, description);
                 List<LinkGroup> linkGroups =
-                        db.findLinkGroups(sizeInBytes, latency, policy, linkGroupLoader.getLatestUpdateTime());
+                        db.get(db.linkGroups()
+                                       .allowsAccessLatency(latency)
+                                       .allowsRetentionPolicy(policy)
+                                       .hasAvailable(sizeInBytes)
+                                       .whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime()))
+                                .stream()
+                                .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
+                                .collect(toList());
+
                 if (linkGroups.isEmpty()) {
                         LOGGER.warn("Failed to find matching linkgroup for reservation request.");
                         throw new NoFreeSpaceException("No space available.");
                 }
+
                 for (LinkGroup lg : linkGroups) {
                         try {
                                 VOInfo voInfo = authorizationPolicy.checkReservePermission(subject, lg);
@@ -809,7 +820,15 @@ public final class SpaceManagerService
                 throws DataAccessException
         {
             List<LinkGroup> linkGroups =
-                    db.findLinkGroups(size, fileAttributes.getAccessLatency(), fileAttributes.getRetentionPolicy(), linkGroupLoader.getLatestUpdateTime());
+                    db.get(db.linkGroups()
+                                   .allowsAccessLatency(fileAttributes.getAccessLatency())
+                                   .allowsRetentionPolicy(fileAttributes.getRetentionPolicy())
+                                   .hasAvailable(size)
+                                   .whereUpdateTimeAfter(linkGroupLoader.getLatestUpdateTime()))
+                            .stream()
+                            .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
+                            .collect(toList());
+
             List<String> linkGroupNames = new ArrayList<>();
             for (LinkGroup linkGroup : linkGroups) {
                 try {

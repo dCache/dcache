@@ -70,12 +70,6 @@ public interface SpaceManagerDatabase
 
     LinkGroup getLinkGroupByName(String name) throws DataAccessException;
 
-    List<LinkGroup> findLinkGroups(long sizeInBytes,
-                                   @Nullable AccessLatency al,
-                                   RetentionPolicy rp,
-                                   long lastUpdateTime)
-            throws DataAccessException;
-
     /**
      *  Returns the file reservation bound to the pnfsid, or null
      *  if such a reservation is not found.
@@ -127,6 +121,8 @@ public interface SpaceManagerDatabase
         LinkGroupCriterion allowsRetentionPolicy(RetentionPolicy rp);
 
         LinkGroupCriterion whereNameMatches(Glob name);
+
+        LinkGroupCriterion hasAvailable(long sizeInBytes);
     }
 
     /** Selection criterion for space reservations. */
