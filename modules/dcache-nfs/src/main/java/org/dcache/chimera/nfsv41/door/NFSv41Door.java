@@ -57,6 +57,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoAdapter;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -584,6 +585,11 @@ public class NFSv41Door extends AbstractCellComponent implements
             for (NfsTransfer io : _ioMessages.values()) {
                 pw.println(io);
             }
+
+	    if (_proxyIoFactory != null) {
+		pw.println();
+		_proxyIoFactory.getInfo(pw);
+	    }
 
             pw.println();
             pw.println("  Known clients:");
