@@ -116,51 +116,50 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
     @Override
     public void put(LogEntry entry) {
         PersistenceManager insertManager = pmf.getPersistenceManager();
-        Transaction tx = insertManager.currentTransaction();
-        Query query = insertManager.newQuery(LogEntry.class);
-        query.setFilter("key==k");
-        query.declareParameters("java.lang.String k");
-        query.addExtension("datanucleus.query.resultCacheType", "none");
-        /*
-         * looks like DataNucleus 3.1.3+ needs this to get the most recent
-         * updates made from another JVM
-         */
-        query.setIgnoreCache(true);
-        query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
-
         try {
+            Transaction tx = insertManager.currentTransaction();
             tx.begin();
-            Collection<LogEntry> dup
-                = (Collection<LogEntry>) query.executeWithArray(entry.getKey());
-            logger.trace("duplicate? {}", dup);
-            if (dup != null && !dup.isEmpty()) {
-                if (dup.size() > 1) {
-                    throw new RuntimeException
-                        ("data store inconsistency!"
-                          + " more than one alarm with the same id: "
-                                                    + entry.getKey());
+            try {
+                Query query = insertManager.newQuery(LogEntry.class);
+                query.setFilter("key==k");
+                query.declareParameters("java.lang.String k");
+                query.addExtension("datanucleus.query.resultCacheType", "none");
+                query.getFetchPlan().setFetchSize(FetchPlan.FETCH_SIZE_OPTIMAL);
+
+                Collection<LogEntry> dup
+                        = (Collection<LogEntry>) query.executeWithArray(entry.getKey());
+                logger.trace("duplicate? {}", dup);
+                if (dup != null && !dup.isEmpty()) {
+                    if (dup.size() > 1) {
+                        throw new RuntimeException
+                                ("data store inconsistency!"
+                                 + " more than one alarm with the same id: "
+                                 + entry.getKey());
+                    }
+                    LogEntry original = dup.iterator().next();
+                    original.setLastUpdate(entry.getLastUpdate());
+                    original.setReceived(original.getReceived() + 1);
+                    /*
+                     * this needs to be done or else newly arriving instances will
+                     * not be tracked if this type has been closed previously
+                     */
+                    original.setClosed(false);
+                    /*
+                     * original is not detached so it will be updated on commit
+                     */
+                } else {
+                    /*
+                     * first instance of this alarm
+                     */
+                    logger.trace("makePersistent alarm, key={}", entry.getKey());
+                    insertManager.makePersistent(entry);
+                    logger.trace("committing");
                 }
-                LogEntry original = dup.iterator().next();
-                original.setLastUpdate(entry.getLastUpdate());
-                original.setReceived(original.getReceived() + 1);
-                /*
-                 * this needs to be done or else newly arriving instances will
-                 * not be tracked if this type has been closed previously
-                 */
-                original.setClosed(false);
-                /*
-                 * original is not detached so it will be updated on commit
-                 */
-            } else {
-                /*
-                 * first instance of this alarm
-                 */
-                logger.trace("makePersistent alarm, key={}", entry.getKey());
-                insertManager.makePersistent(entry);
-                logger.trace("committing");
+                tx.commit();
+                logger.debug("finished putting alarm, key={}", entry.getKey());
+            } finally {
+                AlarmJDOUtils.rollbackIfActive(tx);
             }
-            tx.commit();
-            logger.debug("finished putting alarm, key={}", entry.getKey());
         } finally {
             /*
              * closing is necessary in order to avoid memory leaks
@@ -229,24 +228,20 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
      */
     private long remove(Long threshold) throws Exception {
         PersistenceManager deleteManager = pmf.getPersistenceManager();
-        if (deleteManager == null) {
-            return 0;
-        }
-
-        Transaction tx = deleteManager.currentTransaction();
-        AlarmDAOFilter filter = AlarmJDOUtils.getDeleteBeforeFilter(threshold);
         try {
-            tx.begin();
-            long removed = AlarmJDOUtils.delete(deleteManager, filter);
-            tx.commit();
-            logger.debug("successfully removed {} entries", removed);
-            return removed;
-        } finally {
+            Transaction tx = deleteManager.currentTransaction();
+            AlarmDAOFilter filter = AlarmJDOUtils.getDeleteBeforeFilter(threshold);
             try {
-                AlarmJDOUtils.rollbackIfActive(tx);
+                tx.begin();
+                long removed = AlarmJDOUtils.delete(deleteManager, filter);
+                tx.commit();
+                logger.debug("successfully removed {} entries", removed);
+                return removed;
             } finally {
-                deleteManager.close();
+                AlarmJDOUtils.rollbackIfActive(tx);
             }
+        } finally {
+            deleteManager.close();
         }
     }
 }
