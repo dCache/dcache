@@ -93,8 +93,8 @@ public class LineBasedDoor
         interpreter = interpreterClass.newInstance();
         parseOptions(interpreter);
         interpreter.setWriter(engine.getWriter());
-        interpreter.setRemoteAddress((InetSocketAddress) engine.getSocket().getRemoteSocketAddress());
-        interpreter.setLocalAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
+        interpreter.setRemoteSocketAddress((InetSocketAddress) engine.getSocket().getRemoteSocketAddress());
+        interpreter.setLocalSocketAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
         interpreter.setExecutor(executor);
         if (interpreter instanceof CellMessageSender) {
             ((CellMessageSender) interpreter).setCellEndpoint(this);
@@ -248,10 +248,10 @@ public class LineBasedDoor
     {
         void setWriter(Writer out);
         void execute(String cmd) throws CommandExitException;
-        void init();
+        void init() throws Exception;
         void shutdown();
-        void setRemoteAddress(InetSocketAddress remoteAddress);
-        void setLocalAddress(InetSocketAddress localAddress);
+        void setRemoteSocketAddress(InetSocketAddress remoteAddress);
+        void setLocalSocketAddress(InetSocketAddress localAddress);
         void setExecutor(Executor executor);
     }
 

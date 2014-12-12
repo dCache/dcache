@@ -200,16 +200,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     /*
      * (non-Javadoc)
      *
-     * @see diskCacheV111.util.ProxyAdapter#getClientListenerPort()
-     */
-    @Override
-    public int getClientListenerPort() {
-        return _lport;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
      * @see diskCacheV111.util.ProxyAdapter#getError()
      */
     @Override
@@ -224,8 +214,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
      */
     @Override
     public int getPoolListenerPort() {
-        // This adapter does not listen the second port,
-        // it actively connects to the second party
         return _lport;
     }
 

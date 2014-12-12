@@ -46,7 +46,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
 
 
     @Override
-    public void init()
+    public void init() throws UnknownHostException
     {
         _gssFlavor = "k5";
         ftpDoorName = "Kerberos FTP";
@@ -62,7 +62,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
             try {
                 String user =
                     Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "krbftp", action, path, _remoteAddress.getAddress());
+                tlog.begin(user, "krbftp", action, path, _remoteSocketAddress.getAddress());
             }
             catch (Exception e) {
                 LOGGER.error("KerberosFTPDoorV1::startTlog: couldn't start tLog. " +
@@ -111,7 +111,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
         GSSContext context = _GManager.createContext(myCredential);
 
         try {
-            ChannelBinding cb = new ChannelBinding(_remoteAddress.getAddress(),
+            ChannelBinding cb = new ChannelBinding(_remoteSocketAddress.getAddress(),
                                                    InetAddress.getLocalHost(),
                                                    null);
             context.setChannelBinding(cb);

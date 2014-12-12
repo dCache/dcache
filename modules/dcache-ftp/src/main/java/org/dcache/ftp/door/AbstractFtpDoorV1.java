@@ -68,10 +68,8 @@ package org.dcache.ftp.door;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
@@ -80,7 +78,6 @@ import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.BufferedOutputStream;
@@ -281,8 +278,8 @@ public abstract class AbstractFtpDoorV1
     private static final Timer TIMER = new Timer("Performance marker timer", true);
     private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.ftp");
 
-    protected InetSocketAddress _localAddress;
-    protected InetSocketAddress _remoteAddress;
+    protected InetSocketAddress _localSocketAddress;
+    protected InetSocketAddress _remoteSocketAddress;
     protected CellAddressCore _cellAddress;
     protected CellEndpoint _cellEndpoint;
     protected Executor _executor;
@@ -531,7 +528,7 @@ public abstract class AbstractFtpDoorV1
         name = "ftp-adapter-internal-interface",
         description = "Interface to bind to"
     )
-    protected String _local_host;
+    protected String _internalAddress;
 
     @Option(
         name = "read-only",
@@ -862,7 +859,7 @@ public abstract class AbstractFtpDoorV1
 
             setDomainName(_cellAddress.getCellDomainName());
             setCellName(_cellAddress.getCellName());
-            setClientAddress(_remoteAddress);
+            setClientAddress(_remoteSocketAddress);
             setCheckStagePermission(_checkStagePermission);
             setOverwriteAllowed(_overwrite);
             setPoolManagerStub(_poolManagerStub);
@@ -987,7 +984,7 @@ public abstract class AbstractFtpDoorV1
                 protocolInfo =
                     new GFtpProtocolInfo("GFtp",
                                          _version, 0,
-                                         new InetSocketAddress(_local_host, _adapter.getPoolListenerPort()),
+                                         new InetSocketAddress(_internalAddress, _adapter.getPoolListenerPort()),
                                          _parallel,
                                          _parallel,
                                          _parallel,
@@ -1106,8 +1103,7 @@ public abstract class AbstractFtpDoorV1
                         _adapter = null;
                     } else if (_mode == Mode.PASSIVE) {
                         replyDelayedPassive(_delayedPassive,
-                                            new InetSocketAddress(_localAddress.getAddress(),
-                                                                  _adapter.getClientListenerPort()));
+                                            (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress());
                     }
                 }
 
@@ -1299,15 +1295,15 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public void setRemoteAddress(InetSocketAddress remoteAddress)
+    public void setRemoteSocketAddress(InetSocketAddress remoteAddress)
     {
-        _remoteAddress = remoteAddress;
+        _remoteSocketAddress = remoteAddress;
     }
 
     @Override
-    public void setLocalAddress(InetSocketAddress localAddress)
+    public void setLocalSocketAddress(InetSocketAddress localAddress)
     {
-        _localAddress = localAddress;
+        _localSocketAddress = localAddress;
     }
 
     @Override
@@ -1317,13 +1313,13 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public void init()
+    public void init() throws UnknownHostException
     {
         _clientDataAddress =
-            new InetSocketAddress(_remoteAddress.getAddress(), DEFAULT_DATA_PORT);
+            new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
 
-        if (_local_host == null) {
-            _local_host = _localAddress.getAddress().getHostAddress();
+        if (_internalAddress == null) {
+            _internalAddress = InetAddress.getLocalHost().getHostAddress();
         }
 
         _preferredProtocol = Protocol.fromAddress(_clientDataAddress.getAddress());
@@ -1354,7 +1350,7 @@ public abstract class AbstractFtpDoorV1
          */
         _parallel = _defaultStreamsPerClient;
 
-        _origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteAddress.getAddress());
+        _origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteSocketAddress.getAddress());
 
         _readRetryPolicy =
             new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
@@ -1560,7 +1556,7 @@ public abstract class AbstractFtpDoorV1
 
         if (ACCESS_LOGGER.isInfoEnabled()) {
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.ftp.disconnect").omitNullValues();
-            log.add("host.remote", _remoteAddress);
+            log.add("host.remote", _remoteSocketAddress);
             log.add("session", CDC.getSession());
             log.toLogger(ACCESS_LOGGER);
         }
@@ -1616,7 +1612,7 @@ public abstract class AbstractFtpDoorV1
         if (user != null) {
             pw.println( "          User  : " + user);
         }
-        pw.println( "    Local Host  : " + _local_host);
+        pw.println( "    Local Host  : " + _internalAddress);
         pw.println( "  Last Command  : " + _lastCommand);
         pw.println( " Command Count  : " + _commandCounter);
         pw.println( "     I/O Queue  : " + _ioQueueName);
@@ -1712,7 +1708,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
-            log.add("host.remote", _remoteAddress);
+            log.add("host.remote", _remoteSocketAddress);
             log.add("session", CDC.getSession());
             log.addInQuotes("command", commandLine);
             log.addInQuotes("reply", response);
@@ -2335,15 +2331,15 @@ public abstract class AbstractFtpDoorV1
         try {
             if (_passiveModeServerSocket == null) {
                 LOGGER.info("Opening server socket for passive mode");
-                if (!Protocol.fromAddress(_localAddress.getAddress()).equals(_preferredProtocol)) {
+                InetAddress address = _localSocketAddress.getAddress();
+                if (Protocol.fromAddress(address) != _preferredProtocol) {
                     Iterable<InterfaceAddress> addresses = getLocalAddressInterfaces();
-                    int port = _localAddress.getPort();
                     InterfaceAddress newAddress =
                             find(addresses, (a) -> Protocol.fromAddress(a.getAddress()).equals(_preferredProtocol));
-                    _localAddress = new InetSocketAddress(newAddress.getAddress(), port);
+                    address = newAddress.getAddress();
                 }
                 _passiveModeServerSocket = ServerSocketChannel.open();
-                _passiveModePortRange.bind(_passiveModeServerSocket.socket(), _localAddress.getAddress());
+                _passiveModePortRange.bind(_passiveModeServerSocket.socket(), address);
                 _mode = Mode.PASSIVE;
             }
             return (InetSocketAddress) _passiveModeServerSocket.getLocalAddress();
@@ -2372,7 +2368,7 @@ public abstract class AbstractFtpDoorV1
     protected Iterable<InterfaceAddress> getLocalAddressInterfaces()
             throws SocketException
     {
-        return NetworkInterface.getByInetAddress(_localAddress.getAddress())
+        return NetworkInterface.getByInetAddress(_localSocketAddress.getAddress())
                 .getInterfaceAddresses();
     }
 
@@ -2493,7 +2489,7 @@ public abstract class AbstractFtpDoorV1
 
     private void checkIpV6() throws FTPCommandException
     {
-        if (!_localAddress.getAddress().getClass().equals(Inet6Address.class)) {
+        if (!_localSocketAddress.getAddress().getClass().equals(Inet6Address.class)) {
             throw new FTPCommandException(502, "Command only supported for IPv6");
         }
     }
@@ -3184,7 +3180,7 @@ public abstract class AbstractFtpDoorV1
                             version);
         try {
             LOGGER.info("retrieve user={}", getUser());
-            LOGGER.info("retrieve addr={}", _remoteAddress);
+            LOGGER.info("retrieve addr={}", _remoteSocketAddress);
 
             transfer.readNameSpaceEntry();
             transfer.createTransactionLog();

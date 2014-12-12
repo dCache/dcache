@@ -482,15 +482,6 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     }
 
     /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#getClientListenerPort()
-     */
-    @Override
-    public int getClientListenerPort()
-    {
-        return _clientListenerChannel.socket().getLocalPort();
-    }
-
-    /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#getPoolListenerPort()
      */
     @Override

@@ -38,7 +38,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     protected GSSContext _serviceContext;
 
     @Override
-    public void init()
+    public void init() throws UnknownHostException
     {
         _gssFlavor = "unknown";
         super.init();
@@ -93,7 +93,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
         byte[] token = Base64.base64ToByteArray(arg);
         try {
-            ChannelBinding cb = new ChannelBinding(_remoteAddress.getAddress(),
+            ChannelBinding cb = new ChannelBinding(_remoteSocketAddress.getAddress(),
             InetAddress.getLocalHost(), null);
         } catch( UnknownHostException e ) {
             reply("500 Can not determine address of local host: " + e);

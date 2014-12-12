@@ -26,14 +26,6 @@ public interface ProxyAdapter {
 
     /**
      * Returns the port that we use to listen for connections from the
-     * client.
-     *
-     * This is needed in order to tell the client were to connect to.
-     */
-    public abstract int getClientListenerPort();
-
-    /**
-     * Returns the port that we use to listen for connections from the
      * pool.
      *
      * This is needed in order to tell the pool were to connect to.

@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -72,7 +73,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     private String _user;
 
     @Override
-    public void init()
+    public void init() throws UnknownHostException
     {
         _gssFlavor = "gsi";
         ftpDoorName="GSI FTP";
@@ -86,7 +87,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             try {
                 String user =
                     _user + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "gsiftp", action, path, _remoteAddress.getAddress());
+                tlog.begin(user, "gsiftp", action, path, _remoteSocketAddress.getAddress());
             }
             catch (Exception e) {
                 LOGGER.error("GsiFtpDoor: couldn't start tLog. " +

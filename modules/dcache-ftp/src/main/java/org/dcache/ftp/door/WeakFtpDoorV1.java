@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
+import java.net.UnknownHostException;
+
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -24,7 +26,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
     private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
     @Override
-    public void init()
+    public void init() throws UnknownHostException
     {
         ftpDoorName = "Weak FTP";
         super.init();
@@ -86,7 +88,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
             try {
                 String user =
                     Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "weakftp", action, path, _remoteAddress.getAddress());
+                tlog.begin(user, "weakftp", action, path, _remoteSocketAddress.getAddress());
             }
             catch (Exception e) {
                 LOGGER.error("WeakFtpDoor: couldn't start tLog. " +
