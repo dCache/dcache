@@ -1040,29 +1040,8 @@ class FsSqlDriver {
         PreparedStatement ps = null;
 
         try {
-
-            // attributes atime, mtime, size, uid, gid, mode
-
-            /*
-             *  only level 0 , e.g. original file allowed to have faked file size
-             */
-            if (level == 0) {
-                ps = generateAttributeUpdateStatement(dbConnection, inode, stat);
-            } else {
-                String fileSetModeQuery = "UPDATE t_level_" + level
-                        + " SET iatime=?, imtime=?, iuid=?, igid=?, imode=? WHERE ipnfsid=?";
-                ps = dbConnection.prepareStatement(fileSetModeQuery);
-
-                ps.setTimestamp(1, new Timestamp(stat.getATime()));
-                ps.setTimestamp(2, new Timestamp(stat.getMTime()));
-                ps.setInt(3, stat.getUid());
-                ps.setInt(4, stat.getGid());
-                ps.setInt(5, stat.getMode());
-                ps.setString(6, inode.toString());
-            }
-
+            ps = generateAttributeUpdateStatement(dbConnection, inode, stat, level);
             ps.executeUpdate();
-
         } finally {
             SqlHelper.tryToClose(ps);
         }
@@ -2690,11 +2669,13 @@ class FsSqlDriver {
         return driver;
     }
 
-    private PreparedStatement generateAttributeUpdateStatement(Connection dbConnection, FsInode inode, Stat stat)
-            throws SQLException {
+    private PreparedStatement generateAttributeUpdateStatement(Connection dbConnection, FsInode inode, Stat stat, int level)
+	    throws SQLException {
 
-        final String attrUpdatePrefix = "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1";
-        final String attrUpdateSuffix = " WHERE ipnfsid=?";
+	final String attrUpdatePrefix = level == 0
+		? "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1"
+		: "UPDATE t_level_" + level + " SET ictime=?";
+	final String attrUpdateSuffix = " WHERE ipnfsid=?";
 
         StringBuilder sb = new StringBuilder(128);
         long ctime = stat.isDefined(Stat.StatAttributes.CTIME) ? stat.getCTime() :
