@@ -88,7 +88,7 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
 
     private static String quoteForCase(String s)
     {
-        return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[");
+        return quote(s).replace(")", "\\)").replace("?", "\\?").replace("*", "\\*").replace("[", "\\[").replace(" ", "\\ ");
     }
 
     /**
