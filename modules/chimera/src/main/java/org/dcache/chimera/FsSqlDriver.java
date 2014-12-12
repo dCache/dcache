@@ -315,7 +315,6 @@ class FsSqlDriver {
         removeEntryInParentByID(dbConnection, parent, inode);
         decNlink(dbConnection, parent);
 
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
         removeStorageInfo(dbConnection, inode);
 
         removeInode(dbConnection, inode);
@@ -968,53 +967,6 @@ class FsSqlDriver {
 
         return name;
     }
-    private static final String sqlSetFileSize = "UPDATE t_inodes SET isize=?,imtime=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileSize(Connection dbConnection, FsInode inode, long newSize) throws SQLException {
-
-        PreparedStatement ps = null;
-
-        try {
-
-            ps = dbConnection.prepareStatement(sqlSetFileSize);
-
-            ps.setLong(1, newSize);
-            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            ps.setString(4, inode.toString());
-            ps.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-    }
-    private static final String sqlSetFileOwner = "UPDATE t_inodes SET iuid=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileOwner(Connection dbConnection, FsInode inode, int level, int newOwner) throws SQLException {
-
-        PreparedStatement ps = null;
-
-        try {
-
-            String fileSetModeQuery;
-
-            if (level == 0) {
-                fileSetModeQuery = sqlSetFileOwner;
-            } else {
-                fileSetModeQuery = "UPDATE t_level_" + level + " SET iuid=?,ictime=? WHERE ipnfsid=?";
-            }
-            ps = dbConnection.prepareStatement(fileSetModeQuery);
-
-            ps.setInt(1, newOwner);
-            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            ps.setString(3, inode.toString());
-            ps.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-
-    }
     private static final String sqlSetFileName = "UPDATE t_dirs SET iname=? WHERE iname=? AND iparent=?";
 
     void setFileName(Connection dbConnection, FsInode dir, String oldName, String newName) throws SQLException, ChimeraFsException {
@@ -1042,121 +994,6 @@ class FsSqlDriver {
         try {
             ps = generateAttributeUpdateStatement(dbConnection, inode, stat, level);
             ps.executeUpdate();
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-    }
-    private static final String sqlSetFileATime = "UPDATE t_inodes SET iatime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileATime(Connection dbConnection, FsInode inode, int level, long atime) throws SQLException {
-
-        PreparedStatement ps = null;
-
-        try {
-
-            if (level == 0) {
-                ps = dbConnection.prepareStatement(sqlSetFileATime);
-            } else {
-                String fileSetModeQuery = "UPDATE t_level_" + level + " SET iatime=? WHERE ipnfsid=?";
-                ps = dbConnection.prepareStatement(fileSetModeQuery);
-            }
-
-            ps.setTimestamp(1, new Timestamp(atime));
-            ps.setString(2, inode.toString());
-            ps.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-    }
-    private static final String sqlSetFileCTime = "UPDATE t_inodes SET ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileCTime(Connection dbConnection, FsInode inode, int level, long ctime) throws SQLException {
-
-        PreparedStatement ps = null;
-
-        try {
-
-            if (level == 0) {
-                ps = dbConnection.prepareStatement(sqlSetFileCTime);
-            } else {
-                String fileSetModeQuery = "UPDATE t_level_" + level + " SET ictime=? WHERE ipnfsid=?";
-                ps = dbConnection.prepareStatement(fileSetModeQuery);
-            }
-
-            ps.setTimestamp(1, new Timestamp(ctime));
-            ps.setString(2, inode.toString());
-            ps.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-
-    }
-    private static final String sqlSetFileMTime = "UPDATE t_inodes SET imtime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileMTime(Connection dbConnection, FsInode inode, int level, long mtime) throws SQLException {
-
-        PreparedStatement ps = null;
-
-        try {
-
-            if (level == 0) {
-                ps = dbConnection.prepareStatement(sqlSetFileMTime);
-            } else {
-                String fileSetModeQuery = "UPDATE t_level_" + level + " SET imtime=? WHERE ipnfsid=?";
-                ps = dbConnection.prepareStatement(fileSetModeQuery);
-            }
-            ps.setTimestamp(1, new Timestamp(mtime));
-            ps.setString(2, inode.toString());
-            ps.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-
-    }
-    private static final String sqlSetFileGroup = "UPDATE t_inodes SET igid=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileGroup(Connection dbConnection, FsInode inode, int level, int newGroup) throws SQLException {
-
-        PreparedStatement ps = null;
-        try {
-
-            if (level == 0) {
-                ps = dbConnection.prepareStatement(sqlSetFileGroup);
-            } else {
-                String fileSetModeQuery = "UPDATE t_level_" + level + " SET igid=?,ictime=? WHERE ipnfsid=?";
-                ps = dbConnection.prepareStatement(fileSetModeQuery);
-            }
-            ps.setInt(1, newGroup);
-            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            ps.setString(3, inode.toString());
-            ps.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(ps);
-        }
-
-    }
-    private static final String sqlSetFileMode = "UPDATE t_inodes SET imode=?,ictime=?,igeneration=igeneration+1 WHERE ipnfsid=?";
-
-    void setFileMode(Connection dbConnection, FsInode inode, int level, int newMode) throws SQLException {
-
-        PreparedStatement ps = null;
-        try {
-
-            if (level == 0) {
-                ps = dbConnection.prepareStatement(sqlSetFileMode);
-            } else {
-                String fileSetModeQuery = "UPDATE t_level_" + level + " SET imode=?,ictime=? WHERE ipnfsid=?";
-                ps = dbConnection.prepareStatement(fileSetModeQuery);
-            }
-            ps.setInt(1, newMode & UnixPermission.S_PERMS);
-            ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            ps.setString(3, inode.toString());
-            ps.executeUpdate();
-
         } finally {
             SqlHelper.tryToClose(ps);
         }
@@ -2620,7 +2457,8 @@ class FsSqlDriver {
                 order++;
             }
             stAddACL.executeBatch();
-            setFileCTime(dbConnection, inode, 0, System.currentTimeMillis());
+	    // emty stat will update ctime any way
+            setInodeAttributes(dbConnection, inode, 0, new Stat());
         }finally{
             SqlHelper.tryToClose(stDeleteACL);
             SqlHelper.tryToClose(stAddACL);
@@ -2680,6 +2518,11 @@ class FsSqlDriver {
         StringBuilder sb = new StringBuilder(128);
         long ctime = stat.isDefined(Stat.StatAttributes.CTIME) ? stat.getCTime() :
                 System.currentTimeMillis();
+
+	// set size always must trigger mtime update
+	if (stat.isDefined(Stat.StatAttributes.SIZE) && !stat.isDefined(Stat.StatAttributes.MTIME)) {
+	    stat.setMTime(ctime);
+	}
 
         sb.append(attrUpdatePrefix);
 

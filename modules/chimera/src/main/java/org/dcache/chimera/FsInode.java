@@ -407,83 +407,6 @@ public class FsInode {
         _fs.remove(this, name);
     }
 
-    public void setUID(int uid) throws ChimeraFsException {
-        _fs.setFileOwner(this, _level, uid);
-        if (_stat != null) {
-            _stat.setUid(uid);
-        }
-    }
-
-    public void setGID(int gid) throws ChimeraFsException {
-        _fs.setFileGroup(this, _level, gid);
-        if (_stat != null) {
-            _stat.setGid(gid);
-        }
-    }
-
-    /**
-     *  sets a new size for the file. No effect, it it's a one of the levels.
-     *
-     * @param size
-     * @throws ChimeraFsException
-     */
-    public void setSize(long size) throws ChimeraFsException {
-        // no faked sizes for levels
-        if (_level != 0) {
-            return;
-        }
-
-
-        _fs.setFileSize(this, size);
-        if (_stat != null) {
-            _stat.setSize(size);
-        }
-    }
-
-    public void setMode(int mode) throws ChimeraFsException {
-        int file_type = this.statCache().getMode() & 0770000;
-        _fs.setFileMode(this, _level, mode | file_type);
-        if (_stat != null) {
-            _stat.setMode(mode | file_type);
-        }
-    }
-
-    /**
-     *
-     * @param atime new time in milliseconds
-     * @throws ChimeraFsException
-     */
-    public void setATime(long atime) throws ChimeraFsException {
-        _fs.setFileATime(this, _level, atime);
-        if (_stat != null) {
-            _stat.setATime(atime);
-        }
-    }
-
-    /**
-     *
-     * @param ctime new time in milliseconds
-     * @throws ChimeraFsException
-     */
-    public void setCTime(long ctime) throws ChimeraFsException {
-        _fs.setFileCTime(this, _level, ctime);
-        if (_stat != null) {
-            _stat.setCTime(ctime);
-        }
-    }
-
-    /**
-     *
-     * @param mtime new time in milliseconds
-     * @throws ChimeraFsException
-     */
-    public void setMTime(long mtime) throws ChimeraFsException {
-        _fs.setFileMTime(this, _level, mtime);
-        if (_stat != null) {
-            _stat.setMTime(mtime);
-        }
-    }
-
     public int fsId() {
         return _fs.getFsId();
     }
@@ -507,18 +430,15 @@ public class FsInode {
         _parent = parent;
     }
 
-    // shortcut for setAtime, setMtime, setMode, setUid, setGid, setSize
-    public void setStat(Stat predefinedStat) {
-        try {
-            _fs.setInodeAttributes(this, _level, predefinedStat);
-        } catch (ChimeraFsException ignored) {
-        }
-        this.setStatCache(predefinedStat);
+    public void setStat(Stat predefinedStat) throws ChimeraFsException {
+	_fs.setInodeAttributes(this, _level, predefinedStat);
+	if (_stat != null) {
+	    _stat.update(predefinedStat);
+	}
     }
 
-    // package protected aka internal use only
     void setStatCache(Stat predefinedStat) {
-        _stat = predefinedStat;
+	_stat = predefinedStat;
     }
 
     //  for use in Collections

@@ -64,38 +64,8 @@ public class FsInode_CONST extends FsInode {
     }
 
     @Override
-    public void setATime(long atime) throws ChimeraFsException {
-        // do nothing
-    }
-
-    @Override
-    public void setCTime(long ctime) throws ChimeraFsException {
-        //	do nothing
-    }
-
-    @Override
-    public void setGID(int gid) throws ChimeraFsException {
-        //	do nothing
-    }
-
-    @Override
-    public void setMode(int mode) throws ChimeraFsException {
-        //	do nothing
-    }
-
-    @Override
-    public void setMTime(long mtime) throws ChimeraFsException {
-        //	do nothing
-    }
-
-    @Override
-    public void setSize(long size) throws ChimeraFsException {
-        //	do nothing
-    }
-
-    @Override
-    public void setUID(int uid) throws ChimeraFsException {
-        //	do nothing
+    public void setStat(Stat predefinedStat) {
+	// nop
     }
 
     /**

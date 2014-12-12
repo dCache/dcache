@@ -147,7 +147,9 @@ public class Shell extends ShellApplication
         @Override
         public Serializable call() throws ChimeraFsException
         {
-            lookup(path).setGID(gid);
+	    Stat stat = new Stat();
+	    stat.setGid(gid);
+            lookup(path).setStat(stat);
             return null;
         }
     }
@@ -166,7 +168,9 @@ public class Shell extends ShellApplication
         @Override
         public Serializable call() throws ChimeraFsException
         {
-            lookup(path).setMode(Integer.parseInt(mode, 8));
+	    Stat stat = new Stat();
+	    stat.setMode(Integer.parseInt(mode, 8));
+            lookup(path).setStat(stat);
             return null;
         }
     }
@@ -216,12 +220,14 @@ public class Shell extends ShellApplication
         public Serializable call() throws ChimeraFsException
         {
             parseOwner(owner);
+	    Stat stat = new Stat();
+	    stat.setUid(_uid);
 
-            FsInode inode = lookup(path);
-            inode.setUID(_uid);
             if (_gid != -1) {
-                inode.setGID(_gid);
+                stat.setGid(_gid);
             }
+	    FsInode inode = lookup(path);
+	    inode.setStat(stat);
             return null;
         }
     }

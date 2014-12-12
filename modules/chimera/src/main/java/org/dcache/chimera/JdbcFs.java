@@ -1275,75 +1275,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void setFileSize(FsInode inode, long newSize) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileSize(dbConnection, inode, newSize);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileSize", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileSize rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-    }
-
-    @Override
-    public void setFileOwner(FsInode inode, int newOwner) throws ChimeraFsException {
-        setFileOwner(inode, 0, newOwner);
-    }
-
-    @Override
-    public void setFileOwner(FsInode inode, int level, int newOwner) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileOwner(dbConnection, inode, level, newOwner);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileOwner", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileOwner rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-    }
-
-    @Override
     public void setFileName(FsInode dir, String oldName, String newName) throws ChimeraFsException {
 	move(dir, oldName, dir, newName);
     }
@@ -1365,12 +1296,19 @@ public class JdbcFs implements FileSystemProvider {
 
             switch (inode.type()) {
                 case INODE:
+		case PSET:
                     _sqlDriver.setInodeAttributes(dbConnection, inode, level, stat);
                     break;
                 case TAG:
-                    _sqlDriver.setTagMode(dbConnection, (FsInode_TAG) inode, stat.getMode());
-                    _sqlDriver.setTagOwner(dbConnection, (FsInode_TAG) inode, stat.getUid());
-                    _sqlDriver.setTagOwnerGroup(dbConnection, (FsInode_TAG) inode, stat.getGid());
+		    if (stat.isDefined(Stat.StatAttributes.MODE)) {
+			_sqlDriver.setTagMode(dbConnection, (FsInode_TAG) inode, stat.getMode());
+		    }
+		    if (stat.isDefined(Stat.StatAttributes.UID)) {
+			_sqlDriver.setTagOwner(dbConnection, (FsInode_TAG) inode, stat.getUid());
+		    }
+		    if (stat.isDefined(Stat.StatAttributes.GID)) {
+			_sqlDriver.setTagOwnerGroup(dbConnection, (FsInode_TAG) inode, stat.getGid());
+		    }
                     break;
             }
             dbConnection.commit();
@@ -1381,188 +1319,6 @@ public class JdbcFs implements FileSystemProvider {
                 dbConnection.rollback();
             } catch (SQLException e1) {
                 _log.error("setInodeAttributes rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-    }
-
-    @Override
-    public void setFileATime(FsInode inode, long atime) throws ChimeraFsException {
-        setFileATime(inode, 0, atime);
-    }
-
-    @Override
-    public void setFileATime(FsInode inode, int level, long atime) throws ChimeraFsException {
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileATime(dbConnection, inode, level, atime);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileATime", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileATime rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-    }
-
-    @Override
-    public void setFileCTime(FsInode inode, long ctime) throws ChimeraFsException {
-        setFileCTime(inode, 0, ctime);
-    }
-
-    @Override
-    public void setFileCTime(FsInode inode, int level, long ctime) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileCTime(dbConnection, inode, level, ctime);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileCTime", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileCTime rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-    }
-
-    @Override
-    public void setFileMTime(FsInode inode, long mtime) throws ChimeraFsException {
-        setFileMTime(inode, 0, mtime);
-    }
-
-    @Override
-    public void setFileMTime(FsInode inode, int level, long mtime) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileMTime(dbConnection, inode, level, mtime);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileMTime", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileMTime rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-    }
-
-    @Override
-    public void setFileGroup(FsInode inode, int newGroup) throws ChimeraFsException {
-        setFileGroup(inode, 0, newGroup);
-    }
-
-    @Override
-    public void setFileGroup(FsInode inode, int level, int newGroup) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileGroup(dbConnection, inode, level, newGroup);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileGroup", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileGroup rollback", e1);
-            }
-            throw new IOHimeraFsException(e.getMessage());
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-    }
-
-    @Override
-    public void setFileMode(FsInode inode, int newMode) throws ChimeraFsException {
-        setFileMode(inode, 0, newMode);
-    }
-
-    @Override
-    public void setFileMode(FsInode inode, int level, int newMode) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setFileMode(dbConnection, inode, level, newMode);
-            dbConnection.commit();
-
-        } catch (SQLException e) {
-            _log.error("setFileMode", e);
-            try {
-                dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("setFileMode rollback", e1);
             }
             throw new IOHimeraFsException(e.getMessage());
         } finally {
@@ -1813,8 +1569,9 @@ public class JdbcFs implements FileSystemProvider {
                 // same directory
 		long now = System.currentTimeMillis();
 		_sqlDriver.setFileName(dbConnection, srcDir, source, dest);
-		_sqlDriver.setFileMTime(dbConnection, destDir, 0, now);
-		_sqlDriver.setFileCTime(dbConnection, destDir, 0, now);
+		Stat stat = new Stat();
+		stat.setMTime(now);
+		_sqlDriver.setInodeAttributes(dbConnection, destDir, 0, stat);
             }
 
             dbConnection.commit();

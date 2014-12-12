@@ -340,4 +340,61 @@ public class Stat {
         return !_definedAttrs.isEmpty();
     }
 
+    public EnumSet<StatAttributes> getDefinedAttributeses() {
+	return EnumSet.copyOf(_definedAttrs);
+    }
+
+    /**
+     * Update stat with values provided by <tt>other</tt> Stat.
+     * @param other to get values from.
+     */
+    public void update(Stat other) {
+	for (Stat.StatAttributes attr : other.getDefinedAttributeses()) {
+	    switch (attr) {
+		case DEV:
+		    this.setDev(other.getDev());
+		    break;
+		case INO:
+		    this.setIno(other.getIno());
+		    break;
+		case MODE:
+		    this.setMode(other.getMode());
+		    break;
+		case NLINK:
+		    this.setNlink(other.getNlink());
+		    break;
+		case UID:
+		    this.setUid(other.getUid());
+		    break;
+		case GID:
+		    this.setGid(other.getGid());
+		    break;
+		case RDEV:
+		    this.setRdev(other.getRdev());
+		    break;
+		case SIZE:
+		    this.setSize(other.getSize());
+		    break;
+		case FILEID:
+		    break;
+		case GENERATION:
+		    this.setGeneration(other.getGeneration());
+		    break;
+		case ATIME:
+		    this.setATime(other.getATime());
+		    break;
+		case MTIME:
+		    this.setMTime(other.getMTime());
+		    break;
+		case CTIME:
+		    this.setCTime(other.getCTime());
+		    break;
+		case CRTIME:
+		    this.setCrTime(other.getCrTime());
+		    break;
+		case BLK_SIZE:
+		    break;
+	    }
+	}
+    }
 }

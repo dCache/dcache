@@ -19,6 +19,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FsInode;
+import org.dcache.chimera.posix.Stat;
 import org.dcache.pool.classic.ALRPReplicaStatePolicy;
 import org.dcache.tests.repository.MetaDataRepositoryHelper;
 import org.dcache.tests.repository.RepositoryHealerTestChimeraHelper;
@@ -84,7 +86,10 @@ public class ConsistentStoreTest
     private void givenStoreHasFileOfSize(PnfsId pnfsId, long size)
         throws ChimeraFsException
     {
-        _fileStore.add(pnfsId).setSize(17);
+	Stat stat = new Stat();
+	stat.setSize(17);
+        FsInode inode = _fileStore.add(pnfsId);
+	inode.setStat(stat);
     }
 
     private void givenMetaDataStoreHas(PnfsId pnfsId, EntryState state,

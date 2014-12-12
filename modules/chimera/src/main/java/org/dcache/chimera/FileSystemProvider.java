@@ -162,49 +162,10 @@ public interface FileSystemProvider extends Closeable {
     public abstract FsInode getParentOf(FsInode inode)
             throws ChimeraFsException;
 
-    public abstract void setFileSize(FsInode inode, long newSize)
-            throws ChimeraFsException;
-
-    public abstract void setFileOwner(FsInode inode, int newOwner)
-            throws ChimeraFsException;
-
-    public abstract void setFileOwner(FsInode inode, int level, int newOwner)
-            throws ChimeraFsException;
-
     public abstract void setFileName(FsInode dir, String oldName, String newName)
             throws ChimeraFsException;
 
     public abstract void setInodeAttributes(FsInode inode, int level, Stat stat)
-            throws ChimeraFsException;
-
-    public abstract void setFileATime(FsInode inode, long atime)
-            throws ChimeraFsException;
-
-    public abstract void setFileATime(FsInode inode, int level, long atime)
-            throws ChimeraFsException;
-
-    public abstract void setFileCTime(FsInode inode, long ctime)
-            throws ChimeraFsException;
-
-    public abstract void setFileCTime(FsInode inode, int level, long ctime)
-            throws ChimeraFsException;
-
-    public abstract void setFileMTime(FsInode inode, long mtime)
-            throws ChimeraFsException;
-
-    public abstract void setFileMTime(FsInode inode, int level, long mtime)
-            throws ChimeraFsException;
-
-    public abstract void setFileGroup(FsInode inode, int newGroup)
-            throws ChimeraFsException;
-
-    public abstract void setFileGroup(FsInode inode, int level, int newGroup)
-            throws ChimeraFsException;
-
-    public abstract void setFileMode(FsInode inode, int newMode)
-            throws ChimeraFsException;
-
-    public abstract void setFileMode(FsInode inode, int level, int newMode)
             throws ChimeraFsException;
 
     public abstract void setInodeIo(FsInode inode, boolean enable)
