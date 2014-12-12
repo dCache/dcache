@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.dcache.util.ConfigurationProperties;
+import org.dcache.util.Version;
 
 import static com.google.common.collect.Iterables.transform;
 import static org.dcache.boot.Properties.*;
@@ -48,6 +49,8 @@ public class LayoutBuilder
                 localhost.getHostName().split("\\.")[0]);
         config.setProperty(PROPERTY_HOST_FQDN,
                 localhost.getCanonicalHostName());
+        config.setProperty(PROPERTY_DCACHE_VERSION,
+                Version.of(this).getVersion());
         return config;
     }
 

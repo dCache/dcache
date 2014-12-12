@@ -24,6 +24,10 @@ class DcacheConfigurationUsageChecker implements ConfigurationProperties.UsageCh
     @Override
     public boolean isStandardProperty(Properties defaults, String name)
     {
-        return defaults.getProperty(name) != null || GENERATED_PROPERTIES.contains(name);
+        boolean hasDeclaredPrefix = false;
+        if (defaults instanceof ConfigurationProperties) {
+            hasDeclaredPrefix = ((ConfigurationProperties)defaults).hasDeclaredPrefix(name);
+        }
+        return hasDeclaredPrefix || defaults.getProperty(name) != null || GENERATED_PROPERTIES.contains(name);
     }
 }

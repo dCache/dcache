@@ -70,6 +70,7 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import org.apache.axis.MessageContext;
@@ -86,6 +87,9 @@ import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.dcache.commons.stats.RequestCounters;
@@ -209,6 +213,8 @@ public class SRMServerV2 implements ISRM  {
     private final RequestLogger[] loggers =
             { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
 
+    private final ArrayOfTExtraInfo pingExtraInfo;
+
     public SRMServerV2()
     {
         srm = Axis.getSRM();
@@ -219,6 +225,23 @@ public class SRMServerV2 implements ISRM  {
                 config.isClientDNSLookup(), config.getVomsdir(), config.getCaCertificatePath());
         srmServerCounters = srm.getSrmServerV2Counters();
         srmServerGauges = srm.getSrmServerV2Gauges();
+        pingExtraInfo = buildExtraInfo(config.getPingExtraInfo());
+    }
+
+    private ArrayOfTExtraInfo buildExtraInfo(Map<String,String> items)
+    {
+        if (items.isEmpty()) {
+            return null;
+        }
+
+        TExtraInfo[] extraInfo = new TExtraInfo[items.size()];
+        int i = 0;
+        for (Map.Entry<String,String> item : items.entrySet()) {
+            extraInfo [i++] = new TExtraInfo(item.getKey(),
+                    Strings.emptyToNull(item.getValue()));
+        }
+
+        return new ArrayOfTExtraInfo(extraInfo);
     }
 
     private Object handleRequest(String requestName, Object request)  throws RemoteException {
@@ -613,10 +636,7 @@ public class SRMServerV2 implements ISRM  {
         // Ping is special as it isn't authenticated and unable to return a failure
         SrmPingResponse response = new SrmPingResponse();
         response.setVersionInfo("v2.2");
-        response.setOtherInfo(new ArrayOfTExtraInfo(
-                new TExtraInfo[]{
-                        new TExtraInfo("backend_type", "dCache"),
-                        new TExtraInfo("backend_version", storage.getStorageBackendVersion())}));
+        response.setOtherInfo(pingExtraInfo);
         return response;
     }
 

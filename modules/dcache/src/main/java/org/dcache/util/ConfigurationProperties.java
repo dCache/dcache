@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.LineNumberReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -23,6 +24,7 @@ import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.InvalidPropertiesFormatException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -94,6 +96,12 @@ public class ConfigurationProperties
 {
     private static final long serialVersionUID = -5684848160314570455L;
 
+    /**
+     * The character that separates the prefix from the key for PREFIX-annotated
+     * properties.
+     */
+    public static final String PREFIX_SEPARATOR = "!";
+
     private static final Set<Annotation> OBSOLETE_FORBIDDEN =
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
@@ -106,6 +114,7 @@ public class ConfigurationProperties
     private final Map<String,AnnotatedKey> _annotatedKeys =
             new HashMap<>();
     private final UsageChecker _usageChecker;
+    private final List<String> _prefixes = new ArrayList<>();
 
     private boolean _loading;
     private boolean _isService;
@@ -127,7 +136,9 @@ public class ConfigurationProperties
         super(defaults);
 
         if( defaults instanceof ConfigurationProperties) {
-            _problemConsumer = ((ConfigurationProperties) defaults)._problemConsumer;
+            ConfigurationProperties defaultConfig = (ConfigurationProperties) defaults;
+            _problemConsumer = defaultConfig._problemConsumer;
+            _prefixes.addAll(defaultConfig._prefixes);
         }
         _usageChecker = usageChecker;
     }
@@ -145,6 +156,17 @@ public class ConfigurationProperties
     public void setIsService(boolean isService)
     {
         _isService = isService;
+    }
+
+    public boolean hasDeclaredPrefix(String name)
+    {
+        for (String prefix : _prefixes) {
+            if (name.startsWith(prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -252,6 +274,10 @@ public class ConfigurationProperties
             return null;
         }
 
+        if (key.hasAnnotation(Annotation.PREFIX)) {
+            _prefixes.add(key.getPropertyName() + PREFIX_SEPARATOR);
+        }
+
         checkIsAllowed(key, (String) value);
 
         if (key.hasAnnotations()) {
@@ -286,33 +312,20 @@ public class ConfigurationProperties
     {
         String name = key.getPropertyName();
 
-        if(existingKey.hasAnnotations() && key.hasAnnotations()) {
+        if (existingKey.hasAnnotations() && key.hasAnnotations()) {
             _problemConsumer.error("Property " + name + ": " +
                     "remove \"" + key.getAnnotationDeclaration() + "\"; " +
                     "annotated assignments are not allowed");
         }
 
-        if(existingKey.hasAnnotation(Annotation.IMMUTABLE)) {
-            _problemConsumer.error(immutableErrorMessageFor(existingKey));
+        if (existingKey.hasAnyOf(EnumSet.of(Annotation.IMMUTABLE,
+                Annotation.PREFIX, Annotation.FORBIDDEN))) {
+            _problemConsumer.error(messageFor(existingKey));
         }
 
-        if(existingKey.hasAnnotation(Annotation.FORBIDDEN)) {
-            _problemConsumer.error(forbiddenErrorMessageFor(existingKey));
-        }
-
-        if(existingKey.hasAnnotation(Annotation.OBSOLETE)) {
-            _problemConsumer.warning(obsoleteErrorMessageFor(existingKey));
-        }
-
-        if(existingKey.hasAnnotation(Annotation.DEPRECATED)) {
-            _problemConsumer.warning("Property " + name + ": " +
-                    deprecatedWarningInstructionsFor(name) + "; support for " +
-                    name + " will be removed in the future");
-        }
-
-        if(_isService && existingKey.hasAnnotation(Annotation.NOT_FOR_SERVICES)) {
-            _problemConsumer.warning("Property " + name
-                    + ": consider moving to a domain scope; it has no effect here");
+        if ((_isService && existingKey.hasAnnotation(Annotation.NOT_FOR_SERVICES)) ||
+            existingKey.hasAnyOf(EnumSet.of(Annotation.OBSOLETE, Annotation.DEPRECATED))) {
+            _problemConsumer.warning(messageFor(existingKey));
         }
     }
 
@@ -345,17 +358,6 @@ public class ConfigurationProperties
                         + "\" is not a valid value. Must be a comma separated list of "
                         + validValuesList);
             }
-        }
-    }
-
-    private String deprecatedWarningInstructionsFor(String propertyName)
-    {
-        String synonym = findSynonymOf(propertyName);
-
-        if(synonym != null) {
-            return "use \"" + synonym + "\" instead";
-        } else {
-            return "please review configuration";
         }
     }
 
@@ -404,28 +406,38 @@ public class ConfigurationProperties
         return synonym;
     }
 
-    private String forbiddenErrorMessageFor(AnnotatedKey key)
+    private String messageFor(AnnotatedKey key)
     {
-        String customError = key.getError();
+        String name = key.getPropertyName();
 
-        String suffix = customError.isEmpty() ? "this property no longer affects dCache" :
-            customError;
+        StringBuilder sb = new StringBuilder();
+        sb.append("Property ").append(name).append(": ");
 
-        return "Property " + key.getPropertyName() + ": may not be adjusted; " + suffix;
-    }
+        if (key.hasAnnotation(Annotation.IMMUTABLE)) {
+            sb.append("may not be adjusted as it is marked 'immutable'");
+        } else if (key.hasAnnotation(Annotation.PREFIX)) {
+            sb.append("may not be adjusted as it is marked 'prefix'");
+        } else if (key.hasAnnotation(Annotation.FORBIDDEN)) {
+            sb.append("may not be adjusted; ");
+            sb.append(key.hasError() ? key.getError() : "this property no longer affects dCache");
+        } else if (key.hasAnnotation(Annotation.OBSOLETE)) {
+            sb.append("please remove this assignment; ");
+            sb.append(key.hasError() ? key.getError() : "it has no effect");
+        } else if(key.hasAnnotation(Annotation.DEPRECATED)) {
+            String synonym = findSynonymOf(name);
+            if (synonym != null) {
+                sb.append("use \"").append(synonym).append("\" instead");
+            } else {
+                sb.append("please review configuration");
+            }
+            sb.append("; support for ").append(name).append(" will be removed in the future");
+        } else if (key.hasAnnotation(Annotation.NOT_FOR_SERVICES)) {
+            sb.append("consider moving to a domain scope; it has no effect here");
+        } else {
+            sb.append("has an unknown problem");
+        }
 
-    private String immutableErrorMessageFor(AnnotatedKey key)
-    {
-        return "Property " + key.getPropertyName() + ": may not be adjusted as it is marked 'immutable'";
-    }
-
-    private String obsoleteErrorMessageFor(AnnotatedKey key)
-    {
-        String customError = key.getError();
-
-        String suffix = customError.isEmpty() ? "it has no effect" : customError;
-
-        return "Property " + key.getPropertyName() + ": please remove this assignment; " + suffix;
+        return sb.toString();
     }
 
     @Override
@@ -577,6 +589,10 @@ public class ConfigurationProperties
             return _error;
         }
 
+        public boolean hasError() {
+            return !_error.isEmpty();
+        }
+
         public String getParameter(Annotation annotation) {
             String parameter = _annotations.get(annotation);
 
@@ -602,7 +618,8 @@ public class ConfigurationProperties
         DEPRECATED("deprecated"),
         NOT_FOR_SERVICES("not-for-services"),
         IMMUTABLE("immutable"),
-        ANY_OF("any-of", true);
+        ANY_OF("any-of", true),
+        PREFIX("prefix");
 
         private static final Map<String,Annotation> ANNOTATION_LABELS =
                 new HashMap<>();
