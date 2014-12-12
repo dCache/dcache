@@ -110,6 +110,7 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
             case '?':
             case '*':
             case '[':
+            case ' ':
                 output[len++] = '\\';
                 break;
             }
