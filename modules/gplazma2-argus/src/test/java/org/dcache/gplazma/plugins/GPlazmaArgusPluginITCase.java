@@ -2,7 +2,7 @@ package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Ignore;
 import org.junit.Test;
 

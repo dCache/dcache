@@ -1,7 +1,7 @@
 package org.dcache.auth;
 
 import com.google.common.collect.ImmutableSet;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -1,7 +1,7 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.Lists;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

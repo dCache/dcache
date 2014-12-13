@@ -1,6 +1,6 @@
 package org.dcache.auth.gplazma;
 
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 

@@ -1,7 +1,7 @@
 package org.dcache.gplazma.monitor;
 
 import com.google.common.collect.Sets;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

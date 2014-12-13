@@ -19,7 +19,7 @@ package org.globus.gsi.jaas;
  * A Globus DN principal. The Globus DN is in the form: "/CN=foo/O=bar".
  *
  * To maintain compatibility with pools before 2.5, we cannot use
- * GlobusPrincipal from JGlobus 2, org.globus.gsi.jaas.GlobusPrincipal.
+ * GlobusPrincipal from JGlobus 2, org.globus.gsi.gssapi.jaas.
  * Older versions of dCache would be unable to deserialize messages
  * containing the new principal.
  *
@@ -43,7 +43,7 @@ package org.globus.gsi.jaas;
  * to deserialize and serialize instances of the new class, but will
  * otherwise not pay attention to them.
  */
-@Deprecated // will be removed in 2.11
+@Deprecated // will be removed in 2.14
 public class GlobusPrincipal
     extends SimplePrincipal
 {
@@ -51,6 +51,6 @@ public class GlobusPrincipal
 
     public GlobusPrincipal(String globusDn)
     {
-	super(globusDn);
+        super(globusDn);
     }
 }

@@ -3,7 +3,7 @@ package org.dcache.auth.gplazma;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 

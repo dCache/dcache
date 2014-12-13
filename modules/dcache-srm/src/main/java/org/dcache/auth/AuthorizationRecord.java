@@ -2,7 +2,7 @@ package org.dcache.auth;
 
 import com.google.common.base.Objects;
 import org.datanucleus.api.jpa.annotations.JdbcType;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;

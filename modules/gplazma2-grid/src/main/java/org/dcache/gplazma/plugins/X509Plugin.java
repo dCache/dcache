@@ -1,6 +1,6 @@
 package org.dcache.gplazma.plugins;
 
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import java.security.Principal;
 import java.security.cert.CertPath;

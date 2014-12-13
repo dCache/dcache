@@ -1,7 +1,7 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.collect.Sets;
-import org.globus.gsi.jaas.GlobusPrincipal;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import java.security.Principal;
 import java.util.Collections;
