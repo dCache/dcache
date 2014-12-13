@@ -153,12 +153,39 @@ public abstract class NetworkUtils {
     public static InetAddress getLocalAddress(InetAddress intendedDestination)
             throws SocketException
     {
-        return getLocalAddress(intendedDestination, getProtocolFamily(intendedDestination));
+        InetAddress localAddress = getLocalAddress(intendedDestination, getProtocolFamily(intendedDestination));
+        if (localAddress == null) {
+            if (FAKED_ADDRESS) {
+                localAddress =  LOCAL_INET_ADDRESSES.get(0);
+            } else {
+                try (DatagramSocket socket = new DatagramSocket()) {
+                    socket.connect(intendedDestination, RANDOM_PORT);
+                    localAddress = socket.getLocalAddress();
+
+                    /* The following is a workaround for Java bugs on Mac OS X and
+                     * Windows XP, see eg http://goo.gl/ENXkD
+                     */
+                    if (localAddress.isAnyLocalAddress()) {
+                        if (intendedDestination.isLoopbackAddress()) {
+                            localAddress = InetAddress.getLoopbackAddress();
+                        } else {
+                            try {
+                                localAddress = InetAddress.getLocalHost();
+                            } catch (UnknownHostException e) {
+                                localAddress = LOCAL_INET_ADDRESSES.get(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return localAddress;
     }
 
     /**
      * Like getLocalAddress(InetAddress), but return an addresses from the given protocolFamily on
-     * the network interface that would be used to reach the destination.
+     * the network interface that would be used to reach the destination. Returns null if the
+     * interface doesn't support the protocol family.
      */
     public static InetAddress getLocalAddress(InetAddress intendedDestination, ProtocolFamily protocolFamily)
             throws SocketException
@@ -198,10 +225,10 @@ public abstract class NetworkUtils {
                             (!address.isLoopbackAddress() || intendedDestination.isLoopbackAddress()) &&
                             (!address.isSiteLocalAddress() || intendedDestination.isSiteLocalAddress()) &&
                             (!address.isLinkLocalAddress() || intendedDestination.isLinkLocalAddress())) {
-                        localAddress = address;
-                        break;
+                        return address;
                     }
                 }
+                return null;
             }
             return localAddress;
         }
