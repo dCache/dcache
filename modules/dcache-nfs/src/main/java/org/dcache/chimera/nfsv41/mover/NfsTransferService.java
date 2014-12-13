@@ -1,9 +1,13 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -45,6 +49,8 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
+
+import static com.google.common.collect.Iterables.*;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -155,14 +161,16 @@ public class NfsTransferService extends AbstractCellComponent
         _withGss = withGss;
     }
 
-    private InetSocketAddress[] localSocketAddresses(List<InetAddress> addresses, int port) {
-        InetSocketAddress[] socketAddresses = new InetSocketAddress[addresses.size()];
-        int i = 0;
-        for(InetAddress address: addresses) {
-            socketAddresses[i] = new InetSocketAddress(address, port);
-            i++;
-        }
-        return socketAddresses;
+    private InetSocketAddress[] localSocketAddresses(Iterable<InetAddress> addresses, final int port) {
+        return toArray(transform(addresses,
+                                 new Function<InetAddress, InetSocketAddress>()
+                                 {
+                                     @Override
+                                     public InetSocketAddress apply(InetAddress address)
+                                     {
+                                         return new InetSocketAddress(address, port);
+                                     }
+                                 }), InetSocketAddress.class);
     }
 
     private InetSocketAddress[] localSocketAddresses(NfsMover mover) throws SocketException {

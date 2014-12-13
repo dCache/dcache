@@ -5,6 +5,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Ordering;
 import org.glite.voms.PKIVerifier;
 import org.glite.voms.VOMSAttribute;
 import org.glite.voms.VOMSValidator;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -443,16 +445,11 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * @throws SocketException
      */
     private void configureResourceDNSHostName() throws SocketException {
-        List<InetAddress> addressList = NetworkUtils.getLocalAddresses();
-
-        if (addressList.isEmpty()) {
-            return;
+        Iterable<InetAddress> addressList = NetworkUtils.getLocalAddresses();
+        try {
+            _resourceDNSHostName = Ordering.from(NetworkUtils.getExternalInternalSorter()).min(addressList).getCanonicalHostName();
+        } catch (NoSuchElementException ignored) {
         }
-
-        addressList = new ArrayList<>(addressList);
-
-        Collections.sort(addressList, NetworkUtils.getExternalInternalSorter());
-        _resourceDNSHostName = addressList.get(0).getCanonicalHostName();
     }
 
     /**

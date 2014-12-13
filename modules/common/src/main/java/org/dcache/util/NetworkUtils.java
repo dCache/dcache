@@ -25,12 +25,8 @@ import java.net.StandardProtocolFamily;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -38,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.instanceOf;
+import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterators.*;
@@ -49,58 +46,23 @@ public abstract class NetworkUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(NetworkUtils.class);
 
-    public final static String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
+    public static final String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
-    private final static String canonicalHostName;
+    private static final String canonicalHostName;
     private static final int RANDOM_PORT = 23241;
-    private static final int FIRST_CLIENT_HOST = 0;
 
-    private final static List<InetAddress> LOCAL_INET_ADDRESSES;
-    private final static boolean FAKED_ADDRESS;
+    private static final List<InetAddress> FAKED_ADDRESSES;
 
-    private final static Supplier<Iterable<InetAddress>> LOCAL_ADDRESS_SUPPLIER =
+    private static final Supplier<Iterable<InetAddress>> LOCAL_ADDRESS_SUPPLIER =
             Suppliers.memoizeWithExpiration(new LocalAddressSupplier(), 5, TimeUnit.SECONDS);
 
     static {
-        /*
-         * Get localcal Inet addresses
-         */
-        final String localaddresses = System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY);
-        final List<InetAddress> localInetAddress = new ArrayList<InetAddress>();
-
-        if(localaddresses != null && !localaddresses.isEmpty()) {
-            FAKED_ADDRESS = true;
-            Splitter s = Splitter.on(',')
-                    .omitEmptyStrings()
-                    .trimResults();
-            for(String address: s.split(localaddresses)) {
-                localInetAddress.add(InetAddresses.forString(address));
-            }
-        } else {
-            FAKED_ADDRESS = false;
-            try {
-                Enumeration<NetworkInterface> interfaces =
-                        NetworkInterface.getNetworkInterfaces();
-
-                while (interfaces.hasMoreElements()) {
-                    NetworkInterface i = interfaces.nextElement();
-                    try {
-                        if (i.isUp() && !i.isLoopback()) {
-                            Enumeration<InetAddress> addresses = i.getInetAddresses();
-                            while (addresses.hasMoreElements()) {
-                                localInetAddress.add(addresses.nextElement());
-                            }
-                        }
-                    } catch (SocketException e) {
-                        // skip faulty interface
-                    }
-                }
-            } catch (SocketException e) {
-                // huh....
-            }
+        String value = nullToEmpty(System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY));
+        ImmutableList.Builder<InetAddress> fakedAddresses = ImmutableList.builder();
+        for (String address: Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
+            fakedAddresses.add(InetAddresses.forString(address));
         }
-        LOCAL_INET_ADDRESSES = ImmutableList.copyOf(localInetAddress);
-
+        FAKED_ADDRESSES = fakedAddresses.build();
         canonicalHostName = getPreferredHostName();
     }
 
@@ -135,8 +97,11 @@ public abstract class NetworkUtils {
      * @return
      * @throws SocketException
      */
-    public static List<InetAddress> getLocalAddresses() {
-        return LOCAL_INET_ADDRESSES;
+    public static Iterable<InetAddress> getLocalAddresses() {
+        if (!FAKED_ADDRESSES.isEmpty()) {
+            return FAKED_ADDRESSES;
+        }
+        return filter(LOCAL_ADDRESS_SUPPLIER.get(), isNotMulticast());
     }
 
     /**
@@ -144,15 +109,6 @@ public abstract class NetworkUtils {
      */
     public static List<InetAddress> getLocalAddressesV4() throws SocketException {
         return copyOf(filter(getLocalAddresses(), instanceOf(Inet4Address.class)));
-    }
-
-    /**
-     * Returns a local IP facing the first client address provided.
-     */
-    public static InetAddress getLocalAddressForClient(String[] clientHosts) throws SocketException, UnknownHostException {
-        InetAddress clientAddress = InetAddress.getByName(clientHosts[FIRST_CLIENT_HOST]);
-        InetAddress localAddress = NetworkUtils.getLocalAddress(clientAddress);
-        return localAddress;
     }
 
     /**
@@ -180,8 +136,8 @@ public abstract class NetworkUtils {
     {
         InetAddress localAddress = getLocalAddress(expectedSource, getProtocolFamily(expectedSource));
         if (localAddress == null) {
-            if (FAKED_ADDRESS) {
-                localAddress =  LOCAL_INET_ADDRESSES.get(0);
+            if (!FAKED_ADDRESSES.isEmpty()) {
+                localAddress = FAKED_ADDRESSES.get(0);
             } else {
                 try (DatagramSocket socket = new DatagramSocket()) {
                     socket.connect(expectedSource, RANDOM_PORT);
@@ -205,7 +161,7 @@ public abstract class NetworkUtils {
                                            and(greaterThanOrEquals(minScope),
                                                isNotMulticast())));
                         } catch (NoSuchElementException e) {
-                            localAddress = LOCAL_INET_ADDRESSES.get(0);
+                            throw new SocketException("Unable to find address that faces " + expectedSource);
                         }
                     }
                 }
@@ -222,8 +178,8 @@ public abstract class NetworkUtils {
     public static InetAddress getLocalAddress(InetAddress expectedSource, ProtocolFamily protocolFamily)
             throws SocketException
     {
-        if (FAKED_ADDRESS) {
-            for (InetAddress address : LOCAL_INET_ADDRESSES) {
+        if (!FAKED_ADDRESSES.isEmpty()) {
+            for (InetAddress address : FAKED_ADDRESSES) {
                 if (getProtocolFamily(address) == protocolFamily) {
                     return address;
                 }
@@ -327,37 +283,22 @@ public abstract class NetworkUtils {
         throw new IllegalArgumentException("Unknown protocol family: " + address);
     }
 
-
     private static String getPreferredHostName() {
-        String hostName = "localhost";
-
-        if (!LOCAL_INET_ADDRESSES.isEmpty()) {
-            InetAddress[] addresses
-                = LOCAL_INET_ADDRESSES.toArray(new InetAddress[0]);
-            Arrays.sort(addresses, getExternalInternalSorter());
-
-            boolean found = false;
-
-            /*
-             * For legibility, we prefer to see a traditional
-             * DNS host name; but if there is no mapping,
-             * use the first address.
-             */
-            for (InetAddress a: addresses) {
-                hostName = stripScope(a.getCanonicalHostName());
-
-                if (!InetAddresses.isInetAddress(hostName)) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                hostName = addresses[0].getCanonicalHostName();
+        List<InetAddress> addresses = Ordering.from(getExternalInternalSorter()).sortedCopy(getLocalAddresses());
+        if (addresses.isEmpty()) {
+            return "localhost";
+        }
+        /* For legibility, we prefer to see a traditional
+         * DNS host name; but if there is no mapping,
+         * use the first address.
+         */
+        for (InetAddress a: addresses) {
+            String hostName = stripScope(a.getCanonicalHostName());
+            if (!InetAddresses.isInetAddress(hostName)) {
+                return hostName;
             }
         }
-
-        return hostName;
+        return addresses.get(0).getCanonicalHostName();
     }
 
     /*
