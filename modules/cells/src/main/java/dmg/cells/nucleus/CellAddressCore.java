@@ -31,9 +31,6 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
     private final String _domain;
     private final String _cell;
 
-    @Deprecated // Remote in 2.11
-    private final int _hashcode;
-
     /**
      * Creates a CellAddressCore by scanning the argument string. The syntax can
      * be only one of the following :<br>
@@ -60,15 +57,12 @@ public final class CellAddressCore implements Cloneable, Serializable, Comparabl
                 _domain = addr.substring(ind + 1);
             }
         }
-
-        _hashcode = (_domain + _cell).hashCode();
     }
 
     public CellAddressCore(String addr, String domain) {
         checkNotNull(addr);
         _cell = addr;
         _domain = (domain == null) ? "local" : domain;
-        _hashcode = (_domain + _cell).hashCode();
     }
 
     /*

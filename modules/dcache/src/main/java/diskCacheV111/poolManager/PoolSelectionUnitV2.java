@@ -2429,11 +2429,6 @@ public class PoolSelectionUnitV2
         return "";
     }
 
-    @Deprecated // Remove in 2.10
-    public String ac_psu_set_linkGroup_attribute_$_2(Args args) {
-        return "psu set linkGroup attribute is obsolete.";
-    }
-
 
     public final static String hh_psu_set_linkGroup_custodialAllowed = "<link group> <true|false>";
 

@@ -4,7 +4,6 @@ package diskCacheV111.pools ;
 
 public interface CostCalculatable {
 
-    public double getSpaceCost() ;
     public double getPerformanceCost() ;
     public void   recalculate();
 }

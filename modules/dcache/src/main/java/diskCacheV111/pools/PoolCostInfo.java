@@ -291,15 +291,4 @@ public class PoolCostInfo implements Serializable {
         sb.append("}");
         return sb.toString();
     }
-
-    private void readObject(ObjectInputStream stream)
-        throws IOException, ClassNotFoundException
-    {
-        /* For compatibility with pre 1.9.14 pools we inject a default
-         * value for the mover cost factor. REVISIT: Can be removed
-         * after the third golden release.
-         */
-        _moverCostFactor = 0.5;
-        stream.defaultReadObject();
-    }
 }

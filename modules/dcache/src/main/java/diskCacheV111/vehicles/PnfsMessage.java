@@ -11,6 +11,8 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.acl.enums.AccessMask;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Base class for messages to PnfsManager.
  */
@@ -41,10 +43,7 @@ public class PnfsMessage extends Message {
 
     public void setAccessMask(Set<AccessMask> mask)
     {
-        if (mask == null) {
-            throw new IllegalArgumentException("Null argument not allowed");
-        }
-        _mask = mask;
+        _mask = checkNotNull(mask);
     }
 
     public Set<AccessMask> getAccessMask()
@@ -87,19 +86,6 @@ public class PnfsMessage extends Message {
     public boolean invalidates(Message message)
     {
         return genericInvalidatesForPnfsMessage(message);
-    }
-
-    /**
-     * For compatibility with pre-1.9.6 installations, we fill in the
-     * _mask field if it is missing.
-     */
-    private void readObject(ObjectInputStream stream)
-        throws IOException, ClassNotFoundException
-    {
-        stream.defaultReadObject();
-        if (_mask == null) {
-            _mask = Collections.emptySet();
-        }
     }
 
     @Override

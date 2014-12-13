@@ -66,11 +66,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.vehicles ;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
-import java.net.StandardProtocolFamily;
 
 public class GFtpProtocolInfo implements IpProtocolInfo {
     private String _name  = "Unkown" ;
@@ -109,14 +106,6 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
      * Added for GFtp/2. We rely on default initialisation to null.
      */
     private String _clientAddress;
-
-    /**
-     * Whether the pool is requested to be passive.
-     *
-     * Kept for backwards compatibility with 2.8 and before.
-     */
-    @Deprecated
-    private boolean _passive;
 
     /**
      * Whether the pool is requested to be passive.
@@ -292,15 +281,5 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     @Override
     public InetSocketAddress getSocketAddress() {
         return _addr;
-    }
-
-    /**
-     * Ensures compatibility with pools from 2.8 and older. For old pools, passive mode
-     * is only requested for IPv4.
-     */
-    private void writeObject (ObjectOutputStream out) throws IOException
-    {
-        _passive = _extendedPassive && _protocolFamily == StandardProtocolFamily.INET;
-        out.defaultWriteObject();
     }
 }

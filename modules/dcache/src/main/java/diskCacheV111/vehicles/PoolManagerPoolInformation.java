@@ -15,8 +15,6 @@ public class PoolManagerPoolInformation
     private static final long serialVersionUID = -279163439475487756L;
 
     private final String _name;
-    @Deprecated // Can be removed after Golden Release 4
-    private double _spaceCost;
     private double _cpuCost;
     private final PoolCostInfo _poolCostInfo;
 
@@ -26,7 +24,6 @@ public class PoolManagerPoolInformation
         _poolCostInfo = checkNotNull(poolCostInfo);
         CostCalculationV5 calc = new CostCalculationV5(_poolCostInfo);
         calc.recalculate();
-        _spaceCost = calc.getSpaceCost();
         _cpuCost = calc.getPerformanceCost();
     }
 

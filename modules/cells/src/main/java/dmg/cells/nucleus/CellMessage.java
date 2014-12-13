@@ -201,9 +201,6 @@ public boolean equals( Object obj ){
     {
         stream.defaultReadObject();
         _receivedAt = System.currentTimeMillis();
-        if (_ttl == 0) {
-            _ttl = Long.MAX_VALUE;
-        }
     }
 
     /**
