@@ -3,10 +3,15 @@ package org.dcache.util;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
@@ -29,18 +34,21 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.collect.Collections2.filter;
 import static com.google.common.collect.ImmutableList.copyOf;
+import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterators.*;
-import static com.google.common.collect.Iterators.concat;
 
 /**
  * Various network related utility functions.
  */
 public abstract class NetworkUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(NetworkUtils.class);
+
     public final static String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
     private final static String canonicalHostName;
@@ -49,6 +57,9 @@ public abstract class NetworkUtils {
 
     private final static List<InetAddress> LOCAL_INET_ADDRESSES;
     private final static boolean FAKED_ADDRESS;
+
+    private final static Supplier<Iterable<InetAddress>> LOCAL_ADDRESS_SUPPLIER =
+            Suppliers.memoizeWithExpiration(new LocalAddressSupplier(), 5, TimeUnit.SECONDS);
 
     static {
         /*
@@ -190,9 +201,9 @@ public abstract class NetworkUtils {
                         InetAddressScope minScope = InetAddressScope.of(expectedSource);
                         try {
                             return Ordering.natural().onResultOf(InetAddressScope.OF).min(
-                                    Iterators.filter(getAllLocalAddresses(),
-                                                     and(greaterThanOrEquals(minScope),
-                                                         isNotMulticast())));
+                                    filter(LOCAL_ADDRESS_SUPPLIER.get(),
+                                           and(greaterThanOrEquals(minScope),
+                                               isNotMulticast())));
                         } catch (NoSuchElementException e) {
                             localAddress = LOCAL_INET_ADDRESSES.get(0);
                         }
@@ -201,28 +212,6 @@ public abstract class NetworkUtils {
             }
         }
         return localAddress;
-    }
-
-    /**
-     *  Returns an iterator for all internet addresses of network interfaces that are up.
-     */
-    private static Iterator<InetAddress> getAllLocalAddresses() throws SocketException
-    {
-        return concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
-                                new Function<NetworkInterface, Iterator<InetAddress>>()
-                                {
-                                    @Override
-                                    public Iterator<InetAddress> apply(NetworkInterface i)
-                                    {
-                                        try {
-                                            if (i.isUp()) {
-                                                return forEnumeration(i.getInetAddresses());
-                                            }
-                                        } catch (SocketException ignored) {
-                                        }
-                                        return Collections.emptyIterator();
-                                    }
-                                }));
     }
 
     /**
@@ -260,10 +249,10 @@ public abstract class NetworkUtils {
                 InetAddressScope minScope = InetAddressScope.of(expectedSource);
                 try {
                     return Ordering.natural().onResultOf(InetAddressScope.OF).min(
-                            Iterators.filter(getAllLocalAddresses(),
-                                             and(greaterThanOrEquals(minScope),
-                                                 hasProtocolFamily(protocolFamily),
-                                                 isNotMulticast())));
+                            filter(LOCAL_ADDRESS_SUPPLIER.get(),
+                                   and(greaterThanOrEquals(minScope),
+                                       hasProtocolFamily(protocolFamily),
+                                       isNotMulticast())));
                 } catch (NoSuchElementException e) {
                     return null;
                 }
@@ -389,7 +378,7 @@ public abstract class NetworkUtils {
      * The scope of an address captures the extend of the validity of
      * an internet address.
      */
-    public enum InetAddressScope
+    public static enum InetAddressScope
     {
         LOOPBACK,
         LINK,
@@ -419,5 +408,37 @@ public abstract class NetworkUtils {
                         return of(address);
                     }
                 };
+    }
+
+    /**
+     *  A supplier that returns all internet addresses of network interfaces that are up.
+     */
+    private static class LocalAddressSupplier implements Supplier<Iterable<InetAddress>>
+    {
+        @Override
+        public Iterable<InetAddress> get()
+        {
+            try {
+                return Lists.newArrayList(
+                        concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
+                                         new Function<NetworkInterface, Iterator<InetAddress>>()
+                                         {
+                                             @Override
+                                             public Iterator<InetAddress> apply(NetworkInterface i)
+                                             {
+                                                 try {
+                                                     if (i.isUp()) {
+                                                         return forEnumeration(i.getInetAddresses());
+                                                     }
+                                                 } catch (SocketException ignored) {
+                                                 }
+                                                 return Collections.emptyIterator();
+                                             }
+                                         })));
+            } catch (SocketException e) {
+                logger.error("Failed to resolve local network addresses: {}", e.toString());
+                return Collections.emptyList();
+            }
+        }
     }
 }
