@@ -162,36 +162,39 @@ public abstract class NetworkUtils {
     }
 
     /**
-     * Return the local address via which the given destination
-     * address is reachable.
-     *
-     * Java does not provide this functionality and therefore we need
-     * this workaround.
+     * Return a local address that is likely reachable from {@code expectedSource}.
      */
-    public static InetAddress getLocalAddress(InetAddress intendedDestination)
+    public static InetAddress getLocalAddress(InetAddress expectedSource)
             throws SocketException
     {
-        InetAddress localAddress = getLocalAddress(intendedDestination, getProtocolFamily(intendedDestination));
+        InetAddress localAddress = getLocalAddress(expectedSource, getProtocolFamily(expectedSource));
         if (localAddress == null) {
             if (FAKED_ADDRESS) {
                 localAddress =  LOCAL_INET_ADDRESSES.get(0);
             } else {
                 try (DatagramSocket socket = new DatagramSocket()) {
-                    socket.connect(intendedDestination, RANDOM_PORT);
+                    socket.connect(expectedSource, RANDOM_PORT);
                     localAddress = socket.getLocalAddress();
 
-                    /* The following is a workaround for Java bugs on Mac OS X and
-                     * Windows XP, see eg http://goo.gl/ENXkD
+                    /* DatagramSocket#getLocalAddress reports errors by returning the
+                     * wildcard address. There are several cases in which it does this,
+                     * such as when the host it is unable to serve the protocol family,
+                     * has no route to the address, or in case of Max OS X and Windows XP
+                     * due to bugs (see http://goo.gl/ENXkD).
+                     *
+                     * We fall back to enumerating all local network addresses and choose
+                     * the one with the smallest scope not smaller than the scope of the
+                     * expected source.
                      */
                     if (localAddress.isAnyLocalAddress()) {
-                        if (intendedDestination.isLoopbackAddress()) {
-                            localAddress = InetAddress.getLoopbackAddress();
-                        } else {
-                            try {
-                                localAddress = InetAddress.getLocalHost();
-                            } catch (UnknownHostException e) {
-                                localAddress = LOCAL_INET_ADDRESSES.get(0);
-                            }
+                        InetAddressScope minScope = InetAddressScope.of(expectedSource);
+                        try {
+                            return Ordering.natural().onResultOf(InetAddressScope.OF).min(
+                                    Iterators.filter(getAllLocalAddresses(),
+                                                     and(greaterThanOrEquals(minScope),
+                                                         isNotMulticast())));
+                        } catch (NoSuchElementException e) {
+                            localAddress = LOCAL_INET_ADDRESSES.get(0);
                         }
                     }
                 }
@@ -223,9 +226,9 @@ public abstract class NetworkUtils {
     }
 
     /**
-     * Like getLocalAddress(InetAddress), but return an addresses from the given protocolFamily on
-     * the network interface that would be used to reach the destination. Returns null if the
-     * interface doesn't support the protocol family.
+     * Like getLocalAddress(InetAddress), but returns an addresses from the given protocolFamily
+     * that is likely reachable from {@code expectedSource}. Returns null if such an address
+     * could not be determined.
      */
     public static InetAddress getLocalAddress(InetAddress expectedSource, ProtocolFamily protocolFamily)
             throws SocketException
@@ -251,14 +254,14 @@ public abstract class NetworkUtils {
              *
              * We fall back to enumerating all local network addresses and choose
              * the one with the smallest scope which matches the desired protocol
-             * family and has a scope at least as big as the intended destination.
+             * family and has a scope at least as big as the expected source.
              */
             if (localAddress.isAnyLocalAddress()) {
-                InetAddressScope intendedScope = InetAddressScope.of(expectedSource);
+                InetAddressScope minScope = InetAddressScope.of(expectedSource);
                 try {
                     return Ordering.natural().onResultOf(InetAddressScope.OF).min(
                             Iterators.filter(getAllLocalAddresses(),
-                                             and(greaterThanOrEquals(intendedScope),
+                                             and(greaterThanOrEquals(minScope),
                                                  hasProtocolFamily(protocolFamily),
                                                  isNotMulticast())));
                 } catch (NoSuchElementException e) {
