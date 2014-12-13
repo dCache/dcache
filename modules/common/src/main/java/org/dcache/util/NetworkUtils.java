@@ -1,7 +1,11 @@
 package org.dcache.util;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Ordering;
 import com.google.common.net.InetAddresses;
 
 import java.net.DatagramSocket;
@@ -19,13 +23,19 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import static com.google.common.base.Predicates.and;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Collections2.filter;
 import static com.google.common.collect.ImmutableList.copyOf;
+import static com.google.common.collect.Iterators.*;
+import static com.google.common.collect.Iterators.concat;
 
 /**
  * Various network related utility functions.
@@ -191,11 +201,33 @@ public abstract class NetworkUtils {
     }
 
     /**
+     *  Returns an iterator for all internet addresses of network interfaces that are up.
+     */
+    private static Iterator<InetAddress> getAllLocalAddresses() throws SocketException
+    {
+        return concat(transform(forEnumeration(NetworkInterface.getNetworkInterfaces()),
+                                new Function<NetworkInterface, Iterator<InetAddress>>()
+                                {
+                                    @Override
+                                    public Iterator<InetAddress> apply(NetworkInterface i)
+                                    {
+                                        try {
+                                            if (i.isUp()) {
+                                                return forEnumeration(i.getInetAddresses());
+                                            }
+                                        } catch (SocketException ignored) {
+                                        }
+                                        return Collections.emptyIterator();
+                                    }
+                                }));
+    }
+
+    /**
      * Like getLocalAddress(InetAddress), but return an addresses from the given protocolFamily on
      * the network interface that would be used to reach the destination. Returns null if the
      * interface doesn't support the protocol family.
      */
-    public static InetAddress getLocalAddress(InetAddress intendedDestination, ProtocolFamily protocolFamily)
+    public static InetAddress getLocalAddress(InetAddress expectedSource, ProtocolFamily protocolFamily)
             throws SocketException
     {
         if (FAKED_ADDRESS) {
@@ -208,38 +240,88 @@ public abstract class NetworkUtils {
         }
 
         try (DatagramSocket socket = new DatagramSocket()) {
-            socket.connect(intendedDestination, RANDOM_PORT);
+            socket.connect(expectedSource, RANDOM_PORT);
             InetAddress localAddress = socket.getLocalAddress();
-            /* The following is a workaround for Java bugs on Mac OS X and
-             * Windows XP, see eg http://goo.gl/ENXkD
+
+            /* DatagramSocket#getLocalAddress reports errors by returning the
+             * wildcard address. There are several cases in which it does this,
+             * such as when the host it is unable to serve the protocol family,
+             * has no route to the address, or in case of Max OS X and Windows XP
+             * due to bugs (see http://goo.gl/ENXkD).
+             *
+             * We fall back to enumerating all local network addresses and choose
+             * the one with the smallest scope which matches the desired protocol
+             * family and has a scope at least as big as the intended destination.
              */
             if (localAddress.isAnyLocalAddress()) {
-                if (intendedDestination.isLoopbackAddress()) {
-                    localAddress = InetAddress.getLoopbackAddress();
-                } else {
-                    try {
-                        localAddress = InetAddress.getLocalHost();
-                    } catch (UnknownHostException e) {
-                        localAddress = getLocalAddresses().get(0);
-                    }
+                InetAddressScope intendedScope = InetAddressScope.of(expectedSource);
+                try {
+                    return Ordering.natural().onResultOf(InetAddressScope.OF).min(
+                            Iterators.filter(getAllLocalAddresses(),
+                                             and(greaterThanOrEquals(intendedScope),
+                                                 hasProtocolFamily(protocolFamily),
+                                                 isNotMulticast())));
+                } catch (NoSuchElementException e) {
+                    return null;
                 }
             }
+
+            /* It is quite possible that the expected source has a different protocol
+             * family than the one we are expected to serve. In that case we try to
+             * find a matching address from the same network interface (which we know
+             * faces the expected source).
+             */
             if (getProtocolFamily(localAddress) != protocolFamily) {
-                Enumeration<InetAddress> addresses =
-                        NetworkInterface.getByInetAddress(localAddress).getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    InetAddress address = addresses.nextElement();
-                    if (getProtocolFamily(address) == protocolFamily && !address.isMulticastAddress() &&
-                            (!address.isLoopbackAddress() || intendedDestination.isLoopbackAddress()) &&
-                            (!address.isSiteLocalAddress() || intendedDestination.isSiteLocalAddress()) &&
-                            (!address.isLinkLocalAddress() || intendedDestination.isLinkLocalAddress())) {
-                        return address;
-                    }
+                InetAddressScope intendedScope = InetAddressScope.of(expectedSource);
+                NetworkInterface byInetAddress = NetworkInterface.getByInetAddress(localAddress);
+                try {
+                    return Ordering.natural().onResultOf(InetAddressScope.OF).min(
+                            Iterators.filter(forEnumeration(byInetAddress.getInetAddresses()),
+                                             and(greaterThanOrEquals(intendedScope),
+                                                 hasProtocolFamily(protocolFamily),
+                                                 isNotMulticast())));
+                } catch (NoSuchElementException e) {
+                    return null;
                 }
-                return null;
             }
             return localAddress;
         }
+    }
+
+    private static Predicate<InetAddress> isNotMulticast()
+    {
+        return new Predicate<InetAddress>()
+        {
+            @Override
+            public boolean apply(InetAddress address)
+            {
+                return !address.isMulticastAddress();
+            }
+        };
+    }
+
+    private static Predicate<InetAddress> hasProtocolFamily(final ProtocolFamily protocolFamily)
+    {
+        return new Predicate<InetAddress>()
+        {
+            @Override
+            public boolean apply(InetAddress address)
+            {
+                return getProtocolFamily(address) == protocolFamily;
+            }
+        };
+    }
+
+    private static Predicate<InetAddress> greaterThanOrEquals(final InetAddressScope scope)
+    {
+        return new Predicate<InetAddress>()
+        {
+            @Override
+            public boolean apply(InetAddress address)
+            {
+                return InetAddressScope.of(address).ordinal() >= scope.ordinal();
+            }
+        };
     }
 
     private static ProtocolFamily getProtocolFamily(InetAddress address)
@@ -298,5 +380,41 @@ public abstract class NetworkUtils {
             return hostName.substring(0, i);
         }
         return hostName;
+    }
+
+    /**
+     * The scope of an address captures the extend of the validity of
+     * an internet address.
+     */
+    public enum InetAddressScope
+    {
+        LOOPBACK,
+        LINK,
+        SITE,
+        GLOBAL;
+
+        public static InetAddressScope of(InetAddress address)
+        {
+            if (address.isLoopbackAddress()) {
+                return LOOPBACK;
+            }
+            if (address.isLinkLocalAddress()) {
+                return LINK;
+            }
+            if (address.isSiteLocalAddress()) {
+                return SITE;
+            }
+            return GLOBAL;
+        }
+
+        public static final Function<InetAddress,InetAddressScope> OF =
+                new Function<InetAddress, InetAddressScope>()
+                {
+                    @Override
+                    public InetAddressScope apply(InetAddress address)
+                    {
+                        return of(address);
+                    }
+                };
     }
 }
