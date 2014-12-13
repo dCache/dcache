@@ -447,7 +447,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     private void configureResourceDNSHostName() throws SocketException {
         Iterable<InetAddress> addressList = NetworkUtils.getLocalAddresses();
         try {
-            _resourceDNSHostName = Ordering.from(NetworkUtils.getExternalInternalSorter()).min(addressList).getCanonicalHostName();
+            _resourceDNSHostName = Ordering.natural().onResultOf(NetworkUtils.InetAddressScope.OF).max(addressList).getCanonicalHostName();
         } catch (NoSuchElementException ignored) {
         }
     }
