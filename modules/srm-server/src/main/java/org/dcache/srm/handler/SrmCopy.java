@@ -43,7 +43,7 @@ public class SrmCopy
     private final SRM srm;
     private final RequestCredential credential;
     private final Configuration configuration;
-    private String clientHost;
+    private final String clientHost;
 
     public SrmCopy(SRMUser user,
                    RequestCredential credential,

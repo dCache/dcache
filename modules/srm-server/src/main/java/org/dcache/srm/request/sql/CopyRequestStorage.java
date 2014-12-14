@@ -250,7 +250,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
         "ACCESSLATENCY "+ stringType;
     }
 
-    private static int ADDITIONAL_FIELDS = 3;
+    private static final int ADDITIONAL_FIELDS = 3;
 
     @Override
     public String getTableName() {

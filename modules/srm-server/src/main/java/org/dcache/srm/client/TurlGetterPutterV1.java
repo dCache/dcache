@@ -106,16 +106,16 @@ public abstract class TurlGetterPutterV1 extends TurlGetterPutter {
     private  final Collection<Integer> fileIDs = new HashSet<>();
 
     // The map between remote file IDs and corresponding RequestFileStatuses
-    private Map<Integer, RequestFileStatus> fileIDsMap = new HashMap<>();
+    private final Map<Integer, RequestFileStatus> fileIDsMap = new HashMap<>();
 
     // This two maps give the correspondence between local file IDs
     // and a remote file IDs
-    protected String SURLs[];
+    protected final String[] SURLs;
     protected int requestID;
-    protected int number_of_file_reqs;
+    protected final int number_of_file_reqs;
     protected boolean createdMap;
-    private long retry_timout;
-    private int retry_num;
+    private final long retry_timout;
+    private final int retry_num;
     private final Transport transport;
 
     /** Creates a new instance of RemoteTurlGetter */

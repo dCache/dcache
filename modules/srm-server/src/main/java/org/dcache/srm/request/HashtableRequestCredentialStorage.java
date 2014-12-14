@@ -115,8 +115,8 @@ public class HashtableRequestCredentialStorage
      */
     private class IsMatching implements Predicate<RequestCredential>
     {
-        String name;
-        String role;
+        final String name;
+        final String role;
 
         public IsMatching(String name, String role)
         {

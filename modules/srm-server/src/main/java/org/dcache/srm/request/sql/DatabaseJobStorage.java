@@ -202,7 +202,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     //this should always reflect the number of field definde in the
     // prefix above
-    private static int COLLUMNS_NUM= 11;
+    private static final int COLLUMNS_NUM= 11;
     public abstract String getTableName();
 
     public abstract String getCreateTableFields();
@@ -430,9 +430,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
 
     private void markHistoryAsSaved(List<Job.JobHistory> history)
     {
-        for (Job.JobHistory element : history) {
-            element.setSaved();
-        }
+        history.forEach(Job.JobHistory::setSaved);
     }
 
     private List<Job.JobHistory> getJobHistoriesToSave(Job job)

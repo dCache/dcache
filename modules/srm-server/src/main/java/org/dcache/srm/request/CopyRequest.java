@@ -150,7 +150,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     private SrmUrl destinationUrls[];
     private int fileCount;
 
-    private String[] protocols;
+    private final String[] protocols;
     private SRMProtocol callerSrmProtocol;
     private SRMProtocol remoteSrmProtocol;
     private TFileStorageType storageType;

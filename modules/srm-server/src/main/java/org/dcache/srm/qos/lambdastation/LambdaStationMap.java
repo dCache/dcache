@@ -103,13 +103,13 @@ import java.util.StringTokenizer;
 
 
 public class LambdaStationMap {
-    private List<Site> Sites = new LinkedList<>();
+    private final List<Site> Sites = new LinkedList<>();
 
 
     private class Site {
-        public String domain;
-        public String name;
-        public boolean enabled;
+        public final String domain;
+        public final String name;
+        public final boolean enabled;
         public Site(String domain, String name, boolean enabled) {
             this.domain = domain;
             this.name = name;

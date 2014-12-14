@@ -20,7 +20,7 @@ import java.net.UnknownHostException;
  */
 public class Pgpass {
     private static final Logger _logger = LoggerFactory.getLogger(Pgpass.class);
-    private String _pwdfile;
+    private final String _pwdfile;
     private String _hostname;
     private String _port;
     private String _database;

@@ -225,8 +225,7 @@ public class ServletDelegation implements Delegation
 
     private String generateDelegationId() throws DelegationException
     {
-        String generator = new StringBuilder(getClientDn()).
-                append(getFqanList()).toString();
+        String generator = getClientDn() + getFqanList();
         byte[] raw = generator.getBytes(Charsets.UTF_8);
         byte[] digest = Hashing.sha1().hashBytes(raw).asBytes();
         return BaseEncoding.base16().encode(digest, 0, 20);

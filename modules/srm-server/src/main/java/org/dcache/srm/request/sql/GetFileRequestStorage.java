@@ -204,7 +204,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
         "PINID "+  stringType;
     }
 
-    private static int ADDITIONAL_FIELDS = 4;
+    private static final int ADDITIONAL_FIELDS = 4;
 
     @Override
     public String getTableName() {

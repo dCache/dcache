@@ -100,9 +100,9 @@ public class KAuthFile {
 
     private static boolean debug;
     private double fileVersion;
-    private HashMap<String,UserAuthRecord> auth_records = new HashMap<>();
-    private HashMap<String,UserPwdRecord> pwd_records = new HashMap<>();
-    private HashMap<String,String> mappings = new HashMap<>();
+    private final HashMap<String,UserAuthRecord> auth_records = new HashMap<>();
+    private final HashMap<String,UserPwdRecord> pwd_records = new HashMap<>();
+    private final HashMap<String,String> mappings = new HashMap<>();
 
 
     private KAuthFile(String filename, boolean convert)
@@ -980,8 +980,8 @@ public class KAuthFile {
         boolean disable;
         boolean help;
         boolean debug;
-        HashSet<String> secureIds= new HashSet<>();
-        Collection<String> removeSecureIds = new HashSet<>();
+        final HashSet<String> secureIds= new HashSet<>();
+        final Collection<String> removeSecureIds = new HashSet<>();
     }
 
     public static Arguments parseArgs(String[] args, Arguments arguments) {

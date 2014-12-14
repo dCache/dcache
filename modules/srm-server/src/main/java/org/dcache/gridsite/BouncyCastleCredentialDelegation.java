@@ -93,7 +93,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
     private final X509Certificate _first;
     private final String _pemRequest;
 
-    protected KeyPair _keyPair;
+    protected final KeyPair _keyPair;
 
 
     BouncyCastleCredentialDelegation(KeyPair keypair, DelegationIdentity id,
@@ -142,7 +142,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
                     e.getMessage());
         }
 
-        List<DEREncodable> rdn = new ArrayList(seq.size()+1);
+        List<DEREncodable> rdn = new ArrayList<>(seq.size()+1);
         for(Enumeration e = seq.getObjects(); e.hasMoreElements();) {
             rdn.add((DEREncodable) e.nextElement());
         }

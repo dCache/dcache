@@ -79,12 +79,12 @@ public class Storage
   private int gridftpport;
 
 /** @todo protocols init - this is placehoder*/
-  private String[] putProtocols = {"gsiftp","enstore"};
-  private String[] getProtocols = {"gsiftp","enstore"};
+  private final String[] putProtocols = {"gsiftp","enstore"};
+  private final String[] getProtocols = {"gsiftp","enstore"};
 
 
   private InetAddress myInetAddr;
-  private Configuration config; //srm configuration
+  private final Configuration config; //srm configuration
   private String stat_cmd;
   private String chown_cmd;
   private PrintStream out;
@@ -150,11 +150,6 @@ public class Storage
         throw new IllegalArgumentException("chown_cmd=\""+chown_cmd+"\" execution failed with rc = "+return_code);
     }
     this.chown_cmd = chown_cmd;
-  }
-
-  //----------------------------------------------------------------------------
-  public static void main(String[] args) {
-    //    enstore diskSE = new enstore();
   }
 
   //----------------------------------------------------------------------------
@@ -731,7 +726,7 @@ public class Storage
       return Long.toHexString(unique_id++);
 
   }
-  private Map<String, Thread> copyThreads = new HashMap<>();
+  private final Map<String, Thread> copyThreads = new HashMap<>();
 
   /**
      *

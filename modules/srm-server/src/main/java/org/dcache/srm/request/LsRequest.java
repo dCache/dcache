@@ -283,10 +283,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                         setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
                         throw new SRMTooManyResultsException(sb.toString());
                 }
-                if (getNumberOfResults() > getCount() && getCount()!=0) {
-                        return false;
-                }
-                return true;
+                return getNumberOfResults() <= getCount() || getCount() == 0;
             } finally {
                 wunlock();
             }

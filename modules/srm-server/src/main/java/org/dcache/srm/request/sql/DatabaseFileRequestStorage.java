@@ -54,7 +54,7 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
         getFileRequestCreateTableFields();
     }
 
-    private static int ADDITIONAL_FIELDS_NUM=3;
+    private static final int ADDITIONAL_FIELDS_NUM=3;
 
     protected abstract F getFileRequest(
     Connection _con,

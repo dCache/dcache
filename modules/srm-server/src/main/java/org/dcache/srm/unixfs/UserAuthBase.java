@@ -2,7 +2,7 @@ package org.dcache.srm.unixfs;
 
 public abstract class UserAuthBase
 {
-    public String Username;
+    public final String Username;
     public int UID = -1;
     public int GID = -1;
     public String Home;

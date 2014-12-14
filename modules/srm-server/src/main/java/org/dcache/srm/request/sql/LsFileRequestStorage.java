@@ -26,7 +26,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
 
-        private static int ADDITIONAL_FIELDS = 1;
+        private static final int ADDITIONAL_FIELDS = 1;
         public LsFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
                 throws DataAccessException
         {

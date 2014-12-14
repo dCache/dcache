@@ -83,7 +83,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getStatusCodeString(),
                                   lr.getUser().getId(),
                                   lr.getExplanation(),
-                                  lr.getLongFormat()==true?1:0,
+                                  lr.getLongFormat() ?1:0,
                                   lr.getNumOfLevels(),
                                   lr.getCount(),
                                   lr.getOffset()
@@ -131,7 +131,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getStatusCodeString(),
                                   lr.getUser().getId(),
                                   lr.getExplanation(),
-                                  lr.getLongFormat()==true?1:0,
+                                  lr.getLongFormat() ?1:0,
                                   lr.getNumOfLevels(),
                                   lr.getCount(),
                                   lr.getOffset(),
@@ -140,7 +140,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         return stmt;
     }
 
-        private static int ADDITIONAL_FIELDS = 5;
+        private static final int ADDITIONAL_FIELDS = 5;
 
         public LsRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
                 throws IOException, DataAccessException

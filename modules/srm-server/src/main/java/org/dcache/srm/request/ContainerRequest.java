@@ -644,10 +644,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      */
     @Override
     public boolean equals(Object o) {
-        if(o == this) {
-            return true;
-        }
-        return false;
+        return o == this;
     }
 
     @Override

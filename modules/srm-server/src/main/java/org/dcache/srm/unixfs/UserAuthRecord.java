@@ -76,11 +76,7 @@ public class UserAuthRecord extends UserAuthBase
 
     public boolean hasSecureIdentity(String p)
     {
-      if(principals!=null)
-      {
-          return principals.contains(p);
-      }
-      return false;
+        return principals != null && principals.contains(p);
     }
 
     public boolean isValid()

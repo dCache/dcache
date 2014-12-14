@@ -146,10 +146,10 @@ public class ShellCommandExecuter implements Runnable
         return result;
     }
 
-    BufferedReader reader;
+    final BufferedReader reader;
     BufferedReader ErrReader;
     boolean error;
-    private Writer out;
+    private final Writer out;
     
     private  ShellCommandExecuter(BufferedReader reader,Writer out)
     {

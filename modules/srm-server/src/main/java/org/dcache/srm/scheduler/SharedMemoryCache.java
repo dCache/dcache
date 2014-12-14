@@ -34,7 +34,7 @@ public class SharedMemoryCache {
             new ReentrantReadWriteLock();
     private  final ReadLock sharedMemoryReadLock = sharedMemoryReadWriteLock.readLock();
     private  final WriteLock sharedMemoryWriteLock = sharedMemoryReadWriteLock.writeLock();
-    private  Map<Long,Job> sharedMemoryCache =
+    private final Map<Long,Job> sharedMemoryCache =
             new HashMap<>();
 
 

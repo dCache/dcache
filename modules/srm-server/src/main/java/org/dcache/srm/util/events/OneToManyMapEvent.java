@@ -14,8 +14,8 @@ import java.beans.PropertyChangeEvent;
  */
 public abstract class OneToManyMapEvent extends PropertyChangeEvent{
     
-    Object key;
-    Object value;
+    final Object key;
+    final Object value;
     
     private static final long serialVersionUID = 6544655934489891825L;
     

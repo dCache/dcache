@@ -39,7 +39,7 @@ public class Main extends CommandInterpreter implements  Runnable {
     private Configuration config;
     private SRMAuthorization authorization;
     private SRM srm;
-    private String name;
+    private final String name;
     /** Creates a new instance of Main */
     public Main(String[] args) throws Exception {
         String config_file = args[0];
@@ -199,13 +199,9 @@ public class Main extends CommandInterpreter implements  Runnable {
 
 
         public void getInfo( PrintWriter printWriter ) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("SRM Cell");
-            sb.append(" storage info ");
-            sb.append('\n');
-            sb.append(config.toString()).append('\n');
-            sb.append(srm.getSchedulerInfo());
-            printWriter.println( sb.toString()) ;
+            printWriter.println("SRM Cell storage info ");
+            printWriter.println(config);
+            printWriter.println(srm.getSchedulerInfo());
         }
 
        public String getInfo(){

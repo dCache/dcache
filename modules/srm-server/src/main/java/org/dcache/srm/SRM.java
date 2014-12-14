@@ -145,7 +145,7 @@ public class SRM {
     private final InetAddress host;
     private final Configuration configuration;
     private RequestCredentialStorage requestCredentialStorage;
-    private AbstractStorageElement storage;
+    private final AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerV2Counters;
     private final RequestCounters<String> srmServerV1Counters;
     private final RequestCounters<Method> abstractStorageElementCounters;
@@ -384,8 +384,8 @@ public class SRM {
 
         private boolean done;
         private boolean success = true;
-        SRMUser user;
-        URI surl;
+        final SRMUser user;
+        final URI surl;
         String error;
 
         public TheAdvisoryDeleteCallbacks(SRMUser user, URI surl) {
@@ -1152,15 +1152,11 @@ public class SRM {
                 sb.append("request #").append(requestId)
                         .append(" matches pattern=\"").append(pattern)
                         .append("\"; canceling request \n");
-                new Thread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            job.setState(State.CANCELED, "Canceled by admin through cancelall command.");
-                        } catch (IllegalStateTransition ist) {
-                            logger.error("Illegal State Transition : " +ist.getMessage());
-                        }
+                new Thread(() -> {
+                    try {
+                        job.setState(State.CANCELED, "Canceled by admin through cancelall command.");
+                    } catch (IllegalStateTransition ist) {
+                        logger.error("Illegal State Transition : " +ist.getMessage());
                     }
                 }).start();
             } catch(SRMInvalidRequestException e) {

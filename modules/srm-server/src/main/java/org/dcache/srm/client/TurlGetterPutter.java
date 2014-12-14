@@ -87,7 +87,7 @@ import org.dcache.srm.request.RequestCredential;
  */
 public abstract class TurlGetterPutter implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(TurlGetterPutter.class);
-    private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
+    private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
 
     public void notifyOfTURL(String SURL,String TURL,String requestId, String fileId,Long size) {
         logger.debug("notifyOfTURL( surl="+SURL+" , turl="+TURL+")");
@@ -106,9 +106,9 @@ public abstract class TurlGetterPutter implements Runnable {
         changeSupport.addPropertyChangeListener(listener);
     }
 
-    protected AbstractStorageElement storage;
-    protected RequestCredential credential;
-    protected String[] protocols;
+    protected final AbstractStorageElement storage;
+    protected final RequestCredential credential;
+    protected final String[] protocols;
 
     private boolean stopped;
 

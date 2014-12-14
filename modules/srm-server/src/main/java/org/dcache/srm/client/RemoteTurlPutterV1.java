@@ -92,7 +92,7 @@ public final class RemoteTurlPutterV1 extends TurlGetterPutterV1
 {
     private static final Logger logger = LoggerFactory.getLogger(RemoteTurlPutterV1.class);
 
-    long[] sizes;
+    final long[] sizes;
 
 
     public RemoteTurlPutterV1(AbstractStorageElement storage,

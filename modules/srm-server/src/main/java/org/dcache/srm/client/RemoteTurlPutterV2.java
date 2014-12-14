@@ -126,22 +126,22 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         LoggerFactory.getLogger(RemoteTurlPutterV2.class);
     private ISRM srmv2;
     private String requestToken;
-    private String targetSpaceToken;
-    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+    private final String targetSpaceToken;
+    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     SrmPrepareToPutResponse srmPrepareToPutResponse;
     final Transport transport;
 
-    protected String SURLs[];
-    protected int number_of_file_reqs;
+    protected final String[] SURLs;
+    protected final int number_of_file_reqs;
     protected boolean createdMap;
-    long[] sizes;
-    long retry_timout;
-    long requestLifetime;
-    int retry_num;
-    private TFileStorageType storageType;
-    private TRetentionPolicy retentionPolicy;
-    private TAccessLatency accessLatency;
-    private TOverwriteMode overwriteMode;
+    final long[] sizes;
+    final long retry_timout;
+    final long requestLifetime;
+    final int retry_num;
+    private final TFileStorageType storageType;
+    private final TRetentionPolicy retentionPolicy;
+    private final TAccessLatency accessLatency;
+    private final TOverwriteMode overwriteMode;
 
     public RemoteTurlPutterV2(AbstractStorageElement storage,
                               RequestCredential credential, String[] SURLs,
@@ -463,8 +463,6 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                 true,
                 transport);
         String requestToken = requestTokenString;
-        String[] surl_strings = new String[1];
-        surl_strings[0] = surl;
         URI surlArray[] = new URI[1];
         surlArray[0]= new URI(surl);
         SrmPutDoneRequest srmPutDoneRequest = new SrmPutDoneRequest();

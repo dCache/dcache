@@ -24,7 +24,7 @@ public class LambdaStationPlugin implements QOSPlugin {
 	private String lambdaStationConf;
 	private String lambdaStationScript;
 	private AbstractStorageElement storage;
-	private Collection<LambdaStationTicket> tickets = new ArrayList();
+	private final Collection<LambdaStationTicket> tickets = new ArrayList<>();
 
 	public LambdaStationPlugin(){}
 

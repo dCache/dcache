@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author timur
  */
 public abstract class DatabaseRequestStorage<R extends Request> extends DatabaseJobStorage<R> {
-    SRMUserPersistenceManager srmUserPersistenceManager;
+    final SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
     public DatabaseRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
@@ -133,7 +133,7 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
                 set,
                 next_index );
     }
-    private static int ADDITIONAL_FIELDS_NUM=7;
+    private static final int ADDITIONAL_FIELDS_NUM=7;
 
     protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
 

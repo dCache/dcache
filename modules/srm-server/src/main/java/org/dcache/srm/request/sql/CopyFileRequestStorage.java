@@ -90,7 +90,7 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
 
     private static ImmutableMap<String,String> deserialiseMap(String serialised)
     {
-        ImmutableMap.Builder builder = new ImmutableMap.Builder<>();
+        ImmutableMap.Builder<String,String> builder = new ImmutableMap.Builder<>();
         for (Map.Entry<String,String> entry : Splitter.on(',').omitEmptyStrings().
                 withKeyValueSeparator('=').split(serialised).entrySet()) {
             try {

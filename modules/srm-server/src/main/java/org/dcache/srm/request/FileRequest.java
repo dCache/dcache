@@ -120,7 +120,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     //request which contains this fileRequest (which is different from request number)
     protected final long requestId;
-    protected Long credentialId;
+    protected final Long credentialId;
 
     //pointer to underlying storage
     private transient AbstractStorageElement storage;
@@ -221,10 +221,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     @Override
     public boolean equals(Object o) {
-        if(o == this) {
-            return true;
-        }
-        return false;
+        return o == this;
     }
 
     @Override

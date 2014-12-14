@@ -120,16 +120,16 @@ public class ArgParser
     // private fields
     //
     
-    private Hashtable<String, ArgOption> general_options = new Hashtable<>(); //these are parsed general options
-    private Hashtable<String, ArgOption> command_options = new Hashtable<>();         // and parsed  command options
+    private final Hashtable<String, ArgOption> general_options = new Hashtable<>(); //these are parsed general options
+    private final Hashtable<String, ArgOption> command_options = new Hashtable<>();         // and parsed  command options
                                        // typed by user in command line after 
                                        // command
     private String[] argv;            // these are original arguments
-    private Hashtable<String, ArgOption> option_list =
+    private final Hashtable<String, ArgOption> option_list =
         new Hashtable<>();          //the list of possible options
     private String command_name; // the command name 
                                  //(first non optional argument)
-    private Collection<String> arguments=new Vector<>();// the vector of nonoptional arguments
+    private final Collection<String> arguments=new Vector<>();// the vector of nonoptional arguments
     private String[] commands;
     
     private boolean parsed;

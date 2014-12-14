@@ -28,10 +28,10 @@ import org.dcache.srm.SRMUser;
 public final class UnixfsAuthorization implements SRMAuthorization {
 
     private static UnixfsAuthorization srmauthorization;
-    private static Logger logger =
+    private static final Logger logger =
         LoggerFactory.getLogger(UnixfsAuthorization.class);
 
-    private String kAuthFileName;
+    private final String kAuthFileName;
 
     /** Creates a new instance of SRMAuthorization */
     private UnixfsAuthorization(String kAuthFileName) {

@@ -97,8 +97,8 @@ import java.beans.PropertyChangeEvent;
  * @author  timur
  */
 public class TURLsGetFailedEvent extends PropertyChangeEvent {
-    String requestId;
-    String fileRequestId;
+    final String requestId;
+    final String fileRequestId;
 
     private static final long serialVersionUID = -8572112632044518674L;
 

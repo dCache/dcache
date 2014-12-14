@@ -112,17 +112,17 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
     private static final Logger logger = LoggerFactory.getLogger(RemoteTurlGetterV2.class);
 
     private ISRM srmv2;
-    protected String SURLs[];
-    private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
-    protected int number_of_file_reqs;
+    protected final String[] SURLs;
+    private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
+    protected final int number_of_file_reqs;
     protected boolean createdMap;
     private String requestToken;
-    private long lifetime;
+    private final long lifetime;
     SrmPrepareToGetResponse srmPrepareToGetResponse;
     private final Transport transport;
 
-    long retry_timout;
-    int retry_num;
+    final long retry_timout;
+    final int retry_num;
 
 
     public RemoteTurlGetterV2(AbstractStorageElement storage,
@@ -416,8 +416,6 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                 true,
                 transport);
         String requestToken = requestTokenString;
-        String[] surl_strings = new String[1];
-        surl_strings[0] = surl;
         URI surlArray[] = new URI[1];
         surlArray[0]= new URI(surl);
         SrmReleaseFilesRequest srmReleaseFilesRequest = new SrmReleaseFilesRequest();

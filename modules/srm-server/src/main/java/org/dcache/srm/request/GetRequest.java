@@ -109,7 +109,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     private final static Logger logger =
             LoggerFactory.getLogger(GetRequest.class);
     /** array of protocols supported by client or server (copy) */
-    protected String[] protocols;
+    protected final String[] protocols;
 
     public GetRequest(SRMUser user,
                       Long requestCredentialId,

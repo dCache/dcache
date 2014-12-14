@@ -251,7 +251,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         "ACCESSLATENCY "+ stringType;
     }
 
-   private static int ADDITIONAL_FIELDS = 8;
+   private static final int ADDITIONAL_FIELDS = 8;
 
 
     @Override

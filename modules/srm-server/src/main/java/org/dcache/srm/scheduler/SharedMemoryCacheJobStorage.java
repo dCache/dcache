@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.dcache.srm.request.Job;
 
@@ -105,21 +106,13 @@ public class SharedMemoryCacheJobStorage<J extends Job> implements JobStorage<J>
     @Override
     public Set<J> getJobs(String scheduler) throws DataAccessException
     {
-        Set<J> result = new HashSet<>();
-        for (J job : storage.getJobs(scheduler)) {
-            result.add(canonicalize(job));
-        }
-        return result;
+        return storage.getJobs(scheduler).stream().map(this::canonicalize).collect(Collectors.toSet());
     }
 
     @Override
     public Set<J> getJobs(String scheduler, State state) throws DataAccessException
     {
-        Set<J> result = new HashSet<>();
-        for (J job : storage.getJobs(scheduler, state)) {
-            result.add(canonicalize(job));
-        }
-        return result;
+        return storage.getJobs(scheduler, state).stream().map(this::canonicalize).collect(Collectors.toSet());
     }
 
     @Override

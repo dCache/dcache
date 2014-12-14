@@ -208,7 +208,7 @@ public class Configuration {
     private DataSource dataSource;
     private PlatformTransactionManager transactionManager;
 
-    private Map<String,DatabaseParameters> databaseParameters =
+    private final Map<String,DatabaseParameters> databaseParameters =
         new HashMap<>();
     private String caCertificatePath;
     private String vomsdir;

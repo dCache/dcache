@@ -15,7 +15,7 @@ import org.dcache.srm.SRMUser;
 
 public class UnixfsUser implements SRMUser
 {
-  public long id ;
+  public final long id ;
   public static long nextId;
   private String name;
   private String root;

@@ -100,9 +100,9 @@ import java.beans.PropertyChangeEvent;
  * @author  timur
  */
 public class TURLsArrivedEvent extends PropertyChangeEvent {
-    String requestId;
-    String fileRequestId;
-    Long size;
+    final String requestId;
+    final String fileRequestId;
+    final Long size;
 
     private static final long serialVersionUID = -7303218445433906174L;
 

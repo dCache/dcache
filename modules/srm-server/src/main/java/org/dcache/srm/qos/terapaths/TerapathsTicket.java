@@ -3,16 +3,16 @@ package org.dcache.srm.qos.terapaths;
 import org.dcache.srm.qos.QOSTicket;
 
 public class TerapathsTicket implements QOSTicket {
-	public String credential;
+	public final String credential;
 	public long bytes = -1;
 	public String srcIP; 
-	public int srcPortMin; 
-	public int srcPortMax;
-	public String srcProtocol;
+	public final int srcPortMin;
+	public final int srcPortMax;
+	public final String srcProtocol;
 	public String dstIP; 
-	public int dstPortMin;
-	public int dstPortMax;
-	public String dstProtocol;
+	public final int dstPortMin;
+	public final int dstPortMax;
+	public final String dstProtocol;
 	public String id;
 	public long startTime = -1;
 	public long endTime = -1;

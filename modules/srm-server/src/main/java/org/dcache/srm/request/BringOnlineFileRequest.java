@@ -414,7 +414,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                         desiredPinLifetime,
                         String.valueOf(getRequestId()));
         logger.debug("BringOnlineFileRequest: waiting async notification about pinId...");
-        future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.sameThreadExecutor());
+        future.addListener(new ThePinCallbacks(getId(), future), MoreExecutors.directExecutor());
     }
 
     @Override
@@ -435,20 +435,15 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 try {
                     final CheckedFuture<String, ? extends SRMException> future =
                             getStorage().unPinFile(getUser(), getFileId(), getPinId());
-                    future.addListener(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            try {
-                                String pinId = future.checkedGet();
-                                logger.debug("File unpinned (pinId={}).", pinId);
-                            } catch (SRMException e) {
-                                logger.error("Unpinning failed: {}", e.getMessage());
-                            }
-
+                    future.addListener(() -> {
+                        try {
+                            String pinId1 = future.checkedGet();
+                            logger.debug("File unpinned (pinId={}).", pinId1);
+                        } catch (SRMException e) {
+                            logger.error("Unpinning failed: {}", e.getMessage());
                         }
-                    }, MoreExecutors.sameThreadExecutor());
+
+                    }, MoreExecutors.directExecutor());
                 }
                 catch (SRMInvalidRequestException ire) {
                     logger.error(ire.toString());

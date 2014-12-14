@@ -295,7 +295,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         }
     }
 
-    private static int ADDITIONAL_FIELDS_NUM=5;
+    private static final int ADDITIONAL_FIELDS_NUM=5;
     @Override
     protected int getMoreCollumnsNum() {
         return ADDITIONAL_FIELDS_NUM;

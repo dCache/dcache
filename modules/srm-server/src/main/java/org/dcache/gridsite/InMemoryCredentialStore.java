@@ -42,7 +42,7 @@ import static org.dcache.gridsite.Utilities.assertThat;
  */
 public class InMemoryCredentialStore implements CredentialStore
 {
-    private Map<DelegationIdentity,GSSCredential> _storage = new HashMap<>();
+    private final Map<DelegationIdentity,GSSCredential> _storage = new HashMap<>();
 
     private String vomsDir;
     private String caDir;

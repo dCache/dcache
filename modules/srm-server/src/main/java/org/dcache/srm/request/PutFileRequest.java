@@ -368,7 +368,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                                 Objects.toString(getRetentionPolicy(), null),
                                 getSpaceReservationId(),
                                 getContainerRequest().isOverwrite());
-                future.addListener(new PutCallbacks(getId(), future), MoreExecutors.sameThreadExecutor());
+                future.addListener(new PutCallbacks(getId(), future), MoreExecutors.directExecutor());
                 return;
             }
 

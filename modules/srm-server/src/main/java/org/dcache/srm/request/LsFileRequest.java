@@ -558,10 +558,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 if(fmd.isGroupMember(user) && Permissions.groupCanRead(permissions)) {
                         return true;
                 }
-                if(fmd.isOwner(user) && Permissions.userCanRead(permissions)) {
-                        return true;
-                }
-                return false;
+            return fmd.isOwner(user) && Permissions.userCanRead(permissions);
         }
 
         public TPermissionMode maskToTPermissionMode(int permMask) {
@@ -670,9 +667,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                 if (fmd.spaceTokens.length > 0) {
                                         ArrayOfString arrayOfSpaceTokens = new ArrayOfString(new String[fmd.spaceTokens.length]);
                                         for (int st=0;st<fmd.spaceTokens.length;st++) {
-                                                StringBuilder spaceToken = new StringBuilder();
-                                                spaceToken.append(fmd.spaceTokens[st]);
-                                                arrayOfSpaceTokens.setStringArray(st,spaceToken.toString());
+                                            arrayOfSpaceTokens.setStringArray(st, String.valueOf(fmd.spaceTokens[st]));
                                         }
                                         metaDataPathDetail.setArrayOfSpaceTokens(arrayOfSpaceTokens);
                                 }

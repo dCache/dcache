@@ -112,7 +112,7 @@ import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 public final class CopyFileRequest extends FileRequest<CopyRequest>
 {
@@ -539,7 +539,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                             Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
                             getSpaceReservationId(),
                             getContainerRequest().isOverwrite());
-            future.addListener(new PutCallbacks(getId(), future), sameThreadExecutor());
+            future.addListener(new PutCallbacks(getId(), future), directExecutor());
             LOG.debug("callbacks.waitResult()");
             return;
         }
@@ -571,7 +571,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                             Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
                             getSpaceReservationId(),
                             getContainerRequest().isOverwrite());
-            future.addListener(new PutCallbacks(getId(), future), sameThreadExecutor());
+            future.addListener(new PutCallbacks(getId(), future), directExecutor());
             LOG.debug("callbacks.waitResult");
             return;
         }
