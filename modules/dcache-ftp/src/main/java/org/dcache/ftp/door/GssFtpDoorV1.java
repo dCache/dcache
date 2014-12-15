@@ -176,9 +176,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         msg = msg.trim();
 
         if (msg.toLowerCase().startsWith("pass") && msg.length() != 4) {
-            _currentCmdLine = sectype.toUpperCase() + "{" + msg.substring(0, 4) + " ...}";
+            _commandLine = sectype.toUpperCase() + "{" + msg.substring(0, 4) + " ...}";
         } else {
-            _currentCmdLine = sectype.toUpperCase() + "{" + msg + "}";
+            _commandLine = sectype.toUpperCase() + "{" + msg + "}";
         }
 
         if ( msg.equalsIgnoreCase("CCC") ) {
