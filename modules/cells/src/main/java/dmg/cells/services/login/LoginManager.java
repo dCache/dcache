@@ -167,7 +167,6 @@ public class LoginManager
             if (_maxLogin < 0) {
                 LOGGER.info("Maximum login feature disabled");
             } else {
-                _nucleus.addCellEventListener(new LoginEventListener());
                 LOGGER.info("Maximum logins set to: {}", _maxLogin);
             }
 
@@ -214,6 +213,8 @@ public class LoginManager
             } else {
                 _loginBrokerHandler = null;
             }
+
+            _nucleus.addCellEventListener(new LoginEventListener());
 
             _listenThread = new ListenThread(listenPort);
 
@@ -872,24 +873,22 @@ public class LoginManager
                 }
 
                 Object cell = _loginCellFactory.newCell(engine, userName);
-                if (_maxLogin > -1) {
-                    try {
-                        Method m = cell.getClass().getMethod("getCellName");
-                        String cellName = (String) m.invoke(cell);
-                        LOGGER.info("Invoked cell name : {}", cellName);
-                        if (_children.putIfAbsent(cellName, cell) == DEAD_CELL) {
-                            /*  while cell may be already gone do following trick:
-                             *  if put return an old cell, then it's a dead cell and we
-                             *  have to remove it. Dead cell is inserted by cleanup procedure:
-                             *  if a remove for non existing cells issued, then cells is dead, and
-                             *  we put it into _children.
-                             */
-                            _children.remove(cellName, DEAD_CELL);
-                        }
-                        loadChanged();
-                    } catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ee) {
-                        LOGGER.warn("Can't determine child name", ee);
+                try {
+                    Method m = cell.getClass().getMethod("getCellName");
+                    String cellName = (String) m.invoke(cell);
+                    LOGGER.info("Invoked cell name : {}", cellName);
+                    if (_children.putIfAbsent(cellName, cell) == DEAD_CELL) {
+                        /*  while cell may be already gone do following trick:
+                         *  if put return an old cell, then it's a dead cell and we
+                         *  have to remove it. Dead cell is inserted by cleanup procedure:
+                         *  if a remove for non existing cells issued, then cells is dead, and
+                         *  we put it into _children.
+                         */
+                        _children.remove(cellName, DEAD_CELL);
                     }
+                    loadChanged();
+                } catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ee) {
+                    LOGGER.warn("Can't determine child name", ee);
                 }
                 _loginCounter.incrementAndGet();
 
