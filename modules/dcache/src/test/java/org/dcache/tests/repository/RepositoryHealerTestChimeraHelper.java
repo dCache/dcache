@@ -1,7 +1,6 @@
 package org.dcache.tests.repository;
 
 import com.google.common.io.Resources;
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import liquibase.Liquibase;
 import liquibase.database.Database;
@@ -9,10 +8,7 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 
-import javax.sql.DataSource;
-
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
@@ -25,6 +21,7 @@ import java.util.UUID;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HFile;
 import org.dcache.chimera.IOHimeraFsException;
@@ -36,9 +33,9 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     private final static URL DB_TEST_PROPERTIES
             = Resources.getResource("org/dcache/tests/repository/chimera-test.properties");
 
-    private final Connection _conn;
     private final JdbcFs _fs;
     private final FsInode _rootInode;
+    private final HikariDataSource _dataSource;
 
     public RepositoryHealerTestChimeraHelper() throws Exception {
         Properties dbProperties = new Properties();
@@ -46,30 +43,30 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
             dbProperties.load(input);
         }
 
-        DataSource ds = getDataSource(
+        _dataSource = FsFactory.getDataSource(
                 dbProperties.getProperty("chimera.db.url") + ":" + UUID.randomUUID(),
                 dbProperties.getProperty("chimera.db.user"),
                 dbProperties.getProperty("chimera.db.password"));
 
-        _conn = ds.getConnection();
+        try (Connection conn = _dataSource.getConnection()) {
 
-        _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(_conn));
-        Liquibase liquibase = new Liquibase("org/dcache/chimera/changelog/changelog-master.xml",
-                new ClassLoaderResourceAccessor(), database);
-        liquibase.update("");
-
-        _fs = new JdbcFs(ds, dbProperties.getProperty("chimera.db.dialect"));
+            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(conn));
+            Liquibase liquibase = new Liquibase("org/dcache/chimera/changelog/changelog-master.xml",
+                    new ClassLoaderResourceAccessor(), database);
+            liquibase.update("");
+        }
+        _fs = new JdbcFs(_dataSource, dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
     }
 
     public void shutdown()
     {
         try {
-            _conn.createStatement().execute("SHUTDOWN;");
-            _fs.close();
-        } catch (SQLException | IOException ignored) {
+            _dataSource.getConnection().createStatement().execute("SHUTDOWN;");
+            _dataSource.shutdown();
+        } catch (SQLException ignored) {
         }
     }
 
@@ -124,15 +121,5 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
         }
 
         return entries;
-    }
-
-    public static HikariDataSource getDataSource(String url, String user, String pass) {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(url);
-        config.setUsername(user);
-        config.setPassword(pass);
-        config.setMinimumIdle(0);
-        config.setMaximumPoolSize(3);
-        return new HikariDataSource(config);
     }
 }

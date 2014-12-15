@@ -42,7 +42,7 @@
         <constructor-arg value="${pnfsmanager.db.url}"/>
         <constructor-arg value="JdbcFs"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariDataSource">
+            <bean class="com.zaxxer.hikari.HikariDataSource" destroy-method="shutdown">
                 <description>Database connection pool</description>
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">

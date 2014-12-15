@@ -18,7 +18,7 @@ package org.dcache.chimera;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-
+import java.io.IOException;
 import org.dcache.db.AlarmEnabledDataSource;
 
 public class FsFactory
@@ -31,11 +31,19 @@ public class FsFactory
         if (args.length < ARGC) {
             throw new IllegalArgumentException("Required argument missing: " + USAGE);
         }
-        return getFileSystemProvider(args[0], args[2], args[3], args[1]);
+        final HikariDataSource  dataSource  = getDataSource(args[0], args[2], args[3]);
+        return new JdbcFs(new AlarmEnabledDataSource(args[0],
+                                                     FsFactory.class.getSimpleName(),
+                                                     dataSource),
+                                                     args[1]) {
+                        @Override
+                        public void close() throws IOException {
+                            dataSource.shutdown();
+                        }
+              };
     }
 
-    public static FileSystemProvider getFileSystemProvider(
-            String url, String user, String pass, String dialect)
+    public static HikariDataSource getDataSource(String url, String user, String pass)
     {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(url);
@@ -43,9 +51,6 @@ public class FsFactory
         config.setPassword(pass);
         config.setMaximumPoolSize(3);
         config.setMinimumIdle(0);
-        return new JdbcFs(new AlarmEnabledDataSource(url,
-                                                     FsFactory.class.getSimpleName(),
-                                                     new HikariDataSource(config)),
-                                                     dialect);
+        return new HikariDataSource(config);
     }
 }

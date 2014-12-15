@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -2758,9 +2757,7 @@ public class JdbcFs implements FileSystemProvider {
      */
     @Override
     public void close() throws IOException {
-        if (_dbConnectionsPool instanceof Closeable) {
-            ((Closeable) _dbConnectionsPool).close();
-        }
+	// enforced by the interface
     }
 
     private final static byte[] FH_V0_BIN = new byte[] {0x30, 0x30, 0x30, 0x30};

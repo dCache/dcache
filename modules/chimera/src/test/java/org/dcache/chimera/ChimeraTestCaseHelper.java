@@ -1,6 +1,7 @@
 package org.dcache.chimera;
 
 import com.google.common.io.Resources;
+import com.zaxxer.hikari.HikariDataSource;
 import liquibase.Liquibase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
@@ -12,8 +13,8 @@ import org.junit.Before;
 import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.Properties;
+import org.dcache.db.AlarmEnabledDataSource;
 
 public abstract class ChimeraTestCaseHelper {
 
@@ -22,7 +23,7 @@ public abstract class ChimeraTestCaseHelper {
 
     protected FileSystemProvider _fs;
     protected FsInode _rootInode;
-    private Connection _conn;
+    private HikariDataSource _dataSource;
 
     @Before
     public void setUp() throws Exception {
@@ -32,34 +33,33 @@ public abstract class ChimeraTestCaseHelper {
             dbProperties.load(input);
         }
 
-        _conn = DriverManager.getConnection(dbProperties.getProperty("chimera.db.url"),
-                dbProperties.getProperty("chimera.db.user"), dbProperties.getProperty("chimera.db.password"));
-
-        _conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-
-        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(_conn));
-        Liquibase liquibase = new Liquibase("org/dcache/chimera/changelog/changelog-master.xml",
-                new ClassLoaderResourceAccessor(), database);
-        // Uncomment the following line when testing with mysql database
-      /*
-         * Liquibase liquibase = new Liquibase(changeLogFile, new
-         * ClassLoaderResourceAccessor(), new JdbcConnection(conn));
-         */
-
-        liquibase.update("");
-        _fs = FsFactory.getFileSystemProvider(
+        _dataSource = FsFactory.getDataSource(
                 dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"),
-                dbProperties.getProperty("chimera.db.password"),
+                dbProperties.getProperty("chimera.db.password"));
+
+        try (Connection conn = _dataSource.getConnection()) {
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(conn));
+            Liquibase liquibase = new Liquibase("org/dcache/chimera/changelog/changelog-master.xml",
+                    new ClassLoaderResourceAccessor(), database);
+
+            liquibase.update("");
+        }
+
+        _fs = new JdbcFs(new AlarmEnabledDataSource(dbProperties.getProperty("chimera.db.url"),
+                FsFactory.class.getSimpleName(),
+                _dataSource),
                 dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
     }
 
     @After
     public void tearDown() throws Exception {
-        _fs.close();
-        _conn.createStatement().execute("SHUTDOWN;");
-        _conn.close();
+	Connection conn = _dataSource.getConnection();
+        conn.createStatement().execute("SHUTDOWN;");
+        _dataSource.shutdown();
     }
 
 }
