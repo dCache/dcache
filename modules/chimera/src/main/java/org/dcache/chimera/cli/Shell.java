@@ -220,7 +220,7 @@ public class Shell extends ShellApplication
             FsInode inode = lookup(path);
             inode.setUID(_uid);
             if (_gid != -1) {
-                pwd.setGID(_gid);
+                inode.setGID(_gid);
             }
             return null;
         }
