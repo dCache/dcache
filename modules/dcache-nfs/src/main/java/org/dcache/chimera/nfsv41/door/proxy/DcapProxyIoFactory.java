@@ -14,6 +14,7 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -128,7 +129,12 @@ public class DcapProxyIoFactory extends AbstractCell {
 
             return new DcapChannelImpl(redirect.socketAddress(), session,
                     Base64.byteArrayToBase64(redirect.challange()).getBytes(Charsets.US_ASCII),
-                    transfer.getFileAttributes().getSize());
+                    transfer.getFileAttributes().getSize()) {
+			@Override
+			public String toString() {
+			    return transfer.toString();
+			}
+		    };
         } catch (CacheException | InterruptedException | IOException e) {
             // remove the pending mover if exists
             transfer.killMover(0);
@@ -188,6 +194,15 @@ public class DcapProxyIoFactory extends AbstractCell {
         }
     }
 
+    @Override
+    public void getInfo(PrintWriter pw) {
+	pw.println("  Known proxy adapters (proxy-io):");
+	for (ProxyIoAdapter proxyIoAdapter : _proxyIO.asMap().values()) {
+	    pw.print("    ");
+	    pw.println(proxyIoAdapter);
+	}
+    }
+
     private static void tryToClose(ProxyIoAdapter adapter) {
         try {
             adapter.close();
@@ -226,5 +241,14 @@ public class DcapProxyIoFactory extends AbstractCell {
         public DcapTransfer(PnfsHandler pnfs, Subject ioSubject) {
             super(pnfs, Subjects.ROOT, ioSubject, new FsPath("/"));
         }
+
+	@Override
+	public String toString() {
+	    return String.format("%s : %s@%s, cl=[%s]",
+		    getPnfsId(),
+		    getMoverId(),
+		    getPool(),
+		    ((DCapProtocolInfo) getProtocolInfoForPool()).getSocketAddress().getAddress().getHostAddress());
+	}
     }
 }
