@@ -726,7 +726,7 @@ public abstract class AbstractFtpDoorV1
 
     protected int            _commandCounter;
     protected String         _lastCommand    = "<init>";
-    protected String _currentCmdLine;
+    protected String _commandLine;
     private boolean _isHello = true;
 
     protected InetSocketAddress _clientDataAddress;
@@ -827,6 +827,7 @@ public abstract class AbstractFtpDoorV1
         private final DelayedPassiveReply _delayedPassive;
         private final ProtocolFamily _protocolFamily;
         private final int _version;
+        private final String _commandLine = AbstractFtpDoorV1.this._commandLine;
 
         private long _offset;
         private long _size;
@@ -1098,13 +1099,14 @@ public abstract class AbstractFtpDoorV1
                         assert _mode == Mode.PASSIVE;
                         assert _adapter != null;
 
-                        replyDelayedPassive(_delayedPassive, redirect.getPoolAddress());
+                        replyDelayedPassive(_commandLine, _delayedPassive,
+                                            redirect.getPoolAddress());
 
                         LOGGER.info("Closing adapter");
                         _adapter.close();
                         _adapter = null;
                     } else if (_mode == Mode.PASSIVE) {
-                        replyDelayedPassive(_delayedPassive,
+                        replyDelayedPassive(_commandLine, _delayedPassive,
                                             new InetSocketAddress(_localAddress.getAddress(),
                                                                   _adapter.getClientListenerPort()));
                     }
@@ -1117,13 +1119,13 @@ public abstract class AbstractFtpDoorV1
                 setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
                           (isWrite() ? "Receiving" : "Sending"));
 
-                reply("150 Opening BINARY data connection for " + _path, false);
+                reply(_commandLine, "150 Opening BINARY data connection for " + _path, false);
 
                 if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
                     long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
                     long timeout = period / 2;
                     _perfMarkerTask =
-                        new PerfMarkerTask(getPoolAddress(), getMoverId(), timeout);
+                        new PerfMarkerTask(_commandLine, getPoolAddress(), getMoverId(), timeout);
                     TIMER.schedule(_perfMarkerTask, period, period);
                 }
             } catch (FTPCommandException e) {
@@ -1166,7 +1168,7 @@ public abstract class AbstractFtpDoorV1
 
                 notifyBilling(0, "");
                 setTransfer(null);
-                reply("226 Transfer complete.");
+                reply(_commandLine, "226 Transfer complete.");
             } catch (FTPCommandException e) {
                 abort(e.getCode(), e.getReply());
             } catch (InterruptedException e) {
@@ -1240,7 +1242,7 @@ public abstract class AbstractFtpDoorV1
                 LOGGER.debug(exception.toString(), exception);
             }
             setTransfer(null);
-            reply(msg);
+            reply(_commandLine, msg);
         }
 
         public void getInfo(PrintWriter pw)
@@ -1368,7 +1370,7 @@ public abstract class AbstractFtpDoorV1
             _absoluteUploadPath = new FsPath(_uploadPath.getPath());
         }
 
-        reply("220 " + ftpDoorName + " door ready");
+        reply(_commandLine, "220 " + ftpDoorName + " door ready");
     }
 
     /**
@@ -1578,7 +1580,7 @@ public abstract class AbstractFtpDoorV1
     public void execute(String command)
             throws CommandExitException
     {
-        _currentCmdLine = command;
+        _commandLine = command;
         try {
             if (command.equals("")) {
                 reply(err("",""));
@@ -1587,7 +1589,7 @@ public abstract class AbstractFtpDoorV1
                 ftpcommand(command);
             }
         } finally {
-            _currentCmdLine = null;
+            _commandLine = null;
         }
     }
 
@@ -1663,10 +1665,14 @@ public abstract class AbstractFtpDoorV1
     //
     // GSS authentication
     //
-
     protected void reply(String answer, boolean resetReply)
     {
-        logReply(answer);
+        reply(_commandLine, answer, resetReply);
+    }
+
+    protected void reply(String commandLine, String answer, boolean resetReply)
+    {
+        logReply(commandLine, answer);
         switch (_gReplyType) {
         case "clear":
             println(answer);
@@ -1686,13 +1692,12 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void logReply(String response)
+    private void logReply(String commandLine, String response)
     {
         if (ACCESS_LOGGER.isInfoEnabled()) {
             String event = _isHello ? "org.dcache.ftp.hello" :
                     "org.dcache.ftp.response";
 
-            String commandLine = _currentCmdLine;
             if (commandLine != null) {
                 // For some commands we don't want to log the arguments.
                 String command = commandLine.substring(0, min(commandLine.length(), 4)).trim();
@@ -1718,13 +1723,17 @@ public abstract class AbstractFtpDoorV1
             log.toLogger(ACCESS_LOGGER);
 
             _isHello = false;
-            _currentCmdLine = null;
         }
     }
 
     protected void reply(String answer)
     {
         reply(answer, true);
+    }
+
+    protected void reply(String commandLine, String answer)
+    {
+        reply(commandLine, answer, true);
     }
 
     protected abstract void secure_reply(String answer, String code);
@@ -3863,15 +3872,17 @@ public abstract class AbstractFtpDoorV1
         private final long _timeout;
         private final CellAddressCore _pool;
         private final int _moverId;
+        private final String _commandLine;
         private final CDC _cdc;
         private boolean _stopped;
 
-        public PerfMarkerTask(CellAddressCore pool, int moverId, long timeout)
+        public PerfMarkerTask(String commandLine, CellAddressCore pool, int moverId, long timeout)
         {
             _pool = pool;
             _moverId = moverId;
             _timeout = timeout;
             _cdc = new CDC();
+            _commandLine = commandLine;
 
             /* For the first time, send markers with zero counts -
              * requirement of the standard
@@ -3917,7 +3928,7 @@ public abstract class AbstractFtpDoorV1
         protected synchronized void sendMarker()
         {
             if (!_stopped) {
-                reply(_perfMarkersBlock.markers(0).getReply(), false);
+                reply(_commandLine, _perfMarkersBlock.markers(0).getReply(), false);
             }
         }
 
@@ -4110,6 +4121,11 @@ public abstract class AbstractFtpDoorV1
      */
     protected void replyDelayedPassive(DelayedPassiveReply format, InetSocketAddress socketAddress)
     {
+        replyDelayedPassive(_commandLine, format, socketAddress);
+    }
+
+    protected void replyDelayedPassive(String commandLine, DelayedPassiveReply format, InetSocketAddress socketAddress)
+    {
         InetAddress address = socketAddress.getAddress();
         Protocol protocol = Protocol.fromAddress(address);
         switch (format) {
@@ -4119,7 +4135,7 @@ public abstract class AbstractFtpDoorV1
             checkArgument(protocol == Protocol.IPV4, "PASV required IPv4 data channel.");
             int port = socketAddress.getPort();
             byte[] host = address.getAddress();
-            reply(String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
+            reply(commandLine, String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
                                 (host[0] & 0377),
                                 (host[1] & 0377),
                                 (host[2] & 0377),
@@ -4128,7 +4144,7 @@ public abstract class AbstractFtpDoorV1
                                 (port % 256)), false);
             break;
         case EPSV:
-            reply(String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
+            reply(commandLine, String.format("129 Entering Extended Passive Mode (|%d|%s|%d|)",
                                 protocol.getCode(), InetAddresses.toAddrString(address), socketAddress.getPort()));
             break;
         }
