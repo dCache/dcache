@@ -321,6 +321,20 @@ public class Subjects
     }
 
     /**
+     * Returns the "Kerberos principal" for the user (as specified in
+     * Section 2.1 of RFC 1964) if they logged in via Kerberos or null if
+     * Kerberos was not used.
+     * @throws IllegalArgumentException if the subject contains multiple
+     * KerberosPrincipal.
+     */
+    public static String getKerberosName(Subject subject) throws IllegalArgumentException
+    {
+        KerberosPrincipal principal =
+                getUniquePrincipal(subject, KerberosPrincipal.class);
+        return (principal == null) ? null : principal.getName();
+    }
+
+    /**
      * Maps a UserAuthBase to a Subject.  The Subject will contain the
      * UID (UidPrincipal), GID (GidPrincipal), user name
      * (UserNamePrincipal), DN (GlobusPrincipal), and FQAN

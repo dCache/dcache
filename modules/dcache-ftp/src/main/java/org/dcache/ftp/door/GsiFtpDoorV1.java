@@ -34,6 +34,7 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.CertPaths;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
+import org.dcache.util.NetLoggerBuilder;
 
 import static java.util.Arrays.asList;
 
@@ -174,6 +175,17 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         } catch (GSSException | CertificateException | AuthenticationException e) {
             LOGGER.error("Failed to extract X509 chain: {}", e.toString());
             reply("530 Login failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void addUserAttribute(NetLoggerBuilder log)
+    {
+        try {
+            log.add("dn", Subjects.getDn(_subject));
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Unable add user {} to access log: {}",
+                    Subjects.getDisplayName(_subject), e.getMessage());
         }
     }
 }
