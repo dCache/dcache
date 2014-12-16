@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
+import java.nio.charset.StandardCharsets;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.enums.AccessMask;
@@ -555,34 +556,23 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.addInodeLocation(fileInode, StorageGenericLocation.DISK, "/dev/null");
     }
 
-    @Ignore("Functionality not yet written, but desired")
-    @Test
+    @Test(expected = FileNotFoundHimeraFsException.class)
     public void testSetSizeNotExist() throws Exception {
 
         FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 	Stat stat = new Stat();
 	stat.setSize(1);
-        try {
-            _fs.setInodeAttributes(inode, 0, stat);
-            fail("was able set size for non existing file");
-        } catch (FileNotFoundHimeraFsException e) {
-            // OK
-        }
+
+        _fs.setInodeAttributes(inode, 0, stat);
     }
 
-    @Ignore("Functionality not yet written, but desired")
-    @Test
+    @Test(expected = FileNotFoundHimeraFsException.class)
     public void testChowneNotExist() throws Exception {
 
         FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 	Stat stat = new Stat();
 	stat.setUid(3750);
-        try {
-            _fs.setInodeAttributes(inode, 0, stat);
-            fail("was able set owner for non existing file");
-        } catch (FileNotFoundHimeraFsException e) {
-            // OK
-        }
+        _fs.setInodeAttributes(inode, 0, stat);
     }
 
     @Test
@@ -805,15 +795,15 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test
     public void testUpdateMtimeOnSetSize() throws Exception {
-        FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
-        long oldMtime = dirInode.stat().getMTime();
-        long oldChage = dirInode.stat().getGeneration();
+        FsInode inode = _rootInode.create("file", 0, 0, 0755);
+        long oldMtime = inode.stat().getMTime();
+        long oldChage = inode.stat().getGeneration();
 
 	Stat stat = new Stat();
 	stat.setSize(17);
-        dirInode.setStat(stat);
-        assertTrue("The mtime is not updated", dirInode.stat().getMTime() >= oldMtime);
-        assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
+        inode.setStat(stat);
+        assertTrue("The mtime is not updated", inode.stat().getMTime() >= oldMtime);
+        assertTrue("change count is not updated", inode.stat().getGeneration() != oldChage);
     }
 
     @Test
@@ -1088,5 +1078,22 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         FsInode base = _rootInode.mkdir("dir1");
         base.remove("..");
+    }
+
+    @Test(expected = IsDirChimeraException.class)
+    public void testSetSizeOnDir() throws Exception {
+        FsInode dir = _rootInode.mkdir("dir1");
+        Stat stat = new Stat();
+        stat.setSize(1);
+        dir.setStat(stat);
+    }
+
+    @Test(expected = InvalidArgumentChimeraException.class)
+    public void testSetSizeOnNonFile() throws Exception {
+        FsInode dir = _rootInode.mkdir("dir1");
+        FsInode link = _rootInode.createLink("link1", 1, 1, 0777, "dir1".getBytes(StandardCharsets.UTF_8));
+        Stat stat = new Stat();
+        stat.setSize(1);
+        link.setStat(stat);
     }
 }
