@@ -10,7 +10,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -768,9 +767,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode dirInode = _rootInode.mkdir("testDir", 0, 0, 0755);
         long oldCtime = dirInode.stat().getCTime();
 
-        TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setUID(3750);
-        assertTrue("The ctime is not updated", dirInode.stat().getCTime() > oldCtime);
+        assertTrue("The ctime is not updated", dirInode.stat().getCTime() >= oldCtime);
     }
 
     @Test
@@ -779,9 +777,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         long oldCtime = dirInode.stat().getCTime();
         long oldChage = dirInode.stat().getGeneration();
 
-        TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setGID(3750);
-        assertTrue("The ctime is not updated", dirInode.stat().getCTime() > oldCtime);
+        assertTrue("The ctime is not updated", dirInode.stat().getCTime() >= oldCtime);
         assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
     }
 
@@ -791,9 +788,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         long oldCtime = dirInode.stat().getCTime();
         long oldChage = dirInode.stat().getGeneration();
 
-        TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setMode(0700);
-        assertTrue("The ctime is not updated", dirInode.stat().getCTime() > oldCtime);
+        assertTrue("The ctime is not updated", dirInode.stat().getCTime() >= oldCtime);
         assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
     }
 
@@ -803,9 +799,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         long oldMtime = dirInode.stat().getMTime();
         long oldChage = dirInode.stat().getGeneration();
 
-        TimeUnit.MILLISECONDS.sleep(2);
         dirInode.setSize(17);
-        assertTrue("The mtime is not updated", dirInode.stat().getMTime() > oldMtime);
+        assertTrue("The mtime is not updated", dirInode.stat().getMTime() >= oldMtime);
         assertTrue("change count is not updated", dirInode.stat().getGeneration() != oldChage);
     }
 
@@ -989,13 +984,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
         tagInode.write(0, data1, 0, data1.length);
         Stat statBefore = tagInode.stat();
 
-        // unshure that time in millis is changed
-        TimeUnit.MICROSECONDS.sleep(2);
-
         tagInode.write(0, data2, 0, data2.length);
         Stat statAfter = tagInode.stat();
 
-        assertTrue(statBefore.getMTime() != statAfter.getMTime());
+        assertTrue(statAfter.getMTime() >= statBefore.getMTime());
     }
 
     @Test
