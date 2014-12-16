@@ -15,6 +15,7 @@ import dmg.util.CommandExitException;
 
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
+import org.dcache.util.NetLoggerBuilder;
 
 /**
  *
@@ -94,6 +95,14 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
                 LOGGER.error("WeakFtpDoor: couldn't start tLog. " +
                         "Ignoring exception: {}", e.getMessage());
             }
+        }
+    }
+
+    @Override
+    public void addUserAttribute(NetLoggerBuilder log)
+    {
+        if (_subject != null) {
+            log.add("user", Subjects.getDisplayName(_subject));
         }
     }
 }

@@ -1714,6 +1714,7 @@ public abstract class AbstractFtpDoorV1
 
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
             log.add("host.remote", _remoteSocketAddress);
+            addUserAttribute(log);
             log.add("session", CDC.getSession());
             log.addInQuotes("command", commandLine);
             log.addInQuotes("reply", response);
@@ -1734,6 +1735,11 @@ public abstract class AbstractFtpDoorV1
     }
 
     protected abstract void secure_reply(String answer, String code);
+
+    /**
+     * Add the user identification to the logger.
+     */
+    protected abstract void addUserAttribute(NetLoggerBuilder log);
 
     protected void checkLoggedIn()
         throws FTPCommandException

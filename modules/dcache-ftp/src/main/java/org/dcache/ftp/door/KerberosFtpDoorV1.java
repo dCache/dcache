@@ -24,6 +24,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
+import org.dcache.util.NetLoggerBuilder;
 
 /**
  *
@@ -153,6 +154,17 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
         } catch (CacheException e) {
             LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
             reply("530 Login failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void addUserAttribute(NetLoggerBuilder log)
+    {
+        try {
+            log.add("kerberos", Subjects.getKerberosName(_subject));
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Unable add user {} to access log: {}",
+                    Subjects.getDisplayName(_subject), e.getMessage());
         }
     }
 }
