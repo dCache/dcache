@@ -2,7 +2,7 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -65,7 +64,6 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.getFirst;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 
 public class ChimeraNameSpaceProvider
@@ -212,7 +210,10 @@ public class ChimeraNameSpaceProvider
             ExtendedInode inode = parent.create(newEntryFile.getName(), uid, gid, mode);
             FileAttributes fileAttributes = getFileAttributes(inode, requestedAttributes);
             if (parent.getTags().containsKey(TAG_EXPECTED_SIZE)) {
-                fileAttributes.setSize(Long.parseLong(getFirst(parent.getTag(TAG_EXPECTED_SIZE), "0")));
+                ImmutableList<String> size = parent.getTag(TAG_EXPECTED_SIZE);
+                if (!size.isEmpty()) {
+                    fileAttributes.setSize(Long.parseLong(size.get(0)));
+                }
             }
             return fileAttributes;
         } catch (NotDirChimeraException e) {
@@ -699,7 +700,12 @@ public class ChimeraNameSpaceProvider
                 break;
             case SIZE:
                 stat = inode.statCache();
-                attributes.setSize(stat.getSize());
+                // REVISIT when we have another way to detect new files
+                ExtendedInode level2 = inode.getLevel(2);
+                boolean isNew = (stat.getSize() == 0) && (!level2.exists());
+                if (!isNew) {
+                    attributes.setSize(stat.getSize());
+                }
                 break;
             case CHANGE_TIME:
                 stat = inode.statCache();

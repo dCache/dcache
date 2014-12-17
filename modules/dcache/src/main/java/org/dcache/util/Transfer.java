@@ -798,7 +798,7 @@ public class Transfer implements Comparable<Transfer>
             ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
             if (isWrite()) {
                 long allocated = _allocated;
-                if (allocated == 0) {
+                if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
                     allocated = fileAttributes.getSize();
                 }
                 PoolMgrSelectWritePoolMsg request =
