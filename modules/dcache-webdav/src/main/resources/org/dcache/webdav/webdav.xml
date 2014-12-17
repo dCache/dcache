@@ -155,6 +155,11 @@
         <property name="buffering" value="never"/>
         <property name="staticContentPath" value="${webdav.static-content.location}"/>
         <property name="templateResource" value="${webdav.templates.html}"/>
+        <property name="extraAuthenticationHandlers">
+            <list>
+                <bean class="org.dcache.webdav.X509AuthenticationHandler"/>
+            </list>
+        </property>
     </bean>
 
     <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerList">
