@@ -56,7 +56,7 @@ import org.dcache.auth.attributes.RootDirectory;
 public class SecurityFilter implements Filter
 {
     private final Logger _log = LoggerFactory.getLogger(SecurityFilter.class);
-    private static final String X509_CERTIFICATE_ATTRIBUTE =
+    public static final String X509_CERTIFICATE_ATTRIBUTE =
         "javax.servlet.request.X509Certificate";
 
     private String _realm;
