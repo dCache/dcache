@@ -251,6 +251,18 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
             Range range) throws NotAuthorizedException, BadRequestException,
             NotFoundException
     {
+        Long contentLength = resource.getContentLength();
+        /* [RFC 2616, section 14.35.1]
+         *
+         * "If the last-byte-pos value is absent, or if the value is greater than or equal to the
+         * current length of the entity-body, last-byte-pos is taken to be equal to one less than
+         * the current length of the entity- body in bytes."
+         *
+         * Milton ought to do this, but it doesn't.
+         */
+        if (contentLength != null && range.getFinish() != null && range.getFinish() >= contentLength) {
+            range = new Range(range.getStart(), contentLength - 1);
+        }
         super.respondPartialContent(resource, response, request, params, range);
         rfc3230(resource, response);
     }
