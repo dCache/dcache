@@ -30,6 +30,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -50,6 +51,8 @@ import org.dcache.util.ColumnWriter;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableSet;
 
@@ -78,6 +81,7 @@ public class HsmSet
             ServiceLoader.load(NearlineStorageProvider.class);
     private static final String DEFAULT_PROVIDER = "script";
 
+    private final ConcurrentMap<String, HsmInfo> _newConfig = Maps.newConcurrentMap();
     private final ConcurrentMap<String, HsmInfo> _hsm = Maps.newConcurrentMap();
     private boolean _isReadingSetup;
     private Integer _legacyRemoveConcurrency;
@@ -205,14 +209,14 @@ public class HsmSet
          * Scans an argument set for options and applies those as
          * attributes to an HsmInfo object.
          */
-        public synchronized void scanOptions(Args args, boolean doRefresh)
+        public synchronized void scanOptions(Args args)
         {
             for (Map.Entry<String,String> e: args.options().entries()) {
                 String optName  = e.getKey();
                 String optValue = e.getValue();
                 setAttribute(optName, optValue == null ? "" : optValue);
             }
-            if (doRefresh) {
+            if (!_isReadingSetup) {
                 refresh();
             }
         }
@@ -221,12 +225,12 @@ public class HsmSet
          * Scans an argument set for options and removes and unsets those
          * attributes in the given HsmInfo object.
          */
-        public synchronized void scanOptionsUnset(Args args, boolean doRefresh)
+        public synchronized void scanOptionsUnset(Args args)
         {
             for (String optName: args.options().keySet()) {
                 unsetAttribute(optName);
             }
-            if (doRefresh) {
+            if (!_isReadingSetup) {
                 refresh();
             }
         }
@@ -252,17 +256,6 @@ public class HsmSet
         return unmodifiableSet(_hsm.keySet());
     }
 
-    /**
-     * Returns information about the named HSM. Returns null if no HSM
-     * with this instance name was defined.
-     *
-     * @param instance an HSM instance name.
-     */
-    public HsmInfo getHsmInfoByName(String instance)
-    {
-       return _hsm.get(instance);
-    }
-
 
     /**
      * Returns an unmodifiable view of the HSMs of a given type.
@@ -285,7 +278,7 @@ public class HsmSet
 
     public NearlineStorage getNearlineStorageByName(String name)
     {
-        HsmInfo info = getHsmInfoByName(name);
+        HsmInfo info = _hsm.get(name);
         return (info != null) ? info.getNearlineStorage() : null;
     }
 
@@ -314,68 +307,72 @@ public class HsmSet
         return null;
     }
 
-    /**
-     * Removes any information about the named HSM.
-     *
-     * @param instance An HSM instance name.
-     */
-    private void removeInfo(String instance)
-    {
-        HsmInfo info = _hsm.remove(instance);
-        if (info != null) {
-            info.shutdown();
-        }
-    }
-
     public static final String hh_hsm_create = "<type> [<name> [<provider>]] [-<key>=<value>] ...";
-    public String ac_hsm_create_$_1_3(Args args)
+    public synchronized String ac_hsm_create_$_1_3(Args args)
     {
         String type = args.argv(0);
         String instance = (args.argc() == 1) ? type : args.argv(1);
         String provider = (args.argc() == 3) ? args.argv(2) : DEFAULT_PROVIDER;
-        HsmInfo info = new HsmInfo(instance, type, provider);
-        info.scanOptions(args, !_isReadingSetup);
-        if (_hsm.putIfAbsent(instance, info) != null) {
-            throw new IllegalArgumentException("Nearline storage already exists: " + instance);
+        if (_isReadingSetup) {
+            if (_newConfig.containsKey(instance)) {
+                throw new IllegalArgumentException("Nearline storage already exists: " + instance);
+            }
+            HsmInfo info = _hsm.get(instance);
+            if (info == null) {
+                info = new HsmInfo(instance, type, provider);
+            }
+            info.scanOptions(args);
+            _newConfig.put(instance, info);
+        } else {
+            if (_hsm.containsKey(instance)) {
+                throw new IllegalArgumentException("Nearline storage already exists: " + instance);
+            }
+            HsmInfo info = new HsmInfo(instance, type, provider);
+            info.scanOptions(args);
+            _hsm.put(instance, info);
         }
         return "";
     }
 
     public static final String hh_hsm_set = "<name> [-<key>=<value>] ...";
-    public String ac_hsm_set_$_1_2(Args args)
+    public synchronized String ac_hsm_set_$_1_2(Args args)
     {
+        HsmInfo info;
         if (_isReadingSetup) {
-            /* For backwards compatibility with old pool setup files.
-             */
             String type = args.argv(0);
             String instance = (args.argc() == 1) ? type : args.argv(1);
-            HsmInfo info = new HsmInfo(instance, type, DEFAULT_PROVIDER);
-            HsmInfo existing = _hsm.putIfAbsent(instance, info);
-            if (existing != null) {
-                info = existing;
+            info = _newConfig.get(instance);
+            if (info == null) {
+                info = _hsm.get(instance);
+                if (info == null) {
+                    /* For backwards compatibility with old pool setup files
+                     * we auto-create HSMs.
+                     */
+                    info = new HsmInfo(instance, type, DEFAULT_PROVIDER);
+                }
+                _newConfig.put(instance, info);
             }
-            info.scanOptions(args, false);
         } else {
             String instance = args.argv(0);
-            HsmInfo info = getHsmInfoByName(instance);
+            info = _hsm.get(instance);
             if (info == null) {
                 throw new IllegalArgumentException("No such nearline storage: " + instance);
             }
-            info.scanOptions(args, true);
         }
+        info.scanOptions(args);
         return "";
     }
 
     public static final String hh_hsm_unset = "<name> [-<key>] ...";
-    public String ac_hsm_unset_$_1(Args args)
+    public synchronized String ac_hsm_unset_$_1(Args args)
     {
-       String instance = args.argv(0);
-       HsmInfo info = getHsmInfoByName(instance);
-       if (info == null) {
-           throw new IllegalArgumentException("No such nearline storage: " + instance);
-       }
-       info.scanOptionsUnset(args, !_isReadingSetup);
-       return "";
+        String instance = args.argv(0);
+        HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
+        if (info == null) {
+            throw new IllegalArgumentException("No such nearline storage: " + instance);
+        }
+        info.scanOptionsUnset(args);
+        return "";
     }
 
     public static final String hh_hsm_ls = "[<name>] ...";
@@ -395,14 +392,17 @@ public class HsmSet
     }
 
     public static final String hh_hsm_remove = "<name>";
-    public String ac_hsm_remove_$_1(Args args)
+    public synchronized String ac_hsm_remove_$_1(Args args)
     {
-       removeInfo(args.argv(0));
-       return "";
+        HsmInfo info = (_isReadingSetup ? _newConfig : _hsm).remove(args.argv(0));
+        if (info != null) {
+            info.shutdown();
+        }
+        return "";
     }
 
     public static final String hh_rh_set_max_active = "# Deprecated";
-    public String ac_rh_set_max_active_$_1(Args args)
+    public synchronized String ac_rh_set_max_active_$_1(Args args)
     {
         checkState(_isReadingSetup, "Legacy command only supported in pool setup file.");
         _legacyRestoreConcurrency = Integer.parseInt(args.argv(0));
@@ -410,7 +410,7 @@ public class HsmSet
     }
 
     public static final String hh_st_set_max_active = "# Deprecated";
-    public String ac_st_set_max_active_$_1(Args args)
+    public synchronized String ac_st_set_max_active_$_1(Args args)
     {
         checkState(_isReadingSetup, "Legacy command only supported in pool setup file.");
         _legacyStoreConcurrency = Integer.parseInt(args.argv(0));
@@ -418,7 +418,7 @@ public class HsmSet
     }
 
     public static final String hh_rm_set_max_active = "# Deprecated";
-    public String ac_rm_set_max_active_$_1(Args args)
+    public synchronized String ac_rm_set_max_active_$_1(Args args)
     {
         checkState(_isReadingSetup, "Legacy command only supported in pool setup file.");
         _legacyRemoveConcurrency = Integer.parseInt(args.argv(0));
@@ -426,7 +426,7 @@ public class HsmSet
     }
 
     public static final String hh_hsm_show_providers = "# show available nearline storage providers";
-    public String ac_hsm_show_providers(Args args)
+    public synchronized String ac_hsm_show_providers(Args args)
     {
         ColumnWriter writer = new ColumnWriter();
         writer.header("PROVIDER").left("provider").space();
@@ -465,16 +465,19 @@ public class HsmSet
     }
 
     @Override
-    public void beforeSetup()
+    public synchronized void beforeSetup()
     {
         _isReadingSetup = true;
     }
 
     @Override
-    public void afterSetup()
+    public synchronized void afterSetup()
     {
         _isReadingSetup = false;
-        for (HsmInfo info : _hsm.values()) {
+
+        /* Apply legacy limits.
+         */
+        for (HsmInfo info : _newConfig.values()) {
             if (info.getProvider().equals(DEFAULT_PROVIDER)) {
                 if (_legacyRestoreConcurrency != null) {
                     info.setAttribute(ScriptNearlineStorage.CONCURRENT_GETS, String.valueOf(_legacyRestoreConcurrency));
@@ -486,8 +489,28 @@ public class HsmSet
                     info.setAttribute(ScriptNearlineStorage.CONCURRENT_REMOVES, String.valueOf(_legacyRemoveConcurrency));
                 }
             }
-            info.refresh();
         }
+        _legacyRestoreConcurrency = null;
+        _legacyStoreConcurrency = null;
+        _legacyRemoveConcurrency = null;
+
+        /* Remove the stores that are not in the new configuration.
+         */
+        Iterator<HsmInfo> iterator =
+                Maps.filterKeys(_hsm, not(in(_newConfig.keySet()))).values().iterator();
+        while (iterator.hasNext()) {
+            iterator.next().shutdown();
+            iterator.remove();
+        }
+
+        /* Apply configuration changes
+         */
+        for (HsmInfo hsm : _newConfig.values()) {
+            hsm.refresh();
+        }
+
+        _hsm.putAll(_newConfig);
+        _newConfig.clear();
     }
 
     @PreDestroy
@@ -502,7 +525,7 @@ public class HsmSet
     {
         assert instance != null;
 
-        HsmInfo info = getHsmInfoByName(instance);
+        HsmInfo info = _hsm.get(instance);
         if (info == null) {
             sb.append(instance).append(" not found\n");
         } else {
