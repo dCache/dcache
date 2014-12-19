@@ -7,7 +7,7 @@ check -strong nfs.cell.name
 check -strong nfs.cell.export
 check -strong nfs.net.port
 check -strong nfs.version
-check -strong nfs.service.loginbroker
+check nfs.service.loginbroker
 check -strong nfs.service.loginbroker.update-period
 check -strong nfs.service.loginbroker.update-period.unit
 check -strong nfs.service.loginbroker.update-threshold
