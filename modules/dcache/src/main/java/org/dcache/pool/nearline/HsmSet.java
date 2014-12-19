@@ -30,6 +30,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -100,8 +101,8 @@ public class HsmSet
     {
         private final String _type;
         private final String _instance;
-        private final Map<String,String> _currentAttributes = new HashMap<>();
-        private final Map<String,String> _newAttributes = new HashMap<>();
+        private final Map<String,String> _currentAttributes = new LinkedHashMap<>();
+        private final Map<String,String> _newAttributes = new LinkedHashMap<>();
         private final NearlineStorageProvider _provider;
         private final NearlineStorage _nearlineStorage;
 
