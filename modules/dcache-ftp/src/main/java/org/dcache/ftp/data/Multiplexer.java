@@ -26,36 +26,36 @@ public class Multiplexer implements ErrorListener
      * by a call to close().
      */
     public Multiplexer(ErrorListener errorListener) throws IOException {
-	_shutdown      = false;
-	_selector      = Selector.open();
-	_errorListener = errorListener;
+        _shutdown      = false;
+        _selector      = Selector.open();
+        _errorListener = errorListener;
     }
 
     /** Log status messsages. */
     @Override
     public void say(String msg)
     {
-	if (_errorListener != null) {
-	    _errorListener.say(msg);
-	}
+        if (_errorListener != null) {
+            _errorListener.say(msg);
+        }
     }
 
     /** Log error messsages. */
     @Override
     public void esay(String msg)
     {
-	if (_errorListener != null) {
-	    _errorListener.esay(msg);
-	}
+        if (_errorListener != null) {
+            _errorListener.esay(msg);
+        }
     }
 
     /** Log error messsages. */
     @Override
     public void esay(Throwable t)
     {
-	if (_errorListener != null) {
-	    _errorListener.esay(t);
-	}
+        if (_errorListener != null) {
+            _errorListener.esay(t);
+        }
     }
 
     /**
@@ -66,31 +66,31 @@ public class Multiplexer implements ErrorListener
      * @throws InterruptedException
      */
     public void loop() throws Exception {
-	while (!_shutdown) {
-	    _selector.select();
+        while (!_shutdown) {
+            _selector.select();
 
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
 
-	    for (SelectionKey key : _selector.selectedKeys()) {
-		MultiplexerListener listener =
-		    (MultiplexerListener)key.attachment();
-		if (key.isValid() && key.isConnectable() ) {
-		    listener.connect(this, key);
-		}
+            for (SelectionKey key : _selector.selectedKeys()) {
+                MultiplexerListener listener =
+                        (MultiplexerListener)key.attachment();
+                if (key.isValid() && key.isConnectable() ) {
+                    listener.connect(this, key);
+                }
                 if (key.isValid() && key.isAcceptable()) {
-		    listener.accept(this, key);
-		}
+                    listener.accept(this, key);
+                }
                 if (key.isValid() && key.isReadable()) {
-		    listener.read(this, key);
-		}
+                    listener.read(this, key);
+                }
                 if (key.isValid() && key.isWritable()) {
-		    listener.write(this, key);
-		}
-	    }
-	    _selector.selectedKeys().clear();
-	}
+                    listener.write(this, key);
+                }
+            }
+            _selector.selectedKeys().clear();
+        }
     }
 
     /**
@@ -102,10 +102,10 @@ public class Multiplexer implements ErrorListener
      * SelectionKey).
      */
     public SelectionKey register(MultiplexerListener listener,
-				 int op, SelectableChannel channel)
-	throws IOException
+                                 int op, SelectableChannel channel)
+            throws IOException
     {
-	return channel.register(_selector, op, listener);
+        return channel.register(_selector, op, listener);
     }
 
     /**
@@ -113,7 +113,7 @@ public class Multiplexer implements ErrorListener
      * calling listener.register(multiplexer).
      */
     public void add(MultiplexerListener listener) throws Exception {
-	listener.register(this);
+        listener.register(this);
     }
 
     /**
@@ -121,11 +121,11 @@ public class Multiplexer implements ErrorListener
      * and all channels currently registered in the selector.
      */
     public void close() throws IOException {
-	for (SelectionKey key : _selector.keys()) {
-	    key.channel().close();
-	}
+        for (SelectionKey key : _selector.keys()) {
+            key.channel().close();
+        }
         _selector.selectNow();
-	_selector.close();
+        _selector.close();
     }
 
     /**
@@ -133,6 +133,6 @@ public class Multiplexer implements ErrorListener
      */
     public void shutdown() {
         say("Multiplexer shutting down");
-	_shutdown = true;
+        _shutdown = true;
     }
 }

@@ -59,7 +59,7 @@ public class ModeX extends Mode
     public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
 
     public static final int KNOWN_DESCRIPTORS =
-	EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
+            EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
 
     /**
      * The chunk size used when sending files.
@@ -133,15 +133,15 @@ public class ModeX extends Mode
 
         /** Buffer for representing a block header. */
         protected ByteBuffer _header =
-            ByteBuffer.allocate(HEADER_LENGTH);
+                ByteBuffer.allocate(HEADER_LENGTH);
 
         /** Buffer for reading commands from the receiver. */
         protected ByteBuffer _command =
-            ByteBuffer.allocate(128);
+                ByteBuffer.allocate(128);
 
         /** Buffer for reading commands from the receiver. */
         protected CharBuffer _decodedCommand =
-            CharBuffer.allocate(128);
+                CharBuffer.allocate(128);
 
         public Sender(SocketChannel socket)
         {
@@ -158,7 +158,7 @@ public class ModeX extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+                throws Exception
         {
             /* Protect against clients sending large commands. We
              * could enlarge the command buffer, but this would open
@@ -235,13 +235,13 @@ public class ModeX extends Mode
                 throw new FTPException("RESEND is not implemented");
             } else {
                 throw new FTPException("Unexpected command '" + cmd
-                                       + "' in state " + _state);
+                                               + "' in state " + _state);
             }
         }
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+                throws Exception
         {
             switch (_state) {
             case NEXT_BLOCK:
@@ -254,9 +254,9 @@ public class ModeX extends Mode
                 if (_count == 0) {
                     // No more data. Send EOD and EOF.
                     descriptor =
-                        (byte)(EOF_DESCRIPTOR
-                               | EOD_DESCRIPTOR
-                               | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR);
+                            (byte)(EOF_DESCRIPTOR
+                                    | EOD_DESCRIPTOR
+                                    | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR);
                     _closing++;
                     _eof = true;
                 } else if (_closeAtNextBlock && _opened > _closing + 1) {
@@ -264,8 +264,8 @@ public class ModeX extends Mode
                     // honor the close request as long as at least one
                     // data channel remains open.
                     descriptor =
-                        (byte)(EOD_DESCRIPTOR
-                               | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR);
+                            (byte)(EOD_DESCRIPTOR
+                                    | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR);
                     _closing++;
                     _count = 0;
                 } else {
@@ -331,11 +331,11 @@ public class ModeX extends Mode
 
         /** Buffer for representing a block header. */
         protected ByteBuffer _header =
-            ByteBuffer.allocate(HEADER_LENGTH);
+                ByteBuffer.allocate(HEADER_LENGTH);
 
         /** Buffer for reading commands from the receiver. */
         protected ByteBuffer _command =
-            ByteBuffer.allocate(128);
+                ByteBuffer.allocate(128);
 
         public Receiver(SocketChannel socket)
         {
@@ -368,7 +368,7 @@ public class ModeX extends Mode
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+                throws Exception
         {
             try {
                 _socket.write(_command);
@@ -397,7 +397,7 @@ public class ModeX extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+                throws Exception
         {
             long nbytes;
 
@@ -488,7 +488,7 @@ public class ModeX extends Mode
 
     public ModeX(Role role, RepositoryChannel file, ConnectionMonitor monitor,
                  int blockSize)
-        throws IOException
+            throws IOException
     {
         super(role, file, monitor);
         _currentPosition = getStartPosition();
@@ -500,7 +500,7 @@ public class ModeX extends Mode
 
     @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
-        throws Exception
+            throws Exception
     {
         switch (_role) {
         case Sender:

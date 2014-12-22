@@ -19,7 +19,7 @@ public class BlockLog
     private boolean _eof;
 
     private static final String _overlapMsg
-	= "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
+            = "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
 
     private ErrorListener _errorListener;
 
@@ -27,7 +27,7 @@ public class BlockLog
 
     public BlockLog(ErrorListener errorListener)
     {
-	_errorListener = errorListener;
+        _errorListener = errorListener;
         _limit = Long.MAX_VALUE;
     }
 
@@ -40,62 +40,62 @@ public class BlockLog
      * @throws FTPException if blocks overlap
      */
     public synchronized void addBlock(long position, long size)
-	throws FTPException
+            throws FTPException
     {
-	if (size == 0) {
-	    return;
-	}
+        if (size == 0) {
+            return;
+        }
 
-	long begin = position;
-	long end   = position + size;
+        long begin = position;
+        long end   = position + size;
 
-	SortedMap<Long,Long> headMap = _blocks.headMap(position);
-	SortedMap<Long,Long> tailMap = _blocks.tailMap(position);
+        SortedMap<Long,Long> headMap = _blocks.headMap(position);
+        SortedMap<Long,Long> tailMap = _blocks.tailMap(position);
 
-	if (!headMap.isEmpty()) {
-	    long prevBegin = headMap.lastKey();
-	    long prevEnd = _blocks.get(prevBegin);
+        if (!headMap.isEmpty()) {
+            long prevBegin = headMap.lastKey();
+            long prevEnd = _blocks.get(prevBegin);
 
-	    /* Consistency check.
-	     */
-	    if (prevEnd > begin) {
-		String err =
-		    MessageFormat.format(_overlapMsg,
-					 begin, end, prevBegin, prevEnd);
-		throw new FTPException(err);
-	    }
+            /* Consistency check.
+             */
+            if (prevEnd > begin) {
+                String err =
+                        MessageFormat.format(_overlapMsg,
+                                             begin, end, prevBegin, prevEnd);
+                throw new FTPException(err);
+            }
 
-	    /* Merge blocks.
-	     */
-	    if (prevEnd == begin) {
-		begin = prevBegin;
-		_blocks.remove(prevBegin);
-	    }
-	}
-	if (!tailMap.isEmpty()) {
-	    long nextBegin = tailMap.firstKey();
-	    long nextEnd   = _blocks.get(nextBegin);
+            /* Merge blocks.
+             */
+            if (prevEnd == begin) {
+                begin = prevBegin;
+                _blocks.remove(prevBegin);
+            }
+        }
+        if (!tailMap.isEmpty()) {
+            long nextBegin = tailMap.firstKey();
+            long nextEnd   = _blocks.get(nextBegin);
 
-	    /* Consistency check.
-	     */
-	    if (end > nextBegin) {
-		String err =
-		    MessageFormat.format(_overlapMsg,
-					 begin, end, nextBegin, nextEnd);
-		throw new FTPException(err);
-	    }
+            /* Consistency check.
+             */
+            if (end > nextBegin) {
+                String err =
+                        MessageFormat.format(_overlapMsg,
+                                             begin, end, nextBegin, nextEnd);
+                throw new FTPException(err);
+            }
 
-	    /* Merge blocks.
-	     */
-	    if (end == nextBegin) {
-		end = nextEnd;
-		_blocks.remove(nextBegin);
-	    }
-	}
+            /* Merge blocks.
+             */
+            if (end == nextBegin) {
+                end = nextEnd;
+                _blocks.remove(nextBegin);
+            }
+        }
 
-	_blocks.put(begin, end);
+        _blocks.put(begin, end);
 
-	notifyAll();
+        notifyAll();
 
         /* The transfer can be throttled by setting a limit. Once
          * everything up to that limit has been received, we block
@@ -117,8 +117,8 @@ public class BlockLog
      */
     public synchronized void setEof()
     {
-	_eof = true;
-	notifyAll();
+        _eof = true;
+        notifyAll();
     }
 
     /**
@@ -126,7 +126,7 @@ public class BlockLog
      */
     public synchronized boolean isEof()
     {
-	return _eof;
+        return _eof;
     }
 
     /**
@@ -155,7 +155,7 @@ public class BlockLog
      */
     public synchronized long getCompleted()
     {
-	return !_blocks.containsKey(0L) ? 0L : _blocks.get(0L);
+        return !_blocks.containsKey(0L) ? 0L : _blocks.get(0L);
     }
 
     /**
@@ -163,14 +163,14 @@ public class BlockLog
      * equal to position or until setEof() has been called.
      */
     public synchronized void waitCompleted(long position)
-	throws InterruptedException
+            throws InterruptedException
     {
         if (_limit < position) {
             setLimit(position);
         }
-	while (getCompleted() < position && !isEof()) {
-	    wait();
-	}
+        while (getCompleted() < position && !isEof()) {
+            wait();
+        }
     }
 
     /**
