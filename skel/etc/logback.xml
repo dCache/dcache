@@ -77,7 +77,7 @@
   <appender name="events" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${dcache.log.dir}/${dcache.domain.name}.events</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.events.%d{yyyy-MM-dd}</fileNamePattern>
+      <fileNamePattern>${dcache.log.dir}/${dcache.domain.name}.events.%d{yyyy-MM-dd}.gz</fileNamePattern>
       <maxHistory>0</maxHistory>
     </rollingPolicy>
     <encoder>
