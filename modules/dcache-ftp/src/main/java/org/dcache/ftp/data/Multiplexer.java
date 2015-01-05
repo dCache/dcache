@@ -41,7 +41,7 @@ public class Multiplexer
      *
      * @throws InterruptedException
      */
-    public void loop() throws Exception {
+    public void loop() throws IOException, FTPException, InterruptedException {
         while (!_shutdown) {
             _selector.select();
 
@@ -74,7 +74,7 @@ public class Multiplexer
      * be registered on any given channel. If a listener was already
      * registered, the old listener is silently unregistered and the
      * new listener is registered. The listener is registered for the
-     * type of events specifified by the op bitmask (@see
+     * type of events specified by the op bitmask (@see
      * SelectionKey).
      */
     public SelectionKey register(MultiplexerListener listener,
@@ -88,7 +88,7 @@ public class Multiplexer
      * Add a listener to the multiplexer. This is equivalent to
      * calling listener.register(multiplexer).
      */
-    public void add(MultiplexerListener listener) throws Exception {
+    public void add(MultiplexerListener listener) throws IOException {
         listener.register(this);
     }
 

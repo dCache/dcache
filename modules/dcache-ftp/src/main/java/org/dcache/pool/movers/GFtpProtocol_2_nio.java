@@ -10,10 +10,8 @@ import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.UnresolvedAddressException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
@@ -46,23 +44,26 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
  */
 public class GFtpProtocol_2_nio implements ConnectionMonitor,
         MoverProtocol, ChecksumMover
 {
-    private final static Logger _log =
+    private static final Logger _log =
             LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
-    private final static Logger _logSpaceAllocation =
+    private static final Logger _logSpaceAllocation =
             LoggerFactory.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                                             GFtpProtocol_2_nio.class.getName());
 
     /** The minimum number of bytes to increment the space allocation. */
-    public final static long SPACE_INC = 50 * 1024 * 1024; // 50 MB
+    public static final long SPACE_INC = 50 * 1024 * 1024; // 50 MB
 
     /** Key used to extract the read ahead from the domain context. */
-    public final static String READ_AHEAD_KEY = "gsiftpReadAhead";
+    public static final String READ_AHEAD_KEY = "gsiftpReadAhead";
 
     /**
      * Default block size for mode S. Although mode S is not a block
@@ -70,17 +71,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
      * of data we will try to transfer in a single iteration of the
      * transfer loop.
      */
-    public final static int MODE_S_DEFAULT_BLOCK_SIZE = 512 * 1024;
+    public static final int MODE_S_DEFAULT_BLOCK_SIZE = 512 * 1024;
 
     /**
      * Default block size for mode E.
      */
-    public final static int MODE_E_DEFAULT_BLOCK_SIZE = 128 * 1024;
+    public static final int MODE_E_DEFAULT_BLOCK_SIZE = 128 * 1024;
 
     /**
      * Default block size for mode X.
      */
-    public final static int MODE_X_DEFAULT_BLOCK_SIZE = 128 * 1024;
+    public static final int MODE_X_DEFAULT_BLOCK_SIZE = 128 * 1024;
 
     /** The cell owning this mover. Log messages are sent to it. */
     protected final CellEndpoint  _cell;
@@ -181,19 +182,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     protected boolean      _allowPassivePool;
 
     /**
-     * If true, each block received or sent is logged.
-     */
-    protected boolean      _verboseLogging;
-
-    /**
      * True while the transfer is in progress.
      */
     protected boolean      _inProgress;
-
-    /**
-     * Random number generator used when binding sockets.
-     */
-    private static Random  _random = new Random();
 
     public GFtpProtocol_2_nio(CellEndpoint cell)
     {
@@ -324,7 +315,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             throw new InterruptedException();
         } catch (InterruptedException | FTPException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             _log.error(e.toString());
             throw e;
         } finally {
@@ -404,8 +395,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
         Role role = access == IoMode.WRITE ? Role.Receiver : Role.Sender;
         int    version     = gftpProtocolInfo.getMajorVersion();
-        String host        = gftpProtocolInfo.getSocketAddress().getAddress().getHostAddress();
-        int    port        = gftpProtocolInfo.getSocketAddress().getPort();
+        InetSocketAddress address = gftpProtocolInfo.getSocketAddress();
         int    bufferSize  = gftpProtocolInfo.getBufferSize();
         int    parallelism = gftpProtocolInfo.getParallelStart();
         long   offset      = gftpProtocolInfo.getOffset();
@@ -413,9 +403,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         boolean passive    = gftpProtocolInfo.getPassive() && _allowPassivePool;
         ProtocolFamily protocolFamily = gftpProtocolInfo.getProtocolFamily();
 
-        _log.debug("version={}, role={}, mode={}, host={}:{} buffer={}, passive={}, parallelism={}",
+        _log.debug("version={}, role={}, mode={}, host={} buffer={}, passive={}, parallelism={}",
                   version, role, gftpProtocolInfo.getMode(),
-                  host, port, bufferSize, passive, parallelism);
+                  address, bufferSize, passive, parallelism);
 
         /* Sanity check the parameters.
          */
@@ -504,19 +494,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              * Active mode, host and port identify the client. Either
              * way, we do not really care.
              */
-
-            try {
-                mode.setActive(new InetSocketAddress(host, port));
-            } catch (UnresolvedAddressException e) {
-                throw new CacheException("Failed to resolve " + host);
-            }
+            mode.setActive(address);
         }
 
         /* - Parallel transfers in stream mode are not defined.
          *
-         * - Receiption in E mode must be passive (incomming). If the
+         * - Reception in E mode must be passive (incoming). If the
          *   connection is outgoing, it means we use a proxy at the door.
-         *   This proxy is limitted to one connection from the mover.
+         *   This proxy is limited to one connection from the mover.
          *
          * In either case, set the parallelism to one.
          */
@@ -570,23 +555,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                         Iterables.getFirst(mode.getRemoteAddresses(), gftpProtocolInfo.getSocketAddress()));
             }
         }
-    }
-
-    /**
-     * Enables or disables verbose logging. When enabled, every data
-     * block received or sent is logged. The default value is false.
-     */
-    public void setVerboseLogging(boolean value)
-    {
-        _verboseLogging = value;
-    }
-
-    /**
-     * Returns true iff verbose logging is turned on.
-     */
-    public boolean getVerboseLogging()
-    {
-        return _verboseLogging;
     }
 
     /** Part of the MoverProtocol interface. */
@@ -651,21 +619,14 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Part of the ConnectionMonitor interface. */
     @Override
-    public void receivedBlock(long position, long size) throws Exception
+    public void receivedBlock(long position, long size) throws FTPException
     {
-        if (_role != Role.Receiver) {
-            throw new IllegalStateException("Only receivers can receive");
-        }
-        if (position < 0 || size < 0) {
-            throw new IllegalArgumentException("Position and size must be non-negative");
-        }
-        if (position + size > _spaceUsed) {
-            throw new IllegalArgumentException("Must call preallocate before receiving data");
-        }
+        checkState(_role == Role.Receiver, "Only receivers can receive");
+        checkArgument(position >= 0, "Position must be non-negative");
+        checkArgument(size >= 0, "Size must be non-negative");
+        checkState(position + size <= _spaceUsed, "Must call preallocate before receiving data");
 
-        if (_verboseLogging) {
-            _log.trace("received {} {}", position, size);
-        }
+        _log.trace("received {} {}", position, size);
 
         _blockLog.addBlock(position, size);
         _bytesTransferred += size;
@@ -674,18 +635,13 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
     /** Part of the ConnectionMonitor interface. */
     @Override
-    public void sentBlock(long position, long size) throws Exception
+    public void sentBlock(long position, long size) throws FTPException
     {
-        if (_role != Role.Sender) {
-            throw new IllegalStateException("Only senders can send");
-        }
-        if (position < 0 || size < 0) {
-            throw new IllegalArgumentException("Position and size must be non-negative");
-        }
+        checkState(_role == Role.Sender, "Only senders can send");
+        checkArgument(position >= 0, "Position must be non-negative");
+        checkArgument(size >= 0, "Size must be non-negative");
 
-        if (_verboseLogging) {
-            _log.trace("send {} {}", position, size);
-        }
+        _log.trace("send {} {}", position, size);
 
         _blockLog.addBlock(position, size);
         _bytesTransferred += size;
@@ -746,7 +702,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         System.out.println("  -size=BYTES");
         System.out.println("  -mode=(S|E|X)");
         System.out.println("  -digest=ALGORITHM");
-        System.out.println("  -verbose=false|true");
         System.exit(1);
     }
 
@@ -762,7 +717,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long offset     = Long.valueOf(getOption(args, "offset", "0"));
             long size       = Long.valueOf(getOption(args, "size", "0"));
             String digest   = getOption(args, "digest", "");
-            boolean verbose = Boolean.valueOf(getOption(args, "verbose", "false"));
 
             Role role = Role.Receiver;
             if (args.isOneCharOption('r')) {
@@ -816,7 +770,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                 mover.enableTransferChecksum(ChecksumType.getChecksumType(digest));
             }
 
-            mover.setVerboseLogging(verbose);
             mover.transfer(fileChannel, role, mode, null);
             if (digest.length() > 0) {
                 System.out.println(mover.getActualChecksum());

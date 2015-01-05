@@ -278,7 +278,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      * @see Mode#setParallelism, SocketChannel#open
      */
     protected void registerOutgoing(Multiplexer multiplexer)
-        throws Exception
+        throws IOException
     {
         IOException lastException = null;
 
@@ -340,7 +340,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     @Override
     public void register(Multiplexer multiplexer)
-        throws Exception
+            throws IOException
     {
         assert _address != null || _channel != null
             : "Mode must be either set to passive or active.";
@@ -367,7 +367,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     @Override
     public void accept(Multiplexer multiplexer, SelectionKey key)
-        throws Exception
+        throws IOException
     {
         ServerSocketChannel server = (ServerSocketChannel)key.channel();
         SocketChannel channel = server.accept();
@@ -396,7 +396,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     @Override
     public void connect(Multiplexer multiplexer, SelectionKey key)
-        throws Exception
+        throws IOException
     {
         try {
             SocketChannel channel = (SocketChannel)key.channel();
@@ -503,7 +503,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     abstract protected void newConnection(Multiplexer multiplexer,
                                           SocketChannel channel)
-        throws Exception;
+        throws IOException;
 
 }
 

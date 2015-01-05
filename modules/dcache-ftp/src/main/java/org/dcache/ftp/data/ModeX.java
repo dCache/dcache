@@ -158,7 +158,7 @@ public class ModeX extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-                throws Exception
+                throws IOException, FTPException, InterruptedException
         {
             /* Protect against clients sending large commands. We
              * could enlarge the command buffer, but this would open
@@ -241,7 +241,7 @@ public class ModeX extends Mode
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-                throws Exception
+                throws IOException, FTPException
         {
             switch (_state) {
             case NEXT_BLOCK:
@@ -368,7 +368,7 @@ public class ModeX extends Mode
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-                throws Exception
+                throws IOException
         {
             try {
                 _socket.write(_command);
@@ -397,7 +397,7 @@ public class ModeX extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-                throws Exception
+                throws IOException, FTPException, InterruptedException
         {
             long nbytes;
 
@@ -500,7 +500,7 @@ public class ModeX extends Mode
 
     @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
-            throws Exception
+            throws IOException
     {
         switch (_role) {
         case Sender:

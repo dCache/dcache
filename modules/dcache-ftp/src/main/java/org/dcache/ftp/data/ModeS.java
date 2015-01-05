@@ -33,7 +33,7 @@ public class ModeS extends Mode
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+            throws IOException, FTPException
         {
             long nbytes = transferTo(_position, _count, _socket);
             _monitor.sentBlock(_position, nbytes);
@@ -70,7 +70,7 @@ public class ModeS extends Mode
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+            throws IOException, InterruptedException, FTPException
         {
             _monitor.preallocate(_position + _blockSize);
             long nbytes = transferFrom(_socket, _position, _blockSize);
@@ -93,7 +93,7 @@ public class ModeS extends Mode
 
     @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
-        throws Exception
+        throws IOException
     {
         switch (_role) {
         case Sender:

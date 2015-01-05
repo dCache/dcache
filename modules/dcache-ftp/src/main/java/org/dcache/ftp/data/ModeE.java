@@ -92,13 +92,14 @@ public class ModeE extends Mode
         }
 
         @Override
-        public void register(Multiplexer multiplexer) throws IOException {
+        public void register(Multiplexer multiplexer) throws IOException
+        {
             multiplexer.register(this, SelectionKey.OP_WRITE, _socket);
         }
 
         @Override
         public void write(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+            throws IOException, FTPException
         {
             switch (_state) {
             case PREPARE_BLOCK:
@@ -215,13 +216,14 @@ public class ModeE extends Mode
         }
 
         @Override
-        public void register(Multiplexer multiplexer) throws IOException {
+        public void register(Multiplexer multiplexer) throws IOException
+        {
             multiplexer.register(this, SelectionKey.OP_READ, _socket);
         }
 
         @Override
         public void read(Multiplexer multiplexer, SelectionKey key)
-            throws Exception
+            throws IOException, FTPException, InterruptedException
         {
             /* _count is zero when we have received all of the
              * previous block. We expect to read the header of the
@@ -357,7 +359,7 @@ public class ModeE extends Mode
 
     @Override
     public void newConnection(Multiplexer multiplexer, SocketChannel socket)
-        throws Exception
+        throws IOException
     {
         switch (_role) {
         case Sender:
