@@ -1,5 +1,8 @@
 package org.dcache.ftp.data;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -28,6 +31,8 @@ import org.dcache.pool.repository.RepositoryChannel;
  */
 public abstract class Mode extends AbstractMultiplexerListener
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Mode.class);
+
     protected Role              _role;
     protected Direction         _direction;
     protected RepositoryChannel       _file;
@@ -270,7 +275,7 @@ public abstract class Mode extends AbstractMultiplexerListener
      * fail. Failures to create a SocketChannel are propagated to the
      * caller.
      *
-     * @see setParallellism(), SocketChannel.open()
+     * @see Mode#setParallelism, SocketChannel#open
      */
     protected void registerOutgoing(Multiplexer multiplexer)
         throws Exception
@@ -295,7 +300,7 @@ public abstract class Mode extends AbstractMultiplexerListener
                 SelectionKey key =
                     multiplexer.register(this, SelectionKey.OP_CONNECT, channel);
 
-                multiplexer.say("Connecting to " + _address);
+                LOGGER.debug("Connecting to {}", _address);
                 if (channel.connect(_address)) {
                     connect(multiplexer, key);
                 }
@@ -305,7 +310,7 @@ public abstract class Mode extends AbstractMultiplexerListener
                 // transfer can be completed.
                 channel.close();
                 lastException = e;
-                multiplexer.esay(e.toString());
+                LOGGER.warn(e.toString());
                 _failed++;
 
                 if (allConnectionsEstablished()) {
@@ -326,8 +331,7 @@ public abstract class Mode extends AbstractMultiplexerListener
         throws IOException
     {
         _channel.configureBlocking(false);
-        multiplexer.say("Accepting connections on " +
-                        _channel.socket().getLocalSocketAddress());
+        LOGGER.debug("Accepting connections on {}", _channel.socket().getLocalSocketAddress());
         multiplexer.register(this, SelectionKey.OP_ACCEPT, _channel);
     }
 
@@ -370,7 +374,7 @@ public abstract class Mode extends AbstractMultiplexerListener
         if (channel != null) {
             Socket socket = channel.socket();
             _opened++;
-            multiplexer.say("Opened " + socket);
+            LOGGER.debug("Opened {}", socket);
             _remoteAddresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
             channel.configureBlocking(false);
             if (_bufferSize > 0) {
@@ -399,7 +403,7 @@ public abstract class Mode extends AbstractMultiplexerListener
             if (channel.finishConnect()) {
                 Socket socket = channel.socket();
                 _opened++;
-                multiplexer.say("Opened " + socket);
+                LOGGER.debug("Opened {}", socket);
                 _remoteAddresses.add((InetSocketAddress) socket.getRemoteSocketAddress());
                 newConnection(multiplexer, channel);
             }
@@ -426,7 +430,7 @@ public abstract class Mode extends AbstractMultiplexerListener
         throws IOException
     {
         SocketChannel channel = (SocketChannel)key.channel();
-        multiplexer.say("Closing " + channel.socket());
+        LOGGER.debug("Closing {}", channel.socket());
 
         key.cancel();
         channel.close();

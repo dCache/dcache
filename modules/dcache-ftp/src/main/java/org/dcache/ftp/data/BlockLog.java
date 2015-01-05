@@ -21,13 +21,10 @@ public class BlockLog
     private static final String _overlapMsg
             = "Overlapping block detected between ({0}-{1}) and ({2}-{3}).";
 
-    private final ErrorListener _errorListener;
-
     private long _limit;
 
-    public BlockLog(ErrorListener errorListener)
+    public BlockLog()
     {
-        _errorListener = errorListener;
         _limit = Long.MAX_VALUE;
     }
 

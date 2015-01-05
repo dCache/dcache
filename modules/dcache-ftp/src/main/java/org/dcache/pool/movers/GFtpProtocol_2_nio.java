@@ -13,7 +13,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.UnresolvedAddressException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.MessageFormat;
 import java.util.Random;
 
 import diskCacheV111.util.CacheException;
@@ -30,7 +29,6 @@ import org.dcache.ftp.data.BlockLog;
 import org.dcache.ftp.data.ConnectionMonitor;
 import org.dcache.ftp.data.DigestThread;
 import org.dcache.ftp.data.DirectDigestThread;
-import org.dcache.ftp.data.ErrorListener;
 import org.dcache.ftp.data.FTPException;
 import org.dcache.ftp.data.Mode;
 import org.dcache.ftp.data.ModeE;
@@ -52,7 +50,7 @@ import org.dcache.vehicles.FileAttributes;
  * FTP mover. Supports both mover protocols GFtp/1 and GFtp/2.
  */
 public class GFtpProtocol_2_nio implements ConnectionMonitor,
-        MoverProtocol, ChecksumMover, ErrorListener
+        MoverProtocol, ChecksumMover
 {
     private final static Logger _log =
             LoggerFactory.getLogger(GFtpProtocol_2_nio.class);
@@ -259,24 +257,6 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         return new DirectDigestThread(_fileChannel, _blockLog, _digest);
     }
 
-    /** Utility method for logging. */
-    @Override
-    public void say(String str) {
-        _log.info(str);
-    }
-
-    /** Utility method for reporting errors. */
-    @Override
-    public void esay(String str) {
-        _log.error(str);
-    }
-
-    /** Utility method for reporting errors. */
-    @Override
-    public void esay(Throwable t) {
-        _log.error(t.toString());
-    }
-
     @Override
     public String toString() {
         return "SU=" + _spaceUsed + ";SA=" + _reservedSpace + ";S=" + _status;
@@ -293,7 +273,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          */
         _role             = role;
         _bytesTransferred = 0;
-        _blockLog         = new BlockLog(this);
+        _blockLog         = new BlockLog();
         _fileChannel      = fileChannel;
         _allocator        = allocator;
         _reservedSpace    = 0;
@@ -311,7 +291,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          * increase the chance that data has not yet been evicted from
          * the cache.
          */
-        _multiplexer = new Multiplexer(this);
+        _multiplexer = new Multiplexer();
         try {
             _inProgress = true;
 
@@ -322,17 +302,17 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
                     try {
                         digestThread.setReadAhead(Long.parseLong((String)o));
                     } catch (NumberFormatException e) {
-                        esay("Failed parsing read ahead: " + e.getMessage());
+                        _log.error("Failed parsing read ahead: {}", e.getMessage());
                     }
                 }
 
-                say("Initiated checksum computation thread");
+                _log.debug("Initiated checksum computation thread");
                 digestThread.start();
             }
 
             _multiplexer.add(mode);
 
-            say("Entering event loop");
+            _log.trace("Entering event loop");
             _multiplexer.loop();
         } catch (ClosedByInterruptException e) {
             /* Many NIO operations throw a ClosedByInterruptException
@@ -345,7 +325,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         } catch (InterruptedException | FTPException e) {
             throw e;
         } catch (Exception e) {
-            esay(e);
+            _log.error(e.toString());
             throw e;
         } finally {
             _inProgress = false;
@@ -358,7 +338,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
 
             /* Close all open channels.
              */
-            say("Left event loop and closing channels");
+            _log.trace("Left event loop and closing channels");
             _multiplexer.close();
 
             /* Wait for checksum computation to finish before
@@ -383,12 +363,10 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long amount = getBytesTransferred();
             long time = getTransferTime();
             if (time > 0) {
-                say(String.format("Transfer finished: %d bytes transferred in %.2f seconds = %.3f MB/s",
-                                  amount, time / 1000.0,
-                                  (1000.0 * amount) / (time * 1024 * 1024)));
+                _log.info("Transfer finished: {} bytes transferred in {} seconds = {} MB/s",
+                                          amount, time / 1000.0, (1000.0 * amount) / (time * 1024 * 1024));
             } else {
-                say(String.format("Transfer finished: %d bytes transferred in less than 1 ms",
-                                  amount));
+                _log.info("Transfer finished: {} bytes transferred in less than 1 ms", amount);
             }
         }
 
@@ -399,7 +377,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
          * class into the Mover.
          */
         if (digestThread != null && digestThread.getLastError() != null) {
-            esay(digestThread.getLastError());
+            _log.error(digestThread.getLastError().toString());
             throw digestThread.getLastError();
         }
 
@@ -435,10 +413,9 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         boolean passive    = gftpProtocolInfo.getPassive() && _allowPassivePool;
         ProtocolFamily protocolFamily = gftpProtocolInfo.getProtocolFamily();
 
-        say(MessageFormat.format
-                ("version={0}, role={1}, mode={2}, host={3}:{4,number,#}, buffer={5}, passive={6}, parallelism={7}",
-                 version, role, gftpProtocolInfo.getMode(),
-                 host, port, bufferSize, passive, parallelism));
+        _log.debug("version={}, role={}, mode={}, host={}:{} buffer={}, passive={}, parallelism={}",
+                  version, role, gftpProtocolInfo.getMode(),
+                  host, port, bufferSize, passive, parallelism);
 
         /* Sanity check the parameters.
          */
@@ -563,18 +540,18 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
             long fileSize   = fileChannel.size();
             if (offset < 0) {
                 String err = "prm_offset is " + offset;
-                esay(err);
+                _log.error(err);
                 throw new IllegalArgumentException(err);
             }
             if (size < 0) {
                 String err = "prm_offset is " + size;
-                esay(err);
+                _log.error(err);
                 throw new IllegalArgumentException(err);
             }
             if (offset + size > fileSize) {
                 String err = "invalid prm_offset=" + offset + " and prm_size "
                         + size + " for file of size " + fileSize;
-                esay(err);
+                _log.error(err);
                 throw new IllegalArgumentException(err);
             }
             mode.setPartialRetrieveParameters(offset, size);
@@ -645,7 +622,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         try {
             return ChecksumFactory.getFactory(ChecksumType.getChecksumType(type));
         } catch (NoSuchAlgorithmException e) {
-            esay("CRC Algorithm is not supported: " + type);
+            _log.error("CRC Algorithm is not supported: {}", type);
         }
 
         return null;
@@ -687,7 +664,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
 
         if (_verboseLogging) {
-            say("received " + position + " " + size);
+            _log.trace("received {} {}", position, size);
         }
 
         _blockLog.addBlock(position, size);
@@ -707,7 +684,7 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
         }
 
         if (_verboseLogging) {
-            say("send " + position + " " + size);
+            _log.trace("send {} {}", position, size);
         }
 
         _blockLog.addBlock(position, size);
