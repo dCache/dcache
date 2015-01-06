@@ -12,5 +12,6 @@
         <exclude within="org.springframework.transaction.aspectj.AnnotationTransactionAspect"/>
         <aspect name="org.dcache.util.aspects.PerInstanceAnnotationTransactionAspect"/>
         <aspect name="org.dcache.util.aspects.LogSSLHandshakeExceptionAspect"/>
+        <aspect name="org.dcache.util.aspects.ReturnUsefulExceptionMessagesAspect"/>
     </aspects>
 </aspectj>
