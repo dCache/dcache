@@ -1,5 +1,8 @@
 package org.dcache.ftp.data;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -15,47 +18,20 @@ import java.nio.channels.Selector;
  *
  * Notice that the multiplexer is not thread-safe.
  */
-public class Multiplexer implements ErrorListener
+public class Multiplexer
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Multiplexer.class);
+
     protected boolean _shutdown;
     protected Selector _selector;
-    protected ErrorListener _errorListener;
 
     /**
      * Constructs a new multiplexer. The multiplexer must be destroyed
      * by a call to close().
      */
-    public Multiplexer(ErrorListener errorListener) throws IOException {
+    public Multiplexer() throws IOException {
         _shutdown      = false;
         _selector      = Selector.open();
-        _errorListener = errorListener;
-    }
-
-    /** Log status messsages. */
-    @Override
-    public void say(String msg)
-    {
-        if (_errorListener != null) {
-            _errorListener.say(msg);
-        }
-    }
-
-    /** Log error messsages. */
-    @Override
-    public void esay(String msg)
-    {
-        if (_errorListener != null) {
-            _errorListener.esay(msg);
-        }
-    }
-
-    /** Log error messsages. */
-    @Override
-    public void esay(Throwable t)
-    {
-        if (_errorListener != null) {
-            _errorListener.esay(t);
-        }
     }
 
     /**
@@ -132,7 +108,7 @@ public class Multiplexer implements ErrorListener
      * Shuts down the multiplexer, causing it to leave the event loop.
      */
     public void shutdown() {
-        say("Multiplexer shutting down");
+        LOGGER.trace("Multiplexer shutting down");
         _shutdown = true;
     }
 }

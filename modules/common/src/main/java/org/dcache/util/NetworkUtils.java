@@ -26,7 +26,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -68,27 +67,6 @@ public abstract class NetworkUtils {
 
     public static String getCanonicalHostName() {
         return canonicalHostName;
-    }
-
-    /**
-     * Sorts addresses so that external addresses precede any internal interface
-     * addresses.
-     *
-     * @return comparator for sorting array of {@link InetAddress}.
-     */
-    public static Comparator<InetAddress> getExternalInternalSorter() {
-        return new Comparator<InetAddress>() {
-            @Override
-            public int compare(InetAddress arg0, InetAddress arg1) {
-                if (arg0.isLinkLocalAddress()
-                                || arg0.isLoopbackAddress()
-                                || arg0.isSiteLocalAddress()
-                                || arg0.isMulticastAddress()) {
-                    return 1;
-                }
-                return 0;
-            }
-        };
     }
 
     /**
@@ -284,7 +262,8 @@ public abstract class NetworkUtils {
     }
 
     private static String getPreferredHostName() {
-        List<InetAddress> addresses = Ordering.from(getExternalInternalSorter()).sortedCopy(getLocalAddresses());
+        List<InetAddress> addresses =
+                Ordering.natural().onResultOf(InetAddressScope.OF).reverse().sortedCopy(getLocalAddresses());
         if (addresses.isEmpty()) {
             return "localhost";
         }
