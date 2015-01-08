@@ -94,8 +94,6 @@ public class ConfigurationProperties
 {
     private static final long serialVersionUID = -5684848160314570455L;
 
-    private static final Pattern SINGLE_PROPERTY_EXPANSION = Pattern.compile("^\\$\\{([^}]+)\\}");
-
     private static final Set<Annotation> OBSOLETE_FORBIDDEN =
         EnumSet.of(Annotation.OBSOLETE, Annotation.FORBIDDEN);
 
@@ -365,12 +363,17 @@ public class ConfigurationProperties
      * Define the binary relationship property A hasSynonym property B
      * as true iff either:
      * <ul>
-     * <li>Property A's value is a simple reference to property B (e.g.
-     * <tt>property.A = ${property.B}</tt>).
-     * <li>If there exists precisely one property with a simple reference to
+     * <li>If there exists precisely one non-deprecated property with a simple reference to
      * property A; e.g.
      * <pre>
      *     property.B = ${property.A}
+     *     property.A = some default value
+     * </pre>
+     * <li>If there exists precisely one deprecated property that hasSynonym property B
+     * with a simple reference to property A; e.g.
+     * <pre>
+     *     property.B = ${property.C}
+     *     (deprecated)property.C = ${property.A}
      *     property.A = some default value
      * </pre>
      * <p>
@@ -380,24 +383,22 @@ public class ConfigurationProperties
      */
     private String findSynonymOf(String propertyName)
     {
-        String propertyValue = getProperty(propertyName);
-        Matcher m = SINGLE_PROPERTY_EXPANSION.matcher(propertyValue);
-        if( m.matches()) {
-            return m.group(1);
-        }
-
         String synonym = null;
         String simpleReference = "${" + propertyName + "}";
 
-        for(String name : stringPropertyNames()) {
+        for (String name : stringPropertyNames()) {
             String value = getProperty(name);
-            if( value.equals(simpleReference)) {
-                if( synonym != null) {
+            if (value.equals(simpleReference)) {
+                if (synonym != null) {
                     return null;
                 }
-
                 synonym = name;
             }
+        }
+
+        AnnotatedKey key = getAnnotatedKey(synonym);
+        if (key != null && key.hasAnnotation(Annotation.DEPRECATED)) {
+            synonym = findSynonymOf(synonym);
         }
 
         return synonym;
