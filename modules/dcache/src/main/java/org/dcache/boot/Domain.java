@@ -4,6 +4,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -64,7 +65,7 @@ public class Domain
         List<String> cells = new ArrayList<>();
         for (ConfigurationProperties service: _services) {
             String cellName = Properties.getCellName(service);
-            if (cellName != null) {
+            if (!Strings.isNullOrEmpty(cellName)) {
                 cells.add(cellName);
             }
         }
