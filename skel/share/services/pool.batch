@@ -61,7 +61,6 @@ define context PoolDefaults endDefine
    set heartbeat 30
    set report remove on
    set breakeven 0.7
-   set gap 4294967296
    set duplicate request none
    set p2p separated
 

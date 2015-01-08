@@ -11,15 +11,22 @@ public class SpaceRecord
     private final long _preciousSpace;
     private final long _removableSpace;
     private final long _lru;
+    private final long _gap;
+
+    public SpaceRecord(long total, long free, long precious, long removable, long lru)
+    {
+        this(total, free, precious, removable, lru, 0);
+    }
 
     public SpaceRecord(long total, long free, long precious, long removable,
-                       long lru)
+                       long lru, long gap)
     {
         _totalSize = total;
         _freeSpace = free;
         _preciousSpace = precious;
         _removableSpace = removable;
         _lru = lru;
+        _gap = gap;
     }
 
     public long getTotalSpace()
@@ -40,6 +47,11 @@ public class SpaceRecord
     public long getRemovableSpace()
     {
         return _removableSpace;
+    }
+
+    public long getGap()
+    {
+        return _gap;
     }
 
     public long getLRU()

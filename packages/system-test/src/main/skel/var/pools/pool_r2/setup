@@ -24,7 +24,6 @@ set report remove on
 set breakeven 0.7
 set mover cost factor 0.5
 set max diskspace 1G
-set gap 200000000
 set duplicate request none
 mover set max active -queue=regular 100
 mover set max active -queue=p2p 10

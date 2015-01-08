@@ -168,7 +168,6 @@ public class PoolV4
     private NearlineStorageHandler _storageHandler;
     private boolean _crashEnabled;
     private String _crashType = "exception";
-    private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _p2pFileMode = P2P_CACHED;
     private int _dupRequest = DUP_REQ_IGNORE;
     private P2PClient _p2pClient;
@@ -640,7 +639,6 @@ public class PoolV4
         if (_suppressHsmLoad) {
             pw.println("pool suppress hsmload on");
         }
-        pw.println("set gap " + _gap);
         pw.println("set duplicate request "
                    + ((_dupRequest == DUP_REQ_NONE)
                       ? "none"
@@ -667,7 +665,6 @@ public class PoolV4
         pw.println("Base directory    : " + _baseDir);
         pw.println("Version           : " + VERSION + " (Sub="
                 + _version + ")");
-        pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
         pw.println("Pool Mode         : " + _poolMode);
         if (_poolMode.isDisabled()) {
@@ -1474,7 +1471,7 @@ public class PoolV4
                            space.getPreciousSpace(), space.getRemovableSpace(),
                            space.getLRU());
 
-        info.getSpaceInfo().setParameter(_breakEven, _gap);
+        info.getSpaceInfo().setParameter(_breakEven, space.getGap());
         info.setMoverCostFactor(_moverCostFactor);
 
         for (IoScheduler js : _ioQueue.getQueues()) {
@@ -1812,13 +1809,6 @@ public class PoolV4
         }
         return "Please use 'mover|st|rh set max active <jobs>'";
 
-    }
-
-    public static final String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
-    public String ac_set_gap_$_1(Args args)
-    {
-        _gap = UnitInteger.parseUnitLong(args.argv(0));
-        return "Gap set to " + _gap;
     }
 
     public static final String hh_set_report_remove = "on|off";

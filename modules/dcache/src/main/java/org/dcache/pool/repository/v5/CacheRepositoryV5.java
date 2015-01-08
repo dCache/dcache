@@ -12,6 +12,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -88,6 +88,8 @@ public class CacheRepositoryV5
      *
      */
 
+    private static final Logger _log =
+            LoggerFactory.getLogger(CacheRepositoryV5.class);
 
     /**
      * Time in millisecs added to each sticky expiration task.  We
@@ -95,8 +97,8 @@ public class CacheRepositoryV5
      * small clock shifts.
      */
     public static final long EXPIRATION_CLOCKSHIFT_EXTRA_TIME = 1000L;
-    private final static Logger _log =
-        LoggerFactory.getLogger(CacheRepositoryV5.class);
+
+    public static final long DEFAULT_GAP =  4L << 30;
 
     private final List<FaultListener> _faultListeners =
         new CopyOnWriteArrayList<>();
@@ -166,6 +168,11 @@ public class CacheRepositoryV5
      * Pool size configured in the configuration files.
      */
     private long _staticMaxSize = Long.MAX_VALUE;
+
+    /**
+     * Pool size gap to report to pool manager.
+     */
+    private Optional<Long> _gap = Optional.empty();
 
     public CacheRepositoryV5()
     {
@@ -620,11 +627,13 @@ public class CacheRepositoryV5
     {
         SpaceRecord space = _account.getSpaceRecord();
         long lru = (System.currentTimeMillis() - _sweeper.getLru()) / 1000L;
+        long gap = _gap.orElse(Math.min(space.getTotalSpace() / 4, DEFAULT_GAP));
         return new SpaceRecord(space.getTotalSpace(),
                                space.getFreeSpace(),
                                space.getPreciousSpace(),
                                space.getRemovableSpace(),
-                               lru);
+                               lru,
+                               gap);
     }
 
     @Override
@@ -745,12 +754,13 @@ public class CacheRepositoryV5
         long precious = space.getPreciousSpace();
         long fsFree = _store.getFreeSpace();
         long fsTotal = _store.getTotalSpace();
+        long gap = space.getGap();
 
         pw.println("Disk space");
         pw.println("    Total    : " + UnitInteger.toUnitString(total));
         pw.println("    Used     : " + used + "    ["
                    + (((float) used) / ((float) total)) + "]");
-        pw.println("    Free     : " + (total - used));
+        pw.println("    Free     : " + (total - used) + "    Gap : " + gap);
         pw.println("    Precious : " + precious + "    ["
                    + (((float) precious) / ((float) total)) + "]");
         pw.println("    Removable: "
@@ -1106,11 +1116,22 @@ public class CacheRepositoryV5
         return "";
     }
 
+    public static final String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
+    public String ac_set_gap_$_1(Args args)
+    {
+        long gap = UnitInteger.parseUnitLong(args.argv(0));
+        _gap = Optional.of(gap);
+        return "Gap set to " + gap;
+    }
+
     @Override
     public synchronized void printSetup(PrintWriter pw)
     {
         if (_runtimeMaxSize < Long.MAX_VALUE) {
             pw.println("set max diskspace " + _runtimeMaxSize);
+        }
+        if (_gap.isPresent()) {
+            pw.println("set gap " + _gap.get());
         }
     }
 
@@ -1163,17 +1184,19 @@ public class CacheRepositoryV5
             }
 
             if (hasConfiguredMaxSize && fileSystemMaxSize < configuredMaxSize) {
-                _log.warn(String.format("Configured pool size (%d) is larger than what is available on disk (%d)", configuredMaxSize, fileSystemMaxSize));
+                _log.warn("Configured pool size ({}) is larger than what is available on disk ({})", configuredMaxSize,
+                          fileSystemMaxSize);
             }
 
             if (configuredMaxSize < used) {
-                _log.warn(String.format("Configured pool size (%d) is smaller than what is used already (%d)", configuredMaxSize, used));
+                _log.warn("Configured pool size ({}) is smaller than what is used already ({})", configuredMaxSize,
+                          used);
             }
 
             long newSize =
                 Math.max(used, Math.min(configuredMaxSize, fileSystemMaxSize));
             if (newSize != account.getTotal()) {
-                _log.info("Adjusting pool size to " + newSize);
+                _log.info("Adjusting pool size to {}", newSize);
                 account.setTotal(newSize);
             }
         }
