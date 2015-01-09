@@ -102,11 +102,11 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
             for (String line: OSMTemplate) {
                 StringTokenizer st = new StringTokenizer(line);
                 if (st.countTokens() >= 2) {
-                    hash.put(st.nextToken(), st.nextToken());
+                    hash.put(st.nextToken().intern(), st.nextToken());
                 }
             }
-            String sg = getFirstLine(group).or("none");
-            String ff = getFirstLine(family).or("none");
+            String sg = getFirstLine(group).transform(internString()).or("none");
+            String ff = getFirstLine(family).transform(internString()).or("none");
             EnstoreStorageInfo info = new EnstoreStorageInfo(sg,ff);
             info.addKeys(hash);
             return info;
@@ -119,4 +119,5 @@ public class ChimeraEnstoreStorageInfoExtractor extends ChimeraHsmStorageInfoExt
     private static boolean isEncoded(String s) throws UnsupportedEncodingException {
         return !s.equals(UriUtils.decode(s,"UTF-8"));
     }
+
 }

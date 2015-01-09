@@ -1,8 +1,6 @@
 package diskCacheV111.vehicles;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,8 +16,6 @@ import diskCacheV111.util.RetentionPolicy;
 public class GenericStorageInfo
     implements StorageInfo
 {
-    private static Logger _logger = LoggerFactory.getLogger( GenericStorageInfo.class);
-
     private static final long serialVersionUID = 2089636591513548893L;
 
     /*
@@ -31,8 +27,8 @@ public class GenericStorageInfo
     @Deprecated
     private RetentionPolicy _retentionPolicy = StorageInfo.DEFAULT_RETENTION_POLICY;
 
-    private HashMap<String, String> _keyHash = new HashMap<>();
-    private ArrayList<URI> _locations = new ArrayList<>();
+    private Map<String, String> _keyHash = new HashMap<>();
+    private List<URI> _locations = new ArrayList<>();
     private boolean _setHsm;
     private boolean _setStorageClass;
     private boolean _setBitFileId;
@@ -368,8 +364,8 @@ public class GenericStorageInfo
     {
         try {
             GenericStorageInfo copy = (GenericStorageInfo) super.clone();
-            copy._keyHash = (HashMap<String,String>) copy._keyHash.clone();
-            copy._locations = (ArrayList<URI>) copy._locations.clone();
+            copy._keyHash = new HashMap<>(_keyHash);
+            copy._locations = new ArrayList<>(_locations);
             return copy;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Failed to clone storage info: " +
@@ -439,4 +435,25 @@ public class GenericStorageInfo
         _fileSize = fileSize;
     }
 
+    private void readObject(java.io.ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_keyHash != null) {
+            Map<String,String> map = new HashMap<>();
+            for (Map.Entry<String, String> entry : _keyHash.entrySet()) {
+                map.put(entry.getKey().intern(), entry.getValue());
+            }
+            _keyHash = map;
+        }
+        if (_storageClass != null) {
+            _storageClass = _storageClass.intern();
+        }
+        if (_cacheClass != null) {
+            _cacheClass = _cacheClass.intern();
+        }
+        if (_hsm != null) {
+            _hsm = _hsm.intern();
+        }
+    }
 }
