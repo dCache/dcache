@@ -88,7 +88,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
                     if (st.countTokens() < 2) {
                         continue;
                     }
-                    hash.put(st.nextToken(), st.nextToken());
+                    hash.put(st.nextToken().intern(), st.nextToken());
                 }
                 store = hash.get("StoreName");
                 if (store == null) {
@@ -97,7 +97,7 @@ public class ChimeraOsmStorageInfoExtractor extends ChimeraHsmStorageInfoExtract
             }
 
             ImmutableList<String> sGroup = dirInode.getTag("sGroup");
-            String group = getFirstLine(sGroup).orNull();
+            String group = getFirstLine(sGroup).transform(internString()).orNull();
             OSMStorageInfo info = new OSMStorageInfo(store, group);
             info.addKeys(hash);
             return info;
