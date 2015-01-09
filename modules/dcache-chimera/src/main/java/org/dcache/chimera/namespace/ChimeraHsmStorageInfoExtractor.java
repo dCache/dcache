@@ -1,9 +1,12 @@
 package org.dcache.chimera.namespace;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.net.URI;
@@ -173,12 +176,12 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             // overwrite hsm type with hsmInstance tag
             Optional<String> hsmInstance = getFirstLine(dirInode.getTag("hsmInstance"));
             if (hsmInstance.isPresent()) {
-                info.setHsm(hsmInstance.get());
+                info.setHsm(hsmInstance.get().intern());
             }
 
             Optional<String> cacheClass = getFirstLine(dirInode.getTag("cacheClass"));
             if (cacheClass.isPresent()) {
-                info.setCacheClass(cacheClass.get());
+                info.setCacheClass(cacheClass.get().intern());
             }
 
             Optional<String> spaceToken = getFirstLine(dirInode.getTag("WriteToken"));
@@ -248,4 +251,18 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }
         return Optional.absent();
     }
+
+    protected Function<String,String> internString()
+    {
+        return new Function<String, String>()
+        {
+            @Nullable
+            @Override
+            public String apply(@Nullable String s)
+            {
+                return s.intern();
+            }
+        };
+    }
+
 }
