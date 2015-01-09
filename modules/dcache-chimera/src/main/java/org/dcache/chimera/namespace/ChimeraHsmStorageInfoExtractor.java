@@ -251,18 +251,4 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
         }
         return Optional.absent();
     }
-
-    protected Function<String,String> internString()
-    {
-        return new Function<String, String>()
-        {
-            @Nullable
-            @Override
-            public String apply(@Nullable String s)
-            {
-                return s.intern();
-            }
-        };
-    }
-
 }

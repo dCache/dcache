@@ -13,6 +13,8 @@ import java.util.Set;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
+import static java.util.stream.Collectors.toMap;
+
 public class GenericStorageInfo
     implements StorageInfo
 {
@@ -440,11 +442,7 @@ public class GenericStorageInfo
     {
         stream.defaultReadObject();
         if (_keyHash != null) {
-            Map<String,String> map = new HashMap<>();
-            for (Map.Entry<String, String> entry : _keyHash.entrySet()) {
-                map.put(entry.getKey().intern(), entry.getValue());
-            }
-            _keyHash = map;
+            _keyHash = _keyHash.entrySet().stream().collect(toMap(e -> e.getKey().intern(), e -> e.getValue()));
         }
         if (_storageClass != null) {
             _storageClass = _storageClass.intern();
