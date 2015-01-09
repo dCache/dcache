@@ -371,7 +371,7 @@ public class XrootdDoor
         InetSocketAddress address = null;
         _transfers.put(handle, transfer);
         try {
-            transfer.readNameSpaceEntry();
+            transfer.readNameSpaceEntry(false);
             transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
             address = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);
             if (address == null) {

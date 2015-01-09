@@ -464,11 +464,29 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.setPoolManagerStub(_poolManagerStub);
                     transfer.setPnfsId(pnfsId);
                     transfer.setClientAddress(remote);
-                    transfer.readNameSpaceEntry();
+                    transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
+
+                    if (transfer.isWrite()) {
+                        _log.debug("looking for write pool for {}", transfer.getPnfsId());
+                    } else {
+                        _log.debug("looking for read pool for {}", transfer.getPnfsId());
+                    }
 
                     _ioMessages.put(stateid, transfer);
 
-                    PoolDS ds = getPool(transfer, ioMode);
+                    transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
+
+                    _log.debug("mover ready: pool={} moverid={}", transfer.getPool(), transfer.getMoverId());
+
+                    /*
+                     * FIXME;
+                     *
+                     * usually RPC request will timeout in 30s.
+                     * We have to handle this cases and return LAYOUTTRYLATER
+                     * or GRACE.
+                     *
+                     */
+                    PoolDS ds = transfer.waitForRedirect(NFS_REPLY_TIMEOUT);
                     deviceid = ds.getDeviceId();
                 } else {
                     PoolDS ds = transfer.waitForRedirect(NFS_RETRY_PERIOD);
@@ -512,34 +530,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         if (t != null) {
             t.killMover(0);
         }
-    }
-
-    private PoolDS getPool(NfsTransfer transfer, int iomode)
-            throws InterruptedException, CacheException
-    {
-
-
-        if ((iomode == layoutiomode4.LAYOUTIOMODE4_READ) || !transfer.getStorageInfo().isCreatedOnly()) {
-            _log.debug("looking for read pool for {}", transfer.getPnfsId());
-            transfer.setWrite(false);
-        } else {
-            _log.debug("looking for write pool for {}", transfer.getPnfsId());
-            transfer.setWrite(true);
-        }
-        transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
-
-        _log.debug("mover ready: pool={} moverid={}", transfer.getPool(),
-                transfer.getMoverId());
-
-        /*
-         * FIXME;
-         *
-         * usually RPC request will timeout in 30s.
-         * We have to handle this cases and return LAYOUTTRYLATER
-         * or GRACE.
-         *
-         */
-        return transfer.waitForRedirect(NFS_REPLY_TIMEOUT);
     }
 
     @Override

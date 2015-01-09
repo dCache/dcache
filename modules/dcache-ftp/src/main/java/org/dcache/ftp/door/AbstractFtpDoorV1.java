@@ -3191,7 +3191,7 @@ public abstract class AbstractFtpDoorV1
             LOGGER.info("retrieve user={}", getUser());
             LOGGER.info("retrieve addr={}", _remoteSocketAddress);
 
-            transfer.readNameSpaceEntry();
+            transfer.readNameSpaceEntry(false);
             transfer.createTransactionLog();
             transfer.checkAndDeriveOffsetAndSize();
 

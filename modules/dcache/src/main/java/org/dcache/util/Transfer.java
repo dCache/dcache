@@ -25,6 +25,7 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.NotInTrashCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
@@ -319,7 +320,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets whether this is an upload.
      */
-    public synchronized void setWrite(boolean isWrite)
+    protected synchronized void setWrite(boolean isWrite)
     {
         _isWrite = isWrite;
     }
@@ -629,7 +630,7 @@ public class Transfer implements Comparable<Transfer>
             }
 
             FileAttributes attrs = msg.getFileAttributes();
-            attrs.setChecksums(new HashSet<Checksum>());
+            attrs.setChecksums(new HashSet<>());
             setFileAttributes(attrs);
             setWrite(true);
         } finally {
@@ -638,25 +639,31 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
-     * Reads the name space entry of the file to transfer. This
-     * will fill in the PnfsId and StorageInfo of the file and
-     * mark the transfer as a download.
+     * Reads the name space entry of the file to transfer. This will fill in the PnfsId
+     * and FileAttributes of the file.
      *
-     * Will fail if the subject of the transfer doesn't have
-     * permission to read the file.
+     * Changes the I/O mode from write to read if the file is not new.
      *
+     * @oaram allowWrite whether the file may be opened for writing
+     * @throws PermissionDeniedCacheException if permission to read/write the file is denied
+     * @throws NotFileCacheException if the file is not a regular file
+     * @throws FileIsNewCacheException when attempting to download an incomplete file
      * @throws CacheException if reading the entry failed
      */
-    public void readNameSpaceEntry()
+    public void readNameSpaceEntry(boolean allowWrite)
         throws CacheException
     {
         setStatus("PnfsManager: Fetching storage info");
         try {
-            Set<FileAttribute> request =
-                EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
+            Set<FileAttribute> request = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
             request.addAll(_additionalAttributes);
             request.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-            Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA);
+            Set<AccessMask> mask;
+            if (allowWrite) {
+                mask = EnumSet.of(AccessMask.READ_DATA, AccessMask.WRITE_DATA);
+            } else {
+                mask = EnumSet.of(AccessMask.READ_DATA);
+            }
             PnfsId pnfsId = getPnfsId();
             FileAttributes attributes;
             if (pnfsId != null) {
@@ -665,15 +672,24 @@ public class Transfer implements Comparable<Transfer>
                 attributes = _pnfs.getFileAttributes(_path.toString(), request, mask, true);
             }
 
-            /* We can only read regular files.
+            /* We can only transfer regular files.
              */
             FileType type = attributes.getFileType();
             if (type == FileType.DIR || type == FileType.SPECIAL) {
                 throw new NotFileCacheException("Not a regular file");
             }
 
+            /* I/O mode must match completeness of the file.
+             */
+            if (!attributes.getStorageInfo().isCreatedOnly()) {
+                setWrite(false);
+            } else if (allowWrite) {
+                setWrite(true);
+            } else {
+                throw new FileIsNewCacheException();
+            }
+
             setFileAttributes(attributes);
-            setWrite(false);
         } finally {
             setStatus(null);
         }
@@ -814,7 +830,7 @@ public class Transfer implements Comparable<Transfer>
                 setPool(reply.getPoolName());
                 setPoolAddress(reply.getPoolAddress());
                 setFileAttributes(reply.getFileAttributes());
-            } else if (!_fileAttributes.getStorageInfo().isCreatedOnly()) {
+            } else {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
                     _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
                     ? RequestContainerV5.allStates
@@ -835,8 +851,6 @@ public class Transfer implements Comparable<Transfer>
                 setPoolAddress(reply.getPoolAddress());
                 setFileAttributes(reply.getFileAttributes());
                 setReadPoolSelectionContext(reply.getContext());
-            } else {
-                throw new FileIsNewCacheException();
             }
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -1081,7 +1095,7 @@ public class Transfer implements Comparable<Transfer>
                 case CacheException.FILE_NOT_IN_REPOSITORY:
                     _log.info("Retrying pool selection: {}", e.getMessage());
                     if (!isWrite()) {
-                        readNameSpaceEntry();
+                        readNameSpaceEntry(false);
                     }
                     continue;
                 case CacheException.FILE_IN_CACHE:
@@ -1121,7 +1135,7 @@ public class Transfer implements Comparable<Transfer>
             }
 
             if (!isWrite()) {
-                readNameSpaceEntry();
+                readNameSpaceEntry(false);
             }
         }
     }

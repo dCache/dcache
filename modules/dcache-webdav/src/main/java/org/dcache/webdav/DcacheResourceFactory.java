@@ -945,7 +945,7 @@ public class DcacheResourceFactory
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.setProxyTransfer(isProxyTransfer);
-            transfer.readNameSpaceEntry();
+            transfer.readNameSpaceEntry(false);
             try {
                 transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
                 uri = transfer.waitForRedirect(_moverTimeout, _moverTimeoutUnit);

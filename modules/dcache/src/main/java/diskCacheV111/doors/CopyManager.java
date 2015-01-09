@@ -378,7 +378,6 @@ public class CopyManager extends AbstractCellComponent
             _target.setPoolStub(_poolStub);
             _target.setDomainName(getCellDomainName());
             _target.setCellName(getCellName());
-            _target.setWrite(true);
             // _target.setClientAddress();
             // _target.setBillingStub();
 
@@ -388,7 +387,7 @@ public class CopyManager extends AbstractCellComponent
 
             long timeout = _moverTimeoutUnit.toMillis(_moverTimeout);
             try {
-                _source.readNameSpaceEntry();
+                _source.readNameSpaceEntry(false);
                 _target.createNameSpaceEntry();
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_target));

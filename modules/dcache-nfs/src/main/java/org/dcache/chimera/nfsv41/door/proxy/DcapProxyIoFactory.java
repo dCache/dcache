@@ -120,10 +120,9 @@ public class DcapProxyIoFactory extends AbstractCell {
         transfer.setPoolManagerStub(_poolManagerStub);
         transfer.setPnfsId(pnfsId);
         transfer.setClientAddress(client);
-        transfer.readNameSpaceEntry();
+        transfer.readNameSpaceEntry(isWrite);
 
         _pendingIO.put(session, transfer);
-        transfer.setWrite(isWrite);
         try {
 
             transfer.selectPoolAndStartMover(_ioQueue, _retryPolicy);
