@@ -17,7 +17,6 @@
  */
 package diskCacheV111.vehicles;
 
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
@@ -70,6 +69,15 @@ public class StorageInfos
         if (attributes.isDefined(FileAttribute.OWNER_GROUP)) {
             info.setKey("gid", Integer.toString(attributes.getGroup()));
         }
+        if (attributes.isDefined(FileAttribute.STORAGECLASS)) {
+            info.setStorageClass(attributes.getStorageClass());
+        }
+        if (attributes.isDefined(FileAttribute.CACHECLASS)) {
+            info.setCacheClass(attributes.getCacheClass());
+        }
+        if (attributes.isDefined(FileAttribute.HSM)) {
+            info.setHsm(attributes.getHsm());
+        }
         return info;
     }
 
@@ -87,6 +95,9 @@ public class StorageInfos
         attributes.setSize(info.getLegacySize());
         attributes.setAccessLatency(info.getLegacyAccessLatency());
         attributes.setRetentionPolicy(info.getLegacyRetentionPolicy());
+        attributes.setStorageClass(info.getStorageClass());
+        attributes.setCacheClass(info.getCacheClass());
+        attributes.setHsm(info.getHsm());
         String cFlag = info.getKey("flag-c");
         if (cFlag != null) {
             attributes.setChecksums(Sets.newHashSet(transform(Splitter.on(',').trimResults().omitEmptyStrings().split(cFlag),

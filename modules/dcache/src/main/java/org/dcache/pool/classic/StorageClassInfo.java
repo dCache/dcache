@@ -1,6 +1,5 @@
 package org.dcache.pool.classic;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +21,6 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.transform;
 
@@ -35,20 +33,20 @@ public class StorageClassInfo implements CompletionHandler<Void,PnfsId>
 
     private static class Entry implements Comparable<Entry>
     {
-        final FileAttributes fileAttributes;
+        final PnfsId pnfsId;
         final long timeStamp;
         final long size;
 
         Entry(CacheEntry entry)
         {
-            fileAttributes = entry.getFileAttributes();
+            pnfsId = entry.getPnfsId();
             timeStamp = entry.getCreationTime();
             size = entry.getReplicaSize();
         }
 
         public PnfsId pnfsId()
         {
-            return fileAttributes.getPnfsId();
+            return pnfsId;
         }
 
         @Override

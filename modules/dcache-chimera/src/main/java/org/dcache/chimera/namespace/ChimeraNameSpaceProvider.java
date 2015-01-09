@@ -758,7 +758,16 @@ public class ChimeraNameSpaceProvider
                 attributes.setPnfsId(new PnfsId(inode.toString()));
                 break;
             case STORAGEINFO:
-                attributes.setStorageInfo(_extractor.getStorageInfo(inode));
+            case STORAGECLASS:
+            case CACHECLASS:
+            case HSM:
+                if (!attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                    StorageInfo storageInfo = _extractor.getStorageInfo(inode);
+                    attributes.setStorageInfo(storageInfo);
+                    attributes.setStorageClass(storageInfo.getStorageClass());
+                    attributes.setCacheClass(storageInfo.getCacheClass());
+                    attributes.setHsm(storageInfo.getHsm());
+                }
                 break;
             default:
                 throw new UnsupportedOperationException("Attribute " + attribute + " not supported yet.");
@@ -830,7 +839,6 @@ public class ChimeraNameSpaceProvider
                 }
             }
 
-            StorageInfo dir = null;
             Stat stat = new Stat();
 
             for (FileAttribute attribute : attr.getDefinedAttributes()) {

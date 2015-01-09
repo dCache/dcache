@@ -1,11 +1,14 @@
 package org.dcache.vehicles;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Objects.ToStringHelper;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 
 import javax.annotation.Nonnull;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -22,6 +25,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 
+import static java.util.stream.Collectors.toMap;
 import static org.dcache.namespace.FileAttribute.*;
 
 /**
@@ -143,6 +147,21 @@ public class FileAttributes implements Serializable {
      * The storage info of a file.
      */
     private StorageInfo _storageInfo;
+
+    /**
+     * The storage class of a file.
+     */
+    private String _storageClass;
+
+    /**
+     * The HSM of a file.
+     */
+    private String _hsm;
+
+    /**
+     * The cache class of a file.
+     */
+    private String _cacheClass;
 
     /** Throws IllegalStateException if attribute is not defined. */
     private void guard(FileAttribute attribute)
@@ -415,10 +434,46 @@ public class FileAttributes implements Serializable {
         _storageInfo = storageInfo;
     }
 
+    public String getStorageClass()
+    {
+        guard(STORAGECLASS);
+        return _storageClass;
+    }
+
+    public void setStorageClass(String storageClass)
+    {
+        define(STORAGECLASS);
+        _storageClass = storageClass;
+    }
+
+    public void setCacheClass(String cacheClass)
+    {
+        define(CACHECLASS);
+        _cacheClass = Strings.nullToEmpty(cacheClass); // For compatibility with pre-2.12 - remove after next golden
+    }
+
+    public String getCacheClass()
+    {
+        guard(CACHECLASS);
+        return Strings.emptyToNull(_cacheClass);   // For compatibility with pre-2.12 - remove after next golden
+    }
+
+    public void setHsm(String hsm)
+    {
+        define(HSM);
+        _hsm = hsm;
+    }
+
+    public String getHsm()
+    {
+        guard(HSM);
+        return _hsm;
+    }
+
     @Override
     public String toString()
     {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("defined", _definedAttributes)
                 .add("acl", _acl)
                 .add("size", _size)
@@ -437,6 +492,9 @@ public class FileAttributes implements Serializable {
                 .add("flags", _flags)
                 .add("pnfsId", _pnfsId)
                 .add("storageInfo", _storageInfo)
+                .add("storageClass", _storageClass)
+                .add("cacheClass", _cacheClass)
+                .add("hsm", _hsm)
                 .omitNullValues()
                 .toString();
     }
@@ -446,5 +504,31 @@ public class FileAttributes implements Serializable {
     {
         return isDefined(attribute) ? Optional.of(value) :
                 Optional.<T>absent();
+    }
+
+    private void writeObject(ObjectOutputStream stream)
+            throws IOException
+    {
+        _definedAttributes.remove(CACHECLASS); // For compatibility with pre-2.12 - remove after next golden
+        stream.defaultWriteObject();
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_flags != null) {
+            _flags = _flags.entrySet().stream().collect(toMap(e -> e.getKey().intern(), e -> e.getValue()));
+        }
+        if (_storageClass != null) {
+            _storageClass = _storageClass.intern();
+        }
+        if (_cacheClass != null) {
+            _cacheClass = _cacheClass.intern();
+            _definedAttributes.add(CACHECLASS); // For compatibility with pre-2.12 - remove after next golden
+        }
+        if (_hsm != null) {
+            _hsm = _hsm.intern();
+        }
     }
 }

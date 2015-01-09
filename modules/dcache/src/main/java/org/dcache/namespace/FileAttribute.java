@@ -11,8 +11,9 @@ public enum FileAttribute {
     ACCESS_LATENCY,
     ACCESS_TIME,
     ACL,
+    CACHECLASS,    // Not supported before 2.12, so be careful not to send this to pools
     CHECKSUM,
-    CHANGE_TIME,   // Not supported in 2.6, so be careful not to send this to pools
+    CHANGE_TIME,
     CREATION_TIME,
     FLAGS,
     HSM,
