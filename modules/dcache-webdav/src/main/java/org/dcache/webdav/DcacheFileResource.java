@@ -12,7 +12,10 @@ import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
 import io.milton.resource.MultiNamespaceCustomPropertyResource;
+import io.milton.servlet.ServletResponse;
+import org.eclipse.jetty.io.EofException;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
@@ -35,8 +38,6 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import org.dcache.vehicles.FileAttributes;
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
-import io.milton.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import static org.dcache.util.Checksums.TO_RFC3230;
 
 /**
@@ -111,6 +112,12 @@ public class DcacheFileResource
         try {
             _factory.readFile(new FsPath(_path), _attributes.getPnfsId(),
                               out, range);
+        } catch (EofException e) {
+            // Milton reacts badly to receiving any IOException and wraps the
+            // IOException in a RuntimeException.  Here, we translate this to
+            // an internal error exception, although this shouldn't matter as
+            // the client has already disconnected.
+            throw new WebDavException("Failed to send entity: client closed connection", e, this);
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (FileNotFoundCacheException | NotInTrashCacheException e) {

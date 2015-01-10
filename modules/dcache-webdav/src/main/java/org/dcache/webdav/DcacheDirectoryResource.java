@@ -17,6 +17,7 @@ import io.milton.resource.LockingCollectionResource;
 import io.milton.resource.MakeCollectionableResource;
 import io.milton.resource.PutableResource;
 import io.milton.resource.Resource;
+import org.eclipse.jetty.io.EofException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -95,6 +96,12 @@ public class DcacheDirectoryResource
             } else {
                 return _factory.createFile(path, inputStream, length);
             }
+        } catch (EofException e) {
+            // Milton reacts badly to receiving any IOException and wraps the
+            // IOException in a RuntimeException.  Here, we translate this to
+            // a bad request, as the Content-Length didn't match the
+            // transferred entity's size.
+            throw new BadRequestException(this, "Connection closed prematurely, entity smaller than expected.");
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (FileExistsCacheException e) {
