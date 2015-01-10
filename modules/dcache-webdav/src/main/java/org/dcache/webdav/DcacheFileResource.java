@@ -8,6 +8,12 @@ import io.milton.http.exceptions.ConflictException;
 import io.milton.http.exceptions.NotAuthorizedException;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
+import io.milton.resource.MultiNamespaceCustomPropertyResource;
+import io.milton.servlet.ServletResponse;
+import org.eclipse.jetty.io.EofException;
+
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.namespace.QName;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,6 +31,8 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Checksums;
 import org.dcache.vehicles.FileAttributes;
+
+import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
 
 /**
  * Exposes regular dCache files as resources in the Milton WebDAV
@@ -51,6 +59,12 @@ public class DcacheFileResource
         try {
             _factory.readFile(new FsPath(_path), _attributes.getPnfsId(),
                               out, range);
+        } catch (EofException e) {
+            // Milton reacts badly to receiving any IOException and wraps the
+            // IOException in a RuntimeException.  Here, we translate this to
+            // an internal error exception, although this shouldn't matter as
+            // the client has already disconnected.
+            throw new WebDavException("Failed to send entity: client closed connection", e, this);
         } catch (PermissionDeniedCacheException e) {
             throw new NotAuthorizedException(this);
         } catch (FileNotFoundCacheException | NotInTrashCacheException e) {
