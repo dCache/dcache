@@ -274,9 +274,9 @@ public class HsmSet
     public String getInstanceName(FileAttributes fileAttributes)
     {
         StorageInfo file = fileAttributes.getStorageInfo();
-        if (file.locations().isEmpty() && _hsm.containsKey(file.getHsm())) {
+        if (file.locations().isEmpty() && _hsm.containsKey(fileAttributes.getHsm())) {
             // This is for backwards compatibility.
-            return file.getHsm();
+            return fileAttributes.getHsm();
         }
         for (URI location : file.locations()) {
             if (_hsm.containsKey(location.getAuthority())) {

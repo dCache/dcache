@@ -20,6 +20,7 @@ import java.util.regex.PatternSyntaxException;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.Subjects;
+import org.dcache.vehicles.FileAttributes;
 
 public class CheckStagePermission {
     private File _stageConfigFile;
@@ -45,11 +46,11 @@ public class CheckStagePermission {
      * Check whether staging is allowed for a particular subject on a particular object.
      *
      * @param subject The subject
-     * @param storageInfo The storage info of the object
+     * @param fileAttributes The attributes of the file
      * @return true if and only if the subject is allowed to perform
      * staging
      */
-    public boolean canPerformStaging(Subject subject, StorageInfo storageInfo)
+    public boolean canPerformStaging(Subject subject, FileAttributes fileAttributes)
         throws PatternSyntaxException, IOException
     {
         if (!_isEnabled || Subjects.isRoot(subject)) {
@@ -60,8 +61,8 @@ public class CheckStagePermission {
             String dn = Subjects.getDn(subject);
             Collection<String> fqans = Subjects.getFqans(subject);
 
-            String storageClass = storageInfo.getStorageClass();
-            String hsm = storageInfo.getHsm();
+            String storageClass = fileAttributes.getStorageClass();
+            String hsm = fileAttributes.getHsm();
 
             String storeUnit = "";
             if (storageClass != null && hsm != null) {

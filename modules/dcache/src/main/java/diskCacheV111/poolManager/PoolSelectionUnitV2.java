@@ -436,9 +436,9 @@ public class PoolSelectionUnitV2
     public PoolPreferenceLevel[] match(DirectionType type,  String netUnitName, String protocolUnitName,
             FileAttributes fileAttributes, String linkGroupName) {
 
+        String storeUnitName = fileAttributes.getStorageClass()+"@"+fileAttributes.getHsm();
+        String dCacheUnitName = fileAttributes.getCacheClass();
         StorageInfo storageInfo = fileAttributes.getStorageInfo();
-        String storeUnitName = storageInfo.getStorageClass()+"@"+storageInfo.getHsm();
-        String dCacheUnitName = storageInfo.getCacheClass();
 
         Map<String, String> variableMap = storageInfo.getMap();
 
@@ -685,7 +685,7 @@ public class PoolSelectionUnitV2
                             _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
                             if (((type == DirectionType.READ && pool.canRead())
                                  || (type == DirectionType.CACHE && pool.canReadFromTape()
-                                     && poolCanStageFile(pool, storageInfo))
+                                     && poolCanStageFile(pool, fileAttributes))
                                  || (type == DirectionType.WRITE && pool.canWrite())
                                  || (type == DirectionType.P2P && pool.canWriteForP2P()))
                                 && (_allPoolsActive || pool.isActive())) {
@@ -696,7 +696,7 @@ public class PoolSelectionUnitV2
                                 _log.debug("Pool: {} can read from tape? : {}", pool, pool.canReadFromTape());
                                 if (((type == DirectionType.READ && pool.canRead())
                                      || (type == DirectionType.CACHE && pool.canReadFromTape()
-                                         && poolCanStageFile(pool, storageInfo))
+                                         && poolCanStageFile(pool, fileAttributes))
                                      || (type == DirectionType.WRITE && pool.canWrite())
                                      || (type == DirectionType.P2P && pool.canWriteForP2P()))
                                     && (_allPoolsActive || pool.isActive())) {
@@ -2607,15 +2607,15 @@ public class PoolSelectionUnitV2
      * Returns true if and only if the pool can stage the given file. That is
      * the only case if the file is located on an HSM connected to the pool.
      */
-    private boolean poolCanStageFile(Pool pool, StorageInfo file) {
+    private boolean poolCanStageFile(Pool pool, FileAttributes file) {
         boolean rc  = false;
-        if (file.locations().isEmpty()
+        if (file.getStorageInfo().locations().isEmpty()
                 && pool.getHsmInstances().contains(file.getHsm())) {
             // This is for backwards compatibility until all info
             // extractors support URIs.
             rc = true;
         } else {
-            for (URI uri : file.locations()) {
+            for (URI uri : file.getStorageInfo().locations()) {
                 if (pool.getHsmInstances().contains(uri.getAuthority())) {
                     rc = true;
                 }

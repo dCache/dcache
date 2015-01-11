@@ -31,6 +31,7 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
@@ -130,7 +131,7 @@ public class HsmRestoreTest {
         PnfsGetFileAttributes fileAttributesMessage =
             new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
-        attributes.setStorageInfo(_storageInfo);
+        StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
@@ -207,7 +208,7 @@ public class HsmRestoreTest {
         PnfsGetFileAttributes fileAttributesMessage =
             new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
-        attributes.setStorageInfo(_storageInfo);
+        StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
@@ -307,7 +308,7 @@ public class HsmRestoreTest {
         PnfsGetFileAttributes fileAttributesMessage =
             new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
-        attributes.setStorageInfo(_storageInfo);
+        StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);
@@ -406,7 +407,7 @@ public class HsmRestoreTest {
         PnfsGetFileAttributes fileAttributesMessage =
             new PnfsGetFileAttributes(pnfsId, EnumSet.noneOf(FileAttribute.class));
         FileAttributes attributes = new FileAttributes();
-        attributes.setStorageInfo(_storageInfo);
+        StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(Collections.<String>emptyList());
         attributes.setSize(5);

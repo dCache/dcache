@@ -139,8 +139,8 @@ public class CacheEntryImpl implements CacheEntry
 
         sb.append(_size);
         sb.append(" si={")
-            .append(_fileAttributes.isDefined(FileAttribute.STORAGEINFO)
-                            ? _fileAttributes.getStorageInfo().getStorageClass()
+            .append(_fileAttributes.isDefined(FileAttribute.STORAGECLASS)
+                            ? _fileAttributes.getStorageClass()
                             : "<unknown>")
             .append("}");
         return sb.toString();

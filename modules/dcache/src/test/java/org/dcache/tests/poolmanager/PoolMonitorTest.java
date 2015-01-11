@@ -19,6 +19,7 @@ import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
@@ -97,7 +98,7 @@ public class PoolMonitorTest
          * exercise
          */
         FileAttributes attributes = new FileAttributes();
-        attributes.setStorageInfo(_storageInfo);
+        StorageInfos.injectInto(_storageInfo, attributes);
         attributes.setPnfsId(pnfsId);
         attributes.setLocations(pools);
         PoolSelector availableLocations =

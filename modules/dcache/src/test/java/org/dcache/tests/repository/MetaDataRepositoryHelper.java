@@ -13,6 +13,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.FileStore;
@@ -191,13 +192,12 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         @Override
         public synchronized String toString()
         {
-            StorageInfo info = _fileAttributes.getStorageInfo();
             return _pnfsId.toString()+
                 " <"+_state.toString()+"-"+
                 "(0)"+
                 "["+getLinkCount()+"]> "+
                 getSize()+
-                " si={"+(info==null?"<unknown>":info.getStorageClass())+"}" ;
+                " si={"+(_fileAttributes.isDefined(FileAttribute.STORAGECLASS) ? "<unknown>" : _fileAttributes.getStorageClass())+"}" ;
         }
 
     }

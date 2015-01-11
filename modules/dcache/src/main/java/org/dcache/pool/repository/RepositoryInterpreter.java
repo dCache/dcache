@@ -183,9 +183,7 @@ public class RepositoryInterpreter
                                 if (!fileAttributes.isDefined(FileAttribute.STORAGEINFO)) {
                                     continue;
                                 }
-                                StorageInfo info = fileAttributes.getStorageInfo();
-                                String sc = info.getStorageClass()
-                                    + "@" + info.getHsm();
+                                String sc = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm();
 
                                 long[] counter = map.get(sc);
                                 if (counter == null) {
@@ -311,15 +309,13 @@ public class RepositoryInterpreter
                     for (PnfsId id: _repository) {
                         try {
                             CacheEntry entry = _repository.getEntry(id);
-
-                            StorageInfo info = entry.getFileAttributes().getStorageInfo();
-                            if (info == null) {
-                                continue;
-                            }
-                            String sc = info.getStorageClass();
-                            if (sc.equals(storageClassName)) {
-                                _repository.setState(id, EntryState.REMOVED);
-                                cnt++;
+                            FileAttributes fileAttributes = entry.getFileAttributes();
+                            if (fileAttributes.isDefined(FileAttribute.STORAGECLASS)) {
+                                String sc = fileAttributes.getStorageClass();
+                                if (sc.equals(storageClassName)) {
+                                    _repository.setState(id, EntryState.REMOVED);
+                                    cnt++;
+                                }
                             }
                         } catch (FileNotInCacheException ignored) {
                             // File was deleted - no problem

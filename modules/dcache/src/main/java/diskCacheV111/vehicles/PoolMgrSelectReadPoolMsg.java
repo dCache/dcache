@@ -77,7 +77,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
 
     public static EnumSet<FileAttribute> getRequiredAttributes()
     {
-        return EnumSet.of(PNFSID, STORAGEINFO, LOCATIONS, SIZE, ACCESS_LATENCY, RETENTION_POLICY);
+        return EnumSet.of(PNFSID, STORAGEINFO, STORAGECLASS, CACHECLASS, HSM, LOCATIONS, SIZE, ACCESS_LATENCY, RETENTION_POLICY);
     }
 
     public Context getContext()

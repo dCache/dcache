@@ -15,7 +15,9 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.dcache.namespace.FileAttribute.HSM;
 import static org.dcache.namespace.FileAttribute.PNFSID;
+import static org.dcache.namespace.FileAttribute.STORAGECLASS;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 
 public class PoolMgrGetPoolMsg extends PoolManagerMessage
@@ -87,7 +89,7 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
 
     public static Collection<FileAttribute> getRequiredAttributes()
     {
-        return EnumSet.of(PNFSID, STORAGEINFO);
+        return EnumSet.of(PNFSID, STORAGEINFO, STORAGECLASS, HSM);
     }
 
     @Override

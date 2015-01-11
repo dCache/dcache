@@ -41,7 +41,6 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
@@ -299,22 +298,6 @@ public class Transfer implements Comparable<Transfer>
     public synchronized void setPnfsId(PnfsId pnfsid)
     {
         _fileAttributes.setPnfsId(pnfsid);
-    }
-
-    /**
-     * Returns the StorageInfo of the file to transfer.
-     */
-    public synchronized StorageInfo getStorageInfo()
-    {
-        return _fileAttributes.getStorageInfo();
-    }
-
-    /**
-     * Sets the StorageInfo of the file to transfer.
-     */
-    public synchronized void setStorageInfo(StorageInfo info)
-    {
-        _fileAttributes.setStorageInfo(info);
     }
 
     /**
@@ -832,7 +815,7 @@ public class Transfer implements Comparable<Transfer>
                 setFileAttributes(reply.getFileAttributes());
             } else {
                 EnumSet<RequestContainerV5.RequestState> allowedStates =
-                    _checkStagePermission.canPerformStaging(_subject, fileAttributes.getStorageInfo())
+                    _checkStagePermission.canPerformStaging(_subject, fileAttributes)
                     ? RequestContainerV5.allStates
                     : RequestContainerV5.allStatesExceptStage;
 

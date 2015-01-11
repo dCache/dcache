@@ -28,6 +28,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.Formats;
 
 import org.dcache.util.Args;
+import org.dcache.vehicles.FileAttributes;
 
  /**
   *  @Author: Patrick Fuhrmann
@@ -425,15 +426,12 @@ public class FileHoppingManager extends CellAdapter {
          }
          replicate.setReplyRequired(true);
 
-         StorageInfo storageInfo = replicate.getStorageInfo() ;
-         if( storageInfo == null ) {
-             return;
-         }
+         FileAttributes fileAttributes = replicate.getFileAttributes();
 
          _totalRequests ++ ;
 
-         String storageClass      = storageInfo.getStorageClass()+"@"+storageInfo.getHsm() ;
-         String replicationSource = storageInfo.getKey("replication.source");
+         String storageClass      = fileAttributes.getStorageClass()+"@"+fileAttributes.getHsm() ;
+         String replicationSource = fileAttributes.getStorageInfo().getKey("replication.source");
 
          ProtocolInfo originalProtocolInfo = replicate.getProtocolInfo() ;
 

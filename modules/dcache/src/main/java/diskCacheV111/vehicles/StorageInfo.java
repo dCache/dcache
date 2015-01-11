@@ -53,7 +53,9 @@ public interface StorageInfo
       *   <strong>poolSelection</strong>.
       *
       */
+    @Deprecated
     public String getStorageClass() ;
+    @Deprecated
     public void setStorageClass( String newStorageClass);
 
     @Deprecated
@@ -98,12 +100,16 @@ public interface StorageInfo
       * in the 'cacheClass' tag. May return 'null'  if not
       * precified.
       */
+    @Deprecated
     public String getCacheClass() ;
+    @Deprecated
     public void setCacheClass(String newCacheClass);
     /**
       * Returns the name of the HSM or the HSMInstance.
       */
+    @Deprecated
     public String getHsm() ;
+    @Deprecated
     public void setHsm( String newHsm);
     /**
       * Determines whether the file exists somewhere (cache or HSM)

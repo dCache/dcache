@@ -270,9 +270,9 @@ public class HttpPoolMgrEngineV3 implements
                                 }
                                 storageInfo.setKey("new", "" + storageInfo.isCreatedOnly());
                                 storageInfo.setKey("stored",""+storageInfo.isStored());
-                                storageInfo.setKey("sClass",storageInfo.getStorageClass());
-                                storageInfo.setKey("cClass",storageInfo.getCacheClass());
-                                storageInfo.setKey("hsm",storageInfo.getHsm());
+                                storageInfo.setKey("sClass",fileAttributes.getStorageClass());
+                                storageInfo.setKey("cClass",fileAttributes.getCacheClass());
+                                storageInfo.setKey("hsm",fileAttributes.getHsm());
                             }
                             _fileAttributesMap.put(pnfsId, a[2] = storageInfo);
                         }

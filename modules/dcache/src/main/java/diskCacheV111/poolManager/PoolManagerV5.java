@@ -1,6 +1,5 @@
 package diskCacheV111.poolManager ;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
@@ -42,7 +41,6 @@ import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
@@ -659,8 +657,7 @@ public class PoolManagerV5
     */
 
     private boolean quotasExceeded(FileAttributes fileAttributes) {
-        StorageInfo info = fileAttributes.getStorageInfo();
-        String storageClass = info.getStorageClass() + "@" + info.getHsm() ;
+        String storageClass = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm() ;
         try {
             QuotaMgrCheckQuotaMessage quotas = new QuotaMgrCheckQuotaMessage(storageClass);
            return _quotaManager.sendAndWait(quotas).isHardQuotaExceeded();
@@ -705,14 +702,13 @@ public class PoolManagerV5
        @Override
        public void run(){
            FileAttributes fileAttributes = _request.getFileAttributes();
-           StorageInfo storageInfo = fileAttributes.getStorageInfo();
            ProtocolInfo protocolInfo = _request.getProtocolInfo();
 
            _log.info("{} write handler started", _pnfsId);
            long started = System.currentTimeMillis();
 
            if( _quotasEnabled && quotasExceeded(fileAttributes) ){
-              requestFailed( 55 , "Quotas Exceeded for StorageClass : "+storageInfo.getStorageClass() ) ;
+              requestFailed(55, "Quotas Exceeded for StorageClass : " + fileAttributes.getStorageClass()) ;
               return ;
            }
 

@@ -8,7 +8,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
@@ -61,11 +60,6 @@ public class PinManagerPinMessage extends Message
     public PnfsId getPnfsId()
     {
         return _fileAttributes.getPnfsId();
-    }
-
-    public StorageInfo getStorageInfo()
-    {
-        return _fileAttributes.getStorageInfo();
     }
 
     public FileAttributes getFileAttributes()

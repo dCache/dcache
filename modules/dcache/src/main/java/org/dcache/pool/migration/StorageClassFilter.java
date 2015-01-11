@@ -1,7 +1,5 @@
 package org.dcache.pool.migration;
 
-import diskCacheV111.vehicles.StorageInfo;
-
 import org.dcache.pool.repository.CacheEntry;
 
 /**
@@ -20,7 +18,6 @@ public class StorageClassFilter implements CacheEntryFilter
     @Override
     public boolean accept(CacheEntry entry)
     {
-        StorageInfo info = entry.getFileAttributes().getStorageInfo();
-        return _sc.equals(info.getStorageClass());
+        return _sc.equals(entry.getFileAttributes().getStorageClass());
     }
 }

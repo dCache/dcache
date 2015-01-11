@@ -30,6 +30,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
+import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.Iterables.transform;
@@ -164,9 +165,9 @@ public class StorageClassContainer
         throws CacheException, InterruptedException
     {
         CacheEntry entry = _repository.getEntry(id);
-        StorageInfo storageInfo = entry.getFileAttributes().getStorageInfo();
-        String storageClass = storageInfo.getStorageClass();
-        String hsmName = storageInfo.getHsm().toLowerCase();
+        FileAttributes fileAttributes = entry.getFileAttributes();
+        String storageClass = fileAttributes.getStorageClass();
+        String hsmName = fileAttributes.getHsm().toLowerCase();
 
         String composedName = storageClass + "@" + hsmName;
         StorageClassInfo classInfo = _storageClasses.get(composedName);
@@ -196,8 +197,7 @@ public class StorageClassContainer
             throws CacheException, InterruptedException
     {
         CacheEntry entry = _repository.getEntry(pnfsId);
-        StorageInfo storageInfo = entry.getFileAttributes().getStorageInfo();
-        String hsm = storageInfo.getHsm().toLowerCase();
+        String hsm = entry.getFileAttributes().getHsm().toLowerCase();
         _storageHandler.flush(hsm, Collections.singleton(pnfsId), callback);
     }
 
@@ -380,10 +380,10 @@ public class StorageClassContainer
                     try {
                         CacheEntry info = _repository.getEntry(id);
                         long        time   = info.getLastAccessTime();
-                        StorageInfo sinfo  = info.getFileAttributes().getStorageInfo();
-                        String      sclass = sinfo.getStorageClass();
-                        String      hsm    = sinfo.getHsm();
-                        String      cclass = sinfo.getCacheClass();
+                        FileAttributes fileAttributes  = info.getFileAttributes();
+                        String      sclass = fileAttributes.getStorageClass();
+                        String      hsm    = fileAttributes.getHsm();
+                        String      cclass = fileAttributes.getCacheClass();
                         sb.append("  ").append(id).append("  ").
                                 append(Formats.field(hsm,8,Formats.LEFT)).
                                 append(Formats.field(sclass==null?"-":sclass,20,Formats.LEFT)).
@@ -405,10 +405,10 @@ public class StorageClassContainer
                         }
                         CacheEntry info = _repository.getEntry(id);
                         long        time   = info.getLastAccessTime();
-                        StorageInfo sinfo  = info.getFileAttributes().getStorageInfo();
-                        String      sclass = sinfo.getStorageClass();
-                        String      hsm    = sinfo.getHsm();
-                        String      cclass = sinfo.getCacheClass();
+                        FileAttributes fileAttributes  = info.getFileAttributes();
+                        String      sclass = fileAttributes.getStorageClass();
+                        String      hsm    = fileAttributes.getHsm();
+                        String      cclass = fileAttributes.getCacheClass();
                         sb.append("  ").append(id).append("  ").
                                 append(Formats.field(hsm,8,Formats.LEFT)).
                                 append(Formats.field(sclass==null?"-":sclass,20,Formats.LEFT)).

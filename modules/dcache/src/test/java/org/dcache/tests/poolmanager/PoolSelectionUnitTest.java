@@ -16,6 +16,7 @@ import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
@@ -279,7 +280,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive off");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -307,7 +308,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -331,7 +332,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
@@ -354,7 +355,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
@@ -377,7 +378,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -401,7 +402,7 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
 
         PoolPreferenceLevel[] preference = _psu.match(
@@ -455,7 +456,7 @@ public class PoolSelectionUnitTest {
         _ci.command(new Args("psu create linkGroup h1-link-group"));
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
 
         PoolPreferenceLevel[] preference = _psu.match(
@@ -484,7 +485,7 @@ public class PoolSelectionUnitTest {
         StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(storageInfo);
+        StorageInfos.injectInto(storageInfo, fileAttributes);
 
         Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
@@ -514,7 +515,7 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set pool h1-read rdonly");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
@@ -541,7 +542,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive off");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -569,7 +570,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -593,7 +594,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
@@ -616,7 +617,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.WRITE,  // operation
@@ -639,7 +640,7 @@ public class PoolSelectionUnitTest {
 
         _ci.command("psu set allpoolsactive on");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference = _psu.match(
                                                       DirectionType.READ,  // operation
@@ -663,7 +664,7 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set disabled h1-read");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
 
         PoolPreferenceLevel[] preference = _psu.match(
@@ -691,7 +692,7 @@ public class PoolSelectionUnitTest {
         _ci.command(new Args("psu create linkGroup h1-link-group"));
         _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
 
         PoolPreferenceLevel[] preference = _psu.match(
@@ -720,7 +721,7 @@ public class PoolSelectionUnitTest {
         StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(storageInfo);
+        StorageInfos.injectInto(storageInfo, fileAttributes);
 
         Set<String> supportedHSM = new HashSet<>();
         supportedHSM.add("osm");
@@ -750,7 +751,7 @@ public class PoolSelectionUnitTest {
         _ci.command("psu set allpoolsactive on");
         _ci.command("psu set pool h1-read rdonly");
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("h1:u1@osm", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("h1:u1@osm", "*"), fileAttributes);
 
         PoolPreferenceLevel[] preference =
             _psu.match(DirectionType.P2P,  // operation
@@ -818,7 +819,7 @@ public class PoolSelectionUnitTest {
         /* We cannot read from a write pool.
          */
         FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setStorageInfo(GenericStorageInfo.valueOf("*", "*"));
+        StorageInfos.injectInto(GenericStorageInfo.valueOf("*", "*"), fileAttributes);
         PoolPreferenceLevel[] preference =
             psu.match(DirectionType.READ,  // operation
                       "111.111.111.201", // net unit

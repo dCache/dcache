@@ -204,12 +204,9 @@ public class RemoteGsiftpTransferProtocol_1
         createFtpClient(remoteGsiftpProtocolInfo);
 
         if ( access == IoMode.WRITE) {
-            gridFTPRead(remoteGsiftpProtocolInfo,
-                    fileAttributes.getStorageInfo(),
-                        allocator);
+            gridFTPRead(remoteGsiftpProtocolInfo, allocator);
         } else {
-            gridFTPWrite(remoteGsiftpProtocolInfo,
-                    fileAttributes.getStorageInfo());
+            gridFTPWrite(remoteGsiftpProtocolInfo);
         }
         _log.debug(" runIO() done");
     }
@@ -243,7 +240,6 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
-                            StorageInfo storage,
                             Allocator allocator)
         throws CacheException
     {
@@ -270,8 +266,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
-    public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo protocolInfo,
-                             StorageInfo storage)
+    public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo protocolInfo)
         throws CacheException
     {
         _log.debug("gridFTPWrite started");

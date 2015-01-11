@@ -1,8 +1,5 @@
 package org.dcache.pool.repository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
@@ -18,9 +15,6 @@ import org.dcache.vehicles.FileAttributes;
 
 public class MetaDataStoreYamlTool
 {
-    private final static Logger _log =
-        LoggerFactory.getLogger(MetaDataStoreYamlTool.class);
-
     static MetaDataStore createStore(Class<? extends MetaDataStore> clazz,
                                      FileStore fileStore, File poolDir)
         throws NoSuchMethodException, InstantiationException,
@@ -60,16 +54,22 @@ public class MetaDataStoreYamlTool
                 for (StickyRecord sticky: record.stickyRecords()) {
                     out.format("    %s: %d\n", sticky.owner(), sticky.expire());
                 }
+                if (attributes.isDefined(FileAttribute.STORAGECLASS)) {
+                    out.format("  storageclass: %s\n", attributes.getStorageClass());
+                }
+                if (attributes.isDefined(FileAttribute.CACHECLASS)) {
+                    out.format("  cacheclass: %s\n", attributes.getCacheClass());
+                }
                 if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
                     StorageInfo info = attributes.getStorageInfo();
-                    out.format("  storageclass: %s\n", info.getStorageClass());
-                    out.format("  cacheclass: %s\n", info.getCacheClass());
                     out.format("  bitfileid: %s\n", info.getBitfileId());
                     out.format("  locations:\n");
                     for (URI location: info.locations()) {
                         out.format("    - %s\n", location);
                     }
-                    out.format("  hsm: %s\n", info.getHsm());
+                }
+                if (attributes.isDefined(FileAttribute.HSM)) {
+                    out.format("  hsm: %s\n", attributes.getHsm());
                 }
                 if (attributes.isDefined(FileAttribute.SIZE)) {
                     out.format("  filesize: %s\n", attributes.getSize());

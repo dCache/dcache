@@ -185,8 +185,8 @@ public class PoolMonitorV5
                                          "No write links configured for [" +
                                                  "net=" + hostName +
                                                  ",protocol=" + protocol +
-                                                 ",store=" + _fileAttributes.getStorageInfo().getStorageClass() + "@" + _fileAttributes.getStorageInfo().getHsm() +
-                                                 ",cache=" + nullToEmpty(_fileAttributes.getStorageInfo().getCacheClass()) +
+                                                 ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
+                                                 ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
                                                  ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
             }
 
@@ -204,8 +204,8 @@ public class PoolMonitorV5
                                      "No write pools online for [" +
                                              "net=" + hostName +
                                              ",protocol=" + protocol +
-                                             ",store=" + _fileAttributes.getStorageInfo().getStorageClass() + "@" + _fileAttributes.getStorageInfo().getHsm() +
-                                             ",cache=" + nullToEmpty(_fileAttributes.getStorageInfo().getCacheClass()) +
+                                             ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
+                                             ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
                                              ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
         }
 
@@ -245,8 +245,8 @@ public class PoolMonitorV5
                 throw new CacheException(CacheException.NO_POOL_CONFIGURED, "No read links configured [" +
                         "net=" + hostName +
                         ",protocol=" + protocol +
-                        ",store=" + _fileAttributes.getStorageInfo().getStorageClass() + "@" + _fileAttributes.getStorageInfo().getHsm() +
-                        ",cache=" + nullToEmpty(_fileAttributes.getStorageInfo().getCacheClass()) +
+                        ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
+                        ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
                         ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
             }
 

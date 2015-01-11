@@ -1166,8 +1166,8 @@ public class PnfsManagerV3
                                                   requested);
 
             StorageInfo info = attrs.getStorageInfo();
-            if (attrs.getStorageInfo().getKey("path") == null) {
-                attrs.getStorageInfo().setKey("path", pnfsMessage.getPnfsPath());
+            if (info.getKey("path") == null) {
+                info.setKey("path", pnfsMessage.getPnfsPath());
             }
             info.setKey("uid", Integer.toString(pnfsMessage.getUid()));
             info.setKey("gid", Integer.toString(pnfsMessage.getGid()));
@@ -2008,11 +2008,12 @@ public class PnfsManagerV3
                                                      requested);
 
             if (attrs.isDefined(FileAttribute.STORAGEINFO)) {
-                if (attrs.getStorageInfo().getKey("path") == null) {
-                    attrs.getStorageInfo().setKey("path", message.getPnfsPath());
+                StorageInfo storageInfo = attrs.getStorageInfo();
+                if (storageInfo.getKey("path") == null) {
+                    storageInfo.setKey("path", message.getPnfsPath());
                 }
-                attrs.getStorageInfo().setKey("uid",  Integer.toString(attrs.getOwner()));
-                attrs.getStorageInfo().setKey("gid", Integer.toString(attrs.getGroup()));
+                storageInfo.setKey("uid", Integer.toString(attrs.getOwner()));
+                storageInfo.setKey("gid", Integer.toString(attrs.getGroup()));
             }
 
             message.setFileAttributes(attrs);

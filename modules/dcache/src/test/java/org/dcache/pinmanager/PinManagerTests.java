@@ -41,6 +41,7 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StorageInfos;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
@@ -71,7 +72,7 @@ public class PinManagerTests
             new DCapProtocolInfo("DCap", 3, 0,
             new InetSocketAddress("127.0.0.1", 17));
     final static StorageInfo STORAGE_INFO =
-        new GenericStorageInfo();
+        new GenericStorageInfo("osm", "default");
 
     final static PnfsId PNFS_ID1 =
         new PnfsId("0000D4CF1C3302B44095969C8216CE1E9175");
@@ -95,8 +96,8 @@ public class PinManagerTests
     {
         FileAttributes attributes = new FileAttributes();
         attributes.setPnfsId(pnfsId);
-        attributes.setStorageInfo(STORAGE_INFO);
         attributes.setLocations(Collections.singleton(POOL1));
+        StorageInfos.injectInto(STORAGE_INFO, attributes);
 
         // Required attributes, but the values are not relevant
         // when pool manager and pool are stubbed out.
