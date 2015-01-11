@@ -265,8 +265,10 @@ public class HttpPoolMgrEngineV3 implements
                                 }
                             }
                             if (_siDetails != null) { // allows to select items
-                                storageInfo.setKey("size",""+fileAttributes.getSize());
-                                storageInfo.setKey("new",""+storageInfo.isCreatedOnly());
+                                if (fileAttributes.isDefined(FileAttribute.SIZE)) {
+                                    storageInfo.setKey("size", "" + fileAttributes.getSize());
+                                }
+                                storageInfo.setKey("new", "" + storageInfo.isCreatedOnly());
                                 storageInfo.setKey("stored",""+storageInfo.isStored());
                                 storageInfo.setKey("sClass",storageInfo.getStorageClass());
                                 storageInfo.setKey("cClass",storageInfo.getCacheClass());

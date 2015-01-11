@@ -148,7 +148,7 @@ public class DirectoryLookUpPool extends AbstractCell
                 _out.append(":f:");
                 break;
             }
-            _out.append(attr.getSize()).append(':').append(entry.getName());
+            _out.append(attr.getSizeIfPresent().or(0L)).append(':').append(entry.getName());
             _out.append('\n');
         }
     }
@@ -177,7 +177,7 @@ public class DirectoryLookUpPool extends AbstractCell
             FileAttributes attr = entry.getFileAttributes();
             if (attr.getFileType() == REGULAR) {
                 _out.append(new FsPath(dir, entry.getName()));
-                _out.append(" : ").append(attr.getSize());
+                _out.append(" : ").append(attr.getSizeIfPresent().or(0L));
             }
         }
     }

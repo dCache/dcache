@@ -12,6 +12,7 @@ import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
 import io.milton.resource.MultiNamespaceCustomPropertyResource;
+import io.milton.servlet.ServletResponse;
 
 import javax.xml.namespace.QName;
 
@@ -35,8 +36,6 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import org.dcache.vehicles.FileAttributes;
 
 import static io.milton.property.PropertySource.PropertyAccessibility.READ_ONLY;
-import io.milton.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
 import static org.dcache.util.Checksums.TO_RFC3230;
 
 /**
@@ -139,7 +138,7 @@ public class DcacheFileResource
     @Override
     public Long getContentLength()
     {
-        return _attributes.getSize();
+        return _attributes.getSizeIfPresent().orNull();
     }
 
     public static HttpProtocolInfo.Disposition dispositionFor(String action)

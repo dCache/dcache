@@ -1309,31 +1309,43 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     // append(_vargs.getName()).append(_followLinks?" stat ":" stat ");
                     append(_vargs.getName()).append(" stat ");
 
-                sb.append("-st_size=").append(_fileAttributes.getSize()).append(" ");
-                sb.append("-st_uid=").append(_fileAttributes.getOwner()).append(" ");
-                sb.append("-st_gid=").append(_fileAttributes.getGroup()).append(" ");
-                sb.append("-st_atime=").append(_fileAttributes.getAccessTime()/1000).append(" ");
-                sb.append("-st_mtime=").append(_fileAttributes.getModificationTime()/1000).append(" ");
-                sb.append("-st_ctime=").append(_fileAttributes.getChangeTime()/1000).append(" ");
-
-                String mode = new UnixPermission(_fileAttributes.getMode()).toString().substring(1);
-                switch (_fileAttributes.getFileType()) {
-                case DIR:
-                    mode = "d" + mode;
-                    break;
-                case REGULAR:
-                    mode = "-" + mode;
-                    break;
-                case LINK:
-                    mode = "l" + mode;
-                    break;
-                case SPECIAL:
-                    mode = "x" + mode;
-                    break;
+                if (_fileAttributes.isDefined(SIZE)) {
+                    sb.append("-st_size=").append(_fileAttributes.getSize()).append(" ");
                 }
+                if (_fileAttributes.isDefined(OWNER)) {
+                    sb.append("-st_uid=").append(_fileAttributes.getOwner()).append(" ");
+                }
+                if (_fileAttributes.isDefined(OWNER_GROUP)) {
+                    sb.append("-st_gid=").append(_fileAttributes.getGroup()).append(" ");
+                }
+                if (_fileAttributes.isDefined(ACCESS_TIME)) {
+                    sb.append("-st_atime=").append(_fileAttributes.getAccessTime() / 1000).append(" ");
+                }
+                if (_fileAttributes.isDefined(MODIFICATION_TIME)) {
+                    sb.append("-st_mtime=").append(_fileAttributes.getModificationTime() / 1000).append(" ");
+                }
+                if (_fileAttributes.isDefined(CHANGE_TIME)) {
+                    sb.append("-st_ctime=").append(_fileAttributes.getChangeTime() / 1000).append(" ");
+                }
+                if (_fileAttributes.isDefined(MODE)) {
+                    String mode = new UnixPermission(_fileAttributes.getMode()).toString().substring(1);
+                    switch (_fileAttributes.getFileType()) {
+                    case DIR:
+                        mode = "d" + mode;
+                        break;
+                    case REGULAR:
+                        mode = "-" + mode;
+                        break;
+                    case LINK:
+                        mode = "l" + mode;
+                        break;
+                    case SPECIAL:
+                        mode = "x" + mode;
+                        break;
+                    }
 
-                sb.append("-st_mode=").append(mode);
-                sb.append(" ") ;
+                    sb.append("-st_mode=").append(mode).append(" ");
+                }
                 sb.append("-st_ino=").append(_fileAttributes.getPnfsId().toString().hashCode()&0xfffffff) ;
 
                 println( sb.toString() ) ;
@@ -1400,7 +1412,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                            + cellInfo.getDomainName(), "remove");
             infoRemove.setSubject(_subject);
             infoRemove.setPnfsId(attributes.getPnfsId());
-            infoRemove.setFileSize(attributes.getSize());
+            infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
             infoRemove.setPath(path);
             infoRemove.setClient(_clientAddress.getHostAddress());
 
@@ -2330,17 +2342,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             try {
                 if( reply.getReturnCode() == 0 ){
-
                     long filesize = reply.getFileAttributes().getSize() ;
                     _log.info("doorTransferArrived : fs={};strict={};m={}", filesize, _strictSize, _ioMode);
-                    if( _strictSize && ( filesize > 0L ) && (_ioMode.contains("w")) ){
-
+                    if (_strictSize && _ioMode.contains("w")) {
                         for( int count = 0 ; count < 10 ; count++  ){
                             try{
-                                long fs = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE)).getSize();
-                                _log.info("doorTransferArrived : Size of {}: {}",
-                                          _fileAttributes.getPnfsId(), fs);
-                                if( fs > 0L ) {
+                                FileAttributes attributes = _pnfs.getFileAttributes(_fileAttributes.getPnfsId(), EnumSet.of(SIZE));
+                                if (attributes.isDefined(SIZE)) {
+                                    _log.info("doorTransferArrived : Size of {}: {}", _fileAttributes.getPnfsId(), attributes.getSize());
                                     break;
                                 }
                             }catch(Exception ee ){

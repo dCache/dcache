@@ -396,7 +396,7 @@ public class CostModuleV1
             destinationCostInfo.getSpaceInfo();
 
         int diff = msg.isReply() ? -1 : 1;
-        long pinned = msg.getFileAttributes().isDefined(FileAttribute.SIZE) ? msg.getFileAttributes().getSize() : 0;
+        long pinned = msg.getFileAttributes().getSizeIfPresent().or(0L);
 
         sourceQueue.modifyQueue(diff);
         destinationQueue.modifyQueue(diff);

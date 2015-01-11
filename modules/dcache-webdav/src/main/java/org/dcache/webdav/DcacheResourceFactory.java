@@ -21,6 +21,7 @@ import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
+import org.stringtemplate.v4.misc.Aggregate;
 
 import javax.security.auth.Subject;
 
@@ -820,7 +821,6 @@ public class DcacheResourceFactory
 
         DirectoryListPrinter printer =
                 new DirectoryListPrinter() {
-
                     @Override
                     public Set<FileAttribute> getRequiredAttributes() {
                         return EnumSet.of(MODIFICATION_TIME, TYPE, SIZE);
@@ -833,10 +833,10 @@ public class DcacheResourceFactory
                         UrlPathWrapper name =
                                 UrlPathWrapper.forPath(entry.getName());
                         t.addAggr("files.{name,isDirectory,mtime,size}",
-                                name,
-                                attr.getFileType() == DIR,
-                                mtime,
-                                attr.getSize());
+                                  name,
+                                  attr.getFileType() == DIR,
+                                  mtime,
+                                  attr.getSizeIfPresent().orNull());
                     }
                 };
         _list.printDirectory(getSubject(), printer, path, null,
@@ -866,7 +866,7 @@ public class DcacheResourceFactory
             infoRemove.setSubject(subject);
             infoRemove.setPath(path);
             infoRemove.setPnfsId(attributes.getPnfsId());
-            infoRemove.setFileSize(attributes.getSize());
+            infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
             infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
             _billingStub.notify(infoRemove);
         } catch (NoRouteToCellException e) {

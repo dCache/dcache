@@ -296,6 +296,10 @@ public class FileAttributes implements Serializable {
         return _size;
     }
 
+    public Optional<Long> getSizeIfPresent() {
+        return toOptional(SIZE, _size);
+    }
+
     @Nonnull
     public PnfsId getPnfsId()
     {

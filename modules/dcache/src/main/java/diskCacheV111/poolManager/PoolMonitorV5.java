@@ -480,8 +480,7 @@ public class PoolMonitorV5
     public FileLocality
         getFileLocality(FileAttributes attributes, String hostName)
     {
-        if (attributes.getFileType() == FileType.DIR ||
-            attributes.getSize() == 0) {
+        if (attributes.getFileType() == FileType.DIR || !attributes.isDefined(SIZE)) {
             return FileLocality.NONE;
         }
 

@@ -1093,7 +1093,7 @@ public final class Storage
             infoMsg.setTransaction(CDC.getSession());
             infoMsg.setPnfsId(msg.getPnfsId());
             infoMsg.setResult(0, "");
-            infoMsg.setFileSize(msg.getFileAttributes().getSize());
+            infoMsg.setFileSize(msg.getFileAttributes().getSizeIfPresent().or(0L));
             infoMsg.setStorageInfo(msg.getFileAttributes().getStorageInfo());
             Origin origin = Subjects.getOrigin(subject);
             if (origin != null) {

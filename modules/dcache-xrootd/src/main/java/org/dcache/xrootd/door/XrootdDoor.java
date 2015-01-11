@@ -896,7 +896,7 @@ public class XrootdDoor
             }
         }
 
-        return new FileStatus(0, attributes.getSize(), flags, attributes.getModificationTime() / 1000);
+        return new FileStatus(0, attributes.getSizeIfPresent().or(0L), flags, attributes.getModificationTime() / 1000);
     }
 
     public int[] getMultipleFileStatuses(FsPath[] allPaths, Subject subject) throws CacheException
