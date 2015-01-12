@@ -11,7 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.List;
+import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -179,7 +179,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized List<StickyRecord> removeExpiredStickyFlags()
+    public synchronized Collection<StickyRecord> removeExpiredStickyFlags()
     {
         return _state.removeExpiredStickyFlags();
     }
@@ -273,18 +273,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized List<StickyRecord> stickyRecords() {
+    public synchronized Collection<StickyRecord> stickyRecords() {
         return _state.stickyRecords();
-    }
-
-    public synchronized String toString()
-    {
-        StorageInfo si = getStorageInfo();
-        return _pnfsId.toString()+
-            " <"+_state.toString()+"-"+
-            "(0)"+
-            "["+_linkCount+"]> "+
-            getSize()+
-            " si={"+(si==null?"<unknown>":si.getStorageClass())+"}" ;
     }
 }

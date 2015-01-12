@@ -1,6 +1,8 @@
 package org.dcache.pool.repository.v3.entry.state;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -73,8 +75,8 @@ public class Sticky {
         return sb.toString();
     }
 
-    synchronized public List<StickyRecord> records() {
-        return new ArrayList<>(_records.values());
+    synchronized public Collection<StickyRecord> records() {
+        return Collections.unmodifiableCollection(_records.values());
     }
 
     /**

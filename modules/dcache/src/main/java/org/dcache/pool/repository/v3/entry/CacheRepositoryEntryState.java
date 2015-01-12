@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,8 +22,7 @@ import org.dcache.pool.repository.v3.entry.state.Sticky;
 
 public class CacheRepositoryEntryState
 {
-    // new logger concept
-    private static Logger _logBussiness = LoggerFactory.getLogger("logger.org.dcache.repository");
+    private static Logger _log = LoggerFactory.getLogger(CacheRepositoryEntryState.class);
 
     private static final Pattern VERSION_PATTERN =
         Pattern.compile("#\\s+version\\s+[0-9]\\.[0-9]");
@@ -77,8 +77,7 @@ public class CacheRepositoryEntryState
                 makeStatePersistent();
             }
         } catch (IOException e) {
-            _logBussiness.error("Failed to store repository state: " +
-                                e.getMessage());
+            _log.error("Failed to store repository state: {}", e.getMessage());
         }
         return removed;
     }
@@ -317,9 +316,7 @@ public class CacheRepositoryEntryState
 
                         break;
                     default:
-                        _logBussiness
-                                .info("Unknow number of arguments in " + _controlFile
-                                        .getPath() + " [" + line + "]");
+                        _log.info("Unknow number of arguments in {} [{}]", _controlFile.getPath(), line);
                         _state = EntryState.BROKEN;
                         return;
                     }
@@ -329,34 +326,15 @@ public class CacheRepositoryEntryState
                 }
 
                 // if none of knows states, then it's BAD state
-                _logBussiness
-                        .error("Invalid state [" + line + "] for entry " + _controlFile);
+                _log.error("Invalid state [{}] for entry {}", line, _controlFile);
                 break;
             }
         }
 
     }
 
-    public List<StickyRecord> stickyRecords()
+    public Collection<StickyRecord> stickyRecords()
     {
         return _sticky.records();
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(_state == EntryState.CACHED        ? "C" : "-" );
-        sb.append(_state == EntryState.PRECIOUS      ? "P" : "-" );
-        sb.append(_state == EntryState.FROM_CLIENT   ? "C" : "-" );
-        sb.append((_state == EntryState.FROM_STORE
-                   || _state == EntryState.FROM_POOL)? "S" : "-" );
-        sb.append("-");
-        sb.append("-");
-        sb.append(_state == EntryState.REMOVED       ? "R" : "-" );
-        sb.append("-");
-        sb.append( _sticky.isSet()                   ? "X" : "-" );
-        sb.append(_state == EntryState.BROKEN        ? "E" : "-" );
-        return sb.toString();
     }
 }

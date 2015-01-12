@@ -1,11 +1,14 @@
 package org.dcache.pool.repository.meta.db;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
@@ -20,17 +23,29 @@ import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.collect.Iterables.*;
+
 /**
  * Berkeley DB aware implementation of CacheRepositoryEntry interface.
  */
 public class CacheRepositoryEntryImpl implements MetaDataRecord
 {
-    private static Logger _log =
-        LoggerFactory.getLogger("logger.org.dcache.repository");
+    private static final Logger _log =
+        LoggerFactory.getLogger(CacheRepositoryEntryImpl.class);
 
-    private final CacheRepositoryEntryState _state;
+    // Reusable list for the common case
+    private static final ImmutableList<StickyRecord> SYSTEM_STICKY =
+            ImmutableList.of(new StickyRecord("system", -1));
+
     private final PnfsId _pnfsId;
     private final BerkeleyDBMetaDataRepository _repository;
+
+    /**
+     * Sticky records held by the file.
+     */
+    private ImmutableList<StickyRecord> _sticky;
+
+    private EntryState _state;
 
     private long _creationTime = System.currentTimeMillis();
 
@@ -45,7 +60,8 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     {
         _repository = repository;
         _pnfsId = pnfsId;
-        _state = new CacheRepositoryEntryState();
+        _sticky = ImmutableList.of();
+        _state = EntryState.NEW;
         File file = getDataFile();
         _lastAccess = file.lastModified();
         _size = file.length();
@@ -63,8 +79,10 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         _linkCount    = entry.getLinkCount();
         _creationTime = entry.getCreationTime();
         _size         = entry.getSize();
-        _state        = new CacheRepositoryEntryState(entry);
-        storeStateIfDirty();
+        _state        = entry.getState();
+        setStickyRecords(entry.stickyRecords());
+
+        storeState();
         setFileAttributes(entry.getFileAttributes());
         if (_lastAccess == 0) {
             _lastAccess = _creationTime;
@@ -77,13 +95,19 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     {
         _repository = repository;
         _pnfsId = pnfsId;
-        _state = state;
+        _state = state.getState();
+        setStickyRecords(state.stickyRecords());
         File file = getDataFile();
         _lastAccess = file.lastModified();
         _size = file.length();
         if (_lastAccess == 0) {
             _lastAccess = _creationTime;
         }
+    }
+
+    private void setStickyRecords(Iterable<StickyRecord> records)
+    {
+        _sticky = elementsEqual(records, SYSTEM_STICKY) ? SYSTEM_STICKY : ImmutableList.copyOf(records);
     }
 
     @Override
@@ -180,20 +204,22 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized EntryState getState()
     {
-        return _state.getState();
+        return _state;
     }
 
     @Override
     public synchronized void setState(EntryState state)
     {
-        _state.setState(state);
-        storeStateIfDirty();
+        if (_state != state) {
+            _state = state;
+            storeState();
+        }
     }
 
     @Override
     public synchronized boolean isSticky()
     {
-        return _state.isSticky();
+        return !_sticky.isEmpty();
     }
 
     @Override
@@ -203,11 +229,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized List<StickyRecord> removeExpiredStickyFlags()
+    public synchronized Collection<StickyRecord> removeExpiredStickyFlags()
     {
-        List<StickyRecord> removed = _state.removeExpiredStickyFlags();
+        long now = System.currentTimeMillis();
+        List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, r -> !r.isValidAt(now)));
         if (!removed.isEmpty()) {
-            storeStateIfDirty();
+            setStickyRecords(ImmutableList.copyOf(filter(_sticky, r -> r.isValidAt(now))));
+            storeState();
         }
         return removed;
     }
@@ -215,22 +243,23 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     @Override
     public synchronized boolean setSticky(String owner, long expire, boolean overwrite) throws CacheException
     {
-        try {
-            if (_state.setSticky(owner, expire, overwrite)) {
-                storeStateIfDirty();
-                return true;
-            }
-            return false;
-        } catch (IllegalStateException e) {
-            throw new CacheException(e.getMessage());
+        if (_state == EntryState.REMOVED) {
+            throw new CacheException("Entry in removed state");
         }
+        if (!overwrite && any(_sticky, r -> r.owner().equals(owner) && r.isValidAt(expire))) {
+            return false;
+        }
+        ImmutableList.Builder<StickyRecord> builder = ImmutableList.builder();
+        builder.addAll(filter(_sticky, r -> !r.owner().equals(owner)));
+        builder.add(new StickyRecord(owner, expire));
+        setStickyRecords(builder.build());
+        return true;
     }
 
     @Override
     public synchronized void touch() throws CacheException
     {
         File file = getDataFile();
-
         try {
             if (!file.exists()) {
                 file.createNewFile();
@@ -247,28 +276,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized List<StickyRecord> stickyRecords()
+    public synchronized Collection<StickyRecord> stickyRecords()
     {
-        return _state.stickyRecords();
+        return _sticky;
     }
 
-    @Override
-    public synchronized String toString()
+    private synchronized void storeState()
     {
-        StorageInfo info = getStorageInfo();
-        return _pnfsId.toString()+
-            " <"+_state.toString()+"-"+
-            "(0)"+
-            "["+getLinkCount()+"]> "+
-            getSize()+
-            " si={"+(info==null?"<unknown>":info.getStorageClass())+"}" ;
-    }
-
-    private synchronized void storeStateIfDirty()
-    {
-        if (_state.dirty()) {
-            _repository.getStateMap().put(_pnfsId.toString(), _state);
-        }
+        _repository.getStateMap().put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
     }
 
     static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository,
@@ -276,14 +291,11 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     {
         try {
             String id = pnfsId.toString();
-            CacheRepositoryEntryState state =
-                repository.getStateMap().get(id);
-
+            CacheRepositoryEntryState state = repository.getStateMap().get(id);
             if (state != null) {
                 return new CacheRepositoryEntryImpl(repository, pnfsId, state);
             }
-
-            _log.debug("No entry found for " + id);
+            _log.debug("No entry found for {}", id);
         } catch (ClassCastException e) {
             _log.warn(e.toString());
         } catch (RuntimeExceptionWrapper e) {

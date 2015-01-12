@@ -8,10 +8,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.DuplicateEntryException;
@@ -20,16 +20,16 @@ import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.meta.db.CacheRepositoryEntryState;
 import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.stream.Collectors.toList;
 
 public class MetaDataRepositoryHelper implements MetaDataStore {
 
 
 
     public static class CacheRepositoryEntryImpl implements MetaDataRecord {
-        private final CacheRepositoryEntryState _state;
         private final PnfsId _pnfsId;
 
         private long _creationTime = System.currentTimeMillis();
@@ -40,6 +40,10 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
 
         private long _size;
 
+        private EntryState _state;
+
+        private List<StickyRecord> _sticky = new ArrayList<>();
+
         private final FileStore _repository;
         private FileAttributes _fileAttributes;
 
@@ -47,9 +51,9 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         {
             _repository = repository;
             _pnfsId = pnfsId;
-            _state = new CacheRepositoryEntryState();
             _lastAccess = getDataFile().lastModified();
             _size = getDataFile().length();
+            _state = EntryState.NEW;
         }
 
         @Override
@@ -115,19 +119,19 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         @Override
         public synchronized EntryState getState()
         {
-            return _state.getState();
+            return _state;
         }
 
         @Override
         public synchronized void setState(EntryState state)
         {
-            _state.setState(state);
+            _state = state;
         }
 
         @Override
         public synchronized boolean isSticky()
         {
-            return _state.isSticky();
+            return !_sticky.isEmpty();
         }
 
         @Override
@@ -137,14 +141,16 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized boolean setSticky(String owner, long lifetime, boolean overwrite)
+        public synchronized boolean setSticky(String owner, long expire, boolean overwrite)
             throws CacheException
         {
-            try {
-                return _state.setSticky(owner, lifetime, overwrite);
-            } catch (IllegalStateException e) {
-                throw new CacheException(e.getMessage());
+            if (!overwrite && _sticky.stream().anyMatch(r -> r.owner().equals(owner) && r.isValidAt(expire))) {
+                return false;
             }
+            _sticky = Stream.concat(_sticky.stream().filter(r -> !r.owner().equals(owner)),
+                                    Stream.of(new StickyRecord(owner, expire)))
+                    .collect(toList());
+            return true;
         }
 
         @Override
@@ -166,15 +172,15 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
-        public synchronized List<StickyRecord> stickyRecords()
+        public synchronized Collection<StickyRecord> stickyRecords()
         {
-            return _state.stickyRecords();
+            return _sticky;
         }
 
         @Override
-        public synchronized List<StickyRecord> removeExpiredStickyFlags()
+        public synchronized Collection<StickyRecord> removeExpiredStickyFlags()
         {
-            return new ArrayList();
+            return Collections.emptyList();
         }
 
         @Override

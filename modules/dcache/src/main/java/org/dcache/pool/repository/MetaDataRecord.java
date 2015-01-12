@@ -1,7 +1,7 @@
 package org.dcache.pool.repository;
 
 import java.io.File;
-import java.util.List;
+import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -81,7 +81,7 @@ public interface MetaDataRecord
      *
      * @return The expired sticky flags removed from the record.
      */
-    public List<StickyRecord> removeExpiredStickyFlags();
+    public Collection<StickyRecord> removeExpiredStickyFlags();
 
     /**
      * Set sticky flag for a given owner and time. There is at most
@@ -104,8 +104,7 @@ public interface MetaDataRecord
         throws CacheException;
 
     /**
-     *
      * @return list of StickyRecords held by the file
      */
-    public List<StickyRecord> stickyRecords();
+    public Collection<StickyRecord> stickyRecords();
 }

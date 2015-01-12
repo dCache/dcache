@@ -7,6 +7,7 @@ import javax.annotation.concurrent.GuardedBy;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -994,7 +995,7 @@ public class CacheRepositoryV5
     {
         synchronized (entry) {
             CacheEntry oldEntry = new CacheEntryImpl(entry);
-            List<StickyRecord> removed = entry.removeExpiredStickyFlags();
+            Collection<StickyRecord> removed = entry.removeExpiredStickyFlags();
             for (StickyRecord record: removed) {
                 CacheEntryImpl newEntry = new CacheEntryImpl(entry);
                 stickyChanged(oldEntry, newEntry, record);

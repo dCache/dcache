@@ -1218,10 +1218,6 @@ public class PoolV4
                 _log.error("Replica " + fileList[i] + " not removed: "
                            + e.getMessage());
                 counter++;
-            } catch (IllegalArgumentException e) {
-                _log.error("Invalid syntax in remove request ("
-                           + fileList[i] + ")");
-                counter++;
             }
         }
         if (counter > 0) {
