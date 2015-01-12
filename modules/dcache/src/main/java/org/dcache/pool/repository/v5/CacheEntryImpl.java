@@ -3,7 +3,6 @@ package org.dcache.pool.repository.v5;
 import java.util.Collection;
 
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.CacheEntry;
@@ -130,7 +129,7 @@ public class CacheEntryImpl implements CacheEntry
         sb.append("-");
         sb.append("-");
         sb.append((_state == EntryState.REMOVED)     ? "R" : "-");
-        sb.append((_state == EntryState.DESTROYED)   ? "D" : "-");
+        sb.append("-");
         sb.append(isSticky()                         ? "X" : "-");
         sb.append((_state == EntryState.BROKEN)      ? "E" : "-");
         sb.append("-");

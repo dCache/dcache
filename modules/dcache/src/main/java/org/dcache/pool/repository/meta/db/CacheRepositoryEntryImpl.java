@@ -99,7 +99,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     public synchronized void incrementLinkCount()
     {
         EntryState state = getState();
-        if (state == EntryState.REMOVED || state == EntryState.DESTROYED) {
+        if (state == EntryState.REMOVED) {
             throw new IllegalStateException("Entry is marked as removed");
         }
         _linkCount++;

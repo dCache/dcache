@@ -98,41 +98,32 @@ public class CacheRepositoryEntryState implements Serializable
             _fromStore = true;
             break;
         case CACHED:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             _precious = _fromClient = _fromStore = _error = _removed = false;
             _cached = true;
             break;
         case PRECIOUS:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             _cached = _fromClient = _fromStore = _error = _removed = false;
             _precious = true;
             break;
         case BROKEN:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             _precious = _cached = _fromClient = _fromStore = _removed = false;
             _error = true;
             break;
         case REMOVED:
-            if (_state == EntryState.DESTROYED) {
-                throw new IllegalStateException("Entry is " + _state);
-            }
             _precious = _cached = _fromClient = _fromStore = _error = false;
             _removed = true;
             break;
-        case DESTROYED:
-            if (_state != EntryState.REMOVED) {
-                throw new IllegalStateException("Entry is " + _state);
-            }
-            break;
+        default:
+            throw new IllegalArgumentException("Invalid state: " + state);
         }
 
         _state = state;

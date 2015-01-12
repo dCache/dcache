@@ -52,9 +52,8 @@ public class CacheRepositoryEntryInfo implements Serializable {
         case REMOVED:
             bitmask = 1 << REMOVED_BIT;
             break;
-        case NEW:
-        case DESTROYED:
-            throw new RuntimeException("Bug. An entry should never be in NEW or DESTROYED.");
+        default:
+            throw new IllegalArgumentException("Bug. An entry should never be in " + entry.getState());
         }
         if (entry.isSticky()) {
             bitmask |= 1<< STICKY_BIT;

@@ -23,6 +23,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
@@ -542,18 +543,6 @@ public class RepositorySubsystemTest
         repository.setState(id1, NEW);
     }
 
-    @Test(expected=IllegalTransitionException.class)
-    public void testSetStateToDestroyed()
-        throws IOException, IllegalTransitionException,
-               CacheException, InterruptedException
-    {
-        repository.init();
-        repository.load();
-        stateChangeEvents.clear();
-
-        repository.setState(id1, DESTROYED);
-    }
-
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleClose()
         throws IOException, CacheException, InterruptedException
@@ -645,7 +634,6 @@ public class RepositorySubsystemTest
             {
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
-                expectStateChangeEvent(id1, REMOVED, DESTROYED);
                 assertStep("Cache location cleared", 1);
                 assertEquals(repository.getState(id1), NEW);
             }
@@ -680,17 +668,12 @@ public class RepositorySubsystemTest
                 assertNoStateChangeEvent();
                 assertStep("Cache location cleared", 1);
                 handle1.close();
-                expectStateChangeEvent(id1, REMOVED, DESTROYED);
+                assertEquals(repository.getState(id1), NEW);
             }
         };
     }
 
-    /**
-     * Removing a file while it is open will mark it removed, but as
-     * long as the file has not been destroyed yet, the file may be
-     * opened again.
-     */
-    @Test
+    @Test(expected= LockedCacheException.class)
     public void testRemoveOpenAgain()
         throws Throwable
     {
@@ -718,10 +701,6 @@ public class RepositorySubsystemTest
                 assertStep("Cache location should have been cleared", 1);
                 ReplicaDescriptor h2 =
                     repository.openEntry(id1, EnumSet.noneOf(OpenFlags.class));
-                h1.close();
-                assertNoStateChangeEvent();
-                h2.close();
-                expectStateChangeEvent(id1, REMOVED, DESTROYED);
             }
         };
     }

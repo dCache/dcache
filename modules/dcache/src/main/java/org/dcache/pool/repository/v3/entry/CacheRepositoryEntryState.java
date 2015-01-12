@@ -109,32 +109,24 @@ public class CacheRepositoryEntryState
             }
             break;
         case CACHED:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case PRECIOUS:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case BROKEN:
-            if (_state == EntryState.REMOVED ||
-                _state == EntryState.DESTROYED) {
+            if (_state == EntryState.REMOVED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case REMOVED:
-            if (_state == EntryState.DESTROYED) {
-                throw new IllegalStateException("Entry is " + _state);
-            }
             break;
-        case DESTROYED:
-            if (_state != EntryState.REMOVED) {
-                throw new IllegalStateException("Entry is " + _state);
-            }
+        default:
+            throw new IllegalArgumentException("Invalid state " + state);
         }
 
         _state = state;
@@ -155,7 +147,7 @@ public class CacheRepositoryEntryState
     public boolean setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException, IOException
     {
-        if (_state == EntryState.REMOVED || _state == EntryState.DESTROYED) {
+        if (_state == EntryState.REMOVED) {
             throw new IllegalStateException("Entry in removed state");
         }
 
@@ -362,7 +354,7 @@ public class CacheRepositoryEntryState
         sb.append("-");
         sb.append("-");
         sb.append(_state == EntryState.REMOVED       ? "R" : "-" );
-        sb.append(_state == EntryState.DESTROYED     ? "D" : "-" );
+        sb.append("-");
         sb.append( _sticky.isSet()                   ? "X" : "-" );
         sb.append(_state == EntryState.BROKEN        ? "E" : "-" );
         return sb.toString();
