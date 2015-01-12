@@ -250,14 +250,15 @@ public class NFSv41Door extends AbstractCellComponent implements
         _cellName = getCellName();
         _domainName = getCellDomainName();
 
-        _rpcService = new OncRpcSvcBuilder()
+        OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withPort(_port)
                 .withTCP()
-                .withAutoPublish()
-                .build();
+                .withWorkerThreadIoStrategy()
+                .withAutoPublish();
         if (_enableRpcsecGss) {
-            _rpcService.setGssSessionManager(new GssSessionManager(_idMapper));
+            oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
         }
+        _rpcService = oncRpcSvcBuilder.build();
 
         _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
 
