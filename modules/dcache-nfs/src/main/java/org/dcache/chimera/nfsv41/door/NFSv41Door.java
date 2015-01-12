@@ -57,15 +57,17 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
-import org.dcache.chimera.nfsv41.door.proxy.ProxyIoAdapter;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
+import org.dcache.nfs.FsExport;
+import org.dcache.nfs.status.AccessException;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
+import org.dcache.nfs.status.LayoutUnavailableException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
@@ -432,6 +434,11 @@ public class NFSv41Door extends AbstractCellComponent implements
             NDC.push(inode.toString());
             NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             deviceid4 deviceid;
+
+            if (!isPnfsAllowed(context, nfsInode)) {
+                throw new LayoutUnavailableException("pNFS is not allowed");
+            }
+
             if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
                 /*
                  * all non regular files ( AKA pnfs dot files ) provided by door itself.
@@ -858,5 +865,14 @@ public class NFSv41Door extends AbstractCellComponent implements
                 return "pool " + pool + " Not Found.";
             }
         }
+    }
+
+    private boolean isPnfsAllowed(CompoundContext context, Inode inode) throws ChimeraNFSException {
+        FsExport export = context.getExportFile().getExport(inode.exportIndex(),
+                context.getRpcCall().getTransport().getRemoteSocketAddress().getAddress());
+        if (export == null) {
+            throw new AccessException("no export");
+        }
+        return export.isWithPnfs();
     }
 }
