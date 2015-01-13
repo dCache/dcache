@@ -2,10 +2,20 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframework.org/schema/jee"
        xmlns:context="http://www.springframework.org/schema/context"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/jee
+                        http://www.springframework.org/schema/jee/spring-jee.xsd
+                        http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/util
+                        http://www.springframework.org/schema/util/spring-util.xsd">
 
     <context:property-placeholder/>
+    <context:annotation-config/>
 
     <bean id="definitionsMap" class="org.dcache.alarms.jdom.XmlBackedAlarmDefinitionsMap"
         init-method="initialize">
@@ -28,16 +38,7 @@
         <property name="rootLevel" value="${alarms.log.root-level}"/>
         <property name="priorityMap" ref="priorityMap"/>
         <property name="converter" ref="logEventConverter"/>
-        <property name="xmlPath" value="${alarms.db.xml.path}"/>
-        <property name="url" value="${alarms.db.url}"/>
-        <property name="user" value="${alarms.db.user}"/>
-        <property name="password" value="${alarms.db.password}"/>
-        <property name="dnPropertiesPath" value="${alarms.db.datanucleus-properties.path}"/>
-        <property name="cleanerEnabled" value="${alarms.enable.cleaner}"/>
-        <property name="cleanerSleepInterval" value="${alarms.cleaner.timeout}"/>
-        <property name="cleanerSleepIntervalUnit" value="${alarms.cleaner.timeout.unit}"/>
-        <property name="cleanerDeleteThreshold" value="${alarms.cleaner.delete-entries-before}"/>
-        <property name="cleanerDeleteThresholdUnit" value="${alarms.cleaner.delete-entries-before.unit}"/>
+        <property name="store" ref="alarmStore"/>
         <property name="emailEnabled" value="${alarms.enable.email}"/>
         <property name="emailThreshold" value="${alarms.email.threshold}"/>
         <property name="emailEncoding" value="${alarms.email.encoding-pattern}"/>
@@ -74,7 +75,73 @@
         <property name="serverPort" value="${alarms.net.port}"/>
     </bean>
 
+    <beans profile="off">
+        <bean id="alarmStore" class="org.dcache.alarms.dao.impl.NOPLogEntryStore"/>
+    </beans>
+
+    <beans profile="xml">
+        <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+              destroy-method="close" depends-on="xmlStoreInitializer">
+            <description>Database persistence manager</description>
+            <constructor-arg>
+                <map>
+                    <entry key="datanucleus.PersistenceUnitName" value="AlarmsXML"/>
+                    <entry key="datanucleus.ConnectionURL" value="${alarms.db.url}"/>
+                </map>
+            </constructor-arg>
+        </bean>
+
+        <bean id="xmlStoreInitializer" class="org.dcache.alarms.logback.LogEntryXMLInitializer">
+            <constructor-arg>
+                <value>${alarms.db.xml.path}</value>
+            </constructor-arg>
+        </bean>
+
+        <bean id="alarmStore" class="org.dcache.alarms.dao.impl.DataNucleusLogEntryStore"
+            init-method="initialize" destroy-method="shutdown">
+            <constructor-arg><ref bean="pmf"/></constructor-arg>
+            <property name="cleanerEnabled" value="${alarms.enable.cleaner}"/>
+            <property name="cleanerSleepInterval" value="${alarms.cleaner.timeout}"/>
+            <property name="cleanerSleepIntervalUnit" value="${alarms.cleaner.timeout.unit}"/>
+            <property name="cleanerDeleteThreshold" value="${alarms.cleaner.delete-entries-before}"/>
+            <property name="cleanerDeleteThresholdUnit" value="${alarms.cleaner.delete-entries-before.unit}"/>
+        </bean>
+    </beans>
+
     <beans profile="rdbms">
+        <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"
+              destroy-method="shutdown">
+            <description>Database connection pool</description>
+            <constructor-arg>
+                <bean class="com.zaxxer.hikari.HikariConfig">
+                    <property name="jdbcUrl" value="${alarms.db.url}"/>
+                    <property name="username" value="${alarms.db.user}"/>
+                    <property name="password" value="${alarms.db.password}"/>
+                 </bean>
+            </constructor-arg>
+        </bean>
+
+        <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+              destroy-method="close">
+            <description>Database persistence manager</description>
+            <constructor-arg>
+                 <map>
+                    <entry key="datanucleus.PersistenceUnitName" value="AlarmsRDBMS"/>
+                </map>
+            </constructor-arg>
+            <property name="connectionFactory" ref="dataSource"/>
+        </bean>
+
+        <bean id="alarmStore" class="org.dcache.alarms.dao.impl.DataNucleusLogEntryStore"
+            init-method="initialize" destroy-method="shutdown">
+            <constructor-arg><ref bean="pmf"/></constructor-arg>
+            <property name="cleanerEnabled" value="${alarms.enable.cleaner}"/>
+            <property name="cleanerSleepInterval" value="${alarms.cleaner.timeout}"/>
+            <property name="cleanerSleepIntervalUnit" value="${alarms.cleaner.timeout.unit}"/>
+            <property name="cleanerDeleteThreshold" value="${alarms.cleaner.delete-entries-before}"/>
+            <property name="cleanerDeleteThresholdUnit" value="${alarms.cleaner.delete-entries-before.unit}"/>
+        </bean>
+
         <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
             <description>Database schema manager</description>
             <property name="dataSource">

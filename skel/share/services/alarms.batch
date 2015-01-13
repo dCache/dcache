@@ -9,7 +9,6 @@ check -strong alarms.net.port
 check -strong alarms.db.type
 check -strong alarms.db.url
 check -strong alarms.custom-definitions.path
-check -strong alarms.db.datanucleus-properties.path
 check alarms.db.xml.path
 check alarms.enable.email
 check alarms.email.smtp-host

@@ -70,33 +70,16 @@ import ch.qos.logback.core.rolling.FixedWindowRollingPolicy;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy;
 import ch.qos.logback.core.spi.CyclicBufferTracker;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
-import com.google.common.io.Files;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import org.datanucleus.api.jdo.JDOPersistenceManagerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.dao.LogEntry;
 import org.dcache.alarms.dao.LogEntryDAO;
-import org.dcache.alarms.dao.impl.DataNucleusLogEntryStore;
-import org.dcache.db.AlarmEnabledDataSource;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * For server-side interception of log messages. Will store them to the LogEntry
@@ -107,10 +90,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author arossi
  */
 public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
-
-    private static final String EMPTY_XML_STORE =
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<entries></entries>\n";
-
     /**
      *  LogEntry converter -- binds logback to the DAO.
      */
@@ -132,28 +111,6 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
      * The main configuration for storing alarms through DAO.
      */
     private LogEntryDAO store;
-    private File xmlPath;
-    private String dnPropertiesPath;
-    private String url;
-    private String user;
-    private String password;
-    private JDOPersistenceManagerFactory pmf;
-
-    /**
-     * Obviously, we do not wrap this data source with the
-     * {@link AlarmEnabledDataSource} because we don't want
-     * internal errors being logged to the alarm system itself.
-     */
-    private HikariDataSource dataSource;
-
-    /**
-     * Optional cleaner daemon.
-     */
-    private boolean cleanerEnabled;
-    private int cleanerSleepInterval;
-    private TimeUnit cleanerSleepIntervalUnit;
-    private int cleanerDeleteThreshold;
-    private TimeUnit cleanerDeleteThresholdUnit;
 
     /**
      * Optional email appender configuration.
@@ -186,32 +143,8 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     private int historyMinIndex;
     private int historyMaxIndex;
 
-    public void setCleanerDeleteThreshold(int cleanerDeleteThreshold) {
-        this.cleanerDeleteThreshold = cleanerDeleteThreshold;
-    }
-
-    public void setCleanerDeleteThresholdUnit(TimeUnit timeUnit) {
-        cleanerDeleteThresholdUnit = checkNotNull(timeUnit);
-    }
-
-    public void setCleanerEnabled(boolean cleanerEnabled) {
-        this.cleanerEnabled = cleanerEnabled;
-    }
-
-    public void setCleanerSleepInterval(int cleanerSleepInterval) {
-        this.cleanerSleepInterval = cleanerSleepInterval;
-    }
-
-    public void setCleanerSleepIntervalUnit(TimeUnit timeUnit) {
-        cleanerSleepIntervalUnit = checkNotNull(timeUnit);
-    }
-
     public void setConverter(LoggingEventConverter converter) {
         this.converter = converter;
-    }
-
-    public void setDnPropertiesPath(String dnPropertiesPath) {
-        this.dnPropertiesPath = dnPropertiesPath;
     }
 
     public void setEmailBufferSize(int emailBufferSize) {
@@ -285,14 +218,6 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
         this.historyThreshold = AlarmPriority.valueOf(historyThreshold.toUpperCase());
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setPmf(JDOPersistenceManagerFactory pmf) {
-        this.pmf = pmf;
-    }
-
     public void setPriorityMap(AlarmPriorityMap priorityMap) {
         this.priorityMap = priorityMap;
     }
@@ -317,25 +242,13 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
         this.startTls = startTls;
     }
 
-    public void setUrl(String url) {
-        this.url = Preconditions.checkNotNull(Strings.emptyToNull(url));
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public void setXmlPath(String xmlPath) {
-        this.xmlPath = new File(xmlPath);
+    public void setStore(LogEntryDAO store) {
+        this.store = store;
     }
 
     @Override
     public void start() {
         try {
-            if (store == null) {
-                initializeStore();
-            }
-
             if (emailEnabled) {
                 startEmailAppender();
             }
@@ -354,20 +267,6 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     public synchronized void stop()
     {
         super.stop();
-
-        if (store != null) {
-            store.shutdown();
-        }
-
-        if (pmf != null) {
-            pmf.close();
-            pmf = null;
-        }
-
-        if (dataSource != null) {
-            dataSource.shutdown();
-            dataSource = null;
-        }
 
         if (emailAppender != null) {
             emailAppender.stop();
@@ -419,74 +318,6 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
          * Now store the remote event.
          */
         store.put(entry);
-    }
-
-    /*
-     * Largely a convenience for internal testing.
-     */
-    void setStore(LogEntryDAO store) {
-        this.store = store;
-    }
-
-    private void initializeStore() throws IOException {
-        initPersistenceManagerFactory();
-        DataNucleusLogEntryStore dnStore = new DataNucleusLogEntryStore(pmf);
-        dnStore.setCleanerDeleteThreshold(cleanerDeleteThreshold);
-        dnStore.setCleanerDeleteThresholdUnit(cleanerDeleteThresholdUnit);
-        dnStore.setCleanerEnabled(cleanerEnabled);
-        dnStore.setCleanerSleepInterval(cleanerSleepInterval);
-        dnStore.setCleanerSleepIntervalUnit(cleanerSleepIntervalUnit);
-        dnStore.initialize();
-        this.store = dnStore;
-    }
-
-    /*
-     * Checks for the existence of the file and creates it if not. Note that
-     * existing files are not validated against any schema, explicit or
-     * implicit. If the parent does not exist, an exception will be thrown.
-     */
-    private void initializeXmlFile(File file) throws IOException {
-        if (!file.exists()) {
-            if (!file.getParentFile().isDirectory()) {
-                String parent = file.getParentFile().getAbsolutePath();
-                throw new FileNotFoundException(parent + " is not a directory");
-            }
-            Files.write(EMPTY_XML_STORE, file, Charsets.UTF_8);
-        }
-    }
-
-    private void initPersistenceManagerFactory() throws IOException {
-        Properties properties = new Properties();
-        if (dnPropertiesPath != null && !dnPropertiesPath.trim().isEmpty()) {
-            File file = new File(dnPropertiesPath);
-            if (!file.exists()) {
-                throw new FileNotFoundException(file.getAbsolutePath());
-            }
-            try (InputStream stream = new FileInputStream(file)) {
-                properties.load(stream);
-            }
-        }
-
-        if (url.startsWith("xml:")) {
-            initializeXmlFile(xmlPath);
-            properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsXML");
-            properties.setProperty("datanucleus.ConnectionURL", url);
-        } else if (url.startsWith("jdbc:")) {
-            HikariConfig config = new HikariConfig();
-            config.setJdbcUrl(url);
-            config.setUsername(user);
-            config.setPassword(password);
-            dataSource = new HikariDataSource(config);
-            properties.setProperty("datanucleus.PersistenceUnitName", "AlarmsRDBMS");
-            properties.setProperty("datanucleus.connectionPoolingType", "None");
-            properties.setProperty("datanucleus.cache.level2.type", "none");
-        }
-
-        pmf = new JDOPersistenceManagerFactory(
-                Maps.<String, Object>newHashMap(Maps.fromProperties(properties)));
-        if (dataSource != null) {
-            pmf.setConnectionFactory(dataSource);
-        }
     }
 
     private void startEmailAppender() {

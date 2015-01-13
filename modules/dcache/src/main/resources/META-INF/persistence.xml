@@ -18,14 +18,74 @@
 
     <persistence-unit name="AlarmsRDBMS">
       <mapping-file>org/dcache/alarms/dao/package.jdo</mapping-file>
+        <properties>
+            <property name="datanucleus.connectionPoolingType" value="None"/>
+            <property name="datanucleus.autoCreateSchema" value="false"/>
+            <property name="datanucleus.autoCreateTables" value="false"/>
+            <property name="datanucleus.autoCreateColumns" value="false"/>
+            <property name="datanucleus.autoCreateConstraints" value="false"/>
+            <property name="datanucleus.validateTables" value="false"/>
+            <property name="datanucleus.validateConstraints" value="false"/>
+            <property name="datanucleus.validateColumns" value="false"/>
+            <property name="datanucleus.rdbms.CheckExistTablesOrViews" value="false"/>
+            <property name="datanucleus.rdbms.initializeColumnInfo" value="None"/>
+            <property name="datanucleus.identifier.case" value="LowerCase"/>
+            <property name="datanucleus.autoStartMechanism" value="false"/>
+            <property name="datanucleus.manageRelationships" value="false"/>
+            <property name="datanucleus.rdbms.statementBatchLimit" value="-1"/>
+            <property name="datanucleus.detachAllOnCommit" value="false"/>
+            <property name="datanucleus.persistenceByReachabilityAtCommit" value="false"/>
+            <property name="datanucleus.rdbms.stringLengthExceededAction" value="TRUNCATE"/>
+            <property name="datanucleus.query.jdoql.allowAll" value="true"/>
+            <property name="javax.jdo.option.Optimistic" value="true"/>
+            <property name="javax.jdo.option.NontransactionalRead" value="false"/>
+            <property name="javax.jdo.option.RetainValues" value="true"/>
+            <property name="javax.jdo.option.Multithreaded" value="true"/>
+        </properties>
     </persistence-unit>
 
     <persistence-unit name="Billing">
       <mapping-file>org/dcache/services/billing/db/data/package.jdo</mapping-file>
+        <properties>
+            <property name="datanucleus.connectionPoolingType" value="None"/>
+            <property name="datanucleus.autoCreateSchema" value="false"/>
+            <property name="datanucleus.autoCreateTables" value="false"/>
+            <property name="datanucleus.autoCreateColumns" value="false"/>
+            <property name="datanucleus.autoCreateConstraints" value="false"/>
+            <property name="datanucleus.validateTables" value="false"/>
+            <property name="datanucleus.validateConstraints" value="false"/>
+            <property name="datanucleus.validateColumns" value="false"/>
+            <property name="datanucleus.rdbms.CheckExistTablesOrViews" value="false"/>
+            <property name="datanucleus.rdbms.initializeColumnInfo" value="None"/>
+            <property name="datanucleus.identifier.case" value="LowerCase"/>
+            <property name="datanucleus.autoStartMechanism" value="false"/>
+            <property name="datanucleus.manageRelationships" value="false"/>
+            <property name="datanucleus.rdbms.statementBatchLimit" value="-1"/>
+            <property name="datanucleus.detachAllOnCommit" value="false"/>
+            <property name="datanucleus.persistenceByReachabilityAtCommit" value="false"/>
+            <property name="datanucleus.rdbms.stringLengthExceededAction" value="TRUNCATE"/>
+            <property name="datanucleus.query.jdoql.allowAll" value="true"/>
+            <property name="javax.jdo.option.Optimistic" value="true"/>
+            <property name="javax.jdo.option.NontransactionalRead" value="false"/>
+            <property name="javax.jdo.option.RetainValues" value="true"/>
+            <property name="javax.jdo.option.Multithreaded" value="true"/>
+        </properties>
     </persistence-unit>
 
     <persistence-unit name="TransferManager">
       <mapping-file>diskCacheV111/services/package.jdo</mapping-file>
+        <properties>
+            <property name="datanucleus.detachAllOnCommit" value="true"/>
+            <property name="javax.jdo.option.Optimistic" value="true"/>
+            <property name="javax.jdo.option.NontransactionalRead" value="true"/>
+            <property name="javax.jdo.option.RetainValues" value="true"/>
+            <property name="javax.jdo.option.Multithreaded" value="true"/>
+            <property name="datanucleus.autoCreateSchema" value="true"/>
+            <property name="datanucleus.validateTables" value="false"/>
+            <property name="datanucleus.validateConstraints" value="false"/>
+            <property name="datanucleus.autoCreateColumns" value="true"/>
+            <property name="datanucleus.connectionPoolingType" value="None"/>
+        </properties>
     </persistence-unit>
 </persistence>
 

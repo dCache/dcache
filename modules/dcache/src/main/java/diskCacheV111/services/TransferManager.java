@@ -244,18 +244,6 @@ public abstract class TransferManager extends AbstractCell
         // FIXME: Close connection pool and pmf
         Properties properties = new Properties();
         properties.setProperty("datanucleus.PersistenceUnitName", "TransferManager");
-        properties.setProperty("javax.jdo.option.DetachAllOnCommit", "true");
-        properties.setProperty("javax.jdo.option.Optimistic", "true");
-        properties.setProperty("javax.jdo.option.NontransactionalRead", "true");
-        properties.setProperty("javax.jdo.option.RetainValues", "true");
-        properties.setProperty("javax.jdo.option.Multithreaded", "true");
-        properties.setProperty("datanucleus.autoCreateSchema", "true");
-        properties.setProperty("datanucleus.validateTables", "false");
-        properties.setProperty("datanucleus.validateConstraints", "false");
-        properties.setProperty("datanucleus.autoCreateColumns", "true");
-        properties.setProperty("datanucleus.connectionPoolingType", "None");
-// below is default, supported are "LowerCase", "MixedCase"
-//                properties.setProperty("datanucleus.identifier.case","UpperCase");
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(_jdbcUrl);
         config.setUsername(_user);

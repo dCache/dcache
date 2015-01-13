@@ -88,8 +88,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     private final PersistenceManagerFactory pmf;
 
+    /**
+     * Optional cleaner daemon.
+     */
     private boolean cleanerEnabled;
     private int cleanerSleepInterval;
     private TimeUnit cleanerSleepIntervalUnit;

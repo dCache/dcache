@@ -28,7 +28,6 @@ define env billingToDb.exe endExe
   check billing.db.name
   check billing.db.password
   check billing.db.password.file
-  check billing.db.config.path
   check billing.db.connections.max
   check billing.db.connections.idle
   check billing.db.schema.auto
