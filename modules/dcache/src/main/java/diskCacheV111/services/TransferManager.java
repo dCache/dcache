@@ -1,7 +1,6 @@
 /* -*- c-basic-offset: 8; indent-tabs-mode: nil -*- */
 package diskCacheV111.services;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -23,7 +22,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.Pgpass;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IpProtocolInfo;
@@ -39,11 +36,14 @@ import diskCacheV111.vehicles.transferManager.CancelTransferMessage;
 import diskCacheV111.vehicles.transferManager.TransferManagerMessage;
 import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.SerializationException;
 import dmg.util.TimebasedCounter;
 
-import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.util.Args;
@@ -57,25 +57,27 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Base class for services that transfer files on behalf of SRM. Used to
  * implement server-side srmCopy.
  */
-public abstract class TransferManager extends AbstractCell
+public abstract class TransferManager extends AbstractCellComponent
+                                      implements CellCommandListener,
+                                                 CellMessageReceiver
 {
     private static final Logger log = LoggerFactory.getLogger(TransferManager.class);
     private String _jdbcUrl = "jdbc:postgresql://localhost/srmdcache";
     private String _user = "srmdcache";
-    private String _pass;
-    private String _pwdFile;
+    private String _password;
     private PersistenceManager _pm;
     private final Map<Long, TransferManagerHandler> _activeTransfers =
             new ConcurrentHashMap<>();
     private int _maxTransfers;
     private int _numTransfers;
     private long _moverTimeout;
+    private TimeUnit _moverTimeoutUnit;
     protected static long nextMessageID;
     private String _tLogRoot;
-    private final CellStub _pnfsManager;
-    private final CellStub _poolManager;
-    private final CellStub _poolStub;
-    private final CellStub _billingStub;
+    private CellStub _pnfsManager;
+    private CellStub _poolManager;
+    private CellStub _poolStub;
+    private CellStub _billingStub;
     private boolean _overwrite;
     private boolean _doDatabaseLogging;
     private int _maxNumberOfDeleteRetries;
@@ -92,79 +94,25 @@ public abstract class TransferManager extends AbstractCell
     private ExecutorService executor =
             new CDCExecutorServiceDecorator<>(Executors.newCachedThreadPool());
 
-    /**
-     * Creates a new instance of Class
-     */
-    public TransferManager(String cellName, String args)
-            throws InterruptedException, ExecutionException
+    public void init()
     {
-        super(cellName, args);
-        _poolManager = new CellStub(this);
-        _pnfsManager = new CellStub(this);
-        _poolStub = new CellStub(this);
-        _billingStub = new CellStub(this, new CellPath("billing"));
-        doInit();
-    }
-
-    @Override
-    protected void init()
-    {
-        Args args = getArgs();
-
-        _jdbcUrl = args.getOpt("jdbcUrl");
-        _user = args.getOpt("dbUser");
-        _pass = args.getOpt("dbPass");
-        _pwdFile = args.getOpt("pgPass");
-        if (_pwdFile != null && !_pwdFile.isEmpty()) {
-            Pgpass pgpass = new Pgpass(_pwdFile);
-            _pass = pgpass.getPgpass(_jdbcUrl, _user);
-        }
-
-        String dbLog = args.getOpt("doDbLog");
-        if (dbLog.equalsIgnoreCase("true") || dbLog.equalsIgnoreCase("t")) {
-            setDbLogging(true);
-        } else if (dbLog.equalsIgnoreCase("false") || dbLog.equalsIgnoreCase("f")) {
-            setDbLogging(false);
-        } else {
-            log.error("Unrecognized value of \"doDbLog\" option : " + dbLog + " , ignored");
-        }
-
         if (doDbLogging()) {
             try {
                 _pm = createPersistenceManager();
             } catch (Exception e) {
-                log.error("Failed to initialize Data Base connection using default values");
-                log.error("jdbcUrl=" + _jdbcUrl + " dbUser=" + _user + " dbPass=" + _pass + " pgPass=" + _pwdFile);
-                log.error(e.toString());
+                log.error("Failed to initialize Data Base connection using "
+                                + "default values (url {}, user {}, passwd {}): {}.",
+                                _jdbcUrl, _user, _password, e.getMessage());
                 _pm = null;
                 setDbLogging(false);
             }
         }
-
-        _tLogRoot = Strings.emptyToNull(args.getOpt("tlog"));
-        _maxNumberOfDeleteRetries = args.getIntOption("maxNumberOfDeleteRetries");
-        _poolStub.setTimeout(args.getIntOption("pool_timeout"));
-        _poolStub.setTimeoutUnit(TimeUnit.valueOf(args.getOpt("pool_timeout_unit")));
-        _maxTransfers = args.getIntOption("max_transfers");
-        _overwrite = Strings.nullToEmpty(args.getOpt("overwrite")).equalsIgnoreCase("true");
-        _poolManager.setDestination(args.getOpt("poolManager"));
-        _poolManager.setTimeout(args.getIntOption("pool_manager_timeout"));
-        _poolManager.setTimeoutUnit(TimeUnit.valueOf(args.getOpt("pool_manager_timeout_unit")));
-        _pnfsManager.setDestination(args.getOpt("pnfsManager"));
-        _pnfsManager.setTimeout(args.getIntOption("pnfs_timeout"));
-        _pnfsManager.setTimeoutUnit(TimeUnit.valueOf(args.getOpt("pnfs_timeout_unit")));
-
-        _moverTimeout = MILLISECONDS.convert(args.getIntOption("mover_timeout"),
-                                             TimeUnit.valueOf(args.getOpt("mover_timeout_unit")));
-        _ioQueueName = Strings.emptyToNull(args.getOpt("io-queue"));
-        _poolProxy = args.getOpt("poolProxy");
-        log.debug("Pool Proxy " + (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
+        log.debug("Pool Proxy {}",
+                   (_poolProxy == null ? "not set" : ("set to " + _poolProxy)));
     }
 
-    @Override
     public void cleanUp()
     {
-        super.cleanUp();
         if (ds != null) {
             try {
                 ds.close();
@@ -247,7 +195,7 @@ public abstract class TransferManager extends AbstractCell
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(_jdbcUrl);
         config.setUsername(_user);
-        config.setPassword(_pass);
+        config.setPassword(_password);
         JDOPersistenceManagerFactory pmf = new JDOPersistenceManagerFactory(
                 Maps.<String, Object>newHashMap(Maps.fromProperties(properties)));
         pmf.setConnectionFactory(new AlarmEnabledDataSource(_jdbcUrl,
@@ -276,7 +224,7 @@ public abstract class TransferManager extends AbstractCell
 
     public String ac_set_dbpass_$_1(Args args)
     {
-        _pass = args.argv(0);
+        _password = args.argv(0);
         return "OK";
     }
 
@@ -568,7 +516,7 @@ public abstract class TransferManager extends AbstractCell
 
         // this is very approximate
         // but we do not need hard real time
-        _moverTimeoutTimer.schedule(task, _moverTimeout);
+        _moverTimeoutTimer.schedule(task, _moverTimeoutUnit.toMillis(_moverTimeout));
     }
 
     public void stopTimer(long id)
@@ -714,8 +662,73 @@ public abstract class TransferManager extends AbstractCell
         }
     }
 
+    public String getCellName() {
+       return super.getCellName();
+    }
+
+    public String getCellDomainName() {
+        return super.getCellDomainName();
+    }
+
+    public void sendMessage(CellMessage envelope) throws SerializationException,
+                                                         NoRouteToCellException {
+        super.sendMessage(envelope);
+    }
+
     public String getPoolProxy()
     {
         return _poolProxy;
+    }
+
+    public void setPoolManager(CellStub poolManager) {
+        _poolManager = poolManager;
+    }
+
+    public void setPnfsManager(CellStub pnfsManager) {
+        _pnfsManager = pnfsManager;
+    }
+
+    public void setPool(CellStub pool) {
+        _poolStub = pool;
+    }
+
+    public void setMoverTimeout(long moverTimeout) {
+        _moverTimeout = moverTimeout;
+    }
+
+    public void setMoverTimeoutUnit(TimeUnit moverTimeoutUnit) {
+        _moverTimeoutUnit = moverTimeoutUnit;
+    }
+
+    public void setIoQueueName(String ioQueueName) {
+        _ioQueueName = ioQueueName;
+    }
+
+    public void setJdbcUrl(String jdbcUrl) {
+        _jdbcUrl = jdbcUrl;
+    }
+
+    public void setUser(String user) {
+        _user = user;
+    }
+
+    public void setPassword(String password) {
+        _password = password;
+    }
+
+    public void setPoolProxy(String poolProxy) {
+        _poolProxy = poolProxy;
+    }
+
+    public void setMaxNumberOfDeleteRetries(int maxNumberOfDeleteRetries) {
+        _maxNumberOfDeleteRetries = maxNumberOfDeleteRetries;
+    }
+
+    public void setOverwrite(boolean overwrite) {
+        _overwrite = overwrite;
+    }
+
+    public void setTLogRoot(String tLogRoot) {
+        _tLogRoot = tLogRoot;
     }
 }

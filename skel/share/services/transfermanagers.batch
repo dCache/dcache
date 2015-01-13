@@ -34,40 +34,10 @@ check transfermanagers.db.password.file
 
 check transfermanagers.mover.queue
 
-create diskCacheV111.services.RemoteTransferManager ${transfermanagers.cell.name} \
-        "default -export=${transfermanagers.cell.export} \
-        -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
-        -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
-        -pool_timeout=${transfermanagers.service.pool.timeout} \
-        -pool_timeout_unit=${transfermanagers.service.pool.timeout.unit} \
-        -pnfs_timeout=${transfermanagers.service.pnfsmanager.timeout} \
-        -pnfs_timeout_unit=${transfermanagers.service.pnfsmanager.timeout.unit} \
-        -mover_timeout=${transfermanagers.limits.transfer-time} \
-        -mover_timeout_unit=${transfermanagers.limits.transfer-time.unit} \
-        -max_transfers=${transfermanagers.limits.external-transfers} \
-        -io-queue=${transfermanagers.mover.queue} \
-        -jdbcUrl=${transfermanagers.db.url} \
-        -dbUser=${transfermanagers.db.user} \
-        -dbPass=${transfermanagers.db.password} \
-        -pgPass=${transfermanagers.db.password.file}   \
-        -doDbLog=${transfermanagers.enable.log-to-database} \
-        -poolManager=${transfermanagers.service.poolmanager} \
-        -poolProxy=${transfermanagers.service.poolmanager} \
-        -pnfsManager=${transfermanagers.service.pnfsmanager} \
-        -maxNumberOfDeleteRetries=1 \
-"
+create org.dcache.cells.UniversalSpringCell ${transfermanagers.cell.name} \
+        "classpath:diskCacheV111/services/transfer-manager.xml \
+        -export=${transfermanagers.cell.export}"
 
-create diskCacheV111.doors.CopyManager CopyManager \
-       "default -export=${transfermanagers.cell.export} \
-        -pool_manager_timeout=${transfermanagers.service.poolmanager.timeout} \
-        -pool_manager_timeout_unit=${transfermanagers.service.poolmanager.timeout.unit} \
-        -pool_timeout=${transfermanagers.service.pool.timeout} \
-        -pool_timeout_unit=${transfermanagers.service.pool.timeout.unit} \
-        -pnfs_timeout=${transfermanagers.service.pnfsmanager.timeout} \
-        -pnfs_timeout_unit=${transfermanagers.service.pnfsmanager.timeout.unit} \
-        -mover_timeout=${transfermanagers.limits.transfer-time} \
-        -mover_timeout_unit=${transfermanagers.limits.transfer-time.unit} \
-        -max_transfers=${transfermanagers.limits.internal-transfers} \
-        -poolManager=${transfermanagers.service.poolmanager} \
-        -poolProxy=${transfermanagers.service.poolmanager} \
-"
+create org.dcache.cells.UniversalSpringCell CopyManager \
+        "classpath:diskCacheV111/doors/copy-manager.xml \
+        -export=${transfermanagers.cell.export}"

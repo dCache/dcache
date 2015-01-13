@@ -12,7 +12,6 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
@@ -26,18 +25,17 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
+import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 
-public class CopyManager extends AbstractCell
+public class CopyManager extends AbstractCellComponent
 {
     private final static Logger _log =
         LoggerFactory.getLogger(CopyManager.class);
@@ -47,44 +45,21 @@ public class CopyManager extends AbstractCell
     private final Queue<CellMessage> _queue = new ArrayDeque<>();
 
     private InetSocketAddress _localAddr;
-    private long _moverTimeout = TimeUnit.HOURS.toMillis(24);
+    private long _moverTimeout = 24;
+    private TimeUnit _moverTimeoutUnit = TimeUnit.HOURS;
     private int _bufferSize = 256 * 1024;
     private int _tcpBufferSize = 256 * 1024;
     private int _maxTransfers = 30;
     private int _numTransfers;
 
-    private PnfsHandler _pnfs;
-    private CellStub _poolManagerStub;
+    private PnfsHandler _pnfsHandler;
+    private CellStub _poolManager;
     private CellStub _poolStub;
 
-    public CopyManager(String cellName, String args)
-        throws InterruptedException, ExecutionException
-    {
-        super(cellName, args);
-        doInit();
-    }
-
-    @Override
-    protected void init()
+    public void init()
         throws Exception
     {
-        Args args = getArgs();
         _localAddr = new InetSocketAddress(InetAddress.getLocalHost(), 0);
-
-        _moverTimeout = TimeUnit.MILLISECONDS.convert(args.getLongOption("mover_timeout"),
-                                                      TimeUnit.valueOf(args.getOpt("mover_timeout_unit")));
-        _maxTransfers = args.getIntOption("max_transfers");
-
-        _pnfs = new PnfsHandler(this, new CellPath("PnfsManager"));
-        _poolManagerStub =
-            new CellStub(this,
-                         new CellPath(args.getOpt("poolManager")),
-                         args.getLongOption("pool_manager_timeout"),
-                         TimeUnit.valueOf(args.getOpt("pool_manager_timeout_unit")));
-        _poolStub =
-            new CellStub(this, null,
-                         args.getLongOption("pool_timeout"),
-                         TimeUnit.valueOf(args.getOpt("pool_timeout_unit")));
     }
 
     public final static String hh_set_max_transfers = "<#max transfers>";
@@ -105,7 +80,8 @@ public class CopyManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, mover timeout should be greater than 0";
         }
-        _moverTimeout = timeout * 1000;
+        _moverTimeout = timeout;
+        _moverTimeoutUnit = TimeUnit.SECONDS;
         return "set mover timeout to " + timeout +  " seconds";
     }
 
@@ -128,8 +104,8 @@ public class CopyManager extends AbstractCell
         if (timeout <= 0) {
             return "Error, pool manger timeout should be greater than 0";
         }
-        _poolManagerStub.setTimeout(timeout);
-        _poolManagerStub.setTimeoutUnit(TimeUnit.SECONDS);
+        _poolManager.setTimeout(timeout);
+        _poolManager.setTimeoutUnit(TimeUnit.SECONDS);
         return "set pool manager timeout to "+ timeout +  " seconds";
     }
 
@@ -190,8 +166,7 @@ public class CopyManager extends AbstractCell
     {
         pw.println("    CopyManager");
         pw.println("---------------------------------");
-        pw.printf("Name   : %s\n",
-                  getCellName());
+        pw.printf("Name   : %s\n", getCellName());
         pw.printf("number of active transfers : %d\n",
                   _numTransfers);
         pw.printf("number of queuedrequests : %d\n",
@@ -199,13 +174,13 @@ public class CopyManager extends AbstractCell
         pw.printf("max number of active transfers  : %d\n",
                   getMaxTransfers());
         pw.printf("PoolManager  : %s\n",
-                  _poolManagerStub.getDestinationPath());
+                  _poolManager.getDestinationPath());
         pw.printf("PoolManager timeout : %d %s\n",
-                  _poolManagerStub.getTimeout(), _poolManagerStub.getTimeoutUnit());
+                  _poolManager.getTimeout(), _poolManager.getTimeoutUnit());
         pw.printf("Pool timeout  : %d %s\n",
                   _poolStub.getTimeout(), _poolStub.getTimeoutUnit());
         pw.printf("Mover timeout  : %d seconds",
-                  _moverTimeout / 1000);
+                  _moverTimeoutUnit.toSeconds(_moverTimeout));
     }
 
     public void messageArrived(DoorTransferFinishedMessage message)
@@ -387,11 +362,11 @@ public class CopyManager extends AbstractCell
             throws CacheException, InterruptedException
         {
             synchronized (this) {
-                _target = new RedirectedTransfer<>(_pnfs, subject, dstPnfsFilePath);
-                _source = new Transfer(_pnfs, subject, srcPnfsFilePath);
+                _target = new RedirectedTransfer<>(_pnfsHandler, subject, dstPnfsFilePath);
+                _source = new Transfer(_pnfsHandler, subject, srcPnfsFilePath);
             }
 
-            _source.setPoolManagerStub(_poolManagerStub);
+            _source.setPoolManagerStub(_poolManager);
             _source.setPoolStub(_poolStub);
             _source.setDomainName(getCellDomainName());
             _source.setCellName(getCellName());
@@ -399,7 +374,7 @@ public class CopyManager extends AbstractCell
             // _source.setBillingStub();
             // _source.setCheckStagePermission();
 
-            _target.setPoolManagerStub(_poolManagerStub);
+            _target.setPoolManagerStub(_poolManager);
             _target.setPoolStub(_poolStub);
             _target.setDomainName(getCellDomainName());
             _target.setCellName(getCellName());
@@ -410,23 +385,25 @@ public class CopyManager extends AbstractCell
             boolean success = false;
             _activeTransfers.put(_target.getId(), this);
             _activeTransfers.put(_source.getId(), this);
+
+            long timeout = _moverTimeoutUnit.toMillis(_moverTimeout);
             try {
                 _source.readNameSpaceEntry();
                 _target.createNameSpaceEntry();
 
                 _target.setProtocolInfo(createTargetProtocolInfo(_target));
                 _target.setLength(_source.getLength());
-                _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
-                _target.waitForRedirect(_moverTimeout);
+                _target.selectPoolAndStartMover("pp", new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
+                _target.waitForRedirect(timeout);
 
                 _source.setProtocolInfo(createSourceProtocolInfo(_target.getRedirect(), _target.getId()));
-                _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManagerStub.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
+                _source.selectPoolAndStartMover("p2p", new TransferRetryPolicy(1, 0, _poolManager.getTimeoutInMillis(), _poolStub.getTimeoutInMillis()));
 
-                if (!_source.waitForMover(_moverTimeout)) {
+                if (!_source.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
                 }
 
-                if (!_target.waitForMover(_moverTimeout)) {
+                if (!_target.waitForMover(timeout)) {
                     throw new TimeoutCacheException("copy: wait for DoorTransferFinishedMessage expired");
                 }
                 _log.info("transfer finished successfully");
@@ -532,5 +509,25 @@ public class CopyManager extends AbstractCell
             }
         }
         return null;
+    }
+
+    public void setPoolManager(CellStub poolManager) {
+        _poolManager = poolManager;
+    }
+
+    public void setPnfsHandler(PnfsHandler pnfsHandler) {
+        _pnfsHandler = pnfsHandler;
+    }
+
+    public void setPool(CellStub pool) {
+        _poolStub = pool;
+    }
+
+    public void setMoverTimeout(long moverTimeout) {
+        _moverTimeout = moverTimeout;
+    }
+
+    public void setMoverTimeoutUnit(TimeUnit moverTimeoutUnit) {
+        _moverTimeoutUnit = moverTimeoutUnit;
     }
 }

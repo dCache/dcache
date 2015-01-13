@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/util
+                           http://www.springframework.org/schema/util/spring-util.xsd">
+
+  <context:property-placeholder/>
+
+  <bean id="poolmanager" class="org.dcache.cells.CellStub">
+    <property name="destination" value="${transfermanagers.service.poolmanager}"/>
+    <property name="timeout" value="${transfermanagers.service.poolmanager.timeout}"/>
+    <property name="timeoutUnit" value="${transfermanagers.service.poolmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pnfsmanager" class="org.dcache.cells.CellStub">
+    <property name="destination" value="${transfermanagers.service.pnfsmanager}"/>
+    <property name="timeout" value="${transfermanagers.service.pnfsmanager.timeout}"/>
+    <property name="timeoutUnit" value="${transfermanagers.service.pnfsmanager.timeout.unit}"/>
+  </bean>
+
+  <bean id="pool" class="org.dcache.cells.CellStub">
+    <property name="timeout" value="${transfermanagers.service.pool.timeout}"/>
+    <property name="timeoutUnit" value="${transfermanagers.service.pool.timeout.unit}"/>
+  </bean>
+
+  <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
+        init-method="init" destroy-method="cleanUp">
+    <property name="poolManager" ref="poolmanager"/>
+    <property name="pnfsManager" ref="pnfsmanager"/>
+    <property name="pool" ref="pool"/>
+    <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
+    <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
+    <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
+    <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
+    <property name="jdbcUrl" value="${transfermanagers.db.url}"/>
+    <property name="user" value="${transfermanagers.db.user}"/>
+    <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
+    <property name="dbLogging" value="${transfermanagers.enable.log-to-database}"/>
+    <property name="poolProxy" value="${transfermanagers.service.poolmanager}"/>
+    <property name="maxNumberOfDeleteRetries" value="1"/>
+    <property name="overwrite" value="false"/>
+  </bean>
+</beans>
