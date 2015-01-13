@@ -28,6 +28,11 @@
 /plugins/**/*.iml
 /.idea/
 
+## Once again, the above expressions are not working (SL 6).
+## the following are sufficient, as with the Eclipse
+## exclusions.
+.idea/
+*.iml
 
 ## Ignore Mac generated files, wherever they are
 .DS_Store
