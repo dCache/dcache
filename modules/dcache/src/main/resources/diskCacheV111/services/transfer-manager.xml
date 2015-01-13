@@ -30,21 +30,63 @@
     <property name="timeoutUnit" value="${transfermanagers.service.pool.timeout.unit}"/>
   </bean>
 
-  <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
-        init-method="init" destroy-method="cleanUp">
-    <property name="poolManager" ref="poolmanager"/>
-    <property name="pnfsManager" ref="pnfsmanager"/>
-    <property name="pool" ref="pool"/>
-    <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
-    <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
-    <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
-    <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
-    <property name="jdbcUrl" value="${transfermanagers.db.url}"/>
-    <property name="user" value="${transfermanagers.db.user}"/>
-    <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
-    <property name="dbLogging" value="${transfermanagers.enable.log-to-database}"/>
-    <property name="poolProxy" value="${transfermanagers.service.poolmanager}"/>
-    <property name="maxNumberOfDeleteRetries" value="1"/>
-    <property name="overwrite" value="false"/>
-  </bean>
+  <beans profile="db.enabled-false">
+    <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
+            destroy-method="cleanUp">
+        <property name="poolManager" ref="poolmanager"/>
+        <property name="pnfsManager" ref="pnfsmanager"/>
+        <property name="pool" ref="pool"/>
+        <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
+        <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
+        <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
+        <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
+        <property name="poolProxy" value="${transfermanagers.service.poolmanager}"/>
+        <property name="maxNumberOfDeleteRetries" value="1"/>
+        <property name="overwrite" value="false"/>
+    </bean>
+  </beans>
+
+  <beans profile="db.enabled-true">
+     <bean id="hikariDataSource" class="com.zaxxer.hikari.HikariDataSource">
+        <constructor-arg>
+            <bean class="com.zaxxer.hikari.HikariConfig">
+                <property name="jdbcUrl" value="${transfermanagers.db.url}"/>
+                <property name="username" value="${transfermanagers.db.url}"/>
+                <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource"
+            destroy-method="close">
+        <constructor-arg value="${transfermanagers.db.url}"/>
+        <constructor-arg value="TransferManager"/>
+        <constructor-arg ref="hikariDataSource"/>
+    </bean>
+
+    <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"
+            destroy-method="close">
+        <constructor-arg>
+            <map>
+                <entry key="datanucleus.PersistenceUnitName" value="TransferManager"/>
+            </map>
+        </constructor-arg>
+        <property name="connectionFactory" ref="dataSource"/>
+    </bean>
+
+    <bean id="transferManager" class="diskCacheV111.services.RemoteTransferManager"
+            destroy-method="cleanUp">
+        <property name="poolManager" ref="poolmanager"/>
+        <property name="pnfsManager" ref="pnfsmanager"/>
+        <property name="pool" ref="pool"/>
+        <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
+        <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
+        <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
+        <property name="ioQueueName" value="${transfermanagers.mover.queue}"/>
+        <property name="persistenceManagerFactory" ref="pmf"/>
+        <property name="poolProxy" value="${transfermanagers.service.poolmanager}"/>
+        <property name="maxNumberOfDeleteRetries" value="1"/>
+        <property name="overwrite" value="false"/>
+    </bean>
+ </beans>
 </beans>
