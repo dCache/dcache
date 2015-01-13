@@ -140,7 +140,6 @@
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
     <description>Repository user interface</description>
     <property name="repository" ref="rep"/>
-    <property name="account" ref="account"/>
   </bean>
 
   <bean id="scanner" class="org.dcache.pool.classic.ChecksumScanner">

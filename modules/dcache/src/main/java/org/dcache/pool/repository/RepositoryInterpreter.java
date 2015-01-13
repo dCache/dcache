@@ -4,12 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.DelayedReply;
@@ -24,23 +25,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 public class RepositoryInterpreter
     implements CellCommandListener
 {
-    private final static Logger _log =
-        LoggerFactory.getLogger(RepositoryInterpreter.class);
-    private Repository _repository;
-    private Account _account;
+    private static final Logger _log =
+            LoggerFactory.getLogger(RepositoryInterpreter.class);
 
-    public RepositoryInterpreter()
-    {
-    }
+    private Repository _repository;
+
+    private StatisticsListener _statiStatisticsListener = new StatisticsListener();
 
     public void setRepository(Repository repository)
     {
         _repository = repository;
-    }
-
-    public void setAccount(Account account)
-    {
-        _account = account;
+        _repository.addListener(_statiStatisticsListener);
     }
 
     public static final String hh_rep_set_sticky =
@@ -165,63 +160,15 @@ public class RepositoryInterpreter
                     StringBuilder sb = new StringBuilder();
                     String stat = args.getOpt("s");
                     if (stat != null) {
-                        long dev = 1;
-                        dev = (stat.contains("k")) ||
-                            (stat.contains("K")) ? 1024L : dev;
-                        dev = (stat.contains("m")) ||
-                            (stat.contains("M")) ? (1024L*1024L) : dev;
-                        dev = (stat.contains("g")) ||
-                            (stat.contains("G")) ? (1024L*1024L*1024L) : dev;
-                        dev = (stat.contains("t")) ||
-                            (stat.contains("T")) ? (1024L*1024L*1024L*1024L) : dev;
-                        Map<String,long[]> map = new HashMap<>();
-                        long removable = 0L;
-                        for (PnfsId id: _repository) {
-                            try {
-                                CacheEntry entry = _repository.getEntry(id);
-                                FileAttributes fileAttributes = entry.getFileAttributes();
-                                if (!fileAttributes.isDefined(FileAttribute.STORAGEINFO)) {
-                                    continue;
-                                }
-                                String sc = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm();
+                        Map<String,long[]> map = _statiStatisticsListener.toMap();
 
-                                long[] counter = map.get(sc);
-                                if (counter == null) {
-                                    map.put(sc, counter = new long[8]);
-                                }
-
-                                boolean sticky = entry.isSticky();
-                                boolean precious =
-                                    (entry.getState() == EntryState.PRECIOUS);
-                                long entrySize = entry.getReplicaSize();
-
-                                counter[0] += entrySize;
-                                counter[1]++;
-
-                                if (precious) {
-                                    counter[2] += entrySize;
-                                    counter[3]++;
-                                }
-                                if (sticky) {
-                                    counter[4] += entrySize;
-                                    counter[5]++;
-                                }
-                                if (!precious && !sticky) {
-                                    counter[6] += entrySize;
-                                    removable  += entrySize;
-                                    counter[7]++;
-                                }
-                            } catch (FileNotInCacheException e) {
-                                // Entry deleted - no problem
-                            }
-                        }
                         if (args.hasOption("sum")) {
                             long[] counter = new long[10];
                             map.put("total", counter);
                             SpaceRecord record = _repository.getSpaceRecord();
                             counter[0] = record.getTotalSpace();
                             counter[1] = record.getFreeSpace();
-                            counter[2] = removable;
+                            counter[2] = _statiStatisticsListener.getOtherBytes();
                         }
 
                         Iterator<String> e2 = map.keySet().iterator();
@@ -236,6 +183,16 @@ public class RepositoryInterpreter
                             }
                             return result;
                         }
+
+                        long dev = 1L;
+                        dev = (stat.contains("k")) ||
+                              (stat.contains("K")) ? 1024L : dev;
+                        dev = (stat.contains("m")) ||
+                              (stat.contains("M")) ? (1024L*1024L) : dev;
+                        dev = (stat.contains("g")) ||
+                              (stat.contains("G")) ? (1024L*1024L*1024L) : dev;
+                        dev = (stat.contains("t")) ||
+                              (stat.contains("T")) ? (1024L*1024L*1024L*1024L) : dev;
 
                         while (e2.hasNext()) {
                             String sc = e2.next();
@@ -384,5 +341,135 @@ public class RepositoryInterpreter
         PnfsId pnfsId  = new PnfsId(args.argv(0));
         _repository.setState(pnfsId, EntryState.BROKEN);
         return "";
+    }
+
+    private static class Statistics
+    {
+        long bytes;
+        int entries;
+
+        long preciousBytes;
+        int preciousEntries;
+
+        long stickyBytes;
+        int stickyEntries;
+
+        long otherBytes;
+        int otherEntries;
+
+        long[] toArray()
+        {
+            return new long[] { bytes, entries, preciousBytes, preciousEntries, stickyBytes, stickyEntries, otherBytes, otherEntries };
+        }
+    }
+
+    private static class StatisticsListener implements StateChangeListener
+    {
+        private final Map<String, Statistics> statistics = new HashMap<>();
+
+        @Override
+        public void stateChanged(StateChangeEvent event)
+        {
+            updateStatistics(event);
+        }
+
+        @Override
+        public void accessTimeChanged(EntryChangeEvent event)
+        {
+        }
+
+        @Override
+        public void stickyChanged(StickyChangeEvent event)
+        {
+            updateStatistics(event);
+        }
+
+        private boolean isPrecious(CacheEntry entry)
+        {
+            return entry.getState() == EntryState.PRECIOUS;
+        }
+
+        private boolean isSticky(CacheEntry entry)
+        {
+            return entry.isSticky();
+        }
+
+        private boolean isOther(CacheEntry entry)
+        {
+            return !isPrecious(entry) && !isSticky(entry);
+        }
+
+        private Statistics getStatistics(FileAttributes fileAttributes)
+        {
+            String store = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm();
+            return statistics.computeIfAbsent(store, s -> new Statistics());
+        }
+
+        private void removeStatistics(FileAttributes fileAttributes)
+        {
+            String store = fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm();
+            statistics.remove(store);
+        }
+
+        private synchronized void updateStatistics(EntryChangeEvent event)
+        {
+            CacheEntry oldEntry = event.getOldEntry();
+            if (oldEntry.getState() == EntryState.CACHED || oldEntry.getState() == EntryState.PRECIOUS) {
+                Statistics stats = getStatistics(oldEntry.getFileAttributes());
+                stats.bytes -= oldEntry.getReplicaSize();
+                stats.entries--;
+                if (isPrecious(oldEntry)) {
+                    stats.preciousBytes -= oldEntry.getReplicaSize();
+                    stats.preciousEntries--;
+                }
+                if (isSticky(oldEntry)) {
+                    stats.stickyBytes -= oldEntry.getReplicaSize();
+                    stats.stickyEntries--;
+                }
+                if (isOther(oldEntry)) {
+                    stats.otherBytes -= oldEntry.getReplicaSize();
+                    stats.otherEntries--;
+                }
+                if (stats.entries == 0) {
+                    removeStatistics(oldEntry.getFileAttributes());
+                }
+            }
+            CacheEntry newEntry = event.getNewEntry();
+            if (newEntry.getState() == EntryState.CACHED || newEntry.getState() == EntryState.PRECIOUS) {
+                Statistics stats = getStatistics(newEntry.getFileAttributes());
+                stats.bytes += newEntry.getReplicaSize();
+                stats.entries++;
+                if (isPrecious(newEntry)) {
+                    stats.preciousBytes += newEntry.getReplicaSize();
+                    stats.preciousEntries++;
+                }
+                if (isSticky(newEntry)) {
+                    stats.stickyBytes += newEntry.getReplicaSize();
+                    stats.stickyEntries++;
+                }
+                if (isOther(newEntry)) {
+                    stats.otherBytes += newEntry.getReplicaSize();
+                    stats.otherEntries++;
+                }
+            }
+        }
+
+        public synchronized Map<String,long[]> toMap()
+        {
+            Map<String,long[]> map = new HashMap<>();
+            for (Map.Entry<String, Statistics> entry : statistics.entrySet()) {
+                map.put(entry.getKey(), entry.getValue().toArray());
+            }
+            return map;
+        }
+
+        public synchronized long getOtherBytes()
+        {
+            long sum = 0;
+            for (Statistics stats : statistics.values()) {
+                sum += stats.otherBytes;
+            }
+            return sum;
+        }
     }
 }
