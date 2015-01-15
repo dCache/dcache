@@ -565,6 +565,10 @@ public abstract class TransferManager extends AbstractCellComponent
         return _poolProxy;
     }
 
+    public void setBilling(CellStub billingStub) {
+        _billingStub = billingStub;
+    }
+
     public void setPoolManager(CellStub poolManager) {
         _poolManager = poolManager;
     }
