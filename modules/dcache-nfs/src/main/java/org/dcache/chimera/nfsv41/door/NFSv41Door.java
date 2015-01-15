@@ -477,21 +477,10 @@ public class NFSv41Door extends AbstractCellComponent implements
                     transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
 
                     _log.debug("mover ready: pool={} moverid={}", transfer.getPool(), transfer.getMoverId());
-
-                    /*
-                     * FIXME;
-                     *
-                     * usually RPC request will timeout in 30s.
-                     * We have to handle this cases and return LAYOUTTRYLATER
-                     * or GRACE.
-                     *
-                     */
-                    PoolDS ds = transfer.waitForRedirect(NFS_REPLY_TIMEOUT);
-                    deviceid = ds.getDeviceId();
-                } else {
-                    PoolDS ds = transfer.waitForRedirect(NFS_RETRY_PERIOD);
-                    deviceid = ds.getDeviceId();
                 }
+
+                PoolDS ds = transfer.waitForRedirect(NFS_REPLY_TIMEOUT);
+                deviceid = ds.getDeviceId();
             }
 
             nfs_fh4 fh = new nfs_fh4(nfsInode.toNfsHandle());
