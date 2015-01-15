@@ -1,0 +1,38 @@
+##  Ignore maven-generated directories and their contents.
+/modules/*/target/
+/packages/*/target/
+/plugins/*/target/
+
+## Ignore Eclipse-generated files and directories
+## The globbed version does not work on Mac OS X.9.
+## The expression of the file or directory name
+## should be sufficient to indicate it should be
+## ignored whatever its parent path.
+
+.project
+.classpath
+.settings/
+
+## Ignore IntelliJ-generated files and directories
+##
+##     There is a *.iml file wherever there is a pom.xml file.  The .idea
+##     directory is in the root of the aggregating project.
+##
+## See also:
+##
+##     http://devnet.jetbrains.com/docs/DOC-1186
+##
+/*.iml
+/modules/**/*.iml
+/packages/**/*.iml
+/plugins/**/*.iml
+/.idea/
+
+## Once again, the above expressions are not working (SL 6).
+## the following are sufficient, as with the Eclipse
+## exclusions.
+.idea/
+*.iml
+
+## Ignore Mac generated files, wherever they are
+.DS_Store
