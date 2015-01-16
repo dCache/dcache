@@ -1629,8 +1629,11 @@ class FsSqlDriver {
                 while (rs.next()) {
                     try (InputStream in = rs.getBinaryStream("ivalue")) {
                         byte[] data = new byte[Ints.saturatedCast(rs.getLong("isize"))];
-                        ByteStreams.readFully(in, data);
-                        tags.put(rs.getString("itagname"), data);
+                        // we get null if filed id NULL, e.g not set
+                        if (in != null) {
+                            ByteStreams.readFully(in, data);
+                            tags.put(rs.getString("itagname"), data);
+                        }
                     }
                 }
             }
