@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.util.Comparator;
-import java.util.List;
 
 import dmg.cells.nucleus.UOID;
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -22,7 +20,6 @@ import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.util.NetworkUtils;
 
-import static java.util.stream.Collectors.toList;
 
 /**
  * Parse the reply messages from sending the LoginBroker CellMessages with "ls -binary".
@@ -102,15 +99,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		update.appendUpdate( pathToDoor.newChild( "update-time"),
 					new IntegerStateValue( info.getUpdateTime(), lifetime));
 
-		StatePath pathToInterfaces = pathToDoor.newChild("interfaces");
-
-		List<InetAddress> interfaceNames =
-				info.getAddresses().stream()
-						.sorted(Comparator.comparing(NetworkUtils.InetAddressScope::of).reversed())
-						.collect(toList());
-		for (int i = 0; i < interfaceNames.size(); i++) {
-			addInterfaceInfo(update, pathToInterfaces, interfaceNames.get(i), i + 1, lifetime);
-		}
+                info.getAddresses().stream().forEach((i) ->
+                        {addInterfaceInfo(update, pathToDoor.newChild("interfaces"),
+                                i, lifetime);});
 	}
 
 
@@ -150,7 +141,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 * @param order the order in which the interfaces should be considered: 1 is the lowest number.
 	 * @param lifetime how long the created metrics should last.
 	 */
-	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, InetAddress address, int order, long lifetime) {
+	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, InetAddress address, long lifetime) {
 
 		StatePath pathToInterfaceBranch = parentPath.newChild(address.getHostAddress());
 
@@ -159,8 +150,6 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
 		update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
 							new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
-
-		update.appendUpdate( pathToInterfaceBranch.newChild( "order"), new IntegerStateValue( order, lifetime));
 		update.appendUpdate( pathToInterfaceBranch.newChild( "scope"), new StringStateValue(NetworkUtils.InetAddressScope.of(address).toString().toLowerCase()));
 	}
 }

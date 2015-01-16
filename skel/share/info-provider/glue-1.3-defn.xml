@@ -52,7 +52,7 @@
               |    PUBLISH DOORS
               |
               |    We publish one GlueSEAccessProtocol for each
-              |    door
+              |    door + interface-with-global-scope combination.
               |
               |    GlueSE
               |     |
@@ -60,26 +60,26 @@
               |     :
               +-->
           <object rdn="GlueSEAccessProtocolLocalID"
-                  select="/d:dCache/d:doors/d:door"
+                  select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global']"
                   classes="GlueSETop GlueSEAccessProtocol GlueKey GlueSchemaVersion">
             <!-- Never publish SRM here -->
             <suppress test="srm">
-              <lookup path="d:protocol/d:metric[@name='family']"/>
+              <lookup path="../../d:protocol/d:metric[@name='family']"/>
             </suppress>
 
             <!-- Don't publish any dcap doors -->
             <suppress test="dcap">
-              <lookup path="d:protocol/d:metric[@name='family']"/>
+              <lookup path="../../d:protocol/d:metric[@name='family']"/>
             </suppress>
 
             <!-- Don't publish any xrootd doors -->
             <suppress test="Xrootd">
-              <lookup path="d:protocol/d:metric[@name='family']"/>
+              <lookup path="../../d:protocol/d:metric[@name='family']"/>
             </suppress>
 
             <!-- Don't publish any nfs doors -->
             <suppress test="file">
-              <lookup path="d:protocol/d:metric[@name='family']"/>
+              <lookup path="../../d:protocol/d:metric[@name='family']"/>
             </suppress>
 
             <!-- Uncomment the next section to suppress publishing gsidcap -->
@@ -107,14 +107,8 @@
               |     :
               +-->
           <object rdn="GlueSEControlProtocolLocalID"
-                  select="/d:dCache/d:doors/d:door"
-                  select-mode="default-suppress"
+                  select="/d:dCache/d:doors/d:door[d:protocol/d:metric[@name='family']='srm']/d:interfaces/d:interface[d:metric[@name='scope']='global']"
                   classes="GlueSETop GlueSEControlProtocol GlueKey GlueSchemaVersion">
-            <!-- Only publish the SRM door here -->
-            <allow test="srm">
-              <lookup path="d:protocol/d:metric[@name='family']"/>
-            </allow>
-
             <attr name="GlueChunkKey">
               <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
             </attr>
@@ -933,14 +927,8 @@
             |
             +-->
         <object rdn="GlueServiceUniqueID"
-                select="/d:dCache/d:doors/d:door"
-                select-mode="default-suppress"
+		select="/d:dCache/d:doors/d:door[d:protocol/d:metric[@name='family']='srm']/d:interfaces/d:interface[d:metric[@name='scope']='global']"
                 classes="GlueTop GlueKey GlueSchemaVersion GlueService">
-
-          <!-- Publish only SRM door here -->
-          <allow test="srm">
-            <lookup path="d:protocol/d:metric[@name='family']"/>
-          </allow>
 
 
           <!-- The GlueService's UniqueID MUST be the URI of the end-point.
@@ -978,8 +966,8 @@
           <attr name="GlueServiceStartTime">
             <lookup default="1970-01-01T00:00:00Z"
                     child="path">/d:dCache/d:domains/d:domain[@name='<lookup
-                    path="d:metric[@name='domain']"/>']/d:cells/d:cell[@name='<lookup
-                    path="d:metric[@name='cell']"/>']/d:created/d:metric[@name='ISO-8601']</lookup>
+                    path="../../d:metric[@name='domain']"/>']/d:cells/d:cell[@name='<lookup
+                    path="../../d:metric[@name='cell']"/>']/d:created/d:metric[@name='ISO-8601']</lookup>
           </attr>
 
           <!-- Our list of supported VOs -->
@@ -1133,27 +1121,28 @@
         +-->
     <class name="GlueSEAccessProtocol">
 
-      <attr name="GlueSEAccessProtocolLocalID"><lookup path="@name"/></attr>
+
+      <attr name="GlueSEAccessProtocolLocalID"><lookup path="d:metric[@name='FQDN']"/>:<lookup
+          path="../../d:metric[@name='port']"/></attr>
 
       <attr name="GlueSEAccessProtocolType">
         <map name="door-type-to-access-proto-type">
-            <lookup path="d:protocol/d:metric[@name='family']"/>
+            <lookup path="../../d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
-      <!-- Publish the URI.  The interfaces are ordered (with the order
-           metric) indicating some preference. Order 1 will always be
-           have a public-accessible FQDN, if any interface does -->
+      <!-- Publish the URI.  We publish the FQDN of the first
+           interface with 'global' scope -->
       <attr name="GlueSEAccessProtocolEndpoint">
-        <lookup path="d:protocol/d:metric[@name='family']"/>://<lookup
-            path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
-            path="d:metric[@name='port']"/>
+        <lookup path="../../d:protocol/d:metric[@name='family']"/>://<lookup
+            path="d:metric[@name='FQDN']"/>:<lookup
+            path="../../d:metric[@name='port']"/>
       </attr>
 
       <!-- Hardcode value, based on protocol family -->
       <attr name="GlueSEAccessProtocolMaxStreams">
         <map name="door-family-to-max-streams">
-          <lookup path="d:protocol/d:metric[@name='family']"/>
+          <lookup path="../../d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
@@ -1163,13 +1152,13 @@
       <!-- Hardcoded value, based on protocol family -->
       <attr name="GlueSEAccessProtocolVersion">
         <map name="door-family-to-version">
-          <lookup path="d:protocol/d:metric[@name='family']"/>
+          <lookup path="../../d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
       <attr not-empty="1" name="GlueSEAccessProtocolSupportedSecurity">
         <map name="door-family-to-GSI">
-          <lookup path="d:protocol/d:metric[@name='family']"/>
+          <lookup path="../../d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
     </class>
@@ -1181,12 +1170,12 @@
         +-->
     <class name="GlueSEControlProtocol">
       <attr name="GlueSEControlProtocolLocalID">
-        <lookup path="@name"/>
+        <lookup path="../../@name"/>
       </attr>
 
       <attr name="GlueSEControlProtocolType">
         <map name="door-family-to-ctrl-proto-type">
-          <lookup path="d:protocol/d:metric[@name='family']"/>
+          <lookup path="../../d:protocol/d:metric[@name='family']"/>
         </map>
       </attr>
 
@@ -1196,7 +1185,7 @@
            MUST be the SRM's FQDN.  We use this here to support
            aliases  -->
       <attr name="GlueSEControlProtocolEndpoint">httpg://&info-provider.se-unique-id;:<lookup
-          path="d:metric[@name='port']"/>/srm/managerv2</attr>
+          path="../../d:metric[@name='port']"/>/srm/managerv2</attr>
 
       <!-- For now we hard-code this, which is wrong -->
       <attr name="GlueSEControlProtocolVersion">2.2.0</attr>

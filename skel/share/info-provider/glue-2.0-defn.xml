@@ -414,6 +414,9 @@
               |
               |  These objects represent mechanisms that allow interaction
               |  with the StorageService.  For dCache, these are the doors.
+	      |
+	      |  We publish a GLUE2EndpointID for each door +
+	      |  interface-with-global-scope combination.
               |
               |  GLUE2StorageService
               |   |
@@ -422,13 +425,13 @@
               |       +- GLUE2AccessPolicy
               +-->
           <object rdn="GLUE2EndpointID"
-                  select="/d:dCache/d:doors/d:door"
+                  select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global']"
                   classes="GLUE2StorageEndpoint GLUE2Endpoint">
 
             <attr name="GLUE2EndpointID">glue:&info-provider.se-unique-id;/data/ep/<lookup
-                    path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>/<lookup
-                    path="d:protocol/d:metric[@name='family']"/>/<lookup
-                    path="d:protocol/d:metric[@name='version']"/>
+                    path="d:metric[@name='FQDN']"/>/<lookup
+                    path="../../d:protocol/d:metric[@name='family']"/>/<lookup
+                    path="../../d:protocol/d:metric[@name='version']"/>
             </attr>
 
             <attr name="GLUE2EndpointServiceForeignKey">
@@ -437,21 +440,21 @@
 
             <attr name="GLUE2EndpointInterfaceName">
               <map name="door-protocol-family-to-GLUE2-InterfaceName_t">
-                <lookup path="d:protocol/d:metric[@name='family']"/>
+                <lookup path="../../d:protocol/d:metric[@name='family']"/>
               </map>
             </attr>
 
 	    <attr name="GLUE2EndpointImplementationName">dCache</attr>
 	    <attr name="GLUE2EndpointImplementationVersion">
               <map name="cell-version-to-dcache-version">
-		<lookup path="/d:dCache/d:domains/d:domain[@name=current()/d:metric[@name='domain']]/d:cells/d:cell[@name=current()/d:metric[@name='cell']]/d:version/d:metric[@name='release']"/>
+		<lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:cells/d:cell[@name=current()/../../d:metric[@name='cell']]/d:version/d:metric[@name='release']"/>
 	      </map>
 	    </attr>
 
             <choose>
               <optionally>
                 <when test="srm">
-                  <lookup path="d:protocol/d:metric[@name='family']"/>
+                  <lookup path="../../d:protocol/d:metric[@name='family']"/>
                 </when>
                 <attr name="GLUE2EndpointInterfaceVersion">2.2</attr>
                 <attr name="GLUE2EndpointCapability">data.management.storage</attr>
@@ -463,14 +466,14 @@
               <otherwise>
                 <attr name="GLUE2EndpointURL">
                   <map name="door-protocol-family-to-URL-Schema">
-                    <lookup path="d:protocol/d:metric[@name='family']"/>
+                    <lookup path="../../d:protocol/d:metric[@name='family']"/>
                   </map>://<lookup
-                          path="d:interfaces/d:interface[d:metric[@name='order']=1]/d:metric[@name='FQDN']"/>:<lookup
-                          path="d:metric[@name='port']"/>
+                          path="d:metric[@name='FQDN']"/>:<lookup
+                          path="../../d:metric[@name='port']"/>
                 </attr>
 
                 <attr name="GLUE2EndpointInterfaceVersion">
-                  <lookup path="d:protocol/d:metric[@name='version']"/>
+                  <lookup path="../../d:protocol/d:metric[@name='version']"/>
                 </attr>
 
                 <attr name="GLUE2EndpointCapability">data.transfer</attr>
@@ -483,10 +486,10 @@
             <attr name="GLUE2EndpointServingState">production</attr>
 
 	    <optionally>
-	      <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain[@name=current()/d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
+	      <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
 
 	      <attr name="GLUE2EntityOtherInfo">MiddlewareName=EMI</attr>
-	      <attr name="GLUE2EntityOtherInfo">MiddlewareVersion=<lookup path="/d:dCache/d:domains/d:domain[@name=current()/d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></attr>
+	      <attr name="GLUE2EntityOtherInfo">MiddlewareVersion=<lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></attr>
 	    </optionally>
 
 
