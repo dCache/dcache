@@ -41,6 +41,6 @@
     <property name="pnfsHandler" ref="pnfshandler"/>
     <property name="moverTimeout" value="${transfermanagers.limits.transfer-time}"/>
     <property name="moverTimeoutUnit" value="${transfermanagers.limits.transfer-time.unit}"/>
-    <property name="maxTransfers" value="${transfermanagers.limits.external-transfers}"/>
+    <property name="maxTransfers" value="${transfermanagers.limits.internal-transfers}"/>
   </bean>
 </beans>
