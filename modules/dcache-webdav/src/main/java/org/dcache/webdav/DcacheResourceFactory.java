@@ -832,11 +832,16 @@ public class DcacheResourceFactory
                         Date mtime = new Date(attr.getModificationTime());
                         UrlPathWrapper name =
                                 UrlPathWrapper.forPath(entry.getName());
-                        t.addAggr("files.{name,isDirectory,mtime,size}",
+                        /* FIXME: SIZE is defined if client specifies the
+                         * file's size before uploading.
+                         */
+                        boolean isUploading = !attr.isDefined(SIZE);
+                        t.addAggr("files.{name,isDirectory,mtime,size,isUploading}",
                                   name,
                                   attr.getFileType() == DIR,
                                   mtime,
-                                  attr.getSizeIfPresent().orNull());
+                                  attr.getSizeIfPresent().orNull(),
+                                  isUploading);
                     }
                 };
         _list.printDirectory(getSubject(), printer, path, null,

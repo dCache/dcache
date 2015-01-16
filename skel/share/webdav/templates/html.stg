@@ -47,6 +47,18 @@ file(f) ::= <<
         <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$/">$f.name.unencoded$</a>
     </td>
     <td></td>
+    <td>
+        $f.mtime$
+    </td>
+    $elseif(f.isUploading)$
+    <td class="text-muted text-center">
+        <span class="glyphicon glyphicon-file"></span>
+    </td>
+    <td class="text-muted" title="Upload not yet complete">$f.name.unencoded$</td>
+    <td></td>
+    <td class="text-muted">
+        $f.mtime$
+    </td>
     $else$
     <td class="text-muted text-center">
         <span class="glyphicon glyphicon-file"></span>
@@ -58,10 +70,10 @@ file(f) ::= <<
         </a>
     </td>
     <td>$f.size$</td>
-    $endif$
     <td>
         $f.mtime$
     </td>
+    $endif$
   </tr>
 >>
 
