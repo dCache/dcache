@@ -1,5 +1,7 @@
 package org.dcache.boot;
 
+import com.google.common.base.Strings;
+
 import java.io.PrintStream;
 
 import org.dcache.util.ConfigurationProperties;
@@ -41,7 +43,7 @@ public class ShellOracleLayoutPrinter implements LayoutPrinter {
             out.println("          ;;"); // Fall through
             for (ConfigurationProperties service: domain.getServices()) {
                 String cellName = Properties.getCellName(service);
-                if (cellName != null) {
+                if (!Strings.isNullOrEmpty(cellName)) {
                     out.append("        ").append(quoteForCase(cellName)).println(")");
                     compile(out, "          ", service, domain.properties());
                     out.println("          ;;");

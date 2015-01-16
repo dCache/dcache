@@ -1,5 +1,7 @@
 package org.dcache.boot;
 
+import com.google.common.base.Strings;
+
 import java.io.PrintStream;
 
 import org.dcache.util.ConfigurationProperties;
@@ -155,7 +157,7 @@ public class PythonOracleLayoutPrinter implements LayoutPrinter
 
             for(ConfigurationProperties service : domain.getServices()) {
                 String name = Properties.getCellName(service);
-                if(name != null) {
+                if (!Strings.isNullOrEmpty(name)) {
                     out.println("'" + markup(name) + "' : {");
                     printProperties(indent, service, domain.properties());
                     indent.println("},");
