@@ -223,17 +223,6 @@ public class ConfigurationPropertiesTests {
     }
 
     @Test
-    public void testDeprecatedForwardSynonymPropertyPut() {
-        _properties.put( DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME, "some value");
-        assertEquals(1, _log.size());
-        assertEquals(Level.WARN, _log.get(0).getLevel());
-        assertEquals("Property " + DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME +
-                     ": use \"" + SIMPLE_PROPERTY_NAME + "\" instead; support for " +
-                     DEPRECATED_PROPERTY_W_FORWARD_SYNONYM_NAME + " will be removed in the future",
-                     _log.get(0).getFormattedMessage());
-    }
-
-    @Test
     public void testDeprecatedBackSynonymDefaultPropertyPut() {
         ConfigurationProperties properties = new ConfigurationProperties(_properties);
         properties.put( DEPRECATED_PROPERTY_W_BACK_SYNONYM_NAME, "some value");
