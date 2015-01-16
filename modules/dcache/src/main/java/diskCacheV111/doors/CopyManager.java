@@ -26,7 +26,9 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
@@ -36,6 +38,7 @@ import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 
 public class CopyManager extends AbstractCellComponent
+    implements CellMessageReceiver, CellCommandListener
 {
     private final static Logger _log =
         LoggerFactory.getLogger(CopyManager.class);
