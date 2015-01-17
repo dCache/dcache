@@ -1,5 +1,6 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +14,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.Subjects;
+import org.dcache.cells.CellStub;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
+import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.NFSv4OperationFactory;
 import org.dcache.nfs.v4.OperationBIND_CONN_TO_SESSION;
 import org.dcache.nfs.v4.OperationCOMMIT;
@@ -44,6 +50,7 @@ import org.dcache.nfs.vfs.Stat.Type;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.util.PortRange;
+import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
@@ -180,7 +187,20 @@ public class NFSv4MoverHandler {
             new EDSNFSv4OperationFactory(_activeIO);
     private final NFSServerV41 _embededDS;
 
-    public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId)
+    /**
+     * A CellStub for communication with doors.
+     */
+    private final CellStub _door;
+
+    /**
+     * A time window in millis during which we accept idle movers.
+     */
+    private final static long IDLE_PERIOD = TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME * 5);
+
+    private final ScheduledExecutorService _cleanerExecutor;
+    private final long _bootVerifier;
+
+    public NFSv4MoverHandler(PortRange portRange, boolean withGss, String serverId, CellStub door, long bootVerifier)
             throws IOException , GSSException, OncRpcException {
 
         _embededDS = new NFSServerV41(_operationFactory, null, _fs, new SimpleIdMap(), null);
@@ -208,6 +228,14 @@ public class NFSv4MoverHandler {
         _rpcService = oncRpcSvcBuilder.build();
         _rpcService.setPrograms(programs);
         _rpcService.start();
+        _door = door;
+        _bootVerifier = bootVerifier;
+        _cleanerExecutor = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactoryBuilder()
+                .setNameFormat("NFS mover validationthread")
+                .build()
+        );
+        _cleanerExecutor.scheduleAtFixedRate(new MoverValidator(), IDLE_PERIOD, IDLE_PERIOD, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -285,9 +313,28 @@ public class NFSv4MoverHandler {
 
     public void shutdown() throws IOException {
         _rpcService.stop();
+        _cleanerExecutor.shutdown();
     }
 
     NFSServerV41 getNFSServer() {
         return _embededDS;
+    }
+
+    class MoverValidator implements Runnable {
+
+        @Override
+        public void run() {
+            long now = System.currentTimeMillis();
+            for(NfsMover mover: _activeIO.values()) {
+                if (!mover.hasSession() && (now - mover.getLastTransferred() > IDLE_PERIOD)) {
+                    _log.debug("Verifing inactive mover {}", mover);
+                    final org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateId = mover.getProtocolInfo().stateId();
+                    CellStub.addCallback(_door.send(mover.getPathToDoor(),
+                            new DoorValidateMoverMessage<>(-1, mover.getFileAttributes().getPnfsId(), _bootVerifier, legacyStateId)),
+                            new NfsMoverValidationCallback(mover),
+                            _cleanerExecutor);
+                }
+            }
+        }
     }
 }
