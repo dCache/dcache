@@ -41,8 +41,10 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerHandler;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.command.Argument;
@@ -69,6 +71,7 @@ import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
 import org.dcache.nfs.status.NfsIoException;
+import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -101,6 +104,7 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.utils.Bytes;
+import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
@@ -377,6 +381,24 @@ public class NFSv41Door extends AbstractCellComponent implements
                 transfer.notifyBilling(transferFinishedMessage.getReturnCode(), "");
                 _vfs.invalidateStatCache(transfer.getInode());
         }
+    }
+
+    public DoorValidateMoverMessage messageArrived(DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.getChallenge();
+        stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
+
+        boolean isValid = false;
+        try {
+            NFS4Client nfsClient = _nfs4.getStateHandler().getClientIdByStateId(stateid);
+            // will throw exception if state does not exists
+            nfsClient.state(stateid);
+            isValid = true;
+        } catch (BadStateidException e) {
+        } catch (ChimeraNFSException e) {
+            _log.warn("Unexpected NFS exception: {}", e.getMessage() );
+        }
+        message.setIsValid(isValid);
+        return message;
     }
 
     private int nextDeviceID() {

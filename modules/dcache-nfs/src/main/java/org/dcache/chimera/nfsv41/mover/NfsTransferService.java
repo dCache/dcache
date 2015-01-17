@@ -1,20 +1,17 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
-import java.util.List;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -27,7 +24,6 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.net.Inet4Address;
-import java.util.Arrays;
 
 import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -82,7 +78,8 @@ public class NfsTransferService extends AbstractCellComponent
             portRange = new PortRange(0);
         }
 
-        _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName());
+        _door = new CellStub(getCellEndpoint());
+        _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
         _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
 
         /*
@@ -96,8 +93,6 @@ public class NfsTransferService extends AbstractCellComponent
             }
         }
         _sortMultipathList = ipv4Count > 1;
-
-        _door = new CellStub(getCellEndpoint());
     }
 
     @Required
