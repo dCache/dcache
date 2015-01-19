@@ -455,18 +455,19 @@ public class RemoteTransferHandler implements CellMessageReceiver
             ListenableFuture<TransferStatusQueryMessage> future =
                     _transferManager.send(message, _performanceMarkerPeriod/2);
 
+            int state = TransferManagerHandler.UNKNOWN_ID;
+            IoJobInfo info = null;
             try {
                 TransferStatusQueryMessage reply = CellStub.getMessage(future);
-
-                if (!_finished) {
-                    sendMarker(reply.getState(),
-                            reply.getMoverInfo());
-                    checkClientConnected();
-                }
+                state = reply.getState();
+                info = reply.getMoverInfo();
             } catch (CacheException e) {
                 LOG.warn("Failed to fetch information for progress marker: {}",
                         e.getMessage());
             }
+
+            sendMarker(state, info);
+            checkClientConnected();
        }
 
 

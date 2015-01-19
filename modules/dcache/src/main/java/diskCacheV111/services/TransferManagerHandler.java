@@ -737,17 +737,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
             @Override
             public void onFailure(Throwable e)
             {
-                if (e instanceof Exception) {
-                    reply.fail(message, (Exception)e);
-                } else {
-                    // I don't think this should happen as the pool shouldn't
-                    // send an Error.
-                    reply.fail(message, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                            e.toString());
-                }
-
+                reply.fail(message, CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                        "failed to query pool: " + e.getMessage());
             }
-        }, MoreExecutors.sameThreadExecutor());
+        }, MoreExecutors.directExecutor());
 
         return reply;
     }
