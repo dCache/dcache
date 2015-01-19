@@ -457,17 +457,43 @@ public class CellNucleus implements ThreadFactory
         // _waitHash can't be used here. Otherwise
         // we will end up in a deadlock (NO LOCKS WHILE CALLING CALLBACKS)
         //
-        for (CellLock lock: expired) {
-            try {
-                CellMessage envelope = lock.getMessage();
-                EventLogger.sendEnd(envelope);
-                lock.getCallback().answerTimedOut(envelope);
-            } catch (RuntimeException e) {
-                /* Don't let a problem in the callback prevent us from
-                 * expiring all messages.
-                 */
-                Thread t = Thread.currentThread();
-                t.getUncaughtExceptionHandler().uncaughtException(t, e);
+        for (final CellLock lock: expired) {
+            try (CDC ignored = lock.getCdc().restore()) {
+                try {
+                    lock.getExecutor().execute(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            CellMessage envelope = lock.getMessage();
+                            try {
+                                lock.getCallback().answerTimedOut(envelope);
+                                EventLogger.sendEnd(envelope);
+                            } catch (RejectedExecutionException e) {
+                                /* May happen when the callback itself tries to schedule the call
+                                 * on an executor. Put the request back and let it time out.
+                                 */
+                                synchronized (_waitHash) {
+                                    _waitHash.put(envelope.getUOID(), lock);
+                                }
+                                LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                            }
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    /* Put it back and deal with it later.
+                     */
+                    synchronized (_waitHash) {
+                        _waitHash.put(lock.getMessage().getUOID(), lock);
+                    }
+                    LOGGER.warn("Failed to invoke callback: {}", e.toString());
+                } catch (RuntimeException e) {
+                    /* Don't let a problem in the callback prevent us from
+                     * expiring all messages.
+                     */
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                }
             }
         }
 
@@ -502,10 +528,10 @@ public class CellNucleus implements ThreadFactory
      * @exception SerializationException if the payload object of this
      *            message is not serializable.
      */
-    public void sendMessage(CellMessage msg,
+    public void sendMessage(final CellMessage msg,
                             boolean local,
                             boolean remote,
-                            CellMessageAnswerable callback,
+                            final CellMessageAnswerable callback,
                             Executor executor,
                             long timeout)
         throws SerializationException
@@ -516,27 +542,52 @@ public class CellNucleus implements ThreadFactory
 
         msg.setTtl(timeout);
 
-        EventLogger.sendBegin(this, msg, "callback");
-        UOID uoid = msg.getUOID();
-        boolean success = false;
-        try {
-            CellLock lock = new CellLock(msg, callback, executor, timeout);
-            synchronized (_waitHash) {
-                _waitHash.put(uoid, lock);
-            }
+        final UOID uoid = msg.getUOID();
+        final CellLock lock = new CellLock(msg, callback, executor, timeout);
 
+        EventLogger.sendBegin(this, msg, "callback");
+        synchronized (_waitHash) {
+            _waitHash.put(uoid, lock);
+        }
+        try {
             __cellGlue.sendMessage(this, msg, local, remote);
-            success = true;
-        } catch (NoRouteToCellException e) {
-            if (callback != null) {
-                callback.exceptionArrived(msg, e);
+        } catch (SerializationException e) {
+            synchronized (_waitHash) {
+                _waitHash.remove(uoid);
             }
-        } finally {
-            if (!success) {
+            EventLogger.sendEnd(msg);
+            throw e;
+        } catch (final Exception e) {
+            synchronized (_waitHash) {
+                _waitHash.remove(uoid);
+            }
+            try {
+                executor.execute(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try {
+                            callback.exceptionArrived(msg, e);
+                            EventLogger.sendEnd(msg);
+                        } catch (RejectedExecutionException e) {
+                            /* May happen when the callback itself tries to schedule the call
+                             * on an executor. Put the request back and let it time out.
+                             */
+                            synchronized (_waitHash) {
+                                _waitHash.put(uoid, lock);
+                            }
+                            LOGGER.error("Failed to invoke callback: {}", e.toString());
+                        }
+                    }
+                });
+            } catch (RejectedExecutionException e1) {
+                /* Put it back and let it time out.
+                 */
                 synchronized (_waitHash) {
-                    _waitHash.remove(uoid);
+                    _waitHash.put(uoid, lock);
                 }
-                EventLogger.sendEnd(msg);
+                LOGGER.error("Failed to invoke callback: {}", e1.toString());
             }
         }
     }
@@ -933,7 +984,8 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    public Class<?> loadClass(String className) throws ClassNotFoundException {
+    public Class<?> loadClass(String className) throws ClassNotFoundException
+    {
         return __cellGlue.loadClass(className);
     }
 
@@ -1045,13 +1097,22 @@ public class CellNucleus implements ThreadFactory
                     answer = null;
                 }
 
-                EventLogger.sendEnd(_lock.getMessage());
-                if (obj instanceof Exception) {
-                    callback.
-                            exceptionArrived(_lock.getMessage(), (Exception) obj);
-                } else {
-                    callback.
-                            answerArrived(_lock.getMessage(), answer);
+                CellMessage request = _lock.getMessage();
+                try {
+                    if (obj instanceof Exception) {
+                        callback.exceptionArrived(request, (Exception) obj);
+                    } else {
+                        callback.answerArrived(request, answer);
+                    }
+                    EventLogger.sendEnd(request);
+                } catch (RejectedExecutionException e) {
+                    /* May happen when the callback itself tries to schedule the call
+                     * on an executor. Put the request back and let it time out.
+                     */
+                    synchronized (_waitHash) {
+                        _waitHash.put(request.getUOID(), _lock);
+                    }
+                    LOGGER.error("Failed to invoke callback: {}", e.toString());
                 }
                 LOGGER.trace("addToEventQueue : callback done for : {}", _message);
             }
