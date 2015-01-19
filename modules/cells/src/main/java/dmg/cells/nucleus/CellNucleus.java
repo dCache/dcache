@@ -528,7 +528,7 @@ public class CellNucleus implements ThreadFactory
      * @exception SerializationException if the payload object of this
      *            message is not serializable.
      */
-    public void sendMessage(CellMessage msg,
+    public void sendMessage(final CellMessage msg,
                             boolean local,
                             boolean remote,
                             final CellMessageAnswerable callback,
@@ -557,7 +557,7 @@ public class CellNucleus implements ThreadFactory
             }
             EventLogger.sendEnd(msg);
             throw e;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             synchronized (_waitHash) {
                 _waitHash.remove(uoid);
             }
