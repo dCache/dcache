@@ -1,17 +1,15 @@
 package org.dcache.webadmin.view.panels.userpanel;
 
-import org.apache.wicket.RestartResponseAtInterceptPageException;
 import org.apache.wicket.Session;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 import org.dcache.webadmin.view.beans.WebAdminInterfaceSession;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.dcacheservices.DCacheServices;
-import org.dcache.webadmin.view.pages.login.LogIn;
 import org.dcache.webadmin.view.panels.basepanel.BasePanel;
+import org.dcache.webadmin.view.util.LogInLink;
 
 /**
  *
@@ -23,14 +21,10 @@ import org.dcache.webadmin.view.panels.basepanel.BasePanel;
  * @author tanja
  */
 public class UserPanel extends BasePanel {
-
     private static final long serialVersionUID = -4419358909048041100L;
 
-    public UserPanel(String id, BasePage basePage) {
+    public UserPanel(String id) {
         super(id);
-
-        final PageParameters parameters = new PageParameters();
-        parameters.set(0, basePage.getClass().getName());
 
         add(new Label("username", new PropertyModel(this, "session.userName")));
         add(new Link("logout") {
@@ -51,21 +45,14 @@ public class UserPanel extends BasePanel {
             }
         });
 
-        add(new Link("login") {
+        add(new LogInLink("login") {
 
-            private static final long serialVersionUID = -1031589310010810063L;
-
-            @Override
-            public void onClick() {
-                throw new RestartResponseAtInterceptPageException(LogIn.class,
-                                                                  parameters);
-            }
+            private static final long serialVersionUID = 6704578675572299011L;
 
             @Override
             public boolean isVisible() {
                 return !((WebAdminInterfaceSession) Session.get()).isSignedIn();
             }
         });
-
     }
 }
