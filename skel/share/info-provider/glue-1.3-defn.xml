@@ -939,7 +939,7 @@
                MUST be the SRM's FQDN.  We use this here to support
                aliases  -->
           <attr name="GlueServiceUniqueID">httpg://&info-provider.se-unique-id;:<lookup
-              path="d:metric[@name='port']"/>/srm/managerv2</attr>
+              path="../../d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- GlueServiceName is a human-readable string -->
           <attr name="GlueServiceName">SRM endpoint for &info-provider.se-unique-id;</attr>
@@ -951,7 +951,7 @@
           <!-- as above, we use the fact that the SRM FQDN must be
                the SRM FQDN to support DNS aliases -->
           <attr name="GlueServiceEndpoint">httpg://&info-provider.se-unique-id;:<lookup
-            path="d:metric[@name='port']"/>/srm/managerv2</attr>
+            path="../../d:metric[@name='port']"/>/srm/managerv2</attr>
 
           <!-- When should we publish something other than "OK" ? -->
           <attr name="GlueServiceStatus">OK</attr>
