@@ -41,7 +41,7 @@ public class BasePage extends WebPage {
         setTitle(getStringResource("title"));
         add(new Label("pageTitle", new PropertyModel<String>(this, "_title")));
         add(new HeaderPanel("headerPanel"));
-        add(new UserPanel("userPanel", this));
+        add(new UserPanel("userPanel"));
         BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
                                 this.getClass());
         add(navigation);
