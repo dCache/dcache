@@ -477,7 +477,7 @@ public class Scheduler <T extends Job>
 
     private int getTotalRequests()
     {
-        return getTotalTQueued() + getTotalInprogress() + getTotalRQueued();
+        return getTotalTQueued() + getTotalInprogress() + getTotalRQueued() + getTotalReady();
     }
 
     private int getTotalInprogress()
