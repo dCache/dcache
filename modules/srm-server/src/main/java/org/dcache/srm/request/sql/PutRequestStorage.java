@@ -48,8 +48,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
     private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
         "ID ,"+
@@ -61,17 +60,16 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
         "SCHEDULERID ,"+
         "SCHEDULERTIMESTAMP ,"+
         "NUMOFRETR ,"+
-        "MAXNUMOFRETR ,"+ //10
-        "LASTSTATETRANSITIONTIME,"+
+        "LASTSTATETRANSITIONTIME,"+ // 10
          //Database Request Storage
         "CREDENTIALID , " +
         "RETRYDELTATIME , "+
         "SHOULDUPDATERETRYDELTATIME ,"+
-        "DESCRIPTION ,"+ //15
-        "CLIENTHOST ,"+
+        "DESCRIPTION ,"+
+        "CLIENTHOST ,"+ // 15
         "STATUSCODE ,"+
         "USERID  ) " +
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -87,8 +85,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getSchedulerId(),
                                   pr.getSchedulerTimeStamp(),
                                   pr.getNumberOfRetries(),
-                                  pr.getMaxNumberOfRetries(),//10
-                                  pr.getLastStateTransitionTime(),
+                                  pr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   pr.getCredentialId(),
                                   pr.getRetryDeltaTime(),
@@ -124,10 +121,9 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getSchedulerId(),
                                   pr.getSchedulerTimeStamp(),
                                   pr.getNumberOfRetries(),
-                                  pr.getMaxNumberOfRetries(),
-                                  pr.getLastStateTransitionTime(),//10
+                                  pr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  pr.getCredentialId(),
+                                  pr.getCredentialId(), // 10
                                   pr.getRetryDeltaTime(),
                                   pr.isShould_updateretryDeltaTime()?0:1,
                                   pr.getDescription(),
@@ -218,7 +214,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
-            int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
             Long CREDENTIALID,
             int RETRYDELTATIME,
@@ -252,7 +247,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
-                MAXNUMOFRETR,
                 LASTSTATETRANSITIONTIME,
                 jobHistoryArray,
                 CREDENTIALID,

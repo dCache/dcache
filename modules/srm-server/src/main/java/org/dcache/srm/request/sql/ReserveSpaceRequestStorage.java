@@ -35,8 +35,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
         private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
     "ID ,"+
@@ -48,14 +47,13 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     "SCHEDULERID ,"+
     "SCHEDULERTIMESTAMP ,"+
     "NUMOFRETR ,"+
-    "MAXNUMOFRETR ,"+ //10
-    "LASTSTATETRANSITIONTIME,"+
+    "LASTSTATETRANSITIONTIME,"+ // 10
      //Database Request Storage
     "CREDENTIALID , " +
     "RETRYDELTATIME , "+
     "SHOULDUPDATERETRYDELTATIME ,"+
-    "DESCRIPTION ,"+ //15
-    "CLIENTHOST ,"+
+    "DESCRIPTION ,"+
+    "CLIENTHOST ,"+ // 15
     "STATUSCODE ,"+
     "USERID ,"+
     // Reserve Space Request
@@ -66,7 +64,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     "ACCESSLATENCY ) " +
     "VALUES (?,?,?,?,?,?,?,?,?,?,?," +//Job
                 "?,?,?,?,?,?,?," +//Request
-                "?,?,?,?,?)";
+                "?,?,?,?)";
 
 
     @Override
@@ -91,8 +89,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                   rsr.getSchedulerId(),
                                   rsr.getSchedulerTimeStamp(),
                                   rsr.getNumberOfRetries(),
-                                  rsr.getMaxNumberOfRetries(),//10
-                                  rsr.getLastStateTransitionTime(),
+                                  rsr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   rsr.getCredentialId(),
                                   rsr.getRetryDeltaTime(),
@@ -146,10 +143,9 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                   rsr.getSchedulerId(),
                                   rsr.getSchedulerTimeStamp(),
                                   rsr.getNumberOfRetries(),
-                                  rsr.getMaxNumberOfRetries(),
-                                  rsr.getLastStateTransitionTime(),//10
+                                  rsr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  rsr.getCredentialId(),
+                                  rsr.getCredentialId(), // 10
                                   rsr.getRetryDeltaTime(),
                                   rsr.isShould_updateretryDeltaTime()?0:1,
                                   rsr.getDescription(),
@@ -202,7 +198,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
-    int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
     Long CREDENTIALID,
     int RETRYDELTATIME,
@@ -232,7 +227,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,
-            MAXNUMOFRETR,
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
                 CREDENTIALID,

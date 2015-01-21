@@ -65,13 +65,11 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         public LsFileRequest(long requestId,
                              Long  requestCredentalId,
                              URI surl,
-                             long lifetime,
-                             int maxNumberOfRetries)
+                             long lifetime)
         {
                 super(requestId,
                       requestCredentalId,
-                      lifetime,
-                      maxNumberOfRetries);
+                      lifetime);
                 this.surl = surl;
         }
 
@@ -85,7 +83,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 String scheduelerId,
                 long schedulerTimeStamp,
                 int numberOfRetries,
-                int maxNumberOfRetries,
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
                 long requestId,
@@ -102,7 +99,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                       scheduelerId,
                       schedulerTimeStamp,
                       numberOfRetries,
-                      maxNumberOfRetries,
                       lastStateTransitionTime,
                       jobHistoryArray,
                       requestId,

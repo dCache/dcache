@@ -106,7 +106,6 @@ public class SrmBringOnline
                         requestTime,
                         desiredLifetimeInSeconds,
                         configuration.getGetRetryTimeout(),
-                        configuration.getGetMaxNumOfRetries(),
                         request.getUserRequestDescription(),
                         clientHost);
         try (JDC ignored = r.applyJdc()) {

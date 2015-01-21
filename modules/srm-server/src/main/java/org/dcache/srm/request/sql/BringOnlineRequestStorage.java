@@ -51,8 +51,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
             private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
     "ID ,"+
@@ -64,17 +63,16 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     "SCHEDULERID ,"+
     "SCHEDULERTIMESTAMP ,"+
     "NUMOFRETR ,"+
-    "MAXNUMOFRETR ,"+ //10
-    "LASTSTATETRANSITIONTIME,"+
+    "LASTSTATETRANSITIONTIME,"+ // 10
      //Database Request Storage
     "CREDENTIALID , " +
     "RETRYDELTATIME , "+
     "SHOULDUPDATERETRYDELTATIME ,"+
-    "DESCRIPTION ,"+ //15
-    "CLIENTHOST ,"+
+    "DESCRIPTION ,"+
+    "CLIENTHOST ,"+ // 15
     "STATUSCODE ,"+
     "USERID  ) " +
-    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     @Override
@@ -91,8 +89,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                                       bor.getSchedulerId(),
                                                       bor.getSchedulerTimeStamp(),
                                                       bor.getNumberOfRetries(),
-                                                      bor.getMaxNumberOfRetries(),//10
-                                                      bor.getLastStateTransitionTime(),
+                                                      bor.getLastStateTransitionTime(), // 10
                                                       //Database Request Storage
                                                       bor.getCredentialId(),
                                                       bor.getRetryDeltaTime(),
@@ -127,7 +124,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                   bor.getSchedulerId(),
                                   bor.getSchedulerTimeStamp(),
                                   bor.getNumberOfRetries(),
-                                  bor.getMaxNumberOfRetries(),
                                   bor.getLastStateTransitionTime(),//10
                                   //Database Request Storage
                                   bor.getCredentialId(),
@@ -188,7 +184,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
-    int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
     Long CREDENTIALID,
     int RETRYDELTATIME,
@@ -224,7 +219,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                         SCHEDULERID,
                         SCHEDULER_TIMESTAMP,
                         NUMOFRETR,
-                        MAXNUMOFRETR,
                         LASTSTATETRANSITIONTIME,
                         jobHistoryArray,
                         CREDENTIALID,

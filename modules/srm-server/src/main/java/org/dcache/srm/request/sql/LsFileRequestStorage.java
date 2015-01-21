@@ -23,7 +23,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
 
         private static final int ADDITIONAL_FIELDS = 1;
@@ -44,7 +43,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                              String SCHEDULERID,
                                              long SCHEDULER_TIMESTAMP,
                                              int NUMOFRETR,
-                                             int MAXNUMOFRETR,
                                              long LASTSTATETRANSITIONTIME,
                                              long REQUESTID,
                                              Long CREDENTIALID,
@@ -63,7 +61,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                          SCHEDULERID,
                                          SCHEDULER_TIMESTAMP,
                                          NUMOFRETR,
-                                         MAXNUMOFRETR,
                                          LASTSTATETRANSITIONTIME,
                                          jobHistoryArray,
                                          REQUESTID,
@@ -99,7 +96,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getSchedulerId(),
                                           gfr.getSchedulerTimeStamp(),
                                           gfr.getNumberOfRetries(),
-                                          gfr.getMaxNumberOfRetries(),
                                           gfr.getLastStateTransitionTime(),
                                           gfr.getRequestId(),
                                           gfr.getCredentialId(),
@@ -135,14 +131,13 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
             "SCHEDULERID ,"+
             "SCHEDULERTIMESTAMP ,"+
             "NUMOFRETR ,"+
-            "MAXNUMOFRETR ,"+ //10
             "LASTSTATETRANSITIONTIME,"+
             //DATABASE FILE REQUEST STORAGE
             "REQUESTID , " +
             "CREDENTIALID , "+
             "STATUSCODE,  "+
             "SURL )"+
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         @Override
         public PreparedStatement getCreateStatement(Connection connection,
@@ -163,7 +158,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getSchedulerId(),
                                           gfr.getSchedulerTimeStamp(),
                                           gfr.getNumberOfRetries(),
-                                          gfr.getMaxNumberOfRetries(),
                                           gfr.getLastStateTransitionTime(),
                                           gfr.getRequestId(),
                                           gfr.getCredentialId(),

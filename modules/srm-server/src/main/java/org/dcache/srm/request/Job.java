@@ -135,7 +135,6 @@ public abstract class Job  {
     protected long lifetime;
 
     protected int numberOfRetries;
-    protected int maxNumberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
     private final List<JobHistory> jobHistory = new ArrayList<>();
@@ -160,7 +159,6 @@ public abstract class Job  {
     String schedulerId,
     long schedulerTimestamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray
     ) {
@@ -175,7 +173,6 @@ public abstract class Job  {
         this.schedulerId = schedulerId;
         this.schedulerTimeStamp = schedulerTimestamp;
         this.numberOfRetries = numberOfRetries;
-        this.maxNumberOfRetries = maxNumberOfRetries;
         this.lastStateTransitionTime = lastStateTransitionTime;
         this.jdc = new JDC();
         if(jobHistoryArray != null) {
@@ -187,13 +184,11 @@ public abstract class Job  {
 
     /** Creates a new instance of Job */
 
-    public Job(long lifetime,
-              int maxNumberOfRetries) {
+    public Job(long lifetime) {
 
         id = nextId();
         creationTime = System.currentTimeMillis();
         this.lifetime = lifetime;
-        this.maxNumberOfRetries = maxNumberOfRetries;
         this.jdc = new JDC();
         jobHistory.add(new JobHistory(nextLong(), state, "Request created", lastStateTransitionTime));
     }
@@ -801,32 +796,6 @@ public abstract class Job  {
             }
         } catch (IllegalStateTransition e) {
             logger.error("Illegal state transition while expiring job: {}", e.toString());
-        } finally {
-            wunlock();
-        }
-    }
-
-    /** Getter for property maxNumberOfRetries.
-     * @return Value of property maxNumberOfRetries.
-     *
-     */
-    public int getMaxNumberOfRetries() {
-        rlock();
-        try {
-            return maxNumberOfRetries;
-        } finally {
-            runlock();
-        }
-    }
-
-    /** Setter for property maxNumberOfRetries.
-     * @param maxNumberOfRetries New value of property maxNumberOfRetries.
-     *
-     */
-    public void setMaxNumberOfRetries(int maxNumberOfRetries) {
-        wlock();
-        try {
-            this.maxNumberOfRetries = maxNumberOfRetries;
         } finally {
             wunlock();
         }

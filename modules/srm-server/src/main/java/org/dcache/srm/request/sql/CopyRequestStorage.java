@@ -38,8 +38,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
         private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
     "ID ,"+
@@ -51,21 +50,20 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
     "SCHEDULERID ,"+
     "SCHEDULERTIMESTAMP ,"+
     "NUMOFRETR ,"+
-    "MAXNUMOFRETR ,"+ //10
-    "LASTSTATETRANSITIONTIME,"+
+    "LASTSTATETRANSITIONTIME,"+ // 10
      //Database Request Storage
     "CREDENTIALID , " +
     "RETRYDELTATIME , "+
     "SHOULDUPDATERETRYDELTATIME ,"+
-    "DESCRIPTION ,"+ //15
-    "CLIENTHOST ,"+
+    "DESCRIPTION ,"+
+    "CLIENTHOST ,"+ // 15
     "STATUSCODE ,"+
     "USERID ,"+
     // Copy Request
     "STORAGETYPE, " +
     "RETENTIONPOLICY, "+
     "ACCESSLATENCY ) " +
-    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -93,8 +91,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                                   cr.getSchedulerId(),
                                   cr.getSchedulerTimeStamp(),
                                   cr.getNumberOfRetries(),
-                                  cr.getMaxNumberOfRetries(),//10
-                                  cr.getLastStateTransitionTime(),
+                                  cr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   cr.getCredentialId(),
                                   cr.getRetryDeltaTime(),
@@ -148,10 +145,9 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                                   cr.getSchedulerId(),
                                   cr.getSchedulerTimeStamp(),
                                   cr.getNumberOfRetries(),
-                                  cr.getMaxNumberOfRetries(),
-                                  cr.getLastStateTransitionTime(),//10
+                                  cr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  cr.getCredentialId(),
+                                  cr.getCredentialId(), // 10
                                   cr.getRetryDeltaTime(),
                                   cr.isShould_updateretryDeltaTime()?0:1,
                                   cr.getDescription(),
@@ -185,7 +181,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
-            int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
             Long CREDENTIALID,
             int RETRYDELTATIME,
@@ -224,7 +219,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                         SCHEDULERID,
                         SCHEDULER_TIMESTAMP,
                         NUMOFRETR,
-                        MAXNUMOFRETR,
                         LASTSTATETRANSITIONTIME,
                         jobHistoryArray,
                         CREDENTIALID,

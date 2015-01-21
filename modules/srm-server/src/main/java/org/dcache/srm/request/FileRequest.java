@@ -141,10 +141,9 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
    /** Creates new FileRequest */
     protected FileRequest(long requestId,
                           Long requestCredentalId,
-                          long lifetime,
-                          int maxNumberOfRetries)
+                          long lifetime)
     {
-        super(lifetime, maxNumberOfRetries);
+        super(lifetime);
         this.credentialId = requestCredentalId;
         this.requestId = requestId;
         logger.debug("created");
@@ -163,7 +162,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     long requestId,
@@ -175,7 +173,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         stateId, errorMessage,
         scheduelerId,
         schedulerTimeStamp,
-        numberOfRetries,maxNumberOfRetries,
+        numberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray);
         this.credentialId = requestCredentalId;

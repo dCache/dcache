@@ -127,7 +127,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         String[] protocols,
         long lifetime,
         long max_update_period,
-        int max_number_of_retries,
         String client_host,
         @Nullable String spaceToken,
         @Nullable TRetentionPolicy retentionPolicy,
@@ -137,7 +136,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
 
         super(user,
                 requestCredentialId,
-                max_number_of_retries,
                 max_update_period,
                 lifetime,
                 description,
@@ -153,8 +151,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         for(int i = 0; i < len; ++i) {
             PutFileRequest request = new PutFileRequest(getId(),
                     requestCredentialId, surls[i], sizes[i], lifetime,
-                    max_number_of_retries, spaceToken, retentionPolicy,
-                    accessLatency);
+                    spaceToken, retentionPolicy, accessLatency);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -171,7 +168,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
@@ -193,7 +189,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
-        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
         credentialId,

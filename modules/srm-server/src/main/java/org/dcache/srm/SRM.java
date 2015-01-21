@@ -594,7 +594,6 @@ public class SRM {
                     null, // no space reservation in v1
                     lifetime,
                     configuration.getCopyRetryTimeout(),
-                    configuration.getCopyMaxNumOfRetries(),
                     SRMProtocol.V1_1,
                     TFileStorageType.PERMANENT,
                     null,
@@ -665,7 +664,6 @@ public class SRM {
                             uris, protocols,
                             configuration.getGetLifetime(),
                             configuration.getGetRetryTimeout(),
-                            configuration.getGetMaxNumOfRetries(),
                             null,
                             client_host);
             schedule(r);
@@ -891,7 +889,6 @@ public class SRM {
                     dests_urls, sizes,
                     wantPerm, protocols, configuration.getPutLifetime(),
                     configuration.getPutRetryTimeout(),
-                    configuration.getPutMaxNumOfRetries(),
                     clientHost,
                     null,
                     null,

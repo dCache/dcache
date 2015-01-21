@@ -67,7 +67,6 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
-    int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
     long REQUESTID,
     Long CREDENTIALID,
@@ -88,7 +87,6 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
-    int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
     ResultSet set,
     int next_index) throws SQLException {
@@ -106,7 +104,6 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
         SCHEDULERID,
         SCHEDULER_TIMESTAMP,
         NUMOFRETR,
-        MAXNUMOFRETR,
         LASTSTATETRANSITIONTIME,
         REQUESTID,
         CREDENTIALID,

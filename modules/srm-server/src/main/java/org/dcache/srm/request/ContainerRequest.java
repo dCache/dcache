@@ -143,12 +143,9 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      *  srm user
      * @param configuration
      *   srm configuration
-     * @param numberOfRetries
-     * max number of retries
      */
     public ContainerRequest(SRMUser user,
                             Long requestCredentalId,
-                            int max_number_of_retries,
                             long max_update_period,
                             long lifetime,
                             @Nullable String description,
@@ -156,7 +153,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     {
          super(user ,
          requestCredentalId,
-         max_number_of_retries,
          max_update_period,
          lifetime,
          description,
@@ -182,7 +178,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
@@ -202,7 +197,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      scheduelerId,
      schedulerTimeStamp,
      numberOfRetries,
-     maxNumberOfRetries,
      lastStateTransitionTime,
      jobHistoryArray,
      credentialId,

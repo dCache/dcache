@@ -111,7 +111,6 @@ public class SrmCopy
                 spaceToken,
                 lifetime,
                 configuration.getCopyRetryTimeout(),
-                configuration.getCopyMaxNumOfRetries(),
                 SRMProtocol.V2_1,  // Revisit: v2.1?
                 request.getTargetFileStorageType(),
                 targetRetentionPolicy,

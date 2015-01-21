@@ -128,13 +128,11 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     public BringOnlineFileRequest(long requestId,
                                   Long requestCredentalId,
                                   URI surl,
-                                  long lifetime,
-                                  int maxNumberOfRetries)
+                                  long lifetime)
     {
         super(requestId,
                 requestCredentalId,
-                lifetime,
-                maxNumberOfRetries);
+                lifetime);
         logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         this.surl = surl;
     }
@@ -154,7 +152,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     long requestId,
@@ -173,7 +170,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
-        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
         requestId,

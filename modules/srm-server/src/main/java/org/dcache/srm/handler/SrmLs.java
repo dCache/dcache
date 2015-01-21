@@ -83,7 +83,6 @@ public class SrmLs
                 surls,
                 TimeUnit.HOURS.toMillis(1),
                 configuration.getLsRetryTimeout(),
-                configuration.getLsMaxNumOfRetries(),
                 clientHost,
                 count,
                 offset,

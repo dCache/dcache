@@ -30,7 +30,6 @@ public class SrmReserveSpace
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmReserveSpace.class);
-    public static final int MAX_NUMBER_OF_RETRIES = 3;
 
     private final SrmReserveSpaceRequest request;
     private final SRMUser user;
@@ -94,7 +93,6 @@ public class SrmReserveSpace
                             credential.getId(),
                             user,
                             requestLifetime,
-                            MAX_NUMBER_OF_RETRIES,
                             size.longValue(),
                             lifetime,
                             retentionPolicy,

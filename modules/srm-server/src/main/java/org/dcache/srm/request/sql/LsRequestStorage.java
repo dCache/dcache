@@ -27,8 +27,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
     private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
         "ID ,"+
@@ -40,8 +39,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         "SCHEDULERID ,"+
         "SCHEDULERTIMESTAMP ,"+
         "NUMOFRETR ,"+
-        "MAXNUMOFRETR ,"+ //10
-        "LASTSTATETRANSITIONTIME,"+
+        "LASTSTATETRANSITIONTIME,"+ // 10
          //Database Request Storage
         "CREDENTIALID , " +
         "RETRYDELTATIME , "+
@@ -56,7 +54,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         "NUMOFLEVELS ,"+
         "\"count\" ,"+
         "LSOFFSET ) "+
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -72,8 +70,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getSchedulerId(),
                                   lr.getSchedulerTimeStamp(),
                                   lr.getNumberOfRetries(),
-                                  lr.getMaxNumberOfRetries(),//10
-                                  lr.getLastStateTransitionTime(),
+                                  lr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   lr.getCredentialId(),
                                   lr.getRetryDeltaTime(),
@@ -120,10 +117,9 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getSchedulerId(),
                                   lr.getSchedulerTimeStamp(),
                                   lr.getNumberOfRetries(),
-                                  lr.getMaxNumberOfRetries(),
-                                  lr.getLastStateTransitionTime(),//10
+                                  lr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  lr.getCredentialId(),
+                                  lr.getCredentialId(), // 10
                                   lr.getRetryDeltaTime(),
                                   lr.isShould_updateretryDeltaTime()?0:1,
                                   lr.getDescription(),
@@ -160,7 +156,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                                        String SCHEDULERID,
                                                        long SCHEDULER_TIMESTAMP,
                                                        int NUMOFRETR,
-                                                       int MAXNUMOFRETR,
                                                        long LASTSTATETRANSITIONTIME,
                                                        Long CREDENTIALID,
                                                        int RETRYDELTATIME,
@@ -187,7 +182,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                       SCHEDULERID,
                                       SCHEDULER_TIMESTAMP,
                                       NUMOFRETR,
-                                      MAXNUMOFRETR,
                                       LASTSTATETRANSITIONTIME,
                                       jobHistoryArray,
                                       CREDENTIALID,

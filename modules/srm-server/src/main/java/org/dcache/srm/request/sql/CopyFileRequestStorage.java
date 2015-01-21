@@ -49,25 +49,24 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=?, " + //10
-        "REQUESTID=?, "+
+        "LASTSTATETRANSITIONTIME=?, " +
+        "REQUESTID=?, "+ // 10
         "CREDENTIALID=?, "+
         "STATUSCODE=?, "+
         "FROMURL=? ,"+
-        "TOURL =?,"+ // 15
-        "FROMTURL=? ,"+
+        "TOURL =?,"+
+        "FROMTURL=? ,"+ // 15
         "TOTURL=? ,"+
         "FROMLOCALPATH=? ,"+
         "TOLOCALPATH=? ,"+
-        "SIZE=? ,"+  // 20
-        "FROMFILEID=? ,"+
+        "SIZE=? ,"+
+        "FROMFILEID=? ,"+ // 20
         "TOFILEID=? ,"+
         "REMOTEREQUESTID=? ,"+
         "REMOTEFILEID=? , "+
-        "SPACERESERVATIONID=? , "+ // 25
-        "TRANSFERID=?, "+
-        "EXTRAINFO=? " + // 27
+        "SPACERESERVATIONID=? , "+
+        "TRANSFERID=?, "+ // 25
+        "EXTRAINFO=? " +
         "WHERE ID=? ";
 
     private final static int ADDITIONAL_FIELDS = 14;
@@ -118,9 +117,8 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getSchedulerId(),
                                   request.getSchedulerTimeStamp(),
                                   request.getNumberOfRetries(),
-                                  request.getMaxNumberOfRetries(),
-                                  request.getLastStateTransitionTime(),//10
-                                  request.getRequestId(),
+                                  request.getLastStateTransitionTime(),
+                                  request.getRequestId(), // 10
                                   request.getCredentialId(),
                                   request.getStatusCodeString(),
                                   request.getSourceSurl().toString(),
@@ -162,29 +160,28 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
             "SCHEDULERID ,"+
             "SCHEDULERTIMESTAMP ,"+
             "NUMOFRETR ,"+
-            "MAXNUMOFRETR ,"+ //10
-            "LASTSTATETRANSITIONTIME,"+
+            "LASTSTATETRANSITIONTIME,"+ // 10
             //DATABASE FILE REQUEST STORAGE
             "REQUESTID , " +
             "CREDENTIALID , "+
             "STATUSCODE , "+
-            "FROMURL ,"+ //15
-            "TOURL ,"+
+            "FROMURL ,"+
+            "TOURL ,"+ // 15
             "FROMTURL ,"+
             "TOTURL ,"+
             "FROMLOCALPATH ,"+
-            "TOLOCALPATH ,"+ //20
-            "SIZE ,"+
+            "TOLOCALPATH ,"+
+            "SIZE ,"+ // 20
             "FROMFILEID ,"+
             "TOFILEID ,"+
             "REMOTEREQUESTID ,"+
-            "REMOTEFILEID , "+ //25
-            "SPACERESERVATIONID , "+
+            "REMOTEFILEID , "+
+            "SPACERESERVATIONID , "+ // 25
             "TRANSFERID, " +
-            "EXTRAINFO) " + // 28
+            "EXTRAINFO) " + // 27
             "VALUES (?,?,?,?,?,?,?,?,?,?," +
                     "?,?,?,?,?,?,?,?,?,?," +
-                    "?,?,?,?,?,?,?,?)";
+                    "?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -205,7 +202,6 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
                                   request.getSchedulerId(),
                                   request.getSchedulerTimeStamp(),
                                   request.getNumberOfRetries(),
-                                  request.getMaxNumberOfRetries(),
                                   request.getLastStateTransitionTime(),
                                   request.getRequestId(),
                                   request.getCredentialId(),
@@ -247,7 +243,6 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
-    int MAXNUMOFRETR,
     long LASTSTATETRANSITIONTIME,
     long REQUESTID,
     Long CREDENTIALID,
@@ -283,7 +278,6 @@ public class CopyFileRequestStorage extends DatabaseFileRequestStorage<CopyFileR
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,
-            MAXNUMOFRETR,
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
             REQUESTID,

@@ -143,10 +143,9 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                            URI destinationSurl,
                            String spaceToken,
                            long lifetime,
-                           int maxNumberOfRetries,
                            ImmutableMap<String,String> extraInfo)
     {
-        super(requestId, requestCredentalId, lifetime, maxNumberOfRetries);
+        super(requestId, requestCredentalId, lifetime);
         LOG.debug("CopyFileRequest");
         this.sourceSurl = sourceSurl;
         this.destinationSurl = destinationSurl;
@@ -169,7 +168,6 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
-            int maxNumberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
             long requestId,
@@ -192,7 +190,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
     {
         super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
               scheduelerId, schedulerTimeStamp, numberOfRetries,
-              maxNumberOfRetries, lastStateTransitionTime, jobHistoryArray,
+              lastStateTransitionTime, jobHistoryArray,
               requestId, requestCredentalId, statusCodeString);
         this.sourceSurl = URI.create(sourceSurl);
         this.destinationSurl = URI.create(destinationSurl);

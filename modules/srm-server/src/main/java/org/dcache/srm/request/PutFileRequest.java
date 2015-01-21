@@ -116,15 +116,13 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             URI url,
             @Nullable Long size,
             long lifetime,
-            int maxNumberOfRetires,
             @Nullable String spaceReservationId,
             @Nullable TRetentionPolicy retentionPolicy,
             @Nullable TAccessLatency accessLatency)
     {
         super(requestId,
                 requestCredentalId,
-                lifetime,
-                maxNumberOfRetires);
+                lifetime);
         this.surl = url;
         this.size = size;
         this.spaceReservationId = spaceReservationId;
@@ -142,7 +140,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
-            int maxNumberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
             long requestId,
@@ -165,7 +162,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
               scheduelerId,
               schedulerTimeStamp,
               numberOfRetries,
-              maxNumberOfRetries,
               lastStateTransitionTime,
               jobHistoryArray,
               requestId,

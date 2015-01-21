@@ -175,7 +175,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             String spaceToken,
             long lifetime,
             long maxUpdatePeriod,
-            int maxNumberOfRetries,
             SRMProtocol callerProtocolVersion,
             TFileStorageType storageType,
             TRetentionPolicy targetRetentionPolicy,
@@ -185,7 +184,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TOverwriteMode overwriteMode,
             ImmutableMap<String,String> extraInfo)
     {
-        super(user, requestCredentialId, maxNumberOfRetries, maxUpdatePeriod,
+        super(user, requestCredentialId, maxUpdatePeriod,
                 lifetime, description, clientHost);
 
         ArrayList<String> allowedProtocols = new ArrayList<>(4);
@@ -213,7 +212,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         for (int i = 0; i < requestCount; ++i) {
             CopyFileRequest request = new CopyFileRequest(getId(),
                     requestCredentialId, sourceUrl[i], destinationUrl[i], spaceToken,
-                    lifetime, maxNumberOfRetries, extraInfo);
+                    lifetime, extraInfo);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -242,7 +241,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
-            int maxNumberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
             Long credentialId,
@@ -258,7 +256,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     {
         super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
                 user, scheduelerId, schedulerTimeStamp, numberOfRetries,
-                maxNumberOfRetries, lastStateTransitionTime, jobHistoryArray,
+                lastStateTransitionTime, jobHistoryArray,
                 credentialId, fileRequest, retryDeltaTime, should_updateretryDeltaTime,
                 description, client_host, statusCodeString);
 

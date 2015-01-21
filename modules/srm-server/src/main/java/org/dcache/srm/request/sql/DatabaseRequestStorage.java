@@ -73,7 +73,6 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
-            int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
             Long CREDENTIALID,
             int RETRYDELTATIME,
@@ -97,7 +96,6 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
-            int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
             ResultSet set,
             int next_index) throws SQLException {
@@ -122,7 +120,6 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
-                MAXNUMOFRETR,
                 LASTSTATETRANSITIONTIME,
                 CREDENTIALID,
                 RETRYDELTATIME,

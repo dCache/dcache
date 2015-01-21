@@ -684,8 +684,7 @@ public class Scheduler <T extends Job>
                     } catch (NonFatalJobFailure e) {
                         job.wlock();
                         try {
-                            if (job.getNumberOfRetries() < getMaxNumberOfRetries() &&
-                                    job.getNumberOfRetries() < job.getMaxNumberOfRetries()) {
+                            if (job.getNumberOfRetries() < getMaxNumberOfRetries()) {
                                 job.setState(State.RETRYWAIT, e.getMessage());
                                 startRetryTimer(job);
                             } else {

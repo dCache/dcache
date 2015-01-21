@@ -131,7 +131,6 @@ public final class ReserveSpaceRequest extends Request {
             Long  requestCredentalId,
             SRMUser user,
             long lifetime,
-            int maxNumberOfRetries,
             long sizeInBytes ,
             long spaceReservationLifetime,
             TRetentionPolicy retentionPolicy,
@@ -140,7 +139,6 @@ public final class ReserveSpaceRequest extends Request {
             String clienthost) {
               super(user,
               requestCredentalId,
-              maxNumberOfRetries,
               0,
               lifetime,
               description,
@@ -168,7 +166,6 @@ public final class ReserveSpaceRequest extends Request {
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
-            int maxNumberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
             Long  requestCredentalId,
@@ -190,7 +187,6 @@ public final class ReserveSpaceRequest extends Request {
                 scheduelerId,
                 schedulerTimeStamp,
                 numberOfRetries,
-                maxNumberOfRetries,
                 lastStateTransitionTime,
                 jobHistoryArray,//VVV
                 requestCredentalId,

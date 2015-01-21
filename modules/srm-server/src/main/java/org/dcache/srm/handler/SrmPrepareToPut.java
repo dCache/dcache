@@ -154,7 +154,6 @@ public class SrmPrepareToPut
                         protocols,
                         lifetime,
                         configuration.getGetRetryTimeout(),
-                        configuration.getGetMaxNumOfRetries(),
                         clientHost,
                         spaceToken,
                         retentionPolicy,

@@ -42,8 +42,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
 
     /** Creates a new instance of BringOnlineFileRequestStorage */
@@ -65,7 +64,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         String SCHEDULERID,
         long SCHEDULER_TIMESTAMP,
         int NUMOFRETR,
-        int MAXNUMOFRETR,
         long LASTSTATETRANSITIONTIME,
         long REQUESTID,
         Long CREDENTIALID,
@@ -87,7 +85,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,
-            MAXNUMOFRETR,
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
             REQUESTID,
@@ -130,14 +127,13 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                   gfr.getSchedulerId(),
                                   gfr.getSchedulerTimeStamp(),
                                   gfr.getNumberOfRetries(),
-                                  gfr.getMaxNumberOfRetries(),
-                                  gfr.getLastStateTransitionTime(),//10
-                                  gfr.getRequestId(),
+                                  gfr.getLastStateTransitionTime(),
+                                  gfr.getRequestId(),//10
                                   gfr.getCredentialId(),
                                   gfr.getStatusCodeString(),
                                   gfr.getSurlString(),
-                                  gfr.getFileId(),//15
-                                  gfr.getPinId(),
+                                  gfr.getFileId(),
+                                  gfr.getPinId(),//15
                                   gfr.getId());
         return stmt;
     }
@@ -167,7 +163,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         "SCHEDULERID ,"+
         "SCHEDULERTIMESTAMP ,"+
         "NUMOFRETR ,"+
-        "MAXNUMOFRETR ,"+ //10
         "LASTSTATETRANSITIONTIME,"+
          //DATABSE FILE REQUEST STORAGE
         "REQUESTID , " +
@@ -177,7 +172,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         "SURL ,"+ //15
         "FILEID ,"+
         "PINID  ) " +
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -195,7 +190,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                   gfr.getSchedulerId(),
                                   gfr.getSchedulerTimeStamp(),
                                   gfr.getNumberOfRetries(),
-                                  gfr.getMaxNumberOfRetries(),//10
                                   gfr.getLastStateTransitionTime(),
                                  //DATABSE FILE REQUEST STORAGE
                                   gfr.getRequestId(),

@@ -34,8 +34,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
     public PreparedStatement getStatement(Connection connection,
                                           String query,
@@ -51,7 +50,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                                       request.getSchedulerId(),
                                                       request.getSchedulerTimeStamp(),
                                                       request.getNumberOfRetries(),
-                                                      request.getMaxNumberOfRetries(),
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
                                                       request.getCredentialId(),
@@ -95,8 +93,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             "SCHEDULERID ,"+
             "SCHEDULERTIMESTAMP ,"+
             "NUMOFRETR ,"+
-            "MAXNUMOFRETR ,"+ //10
-            "LASTSTATETRANSITIONTIME,"+
+            "LASTSTATETRANSITIONTIME,"+ // 10
             //DATABASE FILE REQUEST STORAGE
             "REQUESTID , " +
             "CREDENTIALID , "+
@@ -105,7 +102,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             "TURL ,"+
             "FILEID ,"+
             "PINID ) "+
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -126,7 +123,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                                       request.getSchedulerId(),
                                                       request.getSchedulerTimeStamp(),
                                                       request.getNumberOfRetries(),
-                                                      request.getMaxNumberOfRetries(),
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
                                                       request.getCredentialId(),
@@ -156,7 +152,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
         String SCHEDULERID,
         long SCHEDULER_TIMESTAMP,
         int NUMOFRETR,
-        int MAXNUMOFRETR,
         long LASTSTATETRANSITIONTIME,
         long REQUESTID,
         Long CREDENTIALID,
@@ -179,7 +174,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,
-            MAXNUMOFRETR,
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
             REQUESTID,

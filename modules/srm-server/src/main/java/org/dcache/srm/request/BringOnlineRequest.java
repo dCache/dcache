@@ -118,12 +118,10 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                               long lifetime,
                               long desiredOnlineLifetimeInSeconds,
                               long max_update_period,
-                              int max_number_of_retries,
                               String description,
                               String client_host)
     {
         super(user,requestCredentialId,
-            max_number_of_retries,
             max_update_period,
             lifetime,
             description,
@@ -142,7 +140,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         List<BringOnlineFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
         for(URI surl : surls) {
             BringOnlineFileRequest request = new BringOnlineFileRequest(getId(),
-                    requestCredentialId, surl, lifetime, max_number_of_retries);
+                    requestCredentialId, surl, lifetime);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -162,7 +160,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
@@ -184,7 +181,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
-        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
         credentialId,

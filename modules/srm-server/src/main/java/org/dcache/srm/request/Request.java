@@ -111,13 +111,12 @@ public abstract class Request extends Job {
 
     public Request(@Nonnull SRMUser user,
     Long requestCredentalId,
-    int max_number_of_retries,
     long max_update_period,
     long lifetime,
     @Nullable String description,
     String client_host
         ) {
-        super(lifetime,max_number_of_retries);
+        super(lifetime);
         this.credentialId = requestCredentalId;
         this.max_update_period = max_update_period;
         this.description = description;
@@ -141,7 +140,6 @@ public abstract class Request extends Job {
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
@@ -159,7 +157,6 @@ public abstract class Request extends Job {
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
-        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray);
         this.credentialId = credentialId;

@@ -117,13 +117,11 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                       String[] protocols,
                       long lifetime,
                       long max_update_period,
-                      int max_number_of_retries,
                       String description,
                       String client_host)
     {
         super(user,
                 requestCredentialId,
-                max_number_of_retries,
                 max_update_period,
                 lifetime,
                 description,
@@ -133,8 +131,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         List<GetFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
         for(URI surl : surls) {
             GetFileRequest request = new GetFileRequest(getId(),
-                    requestCredentialId, surl, lifetime,
-                    max_number_of_retries);
+                    requestCredentialId, surl, lifetime);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -154,7 +151,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     Long credentialId,
@@ -176,7 +172,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
-        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
         credentialId,

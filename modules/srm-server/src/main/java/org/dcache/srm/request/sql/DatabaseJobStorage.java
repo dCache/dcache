@@ -308,7 +308,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
-            int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
             ResultSet set,
             int next_index) throws SQLException;
@@ -363,7 +362,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
-                MAXNUMOFRETR,
                 LASTSTATETRANSITIONTIME,
                 set,
                 12 );

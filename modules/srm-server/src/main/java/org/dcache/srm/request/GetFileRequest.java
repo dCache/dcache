@@ -127,13 +127,11 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     public GetFileRequest(long requestId,
                           Long  requestCredentalId,
                           URI surl,
-                          long lifetime,
-                          int maxNumberOfRetries)
+                          long lifetime)
     {
         super(requestId,
             requestCredentalId,
-            lifetime,
-            maxNumberOfRetries);
+            lifetime);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         this.surl = surl;
     }
@@ -153,7 +151,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
-    int maxNumberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     long requestId,
@@ -173,7 +170,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
-        maxNumberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
         requestId,

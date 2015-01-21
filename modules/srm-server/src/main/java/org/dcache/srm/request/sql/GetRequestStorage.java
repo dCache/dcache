@@ -47,8 +47,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
         "SCHEDULERID=?, " +
         "SCHEDULERTIMESTAMP=?," +
         "NUMOFRETR=?," +
-        "MAXNUMOFRETR=?," +
-        "LASTSTATETRANSITIONTIME=? ";//10
+        "LASTSTATETRANSITIONTIME=? ";
 
     private static final String INSERT_SQL = "INSERT INTO "+ TABLE_NAME+ "(    " +
         "ID ,"+
@@ -60,17 +59,16 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
         "SCHEDULERID ,"+
         "SCHEDULERTIMESTAMP ,"+
         "NUMOFRETR ,"+
-        "MAXNUMOFRETR ,"+ //10
-        "LASTSTATETRANSITIONTIME,"+
+        "LASTSTATETRANSITIONTIME,"+ // 10
          //Database Request Storage
         "CREDENTIALID , " +
         "RETRYDELTATIME , "+
         "SHOULDUPDATERETRYDELTATIME ,"+
-        "DESCRIPTION ,"+ //15
-        "CLIENTHOST ,"+
+        "DESCRIPTION ,"+
+        "CLIENTHOST ,"+ // 15
         "STATUSCODE ,"+
         "USERID  ) " +
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -86,8 +84,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                   gr.getSchedulerId(),
                                   gr.getSchedulerTimeStamp(),
                                   gr.getNumberOfRetries(),
-                                  gr.getMaxNumberOfRetries(),//10
-                                  gr.getLastStateTransitionTime(),
+                                  gr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   gr.getCredentialId(),
                                   gr.getRetryDeltaTime(),
@@ -122,10 +119,9 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                   gr.getSchedulerId(),
                                   gr.getSchedulerTimeStamp(),
                                   gr.getNumberOfRetries(),
-                                  gr.getMaxNumberOfRetries(),
-                                  gr.getLastStateTransitionTime(),//10
+                                  gr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  gr.getCredentialId(),
+                                  gr.getCredentialId(), // 10
                                   gr.getRetryDeltaTime(),
                                   gr.isShould_updateretryDeltaTime()?0:1,
                                   gr.getDescription(),
@@ -216,7 +212,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
-            int MAXNUMOFRETR,
             long LASTSTATETRANSITIONTIME,
             Long CREDENTIALID,
             int RETRYDELTATIME,
@@ -251,7 +246,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
-                MAXNUMOFRETR,
                 LASTSTATETRANSITIONTIME,
                 jobHistoryArray,
                 CREDENTIALID,

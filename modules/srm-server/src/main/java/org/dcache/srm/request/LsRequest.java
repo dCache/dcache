@@ -45,7 +45,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                          URI[] surls,
                          long lifetime,
                          long max_update_period,
-                         int max_number_of_retries,
                          String client_host,
                          long count,
                          long offset,
@@ -55,7 +54,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         {
                 super(user,
                       requestCredentialId,
-                      max_number_of_retries,
                       max_update_period,
                       lifetime,
                       "Ls request",
@@ -68,8 +66,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 List<LsFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
                 for (URI surl: surls) {
                     LsFileRequest fileRequest = new LsFileRequest(getId(),
-                            requestCredentialId, surl, lifetime,
-                            max_number_of_retries);
+                            requestCredentialId, surl, lifetime);
                     requests.add(fileRequest);
                 }
                 setFileRequests(requests);
@@ -86,7 +83,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 String scheduelerId,
                 long schedulerTimeStamp,
                 int numberOfRetries,
-                int maxNumberOfRetries,
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
                 Long credentialId,
@@ -111,7 +107,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                       scheduelerId,
                       schedulerTimeStamp,
                       numberOfRetries,
-                      maxNumberOfRetries,
                       lastStateTransitionTime,
                       jobHistoryArray,
                       credentialId,
