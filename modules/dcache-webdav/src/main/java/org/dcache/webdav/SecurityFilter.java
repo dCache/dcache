@@ -32,6 +32,7 @@ import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.PasswordCredential;
+import org.dcache.auth.Subjects;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
@@ -126,10 +127,7 @@ public class SecurityFilter implements Filter
              * ourselves, Milton uses it to detect that the request
              * was preauthenticated.
              */
-            Auth auth = request.getAuthorization();
-            if (auth != null) {
-                auth.setTag(subject);
-            }
+            request.setAuthorization(new Auth(Subjects.getUserName(subject), subject));
 
             /* Process the request as the authenticated user.
              */
