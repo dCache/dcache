@@ -116,12 +116,12 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             HttpResponseStatus statusCode,
             String message)
     {
-        _logger.info("Sending error {} with message {} to client.",
-                statusCode, message);
-
         if (message == null || message.isEmpty()) {
             message = "An unexpected server error has occurred.";
         }
+
+        _logger.info("Sending error {} with message '{}' to client.",
+                     statusCode, message);
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
         response.headers().add(CONTENT_TYPE, "text/plain; charset=UTF-8");
@@ -147,12 +147,12 @@ public class HttpRequestHandler extends IdleStateAwareChannelHandler
             HttpResponseStatus statusCode,
             String message)
     {
-        _logger.info("Sending error {} with message {} to client.",
-                statusCode, message);
-
         if (message == null || message.isEmpty()) {
             message = "An unexpected server error has occurred.";
         }
+
+        _logger.info("Sending error {} with message '{}' to client.",
+                     statusCode, message);
 
         HttpResponse response = new DefaultHttpResponse(HTTP_1_1, statusCode);
         response.headers().add(CONTENT_TYPE, "text/plain; charset=UTF-8");
