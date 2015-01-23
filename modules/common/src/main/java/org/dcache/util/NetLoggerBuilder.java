@@ -5,8 +5,8 @@ import com.google.common.escape.CharEscaperBuilder;
 import com.google.common.escape.Escaper;
 import org.slf4j.Logger;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -21,15 +21,8 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class NetLoggerBuilder
 {
-    private static final ThreadLocal<SimpleDateFormat> TS_FORMAT =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-                }
-            };
+    private static final DateTimeFormatter TS_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
 
     private final StringBuilder s = new StringBuilder(256);
     private boolean omitNullValues;
@@ -51,7 +44,7 @@ public class NetLoggerBuilder
 
     private String getTimestamp()
     {
-        return TS_FORMAT.get().format(new Date());
+        return ZonedDateTime.now().format(TS_FORMAT);
     }
 
     public NetLoggerBuilder(String event)
