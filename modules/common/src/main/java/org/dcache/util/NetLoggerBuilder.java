@@ -37,6 +37,7 @@ public class NetLoggerBuilder
     private final StringBuilder s = new StringBuilder(256);
     private boolean omitNullValues;
     private Level level;
+    private Logger logger;
 
     private static final Escaper AS_QUOTED_VALUE = new CharEscaperBuilder().
             addEscape('\\', "\\\\").
@@ -118,6 +119,11 @@ public class NetLoggerBuilder
 
     public NetLoggerBuilder omitNullValues() {
         omitNullValues = true;
+        return this;
+    }
+
+    public NetLoggerBuilder onLogger(Logger logger) {
+        this.logger = logger;
         return this;
     }
 
@@ -249,5 +255,10 @@ public class NetLoggerBuilder
             logger.trace(line);
             break;
         }
+    }
+
+    public void log() {
+        checkState(logger != null, "can't log without logger");
+        this.toLogger(logger);
     }
 }
