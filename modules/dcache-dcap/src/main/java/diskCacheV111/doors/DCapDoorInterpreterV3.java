@@ -222,8 +222,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private boolean _strictSize;
     private String  _poolProxy;
-    private Version _minClientVersion;
-    private Version _maxClientVersion;
+    private Version _minClientVersion = new Version(0, 0);
+    private Version _maxClientVersion = new Version(Integer.MAX_VALUE, Integer.MAX_VALUE);
     private boolean _checkStrict      = true ;
     private long    _poolRetry;
     private String  _hsmManager;
@@ -405,10 +405,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
         @Override
         public int compareTo( Version other ){
-            return _major < other._major ? -1 :
-                _major > other._major ?  1 :
-                    _minor < other._minor ? -1 :
-                        _minor > other._minor ?  1 : 0;
+            return _major != other._major ?
+                    Integer.compare(_major, other._major) : Integer.compare(_minor, other._minor);
         }
         @Override
         public String toString(){ return ""+_major+"."+_minor ; }
@@ -447,10 +445,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         try{
             StringTokenizer st = new StringTokenizer(versionString,":");
             _minClientVersion  = new Version( st.nextToken() ) ;
-            _maxClientVersion  = st.countTokens() > 0 ? new Version(st.nextToken()) : null ;
+            if (st.countTokens() > 0) {
+                _maxClientVersion  =  new Version(st.nextToken());
+            }
         } catch (Exception e) {
             _log.error("Client Version : syntax error (limits ignored) : {} : {}", versionString, e.toString());
-            _minClientVersion = _maxClientVersion = null ;
         }
     }
     public synchronized void println( String str ){
@@ -485,7 +484,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public String com_hello( int sessionId , int commandId , VspArgs args )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 2 ) {
             throw new
                     CommandExitException("Command Syntax Exception", 2);
@@ -496,14 +494,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _majorVersion = Integer.parseInt( args.argv(2) ) ;
             _minorVersion = Integer.parseInt( args.argv(3) ) ;
         }catch(NumberFormatException e ){
-            _majorVersion = _minorVersion = 0 ;
-            _log.error("Syntax error in client version number : {}",
-                       e.toString());
+            _log.error("Syntax error in client version number : {}", e.toString());
+            throw new CommandException("Invalid client version number", e);
         }
+
         version = new Version( _majorVersion , _minorVersion ) ;
         _log.debug("Client Version : {}", version);
-        if( ( ( _minClientVersion != null ) && ( version.compareTo( _minClientVersion ) < 0 ) ) ||
-        ( ( _maxClientVersion != null ) && ( version.compareTo( _maxClientVersion ) > 0 ) )  ){
+        if (version.compareTo(_minClientVersion) < 0 || (version.compareTo(_maxClientVersion) > 0)) {
 
             String error = "Client version rejected : "+version ;
             _log.error(error);
@@ -514,38 +511,24 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         if( yourName.equals("server") ) {
             _ourName = "client";
         }
-        String pid = args.getOpt("pid");
-        if (pid != null) {
-            _pid = pid;
-        }
-        String uid = args.getOpt("uid") ;
-        if (uid != null) {
-            try {
-                _uid = Integer.parseInt(uid);
-            } catch (NumberFormatException e) {
-                _log.warn("Client specified invalid UID: {}", uid);
-            }
-        }
-        String gid = args.getOpt("gid") ;
-        if (gid != null) {
-            try {
-                _gid = Integer.parseInt(gid);
-            } catch (NumberFormatException e) {
-                _log.warn("Client specified invalid GID: {}", gid);
-            }
-        }
+
+        /*
+          replace current values if alternatives are provided
+        */
+        _pid = args.getOption("pid", _pid);
+        _uid = args.getIntOption("uid", _uid);
+        _gid = args.getIntOption("gid", _gid);
+
         return "0 0 "+_ourName+" welcome "+_majorVersion+" "+_minorVersion ;
     }
     public String com_byebye( int sessionId , int commandId , VspArgs args )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         throw new CommandExitException("byeBye",commandId)  ;
     }
     public synchronized String com_open( int sessionId , int commandId , VspArgs args )
         throws CacheException, CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 4 ) {
             throw new
                     CommandException(3, "Not enough arguments for put");
@@ -558,7 +541,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public synchronized String com_stage( int sessionId , int commandId , VspArgs args )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for stage");
@@ -634,7 +616,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for unlink");
@@ -649,7 +630,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private synchronized String do_rename(int sessionId, int commandId, VspArgs args)
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for unlink");
@@ -664,7 +644,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for rmdir");
@@ -678,7 +657,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for unlink");
@@ -692,7 +670,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for chown");
@@ -707,7 +684,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-                _lastCommandTS = new Date() ;
                 if( args.argc() < 1 ) {
                     throw new
                             CommandException(3, "Not enough arguments for chgrp");
@@ -721,7 +697,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-                _lastCommandTS = new Date() ;
                 if( args.argc() < 1 ) {
                     throw new
                             CommandException(3, "Not enough arguments for chmod");
@@ -734,7 +709,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     private synchronized String do_opendir(  int sessionId , int commandId , VspArgs args )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for opendir");
@@ -748,7 +722,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     int sessionId , int commandId , VspArgs args , boolean resolvePath )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for stat");
@@ -767,7 +740,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public synchronized String com_check( int sessionId , int commandId , VspArgs args )
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         if( args.argc() < 1 ) {
             throw new
                     CommandException(3, "Not enough arguments for check");
@@ -780,7 +752,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public String com_status(int sessionId, int commandId, VspArgs args)
         throws CommandException
     {
-        _lastCommandTS = new Date() ;
         SessionHandler handler = _sessions.get(sessionId);
         if (handler == null) {
             throw new
@@ -2496,6 +2467,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     public String execute(VspArgs args)
         throws CommandExitException
     {
+        _lastCommandTS = new Date();
         int sessionId = args.getSessionId();
         int commandId = args.getSubSessionId();
 
