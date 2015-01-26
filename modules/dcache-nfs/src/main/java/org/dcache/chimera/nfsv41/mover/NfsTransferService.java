@@ -78,7 +78,6 @@ public class NfsTransferService extends AbstractCellComponent
             portRange = new PortRange(0);
         }
 
-        _door = new CellStub(getCellEndpoint());
         _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
         _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
 
@@ -108,6 +107,11 @@ public class NfsTransferService extends AbstractCellComponent
     @Required
     public void setPnfsHandler(PnfsHandler pnfsHandler) {
         _pnfsHandler = pnfsHandler;
+    }
+
+    @Required
+    public void setDoorStub(CellStub cellStub) {
+        _door = cellStub;
     }
 
     public void shutdown() throws IOException {

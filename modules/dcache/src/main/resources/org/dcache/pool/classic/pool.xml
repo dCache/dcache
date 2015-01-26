@@ -227,6 +227,12 @@
       <property name="timeoutUnit" value="${pool.service.poolmanager.timeout.unit}"/>
   </bean>
 
+  <bean id="doorStub" class="org.dcache.cells.CellStub">
+      <description>Door cell stub</description>
+      <property name="timeout" value="${pool.service.door.timeout}"/>
+      <property name="timeoutUnit" value="${pool.service.door.timeout.unit}"/>
+  </bean>
+
   <bean id="workerThreadPool"
         class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
       <description>Thread pool for background tasks</description>
@@ -331,6 +337,7 @@
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="pnfsHandler" ref="pnfs"/>
       <property name="faultListener" ref="pool"/>
+      <property name="doorStub" ref="doorStub"/>
   </bean>
 
   <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"
