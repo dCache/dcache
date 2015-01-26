@@ -19,6 +19,7 @@ import io.milton.resource.GetableResource;
 import io.milton.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
@@ -69,6 +70,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
     private AuthenticationService _authenticationService;
     private String _staticContentPath;
     private STGroup _templateGroup;
+    private ImmutableMap<String, String> _templateConfig;
 
     public void setAuthenticationService(AuthenticationService authenticationService)
     {
@@ -93,6 +95,12 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
          * here we force initialisation to work-around this.
          */
         _templateGroup.getInstanceOf(HTML_TEMPLATE_NAME);
+    }
+
+    @Required
+    public void setTemplateConfig(ImmutableMap<String, String> config)
+    {
+        _templateConfig = config;
     }
 
     /**
@@ -193,6 +201,7 @@ public class DcacheResponseHandler extends AbstractWrappingResponseHandler
         template.add("static", _staticContentPath);
         template.add("errorcode", status.toString());
         template.add("errormessage", ERRORS.get(status));
+        template.add("config", _templateConfig);
 
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject != null) {

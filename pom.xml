@@ -1111,6 +1111,28 @@
             </plugin>
 
             <plugin>
+                <groupId>com.lukegb.mojo</groupId>
+                <artifactId>gitdescribe-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>git-describe</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>gitdescribe</goal>
+                        </goals>
+                        <configuration>
+                            <descriptionProperty>gitDescribe</descriptionProperty>
+                            <outputPrefix></outputPrefix>
+                            <extraArguments>
+                                <param>--dirty</param>
+                                <param>--all</param>
+                            </extraArguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
@@ -1123,6 +1145,7 @@
                             <Build-Time>${maven.build.timestamp}</Build-Time>
                             <Implementation-Build>${buildNumber}</Implementation-Build>
                             <Implementation-Branch>${scmBranch}</Implementation-Branch>
+			    <Implementation-State>${gitDescribe}</Implementation-State>
                         </manifestEntries>
                     </archive>
                 </configuration>

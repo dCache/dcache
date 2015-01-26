@@ -3,6 +3,7 @@ package org.dcache.webdav;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
@@ -17,11 +18,11 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.stringtemplate.v4.AutoIndentWriter;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
-import org.stringtemplate.v4.misc.Aggregate;
 
 import javax.security.auth.Subject;
 
@@ -173,6 +174,7 @@ public class DcacheResourceFactory
 
     private String _staticContentPath;
     private STGroup _listingGroup;
+    private ImmutableMap<String,String> _templateConfig;
 
     private TransferRetryPolicy _retryPolicy =
         TransferRetryPolicies.tryOncePolicy(_moverTimeout, _moverTimeoutUnit);
@@ -477,6 +479,12 @@ public class DcacheResourceFactory
          */
         _listingGroup.getInstanceOf(HTML_TEMPLATE_NAME);
 
+    }
+
+    @Required
+    public void setTemplateConfig(ImmutableMap<String,String> config)
+    {
+        _templateConfig = config;
     }
 
     /**
@@ -818,6 +826,7 @@ public class DcacheResourceFactory
         t.add("static", _staticContentPath);
         t.add("subject", new SubjectWrapper(getSubject()));
         t.add("base", UrlPathWrapper.forEmptyPath());
+        t.add("config", _templateConfig);
 
         DirectoryListPrinter printer =
                 new DirectoryListPrinter() {
@@ -1163,7 +1172,6 @@ public class DcacheResourceFactory
     {
         return HttpManager.request().getMethod() == Request.Method.PROPFIND;
     }
-
 
     /**
      * Specialisation of the Transfer class for HTTP transfers.

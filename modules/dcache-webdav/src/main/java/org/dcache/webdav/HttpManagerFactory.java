@@ -1,10 +1,12 @@
 package org.dcache.webdav;
 
+import com.google.common.collect.ImmutableMap;
 import io.milton.config.HttpManagerBuilder;
 import io.milton.http.HttpManager;
 import io.milton.http.webdav.DefaultWebDavResponseHandler;
 import io.milton.http.webdav.WebDavResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -14,6 +16,7 @@ import org.dcache.webdav.federation.FederationResponseHandler;
 public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBean
 {
     private Resource _templateResource;
+    private ImmutableMap<String,String> _templateConfig;
     private String _staticContentPath;
 
     @Override
@@ -32,6 +35,7 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
             new DefaultWebDavResponseHandler(getHttp11ResponseHandler(), getResourceTypeHelper(),
                                              getPropFindXmlGenerator()));
         dcacheResponseHandler.setTemplateResource(_templateResource);
+        dcacheResponseHandler.setTemplateConfig(_templateConfig);
         dcacheResponseHandler.setStaticContentPath(_staticContentPath);
         dcacheResponseHandler.setBuffering(getBuffering());
 
@@ -58,6 +62,12 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
         throws IOException
     {
         _templateResource = resource;
+    }
+
+    @Required
+    public void setTemplateConfig(ImmutableMap<String,String> config)
+    {
+        _templateConfig = config;
     }
 
     /**

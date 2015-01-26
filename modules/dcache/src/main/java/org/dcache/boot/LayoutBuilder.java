@@ -51,6 +51,8 @@ public class LayoutBuilder
                 localhost.getCanonicalHostName());
         config.setProperty(PROPERTY_DCACHE_VERSION,
                 Version.of(this).getVersion());
+        config.setProperty(PROPERTY_DCACHE_SCM_STATE,
+                Version.of(this).getState());
         return config;
     }
 

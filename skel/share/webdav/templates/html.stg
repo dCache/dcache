@@ -11,11 +11,11 @@
  * point to the copy.
  */
 
-page(static,subject,path,files,base) ::= <<
+page(static,subject,path,files,base,config) ::= <<
   $render(list(files))$
 >>
 
-errorpage(static,subject,path,errorcode,errormessage,base) ::= <<
+errorpage(static,subject,path,errorcode,errormessage,base,config) ::= <<
   $render(error(errorcode,errormessage))$
 >>
 
@@ -91,7 +91,7 @@ render(body) ::= <<
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>dCache File System</title>
+        <title>$config.head_title$</title>
 
         <link rel="stylesheet" href="$static$/bootstrap/css/bootstrap.min.css">
         <link rel="stylesheet" href="$static$/css/tablesorter.custom.css">
@@ -114,7 +114,8 @@ render(body) ::= <<
         <div class="navbar navbar-default navbar-fixed-top">
           <div class="container">
             <div class="navbar-header pull-left">
-              <a class="navbar-brand" href="#">dCache</a>
+              <a class="navbar-brand" href="#">$config.header_brand$</a>
+              <p class="navbar-text">$config.header_text$</p>
             </div>
             <div class="navbar-header pull-right">
               <div class="dropdown">
@@ -141,7 +142,7 @@ render(body) ::= <<
 
         <div id="footer">
           <div class="container">
-             <p class="text-muted text-center">Powered by <a href="http://www.dcache.org/">dCache</a></p>
+             <p class="text-muted text-center">$config.footer$</p>
           </div>
         </div>
     </body>
