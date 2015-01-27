@@ -218,11 +218,12 @@ public class PosixPermissionHandler implements PermissionHandler
                                        Set<FileAttribute> attributes)
     {
         /* Some flags can only be changed by the owner of the file.
-         */
+        */
         if (attributes.contains(OWNER) ||
             attributes.contains(OWNER_GROUP) ||
             attributes.contains(MODE) ||
-            attributes.contains(PERMISSION)) {
+            attributes.contains(PERMISSION) ||
+            attributes.contains(ACL)    ) {
 
             if (!Subjects.hasUid(subject, attr.getOwner())) {
                 return AccessType.ACCESS_DENIED;
@@ -233,7 +234,8 @@ public class PosixPermissionHandler implements PermissionHandler
          */
         int mode = attr.getMode();
         if (Subjects.hasUid(subject, attr.getOwner())) {
-            return AccessType.valueOf(isSet(mode, S_IWUSR));
+            // posix allows owner of file to set any attribute.
+            return AccessType.ACCESS_ALLOWED;
         }
 
         if (Subjects.hasGid(subject, attr.getGroup())) {
