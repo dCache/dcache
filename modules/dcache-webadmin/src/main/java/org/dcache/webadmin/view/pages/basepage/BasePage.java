@@ -146,10 +146,8 @@ public abstract class BasePage extends WebPage {
         setTimeout();
         add(new Label("pageTitle", new ResourceModel("title")));
         add(new HeaderPanel("headerPanel"));
-        add(new UserPanel("userPanel", this));
-        BasicNavigationPanel navigation = new BasicNavigationPanel("navigationPanel",
-                        this.getClass());
-        add(navigation);
+        add(new UserPanel("userPanel"));
+        add(new BasicNavigationPanel("navigationPanel", this.getClass()));
     }
 
     /**
