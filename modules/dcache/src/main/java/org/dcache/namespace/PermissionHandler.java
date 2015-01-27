@@ -3,6 +3,7 @@ package org.dcache.namespace;
 import javax.security.auth.Subject;
 
 import java.util.Set;
+import javax.annotation.Nonnull;
 
 import org.dcache.acl.enums.AccessType;
 import org.dcache.vehicles.FileAttributes;
@@ -35,6 +36,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canReadFile(Subject subject, FileAttributes attr);
 
     /**
@@ -47,6 +49,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canWriteFile(Subject subject, FileAttributes attr);
 
 
@@ -61,6 +64,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canCreateSubDir(Subject subject, FileAttributes parentAttr);
 
 
@@ -75,6 +79,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canCreateFile(Subject subject, FileAttributes parentAttr);
 
     /**
@@ -89,6 +94,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canDeleteFile(Subject subject,
                              FileAttributes parentAttr,
                              FileAttributes childAttr);
@@ -105,6 +111,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canDeleteDir(Subject subject,
                             FileAttributes parentAttr,
                             FileAttributes childAttr);
@@ -123,6 +130,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canRename(Subject subject,
                          FileAttributes existingParentAttr,
                          FileAttributes newParentAttr,
@@ -138,6 +146,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canListDir(Subject subject, FileAttributes attr);
 
     /**
@@ -150,6 +159,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canLookup(Subject subject, FileAttributes attr);
 
     /**
@@ -166,6 +176,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canSetAttributes(Subject subject,
                                 FileAttributes parentAttr,
                                 FileAttributes attr,
@@ -185,6 +196,7 @@ public interface PermissionHandler
      *
      * @return Returns the access type granted
      */
+    @Nonnull
     AccessType canGetAttributes(Subject subject,
                                 FileAttributes parentAttr,
                                 FileAttributes attr,
