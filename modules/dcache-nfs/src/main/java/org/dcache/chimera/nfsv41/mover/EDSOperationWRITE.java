@@ -61,6 +61,17 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
             _args.opwrite.data.rewind();
             int bytesWritten = fc.write(_args.opwrite.data, offset);
 
+            /*
+                due to bug in linux commit-through-ds code,
+                we shamelessly always return FILE_SYNC4 without
+                committing.
+
+                RedHat Bugzilla:
+                   https://bugzilla.redhat.com/show_bug.cgi?id=1184394
+            */
+            int stable = stable_how4.FILE_SYNC4;
+            /*
+            FIXME: enable this back as soon as kernel bug is fixed
             int stable = _args.opwrite.stable;
             switch (stable) {
                 case stable_how4.FILE_SYNC4:
@@ -75,6 +86,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
                 default:
                     throw new BadXdrException();
             }
+            */
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
