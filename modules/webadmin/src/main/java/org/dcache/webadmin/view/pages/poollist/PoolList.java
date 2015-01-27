@@ -107,7 +107,7 @@ public class PoolList extends BasePage {
                 @Override
                 protected void setSelectionForAll(Boolean selected) {
                     for (PoolSpaceBean bean: _poolBeans) {
-                        bean.setSelected(true);
+                        bean.setSelected(selected);
                     }
                 }
             };

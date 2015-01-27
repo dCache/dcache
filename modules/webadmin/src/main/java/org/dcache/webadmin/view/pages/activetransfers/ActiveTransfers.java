@@ -45,7 +45,7 @@ public class ActiveTransfers extends BasePage {
             @Override
             protected void setSelectionForAll(Boolean selected) {
                 for (SelectableWrapper<ActiveTransfersBean> wrapper: _transfers) {
-                    wrapper.setSelected(true);
+                    wrapper.setSelected(selected);
                 }
             }
         };
