@@ -459,7 +459,7 @@
                 <attr name="GLUE2EndpointCapability">data.management.storage</attr>
                 <attr name="GLUE2EndpointCapability">data.management.transfer</attr>
                 <attr name="GLUE2EndpointURL">httpg://&info-provider.se-unique-id;:<lookup
-                        path="../../d:metric[@name='port']"/>/srm/managerv2</attr>
+                        path="d:metric[@name='port']"/>/srm/managerv2</attr>
               </optionally>
 
               <otherwise>
