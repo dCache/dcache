@@ -180,7 +180,7 @@ loadConfig()
 
 # Get java location
 if ! findJava || ! isJavaVersionOk; then
-    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 7"
+    echo "Could not find usable Java VM. Please set JAVA_HOME to the path to Java 8"
     echo "or newer."
     exit 1
 fi
