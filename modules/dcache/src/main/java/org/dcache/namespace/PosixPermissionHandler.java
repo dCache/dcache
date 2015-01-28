@@ -213,7 +213,6 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes parentAttr,
                                        FileAttributes attr,
                                        Set<FileAttribute> attributes)
     {
@@ -247,27 +246,10 @@ public class PosixPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canGetAttributes(Subject subject,
-                                       FileAttributes parentAttr,
                                        FileAttributes attr,
                                        Set<FileAttribute> attributes)
     {
-        /* I'm not certain this is correct for all attributes, but it is
-         * consistent with our legacy code.
-         */
-        if (parentAttr == null) {
-            return ACCESS_ALLOWED;
-        }
-
-        int mode = parentAttr.getMode();
-
-        if (Subjects.hasUid(subject, parentAttr.getOwner())) {
-            return AccessType.valueOf(isSet(mode, S_IXUSR));
-        }
-
-        if (Subjects.hasGid(subject, parentAttr.getGroup())) {
-            return AccessType.valueOf(isSet(mode, S_IXGRP));
-        }
-
-        return AccessType.valueOf(isSet(mode, S_IXOTH));
+        // posix always allowes to read attributes
+        return ACCESS_ALLOWED;
     }
 }

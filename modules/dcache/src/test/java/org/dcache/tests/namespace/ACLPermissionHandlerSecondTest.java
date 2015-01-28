@@ -140,35 +140,33 @@ public class ACLPermissionHandlerSecondTest {
 
     @Test
     public void testSetAttributes() {
-        FileAttributes parent = getAttributes(UID, GID, null);
         FileAttributes attr = getAttributes(UID, GID, null);
 
         assertTrue("Set attributes should be undefined!", //
-                pdp.canSetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
+                pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
 
         attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+C"));
         assertTrue("Set attributes should be allowed!", //
-                pdp.canSetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
+                pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
 
         attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-C"));
         assertTrue("Set attributes should be denied!", //
-                pdp.canSetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
+                pdp.canSetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
     }
 
     @Test
     public void testGetAttributes() {
-        FileAttributes parent = getAttributes(UID, GID, null);
         FileAttributes attr = getAttributes(UID, GID, null);
 
         assertTrue("Get attributes (read ACL) should be undefined!", //
-                pdp.canGetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
+                pdp.canGetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_UNDEFINED);
 
         attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "+c"));
         assertTrue("Get attributes (read ACL) should be allowed!", //
-                pdp.canGetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
+                pdp.canGetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_ALLOWED);
 
         attr.setAcl(ACLParser.parseAdm(RsType.DIR, PREFIX_USER + "-c"));
         assertTrue("Get attributes (read ACL) should be denied!", //
-                pdp.canGetAttributes(subject, parent, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
+                pdp.canGetAttributes(subject, attr, EnumSet.of(ACL)) == AccessType.ACCESS_DENIED);
     }
 }

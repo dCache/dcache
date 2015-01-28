@@ -803,10 +803,7 @@ public class ChimeraNameSpaceProvider
             /* The permission check is performed after we fetched the
              * attributes to avoid fetching the attributes twice.
              */
-            FsInode inodeParent = _fs.getParentOf(inode);
-            FileAttributes parent =
-                    getFileAttributesForPermissionHandler(inodeParent);
-            if (_permissionHandler.canGetAttributes(subject, parent, fileAttributes, attr) != ACCESS_ALLOWED) {
+            if (_permissionHandler.canGetAttributes(subject, fileAttributes, attr) != ACCESS_ALLOWED) {
                 throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
             }
             return fileAttributes;
@@ -829,13 +826,10 @@ public class ChimeraNameSpaceProvider
 
         try {
             if (!Subjects.isRoot(subject)) {
-                FsInode inodeParent = _fs.getParentOf(inode);
-                FileAttributes parentAttributes =
-                    getFileAttributesForPermissionHandler(inodeParent);
                 FileAttributes attributes =
                     getFileAttributesForPermissionHandler(inode);
 
-                if (_permissionHandler.canSetAttributes(subject, parentAttributes, attributes,
+                if (_permissionHandler.canSetAttributes(subject, attributes,
                                                         attr.getDefinedAttributes()) != ACCESS_ALLOWED) {
                     throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
                 }

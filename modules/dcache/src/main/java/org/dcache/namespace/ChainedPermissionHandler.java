@@ -177,14 +177,12 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     private AccessType canSetAttribute(Subject subject,
-                                       FileAttributes parentAttrs,
                                        FileAttributes attrs,
                                        FileAttribute attribute)
     {
         Set<FileAttribute> set = Collections.singleton(attribute);
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canSetAttributes(subject,
-                                                      parentAttrs,
                                                       attrs,
                                                       set);
             switch (res) {
@@ -200,14 +198,12 @@ public class ChainedPermissionHandler implements PermissionHandler
     }
 
     private AccessType canGetAttribute(Subject subject,
-                                       FileAttributes parentAttrs,
                                        FileAttributes attrs,
                                        FileAttribute attribute)
     {
         Set<FileAttribute> set = Collections.singleton(attribute);
         for (PermissionHandler handler: _chain) {
             AccessType res = handler.canGetAttributes(subject,
-                                                      parentAttrs,
                                                       attrs,
                                                       set);
             switch (res) {
@@ -224,14 +220,13 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes parentAttrs,
                                        FileAttributes attrs,
                                        Set<FileAttribute> attributes)
     {
         boolean allAllowed = true;
         for (FileAttribute attribute: attributes) {
             AccessType res =
-                canSetAttribute(subject, parentAttrs, attrs, attribute);
+                canSetAttribute(subject, attrs, attribute);
             switch (res) {
             case ACCESS_DENIED:
                 return ACCESS_DENIED;
@@ -247,14 +242,13 @@ public class ChainedPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canGetAttributes(Subject subject,
-                                       FileAttributes parentAttrs,
                                        FileAttributes attrs,
                                        Set<FileAttribute> attributes)
     {
         boolean allAllowed = true;
         for (FileAttribute attribute: attributes) {
             AccessType res =
-                canGetAttribute(subject, parentAttrs, attrs, attribute);
+                canGetAttribute(subject, attrs, attribute);
             switch (res) {
             case ACCESS_DENIED:
                 return ACCESS_DENIED;

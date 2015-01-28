@@ -167,8 +167,6 @@ public interface PermissionHandler
      *
      * @param subject
      *            identifies the subject that is trying to access a resource
-     * @param parentAttr
-     *            Attributes of the parent directory
      * @param attr
      *            Attributes of the file for which to modify an attribute
      * @param attributes
@@ -178,7 +176,6 @@ public interface PermissionHandler
      */
     @Nonnull
     AccessType canSetAttributes(Subject subject,
-                                FileAttributes parentAttr,
                                 FileAttributes attr,
                                 Set<FileAttribute> attributes);
 
@@ -187,8 +184,6 @@ public interface PermissionHandler
      *
      * @param subject
      *            identifies the subject that is trying to access a resource
-     * @param parentAttr
-     *            Attributes of the parent directory
      * @param attr
      *            Attributes of the file for which to modify an attribute
      * @param attributes
@@ -198,7 +193,6 @@ public interface PermissionHandler
      */
     @Nonnull
     AccessType canGetAttributes(Subject subject,
-                                FileAttributes parentAttr,
                                 FileAttributes attr,
                                 Set<FileAttribute> attributes);
 }

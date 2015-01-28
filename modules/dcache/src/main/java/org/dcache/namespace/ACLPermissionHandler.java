@@ -163,7 +163,6 @@ public class ACLPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canSetAttributes(Subject subject,
-                                       FileAttributes parentAttr,
                                        FileAttributes attr,
                                        Set<FileAttribute> attributes)
     {
@@ -173,7 +172,6 @@ public class ACLPermissionHandler implements PermissionHandler
 
     @Override
     public AccessType canGetAttributes(Subject subject,
-                                       FileAttributes parentAttr,
                                        FileAttributes attr,
                                        Set<FileAttribute> attributes)
     {

@@ -4459,7 +4459,7 @@ public abstract class AbstractFtpDoorV1
                     case SIZE:
                         if (attr.isDefined(SIZE) && attr.getFileType() != FileType.DIR) {
                             access =
-                                _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                _pdp.canGetAttributes(_subject, attr,
                                                       EnumSet.of(SIZE));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printSizeFact(attr);
@@ -4469,7 +4469,7 @@ public abstract class AbstractFtpDoorV1
                     case CREATE:
                         if (attr.isDefined(CREATION_TIME)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(CREATION_TIME));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printCreateFact(attr);
@@ -4479,7 +4479,7 @@ public abstract class AbstractFtpDoorV1
                     case MODIFY:
                         if (attr.isDefined(MODIFICATION_TIME)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(MODIFICATION_TIME));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printModifyFact(attr);
@@ -4489,7 +4489,7 @@ public abstract class AbstractFtpDoorV1
                     case CHANGE:
                         if (attr.isDefined(CHANGE_TIME)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(CHANGE_TIME));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printChangeFact(attr);
@@ -4499,7 +4499,7 @@ public abstract class AbstractFtpDoorV1
                     case ACCESS:
                         if (attr.isDefined(ACCESS_TIME)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(ACCESS_TIME));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printAccessFact(attr);
@@ -4509,7 +4509,7 @@ public abstract class AbstractFtpDoorV1
                     case TYPE:
                         if (attr.isDefined(TYPE)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(TYPE));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printTypeFact(attr);
@@ -4521,7 +4521,7 @@ public abstract class AbstractFtpDoorV1
                         break;
                     case PERM:
                         access =
-                            _pdp.canGetAttributes(_subject, dirAttr, attr,
+                            _pdp.canGetAttributes(_subject, attr,
                                                   EnumSet.of(MODE, ACL));
                         if (access == AccessType.ACCESS_ALLOWED) {
                             printPermFact(dirAttr, attr);
@@ -4530,7 +4530,7 @@ public abstract class AbstractFtpDoorV1
                     case OWNER:
                         if (attr.isDefined(OWNER)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(OWNER));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printOwnerFact(attr);
@@ -4540,7 +4540,7 @@ public abstract class AbstractFtpDoorV1
                     case GROUP:
                         if (attr.isDefined(OWNER_GROUP)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(OWNER_GROUP));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printGroupFact(attr);
@@ -4550,7 +4550,7 @@ public abstract class AbstractFtpDoorV1
                     case MODE:
                         if (attr.isDefined(MODE)) {
                             access =
-                                    _pdp.canGetAttributes(_subject, dirAttr, attr,
+                                    _pdp.canGetAttributes(_subject, attr,
                                                           EnumSet.of(MODE));
                             if (access == AccessType.ACCESS_ALLOWED) {
                                 printModeFact(attr);
