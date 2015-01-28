@@ -17,7 +17,6 @@
  */
 package org.dcache.http;
 
-import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -87,13 +86,10 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     private ChecksumModule checksumModule;
     private long connectTimeout;
     private TimeUnit connectTimeoutUnit;
-    private int diskThreads;
-    private int maxMemoryPerConnection;
-    private int maxMemory;
+    private int threads;
     private int chunkSize;
     private long clientIdleTimeout;
     private TimeUnit clientIdleTimeoutUnit;
-    private Integer socketThreads;
 
     private HttpPoolNettyServer server;
 
@@ -138,37 +134,15 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
         this.connectTimeoutUnit = connectTimeoutUnit;
     }
 
-    public int getDiskThreads()
+    public int getThreads()
     {
-        return diskThreads;
+        return threads;
     }
 
     @Required
-    public void setDiskThreads(int diskThreads)
+    public void setThreads(int threads)
     {
-        this.diskThreads = diskThreads;
-    }
-
-    public int getMaxMemoryPerConnection()
-    {
-        return maxMemoryPerConnection;
-    }
-
-    @Required
-    public void setMaxMemoryPerConnection(int maxMemoryPerConnection)
-    {
-        this.maxMemoryPerConnection = maxMemoryPerConnection;
-    }
-
-    public int getMaxMemory()
-    {
-        return maxMemory;
-    }
-
-    @Required
-    public void setMaxMemory(int maxMemory)
-    {
-        this.maxMemory = maxMemory;
+        this.threads = threads;
     }
 
     public int getChunkSize()
@@ -204,33 +178,10 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
         this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
     }
 
-    public String getSocketThreads()
-    {
-        return (socketThreads == null) ? null : String.valueOf(socketThreads);
-    }
-
-    public void setSocketThreads(String socketThreads)
-    {
-        this.socketThreads = Strings.isNullOrEmpty(socketThreads) ? null : Integer.valueOf(socketThreads);
-    }
-
     @PostConstruct
     public synchronized void init()
     {
-        if (socketThreads == null) {
-            server = new HttpPoolNettyServer(diskThreads,
-                    maxMemoryPerConnection,
-                    maxMemory,
-                    chunkSize,
-                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout));
-        } else {
-            server = new HttpPoolNettyServer(diskThreads,
-                    maxMemoryPerConnection,
-                    maxMemory,
-                    chunkSize,
-                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
-                    socketThreads);
-        }
+        server = new HttpPoolNettyServer(threads, chunkSize, clientIdleTimeoutUnit.toMillis(clientIdleTimeout));
     }
 
     @PreDestroy

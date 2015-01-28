@@ -1,8 +1,11 @@
 package org.dcache.util;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelException;
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Uninterruptibles;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
 
 import java.io.IOException;
 import java.net.BindException;
@@ -11,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -232,10 +236,13 @@ public class PortRange
         int port = start;
         do {
             try {
-                return server.bind(new InetSocketAddress(address, port));
-            } catch (ChannelException e) {
+                ChannelFuture future = server.bind(new InetSocketAddress(address, port));
+                Uninterruptibles.getUninterruptibly(future);
+                return future.channel();
+            } catch (ExecutionException e) {
                 if (!(e.getCause() instanceof BindException)) {
-                    throw e;
+                    Throwables.propagateIfPossible(e.getCause(), IOException.class);
+                    throw Throwables.propagate(e.getCause());
                 }
             }
             port = succ(port);

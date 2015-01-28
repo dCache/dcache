@@ -2,14 +2,12 @@ package org.dcache.pool.movers;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
-import org.jboss.netty.logging.InternalLoggerFactory;
-import org.jboss.netty.logging.Slf4JLoggerFactory;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,8 +16,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,9 +34,7 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * Abstract base class for all netty servers running on the pool
  * dispatching movers. This class provides most methods needed by a
- * pool-side netty mover. Minimally, extending classes need to provide
- * their own channel-pipelines, their port-range and the logic used
- * for starting/stopping the server.
+ * pool-side netty mover.
  *
  * TODO: Cancellation currently doesn't close the netty channel. We rely
  * on the mover closing the MoverChannel, thus as a side effect causing
@@ -50,33 +44,17 @@ import org.dcache.vehicles.FileAttributes;
  */
 public abstract class AbstractNettyServer<T extends ProtocolInfo>
 {
-    private final static Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(AbstractNettyServer.class);
-
-    /**
-     * Shared thread pool accepting TCP connections.
-     */
-    private final ExecutorService _acceptExecutor;
-
-    /**
-     * Shared thread pool performing non-blocking socket IO.
-     */
-    private final ExecutorService _socketExecutor;
-
-    /**
-     * Shared thread pool performing blocking disk IO.
-     */
-    private final ExecutorService _diskExecutor;
 
     /**
      * Manages connection timeouts.
      */
     private final ScheduledExecutorService _timeoutScheduler;
 
-    /**
-     * Number of threads accepting connections.
-     */
-    private final int _socketThreads;
+
+    private final NioEventLoopGroup _acceptGroup;
+    private final NioEventLoopGroup _socketGroup;
 
     /**
      * Shared Netty server channel
@@ -88,11 +66,6 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      */
     private InetSocketAddress _lastServerAddress;
 
-    /**
-     * Netty channel factory.
-     */
-    private ChannelFactory _channelFactory;
-
     private PortRange _portRange = new PortRange(0);
 
     private final ConcurrentMap<UUID,Entry> _uuids =
@@ -100,36 +73,13 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     private final ConcurrentMap<MoverChannel<T>,Entry> _channels =
         Maps.newConcurrentMap();
 
-    /**
-     * Switch Netty to slf4j for logging. Should be moved somewhere
-     * else.
-     */
-    static
-    {
-        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
-    }
-
-    public AbstractNettyServer(
-            String name,
-            int threadPoolSize,
-            int memoryPerConnection,
-            int maxMemory,
-            int socketThreads)
+    public AbstractNettyServer(String name, int threads)
     {
         _timeoutScheduler =
                 Executors.newSingleThreadScheduledExecutor(
                         new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());
-        _diskExecutor =
-            new OrderedMemoryAwareThreadPoolExecutor(
-                    threadPoolSize, memoryPerConnection, maxMemory, 30, TimeUnit.SECONDS,
-                    new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-disk-%d").build()));
-        _acceptExecutor =
-                Executors.newCachedThreadPool(
-                        new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build()));
-        _socketExecutor =
-                Executors.newCachedThreadPool(
-                        new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-net-%d").build()));
-        _socketThreads = socketThreads;
+        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build()));
+        _socketGroup = new NioEventLoopGroup(threads, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-net-%d").build()));
     }
 
     /**
@@ -139,27 +89,16 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      */
     protected synchronized void startServer() throws IOException {
         if (_serverChannel == null) {
-            if (_channelFactory == null) {
-                if (_socketThreads == -1) {
-                    _channelFactory =
-                            new NioServerSocketChannelFactory(_acceptExecutor,
-                                    _socketExecutor);
-                } else {
-                    _channelFactory =
-                            new NioServerSocketChannelFactory(_acceptExecutor,
-                                    _socketExecutor,
-                                    _socketThreads);
-                }
-            }
-
-            ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
-            bootstrap.setOption("child.tcpNoDelay", false);
-            bootstrap.setOption("child.keepAlive", true);
-            bootstrap.setPipelineFactory(newPipelineFactory());
+            ServerBootstrap bootstrap = new ServerBootstrap()
+                    .group(_acceptGroup, _socketGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childOption(ChannelOption.TCP_NODELAY, false)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childHandler(newChannelInitializer());
 
             _serverChannel = _portRange.bind(bootstrap);
-            _lastServerAddress = (InetSocketAddress) _serverChannel.getLocalAddress();
-            _logger.debug("Started {} on {}", getClass().getSimpleName(), _lastServerAddress);
+            _lastServerAddress = (InetSocketAddress) _serverChannel.localAddress();
+            LOGGER.debug("Started {} on {}", getClass().getSimpleName(), _lastServerAddress);
         }
     }
 
@@ -169,7 +108,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     protected synchronized void stopServer()
     {
         if (_serverChannel != null) {
-            _logger.debug("Stopping {} on {}", getClass().getSimpleName(), _lastServerAddress);
+            LOGGER.debug("Stopping {} on {}", getClass().getSimpleName(), _lastServerAddress);
             _serverChannel.close();
             _serverChannel = null;
         }
@@ -178,24 +117,18 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     public synchronized void shutdown()
     {
         stopServer();
-        if (_channelFactory != null) {
-            _timeoutScheduler.shutdown();
-            _channelFactory.releaseExternalResources();
-            _channelFactory = null;
-            _acceptExecutor.shutdown();
-            _socketExecutor.shutdown();
-            _diskExecutor.shutdown();
-            try {
-                if (_timeoutScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
-                    if (_acceptExecutor.awaitTermination(3, TimeUnit.SECONDS)) {
-                        if (_socketExecutor.awaitTermination(3, TimeUnit.SECONDS)) {
-                            _diskExecutor.awaitTermination(3, TimeUnit.SECONDS);
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+        _timeoutScheduler.shutdown();
+
+        _acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        _socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+
+        try {
+            if (_timeoutScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
+                _acceptGroup.terminationFuture().sync();
+                _socketGroup.terminationFuture().sync();
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -388,19 +321,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      * Child classes should produce suitable pipeline factories here.
      * @return ChannelPipelineFactory adapted to child class.
      */
-    protected abstract ChannelPipelineFactory newPipelineFactory();
-
-    protected Executor getDiskExecutor() {
-        return _diskExecutor;
-    }
-
-    protected Executor getAcceptExecutor() {
-        return _acceptExecutor;
-    }
-
-    protected Executor getSocketExecutor() {
-        return _socketExecutor;
-    }
+    protected abstract ChannelInitializer newChannelInitializer();
 
     public PortRange getPortRange() {
         return _portRange;

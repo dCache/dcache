@@ -1,12 +1,10 @@
 package org.dcache.xrootd.pool;
 
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.logging.LoggingHandler;
-import org.jboss.netty.handler.timeout.IdleStateHandler;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +21,6 @@ import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
 
-import static org.jboss.netty.channel.Channels.pipeline;
-
 /**
  * Pool-netty server tailored to the requirements of the xrootd protocol.
  * @author tzangerl
@@ -33,15 +29,10 @@ import static org.jboss.netty.channel.Channels.pipeline;
 public class XrootdPoolNettyServer
     extends AbstractNettyServer<XrootdProtocolInfo>
 {
-    private final static Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(XrootdPoolNettyServer.class);
 
     private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
-
-    /**
-     * Used to generate channel-idle events for the pool handler
-     */
-    private final Timer _timer;
 
     private final long _clientIdleTimeout;
     private final int _maxFrameSize;
@@ -50,32 +41,13 @@ public class XrootdPoolNettyServer
     private List<ChannelHandlerFactory> _plugins;
 
     public XrootdPoolNettyServer(int threadPoolSize,
-                                 int memoryPerConnection,
-                                 int maxMemory,
                                  long clientIdleTimeout,
                                  int maxFrameSize,
                                  List<ChannelHandlerFactory> plugins) {
-        this(threadPoolSize,
-             memoryPerConnection,
-             maxMemory,
-             clientIdleTimeout,
-             maxFrameSize,
-             plugins,
-             -1);
-    }
-
-    public XrootdPoolNettyServer(int threadPoolSize,
-                                 int memoryPerConnection,
-                                 int maxMemory,
-                                 long clientIdleTimeout,
-                                 int maxFrameSize,
-                                 List<ChannelHandlerFactory> plugins,
-                                 int socketThreads) {
-        super("xrootd", threadPoolSize, memoryPerConnection, maxMemory, socketThreads);
+        super("xrootd", threadPoolSize);
         _clientIdleTimeout = clientIdleTimeout;
         _maxFrameSize = maxFrameSize;
         _plugins = plugins;
-        _timer = new HashedWheelTimer();
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -88,15 +60,9 @@ public class XrootdPoolNettyServer
         return _maxFrameSize;
     }
 
-    public void shutdown()
-    {
-        super.shutdown();
-        _timer.stop();
-    }
-
     @Override
-    protected ChannelPipelineFactory newPipelineFactory() {
-        return new XrootdPoolPipelineFactory();
+    protected ChannelInitializer newChannelInitializer() {
+        return new XrootdPoolChannelInitializer();
     }
 
     /**
@@ -119,21 +85,17 @@ public class XrootdPoolNettyServer
         conditionallyStopServer();
     }
 
-    private class XrootdPoolPipelineFactory implements ChannelPipelineFactory {
+    private class XrootdPoolChannelInitializer extends ChannelInitializer
+    {
         @Override
-        public ChannelPipeline getPipeline() throws Exception {
-            ChannelPipeline pipeline = pipeline();
+        protected void initChannel(Channel ch) throws Exception
+        {
+            ChannelPipeline pipeline = ch.pipeline();
 
-            /* The disk executor is an OrderedMemoryAwareThreadPoolExecutor.  It only
-             * knows how to estimate the size of ChannelBuffer, so we cannot place
-             * decoded messages on the queue.
-             */
-            pipeline.addLast("executor", new ExecutionHandler(getDiskExecutor()));
             pipeline.addLast("encoder", new XrootdEncoder());
             pipeline.addLast("decoder", new XrootdDecoder());
-            if (_logger.isDebugEnabled()) {
-                pipeline.addLast("logger",
-                                 new LoggingHandler(XrootdPoolNettyServer.class));
+            if (LOGGER.isDebugEnabled()) {
+                pipeline.addLast("logger", new LoggingHandler(XrootdPoolNettyServer.class));
             }
             pipeline.addLast("handshake",
                              new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
@@ -141,15 +103,12 @@ public class XrootdPoolNettyServer
                 pipeline.addLast("plugin:" + plugin.getName(),
                         plugin.createHandler());
             }
-            pipeline.addLast("timeout", new IdleStateHandler(_timer,
-                                                             0,
+            pipeline.addLast("timeout", new IdleStateHandler(0,
                                                              0,
                                                              _clientIdleTimeout,
                                                              TimeUnit.MILLISECONDS));
             pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
-            pipeline.addLast("transfer",
-                             new XrootdPoolRequestHandler(XrootdPoolNettyServer.this));
-            return pipeline;
+            pipeline.addLast("transfer", new XrootdPoolRequestHandler(XrootdPoolNettyServer.this));
         }
     }
 }

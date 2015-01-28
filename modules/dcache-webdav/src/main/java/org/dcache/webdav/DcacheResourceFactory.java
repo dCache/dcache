@@ -14,8 +14,8 @@ import io.milton.http.Request;
 import io.milton.http.ResourceFactory;
 import io.milton.resource.Resource;
 import io.milton.servlet.ServletRequest;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -1350,7 +1350,7 @@ public class DcacheResourceFactory
                         ByteStreams.copy(inputStream, outputStream);
                         outputStream.flush();
                     }
-                    if (connection.getResponseCode() != HttpResponseStatus.CREATED.getCode()) {
+                    if (connection.getResponseCode() != HttpResponseStatus.CREATED.code()) {
                         throw new CacheException(connection.getResponseMessage());
                     }
                 } finally {

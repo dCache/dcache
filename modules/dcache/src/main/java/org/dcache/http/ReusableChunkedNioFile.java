@@ -1,7 +1,9 @@
 package org.dcache.http;
 
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.stream.ChunkedInput;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.stream.ChunkedInput;
 
 import java.nio.ByteBuffer;
 
@@ -24,7 +26,7 @@ import org.dcache.pool.repository.RepositoryChannel;
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-public class ReusableChunkedNioFile implements ChunkedInput
+public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
 {
     private final RepositoryChannel _channel;
     private final long _endOffset;
@@ -74,13 +76,8 @@ public class ReusableChunkedNioFile implements ChunkedInput
     }
 
     @Override
-    public boolean hasNextChunk() throws Exception {
-        return _offset < _endOffset && _channel.isOpen();
-    }
-
-    @Override
     public boolean isEndOfInput() throws Exception {
-        return !hasNextChunk();
+        return _offset >= _endOffset || !_channel.isOpen();
     }
 
     /**
@@ -91,7 +88,8 @@ public class ReusableChunkedNioFile implements ChunkedInput
      * @return ChannelBuffer containing the read bytes
      */
     @Override
-    public Object nextChunk() throws Exception {
+    public ByteBuf readChunk(ChannelHandlerContext ctx) throws Exception
+    {
         long offset = _offset;
 
         if (_offset >= _endOffset) {
@@ -121,7 +119,7 @@ public class ReusableChunkedNioFile implements ChunkedInput
 
         _offset += readBytes;
 
-        return ChannelBuffers.wrappedBuffer(chunkArray);
+        return Unpooled.wrappedBuffer(chunkArray);
     }
 
     /**

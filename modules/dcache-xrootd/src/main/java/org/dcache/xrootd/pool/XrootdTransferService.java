@@ -102,13 +102,10 @@ public class XrootdTransferService
 
     private PostTransferService postTransferService;
     private FaultListener faultListener;
-    private int diskThreads;
-    private int maxMemoryPerConnection;
-    private int maxMemory;
+    private int threads;
     private long clientIdleTimeout;
     private TimeUnit clientIdleTimeoutUnit;
     private int maxFrameSize;
-    private Integer socketThreads;
     private List<ChannelHandlerFactory> plugins;
 
     private XrootdPoolNettyServer server;
@@ -127,36 +124,14 @@ public class XrootdTransferService
     }
 
     @Required
-    public void setDiskThreads(int threads)
+    public void setThreads(int threads)
     {
-        this.diskThreads = threads;
+        this.threads = threads;
     }
 
-    public int getDiskThreads()
+    public int getThreads()
     {
-        return diskThreads;
-    }
-
-    @Required
-    public void setMaxMemoryPerConnection(int bytes)
-    {
-        this.maxMemoryPerConnection = bytes;
-    }
-
-    public int getMaxMemoryPerConnection()
-    {
-        return maxMemoryPerConnection;
-    }
-
-    @Required
-    public void setMaxMemory(int bytes)
-    {
-        this.maxMemory = bytes;
-    }
-
-    public int getMaxMemory()
-    {
-        return maxMemory;
+        return threads;
     }
 
     @Required
@@ -181,16 +156,6 @@ public class XrootdTransferService
         this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
     }
 
-    public void setSocketThreads(String socketThreads)
-    {
-        this.socketThreads = Strings.isNullOrEmpty(socketThreads) ? null : Integer.parseInt(socketThreads);
-    }
-
-    public String getSocketThreads()
-    {
-        return (socketThreads == null) ? null : String.valueOf(socketThreads);
-    }
-
     @Required
     public void setPlugins(List<ChannelHandlerFactory> plugins)
     {
@@ -211,24 +176,11 @@ public class XrootdTransferService
     @PostConstruct
     public synchronized void init()
     {
-        if (socketThreads == null) {
-            server = new XrootdPoolNettyServer(
-                    diskThreads,
-                    maxMemoryPerConnection,
-                    maxMemory,
-                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
-                    maxFrameSize,
-                    plugins);
-        } else {
-            server = new XrootdPoolNettyServer(
-                    diskThreads,
-                    maxMemoryPerConnection,
-                    maxMemory,
-                    clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
-                    maxFrameSize,
-                    plugins,
-                    socketThreads);
-        }
+        server = new XrootdPoolNettyServer(
+                threads,
+                clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
+                maxFrameSize,
+                plugins);
     }
 
     @PreDestroy

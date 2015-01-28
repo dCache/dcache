@@ -1,15 +1,13 @@
 package org.dcache.http;
 
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder;
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.logging.LoggingHandler;
-import org.jboss.netty.handler.stream.ChunkedWriteHandler;
-import org.jboss.netty.handler.timeout.IdleStateHandler;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timer;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +17,6 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.util.PortRange;
-
-import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Class used for encapsulating the netty HTTP server that serves client
@@ -32,42 +28,24 @@ import static org.jboss.netty.channel.Channels.pipeline;
 public class HttpPoolNettyServer
     extends AbstractNettyServer<HttpProtocolInfo>
 {
-    private final static Logger _logger =
+    private static final Logger LOGGER =
         LoggerFactory.getLogger(HttpPoolNettyServer.class);
 
-    private final static PortRange DEFAULT_PORTRANGE =
+    private static final PortRange DEFAULT_PORTRANGE =
         new PortRange(20000, 25000);
-
-    private final Timer _timer;
 
     private final long _clientIdleTimeout;
 
     private final int _chunkSize;
 
     public HttpPoolNettyServer(int threadPoolSize,
-                               int memoryPerConnection,
-                               int maxMemory,
                                int chunkSize,
-                               long clientIdleTimeout) {
-        this(threadPoolSize,
-             memoryPerConnection,
-             maxMemory,
-             chunkSize,
-             clientIdleTimeout,
-             -1);
-    }
-
-    public HttpPoolNettyServer(int threadPoolSize,
-                               int memoryPerConnection,
-                               int maxMemory,
-                               int chunkSize,
-                               long clientIdleTimeout,
-                               int socketThreads) {
-        super("http", threadPoolSize, memoryPerConnection, maxMemory, socketThreads);
+                               long clientIdleTimeout)
+    {
+        super("http", threadPoolSize);
 
         _clientIdleTimeout = clientIdleTimeout;
         _chunkSize = chunkSize;
-        _timer = new HashedWheelTimer();
 
         String range = System.getProperty("org.globus.tcp.port.range");
         PortRange portRange =
@@ -78,12 +56,11 @@ public class HttpPoolNettyServer
     public void shutdown()
     {
         super.shutdown();
-        _timer.stop();
     }
 
     @Override
-    protected ChannelPipelineFactory newPipelineFactory() {
-        return new HttpPoolPipelineFactory();
+    protected ChannelInitializer newChannelInitializer() {
+        return new HttpChannelInitializer();
     }
 
     /**
@@ -94,34 +71,26 @@ public class HttpPoolNettyServer
      * @author tzangerl
      *
      */
-    class HttpPoolPipelineFactory implements ChannelPipelineFactory {
-
+    class HttpChannelInitializer extends ChannelInitializer
+    {
         @Override
-        public ChannelPipeline getPipeline() throws Exception {
-            ChannelPipeline pipeline = pipeline();
+        protected void initChannel(Channel ch) throws Exception
+        {
+            ChannelPipeline pipeline = ch.pipeline();
 
-            /* The disk executor is an OrderedMemoryAwareThreadPoolExecutor.  It only
-             * knows how to estimate the size of ChannelBuffer, so we cannot place
-             * decoded messages on the queue.
-             */
-            pipeline.addLast("executor",
-                             new ExecutionHandler(getDiskExecutor()));
             pipeline.addLast("decoder", new HttpRequestDecoder());
             pipeline.addLast("encoder", new HttpResponseEncoder());
 
-            if (_logger.isDebugEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 pipeline.addLast("logger", new LoggingHandler(HttpPoolNettyServer.class));
             }
             pipeline.addLast("idle-state-handler",
-                             new IdleStateHandler(_timer,
-                                                  0,
+                             new IdleStateHandler(0,
                                                   0,
                                                   _clientIdleTimeout,
                                                   TimeUnit.MILLISECONDS));
             pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
             pipeline.addLast("transfer", new HttpPoolRequestHandler(HttpPoolNettyServer.this, _chunkSize));
-
-            return pipeline;
         }
     }
 }

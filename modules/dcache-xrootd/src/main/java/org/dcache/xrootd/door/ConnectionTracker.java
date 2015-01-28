@@ -1,11 +1,9 @@
 package org.dcache.xrootd.door;
 
-import com.google.common.collect.Ordering;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandler.Sharable;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 import java.io.PrintWriter;
 import java.util.Iterator;
@@ -26,30 +24,30 @@ import org.dcache.util.Args;
  */
 @Sharable
 public class ConnectionTracker
-    extends SimpleChannelUpstreamHandler
+    extends ChannelInboundHandlerAdapter
     implements CellCommandListener, CellInfoProvider
 {
     private Map<Channel,String> sessions = new ConcurrentHashMap<>();
     private AtomicInteger counter = new AtomicInteger();
 
     @Override
-    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
+    public void channelActive(ChannelHandlerContext ctx)
         throws Exception
     {
-        Channel channel = e.getChannel();
+        Channel channel = ctx.channel();
         sessions.put(channel, CDC.getSession());
         counter.getAndIncrement();
-        super.channelOpen(ctx, e);
+        super.channelActive(ctx);
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
+    public void channelInactive(ChannelHandlerContext ctx)
         throws Exception
     {
         try {
-            super.channelClosed(ctx, e);
+            super.channelInactive(ctx);
         } finally {
-            sessions.remove(e.getChannel());
+            sessions.remove(ctx.channel());
         }
     }
 

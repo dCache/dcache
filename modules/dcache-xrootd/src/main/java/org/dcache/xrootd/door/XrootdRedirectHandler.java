@@ -17,14 +17,13 @@
  */
 package org.dcache.xrootd.door;
 
-import com.google.common.base.Function;
+import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +33,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -59,7 +59,6 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
-import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.DirListResponse;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
@@ -75,88 +74,73 @@ import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
+import org.dcache.xrootd.protocol.messages.XrootdRequest;
+import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.OpaqueStringParser;
 
 import static com.google.common.collect.Iterables.transform;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
 /**
- * Channel handler which redirects all open requests to a
- * pool. Besides open, the handler implements stat and statx. All
- * other requests return an error to the client.
- *
- * Most of the code is copied from the old xrootd implementation.
- *
- * Should possibly be renamed as only open requests are
- * redirected. Other requests can be handled locally.
+ * Channel handler which redirects all open requests to a pool.
  */
 public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
 
     private final XrootdDoor _door;
+    private final FsPath _rootPath;
     private final FsPath _uploadPath;
+    private final ListeningExecutorService _executor;
+
+    /**
+     * The set of requests which are currently processed for this channel. They
+     * will be interrupted in case the channel is disonnected.
+     */
+    private final Set<Future<?>> _requests = Collections.synchronizedSet(new HashSet<>());
 
     private boolean _isReadOnly = true;
     private FsPath _userRootPath = new FsPath();
-    private final FsPath _rootPath;
 
-    /**
-     * The set of threads which currently process an xrootd request
-     * for this channel. They will be interrupted in case the channel
-     * is disonnected.
-     */
-    private final Set<Thread> _threads =
-        Collections.synchronizedSet(new HashSet<Thread>());
-
-    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath)
+    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath, ListeningExecutorService executor)
     {
         _door = door;
         _rootPath = rootPath;
         _uploadPath = uploadPath;
+        _executor = executor;
     }
 
     @Override
-    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent event)
-        throws Exception
+    protected void requestReceived(ChannelHandlerContext ctx, XrootdRequest req)
+    {
+        ListenableFuture<?> future = _executor.submit(() -> super.requestReceived(ctx, req));
+        _requests.add(future);
+        future.addListener(() -> _requests.remove(future), MoreExecutors.directExecutor());
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx)
+            throws Exception
+    {
+        synchronized (_requests) {
+            for (Future<?> request : _requests) {
+                request.cancel(true);
+            }
+        }
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object event) throws Exception
     {
         if (event instanceof LoginEvent) {
             loggedIn((LoginEvent) event);
         }
-        super.handleUpstream(ctx, event);
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event)
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
     {
-        Thread me = Thread.currentThread();
-        _threads.add(me);
-        try {
-            super.messageReceived(ctx, event);
-        } finally {
-            _threads.remove(me);
-        }
-    }
-
-    @Override
-    public void channelDisconnected(ChannelHandlerContext ctx,
-                                    ChannelStateEvent event)
-        throws Exception
-    {
-        synchronized (_threads) {
-            for (Thread thread: _threads) {
-                thread.interrupt();
-            }
-        }
-        super.channelDisconnected(ctx, event);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx,
-                                ExceptionEvent event)
-    {
-        Throwable t = event.getCause();
         if (t instanceof ClosedChannelException) {
             _log.info("Connection closed");
         } else if (t instanceof RuntimeException || t instanceof Error) {
@@ -173,15 +157,12 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
      * sync, read, write or close are expected at the door.
      */
     @Override
-    protected AbstractResponseMessage
-        doOnOpen(ChannelHandlerContext ctx, MessageEvent event, OpenRequest req)
+    protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest req)
         throws XrootdException
     {
-        Channel channel = event.getChannel();
-        InetSocketAddress localAddress =
-            (InetSocketAddress) channel.getLocalAddress();
-        InetSocketAddress remoteAddress =
-            (InetSocketAddress) channel.getRemoteAddress();
+        Channel channel = ctx.channel();
+        InetSocketAddress localAddress = (InetSocketAddress) channel.localAddress();
+        InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
         int options = req.getOptions();
 
         FilePerm neededPerm;
@@ -229,7 +210,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             /* xrootd developers say that IPv6 addresses must always be URI quoted.
              * The spec doesn't require this, but clients depend on it.
              */
-            return new RedirectResponse(req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, "");
+            return new RedirectResponse<>(req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, "");
         } catch (FileNotFoundCacheException e) {
             throw new XrootdException(kXR_NotFound, "No such file");
         } catch (FileExistsCacheException e) {
@@ -257,14 +238,12 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnStat(ChannelHandlerContext ctx, MessageEvent event, StatRequest req)
+    protected XrootdResponse<StatRequest> doOnStat(ChannelHandlerContext ctx, StatRequest req)
         throws XrootdException
     {
         String path = req.getPath();
         try {
-            String client =
-                    ((InetSocketAddress) event.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+            String client = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
             return new StatResponse(req, _door.getFileStatus(createFullPath(path), req.getSubject(), client));
         } catch (FileNotFoundCacheException e) {
             throw new XrootdException(kXR_NotFound, "No such file");
@@ -280,8 +259,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnStatx(ChannelHandlerContext ctx, MessageEvent event, StatxRequest req)
+    protected XrootdResponse<StatxRequest> doOnStatx(ChannelHandlerContext ctx, StatxRequest req)
         throws XrootdException
     {
         if (req.getPaths().length == 0) {
@@ -306,8 +284,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
 
 
     @Override
-    protected AbstractResponseMessage
-        doOnRm(ChannelHandlerContext ctx, MessageEvent event, RmRequest req)
+    protected XrootdResponse<RmRequest> doOnRm(ChannelHandlerContext ctx, RmRequest req)
         throws XrootdException
     {
         if (req.getPath().isEmpty()) {
@@ -337,8 +314,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnRmDir(ChannelHandlerContext ctx, MessageEvent event, RmDirRequest req)
+    protected XrootdResponse<RmDirRequest> doOnRmDir(ChannelHandlerContext ctx, RmDirRequest req)
         throws XrootdException
     {
         if (req.getPath().isEmpty()) {
@@ -369,8 +345,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnMkDir(ChannelHandlerContext ctx, MessageEvent event, MkDirRequest req)
+    protected XrootdResponse<MkDirRequest> doOnMkDir(ChannelHandlerContext ctx, MkDirRequest req)
         throws XrootdException
     {
         if (req.getPath().isEmpty()) {
@@ -403,8 +378,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnMv(ChannelHandlerContext ctx, MessageEvent event, MvRequest req)
+    protected XrootdResponse<MvRequest> doOnMv(ChannelHandlerContext ctx, MvRequest req)
         throws XrootdException
     {
         String sourcePath = req.getSourcePath();
@@ -421,8 +395,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             throw new XrootdException(kXR_NotAuthorized, "Read-only access");
         }
 
-        _log.info("Trying to rename {} to {}",
-                  req.getSourcePath(), req.getTargetPath());
+        _log.info("Trying to rename {} to {}", req.getSourcePath(), req.getTargetPath());
 
         try {
             _door.moveFile(
@@ -451,7 +424,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected Object doOnQuery(ChannelHandlerContext ctx, MessageEvent event, QueryRequest msg) throws XrootdException
+    protected XrootdResponse<QueryRequest> doOnQuery(ChannelHandlerContext ctx, QueryRequest msg) throws XrootdException
     {
         switch (msg.getReqcode()) {
         case kXR_Qconfig:
@@ -492,14 +465,12 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
 
         default:
-            return super.doOnQuery(ctx, event, msg);
+            return unsupported(ctx, msg);
         }
     }
 
     @Override
-    protected AbstractResponseMessage doOnDirList(ChannelHandlerContext context,
-                                                  MessageEvent event,
-                                                  DirListRequest request)
+    protected XrootdResponse<DirListRequest> doOnDirList(ChannelHandlerContext ctx, DirListRequest request)
         throws XrootdException
     {
         try {
@@ -509,8 +480,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             }
 
             _log.info("Listing directory {}", listPath);
-            MessageCallback<PnfsListDirectoryMessage> callback =
-                    new ListCallback(request, context, event);
+            MessageCallback<PnfsListDirectoryMessage> callback = new ListCallback(request, ctx);
             _door.listPath(createFullPath(listPath), request.getSubject(), callback);
             return null;
         } catch (PermissionDeniedCacheException e) {
@@ -519,9 +489,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnPrepare(ChannelHandlerContext ctx, MessageEvent event,
-                    PrepareRequest msg)
+    protected XrootdResponse<PrepareRequest> doOnPrepare(ChannelHandlerContext ctx, PrepareRequest msg)
         throws XrootdException
     {
         return withOk(msg);
@@ -638,14 +606,12 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     {
         private final DirListRequest _request;
         private final ChannelHandlerContext _context;
-        private final MessageEvent _event;
 
         public ListCallback(DirListRequest request,
-                            ChannelHandlerContext context,
-                            MessageEvent event) {
+                            ChannelHandlerContext context)
+        {
             _request = request;
             _context = context;
-            _event = event;
         }
 
         /**
@@ -661,25 +627,25 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
         {
             switch (rc) {
             case CacheException.TIMEOUT:
-                respond(_context, _event,
+                respond(_context,
                         withError(_request,
                                   kXR_ServerError,
                                   "Timeout when trying to list directory: " +
                                   error.toString()));
                 break;
             case CacheException.PERMISSION_DENIED:
-                respond(_context,_event,
+                respond(_context,
                         withError(_request,
                                   kXR_NotAuthorized,
                                   "Permission to list that directory denied: " +
                                   error.toString()));
                 break;
             case CacheException.FILE_NOT_FOUND:
-                respond(_context, _event,
+                respond(_context,
                         withError(_request, kXR_NotFound, "Path not found"));
                 break;
             default:
-                respond(_context, _event,
+                respond(_context,
                         withError(_request,
                                   kXR_ServerError,
                                   "Error when processing list response: " +
@@ -695,7 +661,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
         @Override
         public void noroute(CellPath path)
         {
-            respond(_context, _event,
+            respond(_context,
                     withError(_request,
                               kXR_ServerError,
                               "Could not contact PNFS Manager."));
@@ -721,11 +687,9 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
                 _log.debug("XrootdRedirectHandler: Received final listing " +
                            "message!");
                 respond(_context,
-                        _event,
                         new DirListResponse(_request, directories));
             } else {
                 respond(_context,
-                        _event,
                         new DirListResponse(_request,
                                             kXR_oksofar,
                                             directories));
@@ -737,7 +701,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
          */
         @Override
         public void timeout(String error) {
-            respond(_context, _event,
+            respond(_context,
                     withError(_request,
                               kXR_ServerError,
                               "Timeout when trying to list directory!"));

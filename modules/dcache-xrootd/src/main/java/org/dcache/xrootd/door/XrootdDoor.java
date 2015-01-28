@@ -26,10 +26,8 @@ import org.springframework.beans.factory.annotation.Required;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -150,7 +148,7 @@ public class XrootdDoor
     private Map<UUID, DirlistRequestHandler> _requestHandlers =
         new ConcurrentHashMap<>();
 
-    private ScheduledExecutorService _dirlistTimeoutExecutor;
+    private ScheduledExecutorService _scheduledExecutor;
 
     /**
      * Current xrootd transfers. The key is the xrootd file handle.
@@ -299,15 +297,10 @@ public class XrootdDoor
     @Required
     public void setExecutor(ScheduledExecutorService executor)
     {
+        _scheduledExecutor = executor;
         executor.scheduleAtFixedRate(new FireAndForgetTask(new PingMoversTask<>(_transfers.values())),
                                      PING_DELAY, PING_DELAY,
                                      TimeUnit.MILLISECONDS);
-    }
-
-    @Required
-    public void setDirlistTimeoutExecutor(ScheduledExecutorService executor)
-    {
-        _dirlistTimeoutExecutor = executor;
     }
 
     @Override
@@ -700,7 +693,7 @@ public class XrootdDoor
             }
 
             _executionInstance =
-                _dirlistTimeoutExecutor.schedule(target,
+                _scheduledExecutor.schedule(target,
                                                  _timeout,
                                                  TimeUnit.MILLISECONDS);
         }

@@ -17,11 +17,9 @@
  */
 package org.dcache.xrootd.plugins;
 
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import org.slf4j.Logger;
 
 import javax.security.auth.Subject;
@@ -39,7 +37,6 @@ import org.dcache.auth.UidPrincipal;
 import org.dcache.util.NetLoggerBuilder;
 import org.dcache.xrootd.door.LoginEvent;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.EndSessionRequest;
 import org.dcache.xrootd.protocol.messages.ErrorResponse;
 import org.dcache.xrootd.protocol.messages.LocateRequest;
@@ -59,15 +56,14 @@ import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.XrootdRequest;
+import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.FileStatus;
 
 import static com.google.common.base.Strings.emptyToNull;
-import static org.dcache.util.NetLoggerBuilder.Level.DEBUG;
-import static org.dcache.util.NetLoggerBuilder.Level.ERROR;
-import static org.dcache.util.NetLoggerBuilder.Level.INFO;
+import static org.dcache.util.NetLoggerBuilder.Level.*;
 import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 
-public class AccessLogHandler extends SimpleChannelHandler
+public class AccessLogHandler extends ChannelDuplexHandler
 {
     private final Logger logger;
 
@@ -77,10 +73,10 @@ public class AccessLogHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
     {
-        if (e instanceof LoginEvent) {
-            LoginReply loginReply = ((LoginEvent) e).getLoginReply();
+        if (evt instanceof LoginEvent) {
+            LoginReply loginReply = ((LoginEvent) evt).getLoginReply();
             Subject subject = loginReply.getSubject();
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.xrootd.login").omitNullValues();
             log.add("session", CDC.getSession());
@@ -88,35 +84,34 @@ public class AccessLogHandler extends SimpleChannelHandler
             log.add("user.mapped", subject);
             log.toLogger(logger);
         }
-        super.handleUpstream(ctx, e);
+        ctx.fireUserEventTriggered(evt);
     }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+    public void channelActive(ChannelHandlerContext ctx) throws Exception
     {
         NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.xrootd.connection.start").omitNullValues();
         log.add("session", CDC.getSession());
-        log.add("socket.remote", getAddress((InetSocketAddress) e.getChannel().getRemoteAddress()));
-        log.add("socket.local", getAddress((InetSocketAddress) e.getChannel().getLocalAddress()));
+        log.add("socket.remote", getAddress((InetSocketAddress) ctx.channel().remoteAddress()));
+        log.add("socket.local", getAddress((InetSocketAddress) ctx.channel().localAddress()));
         log.toLogger(logger);
-        super.channelConnected(ctx, e);
+        ctx.fireChannelActive();
     }
 
     @Override
-    public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception
     {
         NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.xrootd.connection.end").omitNullValues();
         log.add("session", CDC.getSession());
         log.toLogger(logger);
-        super.channelDisconnected(ctx, e);
+        ctx.fireChannelInactive();
     }
 
     @Override
-    public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception
     {
-        Object msg = e.getMessage();
-        if (msg instanceof AbstractResponseMessage && logger.isErrorEnabled()) {
-            AbstractResponseMessage response = (AbstractResponseMessage) msg;
+        if (msg instanceof XrootdResponse<?> && logger.isErrorEnabled()) {
+            XrootdResponse<?> response = (XrootdResponse<?>) msg;
             XrootdRequest request = response.getRequest();
 
             NetLoggerBuilder.Level level;
@@ -213,8 +208,7 @@ public class AccessLogHandler extends SimpleChannelHandler
                 log.toLogger(logger);
             }
         }
-
-        super.writeRequested(ctx, e);
+        ctx.write(msg, promise);
     }
 
     private String getErrorCode(ErrorResponse response)
@@ -270,9 +264,9 @@ public class AccessLogHandler extends SimpleChannelHandler
         }
     }
 
-    private static String getStatusCode(AbstractResponseMessage response)
+    private static String getStatusCode(XrootdResponse<?> response)
     {
-        short status = response.getBuffer().getShort(2);
+        int status = response.getStatus();
         switch (status) {
         case XrootdProtocol.kXR_authmore:
             return "authmore";

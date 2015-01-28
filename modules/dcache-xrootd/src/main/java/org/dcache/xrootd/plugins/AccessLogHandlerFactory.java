@@ -17,7 +17,7 @@
  */
 package org.dcache.xrootd.plugins;
 
-import org.jboss.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

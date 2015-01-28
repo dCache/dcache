@@ -1,19 +1,21 @@
 package org.dcache.xrootd.door;
 
 import com.google.common.io.BaseEncoding;
-import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Longs;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
-import org.jboss.netty.handler.execution.ExecutionHandler;
-import org.jboss.netty.handler.logging.LoggingHandler;
-import org.jboss.netty.logging.InternalLoggerFactory;
-import org.jboss.netty.logging.Slf4JLoggerFactory;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -24,7 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.FsPath;
 
@@ -35,13 +37,12 @@ import dmg.cells.nucleus.CellMessageSender;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.commons.util.NDC;
+import org.dcache.util.CDCThreadFactory;
 import org.dcache.xrootd.core.XrootdDecoder;
 import org.dcache.xrootd.core.XrootdEncoder;
 import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-
-import static org.jboss.netty.channel.Channels.pipeline;
 
 /**
  * Netty based xrootd redirector. Could possibly be replaced by pure
@@ -58,23 +59,16 @@ public class NettyXrootdServer implements CellMessageSender
 
     private int _port;
     private int _backlog;
-    private Executor _requestExecutor;
+    private ListeningExecutorService _requestExecutor;
     private XrootdDoor _door;
-    private ChannelFactory _channelFactory;
     private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
     private FsPath _rootPath;
     private FsPath _uploadPath;
     private InetAddress _address;
     private String sessionPrefix;
-
-    /**
-     * Switch Netty to slf4j for logging.
-     */
-    static
-    {
-        InternalLoggerFactory.setDefaultFactory(new Slf4JLoggerFactory());
-    }
+    private EventLoopGroup _acceptGroup;
+    private EventLoopGroup _socketGroup;
 
     public int getPort()
     {
@@ -109,15 +103,9 @@ public class NettyXrootdServer implements CellMessageSender
     }
 
     @Required
-    public void setRequestExecutor(Executor executor)
+    public void setRequestExecutor(ListeningExecutorService executor)
     {
         _requestExecutor = executor;
-    }
-
-    @Required
-    public void setChannelFactory(ChannelFactory channelFactory)
-    {
-        _channelFactory = channelFactory;
     }
 
     @Required
@@ -175,42 +163,56 @@ public class NettyXrootdServer implements CellMessageSender
         return (_uploadPath == null) ? null : new File(_uploadPath.toString());
     }
 
-    public void init()
+    public void start()
     {
-        ServerBootstrap bootstrap = new ServerBootstrap(_channelFactory);
-        bootstrap.setOption("backlog", _backlog);
-        bootstrap.setOption("child.tcpNoDelay", true);
-        bootstrap.setOption("child.keepAlive", true);
+        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-listen-%d").build()));
+        _socketGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-net-%d").build()));
 
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-                @Override
-                public ChannelPipeline getPipeline()
+        ServerBootstrap bootstrap = new ServerBootstrap()
+                .group(_acceptGroup, _socketGroup)
+                .channel(NioServerSocketChannel.class)
+                .childOption(ChannelOption.TCP_NODELAY, true)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childHandler(new ChannelInitializer<Channel>()
                 {
-                    String session = sessionPrefix + SESSION_ENCODING.encode(Longs.toByteArray(sessionCounter.next()));
+                    @Override
+                    protected void initChannel(Channel ch) throws Exception
+                    {
+                        String session = sessionPrefix + SESSION_ENCODING.encode(Longs.toByteArray(sessionCounter.next()));
 
-                    ChannelPipeline pipeline = pipeline();
-                    pipeline.addLast("session-1", new SessionHandler(session));
-                    pipeline.addLast("tracker", _connectionTracker);
-                    pipeline.addLast("encoder", new XrootdEncoder());
-                    pipeline.addLast("decoder", new XrootdDecoder());
-                    if (_log.isDebugEnabled()) {
-                        pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
+                        ChannelPipeline pipeline = ch.pipeline();
+                        pipeline.addLast("session", new SessionHandler(session));
+                        pipeline.addLast("tracker", _connectionTracker);
+                        pipeline.addLast("encoder", new XrootdEncoder());
+                        pipeline.addLast("decoder", new XrootdDecoder());
+                        if (_log.isDebugEnabled()) {
+                            pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
+                        }
+                        pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
+                        for (ChannelHandlerFactory factory: _channelHandlerFactories) {
+                            pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
+                        }
+                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _uploadPath, _requestExecutor));
                     }
-                    pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
-                    pipeline.addLast("executor", new ExecutionHandler(_requestExecutor));
-                    pipeline.addLast("session-2", new SessionHandler(session));
-                    for (ChannelHandlerFactory factory: _channelHandlerFactories) {
-                        pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
-                    }
-                    pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _uploadPath));
-                    return pipeline;
-                }
-            });
+                });
 
         bootstrap.bind(new InetSocketAddress(_address, _port));
     }
 
-    private static class SessionHandler implements ChannelUpstreamHandler
+    public void stop()
+    {
+        _acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        _socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+
+        try {
+            _acceptGroup.terminationFuture().sync();
+            _socketGroup.terminationFuture().sync();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static class SessionHandler extends ChannelHandlerAdapter implements ChannelInboundHandler
     {
         private final String session;
 
@@ -220,12 +222,116 @@ public class NettyXrootdServer implements CellMessageSender
         }
 
         @Override
-        public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception
+        public void channelRegistered(ChannelHandlerContext ctx) throws Exception
         {
             CDC.setSession(session);
             NDC.push(session);
             try {
-                ctx.sendUpstream(e);
+                ctx.fireChannelRegistered();
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireChannelUnregistered();
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireChannelActive();
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireChannelInactive();
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireChannelRead(msg);
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void channelReadComplete(ChannelHandlerContext ctx) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireChannelReadComplete();
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireUserEventTriggered(evt);
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireChannelWritabilityChanged();
+            } finally {
+                NDC.pop();
+                CDC.setSession(null);
+            }
+        }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
+        {
+            CDC.setSession(session);
+            NDC.push(session);
+            try {
+                ctx.fireExceptionCaught(cause);
             } finally {
                 NDC.pop();
                 CDC.setSession(null);

@@ -6,29 +6,20 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
-import org.jboss.netty.handler.codec.http.HttpMethod;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpVersion;
-import org.jboss.netty.handler.stream.ChunkedInput;
-import org.jboss.netty.util.CharsetUtil;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.CharsetUtil;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
-import org.mockito.BDDMockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.python.google.common.collect.Lists;
 
 import java.io.IOException;
@@ -38,7 +29,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,11 +45,11 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.Matchers.*;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
-import static org.jboss.netty.handler.codec.http.HttpHeaders.Values.*;
-import static org.jboss.netty.handler.codec.http.HttpMethod.*;
-import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
-import static org.jboss.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
+import static io.netty.handler.codec.http.HttpHeaders.Values.*;
+import static io.netty.handler.codec.http.HttpMethod.*;
+import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.*;
@@ -84,25 +74,25 @@ public class HttpPoolRequestHandlerTests
 
     private static final int SOME_CHUNK_SIZE = 4096;
 
-    HttpPoolRequestHandler _handler;
-    HttpPoolNettyServer _server;
-    ChannelHandlerContext _context;
-    Map<String,FileInfo> _files;
-    List<Object> _additionalWrites;
-    HttpResponse _response;
+    private HttpPoolRequestHandler _handler;
+    private HttpPoolNettyServer _server;
+    private Map<String,FileInfo> _files;
+    private List<Object> _additionalWrites;
+    private HttpResponse _response;
+    private EmbeddedChannel _channel;
 
     @Before
     public void setup()
     {
-        _context = mock(ChannelHandlerContext.class);
         _server = mock(HttpPoolNettyServer.class);
         _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
+        _channel = new EmbeddedChannel(_handler);
         _files = Maps.newHashMap();
         _additionalWrites = new ArrayList<>();
     }
 
     @Test
-    public void shouldIncludeContentLengthForErrorResponse()
+    public void shouldIncludeContentLengthForErrorResponse() throws Exception
     {
         whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
 
@@ -110,7 +100,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldGiveErrorIfRequestHasWrongUuid() throws URISyntaxException
+    public void shouldGiveErrorIfRequestHasWrongUuid() throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -125,7 +115,7 @@ public class HttpPoolRequestHandlerTests
 
     @Ignore("it's the mover (which is mocked) that verifies path")
     @Test
-    public void shouldGiveErrorIfRequestHasWrongPath() throws URISyntaxException
+    public void shouldGiveErrorIfRequestHasWrongPath() throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -140,7 +130,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFile()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -162,7 +152,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileWithChecksumIfReceivesRequestForWholeFileWithChecksum()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
@@ -185,7 +175,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithQuestionMark()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file?here").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file?here")
@@ -209,7 +199,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithBackslashQuote()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file\\\"here").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file\\\"here")
@@ -233,7 +223,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverCompleteFileIfReceivesRequestForWholeFileWithNonAsciiName()
-            throws URISyntaxException
+            throws Exception
     {
         //  0x16A0 0x16C7 0x16BB is the three-rune word from the start of Rune
         //  poem, available from http://www.ragweedforge.com/poems.html, in
@@ -263,7 +253,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverPartialFileIfReceivesRequestWithSingleRange()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -285,7 +275,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverPartialFileIfReceivesRequestWithSingleRangeForFileWithChecksum()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
@@ -308,7 +298,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverAvailableDataIfReceivesRequestWithSingleRangeButTooBig()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(100));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -330,7 +320,7 @@ public class HttpPoolRequestHandlerTests
 
     @Test
     public void shouldDeliverPartialFileIfReceivesRequestWithMultipleRanges()
-            throws URISyntaxException
+            throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID).
@@ -369,7 +359,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectDeleteRequests()
+    public void shouldRejectDeleteRequests() throws Exception
     {
         whenClientMakes(a(DELETE).forUri("/path/to/file"));
 
@@ -378,7 +368,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectConnectRequests()
+    public void shouldRejectConnectRequests() throws Exception
     {
         whenClientMakes(a(CONNECT).forUri("/path/to/file"));
 
@@ -387,7 +377,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldAcceptHeadRequests() throws URISyntaxException
+    public void shouldAcceptHeadRequests() throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -400,7 +390,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectOptionsRequests()
+    public void shouldRejectOptionsRequests() throws Exception
     {
         whenClientMakes(a(OPTIONS).forUri("/path/to/file"));
 
@@ -409,7 +399,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectPatchRequests()
+    public void shouldRejectPatchRequests() throws Exception
     {
         whenClientMakes(a(PATCH).forUri("/path/to/file"));
 
@@ -418,7 +408,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectPostRequests()
+    public void shouldRejectPostRequests() throws Exception
     {
         whenClientMakes(a(POST).forUri("/path/to/file"));
 
@@ -427,7 +417,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldAcceptPutRequests() throws URISyntaxException
+    public void shouldAcceptPutRequests() throws Exception
     {
         givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
         whenClientMakes(a(PUT)
@@ -436,7 +426,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectPutOnRead() throws URISyntaxException
+    public void shouldRejectPutOnRead() throws Exception
     {
         givenPoolHas(file("/path/to/file").withSize(1024));
         givenDoorHasOrganisedReadOf(file("/path/to/file").with(SOME_UUID));
@@ -446,7 +436,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectGetOnWrite() throws URISyntaxException
+    public void shouldRejectGetOnWrite() throws Exception
     {
         givenDoorHasOrganisedWriteOf(file("/path/to/file").with(SOME_UUID));
         whenClientMakes(a(GET)
@@ -455,7 +445,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     @Test
-    public void shouldRejectTraceRequests()
+    public void shouldRejectTraceRequests() throws Exception
     {
         whenClientMakes(a(TRACE).forUri("/path/to/file"));
 
@@ -653,84 +643,23 @@ public class HttpPoolRequestHandlerTests
         }
     }
 
-    private void whenClientMakes(RequestInfo info)
+    private void whenClientMakes(RequestInfo info) throws Exception
     {
-        Channel channel = mock(Channel.class);
+        _channel.writeInbound(buildRequest(info));
 
-        HttpRequest request = buildMockRequest(info);
-        MessageEvent event = buildMockMessageEvent(channel, request);
-
-        given(_context.getChannel()).willReturn(channel);
-
-        _handler.messageReceived(_context, event);
-
-        ArgumentCaptor<Object> writes = ArgumentCaptor.forClass(Object.class);
-        verify(channel, atLeast(1)).write(writes.capture());
-        List<Object> allWrites = writes.getAllValues();
-
-        _response = (HttpResponse) allWrites.get(0);
-        _additionalWrites.addAll(allWrites.subList(1, allWrites.size()));
+        _response = (HttpResponse) _channel.readOutbound();
+        _additionalWrites.addAll(_channel.outboundMessages());
+        _channel.outboundMessages().clear();
     }
 
-    private HttpRequest buildMockRequest(RequestInfo info)
+    private HttpRequest buildRequest(RequestInfo info)
     {
-        HttpRequest request = mock(HttpRequest.class);
-
-        given(request.getMethod()).willReturn(info.getMethod());
-
-        HttpHeaders headers = mock(HttpHeaders.class);
-        given(request.headers()).willReturn(headers);
-
-        final Multimap<String,String> headersSource = info.getHeaders();
-        for(Map.Entry<String,Collection<String>> entry : headersSource.asMap().entrySet()) {
-            String name = entry.getKey();
-            List<String> values = Lists.newArrayList(entry.getValue());
-
-            given(request.getHeaders(name)).willReturn(values);
-            given(headers.getAll(name)).willReturn(values);
-            given(headers.contains(name)).willReturn(Boolean.TRUE);
-
-            String lastValue = values.isEmpty() ? null :
-                    values.get(values.size()-1);
-
-            given(request.getHeader(name)).willReturn(lastValue);
-            given(headers.get(name)).willReturn(lastValue);
+        HttpRequest request = new DefaultFullHttpRequest(info.getProtocolVersion(), info.getMethod(), info.getUri());
+        for(Map.Entry<String,Collection<String>> entry : info.getHeaders().asMap().entrySet()) {
+            request.headers().set(entry.getKey(), Lists.newArrayList(entry.getValue()));
         }
-
-        given(headers.isEmpty()).willReturn(Boolean.valueOf(info.getHeaders().isEmpty()));
-        given(headers.names()).willReturn(info.getHeaders().keySet());
-        given(headers.iterator()).willAnswer(new Answer<Iterator<Map.Entry<String, String>>>() {
-            @Override
-            public Iterator<Map.Entry<String, String>> answer(InvocationOnMock invocation) throws Throwable
-            {
-                return headersSource.entries().iterator();
-            }
-        });
-
-        given(request.getHeaderNames()).willReturn(headersSource.keySet());
-        given(request.getProtocolVersion()).
-                willReturn(info.getProtocolVersion());
-        given(request.getUri()).willReturn(info.getUri());
-        given(request.getContent()).willReturn(ChannelBuffers.EMPTY_BUFFER);
-
         return request;
     }
-
-    private MessageEvent buildMockMessageEvent(Channel channel,
-            HttpRequest request)
-    {
-        ChannelFuture future = mock(ChannelFuture.class);
-
-        // TODO: make this more specific
-        given(channel.write(BDDMockito.any(ChunkedInput.class))).willReturn(future);
-
-        MessageEvent event = mock(MessageEvent.class);
-        given(event.getMessage()).willReturn(request);
-        given(event.getChannel()).willReturn(channel);
-
-        return event;
-    }
-
 
     private static URI withPath(String path)
     {
@@ -811,12 +740,12 @@ public class HttpPoolRequestHandlerTests
 
             HttpResponse response = (HttpResponse) o;
 
-            if(!response.containsHeader(_name)) {
+            if(!response.headers().contains(_name)) {
                 return false;
             }
 
             if(_value != null) {
-                List<String> values = response.getHeaders(_name);
+                List<String> values = response.headers().getAll(_name);
                 return values.contains(_value);
             } else {
                 return true;
@@ -940,11 +869,11 @@ public class HttpPoolRequestHandlerTests
         @Override
         public boolean matches(Object o)
         {
-            if(!(o instanceof ChannelBuffer)) {
+            if(!(o instanceof ByteBuf)) {
                 return false;
             }
 
-            String rawData = ((ChannelBuffer) o).toString(CharsetUtil.UTF_8);
+            String rawData = ((ByteBuf) o).toString(CharsetUtil.UTF_8);
             if (!rawData.endsWith(CRLF)) {
                 return false;
             }

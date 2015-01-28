@@ -17,8 +17,7 @@
  */
 package org.dcache.xrootd;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,43 +26,40 @@ import java.net.InetSocketAddress;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.core.XrootdRequestHandler;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.LocateRequest;
 import org.dcache.xrootd.protocol.messages.LocateResponse;
 import org.dcache.xrootd.protocol.messages.ProtocolRequest;
 import org.dcache.xrootd.protocol.messages.ProtocolResponse;
 import org.dcache.xrootd.protocol.messages.SetRequest;
 import org.dcache.xrootd.protocol.messages.SetResponse;
+import org.dcache.xrootd.protocol.messages.XrootdResponse;
 
 public class AbstractXrootdRequestHandler extends XrootdRequestHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractXrootdRequestHandler.class);
 
     @Override
-    protected AbstractResponseMessage
-        doOnProtocolRequest(ChannelHandlerContext ctx,
-                            MessageEvent event, ProtocolRequest msg)
+    protected XrootdResponse<ProtocolRequest> doOnProtocolRequest(ChannelHandlerContext ctx, ProtocolRequest msg)
         throws XrootdException
     {
         return new ProtocolResponse(msg, XrootdProtocol.DATA_SERVER);
     }
 
     @Override
-    protected LocateResponse doOnLocate(ChannelHandlerContext ctx, MessageEvent e,
-                                        LocateRequest msg) throws XrootdException
+    protected XrootdResponse<LocateRequest> doOnLocate(ChannelHandlerContext ctx, LocateRequest msg) throws XrootdException
     {
         /* To avoid duplicate name space lookups, we always just return ourselves no matter
          * whether the file exists or not.
          */
         return new LocateResponse(msg,
                                   new LocateResponse.InfoElement(
-                                          (InetSocketAddress) e.getChannel().getLocalAddress(),
+                                          (InetSocketAddress) ctx.channel().localAddress(),
                                           LocateResponse.Node.SERVER,
                                           LocateResponse.Access.READ));
     }
 
     @Override
-    protected Object doOnSet(ChannelHandlerContext ctx, MessageEvent event, SetRequest request) throws XrootdException
+    protected XrootdResponse<SetRequest> doOnSet(ChannelHandlerContext ctx, SetRequest request) throws XrootdException
     {
         /* The xrootd spec states that we should include 80 characters in our log.
          */

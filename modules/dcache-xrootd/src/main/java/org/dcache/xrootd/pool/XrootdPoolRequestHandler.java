@@ -17,12 +17,9 @@
  */
 package org.dcache.xrootd.pool;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.handler.timeout.IdleState;
-import org.jboss.netty.handler.timeout.IdleStateEvent;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +46,6 @@ import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.AuthenticationRequest;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
@@ -62,8 +58,8 @@ import org.dcache.xrootd.protocol.messages.OpenResponse;
 import org.dcache.xrootd.protocol.messages.QueryRequest;
 import org.dcache.xrootd.protocol.messages.QueryResponse;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
-import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
+import org.dcache.xrootd.protocol.messages.ReadVResponse;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.RmDirRequest;
 import org.dcache.xrootd.protocol.messages.RmRequest;
@@ -72,6 +68,7 @@ import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.XrootdRequest;
+import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.FileStatus;
 import org.dcache.xrootd.util.OpaqueStringParser;
 import org.dcache.xrootd.util.ParseException;
@@ -91,7 +88,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.*;
  */
 public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(XrootdPoolRequestHandler.class);
 
     private static final int DEFAULT_FILESTATUS_ID = 0;
@@ -134,28 +131,22 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      *                     fails
      */
     @Override
-    public void channelOpen(ChannelHandlerContext ctx,
-                            ChannelStateEvent event)
-        throws IOException
+    public void channelActive(ChannelHandlerContext ctx)
+            throws Exception
     {
         _server.clientConnected();
     }
 
     @Override
-    public void channelIdle(ChannelHandlerContext ctx,
-                            IdleStateEvent event)
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception
     {
-        if (event.getState() == IdleState.ALL_IDLE) {
-            if (!_hasOpenedFiles) {
-
-                if (_log.isInfoEnabled()) {
-                    long idleTime = System.currentTimeMillis() -
-                        event.getLastActivityTimeMillis();
-                    _log.info("Closing idling connection without opened files." +
-                              " Connection has been idle for {} ms.", idleTime);
+        if (evt instanceof IdleStateEvent) {
+            IdleStateEvent event = (IdleStateEvent) evt;
+            if (event.state() == IdleState.ALL_IDLE) {
+                if (!_hasOpenedFiles) {
+                    _log.info("Closing idling connection without opened files.");
+                    ctx.close();
                 }
-
-                ctx.getChannel().close();
             }
         }
     }
@@ -165,9 +156,8 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      *                     connection fails
      */
     @Override
-    public void channelClosed(ChannelHandlerContext ctx,
-                              ChannelStateEvent event)
-        throws IOException
+    public void channelInactive(ChannelHandlerContext ctx)
+            throws Exception
     {
         /* close leftover descriptors */
         for (FileDescriptor descriptor : _descriptors) {
@@ -186,12 +176,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx,
-                                ExceptionEvent e)
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
     {
-        Throwable t = e.getCause();
         if (t instanceof ClosedChannelException) {
-            _log.info("Connection {} unexpectedly closed.", ctx.getChannel());
+            _log.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
             for (FileDescriptor descriptor : _descriptors) {
                 if (descriptor != null) {
@@ -205,26 +193,23 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 }
             }
             _descriptors.clear();
-            ctx.getChannel().close();
+            ctx.channel().close();
         } else {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
-            ctx.getChannel().close();
+            ctx.channel().close();
         }
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnLogin(ChannelHandlerContext ctx, MessageEvent event, LoginRequest msg)
+    protected XrootdResponse<LoginRequest> doOnLogin(ChannelHandlerContext ctx, LoginRequest msg)
     {
         return withOk(msg);
     }
 
     @Override
-    protected AbstractResponseMessage
-        doOnAuthentication(ChannelHandlerContext ctx,
-                           MessageEvent event,
-                           AuthenticationRequest msg)
+    protected XrootdResponse<AuthenticationRequest> doOnAuthentication(ChannelHandlerContext ctx,
+                                                                       AuthenticationRequest msg)
     {
         return withOk(msg);
     }
@@ -235,9 +220,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * file descriptor is stored for subsequent access.
      */
     @Override
-    protected Object
-        doOnOpen(ChannelHandlerContext ctx, MessageEvent event,
-                 OpenRequest msg)
+    protected XrootdResponse<OpenRequest> doOnOpen(ChannelHandlerContext ctx, OpenRequest msg)
         throws XrootdException
     {
         try {
@@ -276,11 +259,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 file = null;
                 _hasOpenedFiles = true;
 
-                return new OpenResponse(msg,
-                                        fd,
-                                        null,
-                                        null,
-                                        stat);
+                return new OpenResponse(msg, fd, null, null, stat);
             } finally {
                 if (file != null) {
                     _server.close(file);
@@ -322,76 +301,66 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     /**
      * Not supported on the pool - should be issued to the door.
      * @param ctx Received from the netty pipeline
-     * @param event Received from the netty pipeline
      * @param msg The actual request
      */
     @Override
-    protected Object
-        doOnStat(ChannelHandlerContext ctx, MessageEvent event, StatRequest msg)
+    protected XrootdResponse<StatRequest> doOnStat(ChannelHandlerContext ctx, StatRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
     @Override
-    protected Object
-        doOnDirList(ChannelHandlerContext ctx, MessageEvent event, DirListRequest msg)
+    protected XrootdResponse<DirListRequest> doOnDirList(ChannelHandlerContext ctx, DirListRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
     @Override
-    protected Object
-        doOnMv(ChannelHandlerContext ctx, MessageEvent event, MvRequest msg)
+    protected XrootdResponse<MvRequest> doOnMv(ChannelHandlerContext ctx, MvRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
     @Override
-    protected Object
-        doOnRm(ChannelHandlerContext ctx, MessageEvent event, RmRequest msg)
+    protected XrootdResponse<RmRequest> doOnRm(ChannelHandlerContext ctx, RmRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
     @Override
-    protected Object
-        doOnRmDir(ChannelHandlerContext ctx, MessageEvent event, RmDirRequest msg)
+    protected XrootdResponse<RmDirRequest> doOnRmDir(ChannelHandlerContext ctx, RmDirRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
     @Override
-    protected Object
-        doOnMkDir(ChannelHandlerContext ctx, MessageEvent event, MkDirRequest msg)
+    protected XrootdResponse<MkDirRequest> doOnMkDir(ChannelHandlerContext ctx, MkDirRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
     @Override
-    protected Object
-        doOnStatx(ChannelHandlerContext ctx, MessageEvent event, StatxRequest msg)
+    protected XrootdResponse<StatxRequest> doOnStatx(ChannelHandlerContext ctx, StatxRequest msg)
         throws XrootdException
     {
-        return redirectToDoor(ctx, event, msg);
+        return redirectToDoor(ctx, msg);
     }
 
-    private Object
-        redirectToDoor(ChannelHandlerContext ctx, MessageEvent event,
-                       XrootdRequest msg)
+    private <R extends XrootdRequest> XrootdResponse<R> redirectToDoor(ChannelHandlerContext ctx, R msg)
         throws XrootdException
     {
         if (_redirectingDoor == null) {
-            return unsupported(ctx, event, msg);
+            return unsupported(ctx, msg);
         } else {
-            return new RedirectResponse(msg,
-                                        _redirectingDoor.getHostName(),
-                                        _redirectingDoor.getPort());
+            return new RedirectResponse<>(msg,
+                                          _redirectingDoor.getHostName(),
+                                          _redirectingDoor.getPort());
         }
     }
 
@@ -402,12 +371,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * sending data to the client.
      *
      * @param ctx Received from the netty pipeline
-     * @param event Received from the netty pipeline
      * @param msg The actual request
      */
     @Override
-    protected Object
-        doOnRead(ChannelHandlerContext ctx, MessageEvent event, ReadRequest msg)
+    protected Object doOnRead(ChannelHandlerContext ctx, ReadRequest msg)
         throws XrootdException
     {
         int fd = msg.getFileHandle();
@@ -433,12 +400,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * reader.
      *
      * @param ctx received from the netty pipeline
-     * @param event received from the netty pipeline
      * @param msg The actual request.
      */
     @Override
-    protected Object
-        doOnReadV(ChannelHandlerContext ctx, MessageEvent event, ReadVRequest msg)
+    protected Object doOnReadV(ChannelHandlerContext ctx, ReadVRequest msg)
         throws XrootdException
     {
         EmbeddedReadRequest[] list = msg.getReadRequestList();
@@ -458,7 +423,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             }
 
             int totalBytesToRead = req.BytesToRead() +
-                ReadResponse.READ_LIST_HEADER_SIZE;
+                ReadVResponse.READ_LIST_HEADER_SIZE;
 
             if (totalBytesToRead > _server.getMaxFrameSize()) {
                 _log.warn("Vector read of {} bytes requested, exceeds " +
@@ -476,12 +441,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * it.
      *
      * @param ctx received from the netty pipeline
-     * @param event received from the netty pipeline
      * @param msg the actual request
      */
     @Override
-    protected AbstractResponseMessage
-        doOnWrite(ChannelHandlerContext ctx, MessageEvent event, WriteRequest msg)
+    protected XrootdResponse<WriteRequest> doOnWrite(ChannelHandlerContext ctx, WriteRequest msg)
         throws XrootdException
     {
         int fd = msg.getFileHandle();
@@ -516,12 +479,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * Lookup the file descriptor and invoke its sync operation.
      *
      * @param ctx received from the netty pipeline
-     * @param event received from the netty pipeline
      * @param msg The actual request
      */
     @Override
-    protected AbstractResponseMessage
-        doOnSync(ChannelHandlerContext ctx, MessageEvent event, SyncRequest msg)
+    protected XrootdResponse<SyncRequest> doOnSync(ChannelHandlerContext ctx, SyncRequest msg)
         throws XrootdException
     {
         int fd = msg.getFileHandle();
@@ -549,12 +510,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * Lookup the file descriptor and invoke its close operation.
      *
      * @param ctx received from the netty pipeline
-     * @param event received from the netty pipeline
      * @param msg The actual request
      */
     @Override
-    protected AbstractResponseMessage
-        doOnClose(ChannelHandlerContext ctx, MessageEvent event, CloseRequest msg)
+    protected XrootdResponse<CloseRequest> doOnClose(ChannelHandlerContext ctx, CloseRequest msg)
         throws XrootdException
     {
         int fd = msg.getFileHandle();
@@ -571,7 +530,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     }
 
     @Override
-    protected Object doOnQuery(ChannelHandlerContext ctx, MessageEvent event, QueryRequest msg) throws XrootdException
+    protected XrootdResponse<QueryRequest> doOnQuery(ChannelHandlerContext ctx, QueryRequest msg) throws XrootdException
     {
         switch (msg.getReqcode()) {
         case kXR_Qconfig:
@@ -582,7 +541,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     s.append(0);
                     break;
                 case "readv_ior_max":
-                    s.append(_server.getMaxFrameSize() - ReadResponse.READ_LIST_HEADER_SIZE);
+                    s.append(_server.getMaxFrameSize() - ReadVResponse.READ_LIST_HEADER_SIZE);
                     break;
                 case "readv_iov_max":
                     s.append(READV_IOV_MAX);
@@ -602,7 +561,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             String args = msg.getArgs();
             int pos = args.indexOf(OPAQUE_DELIMITER);
             if (pos == -1) {
-                return redirectToDoor(ctx, event, msg);
+                return redirectToDoor(ctx, msg);
             }
             UUID uuid = getUuid(args.substring(pos + 1));
             if (uuid == null) {
@@ -610,11 +569,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                  * Thus we cannot rely on there being a uuid and without the uuid we cannot lookup the
                  * file attributes in the pool.
                  */
-                return redirectToDoor(ctx, event, msg);
+                return redirectToDoor(ctx, msg);
             }
             FileAttributes attributes = _server.getFileAttributes(uuid);
             if (attributes == null) {
-                return redirectToDoor(ctx, event, msg);
+                return redirectToDoor(ctx, msg);
             }
             if (attributes.isUndefined(FileAttribute.CHECKSUM) || attributes.getChecksums().isEmpty()) {
                 throw new XrootdException(kXR_Unsupported, "No checksum available for this file.");
@@ -623,7 +582,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             return new QueryResponse(msg, checksum.getType().getName() + " " + checksum.getValue());
 
         default:
-            return super.doOnQuery(ctx, event, msg);
+            return unsupported(ctx, msg);
         }
     }
 

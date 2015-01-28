@@ -345,12 +345,9 @@
       <description>Xrootd transfer service</description>
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="faultListener" ref="pool"/>
-      <property name="diskThreads" value="${pool.mover.xrootd.disk-threads}"/>
-      <property name="maxMemoryPerConnection" value="${pool.mover.xrootd.memory-per-connection}"/>
-      <property name="maxMemory" value="${pool.mover.xrootd.memory}"/>
+      <property name="threads" value="${pool.mover.xrootd.disk-threads}"/>
       <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
       <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
-      <property name="socketThreads" value="${pool.mover.xrootd.socket-threads}"/>
       <property name="maxFrameSize" value="${pool.mover.xrootd.frame-size}"/>
       <property name="plugins">
           <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
@@ -365,13 +362,10 @@
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
       <property name="faultListener" ref="pool"/>
-      <property name="diskThreads" value="${pool.mover.http.disk-threads}"/>
-      <property name="maxMemoryPerConnection" value="${pool.mover.http.memory-per-connection}"/>
-      <property name="maxMemory" value="${pool.mover.http.memory}"/>
+      <property name="threads" value="${pool.mover.http.threads}"/>
       <property name="chunkSize" value="${pool.mover.http.chunk-size}"/>
       <property name="clientIdleTimeout" value="${pool.mover.http.timeout.idle}"/>
       <property name="clientIdleTimeoutUnit" value="${pool.mover.http.timeout.idle.unit}"/>
-      <property name="socketThreads" value="${pool.mover.http.socket-threads}"/>
       <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
       <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
   </bean>

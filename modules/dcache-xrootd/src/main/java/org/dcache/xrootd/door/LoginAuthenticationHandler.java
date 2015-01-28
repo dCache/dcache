@@ -1,6 +1,6 @@
 package org.dcache.xrootd.door;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ServerError;
 public class LoginAuthenticationHandler
     extends XrootdAuthenticationHandler
 {
-    private final static Logger _log =
+    private static final Logger _log =
         LoggerFactory.getLogger(LoginAuthenticationHandler.class);
 
     private LoginStrategy _loginStrategy;
@@ -57,8 +57,8 @@ public class LoginAuthenticationHandler
     {
         try {
             LoginReply reply = _loginStrategy.login(translateSubject(subject));
-            reply = addOrigin(reply, ((InetSocketAddress) context.getChannel().getRemoteAddress()).getAddress());
-            context.sendUpstream(new LoginEvent(context.getChannel(), reply));
+            reply = addOrigin(reply, ((InetSocketAddress) context.channel().remoteAddress()).getAddress());
+            context.fireUserEventTriggered(new LoginEvent(reply));
             return reply.getSubject();
         } catch (PermissionDeniedCacheException e) {
             _log.warn("Authorization denied for {}: {}",
