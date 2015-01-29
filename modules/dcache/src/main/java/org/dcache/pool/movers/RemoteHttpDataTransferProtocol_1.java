@@ -140,6 +140,13 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     /** Number of milliseconds between successive requests. */
     private static final long DELAY_BETWEEN_REQUESTS = 5_000;
 
+    /**
+     * Maximum number of redirections to follow.
+     * Note that, although RFC 2068 section 10.3 recommends a maximum of 5,
+     * both firefox and webkit currently limit (by default) to 20 redirections.
+     */
+    private static final int MAX_REDIRECTIONS = 20;
+
     // REVISIT: we may wish to generate a value based on the algorithms dCache
     // supports
     private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
@@ -314,33 +321,77 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     private void sendFile(RemoteHttpDataTransferProtocolInfo info, long length)
             throws ThirdPartyTransferFailedCacheException
     {
-        HttpEntity entity = new InputStreamEntity(Channels.newInputStream(_channel), length);
+        URI location = info.getUri();
 
-        HttpPut put = new HttpPut(info.getUri());
-        put.setProtocolVersion(HttpVersion.HTTP_1_1);
-        put.setConfig(RequestConfig.custom().
+        for (int attempt = 0; attempt < MAX_REDIRECTIONS; attempt++) {
+            HttpPut put = buildPutRequest(location, info.getHeaders(), length);
+
+            try (CloseableHttpResponse response = _client.execute(put)) {
+                StatusLine status = response.getStatusLine();
+                switch (status.getStatusCode()) {
+                case 200: /* OK (not actually a valid response from PUT) */
+                case 201: /* Created */
+                    return;
+
+                case 300: /* Multiple Choice */
+                case 301: /* Moved Permanently */
+                case 302: /* Found (REVISIT: should we treat this as an error?) */
+                case 307: /* Temporary Redirect */
+                case 308: /* Permanent Redirect */
+                    String locationHeader = response.getFirstHeader("Location").getValue();
+                    if (locationHeader == null) {
+                        throw new ThirdPartyTransferFailedCacheException("remote " +
+                                "server replied " + status.getStatusCode() +
+                                " (" + status.getReasonPhrase() + ") without a " +
+                                "Location header");
+                    }
+
+
+                    try {
+                        location = URI.create(locationHeader);
+                    } catch (IllegalArgumentException e) {
+                        throw new ThirdPartyTransferFailedCacheException("remote " +
+                                "server redirected to invalid URL '" +
+                                locationHeader + "': " + e.getMessage());
+                    }
+                    break;
+
+                /* Treat all other responses as a failure. */
+                default:
+                    throw new ThirdPartyTransferFailedCacheException("remote " +
+                            "server rejected PUT: " + status.getStatusCode() +
+                            " " + status.getReasonPhrase());
+                }
+            } catch (IOException e) {
+                _log.error("problem connecting: {}", e.getMessage());
+                throw new ThirdPartyTransferFailedCacheException("failed to " +
+                        "connect to server: " + e.getMessage(), e);
+            }
+        }
+
+        _log.error("too many redirects, last location was: {}", location);
+        throw new ThirdPartyTransferFailedCacheException("exceeded maximum " +
+                "number of redirections; last location was " + location);
+    }
+
+    private HttpPut buildPutRequest(URI location, Map<String,String> extraHeaders, long length)
+    {
+        HttpPut request = new HttpPut(location);
+        request.setProtocolVersion(HttpVersion.HTTP_1_1);
+        request.setConfig(RequestConfig.custom().
                 setConnectTimeout(CONNECTION_TIMEOUT).
+                setExpectContinueEnabled(true).
                 setSocketTimeout(0).
                 build());
-        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
-            put.addHeader(header.getKey(), header.getValue());
+        for (Map.Entry<String,String> header : extraHeaders.entrySet()) {
+            request.addHeader(header.getKey(), header.getValue());
         }
 
-        put.setEntity(entity);
+        request.setEntity(new InputStreamEntity(Channels.newInputStream(_channel), length));
+
         // FIXME add SO_KEEPALIVE setting
 
-        try (CloseableHttpResponse response = _client.execute(put)) {
-            StatusLine status = response.getStatusLine();
-            if (status.getStatusCode() >= 300) {
-                throw new ThirdPartyTransferFailedCacheException("remote " +
-                        "server rejected PUT: " + status.getStatusCode() +
-                        " " + status.getReasonPhrase());
-            }
-        } catch (IOException e) {
-            _log.error("problem connecting: {}", e.getMessage());
-            throw new ThirdPartyTransferFailedCacheException("failed to " +
-                    "connect to server: " + e.getMessage(), e);
-        }
+        return request;
     }
 
     private void verifyRemoteFile(RemoteHttpDataTransferProtocolInfo info)
