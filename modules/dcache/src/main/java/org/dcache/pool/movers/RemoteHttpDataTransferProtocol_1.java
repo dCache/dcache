@@ -1,5 +1,6 @@
 package org.dcache.pool.movers;
 
+import com.google.common.base.Optional;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -19,9 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.channels.Channels;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
@@ -120,6 +123,22 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
 
     /** Maximum time to wait for next packet from remote server. */
     private static final int SOCKET_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
+
+    /**
+     * Expected maximum delay all post-processing files will experience,
+     * in milliseconds.
+     */
+    private static final long POST_PROCESSING_OFFSET = 60_000;
+
+    /**
+     * Expected minimum (effective) internal IO bandwidth of the remote
+     * server, in bytes per millisecond.  This is used to estimate how long
+     * any file post-processing (like checksum calculation) will take.
+     */
+    private static final double POST_PROCESSING_BANDWIDTH = 100 * 1024 * 1024 / 1_000.0;
+
+    /** Number of milliseconds between successive requests. */
+    private static final long DELAY_BETWEEN_REQUESTS = 5_000;
 
     // REVISIT: we may wish to generate a value based on the algorithms dCache
     // supports
@@ -328,55 +347,108 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
             throws ThirdPartyTransferFailedCacheException
     {
         FileAttributes attributes = _channel.getFileAttributes();
+        boolean isFirstAttempt = true;
 
-        HttpHead head = new HttpHead(info.getUri());
-        head.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        head.setProtocolVersion(HttpVersion.HTTP_1_1);
-        head.setConfig(RequestConfig.custom().
+        /*
+         * We estimate how long any post-processing will take based on a
+         * linear model.  The model is:
+         *
+         *     t_max = alpha + S / beta
+         *
+         * where t_max is the maximum time post-processing is expected to take,
+         * S is the file's size,  alpha is the fixed time that all files require
+         * and beta is the effective IO bandwidth within the remote server.
+         */
+        long t_max = POST_PROCESSING_OFFSET +
+                (long)(attributes.getSize() / POST_PROCESSING_BANDWIDTH);
+        long deadline = System.currentTimeMillis() + t_max;
+
+        try {
+            while (System.currentTimeMillis() < deadline) {
+                long sleepFor = Math.min(deadline - System.currentTimeMillis(),
+                        DELAY_BETWEEN_REQUESTS);
+                if (!isFirstAttempt && sleepFor > 0) {
+                    Thread.sleep(sleepFor);
+                }
+                isFirstAttempt = false;
+
+                HttpHead head = buildHeadRequest(info.getUri(), info.getHeaders());
+                try (CloseableHttpResponse response = _client.execute(head)) {
+                    StatusLine status = response.getStatusLine();
+
+                    if (status.getStatusCode() >= 300) {
+                        throw new ThirdPartyTransferFailedCacheException("remote " +
+                                "server rejected HEAD: " + status.getStatusCode() +
+                                " " + status.getReasonPhrase());
+                    }
+
+                    Long length = getContentLength(response);
+
+                    if (length == null || (attributes.getSize() != 0 && length == 0)) {
+                        continue;
+                    }
+
+                    if (attributes.getSize() != length) {
+                        throw new ThirdPartyTransferFailedCacheException(
+                                String.format("server reported wrong file size (%d != %d)",
+                                length, attributes.getSize()));
+                    }
+
+                    String rfc3230 = headerValue(response, "Digest");
+                    checkChecksums(info, rfc3230, attributes.getChecksumsIfPresent());
+                    return;
+                } catch (IOException e) {
+                    throw new ThirdPartyTransferFailedCacheException("failed to " +
+                            "connect to server: " + e.getMessage(), e);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new ThirdPartyTransferFailedCacheException("pool is shutting down", e);
+        }
+
+        throw new ThirdPartyTransferFailedCacheException("remote server failed " +
+                "to provide length after " + (t_max / 1_000) + "s");
+    }
+
+    private HttpHead buildHeadRequest(URI location, Map<String,String> extraHeaders)
+    {
+        HttpHead request = new HttpHead(location);
+        request.addHeader("Want-Digest", WANT_DIGEST_VALUE);
+        request.setProtocolVersion(HttpVersion.HTTP_1_1);
+        request.setConfig(RequestConfig.custom().
                 setConnectTimeout(CONNECTION_TIMEOUT).
                 setSocketTimeout(SOCKET_TIMEOUT).
                 build());
-        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
-            head.addHeader(header.getKey(), header.getValue());
+        for (Map.Entry<String,String> header : extraHeaders.entrySet()) {
+            request.addHeader(header.getKey(), header.getValue());
         }
 
-        try (CloseableHttpResponse response = _client.execute(head)) {
-            StatusLine status = response.getStatusLine();
-            if (status.getStatusCode() >= 300) {
-                throw new ThirdPartyTransferFailedCacheException("remote " +
-                        "server rejected HEAD: " + status.getStatusCode() +
-                        " " + status.getReasonPhrase());
-            }
+        return request;
+    }
 
-            if (info.isVerificationRequired() && !hasContentLength(response,
-                    attributes.getSize())) {
-                throw new ThirdPartyTransferFailedCacheException("sever sent no Content-Length");
-            }
+    private void checkChecksums(RemoteHttpDataTransferProtocolInfo info,
+            String rfc3230, Optional<Set<Checksum>> knownChecksums)
+            throws ThirdPartyTransferFailedCacheException
+    {
+        Map<ChecksumType,Checksum> checksums =
+                uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
 
-            String rfc3230 = headerValue(response, "Digest");
-            Map<ChecksumType,Checksum> checksums =
-                    uniqueIndex(Checksums.decodeRfc3230(rfc3230), Checksum::getType);
+        boolean verified = false;
+        if (knownChecksums.isPresent()) {
+            for (Checksum ourChecksum : knownChecksums.get()) {
+                ChecksumType type = ourChecksum.getType();
 
-            boolean verified = false;
-            if (attributes.isDefined(CHECKSUM)) {
-                for (Checksum ourChecksum : attributes.getChecksums()) {
-                    ChecksumType type = ourChecksum.getType();
-
-                    if (checksums.containsKey(type)) {
-                        checkChecksumEqual(ourChecksum, checksums.get(type));
-                        verified = true;
-                    }
+                if (checksums.containsKey(type)) {
+                    checkChecksumEqual(ourChecksum, checksums.get(type));
+                    verified = true;
                 }
             }
+        }
 
-            if (info.isVerificationRequired() && !verified) {
-                throw new ThirdPartyTransferFailedCacheException("server " +
-                        "sent no useful checksum: " +
-                        rfc3230 == null ? "(none sent)" : rfc3230);
-            }
-        } catch (IOException e) {
-            throw new ThirdPartyTransferFailedCacheException("failed to " +
-                    "connect to server: " + e.getMessage(), e);
+        if (info.isVerificationRequired() && !verified) {
+            throw new ThirdPartyTransferFailedCacheException("server " +
+                    "sent no useful checksum: " +
+                    rfc3230 == null ? "(none sent)" : rfc3230);
         }
     }
 
@@ -386,28 +458,20 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
         return header != null ? header.getValue() : null;
     }
 
-    private static boolean hasContentLength(HttpResponse response,
-            long expectedLength) throws ThirdPartyTransferFailedCacheException
+    private static Long getContentLength(HttpResponse response)
+            throws ThirdPartyTransferFailedCacheException
     {
         Header header = response.getLastHeader("Content-Length");
 
         if (header == null) {
-            return false;
+            return null;
         }
 
-        long contentLength;
         try {
-            contentLength = Long.parseLong(header.getValue());
+            return Long.parseLong(header.getValue());
         } catch (NumberFormatException e) {
             throw new ThirdPartyTransferFailedCacheException("server sent malformed Content-Length header", e);
         }
-
-        if (contentLength != expectedLength) {
-            throw new ThirdPartyTransferFailedCacheException(String.format("server reported wrong file size (%d != %d)",
-                    contentLength, expectedLength));
-        }
-
-        return true;
     }
 
     private static void checkChecksumEqual(Checksum expected, Checksum actual)
