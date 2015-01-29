@@ -9,6 +9,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DelayedReply implements Reply
 {
+    private static final long serialVersionUID = -236693000550935733L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DelayedReply.class);
 
     private CellEndpoint _endpoint;
