@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.MessageFormat;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -21,6 +20,7 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.PnfsId;
 
 import dmg.cells.nucleus.CellAdapter;
+import java.util.Collections;
 
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
@@ -409,7 +409,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<String>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     /**
@@ -423,7 +423,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<String>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     private class PoolsWritableIterator extends DbIterator<String> {
@@ -450,7 +450,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     private class PoolsReadableIterator extends DbIterator<String> {
@@ -478,7 +478,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     /**
@@ -627,7 +627,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<Object[]>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     /**
@@ -694,7 +694,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<Object[]>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     /**
@@ -723,7 +723,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<String>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     @Override
@@ -978,7 +978,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<String>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     @Override
@@ -1071,7 +1071,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet<String>().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     /**
@@ -1108,7 +1108,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // TODO Auto-generated catch block
             _log.error(e.toString(), e);
         }
-        return new HashSet().iterator(); // Empty set
+        return Collections.emptyIterator();
     }
 
     /**
