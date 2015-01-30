@@ -7,9 +7,10 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.OSMStorageInfo;
@@ -19,7 +20,6 @@ import diskCacheV111.vehicles.hsmControl.HsmControlGetBfDetailsMsg;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.SyncFifo2;
 
 import org.dcache.util.Args;
 
@@ -28,13 +28,16 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
     private final static Logger _log =
         LoggerFactory.getLogger(HsmControlOsm.class);
 
+    private final static int MAX_QUEUE_SIZE = 100 ;
+
     private CellNucleus _nucleus ;
     private Args        _args ;
     private int         _requests;
     private int         _failed;
     private int         _outstandingRequests;
     private File        _database;
-    private SyncFifo2   _fifo = new SyncFifo2() ;
+
+    private final BlockingQueue<CellMessage>  _fifo = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
     public HsmControlOsm( String name , String  args ) throws Exception {
        super(name, args);
@@ -69,7 +72,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        pw.println("Failed      : "+_failed ) ;
        pw.println("Outstanding : "+_fifo.size() ) ;
     }
-    private int _maxQueueSize = 100 ;
+
     @Override
     public void messageArrived( CellMessage msg ){
        Object obj = msg.getMessageObject() ;
@@ -77,12 +80,11 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        String error;
         if( ! ( obj instanceof Message ) ){
             error = "Illegal dCache message class : "+obj.getClass().getName();
-        }else if( _fifo.size() > _maxQueueSize ){
-            error = "Queue size exceeded "+_maxQueueSize+", Request rejected";
-       }else{
-          _fifo.push( msg ) ;
-          return ;
-       }
+        }else if( _fifo.offer(msg) ){
+            return;
+        } else {
+            error = "Queue size exceeded "+ MAX_QUEUE_SIZE + ", Request rejected";
+        }
        _failed ++ ;
        _log.warn(error);
        ((Message)obj).setFailed( 33 , error ) ;
@@ -99,7 +101,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
         _log.info("Starting working thread");
         try{
             while( true ){
-                CellMessage msg = (CellMessage)_fifo.pop() ;
+                CellMessage msg = _fifo.poll();
                 if( msg == null ){
                     _log.warn("fifo empty");
                     break ;
