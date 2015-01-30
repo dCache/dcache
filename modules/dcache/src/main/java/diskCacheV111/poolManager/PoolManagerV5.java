@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.CostCalculationV5;
@@ -62,9 +64,11 @@ import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
 import org.dcache.util.Version;
+import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.collect.Iterables.transform;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class PoolManagerV5
     extends AbstractCellComponent
@@ -96,6 +100,11 @@ public class PoolManagerV5
     private final static Logger _log = LoggerFactory.getLogger(PoolManagerV5.class);
     private final static Logger _logPoolMonitor = LoggerFactory.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
 
+    private final ExecutorService _executor = new CDCExecutorServiceDecorator<>(
+            Executors.newCachedThreadPool(
+                    new ThreadFactoryBuilder().setNameFormat("write-request-pool-%d").build()
+            )
+    );
 
     public PoolManagerV5()
     {
@@ -157,6 +166,7 @@ public class PoolManagerV5
     public void shutdown() throws InterruptedException
     {
         _watchdog.interrupt();
+        _executor.shutdown();
     }
 
     @Override
@@ -684,14 +694,16 @@ public class PoolManagerV5
     public DelayedReply messageArrived(CellMessage envelope,
                                        PoolMgrSelectWritePoolMsg msg)
     {
-        return new WriteRequestHandler(envelope, msg);
+        WriteRequestHandler writeRequestHandler = new WriteRequestHandler(envelope, msg);
+        _executor.execute( writeRequestHandler );
+        return writeRequestHandler;
     }
 
     public class WriteRequestHandler extends DelayedReply implements Runnable
     {
-        private CellMessage _envelope;
-        private PoolMgrSelectWritePoolMsg _request;
-        private PnfsId _pnfsId;
+        private final CellMessage _envelope;
+        private final PoolMgrSelectWritePoolMsg _request;
+        private final PnfsId _pnfsId;
 
         public WriteRequestHandler(CellMessage envelope,
                                    PoolMgrSelectWritePoolMsg msg)
@@ -699,7 +711,6 @@ public class PoolManagerV5
             _envelope = envelope;
             _request = msg;
             _pnfsId = _request.getPnfsId();
-            new Thread(this, "writeHandler").start();
         }
 
        @Override
