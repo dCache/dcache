@@ -194,6 +194,13 @@ public class DcapProxyIoFactory extends AbstractCell {
         }
     }
 
+    void shutdownAdapter(stateid4 stateid) {
+        ProxyIoAdapter adapter = _proxyIO.getIfPresent(stateid);
+        if (adapter != null) {
+            _proxyIO.invalidate(stateid);
+            tryToClose(adapter);
+        }
+    }
     @Override
     public void getInfo(PrintWriter pw) {
 	pw.println("  Known proxy adapters (proxy-io):");

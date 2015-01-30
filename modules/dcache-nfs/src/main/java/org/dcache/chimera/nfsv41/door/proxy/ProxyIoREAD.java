@@ -102,6 +102,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
             _log.debug(he.getMessage());
         }catch(IOException ioe) {
             _log.error("DSREAD: ", ioe);
+            proxyIoFactory.shutdownAdapter(_args.opread.stateid);
             res.status = nfsstat.NFSERR_IO;
         }catch(Exception e) {
             _log.error("DSREAD: ", e);
