@@ -77,6 +77,11 @@ public class ReplicaInfo
     public static ReplicaInfo forRequest(Request request)
     {
         Map<String,String> parameters = request.getParams();
+
+        if (parameters == null) {
+            return EMPTY_INFO;
+        }
+
         String r1 = parameters.get("r1");
 
         if (isNullOrEmpty(parameters.get("rid"))
