@@ -2,20 +2,17 @@ package org.dcache.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps.EntryTransformer;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-
-import diskCacheV111.util.Base64;
 
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -52,7 +49,7 @@ public class Checksums
                         return new Checksum(ChecksumType.ADLER32, value);
 
                     case "md5":
-                        byte[] bytes = Base64.base64ToByteArray(value);
+                        byte[] bytes = Base64.getDecoder().decode(value);
                         return new Checksum(ChecksumType.MD5_TYPE, bytes);
 
                     default:
@@ -96,7 +93,7 @@ public class Checksums
             case MD4_TYPE:
                 return null;
             case MD5_TYPE:
-                return "md5=" + Base64.byteArrayToBase64(bytes);
+                return "md5=" + Base64.getEncoder().encodeToString(bytes);
             default:
                 return null;
             }

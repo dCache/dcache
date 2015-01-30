@@ -1,9 +1,7 @@
 package org.dcache.chimera.nfsv41.door.proxy;
 
-import com.google.common.base.Charsets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import diskCacheV111.util.Base64;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
@@ -16,6 +14,7 @@ import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+import java.util.Base64;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -129,7 +128,7 @@ public class DcapProxyIoFactory extends AbstractCell {
             PoolPassiveIoFileMessage<byte[]> redirect = transfer.waitForRedirect(NFS_RETRY_PERIOD);
 
             return new DcapChannelImpl(redirect.socketAddress(), session,
-                    Base64.byteArrayToBase64(redirect.challange()).getBytes(Charsets.US_ASCII),
+                    Base64.getEncoder().encode(redirect.challange()),
                     transfer.getFileAttributes().getSize()) {
 			@Override
 			public String toString() {

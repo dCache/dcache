@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Base64;
 
 class TunnelConverter implements Convertable,UserBindible  {
 
@@ -30,7 +32,7 @@ class TunnelConverter implements Convertable,UserBindible  {
 
         System.arraycopy(buf, 0, realBytes, 0, len);
 
-        String outData = "enc " + Base64.byteArrayToBase64(realBytes) + "\n";
+        String outData = "enc " + Base64.getEncoder().encodeToString(realBytes) + "\n";
 
         out.write(outData.getBytes());
     }
@@ -55,8 +57,7 @@ class TunnelConverter implements Convertable,UserBindible  {
             throw new IOException("short read: " + total + new String(buf, 0, total));
         }
 
-        return Base64.base64ToByteArray(new String(buf, 4, total - 5));
-
+        return Base64.getDecoder().decode(Arrays.copyOfRange(buf, 4, total - 5));
     }
 
     @Override

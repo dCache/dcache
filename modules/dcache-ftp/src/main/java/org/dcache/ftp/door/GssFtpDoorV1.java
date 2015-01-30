@@ -13,8 +13,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.cert.CertPathValidatorException;
-
-import diskCacheV111.util.Base64;
+import java.util.Base64;
 
 import dmg.util.CommandExitException;
 
@@ -55,7 +54,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             reply("500 Reply encryption error: " + e);
             return;
         }
-        println(code + " " + Base64.byteArrayToBase64(data));
+        println(code + " " + Base64.getEncoder().encodeToString(data));
     }
 
     @Override
@@ -91,7 +90,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             reply("503 Send AUTH first");
             return;
         }
-        byte[] token = Base64.base64ToByteArray(arg);
+        byte[] token = Base64.getDecoder().decode(arg);
         try {
             ChannelBinding cb = new ChannelBinding(_remoteSocketAddress.getAddress(),
             InetAddress.getLocalHost(), null);
@@ -122,10 +121,10 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
         if (token != null) {
             if (!_serviceContext.isEstablished()) {
-                reply("335 ADAT="+Base64.byteArrayToBase64(token));
+                reply("335 ADAT="+Base64.getEncoder().encodeToString(token));
             }
             else {
-                reply("235 ADAT="+Base64.byteArrayToBase64(token));
+                reply("235 ADAT="+Base64.getEncoder().encodeToString(token));
             }
         }
         else {
@@ -154,7 +153,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
 
-        byte[] data = Base64.base64ToByteArray(answer);
+        byte[] data = Base64.getDecoder().decode(answer);
         MessageProp prop = new MessageProp(0, false);
         try {
             data = _serviceContext.unwrap(data, 0, data.length, prop);

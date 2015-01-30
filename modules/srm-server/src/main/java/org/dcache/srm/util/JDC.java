@@ -2,6 +2,7 @@ package org.dcache.srm.util;
 
 import org.slf4j.MDC;
 
+import java.util.Base64;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
@@ -9,7 +10,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.dcache.commons.util.NDC;
 
 import static com.google.common.base.Strings.nullToEmpty;
-import static diskCacheV111.util.Base64.byteArrayToBase64;
 
 /**
  * The SRM Job/request Diagnostic Context, a utility class for working
@@ -183,7 +183,7 @@ public class JDC implements AutoCloseable
         byte hash1 = (byte)(time ^ (time >>> 8) ^ (time >>> 24) ^ (time >>> 40)
                 ^ (time >>> 56));
         byte hash2 = (byte)((time >>> 16) ^ (time >>> 32) ^ (time >>> 48));
-        String id = byteArrayToBase64(new byte[] {hash1, hash2});
+        String id = Base64.getEncoder().encodeToString(new byte[] {hash1, hash2});
         int idx = id.indexOf('=');
         return idx == -1 ? id : id.substring(0, idx);
     }

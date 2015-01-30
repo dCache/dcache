@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
@@ -28,7 +29,6 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.Base64;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
@@ -2329,7 +2329,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             append(_vargs.getName()).
             append(" connect ").append(poolSocketAddress.getHostName() ).
             append(" ").append(poolSocketAddress.getPort() ).append(" ").
-            append(Base64.byteArrayToBase64(reply.challange()) );
+            append(Base64.getEncoder().encodeToString(reply.challange()) );
 
             println( sb.toString() ) ;
             setStatus( "WaitingForDoorTransferOk" ) ;
