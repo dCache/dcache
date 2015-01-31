@@ -64,24 +64,17 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
-import org.apache.axis.MessageContext;
-import org.globus.gsi.bc.BouncyCastleUtil;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import org.dcache.auth.util.GSSUtils;
-import org.dcache.gplazma.AuthenticationException;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
@@ -89,9 +82,8 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
+import org.dcache.srm.util.Axis;
 
-import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
-import static org.globus.axis.gsi.GSIConstants.GSI_CREDENTIALS;
 
 /**
  * The SrmAUthorizer provides helper methods that mediates access to
@@ -124,46 +116,16 @@ public class SrmAuthorizer
      */
     public UserCredential getUserCredentials() throws SRMInternalErrorException, SRMAuthenticationException
     {
-        try {
-            MessageContext mctx = MessageContext.getCurrentContext();
-
-            Object tmp = mctx.getProperty(MC_HTTP_SERVLETREQUEST);
-            if (!(tmp instanceof HttpServletRequest)) {
-                throw new SRMInternalErrorException("HttpServletRequest is missing from Axis message context.");
-            }
-            HttpServletRequest req = (HttpServletRequest) tmp;
-
-            GSSCredential delegcred = (GSSCredential) req.getAttribute(GSI_CREDENTIALS);
-            if (delegcred != null) {
-                try {
-                    log.debug("User credential (delegcred) is: {}", delegcred.getName());
-                } catch (GSSException e) {
-                    Throwables.propagate(e);
-                }
-            }
-            X509Certificate[] chain = (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
-            if (chain == null) {
-                throw new SRMAuthenticationException("Client's certificate chain is missing from request.");
-            }
-
-            String dn = BouncyCastleUtil.getIdentity(BouncyCastleUtil.getIdentityCertificate(chain));
-
-            log.debug("User ID is: {}", dn);
-
-            UserCredential userCredential = new UserCredential();
-            userCredential.secureId = dn;
-            userCredential.credential = delegcred;
-            userCredential.chain = chain;
-            if (isClientDNSLookup) {
-                userCredential.clientHost = InetAddresses.forString(req.getRemoteAddr()).getCanonicalHostName();
-            } else {
-                userCredential.clientHost = req.getRemoteAddr();
-            }
-
-            return userCredential;
-        } catch (CertificateException e) {
-            throw new SRMAuthenticationException(e.toString(), e);
-        }
+        UserCredential userCredential = new UserCredential();
+        userCredential.chain = Axis.getCertificateChain().orElseThrow(() ->
+                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+        userCredential.secureId = Axis.getDN().orElseThrow(() ->
+                new SRMAuthenticationException("Failed to resolve DN"));
+        userCredential.credential = Axis.getDelegatedCredential().orElse(null);
+        String address = Axis.getRemoteAddress();
+        userCredential.clientHost = isClientDNSLookup ?
+                InetAddresses.forString(address).getCanonicalHostName() : address;
+        return userCredential;
     }
 
 
@@ -175,10 +137,8 @@ public class SrmAuthorizer
     public SRMUser getRequestUser(RequestCredential requestCredential, X509Certificate[] chain)
             throws SRMInternalErrorException, SRMAuthorizationException, SRMAuthenticationException
     {
-        MessageContext mctx = MessageContext.getCurrentContext();
-        HttpServletRequest req = (HttpServletRequest) mctx.getProperty(MC_HTTP_SERVLETREQUEST);
         return authorization.authorize(requestCredential.getId(),
-                requestCredential.getCredentialName(), chain, req.getRemoteAddr());
+                requestCredential.getCredentialName(), chain, Axis.getRemoteAddress());
     }
 
 

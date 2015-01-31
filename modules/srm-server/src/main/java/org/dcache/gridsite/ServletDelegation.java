@@ -21,14 +21,11 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-import org.apache.axis.MessageContext;
 import org.glite.voms.VOMSValidator;
 import org.globus.gsi.bc.BouncyCastleUtil;
-import org.globus.gsi.util.CertificateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.xml.rpc.holders.StringHolder;
 
 import java.security.cert.CertificateException;
@@ -43,7 +40,6 @@ import org.dcache.srm.util.Axis;
 import org.dcache.util.Version;
 
 import static java.util.Arrays.asList;
-import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 /**
@@ -205,22 +201,8 @@ public class ServletDelegation implements Delegation
     private X509Certificate[] getClientCertificates()
             throws DelegationException
     {
-        try {
-            MessageContext mctx = MessageContext.getCurrentContext();
-
-            Object tmp = mctx.getProperty(MC_HTTP_SERVLETREQUEST);
-            if (!(tmp instanceof HttpServletRequest)) {
-                throw new DelegationException("HttpServletRequest is missing from Axis message context.");
-            }
-            HttpServletRequest req = (HttpServletRequest) tmp;
-            X509Certificate[] certificates = (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
-            if (certificates == null) {
-                throw new DelegationException("Client's certificate chain is missing from request.");
-            }
-            return certificates;
-        } catch (IllegalStateException ignored) {
-            throw new DelegationException("user supplied no certificate");
-        }
+        return Axis.getCertificateChain().orElseThrow(() ->
+                new DelegationException("user supplied no certificate"));
     }
 
     private String generateDelegationId() throws DelegationException

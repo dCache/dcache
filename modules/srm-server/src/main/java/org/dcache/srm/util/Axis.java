@@ -1,16 +1,24 @@
 package org.dcache.srm.util;
 
 import org.apache.axis.MessageContext;
+import org.apache.axis.transport.http.HTTPConstants;
+import org.globus.gsi.bc.BouncyCastleUtil;
+import org.ietf.jgss.GSSCredential;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLET;
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
+import static org.globus.axis.gsi.GSIConstants.GSI_CREDENTIALS;
 
 
 /**
@@ -39,6 +47,28 @@ public class Axis
         return castAttribute(key, context.getAttribute(key), type);
     }
 
+    public static Optional<X509Certificate[]> getCertificateChain()
+    {
+        return Optional.ofNullable(Axis.getRequestAttribute("javax.servlet.request.X509Certificate", X509Certificate[].class));
+    }
+
+    public static Optional<String> getDN()
+    {
+        return Axis.getCertificateChain().flatMap(t -> {
+            try {
+                X509Certificate cert = BouncyCastleUtil.getIdentityCertificate(t);
+                return Optional.ofNullable(BouncyCastleUtil.getIdentity(cert));
+            } catch (CertificateException e) {
+                return Optional.empty();
+            }
+        });
+    }
+
+    public static Optional<GSSCredential> getDelegatedCredential()
+    {
+        return Optional.ofNullable(Axis.getRequestAttribute(GSI_CREDENTIALS, GSSCredential.class));
+    }
+
     /**
      * Obtain an object from the set of attributes in the HttpServletRequest
      * @param key The name of the attribute
@@ -52,7 +82,24 @@ public class Axis
         MessageContext msgContext = MessageContext.getCurrentContext();
         HttpServletRequest request = (HttpServletRequest)
                 msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
-        return castAttribute(key, request.getAttribute(key), type);
+        Object item = request.getAttribute(key);
+        return item == null ? null : castAttribute(key, item, type);
+    }
+
+    public static String getRemoteAddress()
+    {
+        MessageContext msgContext = MessageContext.getCurrentContext();
+        HttpServletRequest request = (HttpServletRequest)
+                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
+        return request.getRemoteAddr();
+    }
+
+    public static String getUserAgent()
+    {
+        MessageContext msgContext = MessageContext.getCurrentContext();
+        HttpServletRequest request = (HttpServletRequest)
+                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
+        return request.getHeader(HTTPConstants.HEADER_USER_AGENT);
     }
 
     private static <T> T castAttribute(String key, Object item, Class<T> type)
