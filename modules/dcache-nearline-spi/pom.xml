@@ -1,0 +1,85 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.dcache</groupId>
+    <artifactId>dcache-parent</artifactId>
+    <version>2.12.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>dcache-nearline-spi</artifactId>
+  <packaging>jar</packaging>
+
+  <name>dCache Nearline Storage SPI</name>
+
+  <dependencies>
+      <dependency>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.dcache</groupId>
+          <artifactId>dcache-vehicles</artifactId>
+          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>annotations</artifactId>
+          <version>3.0.0</version>
+          <scope>compile</scope>
+      </dependency>
+  </dependencies>
+
+  <build>
+      <pluginManagement>
+        <plugins>
+            <!--This plugin's configuration is used to store Eclipse
+                m2e settings only. It has no influence on the Maven
+                build itself.-->
+            <plugin>
+                <groupId>org.eclipse.m2e</groupId>
+                <artifactId>lifecycle-mapping</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <lifecycleMappingMetadata>
+                        <pluginExecutions>
+                            <pluginExecution>
+                                <pluginExecutionFilter>
+                                    <groupId>org.datanucleus</groupId>
+                                    <artifactId>datanucleus-maven-plugin</artifactId>
+                                    <!-- The following line is only necessary to work around a NPE in
+                                         the m2e plugin. This is a known bug reported here:
+                                         https://bugs.eclipse.org/bugs/show_bug.cgi?id=347602 -->
+                                    <versionRange>${datanucleus.plugin.version}</versionRange>
+                                    <goals>
+                                        <goal>enhance</goal>
+                                    </goals>
+                                </pluginExecutionFilter>
+                                <action>
+                                    <ignore />
+                                </action>
+                            </pluginExecution>
+                            <pluginExecution>
+                                <pluginExecutionFilter>
+                                    <groupId>org.codehaus.mojo</groupId>
+                                    <artifactId>smc-maven-plugin</artifactId>
+                                    <versionRange>[1.0-alpha-1,)</versionRange>
+                                    <goals>
+                                        <goal>smc</goal>
+                                    </goals>
+                                </pluginExecutionFilter>
+                                <action>
+                                    <execute>
+                                        <runOnIncremental>false</runOnIncremental>
+                                    </execute>
+                                </action>
+                            </pluginExecution>
+                        </pluginExecutions>
+                    </lifecycleMappingMetadata>
+                </configuration>
+            </plugin>
+        </plugins>
+      </pluginManagement>
+  </build>
+</project>
