@@ -27,6 +27,7 @@ import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 import diskCacheV111.vehicles.PnfsFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.StringTemplateInfoMessageVisitor;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 
 import dmg.cells.nucleus.CellCommandListener;
@@ -184,7 +185,7 @@ public final class BillingCell
         } else {
             try {
                 ST template = new ST(_templateGroup, format);
-                msg.fillTemplate(template);
+                msg.accept(new StringTemplateInfoMessageVisitor(template));
                 return template.render();
             } catch (STException e) {
                 _log.error("Unable to render format '{}'. Falling back to internal default.", format);

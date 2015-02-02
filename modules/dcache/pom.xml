@@ -55,7 +55,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>dcache-nearline</artifactId>
+      <artifactId>dcache-nearline-spi</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
