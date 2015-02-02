@@ -7,6 +7,8 @@ import java.util.Collections;
 
 import diskCacheV111.pools.PoolCostInfo;
 
+import org.dcache.pool.classic.IoQueueManager;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static org.hamcrest.Matchers.is;
@@ -25,7 +27,7 @@ public class WeightedAvailableSpaceSelectionTest
                                long lru,
                                long gap)
     {
-        PoolCostInfo info = new PoolCostInfo("pool");
+        PoolCostInfo info = new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(free + removable, free, 0, removable, lru);
         info.getSpaceInfo().setParameter(breakeven, gap);
         assertEquals(expected, (long) wass.getAvailable(info.getSpaceInfo(), 0));
@@ -71,7 +73,7 @@ public class WeightedAvailableSpaceSelectionTest
     @Test
     public void testLargeLoad()
     {
-        PoolCostInfo info = new PoolCostInfo("pool");
+        PoolCostInfo info = new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(100000000, 100000000, 0, 0);
         info.getSpaceInfo().setParameter(0, 1000);
         info.setMoverCostFactor(0.5);
@@ -85,17 +87,17 @@ public class WeightedAvailableSpaceSelectionTest
     @Test
     public void testIdleFullPoolDoesNotAffectLoadNormalization()
     {
-        PoolCostInfo busy = new PoolCostInfo("pool1");
+        PoolCostInfo busy = new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE);
         busy.setSpaceUsage(100000000, 100000000, 0, 0);
         busy.getSpaceInfo().setParameter(0, 1000);
         busy.setMoverCostFactor(0.5);
         busy.addExtendedMoverQueueSizes("movers", 3000, 3000, 0, 0, 3000);
-        PoolCostInfo veryBusy = new PoolCostInfo("pool2");
+        PoolCostInfo veryBusy = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
         veryBusy.setSpaceUsage(100000000, 100000000, 0, 0);
         veryBusy.getSpaceInfo().setParameter(0, 1000);
         veryBusy.setMoverCostFactor(0.5);
         veryBusy.addExtendedMoverQueueSizes("movers", 6000, 6000, 0, 0, 6000);
-        PoolCostInfo full = new PoolCostInfo("pool3");
+        PoolCostInfo full = new PoolCostInfo("pool3", IoQueueManager.DEFAULT_QUEUE);
         full.setSpaceUsage(100000000, 0, 100000000, 0);
         full.getSpaceInfo().setParameter(0, 1000);
         full.setMoverCostFactor(0.5);
@@ -124,7 +126,7 @@ public class WeightedAvailableSpaceSelectionTest
         int moverWriters = 0;
         int filesize = 1000;
 
-        PoolCostInfo info = new PoolCostInfo("pool");
+        PoolCostInfo info = new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(total, free, precious, removable, lru);
         info.getSpaceInfo().setParameter(breakEven, gap);
         info.setMoverCostFactor(moverCostFactor);

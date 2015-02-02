@@ -1,14 +1,11 @@
-package diskCacheV111.vehicles;
+package org.dcache.poolmanager;
 
 import com.google.common.base.Objects;
 
-import java.io.Serializable;
-
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
-public class PoolLinkGroupInfo implements Serializable {
-
-    private static final long serialVersionUID = -1670253098493654055L;
+public class PoolLinkGroupInfo
+{
     private final String _groupName;
     private final long _totalSpaceInBytes;
     private final long _availableSpaceInBytes;

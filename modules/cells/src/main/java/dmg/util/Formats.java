@@ -1,4 +1,4 @@
-package dmg.util ;
+package dmg.util;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

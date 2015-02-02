@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import diskCacheV111.pools.PoolCostInfo;
 
+import org.dcache.pool.classic.IoQueueManager;
+
 import static org.junit.Assert.fail;
 
 
@@ -15,7 +17,7 @@ public class PoolCostInfoTest {
 
     @Before
     public void setUp() {
-        poolCost = new PoolCostInfo("aPool");
+        poolCost = new PoolCostInfo("aPool", IoQueueManager.DEFAULT_QUEUE);
     }
 
     @Test

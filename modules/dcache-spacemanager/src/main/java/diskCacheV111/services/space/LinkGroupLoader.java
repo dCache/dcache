@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import diskCacheV111.util.VOInfo;
-import diskCacheV111.vehicles.PoolLinkGroupInfo;
+import org.dcache.poolmanager.PoolLinkGroupInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;

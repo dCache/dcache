@@ -286,7 +286,7 @@ public class CostModuleTest {
                                                                 long removableSpace) {
 
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
-        PoolCostInfo poolCost = new PoolCostInfo( poolName);
+        PoolCostInfo poolCost = new PoolCostInfo( poolName, IoQueueManager.DEFAULT_QUEUE);
 
         poolCost.setSpaceUsage( totalSpace * BYTES_IN_GIGABYTE,
                                 freeSpace * BYTES_IN_GIGABYTE,
@@ -317,7 +317,7 @@ public class CostModuleTest {
                                                                 int storeActive, int storeMaxActive, int storeQueued) {
 
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
-        PoolCostInfo poolCost = new PoolCostInfo( poolName);
+        PoolCostInfo poolCost = new PoolCostInfo( poolName, IoQueueManager.DEFAULT_QUEUE);
 
         poolCost.setSpaceUsage( totalSpace * BYTES_IN_GIGABYTE,
                                 freeSpace * BYTES_IN_GIGABYTE,

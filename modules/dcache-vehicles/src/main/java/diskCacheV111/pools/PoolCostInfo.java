@@ -1,14 +1,10 @@
-package diskCacheV111.pools ;
+package diskCacheV111.pools;
 
 import com.google.common.collect.Maps;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.dcache.pool.classic.IoQueueManager;
 
 public class PoolCostInfo implements Serializable {
 
@@ -25,10 +21,10 @@ public class PoolCostInfo implements Serializable {
     private final String  _poolName ;
     private double _moverCostFactor;
 
-    public PoolCostInfo(String poolName)
+    public PoolCostInfo(String poolName, String defaultQueue)
     {
         _poolName = poolName;
-        _defaultQueueName = IoQueueManager.DEFAULT_QUEUE;
+        _defaultQueueName = defaultQueue;
         _space = new PoolSpaceInfo(0, 0, 0, 0);
     }
 

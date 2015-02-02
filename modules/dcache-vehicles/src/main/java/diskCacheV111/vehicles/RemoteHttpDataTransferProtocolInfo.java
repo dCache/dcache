@@ -4,9 +4,6 @@ import com.google.common.collect.ImmutableMap;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
-
-import diskCacheV111.util.CacheException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

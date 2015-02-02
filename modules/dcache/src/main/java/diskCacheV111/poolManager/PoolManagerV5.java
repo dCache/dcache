@@ -18,6 +18,7 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
+import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -25,7 +26,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolLinkGroupInfo;
+import org.dcache.poolmanager.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
@@ -464,7 +465,9 @@ public class PoolManagerV5
         if (!pool.isActive() || cost == null) {
             offlinePools.add(name);
         } else {
-            onlinePools.add(new PoolManagerPoolInformation(name, cost));
+            CostCalculationV5 calc = new CostCalculationV5(cost);
+            calc.recalculate();
+            onlinePools.add(new PoolManagerPoolInformation(name, cost, calc.getPerformanceCost()));
         }
     }
 

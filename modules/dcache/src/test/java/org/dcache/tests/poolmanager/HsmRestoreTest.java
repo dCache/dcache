@@ -152,7 +152,7 @@ public class HsmRestoreTest {
 
         for( String pool : pools) {
 
-            PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
+            PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
@@ -230,7 +230,7 @@ public class HsmRestoreTest {
 
         for( String pool : pools) {
 
-            PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
+            PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
@@ -330,7 +330,7 @@ public class HsmRestoreTest {
 
         for( String pool : pools) {
 
-            PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
+            PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
@@ -429,7 +429,7 @@ public class HsmRestoreTest {
 
         for( String pool : pools) {
 
-            PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
+            PoolCostInfo poolCostInfo = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
             poolCostInfo.setSpaceUsage(100, 20, 30, 50);
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);

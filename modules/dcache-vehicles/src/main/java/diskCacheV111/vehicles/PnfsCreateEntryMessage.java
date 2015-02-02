@@ -9,7 +9,6 @@ import java.util.Set;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static diskCacheV111.namespace.NameSpaceProvider.DEFAULT;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class PnfsCreateEntryMessage extends PnfsGetFileAttributes
@@ -22,12 +21,12 @@ public class PnfsCreateEntryMessage extends PnfsGetFileAttributes
     private static final long serialVersionUID = -8197311585737333341L;
 
     public PnfsCreateEntryMessage(String path) {
-        this(path, DEFAULT, DEFAULT, DEFAULT);
+        this(path, -1, -1, -1);
     }
 
     public PnfsCreateEntryMessage(String path, Set<FileAttribute> attr)
     {
-        this(path, DEFAULT, DEFAULT, DEFAULT, attr);
+        this(path, -1, -1, -1, attr);
     }
 
     public PnfsCreateEntryMessage(String path, int uid, int gid, int mode) {

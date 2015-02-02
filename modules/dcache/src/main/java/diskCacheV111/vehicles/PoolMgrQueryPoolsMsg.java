@@ -1,6 +1,6 @@
 // $Id: PoolMgrQueryPoolsMsg.java,v 1.6 2007-07-23 10:49:09 behrmann Exp $
 
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 import java.util.List;
 

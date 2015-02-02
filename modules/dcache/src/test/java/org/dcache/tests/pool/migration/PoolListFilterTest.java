@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.migration.PoolListFilter;
 import org.dcache.pool.migration.RefreshablePoolList;
 import org.dcache.pool.migration.SymbolTable;
@@ -232,7 +233,7 @@ public class PoolListFilterTest
     private static PoolManagerPoolInformation
         createPool(String name)
     {
-        return new PoolManagerPoolInformation(name, new PoolCostInfo(name));
+        return new PoolManagerPoolInformation(name, new PoolCostInfo(name, IoQueueManager.DEFAULT_QUEUE), 0);
     }
 
     private static Set<Pattern> createPatterns(String glob)

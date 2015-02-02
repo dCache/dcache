@@ -295,7 +295,7 @@ public class XMLDataGathererHelper {
         SelectionPoolHelper sPool = new SelectionPoolHelper();
         sPool.setEnabled(IS_POOL2_ENABLED);
         sPool.setPoolMode(new PoolV2Mode(PoolV2Mode.DISABLED_STRICT));
-        PoolCostInfo info = new PoolCostInfo(POOL2_NAME);
+        PoolCostInfo info = new PoolCostInfo(POOL2_NAME, IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(POOL2_TOTAL_SPACE, POOL2_FREE_SPACE, POOL2_PRECIOUS_SPACE,
                 0, POOL2_USED_SPACE);
         Pool pool2 = new Pool(info, sPool);
@@ -312,7 +312,7 @@ public class XMLDataGathererHelper {
 
         SelectionPoolHelper sPool = new SelectionPoolHelper();
         sPool.setEnabled(IS_POOL1_ENABLED);
-        PoolCostInfo info = new PoolCostInfo(POOL1_NAME);
+        PoolCostInfo info = new PoolCostInfo(POOL1_NAME, IoQueueManager.DEFAULT_QUEUE);
         info.setSpaceUsage(POOL1_TOTAL_SPACE, POOL1_FREE_SPACE, POOL1_PRECIOUS_SPACE,
                 POOL1_REMOVABLE_SPACE, POOL1_USED_SPACE);
         info.setP2pClientQueueSizes(POOL1_P2PCLIENT._active,

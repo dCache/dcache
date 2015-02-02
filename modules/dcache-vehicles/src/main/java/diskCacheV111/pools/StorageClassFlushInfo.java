@@ -1,5 +1,3 @@
- // $Id: StorageClassFlushInfo.java,v 1.4 2006-07-31 16:35:42 patrick Exp $
-
 package diskCacheV111.pools;
 
 //Base class for messages to Pool

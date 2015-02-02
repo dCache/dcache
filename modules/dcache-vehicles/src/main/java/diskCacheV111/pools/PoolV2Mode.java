@@ -1,8 +1,3 @@
-/*
- * $Id$
- */
-
-
 package diskCacheV111.pools;
 
 

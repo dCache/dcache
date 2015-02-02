@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 
 import java.io.Serializable;
 
-import diskCacheV111.pools.CostCalculationV5;
 import diskCacheV111.pools.PoolCostInfo;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -18,13 +17,11 @@ public class PoolManagerPoolInformation
     private double _cpuCost;
     private final PoolCostInfo _poolCostInfo;
 
-    public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo)
+    public PoolManagerPoolInformation(String name, PoolCostInfo poolCostInfo, double cpuCost)
     {
         _name = name;
         _poolCostInfo = checkNotNull(poolCostInfo);
-        CostCalculationV5 calc = new CostCalculationV5(_poolCostInfo);
-        calc.recalculate();
-        _cpuCost = calc.getPerformanceCost();
+        _cpuCost = cpuCost;
     }
 
     public String getName()

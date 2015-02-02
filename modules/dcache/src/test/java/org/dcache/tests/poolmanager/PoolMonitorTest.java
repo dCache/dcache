@@ -25,6 +25,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
@@ -74,8 +75,8 @@ public class PoolMonitorTest
          */
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
 
-        PoolCostInfo poolCost1 = new PoolCostInfo("pool1");
-        PoolCostInfo poolCost2 = new PoolCostInfo("pool2");
+        PoolCostInfo poolCost1 = new PoolCostInfo("pool1", IoQueueManager.DEFAULT_QUEUE);
+        PoolCostInfo poolCost2 = new PoolCostInfo("pool2", IoQueueManager.DEFAULT_QUEUE);
 
         poolCost1.setSpaceUsage(100, 20, 30, 50);
         poolCost2.setSpaceUsage(100, 20, 30, 50);

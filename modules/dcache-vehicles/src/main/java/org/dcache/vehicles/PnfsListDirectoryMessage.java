@@ -3,15 +3,13 @@ package org.dcache.vehicles;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsMessage;
-
-import dmg.util.CollectionFactory;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
@@ -35,8 +33,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage
     private final BoundType _upperBoundType;
     private final UUID _uuid = UUID.randomUUID();
     private final Set<FileAttribute> _requestedAttributes;
-    private Collection<DirectoryEntry> _entries =
-        CollectionFactory.newArrayList();
+    private Collection<DirectoryEntry> _entries = new ArrayList<>();
 
     /**
      * The last message has the following field set to true and a non-zero
@@ -52,7 +49,7 @@ public class PnfsListDirectoryMessage extends PnfsMessage
      * @param pattern Optional glob pattern for filtering the result
      * @param range Range for bracketing the result
      * @param attr The file attributes to include for each entry
-     * @see NameSpaceProvider#list
+     * @see diskCacheV111.namespace.NameSpaceProvider#list
      */
     public PnfsListDirectoryMessage(String path, Glob pattern,
                                     Range<Integer> range,

@@ -1,4 +1,4 @@
-package dmg.util ;
+package dmg.util;
 
 public interface Replaceable {
 

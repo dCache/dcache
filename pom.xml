@@ -1234,6 +1234,7 @@
         <module>modules/gplazma2-gsi</module>
         <module>modules/gplazma2-htpasswd</module>
         <module>modules/javatunnel</module>
+	<module>modules/dcache-vehicles</module>
         <module>modules/dcache</module>
         <module>modules/dcache-chimera</module>
         <module>modules/dcache-ftp</module>

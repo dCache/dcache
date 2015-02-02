@@ -24,6 +24,7 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.GenericStorageInfo;
 
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.vehicles.FileAttributes;
@@ -106,7 +107,7 @@ public class StandardPoolsDAO implements PoolsDAO {
         for (SelectionPool selectionPool : pools) {
             PoolCostInfo info = getCostModule().getPoolCostInfo(selectionPool.getName());
             if (info == null) {
-                info = new PoolCostInfo(selectionPool.getName());
+                info = new PoolCostInfo(selectionPool.getName(), IoQueueManager.DEFAULT_QUEUE);
                 info.setSpaceUsage(0, 0, 0, 0, 0);
             }
             Pool pool = new Pool(info, selectionPool);

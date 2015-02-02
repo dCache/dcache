@@ -1327,7 +1327,7 @@ public class PoolV4
                 case PRECIOUS:
                 case CACHED:
                 case BROKEN:
-                    listing.add(new CacheRepositoryEntryInfo(_repository.getEntry(pnfsid)));
+                    listing.add(getCacheRepositoryEntryInfo(pnfsid));
                     break;
                 default:
                     break;
@@ -1341,6 +1341,43 @@ public class PoolV4
             }
         }
         return listing;
+    }
+
+    private CacheRepositoryEntryInfo getCacheRepositoryEntryInfo(PnfsId pnfsid)
+            throws CacheException, InterruptedException
+    {
+        CacheEntry entry = _repository.getEntry(pnfsid);
+        int bitmask;
+        switch (entry.getState()) {
+        case PRECIOUS:
+            bitmask = 1 << CacheRepositoryEntryInfo.PRECIOUS_BIT;
+            break;
+        case CACHED:
+            bitmask = 1 << CacheRepositoryEntryInfo.CACHED_BIT;
+            break;
+        case FROM_CLIENT:
+            bitmask = 1 << CacheRepositoryEntryInfo.RECEIVINGFROMCLIENT_BIT;
+            break;
+        case FROM_POOL:
+        case FROM_STORE:
+            bitmask = 1 << CacheRepositoryEntryInfo.RECEIVINGFROMSTORE_BIT;
+            break;
+        case BROKEN:
+            bitmask = 1 << CacheRepositoryEntryInfo.BAD_BIT;
+            break;
+        case REMOVED:
+            bitmask = 1 << CacheRepositoryEntryInfo.REMOVED_BIT;
+            break;
+        default:
+            throw new IllegalArgumentException("Bug. An entry should never be in " + entry.getState());
+        }
+        if (entry.isSticky()) {
+            bitmask |= 1<< CacheRepositoryEntryInfo.STICKY_BIT;
+        }
+        return new CacheRepositoryEntryInfo(entry.getPnfsId(), bitmask,
+                                            entry.getLastAccessTime(),
+                                            entry.getCreationTime(),
+                                            entry.getReplicaSize());
     }
 
     /**
@@ -1459,7 +1496,7 @@ public class PoolV4
 
     private PoolCostInfo getPoolCostInfo()
     {
-        PoolCostInfo info = new PoolCostInfo(_poolName);
+        PoolCostInfo info = new PoolCostInfo(_poolName, IoQueueManager.DEFAULT_QUEUE);
         SpaceRecord space = _repository.getSpaceRecord();
 
         info.setSpaceUsage(space.getTotalSpace(), space.getFreeSpace(),

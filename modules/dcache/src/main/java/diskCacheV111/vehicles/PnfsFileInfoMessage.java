@@ -1,6 +1,6 @@
 // $Id: PnfsFileInfoMessage.java,v 1.5 2006-04-11 09:47:53 tigran Exp $
 
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 import org.stringtemplate.v4.ST;
 

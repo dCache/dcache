@@ -50,6 +50,11 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
+      <artifactId>dcache-vehicles</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
       <artifactId>common-cli</artifactId>
       <version>${project.version}</version>
     </dependency>

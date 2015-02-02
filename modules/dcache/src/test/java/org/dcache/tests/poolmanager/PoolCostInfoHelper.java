@@ -9,6 +9,8 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.pool.classic.IoQueueManager;
+
 public class PoolCostInfoHelper {
 
 
@@ -18,7 +20,7 @@ public class PoolCostInfoHelper {
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
         long serialId = System.currentTimeMillis();
 
-        PoolCostInfo poolCost = new PoolCostInfo(pool);
+        PoolCostInfo poolCost = new PoolCostInfo(pool, IoQueueManager.DEFAULT_QUEUE);
 
         poolCost.setSpaceUsage(total, free, precious, removable);
 

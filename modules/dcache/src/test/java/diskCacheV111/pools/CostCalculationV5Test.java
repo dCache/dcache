@@ -65,7 +65,7 @@ public class CostCalculationV5Test
                                                    int restoreActive, int restoreMaxActive, int restoreQueued,
                                                    int storeActive, int storeMaxActive, int storeQueued)
     {
-        PoolCostInfo poolCost = new PoolCostInfo(POOL_NAME);
+        PoolCostInfo poolCost = new PoolCostInfo(POOL_NAME, IoQueueManager.DEFAULT_QUEUE);
         poolCost.setQueueSizes(
                 restoreActive, restoreMaxActive, restoreQueued,
                 storeActive, storeMaxActive, storeQueued);

@@ -8,7 +8,7 @@ import java.util.Map;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
-import diskCacheV111.vehicles.PoolLinkGroupInfo;
+import org.dcache.poolmanager.PoolLinkGroupInfo;
 
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;

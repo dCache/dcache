@@ -22,8 +22,8 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     private static final String VALID_ID_REGEX = "^("+PNFS_STRING_REGEX+"|"+CHIMERA_ID_REGEX+")$";
     private static final Pattern VALID_ID_PATTERN = Pattern.compile( VALID_ID_REGEX);
 
-    private final static int OLD_ID_SIZE = 12; // original pnfs
-    private final static int NEW_ID_SIZE = 18; // chimera
+    private static final int OLD_ID_SIZE = 12; // original pnfs
+    private static final int NEW_ID_SIZE = 18; // chimera
 
     private final byte[] _a;
     private final String _domain;
@@ -253,12 +253,55 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
     public byte[] toBinPnfsId() {
         switch (_a.length) {
         case OLD_ID_SIZE: // old pnfsid
-            return PnfsIdUtil.toBinPnfsId(getId());
-        case NEW_ID_SIZE: // himera
+            return toBinPnfsId(getId());
+        case NEW_ID_SIZE: // chimera
             return getBytes();
         default:
             return null;
         }
+    }
+
+    private static int hexToValue(byte val) {
+        if (val >= '0' && val <= '9') {
+            val -= '0';
+            return val;
+        } else if (val >= 'a' && val <= 'f') {
+            val -= 'a' - 10;
+            return val;
+        } else if (val >= 'A' && val <= 'F') {
+            val -= 'A' - 10;
+            return val;
+        }
+        return -1;
+    }
+
+
+    /**
+     * Converts string representation of pnfsid into its internal binary form used by PNFS server
+     *
+     * @param pnfsid as String
+     * @return pnfsid as byte array
+     */
+    private static byte[] toBinPnfsId(String pnfsid) {
+        byte[] bb = pnfsid.getBytes();
+        byte[] ba = new byte[bb.length/2];
+        //
+        ba[ 0] = (byte)(hexToValue(bb[ 2])<<4 | hexToValue(bb[ 3]));
+        ba[ 1] = (byte)(hexToValue(bb[ 0])<<4 | hexToValue(bb[ 1]));
+        //
+        ba[ 2] = (byte)(hexToValue(bb[ 6])<<4 | hexToValue(bb[ 7]));
+        ba[ 3] = (byte)(hexToValue(bb[ 4])<<4 | hexToValue(bb[ 5]));
+        //
+        ba[ 4] = (byte)(hexToValue(bb[14])<<4 | hexToValue(bb[15]));
+        ba[ 5] = (byte)(hexToValue(bb[12])<<4 | hexToValue(bb[13]));
+        ba[ 6] = (byte)(hexToValue(bb[10])<<4 | hexToValue(bb[11]));
+        ba[ 7] = (byte)(hexToValue(bb[ 8])<<4 | hexToValue(bb[ 9]));
+        //
+        ba[ 8] = (byte)(hexToValue(bb[22])<<4 | hexToValue(bb[23]));
+        ba[ 9] = (byte)(hexToValue(bb[20])<<4 | hexToValue(bb[21]));
+        ba[10] = (byte)(hexToValue(bb[18])<<4 | hexToValue(bb[19]));
+        ba[11] = (byte)(hexToValue(bb[16])<<4 | hexToValue(bb[17]));
+        return ba;
     }
 
     public static void main(String[] args) {
@@ -274,7 +317,6 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
             System.out.println("db.getDomain()     " + id.getDomain());
             System.out.println("id.getBytes()      " + Arrays.toString(id.getBytes()));
             System.out.println("id.toBinPnfsId()   " + Arrays.toString(id.toBinPnfsId()));
-            System.out.println("toStringPnfsId(id.toBinPnfsId()) " + PnfsIdUtil.toStringPnfsId(id.toBinPnfsId()));
             System.exit(0);
         } catch (Exception e) {
             e.printStackTrace();

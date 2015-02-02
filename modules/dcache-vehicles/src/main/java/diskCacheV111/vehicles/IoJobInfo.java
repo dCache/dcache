@@ -1,11 +1,6 @@
-// $Id: IoJobInfo.java,v 1.3 2004-11-05 12:07:19 tigran Exp $
-//
 package diskCacheV111.vehicles;
 
 import diskCacheV111.util.PnfsId;
-
-import org.dcache.pool.classic.IoRequestState;
-import org.dcache.pool.movers.Mover;
 
 public class IoJobInfo extends JobInfo  {
 
@@ -16,12 +11,14 @@ public class IoJobInfo extends JobInfo  {
 
    private static final long serialVersionUID = -7987228538353684951L;
 
-   public IoJobInfo(long submitTime, long startTime, IoRequestState state, int id, Mover<?> transfer) {
-      super(submitTime, startTime, state.toString(), id, transfer.getPathToDoor().getDestinationAddress().toString(), transfer.getClientId());
-      _pnfsId           = transfer.getFileAttributes().getPnfsId();
-      _bytesTransferred = transfer.getBytesTransferred() ;
-      _transferTime     = transfer.getTransferTime();
-      _lastTransferred  = transfer.getLastTransferred() ;
+   public IoJobInfo(long submitTime, long startTime, String state, int id, String clientName, long clientId,
+                    PnfsId pnfsId, long bytesTransferred, long transferTime, long lastTransferred)
+   {
+      super(submitTime, startTime, state, id, clientName, clientId);
+      _pnfsId           = pnfsId;
+      _bytesTransferred = bytesTransferred;
+      _transferTime     = transferTime;
+      _lastTransferred  = lastTransferred;
    }
    public long getTransferTime(){ return _transferTime ; }
    public long getBytesTransferred(){ return _bytesTransferred ; }

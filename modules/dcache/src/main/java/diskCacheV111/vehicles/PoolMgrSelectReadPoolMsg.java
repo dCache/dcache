@@ -1,6 +1,6 @@
 // $Id: PoolMgrSelectReadPoolMsg.java,v 1.5 2004-11-05 12:07:19 tigran Exp $
 
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 import java.io.Serializable;
 import java.util.EnumSet;

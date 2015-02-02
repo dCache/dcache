@@ -1,6 +1,6 @@
 // $Id: InfoMessage.java,v 1.12 2007-07-31 12:22:34 tigran Exp $
 
-package diskCacheV111.vehicles ;
+package diskCacheV111.vehicles;
 
 import org.stringtemplate.v4.ST;
 

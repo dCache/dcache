@@ -55,6 +55,7 @@ import dmg.cells.nucleus.SerializationException;
 import org.dcache.cells.CellMessageDispatcher;
 import org.dcache.cells.CellStub;
 import org.dcache.pinmanager.model.Pin;
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PoolInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
@@ -145,7 +146,7 @@ public class PinManagerTests
                     {
                         return new PoolInfo(
                                 new CellAddressCore(POOL1),
-                                new PoolCostInfo(POOL1),
+                                new PoolCostInfo(POOL1, IoQueueManager.DEFAULT_QUEUE),
                                 ImmutableMap.<String,String>of());
                     }
                 };

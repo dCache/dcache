@@ -412,7 +412,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         }
 
         public synchronized JobInfo toJobInfo() {
-            return new IoJobInfo(_submitTime, _startTime, _state, _id, _mover);
+            return new IoJobInfo(_submitTime, _startTime, _state.toString(), _id,
+                                 _mover.getPathToDoor().getDestinationAddress().toString(), _mover.getClientId(),
+                                 _mover.getFileAttributes().getPnfsId(), _mover.getBytesTransferred(),
+                                 _mover.getTransferTime(), _mover.getLastTransferred());
         }
 
         public synchronized void transfer(CompletionHandler<Void,Void> completionHandler) {

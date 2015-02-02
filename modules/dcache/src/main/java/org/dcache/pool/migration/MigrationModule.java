@@ -39,6 +39,7 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 import org.dcache.cells.CellStub;
+import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
@@ -112,7 +113,7 @@ public class MigrationModule
                CellMessageReceiver
 {
     private final static PoolManagerPoolInformation DUMMY_POOL =
-        new PoolManagerPoolInformation("pool", new PoolCostInfo("pool"));
+        new PoolManagerPoolInformation("pool", new PoolCostInfo("pool", IoQueueManager.DEFAULT_QUEUE), 0);
 
     public final static String CONSTANT_TARGET = "target";
     public final static String CONSTANT_SOURCE = "source";

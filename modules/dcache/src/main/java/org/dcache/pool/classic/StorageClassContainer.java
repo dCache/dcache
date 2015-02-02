@@ -1,7 +1,5 @@
 package org.dcache.pool.classic;
 
-import com.google.common.base.Function;
-
 import java.io.PrintWriter;
 import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
@@ -17,7 +15,6 @@ import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.util.Formats;
 import dmg.util.command.Argument;
@@ -31,9 +28,6 @@ import org.dcache.pool.nearline.NearlineStorageHandler;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.collect.Iterables.toArray;
-import static com.google.common.collect.Iterables.transform;
 
 /**
  * Manages tape flush queues.

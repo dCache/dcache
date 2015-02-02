@@ -138,7 +138,7 @@ public class PoolClassAttraction implements Serializable {
    public String toNiceString(){
         StringBuilder sb = new StringBuilder() ;
         PoolClassAttraction attr = this ;
-        sb.append( Formats.field(attr.getPool(),10,Formats.LEFT)).
+        sb.append( Formats.field(attr.getPool(), 10, Formats.LEFT)).
            append( Formats.field(attr.getOrganization(),10,Formats.LEFT)).
            append( Formats.field(attr.getStorageClass(),30,Formats.LEFT)) ;
         int    p  = attr.getReadPreference() ;

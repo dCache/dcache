@@ -1,6 +1,4 @@
-// $Id: PoolCellInfo.java,v 1.9 2006-09-25 15:37:25 tigran Exp $
-
-package diskCacheV111.pools ;
+package diskCacheV111.pools;
 
 import java.io.Serializable;
 import java.util.HashMap;
