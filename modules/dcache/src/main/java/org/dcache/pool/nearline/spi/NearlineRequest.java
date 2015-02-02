@@ -91,6 +91,26 @@ public interface NearlineRequest<T>
     void failed(Exception cause);
 
     /**
+     * Signals that the request has failed.
+     *
+     * Identical to calling <code>failed(new CacheException(rc, msg))</code>, but avoids
+     * the dependency on that specific exception type.
+     *
+     * Summary of return codes:
+     *
+     * Return Code      Meaning                 Behaviour for PUT FILE    Behaviour for GET FILE
+     * 30 <= rc < 40    User defined            Deactivates request       Reports problem to poolmanager
+     * 41	            No space left on device	Pool retries              Disables pool and reports problem to poolmanager
+     * 42               Disk read I/O error     Pool retries              Disables pool and reports problem to poolmanager
+     * 43               Disk write I/O error    Pool retries              Disables pool and reports problem to poolmanager
+     * other            -                       Pool retries              Reports problem to poolmanager
+     *
+     * @param rc Return code
+     * @param msg Error message
+     */
+    void failed(int rc, String msg);
+
+    /**
      * Signals that the request has completed successfully.
      *
      * @param result The result of the request

@@ -65,6 +65,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -99,6 +100,7 @@ import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
@@ -444,6 +446,13 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             }
         }
 
+        public void failed(int rc, String msg)
+        {
+            failed(CacheExceptionFactory.exceptionOf(rc, msg));
+        }
+
+        public abstract void failed(Exception cause);
+
         @Override
         public String toString()
         {
@@ -733,6 +742,13 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         }
 
         @Override
+        public ListenableFuture<String> activateWithPath()
+        {
+            LOGGER.debug("Activating flush of {}.", getFileAttributes().getPnfsId());
+            return register(Futures.transform(super.activate(), new PreFlushWithPathFunction(), executor));
+        }
+
+        @Override
         public String toString()
         {
             return super.toString() + ' ' + getFileAttributes().getPnfsId();
@@ -886,6 +902,22 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
+        private void removeFile(PnfsId pnfsId)
+        {
+            try {
+                repository.setState(pnfsId, EntryState.REMOVED);
+            } catch (CacheException f) {
+                LOGGER.error("File not found in name space, but failed to remove {}: {}",
+                             pnfsId, f.getMessage());
+            } catch (InterruptedException f) {
+                LOGGER.warn("File not found in name space, but failed to remove {}: {}",
+                            pnfsId, f);
+            } catch (IllegalTransitionException f) {
+                LOGGER.warn("File not found in name space, but failed to remove {}: {}",
+                            pnfsId, f.getMessage());
+            }
+        }
+
         private class PreFlushFunction implements AsyncFunction<Void, Void>
         {
             @Override
@@ -899,30 +931,47 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 } catch (FileNotFoundCacheException e) {
                     // Remove file asynchronously to prevent request cancellation from
                     // interrupting the state update.
-                    executor.execute(
-                            new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    try {
-                                        repository.setState(pnfsId, EntryState.REMOVED);
-                                    } catch (CacheException f) {
-                                        LOGGER.error("File not found in name space, but failed to remove {}: {}",
-                                                     pnfsId, f.getMessage());
-                                    } catch (InterruptedException f) {
-                                        LOGGER.warn("File not found in name space, but failed to remove {}: {}",
-                                                    pnfsId, f);
-                                    } catch (IllegalTransitionException f) {
-                                        LOGGER.warn("File not found in name space, but failed to remove {}: {}",
-                                                    pnfsId, f.getMessage());
-                                    }
-                                }
-                            });
+                    executor.execute(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            removeFile(pnfsId);
+                        }
+                    });
                     throw new FileNotFoundCacheException("File not found in name space during pre-flush check.", e);
                 }
                 checksumModule.enforcePreFlushPolicy(descriptor);
                 return Futures.immediateFuture(null);
+            }
+        }
+
+        private class PreFlushWithPathFunction implements AsyncFunction<Void, String>
+        {
+            @Override
+            public ListenableFuture<String> apply(Void ignored)
+                    throws CacheException, InterruptedException, NoSuchAlgorithmException, IOException
+            {
+                final PnfsId pnfsId = descriptor.getFileAttributes().getPnfsId();
+                LOGGER.debug("Checking if {} still exists.", pnfsId);
+                FsPath path;
+                try {
+                    path = pnfs.getPathByPnfsId(pnfsId);
+                } catch (FileNotFoundCacheException e) {
+                    // Remove file asynchronously to prevent request cancellation from
+                    // interrupting the state update.
+                    executor.execute(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            removeFile(pnfsId);
+                        }
+                    });
+                    throw new FileNotFoundCacheException("File not found in name space during pre-flush check.", e);
+                }
+                checksumModule.enforcePreFlushPolicy(descriptor);
+                return Futures.immediateFuture(path.toString());
             }
         }
     }
