@@ -39,7 +39,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.slf4j>1.7.5</version.slf4j>
-        <version.milton>2.6.3.3</version.milton>
+        <version.milton>2.6.3.3-dcache-1</version.milton>
         <version.spring>3.2.4.RELEASE</version.spring>
         <version.aspectj>1.7.3</version.aspectj>
         <version.smc>6.1.0</version.smc>
