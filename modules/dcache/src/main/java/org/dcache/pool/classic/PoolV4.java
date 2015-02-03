@@ -41,7 +41,6 @@ import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
@@ -93,7 +92,6 @@ import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.AbstractStateChangeListener;
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -106,7 +104,6 @@ import org.dcache.util.Args;
 import org.dcache.util.IoPriority;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.vehicles.PnfsSetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -804,7 +801,7 @@ public class PoolV4
             try {
                 message.setMoverId(queueIoRequest(message, mover));
             } catch (Throwable t) {
-                mover.postprocess(new NopCompletionHandler<>());
+                mover.close(new NopCompletionHandler<>());
                 throw Throwables.propagate(t);
             }
             message.setSucceeded();

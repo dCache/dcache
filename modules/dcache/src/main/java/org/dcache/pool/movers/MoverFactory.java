@@ -29,5 +29,19 @@ import org.dcache.pool.repository.ReplicaDescriptor;
  */
 public interface MoverFactory
 {
+    /**
+     * Creates a new mover for the given file and request.
+     *
+     * Upon closing the mover, the mover must close the <code>handle</code>
+     * and signal the request initiator (door) about the completion. A mover
+     * typically delegates this to a PostTransferService, which also enforces
+     * the checksum policy and notifies billing.
+     *
+     * @param handle Handle to the replica to move
+     * @param message The request message from the initiator
+     * @param pathToDoor Cell path to the initiator
+     * @return A mover than will serve the transfer
+     * @throws CacheException If the mover could not be created
+     */
     Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException;
 }

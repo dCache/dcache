@@ -179,7 +179,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     }
 
     @Override
-    public void postprocess(CompletionHandler<Void, Void> completionHandler)
+    public void close(CompletionHandler<Void, Void> completionHandler)
     {
         _postTransferService.execute(this, completionHandler);
     }

@@ -218,8 +218,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
              * the transfer and to notify billing and door.
              */
                 request.kill();
-                request.getMover().postprocess(
-                        new CompletionHandler<Void,Void>()
+                request.getMover().close(
+                        new CompletionHandler<Void, Void>()
                         {
                             @Override
                             public void completed(Void result, Void attachment)
@@ -317,19 +317,23 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                         }
 
                         private void postprocess() {
-                            request.getMover().postprocess(
-                                    new CompletionHandler<Void, Void>() {
+                            request.getMover().close(
+                                    new CompletionHandler<Void, Void>()
+                                    {
                                         @Override
-                                        public void completed(Void result, Void attachment) {
+                                        public void completed(Void result, Void attachment)
+                                        {
                                             release();
                                         }
 
                                         @Override
-                                        public void failed(Throwable exc, Void attachment) {
+                                        public void failed(Throwable exc, Void attachment)
+                                        {
                                             release();
                                         }
 
-                                        private void release() {
+                                        private void release()
+                                        {
                                             request.done();
                                             _jobs.remove(request.getId());
                                             _semaphore.release();

@@ -139,13 +139,18 @@ public interface Mover<T extends ProtocolInfo>
     FsPath getPath();
 
     /**
-     * Initiates the actual transfer phase. The operation is asynchronous.
+     * Initiates the actual transfer phase. The operation is asynchronous. Completion
+     * is signaled through the <code>completionHandler</code>.
      */
     Cancellable execute(CompletionHandler<Void, Void> completionHandler);
 
     /**
-     * Initiates any postprocessing. This marks the end of the transfer and the mover's descriptor
-     * will be closed. The operation is asynchronous.
+     * Releases any resources held by the mover. Since closing a mover triggers
+     * a fair amount of post processing, this operation is asynchronous. Completion
+     * is signaled through the <code>completionHandler</code>.
+     *
+     * A mover can and must be closed even if <code>execute</code> was not called
+     * or failed.
      */
-    void postprocess(CompletionHandler<Void, Void> completionHandler);
+    void close(CompletionHandler<Void, Void> completionHandler);
 }
