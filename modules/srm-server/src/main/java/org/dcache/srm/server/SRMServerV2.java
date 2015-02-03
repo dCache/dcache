@@ -73,6 +73,7 @@ package org.dcache.srm.server;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.InetAddresses;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
@@ -204,6 +205,7 @@ public class SRMServerV2 implements ISRM  {
     private static final Logger LOGGER = LoggerFactory.getLogger(SRMServerV2.class);
 
     private final SrmAuthorizer srmAuth;
+    private final boolean isClientDNSLookup;
     private final AbstractStorageElement storage;
     private final RequestCounters<Class<?>> srmServerCounters;
     private final RequestExecutionTimeGauges<Class<?>> srmServerGauges;
@@ -224,6 +226,7 @@ public class SRMServerV2 implements ISRM  {
         srmServerCounters = srm.getSrmServerV2Counters();
         srmServerGauges = srm.getSrmServerV2Gauges();
         pingExtraInfo = buildExtraInfo(config.getPingExtraInfo());
+        isClientDNSLookup = config.isClientDNSLookup();
     }
 
     private ArrayOfTExtraInfo buildExtraInfo(Map<String,String> items)
@@ -271,13 +274,10 @@ public class SRMServerV2 implements ISRM  {
                 requestName.substring(1);
         try {
             SRMUser user;
-            UserCredential userCred;
-            RequestCredential requestCredential;
+            RequestCredential delegatedCredential;
             try {
-                userCred          = srmAuth.getUserCredentials();
-                requestCredential = srmAuth.getRequestCredential(userCred);
-                user              = srmAuth.getRequestUser(requestCredential,
-                                                           userCred.chain);
+                user = srmAuth.getRequestUser();
+                delegatedCredential = srmAuth.getRequestCredential();
                 if (user.isReadOnly()) {
                     switch (requestName) {
                     case "srmRmdir":
@@ -306,6 +306,11 @@ public class SRMServerV2 implements ISRM  {
             Constructor<?> handlerConstructor;
             Object handler;
             Method handleGetResponseMethod;
+
+            String remoteIP = Axis.getRemoteAddress();
+            String remoteHost = isClientDNSLookup ?
+                    InetAddresses.forString(remoteIP).getCanonicalHostName() : remoteIP;
+
             try {
                 Class<?> handlerClass = Class.forName("org.dcache.srm.handler."+
                         capitalizedRequestName);
@@ -317,11 +322,11 @@ public class SRMServerV2 implements ISRM  {
                         SRM.class,
                         String.class);
                 handler = handlerConstructor.newInstance(user,
-                        requestCredential,
+                        delegatedCredential,
                         request,
                         storage,
                         srm,
-                        userCred.clientHost);
+                        remoteHost);
                 handleGetResponseMethod = handlerClass.getMethod("getResponse");
             } catch (ClassNotFoundException e) {
                 if (LOGGER.isDebugEnabled()) {

@@ -1,5 +1,6 @@
 package org.dcache.srm.server;
 
+import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     private final SRM srm;
     private final RequestCounters<String> srmServerCounters;
     private final RequestExecutionTimeGauges<String> srmServerGauges;
+    private final boolean isClientDNSLookup;
 
     public SRMServerV1() throws java.rmi.RemoteException {
        try
@@ -38,12 +40,19 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
                     config.isClientDNSLookup(),
                     config.getVomsdir(),
                     config.getCaCertificatePath());
+             isClientDNSLookup = config.isClientDNSLookup();
              srmServerCounters = srm.getSrmServerV1Counters();
              srmServerGauges = srm.getSrmServerV1Gauges();
        } catch (Exception e) {
            throw new java.rmi.RemoteException("exception",e);
        }
 
+    }
+
+    private String getRemoteHost() {
+        String remoteIP = Axis.getRemoteAddress();
+        return isClientDNSLookup ?
+                    InetAddresses.forString(remoteIP).getCanonicalHostName() : remoteIP;
     }
 
       /**
@@ -62,14 +71,12 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "put";
       try (JDC ignored = JDC.createSession("srm1:put")) {
           incrementRequest(methodName);
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
           org.dcache.srm.request.RequestCredential requestCredential;
 
           try {
-              userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-              user = srmAuth.getRequestUser(requestCredential, userCred.chain);
+              requestCredential = srmAuth.getRequestCredential();
+              user = srmAuth.getRequestUser();
               if (user.isReadOnly()) {
                   throw new SRMAuthorizationException("Session is read-only");
               }
@@ -81,7 +88,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
               Long[] sizes = Longs.asList(arg2).toArray(new Long[arg2.length]);
-              requestStatus = srm.put(user,requestCredential,arg0,arg1,sizes,arg3,arg4, userCred.clientHost);
+              requestStatus = srm.put(user,requestCredential,arg0,arg1,sizes,arg3,arg4, getRemoteHost());
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm put failed", e);
@@ -101,13 +108,11 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "get";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:get")) {
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential, userCred.chain);
+             requestCredential = srmAuth.getRequestCredential();
+             user = srmAuth.getRequestUser();
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -116,12 +121,11 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
-
              requestStatus = srm.get(user,
                  requestCredential,
                  arg0,
                  arg1,
-                 userCred.clientHost);
+                 getRemoteHost());
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm get failed", e);
@@ -141,13 +145,11 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "copy";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:copy")) {
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
           org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential, userCred.chain);
+             requestCredential = srmAuth.getRequestCredential();
+             user = srmAuth.getRequestUser();
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -156,13 +158,12 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
-
              requestStatus = srm.copy(user,
                  requestCredential,
                  arg0,
                  arg1,
                  arg2,
-                 userCred.clientHost);
+                 getRemoteHost());
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm put failed", e);
@@ -182,14 +183,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "ping";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:ping")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential;
-
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+              if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+              }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -208,13 +205,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "pin";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:pin")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+             }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -234,13 +228,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "unPin";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:unpin")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user = null;
-          org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+             }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -260,13 +251,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "setFileStatus";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:setFileStatus")) {
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+              user = srmAuth.getRequestUser();
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -275,8 +262,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
-
-             requestStatus = srm.setFileStatus(user,requestCredential,arg0,arg1,arg2);
+             requestStatus = srm.setFileStatus(user,arg0,arg1,arg2);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm setFileStatus failed", e);
@@ -296,13 +282,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getRequestStatus";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:getRequestStatus")) {
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             user = srmAuth.getRequestUser();
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -311,8 +293,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
-
-             requestStatus = srm.getRequestStatus(user,requestCredential,arg0);
+             requestStatus = srm.getRequestStatus(user,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getRequestStatus failed", e);
@@ -334,13 +315,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "mkPermanent";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:getFileMetaData")) {
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
           try {
-              userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-              user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+              user = srmAuth.getRequestUser();
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -350,8 +327,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           log.debug("About to call getFileMetaData()");
           diskCacheV111.srm.FileMetaData[] fmdArray;
           try {
-
-             fmdArray = srm.getFileMetaData(user,requestCredential,arg0);
+             fmdArray = srm.getFileMetaData(user,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getFileMetaData failed", e);
@@ -372,14 +348,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "mkPermanent";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:mkPermanent")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
-
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+             }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -388,8 +360,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
-
-             requestStatus = srm.mkPermanent(user,requestCredential,arg0);
+             requestStatus = srm.mkPermanent();
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm mkPermanent failed", e);
@@ -409,14 +380,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getEstGetTime";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:getEstGetTime")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
-
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+             }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -426,7 +393,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srm.getEstGetTime(user,requestCredential,arg0,arg1);
+             requestStatus = srm.getEstGetTime();
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getEstGetTime failed", e);
@@ -446,14 +413,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getEstPutTime";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:getEstPutTime")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
-
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+             }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -463,7 +426,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           diskCacheV111.srm.RequestStatus requestStatus;
           try {
 
-             requestStatus = srm.getEstPutTime(user,requestCredential,arg0,arg1,arg2,arg3,arg4);
+             requestStatus = srm.getEstPutTime();
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm put failed", e);
@@ -483,13 +446,9 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "advisoryDelete";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:advisoryDelete")) {
-          org.dcache.srm.server.UserCredential userCred;
           SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-              user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+              user = srmAuth.getRequestUser();
               if (user.isReadOnly()) {
                   throw new SRMAuthorizationException("Session is read-only");
               }
@@ -501,7 +460,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
           try {
 
-              srm.advisoryDelete(user,requestCredential,arg0);
+              srm.advisoryDelete(user,arg0);
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm advisoryDelete failed", e);
@@ -518,14 +477,10 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       String methodName = "getProtocols";
       incrementRequest(methodName);
       try (JDC ignored = JDC.createSession("srm1:getProtocols")) {
-          org.dcache.srm.server.UserCredential userCred;
-          SRMUser user;
-          org.dcache.srm.request.RequestCredential requestCredential;
-
           try {
-             userCred = srmAuth.getUserCredentials();
-              requestCredential = srmAuth.getRequestCredential(userCred);
-             user = srmAuth.getRequestUser(requestCredential,userCred.chain);
+             if (!srmAuth.isUserAuthorized()) {
+                  throw new java.rmi.RemoteException("Not authorized");
+             }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -533,8 +488,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           }
 
           try {
-
-             return srm.getProtocols(user,requestCredential);
+             return srm.getProtocols();
           } catch(Exception e) {
              log.error(e.toString());
              throw new java.rmi.RemoteException("srm getProtocols failed", e);

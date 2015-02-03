@@ -22,8 +22,6 @@ public class SrmGetTransferProtocols
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmGetTransferProtocols.class);
 
-    private final SRMUser user;
-    private final RequestCredential credential;
     private final SRM srm;
     private SrmGetTransferProtocolsResponse response;
 
@@ -34,8 +32,6 @@ public class SrmGetTransferProtocols
                                    SRM srm,
                                    String clientHost)
     {
-        this.user = checkNotNull(user);
-        this.credential = checkNotNull(credential);
         this.srm = checkNotNull(srm);
     }
 
@@ -57,7 +53,7 @@ public class SrmGetTransferProtocols
 
     private TSupportedTransferProtocol[] getSupportedTransferProtocols() throws SRMInternalErrorException
     {
-        String[] protocols = srm.getProtocols(user, credential);
+        String[] protocols = srm.getProtocols();
         TSupportedTransferProtocol[] arrayOfProtocols =
                 new TSupportedTransferProtocol[protocols.length];
         for (int i = 0; i < protocols.length; ++i) {

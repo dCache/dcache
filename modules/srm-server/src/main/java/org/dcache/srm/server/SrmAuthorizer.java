@@ -111,34 +111,37 @@ public class SrmAuthorizer
     }
 
     /**
-     * Derive the UserCredential from the current Axis context.  The method
-     * also updates various Axis MessageContext properties as a side-effect.
-     */
-    public UserCredential getUserCredentials() throws SRMInternalErrorException, SRMAuthenticationException
-    {
-        UserCredential userCredential = new UserCredential();
-        userCredential.chain = Axis.getCertificateChain().orElseThrow(() ->
-                new SRMAuthenticationException("Client's certificate chain is missing from request"));
-        userCredential.secureId = Axis.getDN().orElseThrow(() ->
-                new SRMAuthenticationException("Failed to resolve DN"));
-        userCredential.credential = Axis.getDelegatedCredential().orElse(null);
-        String address = Axis.getRemoteAddress();
-        userCredential.clientHost = isClientDNSLookup ?
-                InetAddresses.forString(address).getCanonicalHostName() : address;
-        return userCredential;
-    }
-
-
-    /**
      * Obtain the SRMUser object if the user is authorized to use the
      * back-end system.  Throws SRMAuthorizationException if the user is
      * not authorized.
      */
-    public SRMUser getRequestUser(RequestCredential requestCredential, X509Certificate[] chain)
+    public SRMUser getRequestUser()
             throws SRMInternalErrorException, SRMAuthorizationException, SRMAuthenticationException
     {
-        return authorization.authorize(requestCredential.getId(),
-                requestCredential.getCredentialName(), chain, Axis.getRemoteAddress());
+        String dn = Axis.getDN().orElseThrow(() ->
+                new SRMAuthenticationException("Failed to resolve DN"));
+
+        X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
+                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+
+        return authorization.authorize(dn, certificates, Axis.getRemoteAddress());
+    }
+
+    /**
+     * Check whether the current user is authorized to use the SRM without
+     * mapping that user.
+     * @return true if the user can use the SRM.
+     */
+    public boolean isUserAuthorized() throws SRMInternalErrorException,
+            SRMAuthenticationException
+    {
+        String dn = Axis.getDN().orElseThrow(() ->
+                new SRMAuthenticationException("Failed to resolve DN"));
+
+        X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
+                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+
+        return authorization.isAuthorized(dn, certificates, Axis.getRemoteAddress());
     }
 
 
@@ -150,16 +153,22 @@ public class SrmAuthorizer
      * for the longest.  The method ensures the best credential is saved in
      * the storage.
      */
-    public RequestCredential getRequestCredential(UserCredential credential) throws SRMAuthenticationException
+    public RequestCredential getRequestCredential() throws SRMAuthenticationException
     {
+        X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
+                new SRMAuthenticationException("Client's certificate chain is missing from request"));
+
+        String dn = Axis.getDN().orElseThrow(() ->
+                new SRMAuthenticationException("Failed to resolve DN"));
+
+        GSSCredential credential = Axis.getDelegatedCredential().orElse(null);
+
         try {
-            Iterable<String> roles = GSSUtils.extractFQANs(vomsdir, capath, credential.chain);
+            Iterable<String> roles = GSSUtils.extractFQANs(vomsdir, capath, certificates);
             String role = Iterables.getFirst(roles, null);
 
-            String id = credential.secureId;
-            GSSCredential gssCredential = credential.credential;
-            RequestCredential requestCredential = RequestCredential.newRequestCredential(id, role, storage);
-            requestCredential.keepBestDelegatedCredential(gssCredential);
+            RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, role, storage);
+            requestCredential.keepBestDelegatedCredential(credential);
             requestCredential.saveCredential();
             return requestCredential;
         } catch (GSSException | AuthorizationException e) {

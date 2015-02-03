@@ -94,6 +94,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.auth.LoginNamePrincipal;
+import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Origin.AuthType;
@@ -126,31 +127,36 @@ public final class DCacheAuthorization implements SRMAuthorization
         this.cf = CertificateFactories.newX509CertificateFactory();
     }
 
-    /** Performs authorization checks. Throws
-     * <code>SRMAuthorizationException</code> if the authorization fails.
-     * Otherwise, the function completes normally.
-     *
-     * @param requestCredentialId
-     * @param secureId
-     * @param chain
-     * @param remoteIP
-     * @exception <code>SRMAuthorizationException</code> if the peer is
-     *            not authorized to access/use the resource.
-     */
     @Override
-    public SRMUser authorize(Long requestCredentialId,
-                             String secureId, X509Certificate[] chain, String remoteIP)
+    public SRMUser authorize(String dn, X509Certificate[] chain, String remoteIP)
             throws SRMAuthorizationException, SRMInternalErrorException, SRMAuthenticationException
     {
-        LOGGER.trace("authorize {}:{}", requestCredentialId, secureId);
+        LOGGER.trace("authorize {}", dn);
+        return persistenceManager.persist(login(dn, chain, remoteIP));
+    }
+
+    @Override
+    public boolean isAuthorized(String dn, X509Certificate[] chain, String remoteIP)
+            throws SRMInternalErrorException, SRMAuthenticationException
+    {
+        LOGGER.trace("isAuthorized {}", dn);
+
+        try {
+            login(dn, chain, remoteIP);
+        } catch (SRMAuthorizationException e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private LoginReply login(String dn, X509Certificate[] chain, String remoteIP)
+            throws SRMAuthenticationException, SRMInternalErrorException, SRMAuthorizationException
+    {
         try {
             Subject subject = new Subject();
-            if (secureId != null && !secureId.isEmpty()) {
-                /* Technically, the secureId could be a
-                 * KerberosPrincipal too. At this point we cannot tell
-                 * the difference anymore.
-                 */
-                subject.getPrincipals().add(new GlobusPrincipal(secureId));
+            if (dn != null && !dn.isEmpty()) {
+                subject.getPrincipals().add(new GlobusPrincipal(dn));
             }
             subject.getPublicCredentials().add(cf.generateCertPath(asList(chain)));
 
@@ -165,13 +171,13 @@ public final class DCacheAuthorization implements SRMAuthorization
                         remoteIP);
             }
 
-            return persistenceManager.persist(loginStrategy.login(subject));
+            return loginStrategy.login(subject);
+        } catch (CertificateException e) {
+            throw new SRMAuthenticationException(e.getMessage(), e);
         } catch (PermissionDeniedCacheException e) {
             throw new SRMAuthorizationException(e.getMessage(), e);
         } catch (CacheException e) {
             throw new SRMInternalErrorException(e.getMessage(), e);
-        } catch (CertificateException e) {
-            throw new SRMAuthenticationException(e.getMessage(), e);
         }
     }
 }

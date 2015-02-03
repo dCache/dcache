@@ -458,7 +458,7 @@ public class SRM {
         }
     }
 
-    public void advisoryDelete(final SRMUser user, RequestCredential credential, String[] SURLS) {
+    public void advisoryDelete(final SRMUser user, String[] SURLS) {
         logger.debug("SRM.advisoryDelete");
         if (user == null) {
             String error = "advisoryDelete: user is unknown," +
@@ -683,19 +683,14 @@ public class SRM {
     /**
      * this srm method is not implemented
      */
-    public RequestStatus getEstGetTime(SRMUser user, RequestCredential credential, String[] SURLS, String[] protocols) {
+    public RequestStatus getEstGetTime() {
         return createFailedRequestStatus("time is unknown");
     }
 
     /**
      * this srm method is not implemented
      */
-    public RequestStatus getEstPutTime(SRMUser user, RequestCredential credential,
-            String[] src_names,
-            String[] dest_names,
-            long[] sizes,
-            boolean[] wantPermanent,
-            String[] protocols) {
+    public RequestStatus getEstPutTime() {
         return createFailedRequestStatus("time is unknown");
     }
     /**
@@ -708,7 +703,7 @@ public class SRM {
      *         the array of SURLs of files of interest
      * @return FileMetaData array assosiated with these SURLs
      */
-    public FileMetaData[] getFileMetaData(SRMUser user, RequestCredential credential, String[] SURLS) {
+    public FileMetaData[] getFileMetaData(SRMUser user, String[] SURLS) {
         StringBuilder sb = new StringBuilder();
         sb.append("getFileMetaData(");
         if (SURLS == null) {
@@ -743,8 +738,7 @@ public class SRM {
         return fmds;
     }
 
-    public String[] getProtocols(SRMUser user, RequestCredential credential)
-            throws SRMInternalErrorException
+    public String[] getProtocols() throws SRMInternalErrorException
     {
         List<String> getProtocols = asList(storage.supportedGetProtocols());
         List<String> putProtocols = asList(storage.supportedPutProtocols());
@@ -762,7 +756,7 @@ public class SRM {
      *         the id of the previously issued request
      * @return request status assosiated with this request
      */
-    public RequestStatus getRequestStatus(SRMUser user, RequestCredential credential, int requestId) {
+    public RequestStatus getRequestStatus(SRMUser user, int requestId) {
         logger.debug(" getRequestStatus(" + user + "," + requestId + ")");
         try {
             // Try to get the request with such id
@@ -791,7 +785,7 @@ public class SRM {
         }
     }
 
-    public RequestStatus mkPermanent(SRMUser user, RequestCredential credential, String[] SURLS) {
+    public RequestStatus mkPermanent() {
         return createFailedRequestStatus("not supported, all files are already permanent");
     }
 
@@ -805,7 +799,7 @@ public class SRM {
      *         array of TURL (Transfer URL) strings
      * @return request status assosiated with this request
      */
-    public RequestStatus pin(SRMUser user, RequestCredential credential, String[] TURLS) {
+    public RequestStatus pin() {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
 
@@ -815,7 +809,7 @@ public class SRM {
      * @param user
      *         an instance of the RSRMUseror null if unknown
      */
-    public boolean ping(SRMUser user, RequestCredential credential) {
+    public boolean ping() {
         return true;
     }
 
@@ -923,8 +917,8 @@ public class SRM {
      *         the new state of the request
      * @return request status assosiated with this request
      */
-    public RequestStatus setFileStatus(SRMUser user, RequestCredential credential,
-            int requestId, int fileRequestId, String state) {
+    public RequestStatus setFileStatus(SRMUser user, int requestId,
+            int fileRequestId, String state) {
         try {
             logger.debug(" setFileStatus(" + requestId + "," + fileRequestId + "," + state + ");");
             if (!state.equalsIgnoreCase("done") && !state.equalsIgnoreCase("running") && !state.equalsIgnoreCase("failed")) {
@@ -978,8 +972,7 @@ public class SRM {
      *         the id of the previously issued pin request
      * @return request status assosiated with this request
      */
-    public RequestStatus unPin(SRMUser user, RequestCredential credential,
-            String[] TURLS, int requestId) {
+    public RequestStatus unPin() {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
 

@@ -38,21 +38,11 @@ public final class UnixfsAuthorization implements SRMAuthorization {
         this.kAuthFileName = kAuthFileName;
      }
 
-    /** Performs authorization checks. Throws
-     * <code>SRMAuthorizationException</code> if the authorization fails.
-     * Otherwise, the function completes normally.
-     *
-     * @param chain(???) the peer certificate chain.
-     * @param socket the socket connected to the peer.
-     * @exception <code>SRMAuthorizationException</code> if the peer is
-     *            not authorized to access/use the resource.
-     */
     @Override
-    public SRMUser authorize(Long requestCredentialId, String secureId, X509Certificate[] chain,
-                             String remoteIP)
-    throws SRMAuthorizationException {
+    public SRMUser authorize(String dn, X509Certificate[] certificateChain,
+            String remoteIP) throws SRMAuthorizationException {
   /** @todo -- javadoc, there is no such arg 'chain' */
-        UserAuthRecord user_rec = authorize(secureId);
+        UserAuthRecord user_rec = authorize(dn);
         logger.debug("Received authorization request from remote IP {}", remoteIP);
         String username = user_rec.Username;
         String root = user_rec.Root;
@@ -61,18 +51,29 @@ public final class UnixfsAuthorization implements SRMAuthorization {
 
         UnixfsUser user = new UnixfsUser(username,root,uid,gid);
         return user;
-
     }
 
-    private UserAuthRecord authorize(String secureId)
+    @Override
+    public boolean isAuthorized(String dn, X509Certificate[] certificateChain,
+            String remoteIP) {
+        try {
+            authorize(dn);
+        } catch (SRMAuthorizationException e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private UserAuthRecord authorize(String dn)
     throws SRMAuthorizationException {
 
-        String name = getUserNameByGlobusId(secureId);
-        UserAuthRecord userRecord = getUserRecord(name,secureId);
+        String name = getUserNameByGlobusId(dn);
+        UserAuthRecord userRecord = getUserRecord(name,dn);
         return userRecord;
     }
 
-    private String getUserNameByGlobusId(String globusId)
+    private String getUserNameByGlobusId(String dn)
     throws SRMAuthorizationException {
         KAuthFile authf;
         try {
@@ -82,15 +83,15 @@ public final class UnixfsAuthorization implements SRMAuthorization {
             ioe.printStackTrace();
             throw new SRMAuthorizationException(ioe.toString());
         }
-        String username =authf.getIdMapping(globusId);
+        String username =authf.getIdMapping(dn);
         if(username == null) {
             throw new SRMAuthorizationException(
-            " can not determine username from GlobusId="+globusId);
+            " can not determine username from GlobusId="+dn);
         }
         return username;
     }
 
-    private UserAuthRecord getUserRecord(String username,String globusId)
+    private UserAuthRecord getUserRecord(String username, String dn)
     throws SRMAuthorizationException {
         KAuthFile authf;
         try {
@@ -107,9 +108,9 @@ public final class UnixfsAuthorization implements SRMAuthorization {
             "user "+username+" not found");
         }
 
-        if(!userRecord.hasSecureIdentity(globusId)) {
+        if(!userRecord.hasSecureIdentity(dn)) {
             throw new SRMAuthorizationException(
-            "srm authorization failed for user "+username+" with GlobusId="+globusId);
+            "srm authorization failed for user "+username+" with GlobusId="+dn);
         }
         //users.put(username,userRecord);
         return userRecord;
