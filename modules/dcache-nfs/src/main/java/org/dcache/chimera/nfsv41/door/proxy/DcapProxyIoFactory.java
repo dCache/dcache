@@ -129,7 +129,7 @@ public class DcapProxyIoFactory extends AbstractCell {
 
             return new DcapChannelImpl(redirect.socketAddress(), session,
                     Base64.getEncoder().encode(redirect.challange()),
-                    transfer.getFileAttributes().getSize()) {
+                    transfer.getFileAttributes().getSizeIfPresent().or(0L)) {
 			@Override
 			public String toString() {
 			    return transfer.toString();
