@@ -6,7 +6,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest;
@@ -23,7 +22,6 @@ public class SrmStatusOfBringOnlineRequest
 
     public SrmStatusOfBringOnlineRequest(
             SRMUser user,
-            RequestCredential credential,
             SrmStatusOfBringOnlineRequestRequest request,
             AbstractStorageElement storage,
             SRM srm,

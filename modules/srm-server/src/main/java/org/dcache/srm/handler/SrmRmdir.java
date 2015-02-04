@@ -16,7 +16,6 @@ import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -36,7 +35,6 @@ public class SrmRmdir
     private SrmRmdirResponse response;
 
     public SrmRmdir(SRMUser user,
-                    RequestCredential credential,
                     SrmRmdirRequest request,
                     AbstractStorageElement storage,
                     SRM srm,

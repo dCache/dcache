@@ -101,6 +101,7 @@ import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.handler.CredentialAwareHandler;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
@@ -274,10 +275,8 @@ public class SRMServerV2 implements ISRM  {
                 requestName.substring(1);
         try {
             SRMUser user;
-            RequestCredential delegatedCredential;
             try {
                 user = srmAuth.getRequestUser();
-                delegatedCredential = srmAuth.getRequestCredential();
                 if (user.isReadOnly()) {
                     switch (requestName) {
                     case "srmRmdir":
@@ -316,17 +315,27 @@ public class SRMServerV2 implements ISRM  {
                         capitalizedRequestName);
                 handlerConstructor =
                         handlerClass.getConstructor(SRMUser.class,
-                        RequestCredential.class,
                         requestClass,
                         AbstractStorageElement.class,
                         SRM.class,
                         String.class);
                 handler = handlerConstructor.newInstance(user,
-                        delegatedCredential,
                         request,
                         storage,
                         srm,
                         remoteHost);
+
+                if (handler instanceof CredentialAwareHandler) {
+                    CredentialAwareHandler credentialAware = (CredentialAwareHandler) handler;
+                    try {
+                        credentialAware.setCredential(srmAuth.getRequestCredential());
+                    } catch (SRMAuthenticationException e) {
+                        LOGGER.warn(e.getMessage());
+                        return getFailedResponse(capitalizedRequestName, e.getStatusCode(),
+                                                 "Authentication failed (server log contains additional information).");
+                    }
+                }
+
                 handleGetResponseMethod = handlerClass.getMethod("getResponse");
             } catch (ClassNotFoundException e) {
                 if (LOGGER.isDebugEnabled()) {

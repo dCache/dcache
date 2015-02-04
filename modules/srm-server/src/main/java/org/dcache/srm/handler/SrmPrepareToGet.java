@@ -34,7 +34,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
 
-public class SrmPrepareToGet
+public class SrmPrepareToGet implements CredentialAwareHandler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmPrepareToGet.class);
@@ -43,13 +43,12 @@ public class SrmPrepareToGet
     private final SrmPrepareToGetRequest request;
     private final SRMUser user;
     private final SRM srm;
-    private final RequestCredential credential;
+    private RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
     private SrmPrepareToGetResponse response;
 
     public SrmPrepareToGet(SRMUser user,
-                           RequestCredential credential,
                            SrmPrepareToGetRequest request,
                            AbstractStorageElement storage,
                            SRM srm,
@@ -57,11 +56,16 @@ public class SrmPrepareToGet
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
-        this.credential = checkNotNull(credential);
         this.clientHost = clientHost;
         this.storage = checkNotNull(storage);
         this.configuration = checkNotNull(srm.getConfiguration());
         this.srm = checkNotNull(srm);
+    }
+
+    @Override
+    public void setCredential(RequestCredential credential)
+    {
+        this.credential = checkNotNull(credential);
     }
 
     public SrmPrepareToGetResponse getResponse()

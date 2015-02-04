@@ -5,7 +5,6 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
@@ -21,7 +20,6 @@ public class SrmAbortRequest
 
     public SrmAbortRequest(
             SRMUser user,
-            RequestCredential credential,
             SrmAbortRequestRequest request,
             AbstractStorageElement storage,
             SRM srm,

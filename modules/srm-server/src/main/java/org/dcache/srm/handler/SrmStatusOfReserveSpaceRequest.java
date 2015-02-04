@@ -4,7 +4,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest;
@@ -20,7 +19,6 @@ public class SrmStatusOfReserveSpaceRequest
     private SrmStatusOfReserveSpaceRequestResponse response;
 
     public SrmStatusOfReserveSpaceRequest(SRMUser user,
-                                          RequestCredential credential,
                                           SrmStatusOfReserveSpaceRequestRequest request,
                                           AbstractStorageElement storage,
                                           SRM srm,

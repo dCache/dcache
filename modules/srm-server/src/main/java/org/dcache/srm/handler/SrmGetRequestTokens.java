@@ -14,7 +14,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.ArrayOfTRequestTokenReturn;
 import org.dcache.srm.v2_2.SrmGetRequestTokensRequest;
 import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
@@ -35,7 +34,6 @@ public class SrmGetRequestTokens
     private SrmGetRequestTokensResponse response;
 
     public SrmGetRequestTokens(SRMUser user,
-                               RequestCredential credential,
                                SrmGetRequestTokensRequest request,
                                AbstractStorageElement storage,
                                SRM srm,

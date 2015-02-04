@@ -33,7 +33,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
 
-public class SrmBringOnline
+public class SrmBringOnline implements CredentialAwareHandler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmBringOnline.class);
@@ -43,12 +43,12 @@ public class SrmBringOnline
     private SrmBringOnlineResponse response;
     private final SRMUser user;
     private final SRM srm;
-    private final RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
 
+    private RequestCredential credential;
+
     public SrmBringOnline(SRMUser user,
-                          RequestCredential credential,
                           SrmBringOnlineRequest request,
                           AbstractStorageElement storage,
                           SRM srm,
@@ -59,8 +59,13 @@ public class SrmBringOnline
         this.user = checkNotNull(user);
         this.clientHost = clientHost;
         this.storage = checkNotNull(storage);
-        this.credential = checkNotNull(credential);
         this.configuration = srm.getConfiguration();
+    }
+
+    @Override
+    public void setCredential(RequestCredential credential)
+    {
+        this.credential = checkNotNull(credential);
     }
 
     public SrmBringOnlineResponse getResponse()

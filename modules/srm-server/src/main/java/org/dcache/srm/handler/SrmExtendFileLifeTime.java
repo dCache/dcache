@@ -20,7 +20,6 @@ import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfTSURLLifetimeReturnStatus;
@@ -47,7 +46,6 @@ public class SrmExtendFileLifeTime
     private SrmExtendFileLifeTimeResponse response;
 
     public SrmExtendFileLifeTime(SRMUser user,
-                                 RequestCredential credential,
                                  SrmExtendFileLifeTimeRequest request,
                                  AbstractStorageElement storage,
                                  SRM srm,

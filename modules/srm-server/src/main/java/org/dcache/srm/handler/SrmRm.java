@@ -16,9 +16,7 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.PutFileRequest;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmRmRequest;
 import org.dcache.srm.v2_2.SrmRmResponse;
@@ -40,7 +38,6 @@ public class SrmRm
     private SrmRmResponse response;
 
     public SrmRm(SRMUser user,
-                 RequestCredential credential,
                  SrmRmRequest request,
                  AbstractStorageElement storage,
                  SRM srm,

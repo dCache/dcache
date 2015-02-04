@@ -13,7 +13,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmMkdirRequest;
 import org.dcache.srm.v2_2.SrmMkdirResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -31,7 +30,6 @@ public class SrmMkdir
     SrmMkdirResponse response;
 
     public SrmMkdir(SRMUser user,
-                    RequestCredential credential,
                     SrmMkdirRequest request,
                     AbstractStorageElement storage,
                     SRM srm,

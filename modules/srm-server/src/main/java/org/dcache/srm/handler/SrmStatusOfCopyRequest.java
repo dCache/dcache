@@ -8,7 +8,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse;
@@ -23,7 +22,6 @@ public class SrmStatusOfCopyRequest
     private SrmStatusOfCopyRequestResponse response;
 
     public SrmStatusOfCopyRequest(SRMUser user,
-                                  RequestCredential credential,
                                   SrmStatusOfCopyRequestRequest request,
                                   AbstractStorageElement storage,
                                   SRM srm,

@@ -7,7 +7,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.ArrayOfTSupportedTransferProtocol;
 import org.dcache.srm.v2_2.SrmGetTransferProtocolsRequest;
 import org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse;
@@ -26,7 +25,6 @@ public class SrmGetTransferProtocols
     private SrmGetTransferProtocolsResponse response;
 
     public SrmGetTransferProtocols(SRMUser user,
-                                   RequestCredential credential,
                                    SrmGetTransferProtocolsRequest request,
                                    AbstractStorageElement storage,
                                    SRM srm,

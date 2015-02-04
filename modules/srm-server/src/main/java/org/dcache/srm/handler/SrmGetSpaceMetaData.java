@@ -9,7 +9,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.ArrayOfTMetaDataSpace;
 import org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest;
 import org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse;
@@ -31,7 +30,6 @@ public class SrmGetSpaceMetaData
     private SrmGetSpaceMetaDataResponse response;
 
     public SrmGetSpaceMetaData(SRMUser user,
-                               RequestCredential credential,
                                SrmGetSpaceMetaDataRequest request,
                                AbstractStorageElement storage,
                                SRM srm,

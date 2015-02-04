@@ -15,7 +15,6 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
@@ -37,7 +36,6 @@ public class SrmPutDone
     private SrmPutDoneResponse response;
 
     public SrmPutDone(SRMUser user,
-                      RequestCredential credential,
                       SrmPutDoneRequest request,
                       AbstractStorageElement storage,
                       SRM srm,

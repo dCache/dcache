@@ -6,7 +6,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.LsRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
@@ -21,7 +20,6 @@ public class SrmStatusOfLsRequest
     private SrmStatusOfLsRequestResponse response;
 
     public SrmStatusOfLsRequest(SRMUser user,
-                                RequestCredential credential,
                                 SrmStatusOfLsRequestRequest request,
                                 AbstractStorageElement storage,
                                 SRM srm,

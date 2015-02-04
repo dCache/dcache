@@ -10,7 +10,6 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReleaseSpaceCallback;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmReleaseSpaceRequest;
 import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -31,7 +30,6 @@ public class SrmReleaseSpace
     private SrmReleaseSpaceResponse response;
 
     public SrmReleaseSpace(SRMUser user,
-                           RequestCredential credential,
                            SrmReleaseSpaceRequest request,
                            AbstractStorageElement storage,
                            SRM srm,

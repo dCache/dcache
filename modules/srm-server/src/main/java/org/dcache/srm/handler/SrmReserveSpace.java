@@ -26,21 +26,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class SrmReserveSpace
+public class SrmReserveSpace implements CredentialAwareHandler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmReserveSpace.class);
 
     private final SrmReserveSpaceRequest request;
     private final SRMUser user;
-    private final RequestCredential credential;
+    private RequestCredential credential;
     private final Configuration configuration;
     private final String client_host;
     private SrmReserveSpaceResponse response;
     private final SRM srm;
 
     public SrmReserveSpace(SRMUser user,
-                           RequestCredential credential,
                            SrmReserveSpaceRequest request,
                            AbstractStorageElement storage,
                            SRM srm,
@@ -48,10 +47,15 @@ public class SrmReserveSpace
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
-        this.credential = checkNotNull(credential);
         this.configuration = checkNotNull(srm.getConfiguration());
         this.client_host = checkNotNull(clientHost);
         this.srm = checkNotNull(srm);
+    }
+
+    @Override
+    public void setCredential(RequestCredential credential)
+    {
+        this.credential = checkNotNull(credential);
     }
 
     public SrmReserveSpaceResponse getResponse()

@@ -13,7 +13,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmMvRequest;
 import org.dcache.srm.v2_2.SrmMvResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
@@ -33,7 +32,6 @@ public class SrmMv
     private SrmMvResponse response;
 
     public SrmMv(SRMUser user,
-                 RequestCredential credential,
                  SrmMvRequest request,
                  AbstractStorageElement storage,
                  SRM srm,

@@ -14,7 +14,6 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.ArrayOfTGroupPermission;
 import org.dcache.srm.v2_2.ArrayOfTPermissionReturn;
 import org.dcache.srm.v2_2.SrmGetPermissionRequest;
@@ -38,7 +37,6 @@ public class SrmGetPermission
     private SrmGetPermissionResponse response;
 
     public SrmGetPermission(SRMUser user,
-                            RequestCredential credential,
                             SrmGetPermissionRequest request,
                             AbstractStorageElement storage,
                             SRM srm,

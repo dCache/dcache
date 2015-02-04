@@ -9,7 +9,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
 import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
@@ -29,7 +28,6 @@ public class SrmGetSpaceTokens
     private SrmGetSpaceTokensResponse response;
 
     public SrmGetSpaceTokens(SRMUser user,
-                             RequestCredential credential,
                              SrmGetSpaceTokensRequest request,
                              AbstractStorageElement storage,
                              SRM srm,

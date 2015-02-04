@@ -23,7 +23,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SrmLs
+public class SrmLs implements CredentialAwareHandler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmLs.class);
@@ -32,14 +32,13 @@ public class SrmLs
     private final Configuration configuration;
     private final SrmLsRequest request;
     private SrmLsResponse response;
-    private final RequestCredential credential;
+    private RequestCredential credential;
     private final SRMUser user;
     private final SRM srm;
     private final String clientHost;
     private final int max_results_num;
 
     public SrmLs(SRMUser user,
-                 RequestCredential credential,
                  SrmLsRequest request,
                  AbstractStorageElement storage,
                  SRM srm,
@@ -49,10 +48,15 @@ public class SrmLs
         this.user = checkNotNull(user);
         this.max_results_num = srm.getConfiguration().getMaxNumberOfLsEntries();
         this.maxNumOfLevels = srm.getConfiguration().getMaxNumberOfLsLevels();
-        this.credential = checkNotNull(credential);
         this.clientHost = clientHost;
         this.configuration = srm.getConfiguration();
         this.srm = checkNotNull(srm);
+    }
+
+    @Override
+    public void setCredential(RequestCredential credential)
+    {
+        this.credential = checkNotNull(credential);
     }
 
     public SrmLsResponse getResponse()

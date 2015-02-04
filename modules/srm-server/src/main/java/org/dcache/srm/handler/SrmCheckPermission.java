@@ -35,7 +35,6 @@ public class SrmCheckPermission
     private SrmCheckPermissionResponse response;
 
     public SrmCheckPermission(SRMUser user,
-                              RequestCredential credential,
                               SrmCheckPermissionRequest request,
                               AbstractStorageElement storage,
                               SRM srm,

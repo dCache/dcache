@@ -32,21 +32,21 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SrmCopy
+public class SrmCopy implements CredentialAwareHandler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmCopy.class);
 
     private final SrmCopyRequest request;
-    private SrmCopyResponse response;
     private final SRMUser user;
     private final SRM srm;
-    private final RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
 
+    private RequestCredential credential;
+    private SrmCopyResponse response;
+
     public SrmCopy(SRMUser user,
-                   RequestCredential credential,
                    SrmCopyRequest request,
                    AbstractStorageElement storage,
                    SRM srm,
@@ -54,10 +54,15 @@ public class SrmCopy
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
-        this.credential = checkNotNull(credential);
         this.configuration = srm.getConfiguration();
         this.clientHost = clientHost;
         this.srm = checkNotNull(srm);
+    }
+
+    @Override
+    public void setCredential(RequestCredential credential)
+    {
+        this.credential = checkNotNull(credential);
     }
 
     public SrmCopyResponse getResponse()

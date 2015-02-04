@@ -11,7 +11,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
@@ -32,7 +31,6 @@ public class SrmAbortFiles
 
     public SrmAbortFiles(
             SRMUser user,
-            RequestCredential credential,
             SrmAbortFilesRequest request,
             AbstractStorageElement storage,
             SRM srm,

@@ -11,7 +11,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
@@ -30,7 +29,6 @@ public class SrmStatusOfPutRequest
 
     public SrmStatusOfPutRequest(
             SRMUser user,
-            RequestCredential credential,
             SrmStatusOfPutRequestRequest statusOfPutRequestRequest,
             AbstractStorageElement storage,
             SRM srm,

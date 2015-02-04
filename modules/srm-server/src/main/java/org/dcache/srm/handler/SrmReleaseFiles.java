@@ -23,7 +23,6 @@ import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.request.Request;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
@@ -46,7 +45,6 @@ public class SrmReleaseFiles
     private SrmReleaseFilesResponse response;
 
     public SrmReleaseFiles(SRMUser user,
-                           RequestCredential credential,
                            SrmReleaseFilesRequest srmReleaseFilesRequest,
                            AbstractStorageElement storage,
                            SRM srm,

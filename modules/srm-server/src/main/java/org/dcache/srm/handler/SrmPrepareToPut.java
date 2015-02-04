@@ -39,7 +39,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
 
-public class SrmPrepareToPut
+public class SrmPrepareToPut implements CredentialAwareHandler
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmPrepareToPut.class);
@@ -48,13 +48,12 @@ public class SrmPrepareToPut
     private final SrmPrepareToPutRequest request;
     private SrmPrepareToPutResponse response;
     private final SRMUser user;
-    private final RequestCredential credential;
+    private RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
     private final SRM srm;
 
     public SrmPrepareToPut(SRMUser user,
-                           RequestCredential credential,
                            SrmPrepareToPutRequest request,
                            AbstractStorageElement storage,
                            SRM srm,
@@ -62,11 +61,16 @@ public class SrmPrepareToPut
     {
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
-        this.credential = checkNotNull(credential);
         this.storage = checkNotNull(storage);
         this.configuration = checkNotNull(srm.getConfiguration());
         this.clientHost = clientHost;
         this.srm = checkNotNull(srm);
+    }
+
+    @Override
+    public void setCredential(RequestCredential credential)
+    {
+        this.credential = checkNotNull(credential);
     }
 
     public SrmPrepareToPutResponse getResponse()
