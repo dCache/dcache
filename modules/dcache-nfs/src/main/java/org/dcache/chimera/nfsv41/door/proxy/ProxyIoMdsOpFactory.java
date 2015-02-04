@@ -31,6 +31,8 @@ public class ProxyIoMdsOpFactory implements NFSv4OperationFactory {
                     return new ProxyIoREAD(op, _proxyIoFactory);
                 case nfs_opnum4.OP_WRITE:
                     return new ProxyIoWRITE(op, _proxyIoFactory);
+                case nfs_opnum4.OP_CLOSE:
+                    return new ProxyIoClose(op);
                 default:
                     return _inner.getOperation(op);
             }

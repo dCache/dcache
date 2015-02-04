@@ -6,11 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import dmg.cells.nucleus.CDC;
-
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.nfs.FsExport;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
@@ -47,8 +44,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
 
-            boolean allowProxy = allowProxy(context, inode);
-            if ( !allowProxy || !context.getFs().hasIOLayout(inode) ) {
+            if (!context.getFs().hasIOLayout(inode)) {
                 /*
                  * if we have a special file, then fall back to regular write operation
                  */
@@ -117,21 +113,5 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }
-    }
-
-    private boolean allowProxy(CompoundContext context, Inode inode) throws ChimeraNFSException {
-
-        if (context.getMinorversion() == 0) {
-            return true;
-        }
-
-        FsExport export = context
-                .getExportFile()
-                .getExport(inode.exportIndex(), context.getRemoteSocketAddress().getAddress());
-        if (export == null) {
-            throw new AccessException("no export");
-        }
-
-        return !export.isWithPnfs();
     }
 }

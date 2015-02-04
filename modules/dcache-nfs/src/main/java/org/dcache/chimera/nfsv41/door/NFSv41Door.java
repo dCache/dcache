@@ -56,8 +56,9 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
-import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
+import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoAdapter;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -77,11 +78,13 @@ import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.Layout;
 import org.dcache.nfs.v4.MDSOperationFactory;
 import org.dcache.nfs.v4.NFS4Client;
+import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
 import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.RoundRobinStripingPattern;
+import org.dcache.nfs.v4.StateDisposeListener;
 import org.dcache.nfs.v4.StripingPattern;
 import org.dcache.nfs.v4.xdr.device_addr4;
 import org.dcache.nfs.v4.xdr.deviceid4;
@@ -186,7 +189,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private LoginBrokerHandler _loginBrokerHandler;
 
-    private DcapProxyIoFactory _proxyIoFactory;
+    private ProxyIoFactory _proxyIoFactory;
 
     private final static TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
@@ -283,19 +286,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                     break;
                 case V41:
                      final NFSv41DeviceManager _dm = this;
-                     _proxyIoFactory = new DcapProxyIoFactory(getCellAddress().getCellName() + "-dcap-proxy", "",
-                                                              getArgs().getBooleanOption("export"));
-                     _proxyIoFactory.setBillingStub(_billingStub);
-                     _proxyIoFactory.setFileSystemProvider(_fileFileSystemProvider);
-                     _proxyIoFactory.setPnfsHandler(_pnfsHandler);
-                     _proxyIoFactory.setPoolManager(_poolManagerStub.getDestinationPath());
-                     _proxyIoFactory.setIoQueue(_ioQueue);
-                     _proxyIoFactory.setRetryPolicy(RETRY_POLICY);
-                     _proxyIoFactory.startAdapter();
-                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(
-                            _proxyIoFactory.getCellName(),
-                            _proxyIoFactory.getCellDomainName(),
-                            _proxyIoFactory, new MDSOperationFactory()),
+                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
+                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory( this.getCellName(), this.getCellDomainName()
+                            , _proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     _loginBrokerHandler.start();
@@ -316,7 +309,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         if (_nfs4 != null) {
             _nfs4.getStateHandler().shutdown();
         }
-        if(_proxyIoFactory != null) {
+        if (_proxyIoFactory != null) {
             _proxyIoFactory.shutdown();
         }
     }
@@ -513,7 +506,44 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout4 layout = Layout.getLayoutSegment(deviceid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh, ioMode,
                     0, nfs4_prot.NFS4_UINT64_MAX);
 
-            return new Layout(true, stateid, new layout4[]{layout});
+            /*
+               if we need to run proxy-io with NFSv4.0
+            */
+            final NFS4Client client;
+            if (context.getMinorversion() == 0) {
+                client = context.getStateHandler().getClientIdByStateId(stateid);
+            } else {
+                client = context.getSession().getClient();
+            }
+            /*
+             * on on error client will issue layout return.
+             * return we need a different stateid for layout to keep
+             * mover as long as file is opened.
+             *
+             * Well, according to spec we have to return a different
+             * stateid anyway.
+             */
+            final NFS4State layoutStateId = client.createState();
+
+            /*
+             * as  we will never see layout return with this stateid clean it
+             * when open state id is disposed
+             */
+            client.state(stateid).addDisposeListener(
+                    // use java7 for 2.10 backport
+                    new StateDisposeListener() {
+
+                        @Override
+                        public void notifyDisposed(NFS4State state) {
+                            try {
+                                client.releaseState(layoutStateId.stateid());
+                            }catch(ChimeraNFSException e) {
+                                _log.warn("can't release layout stateid.: {}", e.getMessage() );
+                            }
+                        }
+                    }
+            );
+            return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
         } catch (FileInCacheException e) {
 	    cleanStateAndKillMover(stateid);
