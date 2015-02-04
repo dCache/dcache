@@ -32,9 +32,9 @@ import org.dcache.nfs.vfs.Inode;
 public class ProxyIoWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(ProxyIoWRITE.class);
-    private final DcapProxyIoFactory proxyIoFactory;
+    private final ProxyIoFactory proxyIoFactory;
 
-    public ProxyIoWRITE(nfs_argop4 args, DcapProxyIoFactory proxyIoFactory) {
+    public ProxyIoWRITE(nfs_argop4 args, ProxyIoFactory proxyIoFactory) {
         super(args, nfs_opnum4.OP_WRITE);
         this.proxyIoFactory = proxyIoFactory;
     }
@@ -43,7 +43,6 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final WRITE4res res = result.opwrite;
 
-        CDC cdc = CDC.reset(proxyIoFactory.getCellName(), proxyIoFactory.getCellDomainName());
         try {
 	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
@@ -74,7 +73,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 		/*
 		 * use try-with-resource as wee need to close adapter on each request
 		 */
-		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, context, true)) {
+		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, stateid, context, true)) {
 		    bytesWritten = oneUseProxyIoAdapter.write(data, offset);
 		}
 	    } else {
@@ -117,8 +116,6 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
         }catch(Exception e) {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
-        } finally {
-            cdc.close();
         }
     }
 

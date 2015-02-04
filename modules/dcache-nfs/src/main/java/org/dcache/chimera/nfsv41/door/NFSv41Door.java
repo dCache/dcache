@@ -41,10 +41,8 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerHandler;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.command.Argument;
@@ -59,6 +57,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
+import org.dcache.chimera.nfsv41.door.proxy.ProxyIoAdapter;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -293,7 +292,10 @@ public class NFSv41Door extends AbstractCellComponent implements
                      _proxyIoFactory.setIoQueue(_ioQueue);
                      _proxyIoFactory.setRetryPolicy(RETRY_POLICY);
                      _proxyIoFactory.startAdapter();
-                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
+                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(
+                            _proxyIoFactory.getCellName(),
+                            _proxyIoFactory.getCellDomainName(),
+                            _proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     _loginBrokerHandler.start();
@@ -315,7 +317,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             _nfs4.getStateHandler().shutdown();
         }
         if(_proxyIoFactory != null) {
-            _proxyIoFactory.cleanUp();
+            _proxyIoFactory.shutdown();
         }
     }
 
@@ -602,10 +604,14 @@ public class NFSv41Door extends AbstractCellComponent implements
                 pw.println(io);
             }
 
-	    if (_proxyIoFactory != null) {
-		pw.println();
-		_proxyIoFactory.getInfo(pw);
-	    }
+            if (_proxyIoFactory != null) {
+                pw.println();
+                pw.println("  Known proxy adapters (proxy-io):");
+                for (ProxyIoAdapter proxyIoAdapter : _proxyIoFactory.getAdapters()) {
+                    pw.print("    ");
+                    pw.println(proxyIoAdapter);
+                }
+            }
 
             pw.println();
             pw.println("  Known clients:");

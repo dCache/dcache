@@ -28,9 +28,9 @@ import org.dcache.nfs.vfs.Inode;
 public class ProxyIoREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(ProxyIoREAD.class);
-    private final DcapProxyIoFactory proxyIoFactory;
+    private final ProxyIoFactory proxyIoFactory;
 
-    public ProxyIoREAD(nfs_argop4 args, DcapProxyIoFactory proxyIoFactory) {
+    public ProxyIoREAD(nfs_argop4 args, ProxyIoFactory proxyIoFactory) {
         super(args, nfs_opnum4.OP_READ);
         this.proxyIoFactory = proxyIoFactory;
     }
@@ -39,7 +39,6 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final READ4res res = result.opread;
 
-        CDC cdc = CDC.reset(proxyIoFactory.getCellName(), proxyIoFactory.getCellDomainName());
         try {
 	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
@@ -70,7 +69,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 		/*
 		 * use try-with-resource as wee need to close adapter on each request
 		 */
-		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, context, false)) {
+		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, stateid, context, false)) {
 		    proxyIoAdapter = oneUseProxyIoAdapter;
 		    bytesReaded = oneUseProxyIoAdapter.read(bb, offset);
 		}
@@ -108,8 +107,6 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
         }catch(Exception e) {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
-        } finally {
-            cdc.close();
         }
     }
 }

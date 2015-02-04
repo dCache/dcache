@@ -12,7 +12,6 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.Base64;
 import java.util.concurrent.Callable;
@@ -43,7 +42,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class DcapProxyIoFactory extends AbstractCell {
+public class DcapProxyIoFactory extends AbstractCell implements ProxyIoFactory {
 
     private static final Logger _log = LoggerFactory.getLogger(DcapProxyIoFactory.class);
     private final boolean _isNameSiteUnique;
@@ -142,7 +141,8 @@ public class DcapProxyIoFactory extends AbstractCell {
         }
     }
 
-    ProxyIoAdapter getOrCreateProxy(final Inode inode, final stateid4 stateid, final CompoundContext context, final boolean isWrite) throws ChimeraNFSException {
+    @Override
+    public ProxyIoAdapter getOrCreateProxy(final Inode inode, final stateid4 stateid, final CompoundContext context, final boolean isWrite) throws ChimeraNFSException {
 
         try {
             ProxyIoAdapter adapter = _proxyIO.get(stateid,
@@ -159,7 +159,7 @@ public class DcapProxyIoFactory extends AbstractCell {
                             }
 
                             final NFS4State state = nfsClient.state(stateid);
-                            final ProxyIoAdapter adapter = createIoAdapter(inode, context, isWrite);
+                            final ProxyIoAdapter adapter = createIoAdapter(inode, stateid, context, isWrite);
 
                             state.addDisposeListener(new StateDisposeListener() {
 
@@ -194,20 +194,23 @@ public class DcapProxyIoFactory extends AbstractCell {
         }
     }
 
-    void shutdownAdapter(stateid4 stateid) {
+    @Override
+    public void shutdownAdapter(stateid4 stateid) {
         ProxyIoAdapter adapter = _proxyIO.getIfPresent(stateid);
         if (adapter != null) {
             _proxyIO.invalidate(stateid);
             tryToClose(adapter);
         }
     }
+
     @Override
-    public void getInfo(PrintWriter pw) {
-	pw.println("  Known proxy adapters (proxy-io):");
-	for (ProxyIoAdapter proxyIoAdapter : _proxyIO.asMap().values()) {
-	    pw.print("    ");
-	    pw.println(proxyIoAdapter);
-	}
+    public void shutdown() {
+        this.cleanUp();
+    }
+
+    @Override
+    public Iterable<ProxyIoAdapter> getAdapters() {
+        return _proxyIO.asMap().values();
     }
 
     private static void tryToClose(ProxyIoAdapter adapter) {
@@ -218,12 +221,17 @@ public class DcapProxyIoFactory extends AbstractCell {
         }
     }
 
-    ProxyIoAdapter createIoAdapter(final Inode inode, final CompoundContext context, boolean isWrite)
-            throws CacheException, InterruptedException, IOException {
+    @Override
+    public ProxyIoAdapter createIoAdapter(final Inode inode, stateid4 stateid, final CompoundContext context, boolean isWrite)
+            throws IOException {
 
         RpcCall call = context.getRpcCall();
+        try {
         return getAdapter(inode, call.getCredential().getSubject(),
                 call.getTransport().getRemoteSocketAddress(), isWrite);
+        } catch (CacheException | InterruptedException e) {
+            throw new IOException("failed to craete io adapter", e);
+        }
     }
 
     public void startAdapter() throws InterruptedException, ExecutionException {
