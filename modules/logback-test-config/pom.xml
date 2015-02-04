@@ -17,6 +17,25 @@
       <maven>3.0.4</maven>
   </prerequisites>
 
+  <distributionManagement>
+      <downloadUrl>https://download.dcache.org/nexus/content/repositories/releases/</downloadUrl>
+
+      <repository>
+          <uniqueVersion>false</uniqueVersion>
+          <id>dcache.release.repository</id>
+          <name>dCache.org release repository</name>
+          <url>https://download.dcache.org/nexus/content/repositories/releases/</url>
+          <layout>default</layout>
+      </repository>
+      <snapshotRepository>
+          <uniqueVersion>true</uniqueVersion>
+          <id>dcache.snapshot.repository</id>
+          <name>dCache.org snapshot repository</name>
+          <url>https://download.dcache.org/nexus/content/repositories/snapshots/</url>
+          <layout>default</layout>
+      </snapshotRepository>
+  </distributionManagement>
+
   <dependencies>
       <dependency>
           <groupId>ch.qos.logback</groupId>

@@ -36,6 +36,25 @@
         <url>https://ci.dcache.org/job/dCache-master/</url>
     </ciManagement>
 
+    <distributionManagement>
+        <downloadUrl>https://download.dcache.org/nexus/content/repositories/releases/</downloadUrl>
+
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>dcache.release.repository</id>
+            <name>dCache.org release repository</name>
+            <url>https://download.dcache.org/nexus/content/repositories/releases/</url>
+            <layout>default</layout>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>true</uniqueVersion>
+            <id>dcache.snapshot.repository</id>
+            <name>dCache.org snapshot repository</name>
+            <url>https://download.dcache.org/nexus/content/repositories/snapshots/</url>
+            <layout>default</layout>
+        </snapshotRepository>
+    </distributionManagement>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <source.version>1.8</source.version>
