@@ -111,6 +111,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
             _log.debug(he.getMessage());
         }catch(IOException ioe) {
             _log.error("DSWRITE: {}", ioe.getMessage());
+            proxyIoFactory.shutdownAdapter(_args.opwrite.stateid);
             res.status = nfsstat.NFSERR_IO;
         }catch(Exception e) {
             _log.error("DSWRITE: ", e);
