@@ -29,11 +29,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.HttpByteRange;
 import diskCacheV111.vehicles.HttpProtocolInfo;
@@ -47,7 +50,6 @@ import org.dcache.vehicles.FileAttributes;
 
 import static java.util.Arrays.asList;
 import static org.dcache.util.Checksums.TO_RFC3230;
-import static org.dcache.http.HttpRequestHandler.CRLF;
 import static org.dcache.util.StringMarkup.percentEncode;
 import static org.dcache.util.StringMarkup.quotedString;
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -373,9 +375,36 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     {
         _logger.debug("HTTP connection from {} closed", ctx.getChannel().getRemoteAddress());
         for (MoverChannel<HttpProtocolInfo> file: _files) {
-            _server.close(file);
+            if (file == _writeChannel) {
+                _server.close(file, new FileCorruptedCacheException("Connection lost before end of file."));
+            } else {
+                _server.close(file);
+            }
         }
         _files.clear();
+    }
+
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable t)
+    {
+        if (t instanceof ClosedChannelException) {
+            _logger.info("Connection {} unexpectedly closed.", ctx.getChannel());
+        } else if (t instanceof Exception) {
+            for (MoverChannel<HttpProtocolInfo> file : _files) {
+                CacheException cause;
+                if (file == _writeChannel) {
+                    cause = new FileCorruptedCacheException("Connection lost before end of file: " + t, t);
+                } else {
+                    cause = new CacheException(t.toString(), t);
+                }
+                _server.close(file, cause);
+            }
+            _files.clear();
+            ctx.getChannel().close();
+        } else {
+            Thread me = Thread.currentThread();
+            me.getUncaughtExceptionHandler().uncaughtException(me, t);
+            ctx.getChannel().close();
+        }
     }
 
     @Override
