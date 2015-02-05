@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,8 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -44,20 +42,15 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.PostTransferService;
-import org.dcache.pool.classic.TransferService;
-import org.dcache.pool.movers.AbstractNettyServer;
+import org.dcache.pool.movers.AbstractNettyTransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.PortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -101,8 +94,8 @@ import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
  *   end of the file is wrong.
  */
 public class XrootdTransferService
-        extends AbstractNettyServer<XrootdProtocolInfo>
-        implements MoverFactory, TransferService<XrootdMover>
+        extends AbstractNettyTransferService<XrootdProtocolInfo, XrootdMover>
+        implements MoverFactory
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);
@@ -110,16 +103,8 @@ public class XrootdTransferService
     private static final long CONNECT_TIMEOUT =
             TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
-    private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
-
-    private PostTransferService postTransferService;
-    private FaultListener faultListener;
-    private long clientIdleTimeout;
-    private TimeUnit clientIdleTimeoutUnit;
     private int maxFrameSize;
     private List<ChannelHandlerFactory> plugins;
-
-    private CellStub doorStub;
 
     private int numberClientConnections;
 
@@ -129,44 +114,14 @@ public class XrootdTransferService
     }
 
     @Required
-    public void setPostTransferService(
-            PostTransferService postTransferService)
-    {
-        this.postTransferService = postTransferService;
-    }
-
-    @Required
-    public void setFaultListener(FaultListener faultListener)
-    {
-        this.faultListener = faultListener;
-    }
-
-    @Required
-    public void setClientIdleTimeout(long clientIdleTimeout)
-    {
-        this.clientIdleTimeout = clientIdleTimeout;
-    }
-
-    public long getClientIdleTimeout()
-    {
-        return clientIdleTimeout;
-    }
-
-    @Required
-    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
-    {
-        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
-    }
-
-    public TimeUnit getClientIdleTimeoutUnit()
-    {
-        return clientIdleTimeoutUnit;
-    }
-
-    @Required
     public void setPlugins(List<ChannelHandlerFactory> plugins)
     {
         this.plugins = plugins;
+    }
+
+    public List<ChannelHandlerFactory> getPlugins()
+    {
+        return plugins;
     }
 
     @Required
@@ -178,27 +133,6 @@ public class XrootdTransferService
     public int getMaxFrameSize()
     {
         return maxFrameSize;
-    }
-
-    @Required
-    public void setDoorStub(CellStub stub)
-    {
-        this.doorStub = stub;
-    }
-
-    public List<ChannelHandlerFactory> getPlugins()
-    {
-        return plugins;
-    }
-
-    @PostConstruct
-    public synchronized void init()
-    {
-        String range = System.getProperty("org.globus.tcp.port.range");
-        PortRange portRange =
-                (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
-        setPortRange(portRange);
-        super.init();
     }
 
     @Override
@@ -235,12 +169,6 @@ public class XrootdTransferService
                 }
             }
         };
-    }
-
-    @Override
-    public void close(XrootdMover mover, CompletionHandler<Void, Void> completionHandler)
-    {
-        postTransferService.execute(mover, completionHandler);
     }
 
     /**

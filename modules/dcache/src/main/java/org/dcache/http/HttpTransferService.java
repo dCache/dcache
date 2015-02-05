@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,9 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -53,21 +50,16 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
-import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
-import org.dcache.pool.classic.PostTransferService;
-import org.dcache.pool.classic.TransferService;
-import org.dcache.pool.movers.AbstractNettyServer;
+import org.dcache.pool.movers.AbstractNettyTransferService;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.PortRange;
 import org.dcache.util.TryCatchTemplate;
 
 /**
@@ -83,46 +75,24 @@ import org.dcache.util.TryCatchTemplate;
  * a pool. All transfers are handled on the same port.
  */
 public class HttpTransferService
-        extends AbstractNettyServer<HttpProtocolInfo>
-        implements MoverFactory, TransferService<HttpMover>
+        extends AbstractNettyTransferService<HttpProtocolInfo, HttpMover>
+        implements MoverFactory
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransferService.class);
-
-    private static final PortRange DEFAULT_PORTRANGE =
-            new PortRange(20000, 25000);
 
     public static final String UUID_QUERY_PARAM = "dcache-http-uuid";
 
     private static final String QUERY_PARAM_ASSIGN = "=";
     private static final String PROTOCOL_HTTP = "http";
 
-    private PostTransferService postTransferService;
-    private FaultListener faultListener;
     private ChecksumModule checksumModule;
     private long connectTimeout;
     private TimeUnit connectTimeoutUnit;
     private int chunkSize;
-    private long clientIdleTimeout;
-    private TimeUnit clientIdleTimeoutUnit;
-
-    private CellStub doorStub;
 
     public HttpTransferService()
     {
         super("http");
-    }
-
-    @Required
-    public void setPostTransferService(
-            PostTransferService postTransferService)
-    {
-        this.postTransferService = postTransferService;
-    }
-
-    @Required
-    public void setFaultListener(FaultListener faultListener)
-    {
-        this.faultListener = faultListener;
     }
 
     @Required
@@ -162,44 +132,6 @@ public class HttpTransferService
     public void setChunkSize(int chunkSize)
     {
         this.chunkSize = chunkSize;
-    }
-
-    public long getClientIdleTimeout()
-    {
-        return clientIdleTimeout;
-    }
-
-    @Required
-    public void setClientIdleTimeout(long clientIdleTimeout)
-    {
-        this.clientIdleTimeout = clientIdleTimeout;
-    }
-
-    public TimeUnit getClientIdleTimeoutUnit()
-    {
-        return clientIdleTimeoutUnit;
-    }
-
-    @Required
-    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
-    {
-        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
-    }
-
-    @Required
-    public void setDoorStub(CellStub stub)
-    {
-        this.doorStub = stub;
-    }
-
-    @PostConstruct
-    public synchronized void init()
-    {
-        String range = System.getProperty("org.globus.tcp.port.range");
-        PortRange portRange =
-                (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
-        setPortRange(portRange);
-        super.init();
     }
 
     @Override
@@ -244,12 +176,6 @@ public class HttpTransferService
                 }
             }
         };
-    }
-
-    @Override
-    public void close(HttpMover mover, CompletionHandler<Void, Void> completionHandler)
-    {
-        postTransferService.execute(mover, completionHandler);
     }
 
     /**

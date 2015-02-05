@@ -1,3 +1,20 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Maps;
@@ -30,64 +47,116 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
 
+import org.dcache.cells.CellStub;
+import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
+import org.dcache.pool.classic.PostTransferService;
+import org.dcache.pool.classic.TransferService;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
 /**
- * Abstract base class for all netty servers running on the pool
- * dispatching movers. This class provides most methods needed by a
- * pool-side netty mover.
+ * Abstract base class for Netty based transfer services. This class provides
+ * most methods needed by a pool-side Netty mover.
  *
  * TODO: Cancellation currently doesn't close the netty channel. We rely
  * on the mover closing the MoverChannel, thus as a side effect causing
  * the Netty channel to close.
- *
- * @author tzangerl
  */
-public abstract class AbstractNettyServer<T extends ProtocolInfo>
+public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M extends Mover<T>>
+    implements TransferService<M>
 {
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(AbstractNettyServer.class);
+            LoggerFactory.getLogger(AbstractNettyTransferService.class);
+
+    private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
 
     /**
      * Manages connection timeouts.
      */
-    private ScheduledExecutorService _timeoutScheduler;
+    private ScheduledExecutorService timeoutScheduler;
 
-    private NioEventLoopGroup _acceptGroup;
-    private NioEventLoopGroup _socketGroup;
+    private NioEventLoopGroup acceptGroup;
+    private NioEventLoopGroup socketGroup;
 
     /**
      * Shared Netty server channel
      */
-    private Channel _serverChannel;
+    private Channel serverChannel;
 
     /**
      * Socket address of the last server channel created.
      */
-    private InetSocketAddress _lastServerAddress;
+    private InetSocketAddress lastServerAddress;
 
-    private PortRange _portRange = new PortRange(0);
+    private PortRange portRange = new PortRange(0);
 
-    private final ConcurrentMap<UUID, Entry> _uuids =
+    private final ConcurrentMap<UUID, Entry> uuids =
             Maps.newConcurrentMap();
-    private final ConcurrentMap<MoverChannel<T>, Entry> _channels =
+    private final ConcurrentMap<MoverChannel<T>, Entry> channels =
             Maps.newConcurrentMap();
 
-    private String _name;
-    private int _threads;
+    private String name;
+    private int threads;
 
-    public AbstractNettyServer(String name)
+    private PostTransferService postTransferService;
+    protected FaultListener faultListener;
+
+    protected long clientIdleTimeout;
+    protected TimeUnit clientIdleTimeoutUnit;
+    protected CellStub doorStub;
+
+    public AbstractNettyTransferService(String name)
     {
-        _name = name;
+        this.name = name;
     }
 
     @Required
     public void setThreads(int threads)
     {
-        _threads = threads;
+        this.threads = threads;
+    }
+
+    @Required
+    public void setPostTransferService(
+            PostTransferService postTransferService)
+    {
+        this.postTransferService = postTransferService;
+    }
+
+    @Required
+    public void setFaultListener(FaultListener faultListener)
+    {
+        this.faultListener = faultListener;
+    }
+
+    public long getClientIdleTimeout()
+    {
+        return clientIdleTimeout;
+    }
+
+    @Required
+    public void setClientIdleTimeout(long clientIdleTimeout)
+    {
+        this.clientIdleTimeout = clientIdleTimeout;
+    }
+
+    public TimeUnit getClientIdleTimeoutUnit()
+    {
+        return clientIdleTimeoutUnit;
+    }
+
+    @Required
+    public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
+    {
+        this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
+    }
+
+    @Required
+    public void setDoorStub(CellStub stub)
+    {
+        this.doorStub = stub;
     }
 
     /**
@@ -96,17 +165,17 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      * @throws IOException Starting the server failed
      */
     protected synchronized void startServer() throws IOException {
-        if (_serverChannel == null) {
+        if (serverChannel == null) {
             ServerBootstrap bootstrap = new ServerBootstrap()
-                    .group(_acceptGroup, _socketGroup)
+                    .group(acceptGroup, socketGroup)
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.TCP_NODELAY, false)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childHandler(newChannelInitializer());
 
-            _serverChannel = _portRange.bind(bootstrap);
-            _lastServerAddress = (InetSocketAddress) _serverChannel.localAddress();
-            LOGGER.debug("Started {} on {}", getClass().getSimpleName(), _lastServerAddress);
+            serverChannel = portRange.bind(bootstrap);
+            lastServerAddress = (InetSocketAddress) serverChannel.localAddress();
+            LOGGER.debug("Started {} on {}", getClass().getSimpleName(), lastServerAddress);
         }
     }
 
@@ -115,36 +184,40 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      */
     protected synchronized void stopServer()
     {
-        if (_serverChannel != null) {
-            LOGGER.debug("Stopping {} on {}", getClass().getSimpleName(), _lastServerAddress);
-            _serverChannel.close();
-            _serverChannel = null;
+        if (serverChannel != null) {
+            LOGGER.debug("Stopping {} on {}", getClass().getSimpleName(), lastServerAddress);
+            serverChannel.close();
+            serverChannel = null;
         }
     }
 
     @PostConstruct
     public synchronized void init()
     {
-        _timeoutScheduler =
+        String range = System.getProperty("org.globus.tcp.port.range");
+        this.portRange = (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
+
+        timeoutScheduler =
                 Executors.newSingleThreadScheduledExecutor(
-                        new ThreadFactoryBuilder().setNameFormat(_name + "-connect-timeout").build());
-        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(_name + "-listen-%d").build()));
-        _socketGroup = new NioEventLoopGroup(_threads, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(_name + "-net-%d").build()));
+                        new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());
+        acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build()));
+        socketGroup = new NioEventLoopGroup(threads, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(
+                name + "-net-%d").build()));
     }
 
     @PreDestroy
     public synchronized void shutdown()
     {
         stopServer();
-        _timeoutScheduler.shutdown();
+        timeoutScheduler.shutdown();
 
-        _acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
-        _socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        acceptGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
+        socketGroup.shutdownGracefully(1, 3, TimeUnit.SECONDS);
 
         try {
-            if (_timeoutScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
-                _acceptGroup.terminationFuture().sync();
-                _socketGroup.terminationFuture().sync();
+            if (timeoutScheduler.awaitTermination(3, TimeUnit.SECONDS)) {
+                acceptGroup.terminationFuture().sync();
+                socketGroup.terminationFuture().sync();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -155,7 +228,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      * Start server if there are any registered channels.
      */
     protected synchronized void conditionallyStartServer() throws IOException {
-        if (!_uuids.isEmpty()) {
+        if (!uuids.isEmpty()) {
             startServer();
         }
     }
@@ -164,7 +237,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      * Stop server if there are no channels.
      */
     protected synchronized void conditionallyStopServer() {
-        if (_uuids.isEmpty()) {
+        if (uuids.isEmpty()) {
             stopServer();
         }
     }
@@ -173,7 +246,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      * @return The address to which the server channel was last bound.
      */
     public synchronized InetSocketAddress getServerAddress() {
-        return _lastServerAddress;
+        return lastServerAddress;
     }
 
     public synchronized Cancellable register(
@@ -182,11 +255,11 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
     {
         Entry entry = new Entry(channel, uuid, connectTimeout, completionHandler);
 
-        if (_uuids.putIfAbsent(uuid, entry) != null) {
+        if (uuids.putIfAbsent(uuid, entry) != null) {
             throw new IllegalStateException("UUID conflict");
         }
-        if (_channels.putIfAbsent(channel, entry) != null) {
-            _uuids.remove(uuid);
+        if (channels.putIfAbsent(channel, entry) != null) {
+            uuids.remove(uuid);
             throw new IllegalStateException("Mover is already registered");
         }
 
@@ -196,26 +269,32 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     private synchronized void unregister(Entry entry)
     {
-        _channels.remove(entry._channel);
-        _uuids.remove(entry._uuid);
+        channels.remove(entry._channel);
+        uuids.remove(entry._uuid);
         conditionallyStopServer();
     }
 
     public FileAttributes getFileAttributes(UUID uuid)
     {
-        Entry entry = _uuids.get(uuid);
+        Entry entry = uuids.get(uuid);
         return (entry == null) ? null : entry.getFileAttributes();
     }
 
     public MoverChannel<T> open(UUID uuid, boolean exclusive)
     {
-        Entry entry = _uuids.get(uuid);
+        Entry entry = uuids.get(uuid);
         return (entry == null) ? null : entry.open(exclusive);
+    }
+
+    @Override
+    public void close(M mover, CompletionHandler<Void, Void> completionHandler)
+    {
+        postTransferService.execute(mover, completionHandler);
     }
 
     public void close(MoverChannel<T> channel)
     {
-        Entry entry = _channels.get(channel);
+        Entry entry = channels.get(channel);
         if (entry != null) {
             entry.close();
         }
@@ -223,7 +302,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     public void close(MoverChannel<T> channel, Exception exception)
     {
-        Entry entry = _channels.get(channel);
+        Entry entry = channels.get(channel);
         if (entry != null) {
             entry.close(exception);
         }
@@ -242,7 +321,7 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
             _channel = channel;
             _uuid = uuid;
             _completionHandler = completionHandler;
-            _timeout = _timeoutScheduler.schedule(new Runnable()
+            _timeout = timeoutScheduler.schedule(new Runnable()
             {
                 @Override
                 public void run()
@@ -341,12 +420,4 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
      * @return ChannelPipelineFactory adapted to child class.
      */
     protected abstract ChannelInitializer newChannelInitializer();
-
-    public PortRange getPortRange() {
-        return _portRange;
-    }
-
-    public void setPortRange(PortRange portRange) {
-        _portRange = portRange;
-    }
 }

@@ -36,7 +36,7 @@ import java.util.UUID;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import org.dcache.pool.movers.AbstractNettyServer;
+import org.dcache.pool.movers.AbstractNettyTransferService;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.util.Checksum;
@@ -76,7 +76,7 @@ public class HttpPoolRequestHandlerTests
     private static final int SOME_CHUNK_SIZE = 4096;
 
     private HttpPoolRequestHandler _handler;
-    private AbstractNettyServer<HttpProtocolInfo> _server;
+    private AbstractNettyTransferService<HttpProtocolInfo,?> _server;
     private Map<String,FileInfo> _files;
     private List<Object> _additionalWrites;
     private HttpResponse _response;
@@ -85,7 +85,7 @@ public class HttpPoolRequestHandlerTests
     @Before
     public void setup()
     {
-        _server = mock(AbstractNettyServer.class);
+        _server = mock(AbstractNettyTransferService.class);
         _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
         _channel = new EmbeddedChannel(_handler);
         _files = Maps.newHashMap();
