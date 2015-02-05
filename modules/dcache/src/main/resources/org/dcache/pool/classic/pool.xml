@@ -355,6 +355,12 @@
           </bean>
       </property>
       <property name="doorStub" ref="doorStub"/>
+      <property name="portRange">
+          <bean class="org.dcache.util.PortRange">
+              <constructor-arg value="${pool.mover.xrootd.port.min}"/>
+              <constructor-arg value="${pool.mover.xrootd.port.max}"/>
+          </bean>
+      </property>
   </bean>
 
   <bean id="http-transfer-service" class="org.dcache.http.HttpTransferService"
@@ -370,6 +376,12 @@
       <property name="connectTimeout" value="${pool.mover.http.timeout.connect}"/>
       <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
       <property name="doorStub" ref="doorStub"/>
+      <property name="portRange">
+          <bean class="org.dcache.util.PortRange">
+              <constructor-arg value="${pool.mover.http.port.min}"/>
+              <constructor-arg value="${pool.mover.http.port.max}"/>
+          </bean>
+      </property>
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"

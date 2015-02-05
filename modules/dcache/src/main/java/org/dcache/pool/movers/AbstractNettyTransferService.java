@@ -70,8 +70,6 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
     private static final Logger LOGGER =
             LoggerFactory.getLogger(AbstractNettyTransferService.class);
 
-    private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
-
     /**
      * Manages connection timeouts.
      */
@@ -90,7 +88,7 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
      */
     private InetSocketAddress lastServerAddress;
 
-    private PortRange portRange = new PortRange(0);
+    private PortRange portRange;
 
     private final ConcurrentMap<UUID, Entry> uuids =
             Maps.newConcurrentMap();
@@ -159,6 +157,17 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
         this.doorStub = stub;
     }
 
+    @Required
+    public void setPortRange(PortRange portRange)
+    {
+        this.portRange = portRange;
+    }
+
+    public PortRange getPortRange()
+    {
+        return portRange;
+    }
+
     /**
      * Start netty server.
      *
@@ -194,9 +203,6 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
     @PostConstruct
     public synchronized void init()
     {
-        String range = System.getProperty("org.globus.tcp.port.range");
-        this.portRange = (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
-
         timeoutScheduler =
                 Executors.newSingleThreadScheduledExecutor(
                         new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());

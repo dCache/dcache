@@ -27,6 +27,8 @@ check -strong pool.mover.xrootd.memory
 check -strong pool.mover.xrootd.timeout.idle
 check -strong pool.mover.xrootd.timeout.idle.unit
 check -strong pool.mover.xrootd.frame-size
+check -strong pool.mover.xrootd.port.min
+check -strong pool.mover.xrootd.port.max
 check pool.mover.xrootd.plugins
 check -strong pool.mover.http.threads
 check -strong pool.mover.http.timeout.idle
@@ -34,6 +36,8 @@ check -strong pool.mover.http.timeout.idle.unit
 check -strong pool.mover.http.timeout.connect
 check -strong pool.mover.http.timeout.connect.unit
 check -strong pool.mover.http.chunk-size
+check -strong pool.mover.http.port.min
+check -strong pool.mover.http.port.max
 check -strong pool.mover.nfs.rpcsec_gss
 check -strong pool.service.pool.timeout
 check -strong pool.service.pool.timeout.unit
