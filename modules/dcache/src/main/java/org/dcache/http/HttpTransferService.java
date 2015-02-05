@@ -17,6 +17,14 @@
  */
 package org.dcache.http;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -53,11 +61,13 @@ import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
+import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.PortRange;
 import org.dcache.util.TryCatchTemplate;
 
 /**
@@ -72,11 +82,17 @@ import org.dcache.util.TryCatchTemplate;
  * The netty server are started on demand and shared by all http transfers of
  * a pool. All transfers are handled on the same port.
  */
-public class HttpTransferService implements MoverFactory, TransferService<HttpMover>
+public class HttpTransferService
+        extends AbstractNettyServer<HttpProtocolInfo>
+        implements MoverFactory, TransferService<HttpMover>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransferService.class);
 
+    private static final PortRange DEFAULT_PORTRANGE =
+            new PortRange(20000, 25000);
+
     public static final String UUID_QUERY_PARAM = "dcache-http-uuid";
+
     private static final String QUERY_PARAM_ASSIGN = "=";
     private static final String PROTOCOL_HTTP = "http";
 
@@ -85,13 +101,16 @@ public class HttpTransferService implements MoverFactory, TransferService<HttpMo
     private ChecksumModule checksumModule;
     private long connectTimeout;
     private TimeUnit connectTimeoutUnit;
-    private int threads;
     private int chunkSize;
     private long clientIdleTimeout;
     private TimeUnit clientIdleTimeoutUnit;
 
-    private HttpPoolNettyServer server;
     private CellStub doorStub;
+
+    public HttpTransferService()
+    {
+        super("http");
+    }
 
     @Required
     public void setPostTransferService(
@@ -132,17 +151,6 @@ public class HttpTransferService implements MoverFactory, TransferService<HttpMo
     public void setConnectTimeoutUnit(TimeUnit connectTimeoutUnit)
     {
         this.connectTimeoutUnit = connectTimeoutUnit;
-    }
-
-    public int getThreads()
-    {
-        return threads;
-    }
-
-    @Required
-    public void setThreads(int threads)
-    {
-        this.threads = threads;
     }
 
     public int getChunkSize()
@@ -187,15 +195,11 @@ public class HttpTransferService implements MoverFactory, TransferService<HttpMo
     @PostConstruct
     public synchronized void init()
     {
-        server = new HttpPoolNettyServer(threads, chunkSize, clientIdleTimeoutUnit.toMillis(clientIdleTimeout));
-    }
-
-    @PreDestroy
-    public synchronized void shutdown()
-    {
-        if (server != null) {
-            server.shutdown();
-        }
+        String range = System.getProperty("org.globus.tcp.port.range");
+        PortRange portRange =
+                (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
+        setPortRange(portRange);
+        super.init();
     }
 
     @Override
@@ -225,8 +229,8 @@ public class HttpTransferService implements MoverFactory, TransferService<HttpMo
             {
                 UUID uuid = UUID.randomUUID();
                 MoverChannel<HttpProtocolInfo> channel = autoclose(mover.open());
-                setCancellable(server.register(channel, uuid, connectTimeoutUnit.toMillis(connectTimeout), this));
-                sendAddressToDoor(mover, server.getServerAddress().getPort(), uuid);
+                setCancellable(register(channel, uuid, connectTimeoutUnit.toMillis(connectTimeout), this));
+                sendAddressToDoor(mover, getServerAddress().getPort(), uuid);
             }
 
             @Override
@@ -288,5 +292,42 @@ public class HttpTransferService implements MoverFactory, TransferService<HttpMo
                 path,
                 UUID_QUERY_PARAM + QUERY_PARAM_ASSIGN + uuid.toString(),
                 null);
+    }
+
+    @Override
+    protected ChannelInitializer newChannelInitializer()
+    {
+        return new HttpChannelInitializer();
+    }
+
+    /**
+     * Factory that creates new server handler.
+     *
+     * The pipeline can handle HTTP compression and chunked transfers.
+     *
+     * @author tzangerl
+     *
+     */
+    class HttpChannelInitializer extends ChannelInitializer
+    {
+        @Override
+        protected void initChannel(Channel ch) throws Exception
+        {
+            ChannelPipeline pipeline = ch.pipeline();
+
+            pipeline.addLast("decoder", new HttpRequestDecoder());
+            pipeline.addLast("encoder", new HttpResponseEncoder());
+
+            if (LOGGER.isDebugEnabled()) {
+                pipeline.addLast("logger", new LoggingHandler());
+            }
+            pipeline.addLast("idle-state-handler",
+                             new IdleStateHandler(0,
+                                                  0,
+                                                  clientIdleTimeout,
+                                                  clientIdleTimeoutUnit));
+            pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+            pipeline.addLast("transfer", new HttpPoolRequestHandler(HttpTransferService.this, chunkSize));
+        }
     }
 }

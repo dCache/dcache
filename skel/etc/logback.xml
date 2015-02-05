@@ -172,13 +172,8 @@
       <level>off</level>
     </threshold>
     <threshold>
-        <!-- Logs all HTTP I/O. Very noisy. -->
-        <logger>org.dcache.http.HttpPoolNettyServer</logger>
-        <level>off</level>
-    </threshold>
-    <threshold>
-        <!-- Logs all XROOTD I/O. Very noisy. -->
-        <logger>org.dcache.xrootd.pool.XrootdPoolNettyServer</logger>
+        <!-- Logs all Netty I/O. Very noisy. -->
+        <logger>io.netty.handler.logging.LoggingHandler</logger>
         <level>off</level>
     </threshold>
 

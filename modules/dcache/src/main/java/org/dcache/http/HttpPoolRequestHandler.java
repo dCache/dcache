@@ -39,6 +39,7 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
+import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.FileAttributes;
@@ -81,7 +82,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     /**
      * The server in the context of which this handler is executed
      */
-    private final HttpPoolNettyServer _server;
+    private final AbstractNettyServer<HttpProtocolInfo> _server;
 
     private final int _chunkSize;
 
@@ -93,7 +94,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      */
     private MoverChannel<HttpProtocolInfo> _writeChannel;
 
-    public HttpPoolRequestHandler(HttpPoolNettyServer server, int chunkSize) {
+    public HttpPoolRequestHandler(AbstractNettyServer<HttpProtocolInfo> server, int chunkSize) {
         _server = server;
         _chunkSize = chunkSize;
     }

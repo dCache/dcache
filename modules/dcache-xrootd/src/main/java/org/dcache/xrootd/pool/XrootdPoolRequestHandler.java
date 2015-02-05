@@ -120,9 +120,9 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     /**
      * The server on which this request handler is running.
      */
-    private XrootdPoolNettyServer _server;
+    private XrootdTransferService _server;
 
-    public XrootdPoolRequestHandler(XrootdPoolNettyServer server) {
+    public XrootdPoolRequestHandler(XrootdTransferService server) {
         _server = server;
     }
 

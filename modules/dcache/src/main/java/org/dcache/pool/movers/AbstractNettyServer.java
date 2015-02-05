@@ -10,6 +10,10 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -45,16 +49,15 @@ import org.dcache.vehicles.FileAttributes;
 public abstract class AbstractNettyServer<T extends ProtocolInfo>
 {
     private static final Logger LOGGER =
-        LoggerFactory.getLogger(AbstractNettyServer.class);
+            LoggerFactory.getLogger(AbstractNettyServer.class);
 
     /**
      * Manages connection timeouts.
      */
-    private final ScheduledExecutorService _timeoutScheduler;
+    private ScheduledExecutorService _timeoutScheduler;
 
-
-    private final NioEventLoopGroup _acceptGroup;
-    private final NioEventLoopGroup _socketGroup;
+    private NioEventLoopGroup _acceptGroup;
+    private NioEventLoopGroup _socketGroup;
 
     /**
      * Shared Netty server channel
@@ -68,18 +71,23 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
 
     private PortRange _portRange = new PortRange(0);
 
-    private final ConcurrentMap<UUID,Entry> _uuids =
-        Maps.newConcurrentMap();
-    private final ConcurrentMap<MoverChannel<T>,Entry> _channels =
-        Maps.newConcurrentMap();
+    private final ConcurrentMap<UUID, Entry> _uuids =
+            Maps.newConcurrentMap();
+    private final ConcurrentMap<MoverChannel<T>, Entry> _channels =
+            Maps.newConcurrentMap();
 
-    public AbstractNettyServer(String name, int threads)
+    private String _name;
+    private int _threads;
+
+    public AbstractNettyServer(String name)
     {
-        _timeoutScheduler =
-                Executors.newSingleThreadScheduledExecutor(
-                        new ThreadFactoryBuilder().setNameFormat(name + "-connect-timeout").build());
-        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-listen-%d").build()));
-        _socketGroup = new NioEventLoopGroup(threads, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(name + "-net-%d").build()));
+        _name = name;
+    }
+
+    @Required
+    public void setThreads(int threads)
+    {
+        _threads = threads;
     }
 
     /**
@@ -114,6 +122,17 @@ public abstract class AbstractNettyServer<T extends ProtocolInfo>
         }
     }
 
+    @PostConstruct
+    public synchronized void init()
+    {
+        _timeoutScheduler =
+                Executors.newSingleThreadScheduledExecutor(
+                        new ThreadFactoryBuilder().setNameFormat(_name + "-connect-timeout").build());
+        _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(_name + "-listen-%d").build()));
+        _socketGroup = new NioEventLoopGroup(_threads, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat(_name + "-net-%d").build()));
+    }
+
+    @PreDestroy
     public synchronized void shutdown()
     {
         stopServer();

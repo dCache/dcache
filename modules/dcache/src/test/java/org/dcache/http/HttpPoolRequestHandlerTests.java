@@ -9,13 +9,13 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,6 +36,7 @@ import java.util.UUID;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
+import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.util.Checksum;
@@ -44,16 +45,16 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static org.hamcrest.Matchers.*;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
-import static io.netty.handler.codec.http.HttpHeaders.Values.*;
+import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpMethod.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 /**
  *  This class provides unit-tests for how the pool responses to HTTP requests
@@ -75,7 +76,7 @@ public class HttpPoolRequestHandlerTests
     private static final int SOME_CHUNK_SIZE = 4096;
 
     private HttpPoolRequestHandler _handler;
-    private HttpPoolNettyServer _server;
+    private AbstractNettyServer<HttpProtocolInfo> _server;
     private Map<String,FileInfo> _files;
     private List<Object> _additionalWrites;
     private HttpResponse _response;
@@ -84,7 +85,7 @@ public class HttpPoolRequestHandlerTests
     @Before
     public void setup()
     {
-        _server = mock(HttpPoolNettyServer.class);
+        _server = mock(AbstractNettyServer.class);
         _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
         _channel = new EmbeddedChannel(_handler);
         _files = Maps.newHashMap();

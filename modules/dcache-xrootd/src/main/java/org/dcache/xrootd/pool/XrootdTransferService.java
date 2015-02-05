@@ -17,12 +17,16 @@
  */
 package org.dcache.xrootd.pool;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -47,15 +51,22 @@ import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
+import org.dcache.pool.movers.AbstractNettyServer;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.PortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
+import org.dcache.xrootd.core.XrootdDecoder;
+import org.dcache.xrootd.core.XrootdEncoder;
+import org.dcache.xrootd.core.XrootdHandshakeHandler;
 import org.dcache.xrootd.plugins.ChannelHandlerFactory;
+import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
 
 /**
  * xrootd transfer service.
@@ -90,6 +101,7 @@ import org.dcache.xrootd.plugins.ChannelHandlerFactory;
  *   end of the file is wrong.
  */
 public class XrootdTransferService
+        extends AbstractNettyServer<XrootdProtocolInfo>
         implements MoverFactory, TransferService<XrootdMover>
 {
     private static final Logger LOGGER =
@@ -98,16 +110,23 @@ public class XrootdTransferService
     private static final long CONNECT_TIMEOUT =
             TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
+    private static final PortRange DEFAULT_PORTRANGE = new PortRange(20000, 25000);
+
     private PostTransferService postTransferService;
     private FaultListener faultListener;
-    private int threads;
     private long clientIdleTimeout;
     private TimeUnit clientIdleTimeoutUnit;
     private int maxFrameSize;
     private List<ChannelHandlerFactory> plugins;
 
-    private XrootdPoolNettyServer server;
     private CellStub doorStub;
+
+    private int numberClientConnections;
+
+    public XrootdTransferService()
+    {
+        super("xrootd");
+    }
 
     @Required
     public void setPostTransferService(
@@ -123,17 +142,6 @@ public class XrootdTransferService
     }
 
     @Required
-    public void setThreads(int threads)
-    {
-        this.threads = threads;
-    }
-
-    public int getThreads()
-    {
-        return threads;
-    }
-
-    @Required
     public void setClientIdleTimeout(long clientIdleTimeout)
     {
         this.clientIdleTimeout = clientIdleTimeout;
@@ -144,15 +152,15 @@ public class XrootdTransferService
         return clientIdleTimeout;
     }
 
-    public TimeUnit getClientIdleTimeoutUnit()
-    {
-        return clientIdleTimeoutUnit;
-    }
-
     @Required
     public void setClientIdleTimeoutUnit(TimeUnit clientIdleTimeoutUnit)
     {
         this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
+    }
+
+    public TimeUnit getClientIdleTimeoutUnit()
+    {
+        return clientIdleTimeoutUnit;
     }
 
     @Required
@@ -165,6 +173,11 @@ public class XrootdTransferService
     public void setMaxFrameSize(int maxFrameSize)
     {
         this.maxFrameSize = maxFrameSize;
+    }
+
+    public int getMaxFrameSize()
+    {
+        return maxFrameSize;
     }
 
     @Required
@@ -181,19 +194,11 @@ public class XrootdTransferService
     @PostConstruct
     public synchronized void init()
     {
-        server = new XrootdPoolNettyServer(
-                threads,
-                clientIdleTimeoutUnit.toMillis(clientIdleTimeout),
-                maxFrameSize,
-                plugins);
-    }
-
-    @PreDestroy
-    public synchronized void shutdown()
-    {
-        if (server != null) {
-            server.shutdown();
-        }
+        String range = System.getProperty("org.globus.tcp.port.range");
+        PortRange portRange =
+                (range != null) ? PortRange.valueOf(range) : DEFAULT_PORTRANGE;
+        setPortRange(portRange);
+        super.init();
     }
 
     @Override
@@ -214,8 +219,8 @@ public class XrootdTransferService
             {
                 UUID uuid = mover.getProtocolInfo().getUUID();
                 MoverChannel<XrootdProtocolInfo> channel = autoclose(mover.open());
-                setCancellable(server.register(channel, uuid, CONNECT_TIMEOUT, this));
-                sendAddressToDoor(mover, server.getServerAddress().getPort());
+                setCancellable(register(channel, uuid, CONNECT_TIMEOUT, this));
+                sendAddressToDoor(mover, getServerAddress().getPort());
             }
 
             @Override
@@ -251,5 +256,57 @@ public class XrootdTransferService
                 new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(), new InetSocketAddress(localIP, port));
         doorStub.notify(cellpath, doorMsg);
         LOGGER.debug("sending redirect {} to Xrootd-door {}", localIP, cellpath);
+    }
+
+    @Override
+    protected ChannelInitializer newChannelInitializer() {
+        return new XrootdPoolChannelInitializer();
+    }
+
+    /**
+     * Only shutdown the server if no client connection left.
+     */
+    @Override
+    protected synchronized void conditionallyStopServer() {
+        if (numberClientConnections == 0) {
+            super.conditionallyStopServer();
+        }
+    }
+
+    public synchronized void clientConnected()
+    {
+        numberClientConnections++;
+    }
+
+    public synchronized void clientDisconnected() {
+        numberClientConnections--;
+        conditionallyStopServer();
+    }
+
+    private class XrootdPoolChannelInitializer extends ChannelInitializer
+    {
+        @Override
+        protected void initChannel(Channel ch) throws Exception
+        {
+            ChannelPipeline pipeline = ch.pipeline();
+
+            pipeline.addLast("encoder", new XrootdEncoder());
+            pipeline.addLast("decoder", new XrootdDecoder());
+            if (LOGGER.isDebugEnabled()) {
+                pipeline.addLast("logger", new LoggingHandler());
+            }
+            pipeline.addLast("handshake",
+                             new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
+            for (ChannelHandlerFactory plugin: plugins) {
+                pipeline.addLast("plugin:" + plugin.getName(),
+                                 plugin.createHandler());
+            }
+            pipeline.addLast("timeout", new IdleStateHandler(0,
+                                                             0,
+                                                             clientIdleTimeout,
+                                                             clientIdleTimeoutUnit));
+            pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
+            pipeline.addLast("transfer", new XrootdPoolRequestHandler(XrootdTransferService.this));
+        }
     }
 }
