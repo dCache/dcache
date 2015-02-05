@@ -17,9 +17,6 @@
  */
 package org.dcache.xrootd.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.Set;
 
@@ -27,7 +24,6 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -39,15 +35,12 @@ import org.dcache.vehicles.XrootdProtocolInfo;
  */
 public class XrootdMover extends MoverChannelMover<XrootdProtocolInfo, XrootdMover>
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(XrootdMover.class);
-
     public XrootdMover(ReplicaDescriptor handle,
                        PoolIoFileMessage message,
                        CellPath pathToDoor,
-                       XrootdTransferService xrootdTransferService,
-                       PostTransferService postTransferService)
+                       XrootdTransferService xrootdTransferService)
     {
-        super(handle, message, pathToDoor, xrootdTransferService, postTransferService, MoverChannel.AllocatorMode.HARD);
+        super(handle, message, pathToDoor, xrootdTransferService, MoverChannel.AllocatorMode.HARD);
     }
 
     @Override

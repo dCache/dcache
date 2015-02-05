@@ -25,7 +25,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
@@ -42,10 +41,9 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends Mover<
     public MoverChannelMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                              CellPath pathToDoor,
                              TransferService<M> transferService,
-                             PostTransferService postTransferService,
                              MoverChannel.AllocatorMode allocatorMode)
     {
-        super(handle, message, pathToDoor, transferService, postTransferService);
+        super(handle, message, pathToDoor, transferService);
         _allocatorMode = allocatorMode;
     }
 

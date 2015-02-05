@@ -30,4 +30,6 @@ import org.dcache.pool.movers.Mover;
 public interface TransferService<M extends Mover<?>>
 {
     Cancellable execute(M mover, CompletionHandler<Void, Void> completionHandler) throws Exception;
+
+    void close(M mover, CompletionHandler<Void, Void> completionHandler);
 }

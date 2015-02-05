@@ -91,8 +91,7 @@ public class MoverProtocolTransferService extends AbstractCellComponent
         ProtocolInfo info = message.getProtocolInfo();
         try {
             MoverProtocol moverProtocol = createMoverProtocol(getMoverProtocolClass(info));
-            return new MoverProtocolMover(handle, message, pathToDoor, this, _postTransferService,
-                    moverProtocol);
+            return new MoverProtocolMover(handle, message, pathToDoor, this, moverProtocol);
         } catch (InvocationTargetException e) {
             throw new CacheException(27, "Could not create mover for " + info, e.getTargetException());
         } catch (ClassNotFoundException e) {
@@ -140,6 +139,12 @@ public class MoverProtocolTransferService extends AbstractCellComponent
         MoverTask task = new MoverTask(mover, completionHandler);
         _executor.execute(task);
         return task;
+    }
+
+    @Override
+    public void close(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
+    {
+        _postTransferService.execute(mover, completionHandler);
     }
 
     public void shutdown()

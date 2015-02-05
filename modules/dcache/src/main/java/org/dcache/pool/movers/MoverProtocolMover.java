@@ -27,7 +27,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.Checksum;
@@ -43,10 +42,9 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     protected final MoverProtocol _moverProtocol;
 
     public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                              TransferService<MoverProtocolMover> transferService,
-                              PostTransferService postTransferService, MoverProtocol moverProtocol)
+                              TransferService<MoverProtocolMover> transferService, MoverProtocol moverProtocol)
     {
-        super(handle, message, pathToDoor, transferService, postTransferService);
+        super(handle, message, pathToDoor, transferService);
         _moverProtocol = moverProtocol;
     }
 

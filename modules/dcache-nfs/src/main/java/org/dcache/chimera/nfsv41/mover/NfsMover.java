@@ -17,18 +17,19 @@
  */
 package org.dcache.chimera.nfsv41.mover;
 
-import diskCacheV111.util.CacheException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 import java.util.Collections;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
+
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.nfs.v4.NFS4State;
@@ -36,7 +37,6 @@ import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -54,9 +54,8 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private final verifier4 _bootVerifier;
 
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-            NfsTransferService nfsTransferService,
-            PostTransferService postTransferService, PnfsHandler pnfsHandler) {
-        super(handle, message, pathToDoor, nfsTransferService, postTransferService, MoverChannel.AllocatorMode.SOFT);
+            NfsTransferService nfsTransferService, PnfsHandler pnfsHandler) {
+        super(handle, message, pathToDoor, nfsTransferService, MoverChannel.AllocatorMode.SOFT);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         _state = new MoverState();
         _namespace = pnfsHandler;

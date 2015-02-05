@@ -17,7 +17,6 @@
  */
 package org.dcache.xrootd.pool;
 
-import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -38,11 +37,11 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
+import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import dmg.cells.nucleus.AbstractCellComponent;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -195,7 +194,7 @@ public class XrootdTransferService
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                              CellPath pathToDoor) throws CacheException
     {
-        return new XrootdMover(handle, message, pathToDoor, this, postTransferService);
+        return new XrootdMover(handle, message, pathToDoor, this);
     }
 
     @Override
@@ -225,6 +224,12 @@ public class XrootdTransferService
                 }
             }
         };
+    }
+
+    @Override
+    public void close(XrootdMover mover, CompletionHandler<Void, Void> completionHandler)
+    {
+        postTransferService.execute(mover, completionHandler);
     }
 
     /**

@@ -206,7 +206,7 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
         } else {
             checksumFactory = null;
         }
-        return new HttpMover(handle, message, pathToDoor, this, postTransferService, checksumFactory);
+        return new HttpMover(handle, message, pathToDoor, this, checksumFactory);
     }
 
     @Override
@@ -234,6 +234,12 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
                 }
             }
         };
+    }
+
+    @Override
+    public void close(HttpMover mover, CompletionHandler<Void, Void> completionHandler)
+    {
+        postTransferService.execute(mover, completionHandler);
     }
 
     /**

@@ -6,8 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -23,7 +23,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import java.net.Inet4Address;
 
 import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -46,7 +45,8 @@ import org.dcache.util.PortRange;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
 
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.toArray;
+import static com.google.common.collect.Iterables.transform;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -122,7 +122,7 @@ public class NfsTransferService extends AbstractCellComponent
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
     {
-        return new NfsMover(handle, message, pathToDoor, this, _postTransferService, _pnfsHandler);
+        return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler);
     }
 
     @Override
@@ -150,6 +150,12 @@ public class NfsTransferService extends AbstractCellComponent
             completionHandler.failed(e, null);
         }
         return null;
+    }
+
+    @Override
+    public void close(NfsMover mover, CompletionHandler<Void, Void> completionHandler)
+    {
+        _postTransferService.execute(mover, completionHandler);
     }
 
     public NFSv4MoverHandler getNfsMoverHandler() {

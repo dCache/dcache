@@ -31,7 +31,6 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.movers.ChecksumChannel;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
@@ -49,10 +48,9 @@ public class HttpMover extends MoverChannelMover<HttpProtocolInfo, HttpMover>
 
     public HttpMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
                      HttpTransferService httpTransferService,
-                     PostTransferService postTransferService,
                      ChecksumFactory checksumFactory)
     {
-        super(handle, message, pathToDoor, httpTransferService, postTransferService, MoverChannel.AllocatorMode.HARD);
+        super(handle, message, pathToDoor, httpTransferService, MoverChannel.AllocatorMode.HARD);
         this.checksumFactory = checksumFactory;
     }
 

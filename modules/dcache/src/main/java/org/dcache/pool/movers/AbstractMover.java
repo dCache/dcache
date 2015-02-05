@@ -38,7 +38,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.FileRepositoryChannel;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -67,14 +66,12 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     protected final ReplicaDescriptor _handle;
     protected final IoMode _ioMode;
     protected final TransferService<Mover<P>> _transferService;
-    protected final PostTransferService _postTransferService;
     protected final FsPath _path;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                         TransferService<M> transferService,
-                         PostTransferService postTransferService)
+                         TransferService<M> transferService)
     {
         checkArgument(type.isAssignableFrom(message.getProtocolInfo().getClass()));
         _queue = message.getIoQueueName();
@@ -88,7 +85,6 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
         _pathToDoor = pathToDoor;
         _handle = handle;
         _transferService = (TransferService<Mover<P>>) transferService;
-        _postTransferService = postTransferService;
     }
 
     @Override
@@ -181,7 +177,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     @Override
     public void close(CompletionHandler<Void, Void> completionHandler)
     {
-        _postTransferService.execute(this, completionHandler);
+        _transferService.close(this, completionHandler);
     }
 
     @Override
