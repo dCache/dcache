@@ -61,14 +61,13 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
         "NUMOFRETR ,"+
         "LASTSTATETRANSITIONTIME,"+ // 10
          //Database Request Storage
-        "CREDENTIALID , " +
         "RETRYDELTATIME , "+
         "SHOULDUPDATERETRYDELTATIME ,"+
         "DESCRIPTION ,"+
         "CLIENTHOST ,"+ // 15
         "STATUSCODE ,"+
         "USERID  ) " +
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -86,7 +85,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                   gr.getNumberOfRetries(),
                                   gr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
-                                  gr.getCredentialId(),
                                   gr.getRetryDeltaTime(),
                                   gr.isShould_updateretryDeltaTime()?0:1,
                                   gr.getDescription(),
@@ -97,8 +95,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
     }
 
     private static final String UPDATE_REQUEST_SQL =
-            UPDATE_PREFIX + ", CREDENTIALID=?," +
-                " RETRYDELTATIME=?," +
+            UPDATE_PREFIX + ", RETRYDELTATIME=?," +
                 " SHOULDUPDATERETRYDELTATIME=?," +
                 " DESCRIPTION=?," +
                 " CLIENTHOST=?," +
@@ -121,8 +118,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                   gr.getNumberOfRetries(),
                                   gr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  gr.getCredentialId(), // 10
-                                  gr.getRetryDeltaTime(),
+                                  gr.getRetryDeltaTime(), // 10
                                   gr.isShould_updateretryDeltaTime()?0:1,
                                   gr.getDescription(),
                                   gr.getClient_host(),
@@ -248,7 +244,6 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                 NUMOFRETR,
                 LASTSTATETRANSITIONTIME,
                 jobHistoryArray,
-                CREDENTIALID,
                 fileRequests,
                 RETRYDELTATIME,
                 SHOULDUPDATERETRYDELTATIME,

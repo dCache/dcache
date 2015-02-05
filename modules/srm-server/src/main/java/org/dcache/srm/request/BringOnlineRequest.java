@@ -112,7 +112,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
 
 
     public BringOnlineRequest(SRMUser user,
-                              Long requestCredentialId,
                               URI[] surls,
                               String[] protocols,
                               long lifetime,
@@ -121,14 +120,13 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                               String description,
                               String client_host)
     {
-        super(user,requestCredentialId,
+        super(user,
             max_update_period,
             lifetime,
             description,
             client_host);
         logger.debug("constructor");
-        logger.debug("user = "+user);
-        logger.debug("requestCredetialId="+requestCredentialId);
+        logger.debug("user = {}", user);
         if(protocols != null) {
             int len = protocols.length;
             this.protocols = new String[len];
@@ -140,7 +138,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         List<BringOnlineFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
         for(URI surl : surls) {
             BringOnlineFileRequest request = new BringOnlineFileRequest(getId(),
-                    requestCredentialId, surl, lifetime);
+                    surl, lifetime);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -162,7 +160,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long credentialId,
     BringOnlineFileRequest[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
@@ -183,7 +180,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         numberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
-        credentialId,
         fileRequests,
         retryDeltaTime,
         should_updateretryDeltaTime,

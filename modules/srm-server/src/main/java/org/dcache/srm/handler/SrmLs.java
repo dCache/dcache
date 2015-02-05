@@ -12,7 +12,6 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.LsRequest;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
@@ -23,7 +22,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SrmLs implements CredentialAwareHandler
+public class SrmLs
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmLs.class);
@@ -32,7 +31,6 @@ public class SrmLs implements CredentialAwareHandler
     private final Configuration configuration;
     private final SrmLsRequest request;
     private SrmLsResponse response;
-    private RequestCredential credential;
     private final SRMUser user;
     private final SRM srm;
     private final String clientHost;
@@ -51,12 +49,6 @@ public class SrmLs implements CredentialAwareHandler
         this.clientHost = clientHost;
         this.configuration = srm.getConfiguration();
         this.srm = checkNotNull(srm);
-    }
-
-    @Override
-    public void setCredential(RequestCredential credential)
-    {
-        this.credential = checkNotNull(credential);
     }
 
     public SrmLsResponse getResponse()
@@ -83,7 +75,6 @@ public class SrmLs implements CredentialAwareHandler
         URI[] surls = getSurls(request);
 
         LsRequest r = new LsRequest(user,
-                credential.getId(),
                 surls,
                 TimeUnit.HOURS.toMillis(1),
                 configuration.getLsRetryTimeout(),

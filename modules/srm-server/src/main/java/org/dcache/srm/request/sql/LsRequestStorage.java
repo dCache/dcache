@@ -41,11 +41,10 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         "NUMOFRETR ,"+
         "LASTSTATETRANSITIONTIME,"+ // 10
          //Database Request Storage
-        "CREDENTIALID , " +
         "RETRYDELTATIME , "+
         "SHOULDUPDATERETRYDELTATIME ,"+
-        "DESCRIPTION ,"+ //15
-        "CLIENTHOST ,"+
+        "DESCRIPTION ,"+
+        "CLIENTHOST ,"+ //15
         "STATUSCODE ,"+
         "USERID , " +
         // LS REQUEST
@@ -54,7 +53,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         "NUMOFLEVELS ,"+
         "\"count\" ,"+
         "LSOFFSET ) "+
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -72,7 +71,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getNumberOfRetries(),
                                   lr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
-                                  lr.getCredentialId(),
                                   lr.getRetryDeltaTime(),
                                   lr.isShould_updateretryDeltaTime()?0:1,
                                   lr.getDescription(),
@@ -89,8 +87,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
     }
 
     private static final String UPDATE_REQUEST_SQL =
-            UPDATE_PREFIX + ", CREDENTIALID=?," +
-                " RETRYDELTATIME=?," +
+            UPDATE_PREFIX + ", RETRYDELTATIME=?," +
                 " SHOULDUPDATERETRYDELTATIME=?," +
                 " DESCRIPTION=?," +
                 " CLIENTHOST=?," +
@@ -119,8 +116,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getNumberOfRetries(),
                                   lr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  lr.getCredentialId(), // 10
-                                  lr.getRetryDeltaTime(),
+                                  lr.getRetryDeltaTime(), // 10
                                   lr.isShould_updateretryDeltaTime()?0:1,
                                   lr.getDescription(),
                                   lr.getClient_host(),
@@ -184,7 +180,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                       NUMOFRETR,
                                       LASTSTATETRANSITIONTIME,
                                       jobHistoryArray,
-                                      CREDENTIALID,
                                       fileRequests,
                                       RETRYDELTATIME,
                                       SHOULDUPDATERETRYDELTATIME,

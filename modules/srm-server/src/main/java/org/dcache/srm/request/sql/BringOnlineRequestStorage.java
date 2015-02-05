@@ -65,14 +65,13 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     "NUMOFRETR ,"+
     "LASTSTATETRANSITIONTIME,"+ // 10
      //Database Request Storage
-    "CREDENTIALID , " +
     "RETRYDELTATIME , "+
     "SHOULDUPDATERETRYDELTATIME ,"+
     "DESCRIPTION ,"+
     "CLIENTHOST ,"+ // 15
     "STATUSCODE ,"+
     "USERID  ) " +
-    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
 
     @Override
@@ -91,7 +90,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                                       bor.getNumberOfRetries(),
                                                       bor.getLastStateTransitionTime(), // 10
                                                       //Database Request Storage
-                                                      bor.getCredentialId(),
                                                       bor.getRetryDeltaTime(),
                                                       bor.isShould_updateretryDeltaTime()?0:1,
                                                       bor.getDescription(),
@@ -102,8 +100,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     }
 
     private static final String UPDATE_REQUEST_SQL =
-            UPDATE_PREFIX + ", CREDENTIALID=?," +
-                " RETRYDELTATIME=?," +
+            UPDATE_PREFIX + ", RETRYDELTATIME=?," +
                 " SHOULDUPDATERETRYDELTATIME=?," +
                 " DESCRIPTION=?," +
                 " CLIENTHOST=?," +
@@ -126,7 +123,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                   bor.getNumberOfRetries(),
                                   bor.getLastStateTransitionTime(),//10
                                   //Database Request Storage
-                                  bor.getCredentialId(),
                                   bor.getRetryDeltaTime(),
                                   bor.isShould_updateretryDeltaTime()?0:1,
                                   bor.getDescription(),
@@ -221,7 +217,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                         NUMOFRETR,
                         LASTSTATETRANSITIONTIME,
                         jobHistoryArray,
-                        CREDENTIALID,
                         fileRequests,
                         RETRYDELTATIME,
                         SHOULDUPDATERETRYDELTATIME,

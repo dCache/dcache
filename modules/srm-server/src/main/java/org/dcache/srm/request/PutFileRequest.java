@@ -112,7 +112,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     private final TRetentionPolicy retentionPolicy;
 
     public PutFileRequest(long requestId,
-            Long requestCredentalId,
             URI url,
             @Nullable Long size,
             long lifetime,
@@ -120,9 +119,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             @Nullable TRetentionPolicy retentionPolicy,
             @Nullable TAccessLatency accessLatency)
     {
-        super(requestId,
-                requestCredentalId,
-                lifetime);
+        super(requestId, lifetime);
         this.surl = url;
         this.size = size;
         this.spaceReservationId = spaceReservationId;
@@ -143,7 +140,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
             long requestId,
-            Long requestCredentalId,
             String statusCodeString,
             String SURL,
             @Nullable String TURL,
@@ -165,7 +161,6 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
               lastStateTransitionTime,
               jobHistoryArray,
               requestId,
-              requestCredentalId,
               statusCodeString);
 
         this.surl = URI.create(SURL);

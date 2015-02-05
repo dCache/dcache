@@ -16,7 +16,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.PutRequest;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
@@ -39,7 +38,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
 
-public class SrmPrepareToPut implements CredentialAwareHandler
+public class SrmPrepareToPut
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmPrepareToPut.class);
@@ -48,7 +47,6 @@ public class SrmPrepareToPut implements CredentialAwareHandler
     private final SrmPrepareToPutRequest request;
     private SrmPrepareToPutResponse response;
     private final SRMUser user;
-    private RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
     private final SRM srm;
@@ -65,12 +63,6 @@ public class SrmPrepareToPut implements CredentialAwareHandler
         this.configuration = checkNotNull(srm.getConfiguration());
         this.clientHost = clientHost;
         this.srm = checkNotNull(srm);
-    }
-
-    @Override
-    public void setCredential(RequestCredential credential)
-    {
-        this.credential = checkNotNull(credential);
     }
 
     public SrmPrepareToPutResponse getResponse()
@@ -151,7 +143,6 @@ public class SrmPrepareToPut implements CredentialAwareHandler
         PutRequest r =
                 new PutRequest(
                         user,
-                        credential.getId(),
                         surls,
                         sizes,
                         wantPermanent,

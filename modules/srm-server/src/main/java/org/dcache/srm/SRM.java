@@ -660,8 +660,7 @@ public class SRM {
                 uris[i] = new URI(surls[i]);
             }
             GetRequest r =
-                    new GetRequest(user, credential.getId(),
-                            uris, protocols,
+                    new GetRequest(user, uris, protocols,
                             configuration.getGetLifetime(),
                             configuration.getGetRetryTimeout(),
                             null,
@@ -878,9 +877,7 @@ public class SRM {
                 return createFailedRequestStatus(errorsb.toString());
             }
             // create a new put request
-            PutRequest r = new PutRequest(user,
-                    credential.getId(),
-                    dests_urls, sizes,
+            PutRequest r = new PutRequest(user, dests_urls, sizes,
                     wantPerm, protocols, configuration.getPutLifetime(),
                     configuration.getPutRetryTimeout(),
                     clientHost,

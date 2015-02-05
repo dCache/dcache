@@ -49,7 +49,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     "NUMOFRETR ,"+
     "LASTSTATETRANSITIONTIME,"+ // 10
      //Database Request Storage
-    "CREDENTIALID , " +
     "RETRYDELTATIME , "+
     "SHOULDUPDATERETRYDELTATIME ,"+
     "DESCRIPTION ,"+
@@ -64,7 +63,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     "ACCESSLATENCY ) " +
     "VALUES (?,?,?,?,?,?,?,?,?,?,?," +//Job
                 "?,?,?,?,?,?,?," +//Request
-                "?,?,?,?)";
+                "?,?,?)";
 
 
     @Override
@@ -91,7 +90,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                   rsr.getNumberOfRetries(),
                                   rsr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
-                                  rsr.getCredentialId(),
                                   rsr.getRetryDeltaTime(),
                                   rsr.isShould_updateretryDeltaTime()?0:1,
                                   rsr.getDescription(),
@@ -107,8 +105,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
     }
 
     private static final String UPDATE_REQUEST_SQL =
-            UPDATE_PREFIX + ", CREDENTIALID=?," +
-                " RETRYDELTATIME=?," +
+            UPDATE_PREFIX + ", RETRYDELTATIME=?," +
                 " SHOULDUPDATERETRYDELTATIME=?," +
                 " DESCRIPTION=?," +
                 " CLIENTHOST=?," +
@@ -145,8 +142,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                   rsr.getNumberOfRetries(),
                                   rsr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  rsr.getCredentialId(), // 10
-                                  rsr.getRetryDeltaTime(),
+                                  rsr.getRetryDeltaTime(), // 10
                                   rsr.isShould_updateretryDeltaTime()?0:1,
                                   rsr.getDescription(),
                                   rsr.getClient_host(),
@@ -229,7 +225,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
             NUMOFRETR,
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
-                CREDENTIALID,
                 SIZEINBYTES,
                 RESERVATIONLIFETIME,
                 SPACETOKEN,

@@ -112,7 +112,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     protected final String[] protocols;
 
     public GetRequest(SRMUser user,
-                      Long requestCredentialId,
                       URI[] surls,
                       String[] protocols,
                       long lifetime,
@@ -120,18 +119,12 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                       String description,
                       String client_host)
     {
-        super(user,
-                requestCredentialId,
-                max_update_period,
-                lifetime,
-                description,
-                client_host);
+        super(user, max_update_period, lifetime, description, client_host);
         this.protocols = Arrays.copyOf(protocols, protocols.length);
 
         List<GetFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
         for(URI surl : surls) {
-            GetFileRequest request = new GetFileRequest(getId(),
-                    requestCredentialId, surl, lifetime);
+            GetFileRequest request = new GetFileRequest(getId(), surl, lifetime);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -153,7 +146,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long credentialId,
     GetFileRequest[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
@@ -174,7 +166,6 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         numberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
-        credentialId,
         fileRequests,
         retryDeltaTime,
         should_updateretryDeltaTime,

@@ -110,14 +110,12 @@ public abstract class Request extends Job {
     private final SRMUser user;
 
     public Request(@Nonnull SRMUser user,
-    Long requestCredentalId,
     long max_update_period,
     long lifetime,
     @Nullable String description,
     String client_host
         ) {
         super(lifetime);
-        this.credentialId = requestCredentalId;
         this.max_update_period = max_update_period;
         this.description = description;
         this.client_host = client_host;
@@ -142,7 +140,6 @@ public abstract class Request extends Job {
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long credentialId,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
@@ -159,7 +156,6 @@ public abstract class Request extends Job {
         numberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray);
-        this.credentialId = credentialId;
         this.retryDeltaTime = retryDeltaTime;
         this.should_updateretryDeltaTime = should_updateretryDeltaTime;
         this.description = description;
@@ -174,16 +170,7 @@ public abstract class Request extends Job {
 
     /** general srm server configuration settings */
     private transient Configuration configuration;
-
-
-
-
-    private final Long credentialId;
-
-
-
     protected int cyclicUpdateCounter;
-
     protected long max_update_period = 10*60*60;
 
 
@@ -209,22 +196,6 @@ public abstract class Request extends Job {
      * need this to comply with the spec
      */
     private TStatusCode statusCode;
-
-    public RequestCredential getCredential() throws DataAccessException {
-        if(credentialId==null) {
-            return null;
-        }
-        return RequestCredential.getRequestCredential(credentialId);
-    }
-
-
-    /**
-     * Getter for property credentialId.
-     * @return Value of property credentialId.
-     */
-    public final Long getCredentialId() {
-        return credentialId;
-    }
 
     public abstract String getMethod();
 

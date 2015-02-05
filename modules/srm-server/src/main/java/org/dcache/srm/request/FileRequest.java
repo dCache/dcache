@@ -120,7 +120,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     //request which contains this fileRequest (which is different from request number)
     protected final long requestId;
-    protected final Long credentialId;
 
     //pointer to underlying storage
     private transient AbstractStorageElement storage;
@@ -140,11 +139,9 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
    /** Creates new FileRequest */
     protected FileRequest(long requestId,
-                          Long requestCredentalId,
                           long lifetime)
     {
         super(lifetime);
-        this.credentialId = requestCredentalId;
         this.requestId = requestId;
         logger.debug("created");
     }
@@ -165,7 +162,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     long requestId,
-    Long  requestCredentalId,
     String statusCodeString) {
         super(id,
         nextJobId,
@@ -176,7 +172,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         numberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray);
-        this.credentialId = requestCredentalId;
         this.requestId = requestId;
         this.statusCode = statusCodeString==null
                 ?null
@@ -199,18 +194,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
             configuration = SRM.getSRM().getConfiguration();
         }
         return configuration;
-    }
-
-    public RequestCredential getCredential() throws DataAccessException {
-         return RequestCredential.getRequestCredential(credentialId);
-    }
-
-   /**
-    * Getter for property credentialId.
-    * @return Value of property credentialId.
-    */
-    public Long getCredentialId() {
-        return credentialId;
     }
 
     public abstract RequestFileStatus getRequestFileStatus() ;

@@ -120,7 +120,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     private TOverwriteMode overwriteMode;
 
     public PutRequest(SRMUser user,
-        Long requestCredentialId,
         URI[] surls,
         Long[] sizes,
         boolean[] wantPermanent,
@@ -134,12 +133,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         @Nullable String description)
     {
 
-        super(user,
-                requestCredentialId,
-                max_update_period,
-                lifetime,
-                description,
-                client_host);
+        super(user, max_update_period, lifetime, description, client_host);
         this.protocols = Arrays.copyOf(protocols, protocols.length);
 
         int len = surls.length;
@@ -149,9 +143,8 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         }
         List<PutFileRequest> requests = Lists.newArrayListWithCapacity(len);
         for(int i = 0; i < len; ++i) {
-            PutFileRequest request = new PutFileRequest(getId(),
-                    requestCredentialId, surls[i], sizes[i], lifetime,
-                    spaceToken, retentionPolicy, accessLatency);
+            PutFileRequest request = new PutFileRequest(getId(), surls[i],
+                    sizes[i], lifetime, spaceToken, retentionPolicy, accessLatency);
             requests.add(request);
         }
         setFileRequests(requests);
@@ -170,7 +163,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long credentialId,
     PutFileRequest[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
@@ -191,7 +183,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         numberOfRetries,
         lastStateTransitionTime,
         jobHistoryArray,
-        credentialId,
         fileRequests,
         retryDeltaTime,
         should_updateretryDeltaTime,

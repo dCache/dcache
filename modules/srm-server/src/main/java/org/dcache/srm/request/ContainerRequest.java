@@ -145,14 +145,12 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      *   srm configuration
      */
     public ContainerRequest(SRMUser user,
-                            Long requestCredentalId,
                             long max_update_period,
                             long lifetime,
                             @Nullable String description,
                             String client_host)
     {
          super(user ,
-         requestCredentalId,
          max_update_period,
          lifetime,
          description,
@@ -180,7 +178,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    Long credentialId,
     R[] fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
@@ -199,7 +196,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      numberOfRetries,
      lastStateTransitionTime,
      jobHistoryArray,
-     credentialId,
      retryDeltaTime,
      should_updateretryDeltaTime,
      description,
@@ -667,9 +663,12 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             long now = System.currentTimeMillis();
             sb.append("   Submitted: ").append(relativeTimestamp(getCreationTime(), now)).append('\n');
             sb.append("   Expires: ").append(relativeTimestamp(getCreationTime() + getLifetime(), now)).append('\n');
-            RequestCredential credential = getCredential();
-            if (credential != null) {
-                sb.append("   Credential: ").append(credential.getCredentialName()).append('\n');
+            if (this instanceof DelegatedCredentialAware) {
+                Long id = ((DelegatedCredentialAware)this).getCredentialId();
+                RequestCredential credential = RequestCredential.getRequestCredential(id);
+                if (credential != null) {
+                    sb.append("   Credential: ").append(credential.getCredentialName()).append('\n');
+                }
             }
             sb.append("   History:\n");
             sb.append(getHistory("   "));

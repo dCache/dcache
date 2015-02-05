@@ -112,9 +112,10 @@ import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
-public final class CopyFileRequest extends FileRequest<CopyRequest>
+public final class CopyFileRequest extends FileRequest<CopyRequest> implements DelegatedCredentialAware
 {
     private static final Logger LOG = LoggerFactory.getLogger(CopyFileRequest.class);
 
@@ -136,6 +137,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
     // storage of the space reservation related info
     private final String spaceReservationId;
     private final ImmutableMap<String,String> extraInfo;
+    private final Long credentialId;
 
     public CopyFileRequest(long requestId,
                            Long requestCredentalId,
@@ -145,12 +147,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                            long lifetime,
                            ImmutableMap<String,String> extraInfo)
     {
-        super(requestId, requestCredentalId, lifetime);
+        super(requestId, lifetime);
         LOG.debug("CopyFileRequest");
         this.sourceSurl = sourceSurl;
         this.destinationSurl = destinationSurl;
         this.spaceReservationId = spaceToken;
         this.extraInfo = extraInfo;
+        this.credentialId = requestCredentalId;
         LOG.debug("constructor from={} to={}", sourceSurl, destinationSurl);
     }
 
@@ -191,7 +194,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
         super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
               scheduelerId, schedulerTimeStamp, numberOfRetries,
               lastStateTransitionTime, jobHistoryArray,
-              requestId, requestCredentalId, statusCodeString);
+              requestId, statusCodeString);
         this.sourceSurl = URI.create(sourceSurl);
         this.destinationSurl = URI.create(destinationSurl);
         if (sourceTurl != null && !sourceTurl.equalsIgnoreCase("null")) {
@@ -213,6 +216,13 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
         this.spaceReservationId = spaceReservationId;
         this.transferId = transferId;
         this.extraInfo = extraInfo;
+        this.credentialId = requestCredentalId;
+    }
+
+    @Override
+    public Long getCredentialId()
+    {
+        return credentialId;
     }
 
     public void done()
@@ -497,7 +507,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             throw new SRMException(error);
         }
         LOG.debug("calling scriptCopy({},{})", from, to);
-        RequestCredential credential = getCredential();
+        RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         scriptCopy(new GlobusURL(from.toString()),
                    new GlobusURL(to.toString()),
                    credential.getDelegatedCredential());
@@ -558,7 +568,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             SRMException, NonFatalJobFailure
     {
         LOG.debug("copying from remote to local");
-        RequestCredential credential = getCredential();
+        RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         if (getDestinationFileId() == null) {
             setState(State.ASYNCWAIT, "Doing name space lookup.");
             LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
@@ -650,7 +660,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
     {
         if (getTransferId() == null) {
             LOG.debug("copying using storage.putToRemoteTURL");
-            RequestCredential credential = getCredential();
+            RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
             setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
             setState(State.RUNNINGWITHOUTTHREAD, "Transferring file.");

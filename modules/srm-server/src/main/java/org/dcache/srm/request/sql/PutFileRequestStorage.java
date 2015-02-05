@@ -39,7 +39,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         "LASTSTATETRANSITIONTIME=? ";
 
 
-    public PreparedStatement getStatement(Connection connection,
+    private PreparedStatement getStatement(Connection connection,
                                           String query,
                                           Job job) throws SQLException {
         PutFileRequest request = (PutFileRequest)job;
@@ -57,7 +57,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
                                                       request.getNumberOfRetries(),
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
-                                                      request.getCredentialId(),
                                                       request.getStatusCodeString(),
                                                       request.getSurlString(),
                                                       request.getTurlString(),
@@ -73,7 +72,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
 
     private static final String UPDATE_REQUEST_SQL =
             UPDATE_PREFIX + ", REQUESTID=?, "+
-            "CREDENTIALID=?, "+
             "STATUSCODE=?, "+
             "SURL=?, "+
             "TURL=? ,"+
@@ -107,7 +105,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
             "LASTSTATETRANSITIONTIME,"+ // 10
             //DATABASE FILE REQUEST STORAGE
             "REQUESTID , " +
-            "CREDENTIALID , "+
             "STATUSCODE , "+
             "SURL ,"+
             "TURL ,"+
@@ -117,7 +114,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
             "SIZE ,"+
             "RETENTIONPOLICY ," +
             "ACCESSLATENCY )"+
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -142,7 +139,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
                                                       request.getNumberOfRetries(),
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
-                                                      request.getCredentialId(),
                                                       request.getStatusCodeString(),
                                                       request.getSurlString(),
                                                       request.getTurlString(),
@@ -213,7 +209,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage<PutFileReq
         LASTSTATETRANSITIONTIME,
         jobHistoryArray,
         REQUESTID,
-        CREDENTIALID,
         STATUSCODE,
         SURL,
         TURL,

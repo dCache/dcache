@@ -10,7 +10,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
@@ -26,14 +25,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class SrmReserveSpace implements CredentialAwareHandler
+public class SrmReserveSpace
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmReserveSpace.class);
 
     private final SrmReserveSpaceRequest request;
     private final SRMUser user;
-    private RequestCredential credential;
     private final Configuration configuration;
     private final String client_host;
     private SrmReserveSpaceResponse response;
@@ -50,12 +48,6 @@ public class SrmReserveSpace implements CredentialAwareHandler
         this.configuration = checkNotNull(srm.getConfiguration());
         this.client_host = checkNotNull(clientHost);
         this.srm = checkNotNull(srm);
-    }
-
-    @Override
-    public void setCredential(RequestCredential credential)
-    {
-        this.credential = checkNotNull(credential);
     }
 
     public SrmReserveSpaceResponse getResponse()
@@ -94,7 +86,6 @@ public class SrmReserveSpace implements CredentialAwareHandler
         try {
             ReserveSpaceRequest reserveRequest =
                     new ReserveSpaceRequest(
-                            credential.getId(),
                             user,
                             requestLifetime,
                             size.longValue(),

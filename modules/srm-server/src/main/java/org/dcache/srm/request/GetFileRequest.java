@@ -125,13 +125,10 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
 
     /** Creates new FileRequest */
     public GetFileRequest(long requestId,
-                          Long  requestCredentalId,
                           URI surl,
                           long lifetime)
     {
-        super(requestId,
-            requestCredentalId,
-            lifetime);
+        super(requestId, lifetime);
         logger.debug("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         this.surl = surl;
     }
@@ -154,7 +151,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     long requestId,
-    Long  requestCredentalId,
     String statusCodeString,
     String SURL,
     String TURL,
@@ -173,7 +169,6 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         lastStateTransitionTime,
         jobHistoryArray,
         requestId,
-        requestCredentalId,
         statusCodeString);
 
         this.surl = URI.create(SURL);

@@ -15,7 +15,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.GetRequest;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
@@ -34,7 +33,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
 
-public class SrmPrepareToGet implements CredentialAwareHandler
+public class SrmPrepareToGet
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmPrepareToGet.class);
@@ -43,7 +42,6 @@ public class SrmPrepareToGet implements CredentialAwareHandler
     private final SrmPrepareToGetRequest request;
     private final SRMUser user;
     private final SRM srm;
-    private RequestCredential credential;
     private final Configuration configuration;
     private final String clientHost;
     private SrmPrepareToGetResponse response;
@@ -60,12 +58,6 @@ public class SrmPrepareToGet implements CredentialAwareHandler
         this.storage = checkNotNull(storage);
         this.configuration = checkNotNull(srm.getConfiguration());
         this.srm = checkNotNull(srm);
-    }
-
-    @Override
-    public void setCredential(RequestCredential credential)
-    {
-        this.credential = checkNotNull(credential);
     }
 
     public SrmPrepareToGetResponse getResponse()
@@ -111,7 +103,6 @@ public class SrmPrepareToGet implements CredentialAwareHandler
         GetRequest r =
                 new GetRequest(
                         user,
-                        credential.getId(),
                         surls,
                         protocols,
                         lifetime,

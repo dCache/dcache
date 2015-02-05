@@ -62,14 +62,13 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
         "NUMOFRETR ,"+
         "LASTSTATETRANSITIONTIME,"+ // 10
          //Database Request Storage
-        "CREDENTIALID , " +
         "RETRYDELTATIME , "+
         "SHOULDUPDATERETRYDELTATIME ,"+
         "DESCRIPTION ,"+
         "CLIENTHOST ,"+ // 15
         "STATUSCODE ,"+
         "USERID  ) " +
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection, Job job) throws SQLException {
@@ -87,7 +86,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getNumberOfRetries(),
                                   pr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
-                                  pr.getCredentialId(),
                                   pr.getRetryDeltaTime(),
                                   pr.isShould_updateretryDeltaTime()?0:1,
                                   pr.getDescription(),
@@ -98,8 +96,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
     }
 
     private static final String UPDATE_REQUEST_SQL =
-            UPDATE_PREFIX + ", CREDENTIALID=?," +
-                " RETRYDELTATIME=?," +
+            UPDATE_PREFIX + ", RETRYDELTATIME=?," +
                 " SHOULDUPDATERETRYDELTATIME=?," +
                 " DESCRIPTION=?," +
                 " CLIENTHOST=?," +
@@ -123,8 +120,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getNumberOfRetries(),
                                   pr.getLastStateTransitionTime(),
                                   //Database Request Storage
-                                  pr.getCredentialId(), // 10
-                                  pr.getRetryDeltaTime(),
+                                  pr.getRetryDeltaTime(), // 10
                                   pr.isShould_updateretryDeltaTime()?0:1,
                                   pr.getDescription(),
                                   pr.getClient_host(),
@@ -249,7 +245,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                 NUMOFRETR,
                 LASTSTATETRANSITIONTIME,
                 jobHistoryArray,
-                CREDENTIALID,
                 fileRequests,
                 RETRYDELTATIME,
                 SHOULDUPDATERETRYDELTATIME,

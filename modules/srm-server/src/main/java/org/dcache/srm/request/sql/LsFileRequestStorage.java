@@ -64,7 +64,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                          LASTSTATETRANSITIONTIME,
                                          jobHistoryArray,
                                          REQUESTID,
-                                         CREDENTIALID,
                                          STATUSCODE,
                                          SURL);
         }
@@ -82,7 +81,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         }
 
 
-        public PreparedStatement getStatement(Connection connection,
+        private PreparedStatement getStatement(Connection connection,
                                               String query,
                                               Job fr) throws SQLException {
                 LsFileRequest gfr = (LsFileRequest)fr;
@@ -98,7 +97,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getNumberOfRetries(),
                                           gfr.getLastStateTransitionTime(),
                                           gfr.getRequestId(),
-                                          gfr.getCredentialId(),
                                           gfr.getStatusCodeString(),
                                           gfr.getSurlString(),
                                           gfr.getId());
@@ -108,7 +106,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         private static final String UPDATE_REQUEST_SQL =
                 UPDATE_PREFIX +
                 ", REQUESTID=?" +
-                ", CREDENTIALID=?" +
                 ", STATUSCODE=?" +
                 ", SURL=? WHERE ID=?";
         @Override
@@ -134,10 +131,9 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
             "LASTSTATETRANSITIONTIME,"+
             //DATABASE FILE REQUEST STORAGE
             "REQUESTID , " +
-            "CREDENTIALID , "+
             "STATUSCODE,  "+
             "SURL )"+
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         @Override
         public PreparedStatement getCreateStatement(Connection connection,
@@ -160,7 +156,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getNumberOfRetries(),
                                           gfr.getLastStateTransitionTime(),
                                           gfr.getRequestId(),
-                                          gfr.getCredentialId(),
                                           gfr.getStatusCodeString(),
                                           gfr.getSurlString());
                 return stmt;

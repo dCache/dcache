@@ -36,7 +36,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
         "NUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";
 
-    public PreparedStatement getStatement(Connection connection,
+    private PreparedStatement getStatement(Connection connection,
                                           String query,
                                           Job job) throws SQLException {
         GetFileRequest request = (GetFileRequest)job;
@@ -52,7 +52,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                                       request.getNumberOfRetries(),
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
-                                                      request.getCredentialId(),
                                                       request.getStatusCodeString(),
                                                       request.getSurlString(),
                                                       request.getTurlString(),
@@ -65,7 +64,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
     private static final String UPDATE_REQUEST_SQL =
             UPDATE_PREFIX +
             ", REQUESTID=?, "+
-            "CREDENTIALID=?, "+
             "STATUSCODE=?, "+
             "SURL=?, "+
             "TURL=? ,"+
@@ -96,13 +94,12 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             "LASTSTATETRANSITIONTIME,"+ // 10
             //DATABASE FILE REQUEST STORAGE
             "REQUESTID , " +
-            "CREDENTIALID , "+
             "STATUSCODE , "+
             "SURL ,"+
             "TURL ,"+
             "FILEID ,"+
             "PINID ) "+
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -125,7 +122,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                                       request.getNumberOfRetries(),
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
-                                                      request.getCredentialId(),
                                                       request.getStatusCodeString(),
                                                       request.getSurlString(),
                                                       request.getTurlString(),
@@ -177,7 +173,6 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
             REQUESTID,
-            CREDENTIALID,
             STATUSCODE,
             SURL,
             TURL,

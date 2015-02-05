@@ -62,14 +62,9 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         return 0;
                 };
 
-        public LsFileRequest(long requestId,
-                             Long  requestCredentalId,
-                             URI surl,
-                             long lifetime)
+        public LsFileRequest(long requestId, URI surl, long lifetime)
         {
-                super(requestId,
-                      requestCredentalId,
-                      lifetime);
+                super(requestId, lifetime);
                 this.surl = surl;
         }
 
@@ -86,7 +81,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
                 long requestId,
-                Long  requestCredentalId,
                 String statusCodeString,
                 String SURL)
         {
@@ -102,7 +96,6 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                       lastStateTransitionTime,
                       jobHistoryArray,
                       requestId,
-                      requestCredentalId,
                       statusCodeString);
                 this.surl = URI.create(SURL);
         }

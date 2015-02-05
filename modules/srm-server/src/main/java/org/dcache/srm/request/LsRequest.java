@@ -41,7 +41,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         private String explanation;
 
         public LsRequest(SRMUser user,
-                         Long requestCredentialId,
                          URI[] surls,
                          long lifetime,
                          long max_update_period,
@@ -52,12 +51,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                          boolean longFormat,
                          int maxNumOfResults )
         {
-                super(user,
-                      requestCredentialId,
-                      max_update_period,
-                      lifetime,
-                      "Ls request",
-                      client_host);
+                super(user, max_update_period, lifetime, "Ls request", client_host);
                 this.count = count;
                 this.offset = offset;
                 this.numOfLevels = numOfLevels;
@@ -66,7 +60,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 List<LsFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
                 for (URI surl: surls) {
                     LsFileRequest fileRequest = new LsFileRequest(getId(),
-                            requestCredentialId, surl, lifetime);
+                            surl, lifetime);
                     requests.add(fileRequest);
                 }
                 setFileRequests(requests);
@@ -85,7 +79,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 int numberOfRetries,
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
-                Long credentialId,
                 LsFileRequest[] fileRequests,
                 int retryDeltaTime,
                 boolean should_updateretryDeltaTime,
@@ -109,7 +102,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                       numberOfRetries,
                       lastStateTransitionTime,
                       jobHistoryArray,
-                      credentialId,
                       fileRequests,
                       retryDeltaTime,
                       should_updateretryDeltaTime,
@@ -448,7 +440,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         @Override
         public void toString(StringBuilder sb, boolean longformat) {
                 sb.append(getMethod()).append("Request #").append(getId()).append(" created by ").append(getUser());
-                sb.append(" with credentials : ").append(getCredential()).append(" state = ").append(getState());
+                sb.append(" state = ").append(getState());
                 sb.append("\n SURL(s) : ");
                 for (LsFileRequest fr: getFileRequests()) {
                         sb.append(fr.getSurlString()).append(" ");

@@ -112,6 +112,10 @@ public class RequestCredential
 
     public static RequestCredential getRequestCredential(Long requestCredentialId) throws DataAccessException
     {
+        if (requestCredentialId == null) {
+            return null;
+        }
+
         synchronized (weakRequestCredentialStorage) {
             RequestCredential credential = weakRequestCredentialStorage.get(requestCredentialId);
             if (credential != null) {

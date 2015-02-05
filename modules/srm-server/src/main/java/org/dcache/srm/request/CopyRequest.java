@@ -135,11 +135,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author  timur
  */
 public final class CopyRequest extends ContainerRequest<CopyFileRequest>
-        implements PropertyChangeListener
+        implements PropertyChangeListener, DelegatedCredentialAware
 {
     private final static Logger LOG = LoggerFactory.getLogger(CopyRequest.class);
     private final static String SFN_STRING = "?SFN=";
 
+    private final Long credentialId;
     private boolean isSourceSrm;
     private boolean isDestinationSrm;
     private boolean isSourceGsiftp;
@@ -184,8 +185,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TOverwriteMode overwriteMode,
             ImmutableMap<String,String> extraInfo)
     {
-        super(user, requestCredentialId, maxUpdatePeriod,
-                lifetime, description, clientHost);
+        super(user, maxUpdatePeriod, lifetime, description, clientHost);
 
         ArrayList<String> allowedProtocols = new ArrayList<>(4);
 
@@ -225,6 +225,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = overwriteMode;
         this.targetSpaceToken = spaceToken;
+        this.credentialId = requestCredentialId;
         LOG.debug("Request.createCopyRequest : created new request succesfully");
     }
 
@@ -257,7 +258,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         super(id, nextJobId, creationTime, lifetime, stateId, errorMessage,
                 user, scheduelerId, schedulerTimeStamp, numberOfRetries,
                 lastStateTransitionTime, jobHistoryArray,
-                credentialId, fileRequest, retryDeltaTime, should_updateretryDeltaTime,
+                fileRequest, retryDeltaTime, should_updateretryDeltaTime,
                 description, client_host, statusCodeString);
 
         ArrayList<String> allowedProtocols = new ArrayList<>(4);
@@ -285,7 +286,14 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = null;
+        this.credentialId = credentialId;
      }
+
+    @Override
+    public Long getCredentialId()
+    {
+        return credentialId;
+    }
 
     public void proccessRequest() throws DataAccessException, IOException,
             SRMException, InterruptedException, IllegalStateTransition,
@@ -399,7 +407,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     {
         try {
             CopyFileRequest cfr = getFileRequests().get(fileIndex);
-            RequestCredential credential = getCredential();
+            RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             QOSTicket qosTicket = getQosPlugin().createTicket(
                     credential.getCredentialName(),
                     getStorage().getFileMetaData(getUser(), cfr.getSourceSurl(), false).size,
@@ -430,7 +438,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                   throw new FatalJobFailure("TargetFileStorageType " +
                           getStorageType() + " is not supported");
             }
-            RequestCredential credential = getCredential();
+            RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             LOG.debug("obtained credential={} id={}", credential, credential.getId());
 
             for (int i = 0; i < getFileCount(); ++i) {
@@ -589,7 +597,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
         // Now create an SRM client to fetch a TURL for each SURL.
 
-        RequestCredential credential = getCredential();
+        RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         if (getCallerSrmProtocol() == null || getCallerSrmProtocol() == SRMProtocol.V1_1) {
             try {
                 setRemoteTurlClient(new RemoteTurlPutterV1(getStorage(),
@@ -743,21 +751,22 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     {
         synchronized (remoteSurlToFileReqIds) {
             try {
+                RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
                 if (getRemoteSrmProtocol() == SRMProtocol.V1_1) {
-                    TurlGetterPutterV1.staticSetFileStatus(getCredential(), surl,
+                    TurlGetterPutterV1.staticSetFileStatus(credential, surl,
                             Integer.parseInt(requestId), Integer.parseInt(fileId),
                             "Done", getConfiguration().getCopyRetryTimeout(),
                             getConfiguration().getCopyMaxNumOfRetries(),
                             clientTransport);
                 } else if (getRemoteSrmProtocol() == SRMProtocol.V2_1) {
                     if (isSourceSrm() && !isSourceLocal()) {
-                       RemoteTurlGetterV2.staticReleaseFile(getCredential(),
+                       RemoteTurlGetterV2.staticReleaseFile(credential,
                                surl, requestId,
                                getConfiguration().getCopyRetryTimeout(),
                                getConfiguration().getCopyMaxNumOfRetries(),
                                clientTransport);
                     } else {
-                        RemoteTurlPutterV2.staticPutDone(getCredential(),
+                        RemoteTurlPutterV2.staticPutDone(credential,
                                surl, requestId,
                                getConfiguration().getCopyRetryTimeout(),
                                getConfiguration().getCopyMaxNumOfRetries(),

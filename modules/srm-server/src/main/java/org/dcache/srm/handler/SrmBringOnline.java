@@ -15,7 +15,6 @@ import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.BringOnlineRequest;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
@@ -33,7 +32,7 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
 import static java.util.Arrays.asList;
 
-public class SrmBringOnline implements CredentialAwareHandler
+public class SrmBringOnline
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(SrmBringOnline.class);
@@ -45,8 +44,6 @@ public class SrmBringOnline implements CredentialAwareHandler
     private final SRM srm;
     private final Configuration configuration;
     private final String clientHost;
-
-    private RequestCredential credential;
 
     public SrmBringOnline(SRMUser user,
                           SrmBringOnlineRequest request,
@@ -60,12 +57,6 @@ public class SrmBringOnline implements CredentialAwareHandler
         this.clientHost = clientHost;
         this.storage = checkNotNull(storage);
         this.configuration = srm.getConfiguration();
-    }
-
-    @Override
-    public void setCredential(RequestCredential credential)
-    {
-        this.credential = checkNotNull(credential);
     }
 
     public SrmBringOnlineResponse getResponse()
@@ -105,7 +96,6 @@ public class SrmBringOnline implements CredentialAwareHandler
 
         BringOnlineRequest r =
                 new BringOnlineRequest(user,
-                        credential.getId(),
                         surls,
                         protocols,
                         requestTime,

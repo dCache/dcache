@@ -125,14 +125,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     private transient FileMetaData fileMetaData;
 
     /** Creates new FileRequest */
-    public BringOnlineFileRequest(long requestId,
-                                  Long requestCredentalId,
-                                  URI surl,
-                                  long lifetime)
+    public BringOnlineFileRequest(long requestId, URI surl, long lifetime)
     {
-        super(requestId,
-                requestCredentalId,
-                lifetime);
+        super(requestId, lifetime);
         logger.debug("BringOnlineFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         this.surl = surl;
     }
@@ -155,7 +150,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
     long requestId,
-    Long  requestCredentalId,
     String statusCodeString,
     String SURL,
     String fileId,
@@ -173,7 +167,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         lastStateTransitionTime,
         jobHistoryArray,
         requestId,
-        requestCredentalId,
         statusCodeString);
 
         this.surl = URI.create(SURL);

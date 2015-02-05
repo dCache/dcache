@@ -88,7 +88,6 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
             REQUESTID,
-            CREDENTIALID,
             STATUSCODE,
             SURL,
             FILEID,
@@ -113,7 +112,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         return TABLE_NAME;
     }
 
-    public PreparedStatement getStatement(Connection connection,
+    private PreparedStatement getStatement(Connection connection,
                                           String query,
                                           Job fr) throws SQLException {
         BringOnlineFileRequest gfr = (BringOnlineFileRequest)fr;
@@ -129,19 +128,17 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                   gfr.getNumberOfRetries(),
                                   gfr.getLastStateTransitionTime(),
                                   gfr.getRequestId(),//10
-                                  gfr.getCredentialId(),
                                   gfr.getStatusCodeString(),
                                   gfr.getSurlString(),
                                   gfr.getFileId(),
-                                  gfr.getPinId(),//15
-                                  gfr.getId());
+                                  gfr.getPinId(),
+                                  gfr.getId());//15
         return stmt;
     }
 
     private static final String UPDATE_REQUEST_SQL =
             UPDATE_PREFIX +
             ", REQUESTID=?" +
-            ", CREDENTIALID=?" +
             ", STATUSCODE=?" +
             ", SURL=?" +
             ", FILEID=?" +
@@ -166,13 +163,12 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
         "LASTSTATETRANSITIONTIME,"+
          //DATABSE FILE REQUEST STORAGE
         "REQUESTID , " +
-        "CREDENTIALID , "+
         "STATUSCODE ,"+
          // BRING ONLINE FILE REQUEST
         "SURL ,"+ //15
         "FILEID ,"+
         "PINID  ) " +
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     @Override
     public PreparedStatement getCreateStatement(Connection connection,
@@ -193,11 +189,10 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                   gfr.getLastStateTransitionTime(),
                                  //DATABSE FILE REQUEST STORAGE
                                   gfr.getRequestId(),
-                                  gfr.getCredentialId(),
                                   gfr.getStatusCodeString(),
                                  // BRING ONLINE FILE REQUEST
-                                  gfr.getSurlString(),//15
-                                  gfr.getFileId(),
+                                  gfr.getSurlString(),
+                                  gfr.getFileId(),//15
                                   gfr.getPinId());
        return stmt;
     }

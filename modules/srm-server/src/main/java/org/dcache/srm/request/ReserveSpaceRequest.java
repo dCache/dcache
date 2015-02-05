@@ -128,7 +128,6 @@ public final class ReserveSpaceRequest extends Request {
 
     /** Creates new ReserveSpaceRequest */
     public ReserveSpaceRequest(
-            Long  requestCredentalId,
             SRMUser user,
             long lifetime,
             long sizeInBytes ,
@@ -137,12 +136,7 @@ public final class ReserveSpaceRequest extends Request {
             TAccessLatency accessLatency,
             String description,
             String clienthost) {
-              super(user,
-              requestCredentalId,
-              0,
-              lifetime,
-              description,
-              clienthost);
+        super(user, 0, lifetime, description, clienthost);
 
         this.sizeInBytes = sizeInBytes ;
         this.retentionPolicy = retentionPolicy;
@@ -168,7 +162,6 @@ public final class ReserveSpaceRequest extends Request {
             int numberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
-            Long  requestCredentalId,
             long sizeInBytes,
             long spaceReservationLifetime,
             String spaceToken,
@@ -189,7 +182,6 @@ public final class ReserveSpaceRequest extends Request {
                 numberOfRetries,
                 lastStateTransitionTime,
                 jobHistoryArray,//VVV
-                requestCredentalId,
                 0,
                 false,
                 description,
@@ -220,11 +212,6 @@ public final class ReserveSpaceRequest extends Request {
         sb.append(" by:").append(getUser().getDisplayName());
         if(longformat) {
             sb.append('\n');
-            RequestCredential credential = getCredential();
-            if (credential != null) {
-                sb.append("   Credential: \"").append(getCredential()).
-                append("\"\n");
-            }
             sb.append("   Description: ").append(getSpaceToken()).append('\n');
             long now = System.currentTimeMillis();
             sb.append("   Submitted: ").
