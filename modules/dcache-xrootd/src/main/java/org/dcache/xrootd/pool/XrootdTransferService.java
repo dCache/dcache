@@ -37,11 +37,10 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -91,7 +90,7 @@ import org.dcache.xrootd.plugins.ChannelHandlerFactory;
  *   end of the file is wrong.
  */
 public class XrootdTransferService
-        extends AbstractCellComponent implements MoverFactory, TransferService<XrootdMover>
+        implements MoverFactory, TransferService<XrootdMover>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);
@@ -108,6 +107,7 @@ public class XrootdTransferService
     private List<ChannelHandlerFactory> plugins;
 
     private XrootdPoolNettyServer server;
+    private CellStub doorStub;
 
     @Required
     public void setPostTransferService(
@@ -165,6 +165,12 @@ public class XrootdTransferService
     public void setMaxFrameSize(int maxFrameSize)
     {
         this.maxFrameSize = maxFrameSize;
+    }
+
+    @Required
+    public void setDoorStub(CellStub stub)
+    {
+        this.doorStub = stub;
     }
 
     public List<ChannelHandlerFactory> getPlugins()
@@ -243,7 +249,7 @@ public class XrootdTransferService
         CellPath cellpath = protocolInfo.getXrootdDoorCellPath();
         XrootdDoorAdressInfoMessage doorMsg =
                 new XrootdDoorAdressInfoMessage(protocolInfo.getXrootdFileHandle(), new InetSocketAddress(localIP, port));
-        sendMessage(new CellMessage(cellpath, doorMsg));
+        doorStub.notify(cellpath, doorMsg);
         LOGGER.debug("sending redirect {} to Xrootd-door {}", localIP, cellpath);
     }
 }

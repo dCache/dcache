@@ -42,11 +42,10 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import dmg.cells.nucleus.AbstractCellComponent;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
@@ -73,7 +72,7 @@ import org.dcache.util.TryCatchTemplate;
  * The netty server are started on demand and shared by all http transfers of
  * a pool. All transfers are handled on the same port.
  */
-public class HttpTransferService extends AbstractCellComponent implements MoverFactory, TransferService<HttpMover>
+public class HttpTransferService implements MoverFactory, TransferService<HttpMover>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransferService.class);
 
@@ -92,6 +91,7 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
     private TimeUnit clientIdleTimeoutUnit;
 
     private HttpPoolNettyServer server;
+    private CellStub doorStub;
 
     @Required
     public void setPostTransferService(
@@ -178,6 +178,12 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
         this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
     }
 
+    @Required
+    public void setDoorStub(CellStub stub)
+    {
+        this.doorStub = stub;
+    }
+
     @PostConstruct
     public synchronized void init()
     {
@@ -262,7 +268,8 @@ public class HttpTransferService extends AbstractCellComponent implements MoverF
         HttpDoorUrlInfoMessage httpDoorMessage =
                 new HttpDoorUrlInfoMessage(mover.getFileAttributes().getPnfsId().getId(), uri);
         httpDoorMessage.setId(protocolInfo.getSessionId());
-        sendMessage(new CellMessage(new CellPath(httpDoor), httpDoorMessage));
+
+        doorStub.notify(new CellPath(httpDoor), httpDoorMessage);
     }
 
     private URI getUri(HttpProtocolInfo protocolInfo, int port, UUID uuid)
