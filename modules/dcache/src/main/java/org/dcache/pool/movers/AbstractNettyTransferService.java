@@ -366,7 +366,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
                 public void run()
                 {
                     try (CDC ignored = _cdc.restore()) {
-                        if (_sync.timeout()) {
+                        if (_sync.onTimeout()) {
                             _completionHandler.failed(new TimeoutCacheException("No connection from client after " +
                                     TimeUnit.MILLISECONDS.toSeconds(connectTimeout) + " seconds. Giving up."), null);
                         }
@@ -380,17 +380,17 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         }
 
         void close() {
-            close(null);
+            try (CDC ignored = _cdc.restore()) {
+                if (_sync.onClose()) {
+                    _completionHandler.completed(null, null);
+                }
+            }
         }
 
         void close(Exception exception) {
             try (CDC ignored = _cdc.restore()) {
-                if (_sync.close(exception)) {
-                    if (exception != null) {
-                        _completionHandler.failed(exception, null);
-                    } else {
-                        _completionHandler.completed(null, null);
-                    }
+                if (_sync.onFailure()) {
+                    _completionHandler.failed(exception, null);
                 }
             }
         }
@@ -399,7 +399,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         public void cancel()
         {
             try (CDC ignored = _cdc.restore()) {
-                if (_sync.cancel()) {
+                if (_sync.onCancel()) {
                     _completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
                 }
             }
@@ -426,27 +426,32 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
                 return _channel;
             }
 
-            synchronized boolean close(Exception exception) {
+            synchronized boolean onClose() {
                 _open--;
-                return (exception != null || _open <= 0) && close();
+                return _open <= 0 && unregister();
             }
 
-            synchronized boolean cancel()
+            synchronized boolean onFailure() {
+                _open--;
+                return unregister();
+            }
+
+            synchronized boolean onCancel()
             {
-                return close();
+                return unregister();
             }
 
-            synchronized boolean timeout()
+            synchronized boolean onTimeout()
             {
-                return (_open == 0) && close();
+                return (_open == 0) && unregister();
             }
 
-            private boolean close()
+            private boolean unregister()
             {
                 if (!_isClosed) {
                     _isClosed = true;
                     _timeout.cancel(false);
-                    unregister(Entry.this);
+                    AbstractNettyTransferService.this.unregister(Entry.this);
                     return true;
                 }
                 return false;

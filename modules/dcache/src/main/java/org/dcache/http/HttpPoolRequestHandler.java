@@ -498,7 +498,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private void close(MoverChannel<HttpProtocolInfo> channel, Exception exception)
     {
-        _server.close(channel, exception);
+        if (exception == null) {
+            _server.close(channel);
+        } else {
+            _server.close(channel, exception);
+        }
         _files.remove(channel);
     }
 
