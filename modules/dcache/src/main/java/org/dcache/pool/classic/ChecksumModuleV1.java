@@ -98,13 +98,13 @@ public class ChecksumModuleV1
             pw.println("csm set policy -scrub=off");
         }
         pw.print("csm set policy");
-        pw.print(" -onread="); pw.print(hasPolicy(ON_READ) ? "on" : "off");
-        pw.print(" -onwrite="); pw.print(hasPolicy(ON_WRITE) ? "on" : "off");
-        pw.print(" -onflush="); pw.print(hasPolicy(ON_FLUSH) ? "on" : "off");
-        pw.print(" -onrestore="); pw.print(hasPolicy(ON_RESTORE) ? "on" : "off");
-        pw.print(" -ontransfer="); pw.print(hasPolicy(ON_TRANSFER) ? "on" : "off");
-        pw.print(" -enforcecrc="); pw.print(hasPolicy(ENFORCE_CRC) ? "on" : "off");
-        pw.print(" -getcrcfromhsm="); pw.print(hasPolicy(GET_CRC_FROM_HSM) ? "on" : "off");
+        pw.print(" -onread="); pw.print(getPolicy(ON_READ));
+        pw.print(" -onwrite="); pw.print(getPolicy(ON_WRITE));
+        pw.print(" -onflush="); pw.print(getPolicy(ON_FLUSH));
+        pw.print(" -onrestore="); pw.print(getPolicy(ON_RESTORE));
+        pw.print(" -ontransfer="); pw.print(getPolicy(ON_TRANSFER));
+        pw.print(" -enforcecrc="); pw.print(getPolicy(ENFORCE_CRC));
+        pw.print(" -getcrcfromhsm="); pw.print(getPolicy(GET_CRC_FROM_HSM));
         pw.println("");
     }
 
@@ -152,14 +152,14 @@ public class ChecksumModuleV1
         StringBuilder sb = new StringBuilder();
 
         sb.append(" Policies :\n").
-            append("        on read : ").append(hasPolicy(ON_READ)).append("\n").
-            append("       on write : ").append(hasPolicy(ON_WRITE)).append("\n").
-            append("       on flush : ").append(hasPolicy(ON_FLUSH)).append("\n").
-            append("     on restore : ").append(hasPolicy(ON_RESTORE)).append("\n").
-            append("    on transfer : ").append(hasPolicy(ON_TRANSFER)).append("\n").
-            append("    enforce crc : ").append(hasPolicy(ENFORCE_CRC)).append("\n").
-            append("  getcrcfromhsm : ").append(hasPolicy(GET_CRC_FROM_HSM)).append("\n").
-            append("          scrub : ").append(hasPolicy(SCRUB)).append("\n");
+            append("        on read : ").append(getPolicy(ON_READ)).append("\n").
+            append("       on write : ").append(getPolicy(ON_WRITE)).append("\n").
+            append("       on flush : ").append(getPolicy(ON_FLUSH)).append("\n").
+            append("     on restore : ").append(getPolicy(ON_RESTORE)).append("\n").
+            append("    on transfer : ").append(getPolicy(ON_TRANSFER)).append("\n").
+            append("    enforce crc : ").append(getPolicy(ENFORCE_CRC)).append("\n").
+            append("  getcrcfromhsm : ").append(getPolicy(GET_CRC_FROM_HSM)).append("\n").
+            append("          scrub : ").append(getPolicy(SCRUB)).append("\n");
         if (hasPolicy(SCRUB)) {
             if (Double.isInfinite(_throughputLimit)) {
                 sb.append("             limit  = off\n");
@@ -351,6 +351,11 @@ public class ChecksumModuleV1
                 return "New checksumtype : "+ _defaultChecksumType;
             }
         }
+    }
+
+    private synchronized String getPolicy(PolicyFlag flag)
+    {
+        return hasPolicy(flag) ? "on" : "off";
     }
 
     @Override
