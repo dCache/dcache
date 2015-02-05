@@ -82,7 +82,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     /**
      * The server in the context of which this handler is executed
      */
-    private final AbstractNettyTransferService<HttpProtocolInfo,?> _server;
+    private final AbstractNettyTransferService<HttpProtocolInfo> _server;
 
     private final int _chunkSize;
 
@@ -94,7 +94,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      */
     private MoverChannel<HttpProtocolInfo> _writeChannel;
 
-    public HttpPoolRequestHandler(AbstractNettyTransferService<HttpProtocolInfo,?> server, int chunkSize)
+    public HttpPoolRequestHandler(AbstractNettyTransferService<HttpProtocolInfo> server, int chunkSize)
     {
         _server = server;
         _chunkSize = chunkSize;

@@ -35,16 +35,13 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.CompletionHandler;
-import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
-import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
@@ -53,12 +50,9 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.movers.AbstractNettyTransferService;
-import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverChannel;
-import org.dcache.pool.movers.MoverFactory;
-import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.movers.NettyMover;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
 
@@ -74,9 +68,7 @@ import org.dcache.util.TryCatchTemplate;
  * The netty server are started on demand and shared by all http transfers of
  * a pool. All transfers are handled on the same port.
  */
-public class HttpTransferService
-        extends AbstractNettyTransferService<HttpProtocolInfo, HttpMover>
-        implements MoverFactory
+public class HttpTransferService extends AbstractNettyTransferService<HttpProtocolInfo>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransferService.class);
 
@@ -85,7 +77,6 @@ public class HttpTransferService
     private static final String QUERY_PARAM_ASSIGN = "=";
     private static final String PROTOCOL_HTTP = "http";
 
-    private ChecksumModule checksumModule;
     private long connectTimeout;
     private TimeUnit connectTimeoutUnit;
     private int chunkSize;
@@ -93,12 +84,6 @@ public class HttpTransferService
     public HttpTransferService()
     {
         super("http");
-    }
-
-    @Required
-    public void setChecksumModule(ChecksumModule checksumModule)
-    {
-        this.checksumModule = checksumModule;
     }
 
     public long getConnectTimeout()
@@ -135,24 +120,7 @@ public class HttpTransferService
     }
 
     @Override
-    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
-                                CellPath pathToDoor) throws CacheException
-    {
-        ChecksumFactory checksumFactory;
-        if (checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
-            try {
-                checksumFactory = checksumModule.getPreferredChecksumFactory(handle);
-            } catch (NoSuchAlgorithmException e) {
-                throw new CacheException("Failed to instantiate HTTP mover due to unsupported checksum type: " + e.getMessage(), e);
-            }
-        } else {
-            checksumFactory = null;
-        }
-        return new HttpMover(handle, message, pathToDoor, this, checksumFactory);
-    }
-
-    @Override
-    public Cancellable execute(final HttpMover mover, CompletionHandler<Void, Void> completionHandler) throws Exception
+    public Cancellable execute(final NettyMover<HttpProtocolInfo> mover, CompletionHandler<Void, Void> completionHandler) throws Exception
     {
         return new TryCatchTemplate<Void, Void>(completionHandler) {
             @Override
@@ -182,7 +150,7 @@ public class HttpTransferService
      * Send the network address of this mover to the door, along with the UUID
      * identifying it
      */
-    private void sendAddressToDoor(HttpMover mover, int port, UUID uuid)
+    private void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port, UUID uuid)
             throws SocketException, CacheException, NoRouteToCellException
     {
         HttpProtocolInfo protocolInfo = mover.getProtocolInfo();

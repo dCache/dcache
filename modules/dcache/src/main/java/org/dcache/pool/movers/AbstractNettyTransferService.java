@@ -35,6 +35,7 @@ import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.CompletionHandler;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -42,16 +43,22 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
+import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
+import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
@@ -64,8 +71,8 @@ import org.dcache.vehicles.FileAttributes;
  * on the mover closing the MoverChannel, thus as a side effect causing
  * the Netty channel to close.
  */
-public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M extends Mover<T>>
-    implements TransferService<M>
+public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
+    implements TransferService<NettyMover<P>>, MoverFactory
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(AbstractNettyTransferService.class);
@@ -92,7 +99,7 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
 
     private final ConcurrentMap<UUID, Entry> uuids =
             Maps.newConcurrentMap();
-    private final ConcurrentMap<MoverChannel<T>, Entry> channels =
+    private final ConcurrentMap<MoverChannel<P>, Entry> channels =
             Maps.newConcurrentMap();
 
     private String name;
@@ -100,6 +107,7 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
 
     private PostTransferService postTransferService;
     protected FaultListener faultListener;
+    protected ChecksumModule checksumModule;
 
     protected long clientIdleTimeout;
     protected TimeUnit clientIdleTimeoutUnit;
@@ -108,6 +116,12 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
     public AbstractNettyTransferService(String name)
     {
         this.name = name;
+    }
+
+    @Required
+    public void setChecksumModule(ChecksumModule checksumModule)
+    {
+        this.checksumModule = checksumModule;
     }
 
     @Required
@@ -255,8 +269,33 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
         return lastServerAddress;
     }
 
+    private ChecksumFactory getChecksumFactoryFor(ReplicaDescriptor handle) throws CacheException
+    {
+        if (checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
+            try {
+                return checksumModule.getPreferredChecksumFactory(handle);
+            } catch (NoSuchAlgorithmException e) {
+                throw new CacheException("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage(), e);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
+                                CellPath pathToDoor) throws CacheException
+    {
+        return new NettyMover<>(handle, message, pathToDoor, this, getChecksumFactoryFor(handle));
+    }
+
+    @Override
+    public void close(NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
+    {
+        postTransferService.execute(mover, completionHandler);
+    }
+
     public synchronized Cancellable register(
-            MoverChannel<T> channel, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
+            MoverChannel<P> channel, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
         throws IOException
     {
         Entry entry = new Entry(channel, uuid, connectTimeout, completionHandler);
@@ -286,19 +325,13 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
         return (entry == null) ? null : entry.getFileAttributes();
     }
 
-    public MoverChannel<T> open(UUID uuid, boolean exclusive)
+    public MoverChannel<P> open(UUID uuid, boolean exclusive)
     {
         Entry entry = uuids.get(uuid);
         return (entry == null) ? null : entry.open(exclusive);
     }
 
-    @Override
-    public void close(M mover, CompletionHandler<Void, Void> completionHandler)
-    {
-        postTransferService.execute(mover, completionHandler);
-    }
-
-    public void close(MoverChannel<T> channel)
+    public void close(MoverChannel<P> channel)
     {
         Entry entry = channels.get(channel);
         if (entry != null) {
@@ -306,7 +339,7 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
         }
     }
 
-    public void close(MoverChannel<T> channel, Exception exception)
+    public void close(MoverChannel<P> channel, Exception exception)
     {
         Entry entry = channels.get(channel);
         if (entry != null) {
@@ -317,13 +350,13 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
     private class Entry implements Cancellable
     {
         private final Sync _sync = new Sync();
-        private final MoverChannel<T> _channel;
+        private final MoverChannel<P> _channel;
         private final UUID _uuid;
         private final Future<?> _timeout;
         private final CompletionHandler<Void, Void> _completionHandler;
         private final CDC _cdc = new CDC();
 
-        Entry(MoverChannel<T> channel, UUID uuid, final long connectTimeout, CompletionHandler<Void, Void> completionHandler) {
+        Entry(MoverChannel<P> channel, UUID uuid, final long connectTimeout, CompletionHandler<Void, Void> completionHandler) {
             _channel = channel;
             _uuid = uuid;
             _completionHandler = completionHandler;
@@ -342,7 +375,7 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
             }, connectTimeout, TimeUnit.MILLISECONDS);
         }
 
-        MoverChannel<T> open(boolean exclusive) {
+        MoverChannel<P> open(boolean exclusive) {
             return _sync.open(exclusive);
         }
 
@@ -383,7 +416,7 @@ public abstract class AbstractNettyTransferService<T extends ProtocolInfo, M ext
             private boolean _isExclusive;
             private boolean _isClosed;
 
-            synchronized MoverChannel<T> open(boolean exclusive) {
+            synchronized MoverChannel<P> open(boolean exclusive) {
                 if (_isExclusive || _isClosed) {
                     return null;
                 }

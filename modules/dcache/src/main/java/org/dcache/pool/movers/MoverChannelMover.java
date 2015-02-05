@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * A Mover implementation based on the MoverChannel class.
  */
-public abstract class MoverChannelMover<P extends ProtocolInfo, M extends Mover<P>> extends AbstractMover<P, M>
+public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverChannelMover<P, M>> extends AbstractMover<P, M>
 {
     private volatile MoverChannel<P> _wrappedChannel;
     private final MoverChannel.AllocatorMode _allocatorMode;

@@ -50,11 +50,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * Abstract base class for movers.
  */
-public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> implements Mover<P>
+public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMover<P, M>> implements Mover<P>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractMover.class);
-
-    private final TypeToken<P> type = new TypeToken<P>(getClass()){};
 
     protected final long _id;
     protected final String _queue;
@@ -65,7 +63,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     protected final Subject _subject;
     protected final ReplicaDescriptor _handle;
     protected final IoMode _ioMode;
-    protected final TransferService<Mover<P>> _transferService;
+    protected final TransferService<M> _transferService;
     protected final FsPath _path;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
@@ -73,7 +71,9 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     public AbstractMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
                          TransferService<M> transferService)
     {
-        checkArgument(type.isAssignableFrom(message.getProtocolInfo().getClass()));
+        TypeToken<M> type = new TypeToken<M>(getClass()) {};
+        checkArgument(type.isAssignableFrom(getClass()));
+
         _queue = message.getIoQueueName();
         _protocolInfo = (P) message.getProtocolInfo();
         _initiator = message.getInitiator();
@@ -84,7 +84,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
         _path = message.getPnfsPath();
         _pathToDoor = pathToDoor;
         _handle = handle;
-        _transferService = (TransferService<Mover<P>>) transferService;
+        _transferService = transferService;
     }
 
     @Override
@@ -174,21 +174,21 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
         return _subject;
     }
 
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public void close(CompletionHandler<Void, Void> completionHandler)
     {
-        _transferService.close(this, completionHandler);
+        _transferService.close((M) this, completionHandler);
     }
 
     @Override
     public Cancellable execute(CompletionHandler<Void, Void> completionHandler)
     {
         return new TryCatchTemplate<Void, Void>(completionHandler) {
-            @Override
+            @Override @SuppressWarnings("unchecked")
             public Cancellable executeWithCancellable()
                     throws Exception
             {
-                return _transferService.execute(AbstractMover.this, this);
+                return _transferService.execute((M) AbstractMover.this, this);
             }
 
             @Override

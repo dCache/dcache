@@ -76,7 +76,7 @@ public class HttpPoolRequestHandlerTests
     private static final int SOME_CHUNK_SIZE = 4096;
 
     private HttpPoolRequestHandler _handler;
-    private AbstractNettyTransferService<HttpProtocolInfo,?> _server;
+    private AbstractNettyTransferService<HttpProtocolInfo> _server;
     private Map<String,FileInfo> _files;
     private List<Object> _additionalWrites;
     private HttpResponse _response;

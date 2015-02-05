@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.vehicles.PoolIoFileMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -46,10 +45,8 @@ import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.movers.AbstractNettyTransferService;
-import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverChannel;
-import org.dcache.pool.movers.MoverFactory;
-import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.movers.NettyMover;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
@@ -93,9 +90,7 @@ import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
  * * At least for vector read, the behaviour when reading beyond the
  *   end of the file is wrong.
  */
-public class XrootdTransferService
-        extends AbstractNettyTransferService<XrootdProtocolInfo, XrootdMover>
-        implements MoverFactory
+public class XrootdTransferService extends AbstractNettyTransferService<XrootdProtocolInfo>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);
@@ -136,14 +131,7 @@ public class XrootdTransferService
     }
 
     @Override
-    public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
-                             CellPath pathToDoor) throws CacheException
-    {
-        return new XrootdMover(handle, message, pathToDoor, this);
-    }
-
-    @Override
-    public Cancellable execute(final XrootdMover mover, CompletionHandler<Void, Void> completionHandler)
+    public Cancellable execute(final NettyMover<XrootdProtocolInfo> mover, CompletionHandler<Void, Void> completionHandler)
             throws IOException, CacheException, NoRouteToCellException
     {
         return new TryCatchTemplate<Void, Void>(completionHandler) {
@@ -174,7 +162,7 @@ public class XrootdTransferService
     /**
      * Sends our address to the door. Copied from the old xrootd mover.
      */
-    private void sendAddressToDoor(XrootdMover mover, int port)
+    private void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
             throws SocketException, CacheException, NoRouteToCellException
     {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();

@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.http;
+package org.dcache.pool.movers;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -26,31 +26,33 @@ import java.util.Set;
 
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.vehicles.HttpProtocolInfo;
 import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.pool.movers.ChecksumChannel;
-import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.movers.MoverChannel;
-import org.dcache.pool.movers.MoverChannelMover;
+import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class HttpMover extends MoverChannelMover<HttpProtocolInfo, HttpMover>
+/**
+ * A mover that served by AbstractNettyTransferServices.
+ */
+public class NettyMover<P extends ProtocolInfo> extends MoverChannelMover<P, NettyMover<P>>
 {
     private final ChecksumFactory checksumFactory;
     private ChecksumChannel checksumChannel;
 
-    public HttpMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                     HttpTransferService httpTransferService,
-                     ChecksumFactory checksumFactory)
+    public NettyMover(ReplicaDescriptor handle,
+                      PoolIoFileMessage message,
+                      CellPath pathToDoor,
+                      TransferService<NettyMover<P>> transferService,
+                      ChecksumFactory checksumFactory)
     {
-        super(handle, message, pathToDoor, httpTransferService, MoverChannel.AllocatorMode.HARD);
+        super(handle, message, pathToDoor, transferService, MoverChannel.AllocatorMode.HARD);
         this.checksumFactory = checksumFactory;
     }
 
@@ -58,8 +60,8 @@ public class HttpMover extends MoverChannelMover<HttpProtocolInfo, HttpMover>
     public Set<Checksum> getActualChecksums()
     {
         return (checksumChannel == null)
-                ? Collections.<Checksum>emptySet()
-                : Optional.fromNullable(checksumChannel.getChecksum()).asSet();
+               ? Collections.<Checksum>emptySet()
+               : Optional.fromNullable(checksumChannel.getChecksum()).asSet();
     }
 
     @Override
