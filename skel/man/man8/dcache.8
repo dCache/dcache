@@ -278,15 +278,10 @@ documentation is written as HTML to the output directory specified.
 .SH ALARM COMMANDS
 
 .TP
-.B alarm send [-h=HOST] [-d=DOMAIN] [-s=SERVICE] [-t=TYPE] MESSAGE
+.B alarm send [-d=DOMAIN] [-s=SERVICE] [-t=TYPE] MESSAGE
 Command for sending an arbitrary alarm message to the alarm server.  The
 remote server address is taken from the local values for dcache.log.server.host
 and dcache.log.server.port.
-
-.TP.TP
-.B HOST
-The host issuing the alarm; if not given, it defaults to the hostname
-of the node where the command is issued.
 
 .TP.TP
 .B DOMAIN

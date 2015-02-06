@@ -60,11 +60,11 @@ documents or software obtained from this server.
 package org.dcache.alarms.logback;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.net.SMTPAppender;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.FileAppender;
 import ch.qos.logback.core.rolling.FixedWindowRollingPolicy;
 import ch.qos.logback.core.rolling.RollingFileAppender;
@@ -72,9 +72,14 @@ import ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy;
 import ch.qos.logback.core.spi.CyclicBufferTracker;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
@@ -84,12 +89,57 @@ import org.dcache.alarms.dao.LogEntryDAO;
 /**
  * For server-side interception of log messages. Will store them to the LogEntry
  * store used by the dCache installation. If the storage plugin is file-based
- * (e.g., XML), the dCache alarm web display service must be running on a
- * shared file-system with the logging server.
+ * (e.g., XML), the dCache alarm web display service must be running over a
+ * file-system shared with the logging server.
  *
  * @author arossi
  */
-public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
+public class LogEntryHandler {
+    private static final Logger LOGGER
+        = LoggerFactory.getLogger(LogEntryHandler.class);
+
+    /**
+     * Future runnable worker task.
+     */
+    class LogEntryTask implements Runnable {
+        private final ILoggingEvent event;
+
+        LogEntryTask(ILoggingEvent event) {
+            this.event = event;
+        }
+
+        public void run() {
+            LogEntry entry = converter.createEntryFromEvent(event);
+
+            if (entry.isAlarm()) {
+                int priority = priorityMap.getPriority(entry.getType()).ordinal();
+
+                /*
+                 * The history log parses out all alerts above a certain
+                 * priority. This is just a convenience for sifting messages
+                 * from the normal domain log and recording them them using the
+                 * more specific alert pattern. We exclude events from the alarm
+                 * service itself.
+                 */
+                if (historyEnabled && priority >= historyThreshold.ordinal()) {
+                    historyAppender.doAppend(event);
+                }
+
+                /*
+                 * Remote messages which are indeed alarms/alerts can be sent as
+                 * email.
+                 */
+                if (emailEnabled && priority >= emailThreshold.ordinal()) {
+                    emailAppender.doAppend(event);
+                }
+
+                store.put(entry);
+            } else if (!storeOnlyAlarms) {
+                store.put(entry);
+            }
+        }
+    }
+
     /**
      *  LogEntry converter -- binds logback to the DAO.
      */
@@ -102,7 +152,7 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     private AlarmPriorityMap priorityMap;
 
     /**
-     *  Root level.  Appender accepts all events with level equal to
+     *  Root level.  Handler accepts all events with level equal to
      *  or above this value.
      */
     private Level rootLevel;
@@ -111,6 +161,11 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
      * The main configuration for storing alarms through DAO.
      */
     private LogEntryDAO store;
+
+    /**
+     * Exclude non-alarm errors and warnings from being stored.
+     */
+    private boolean storeOnlyAlarms = false;
 
     /**
      * Optional email appender configuration.
@@ -142,6 +197,20 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     private String historyMaxFileSize;
     private int historyMinIndex;
     private int historyMaxIndex;
+
+    /**
+     * Concurrent handling.
+     */
+    private ExecutorService executor;
+
+    /**
+     * State.
+     */
+    private final AtomicBoolean started = new AtomicBoolean(false);
+
+    public LogEntryHandler(int workers) {
+        executor = Executors.newFixedThreadPool(workers);
+    }
 
     public void setConverter(LoggingEventConverter converter) {
         this.converter = converter;
@@ -246,84 +315,57 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
         this.store = store;
     }
 
-    @Override
+    public void setStoreOnlyAlarms(boolean storeOnlyAlarms) {
+        this.storeOnlyAlarms = storeOnlyAlarms;
+    }
+
     public void start() {
-        try {
-            if (emailEnabled) {
-                startEmailAppender();
-            }
+        if (!started.getAndSet(true)) {
+            try {
+                if (emailEnabled) {
+                    startEmailAppender();
+                }
 
-            if (historyEnabled) {
-                startHistoryAppender();
+                if (historyEnabled) {
+                    startHistoryAppender();
+                }
+            } catch (IOException t) {
+                throw new RuntimeException(t);
             }
-
-            super.start();
-        } catch ( IOException t) {
-            throw new RuntimeException(t);
         }
     }
 
-    @Override
-    public synchronized void stop()
-    {
-        super.stop();
+    public void stop() {
+        if (started.getAndSet(false)) {
+            if (emailAppender != null) {
+                emailAppender.stop();
+                emailAppender = null;
+            }
 
-        if (emailAppender != null) {
-            emailAppender.stop();
-            emailAppender = null;
-        }
+            if (historyAppender != null) {
+                historyAppender.stop();
+                historyAppender = null;
+            }
 
-        if (historyAppender != null) {
-            historyAppender.stop();
-            historyAppender = null;
+            executor.shutdown();
         }
     }
 
-    @Override
-    protected void append(ILoggingEvent eventObject) {
+
+    public void handle(ILoggingEvent eventObject) {
+        LOGGER.debug("calling handler with {}.", eventObject.getFormattedMessage());
         if (eventObject.getLevel().levelInt < rootLevel.levelInt) {
             return;
         }
-
-        LogEntry entry = converter.createEntryFromEvent(eventObject);
-
-        if (entry == LoggingEventConverter.ALARM_SERVICE_EVENT) {
-            return;
-        }
-
-        if (entry.isAlarm()) {
-            int priority = priorityMap.getPriority(entry.getType()).ordinal();
-
-            /*
-             * The history log parses out all alerts above a certain
-             * priority. This is just a convenience for sifting messages
-             * from the normal domain log and recording them them using the
-             * more specific alert pattern. We exclude events from the alarm
-             * service itself.
-             */
-            if (historyEnabled && priority >= historyThreshold.ordinal()) {
-                historyAppender.doAppend(eventObject);
-            }
-
-            /*
-             * Remote messages which are indeed alarms/alerts can be sent as
-             * email.
-             */
-            if (emailEnabled && priority >= emailThreshold.ordinal()) {
-                emailAppender.doAppend(eventObject);
-            }
-        }
-
-        /*
-         * Now store the remote event.
-         */
-        store.put(entry);
+        executor.execute(new LogEntryTask(eventObject));
     }
 
     private void startEmailAppender() {
+        LoggerContext context
+            = (LoggerContext) LoggerFactory.getILoggerFactory();
         PatternLayout layout = new PatternLayout();
         layout.setPattern(emailEncoding);
-        layout.setContext(getContext());
+        layout.setContext(context);
         layout.start();
 
         CyclicBufferTracker bufferTracker = new CyclicBufferTracker();
@@ -348,9 +390,11 @@ public final class LogEntryAppender extends AppenderBase<ILoggingEvent> {
     }
 
     private void startHistoryAppender() throws FileNotFoundException {
+        LoggerContext context
+            = (LoggerContext) LoggerFactory.getILoggerFactory();
         PatternLayoutEncoder encoder = new PatternLayoutEncoder();
         encoder.setPattern(historyEncoding);
-        encoder.setContext(getContext());
+        encoder.setContext(context);
         encoder.start();
 
         RollingFileAppender<ILoggingEvent> historyAppender = new RollingFileAppender<>();

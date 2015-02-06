@@ -59,16 +59,16 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
+import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.AppenderBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Marker;
-
-import java.io.File;
-import java.net.MalformedURLException;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.dao.LogEntry;
@@ -90,8 +90,20 @@ import static org.junit.Assert.assertThat;
  * @author arossi
  */
 public class LogEntryAppenderTest {
-
     private static Logger logger;
+
+    static class Receiver extends AppenderBase<ILoggingEvent> {
+        LogEntryHandler handler;
+
+        Receiver(LogEntryHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        protected void append(ILoggingEvent eventObject) {
+            handler.handle(eventObject);
+        }
+    }
 
     private static JDomAlarmDefinition givenAlarmDefinition(
                     String regex, Boolean error, Integer depth, String type,
@@ -123,25 +135,37 @@ public class LogEntryAppenderTest {
     @Before
     public void setup() throws Exception {
         clearLast();
-        LogEntryAppender appender = new LogEntryAppender();
-        appender.setContext(new LoggerContext());
-        appender.setEmailEnabled(false);
-        appender.setHistoryEnabled(false);
-        appender.setRootLevel("ERROR");
+        /*
+         * Bypass the executor and run synchronously in this test.
+         */
+        LogEntryHandler handler = new LogEntryHandler(1) {
+            public void handle(ILoggingEvent eventObject) {
+                if (eventObject.getLevel().levelInt < Level.ERROR.levelInt) {
+                    return;
+                }
+                new LogEntryTask(eventObject).run();
+            }
+        };
+        handler.setEmailEnabled(false);
+        handler.setHistoryEnabled(false);
+        handler.setRootLevel("ERROR");
         XmlBackedAlarmDefinitionsMap dmap = new XmlBackedAlarmDefinitionsMap();
         addDefinitions(dmap);
         LoggingEventConverter converter = new LoggingEventConverter();
         converter.setDefinitions(dmap);
-        converter.setServiceName("alarms");
         FileBackedAlarmPriorityMap pmap = new FileBackedAlarmPriorityMap();
         pmap.setDefinitions(dmap);
         pmap.setPropertiesPath("dummy.properties");
         pmap.initialize();
-        appender.setPriorityMap(pmap);
-        appender.setConverter(converter);
-        appender.setStore(store);
+        handler.setPriorityMap(pmap);
+        handler.setConverter(converter);
+        handler.setStore(store);
+        Receiver appender = new Receiver(handler);
+        LoggerContext context
+            = (LoggerContext) LoggerFactory.getILoggerFactory();
+        appender.setContext(context);
         appender.start();
-        logger = new LoggerContext().getLogger(LogEntryAppenderTest.class);
+        logger = context.getLogger(LogEntryAppenderTest.class);
         logger.addAppender(appender);
         logger.setLevel(Level.ERROR);
     }

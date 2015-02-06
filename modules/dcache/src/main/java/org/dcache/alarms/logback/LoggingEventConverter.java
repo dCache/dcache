@@ -71,6 +71,8 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.alarms.Alarm;
 import org.dcache.alarms.AlarmDefinition;
 import org.dcache.alarms.AlarmDefinitionsMap;
@@ -103,8 +105,6 @@ final class LoggingEventConverter {
             return type;
         }
     }
-
-    static final LogEntry ALARM_SERVICE_EVENT = new LogEntry();
 
     private static String getKeyFromMarker(Marker marker) {
         Marker keyMarker = AlarmMarkerFactory.getKeySubmarker(marker);
@@ -166,14 +166,9 @@ final class LoggingEventConverter {
     }
 
     private AlarmDefinitionsMap definitionsMapping;
-    private String serviceName;
 
     public void setDefinitions(AlarmDefinitionsMap definitionsMapping) {
         this.definitionsMapping = definitionsMapping;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
     }
 
     /**
@@ -185,27 +180,19 @@ final class LoggingEventConverter {
     LogEntry createEntryFromEvent(ILoggingEvent event) {
         Map<String, String> mdc = event.getMDCPropertyMap();
 
-        String service = mdc.get(Alarm.SERVICE_TAG);
-
-        if (service == null) {
-            service = mdc.get(RemoteMDCFilter.CELL);
-        }
-
-        if (serviceName.equals(service)) {
-            /*
-             * exclude internal events
-             */
-            return ALARM_SERVICE_EVENT;
-        }
-
         String host = mdc.get(Alarm.HOST_TAG);
         if (host == null) {
             host = NetworkUtils.getCanonicalHostName();
         }
 
+        String service = mdc.get(Alarm.SERVICE_TAG);
+        if (service == null) {
+            service = mdc.get(CDC.MDC_CELL);
+        }
+
         String domain = mdc.get(Alarm.DOMAIN_TAG);
         if (domain == null) {
-            domain = mdc.get(RemoteMDCFilter.DOMAIN);
+            domain = mdc.get(CDC.MDC_DOMAIN);
         }
 
         LogEntry entry = new LogEntry();

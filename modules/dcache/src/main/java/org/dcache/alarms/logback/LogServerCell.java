@@ -59,39 +59,29 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.logback;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.spi.FilterReply;
+import org.slf4j.MDC;
 
-import java.util.Map;
-
-import org.dcache.alarms.Alarm;
-import org.dcache.util.NetworkUtils;
+import org.dcache.cells.UniversalSpringCell;
 
 /**
- * This filter can be added to the appender responsible for sending remote
- * logging messages. It will accept all events but adds "host", "domain" and
- * "service" to the MDC. These need to be kept distinct from cell.cell and
- * cell.domain because the latter will get clobbered on the receiving end if the
- * messages are processed by a remote server running inside dCache as a cell.<br>
- * <br>
- * Note that there is no event level requirement here.
+ * This wrapper adds an MDC property to the root thread
+ * in order to identify logging statements emanating from this
+ * cell.  This is necessary in order to avoid cycles caused
+ * by resending the event to the cell via the socket appender.
+ * Hence a corresponding filter which blocks events with
+ * this property should be added to that appender in the logback.xml.
  *
  * @author arossi
  */
-public final class RemoteMDCFilter extends Filter<ILoggingEvent> {
-    /*
-     * These are defined elsewhere for use in the MDC.
-     */
-    public static final String CELL = "cells.cell";
-    public static final String DOMAIN = "cells.domain";
+public final class LogServerCell extends UniversalSpringCell {
+    public LogServerCell(String cellName, String arguments) {
+        super(cellName, arguments);
+    }
 
     @Override
-    public FilterReply decide(ILoggingEvent event) {
-        Map<String, String> mdc = event.getMDCPropertyMap();
-        mdc.put(Alarm.HOST_TAG, NetworkUtils.getCanonicalHostName());
-        mdc.put(Alarm.SERVICE_TAG, mdc.get(CELL));
-        mdc.put(Alarm.DOMAIN_TAG, mdc.get(DOMAIN));
-        return FilterReply.NEUTRAL;
+    protected void executeInit() throws Exception {
+        MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL,
+                AlarmsInternalFilter.ALARMS_INTERNAL);
+        super.executeInit();
     }
 }

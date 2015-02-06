@@ -66,7 +66,7 @@ package org.dcache.alarms;
  */
 public interface Alarm {
     /**
-     * Required additional MDC properties when sending alarms.
+     * MDC properties added during processing of the event by the server.
      */
     String HOST_TAG = "host";
     String DOMAIN_TAG = "domain";

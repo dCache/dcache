@@ -69,8 +69,10 @@ import org.slf4j.MDC;
 
 import java.net.URL;
 
-import org.dcache.alarms.Alarm;
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.alarms.PredefinedAlarm;
+import org.dcache.alarms.logback.AlarmsInternalFilter;
 import org.dcache.util.Args;
 
 /**
@@ -109,12 +111,6 @@ import org.dcache.util.Args;
  *             the type will be 'GENERIC'.</td>
  *     </tr>
  *     <tr>
- *         <td>h [source host]</td>
- *         <td>NO</td>
- *         <td>host where alarm originates; defaults to canonical
- *             name of local host.</td>
- *     </tr>
- *     <tr>
  *         <td>d [source domain]</td>
  *         <td>NO</td>
  *         <td>domain where alarm originates; defaults to &lt;na&gt;.</td>
@@ -144,7 +140,11 @@ public class SendAlarm {
 
     public static String processRequest(String[] args, org.slf4j.Logger logger)
                     throws Exception {
-        return sendAlarm(new AlarmArguments(new Args(args)), logger);
+        try {
+            return sendAlarm(new AlarmArguments(new Args(args)), logger);
+        } catch (IllegalArgumentException e) {
+            return e.getMessage();
+        }
     }
 
     private static Logger configureLogger(String host, String port)
@@ -169,14 +169,29 @@ public class SendAlarm {
     private static String sendAlarm(AlarmArguments alarmArgs,
                                     org.slf4j.Logger logger)
                    throws JoranException {
-        MDC.put(Alarm.HOST_TAG, alarmArgs.sourceHost);
-        MDC.put(Alarm.DOMAIN_TAG, alarmArgs.sourceDomain);
-        MDC.put(Alarm.SERVICE_TAG, alarmArgs.sourceService);
         if (logger == null) {
             logger = configureLogger(alarmArgs.destinationHost,
                                      alarmArgs.destinationPort);
         }
+
+         /*
+         * This is called from either the shell or the admin CLI.
+         * In the former case, there is no cell or domain; in
+         * the latter, these are overridden by the flagged values.
+         */
+        MDC.put(CDC.MDC_DOMAIN, alarmArgs.sourceDomain);
+        MDC.put(CDC.MDC_CELL, alarmArgs.sourceService);
+
+        String internal = MDC.get(AlarmsInternalFilter.ALARMS_INTERNAL);
+        MDC.remove(AlarmsInternalFilter.ALARMS_INTERNAL);
+
         logger.error(alarmArgs.marker, alarmArgs.message);
+
+        if (internal != null) {
+            MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL,
+                            AlarmsInternalFilter.ALARMS_INTERNAL);
+        }
+
         return "sending alarm to "
             + alarmArgs.destinationHost + ":" + alarmArgs.destinationPort;
     }

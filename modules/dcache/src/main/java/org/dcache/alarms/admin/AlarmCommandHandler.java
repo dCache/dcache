@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.admin;
 
+import org.slf4j.MDC;
+
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +72,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -508,11 +511,6 @@ public final class AlarmCommandHandler implements CellCommandListener {
                                 + " that, the alarm will be marked 'GENERIC'.")
         String type;
 
-        @Option(name = "h",
-                usage = "Optional name of host of origin of the alarm "
-                                + "(defaults to local host name).")
-        String host;
-
         @Option(name = "d",
                 usage = "Optional name of domain of origin of the alarm "
                                 + "(defaults to '<na>').")
@@ -535,17 +533,15 @@ public final class AlarmCommandHandler implements CellCommandListener {
                 arglist.add("-" + AlarmArguments.TYPE_OPT + "=\"" + type + "\"");
             }
 
-            if (Strings.emptyToNull(host) != null) {
-                arglist.add("-" + AlarmArguments.SRC_HOST_OPT + "=\"" + host + "\"");
+            if (Strings.emptyToNull(domain) == null) {
+                domain = MDC.get(CDC.MDC_DOMAIN);
             }
+            arglist.add("-" + AlarmArguments.SRC_DOMAIN_OPT + "=\"" + domain + "\"");
 
-            if (Strings.emptyToNull(domain) != null) {
-                arglist.add("-" + AlarmArguments.SRC_DOMAIN_OPT + "=\"" + domain + "\"");
+            if (Strings.emptyToNull(service) == null) {
+                service = MDC.get(CDC.MDC_CELL);
             }
-
-            if (Strings.emptyToNull(service) != null) {
-                arglist.add("-" + AlarmArguments.SRC_SERVICE_OPT + "=\"" + service + "\"");
-            }
+            arglist.add("-" + AlarmArguments.SRC_SERVICE_OPT + "=\"" + service + "\"");
 
             arglist.add("-" + AlarmArguments.DST_HOST_OPT + "=\"" + serverHost + "\"");
             arglist.add("-" + AlarmArguments.DST_PORT_OPT + "=\"" + serverPort + "\"");

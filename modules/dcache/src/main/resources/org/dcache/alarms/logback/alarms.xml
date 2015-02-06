@@ -30,11 +30,14 @@
     </bean>
 
     <bean id="logEventConverter" class="org.dcache.alarms.logback.LoggingEventConverter">
-        <property name="serviceName" value="${alarms.cell.name}"/>
         <property name="definitions" ref="definitionsMap"/>
     </bean>
 
-    <bean id="logEntryAppender" class="org.dcache.alarms.logback.LogEntryAppender">
+    <bean id="logEntryHandler" class="org.dcache.alarms.logback.LogEntryHandler"
+        init-method="start" destroy-method="stop">
+        <constructor-arg>
+            <value>${alarms.limits.workers}</value>
+        </constructor-arg>
         <property name="rootLevel" value="${alarms.log.root-level}"/>
         <property name="priorityMap" ref="priorityMap"/>
         <property name="converter" ref="logEventConverter"/>
@@ -60,12 +63,13 @@
         <property name="historyMaxFileSize" value="${alarms.history.max-file-size}"/>
         <property name="historyMaxIndex" value="${alarms.history.max-index}"/>
         <property name="historyMinIndex" value="${alarms.history.min-index}"/>
+        <property name="storeOnlyAlarms" value="${alarms.db.alarms-only}"/>
     </bean>
 
     <bean id="server" class="org.dcache.alarms.logback.LogEntryServer"
         init-method="start" destroy-method="stop">
         <property name="port" value="${alarms.net.port}"/>
-        <property name="appender" ref="logEntryAppender"/>
+        <property name="handler" ref="logEntryHandler"/>
     </bean>
 
     <bean id="admin" class="org.dcache.alarms.admin.AlarmCommandHandler">

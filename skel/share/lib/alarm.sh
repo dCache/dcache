@@ -9,7 +9,7 @@ list_alarms()
 ##
 #   Invokes the main method of SendAlarm with the given arguments
 #
-send_alarm() # $@ = [-s=<source-uri>] [-l=<log level>] [-t=<alarm subtype>] message
+send_alarm() # $@ = [-d=DOMAIN] [-s=SERVICE] [-t=TYPE] message
 {
     local host
     local port

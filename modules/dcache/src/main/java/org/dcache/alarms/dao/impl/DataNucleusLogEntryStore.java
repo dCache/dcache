@@ -221,10 +221,6 @@ public final class DataNucleusLogEntryStore implements LogEntryDAO, Runnable {
         if (cleanerThread != null ) {
             cleanerThread.interrupt();
         }
-
-        if (pmf != null) {
-            pmf.close();
-        }
     }
 
     private boolean isRunning() {
