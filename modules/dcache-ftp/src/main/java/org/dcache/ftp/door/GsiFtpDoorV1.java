@@ -181,7 +181,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     public void addUserAttribute(NetLoggerBuilder log)
     {
         try {
-            log.add("dn", Subjects.getDn(_subject));
+            log.add("user.dn", Subjects.getDn(_subject));
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Unable add user {} to access log: {}",
                     Subjects.getDisplayName(_subject), e.getMessage());

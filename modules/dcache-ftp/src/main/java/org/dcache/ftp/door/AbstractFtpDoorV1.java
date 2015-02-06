@@ -1715,6 +1715,7 @@ public abstract class AbstractFtpDoorV1
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
             log.add("host.remote", _remoteSocketAddress);
             addUserAttribute(log);
+            log.add("user.mapped", _subject);
             log.add("session", CDC.getSession());
             log.addInQuotes("command", commandLine);
             log.addInQuotes("reply", response);

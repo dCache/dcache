@@ -79,7 +79,12 @@ public interface SRMUser
     boolean isReadOnly();
 
     /**
-     * Provide a terse description of this user.
+     * Provide a terse description of this user, such as a username.
      */
     String getDisplayName();
+
+    /**
+     * Provide a longer description of this user.
+     */
+    CharSequence getDescriptiveName();
 }

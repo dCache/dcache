@@ -5,8 +5,14 @@ import com.google.common.escape.CharEscaperBuilder;
 import com.google.common.escape.Escaper;
 import org.slf4j.Logger;
 
+import javax.security.auth.Subject;
+
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.UidPrincipal;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -40,6 +46,62 @@ public class NetLoggerBuilder
     public enum Level
     {
         ERROR, WARN, INFO, DEBUG, TRACE
+    }
+
+    private static StringBuilder appendSubject(StringBuilder sb, Subject subject)
+    {
+        if (subject == null) {
+            return sb.append("unknown");
+        }
+
+        Long uid = null;
+        Long gid = null;
+        boolean hasSecondaryGid = false;
+        for (Principal principal : subject.getPrincipals()) {
+            if (principal instanceof UidPrincipal) {
+                if (((UidPrincipal) principal).getUid() == 0) {
+                    return sb.append("root");
+                }
+                uid = ((UidPrincipal) principal).getUid();
+            } else if (principal instanceof GidPrincipal) {
+                if (((GidPrincipal) principal).isPrimaryGroup()) {
+                    gid = ((GidPrincipal) principal).getGid();
+                } else {
+                    hasSecondaryGid = true;
+                }
+            }
+        }
+        if (uid == null) {
+            return sb.append("nobody");
+        }
+        sb.append(uid).append(':');
+        if (gid != null) {
+            sb.append(gid);
+        }
+        if (hasSecondaryGid) {
+            boolean firstLoop = true;
+            for (Principal principal : subject.getPrincipals()) {
+                if (!firstLoop || gid != null) {
+                    sb.append(',');
+                }
+                firstLoop = false;
+                if (principal instanceof GidPrincipal) {
+                    if (!((GidPrincipal) principal).isPrimaryGroup()) {
+                        sb.append(((GidPrincipal) principal).getGid());
+                    }
+                }
+            }
+        }
+        return sb;
+    }
+
+    public static CharSequence describeSubject(Subject subject)
+    {
+        if (subject == null) {
+            return null;
+        } else {
+            return appendSubject(new StringBuilder(), subject);
+        }
     }
 
     private String getTimestamp()
@@ -90,6 +152,22 @@ public class NetLoggerBuilder
         }
         return this;
     }
+
+    /**
+     * Add a key-value pair that describes an identity.  The value is either
+     * a single word ({@literal unknown}, {@literal root} or {@literal nobody})
+     * or could be the uid and a list of gid(s) of this user
+     * ({@literal <uid>:<gid>[,<gid>...]}).
+     */
+    public NetLoggerBuilder add(String name, Subject subject)
+    {
+        if (!omitNullValues || subject != null) {
+            s.append(' ').append(name).append('=');
+            appendSubject(s, subject);
+        }
+        return this;
+    }
+
 
     /**
      * Add a key-value pair.  If the value is not null then value's string value

@@ -11,15 +11,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 
 import dmg.cells.nucleus.CDC;
 
-import org.dcache.auth.Subjects;
 import org.dcache.util.NetLoggerBuilder;
 
 import static org.dcache.webdav.DcacheResourceFactory.TRANSACTION_ATTRIBUTE;
@@ -59,17 +56,7 @@ public class LoggingFilter implements Filter
         log.add("user-agent", request.getUserAgentHeader());
 
         log.add("user.dn", getCertificateName());
-        Subject subject = getSubject();
-        if (subject != null) {
-            if (Subjects.isNobody(subject)) {
-                log.add("user", "NOBODY");
-            } else if (Subjects.isRoot(subject)) {
-                log.add("user", "ROOT");
-            } else {
-                log.add("user.uid", Subjects.getUid(subject));
-                log.add("user.gid", Arrays.toString(Subjects.getGids(subject)));
-            }
-        }
+        log.add("user.mapped", getSubject());
         log.add("session", CDC.getSession());
         log.add("transaction", getTransaction());
         log.toLogger(ACCESS_LOGGER);

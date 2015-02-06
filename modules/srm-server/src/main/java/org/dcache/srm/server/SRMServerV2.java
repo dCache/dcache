@@ -258,25 +258,39 @@ public class SRMServerV2 implements ISRM  {
             for (RequestLogger logger : loggers) {
                 logger.request(requestName, request);
             }
-            Object response = dispatch(requestName, request);
+            SRMUser user = null;
+            Object response;
+            try {
+                user = srmAuth.getRequestUser();
+                response = dispatch(user, requestName, request);
+            } catch (SRMInternalErrorException e) {
+                LOGGER.error(e.getMessage());
+                response = getFailedResponse(requestName, e.getStatusCode(),
+                        "Authentication failed (server log contains additional information).");
+            } catch (SRMAuthorizationException e) {
+                LOGGER.info(e.getMessage());
+                response = getFailedResponse(requestName, e.getStatusCode(), "Permission denied.");
+            } catch (SRMAuthenticationException e) {
+                LOGGER.warn(e.getMessage());
+                response = getFailedResponse(requestName, e.getStatusCode(),
+                         "Authentication failed (server log contains additional information).");
+            }
             long time = System.currentTimeMillis() - startTimeStamp;
             for (RequestLogger logger : loggers) {
-                logger.response(requestName, request, response, time);
+                logger.response(requestName, request, response, user, time);
             }
             return response;
         }
     }
 
-    private Object dispatch(String requestName, Object request) throws RemoteException
+    private Object dispatch(SRMUser user, String requestName, Object request) throws RemoteException
     {
         Class<?> requestClass = request.getClass();
         String capitalizedRequestName =
                 Character.toUpperCase(requestName.charAt(0))+
                 requestName.substring(1);
         try {
-            SRMUser user;
             try {
-                user = srmAuth.getRequestUser();
                 if (user.isReadOnly()) {
                     switch (requestName) {
                     case "srmRmdir":
@@ -289,17 +303,9 @@ public class SRMServerV2 implements ISRM  {
                                                                     user.getDisplayName() + " is read-only.");
                     }
                 }
-            } catch (SRMInternalErrorException e) {
-                LOGGER.error(e.getMessage());
-                return getFailedResponse(capitalizedRequestName, e.getStatusCode(),
-                                         "Authentication failed (server log contains additional information).");
             } catch (SRMAuthorizationException e) {
                 LOGGER.info(e.getMessage());
                 return getFailedResponse(capitalizedRequestName, e.getStatusCode(), "Permission denied.");
-            } catch (SRMAuthenticationException e) {
-                LOGGER.warn(e.getMessage());
-                return getFailedResponse(capitalizedRequestName, e.getStatusCode(),
-                                         "Authentication failed (server log contains additional information).");
             }
             LOGGER.debug("About to call {} handler", requestName);
             Constructor<?> handlerConstructor;
@@ -356,9 +362,13 @@ public class SRMServerV2 implements ISRM  {
         }
     }
 
-    private Object getFailedResponse(String capitalizedRequestName, TStatusCode statusCode, String errorMessage)
+    private Object getFailedResponse(String requestName, TStatusCode statusCode, String errorMessage)
             throws RemoteException
     {
+        char first = requestName.charAt(0);
+        String capitalizedRequestName =  Character.isUpperCase(first) ? requestName :
+                (Character.toUpperCase(first) + requestName.substring(1));
+
         try {
             Class<?> responseClass = Class.forName("org.dcache.srm.v2_2."+capitalizedRequestName+"Response");
             Constructor<?> responseConstructor = responseClass.getConstructor();
@@ -703,7 +713,7 @@ public class SRMServerV2 implements ISRM  {
     private interface RequestLogger
     {
         void request(String requestName, Object request);
-        void response(String requestName, Object request, Object response, long time);
+        void response(String requestName, Object request, Object response, SRMUser user, long time);
     }
 
     public class AccessLogger implements RequestLogger
@@ -716,7 +726,7 @@ public class SRMServerV2 implements ISRM  {
         }
 
         @Override
-        public void response(String requestName, Object request, Object response, long time)
+        public void response(String requestName, Object request, Object response, SRMUser user, long time)
         {
             if (ACCESS_LOGGER.isErrorEnabled()) {
                 TReturnStatus status = getReturnStatus(response);
@@ -728,8 +738,11 @@ public class SRMServerV2 implements ISRM  {
                 NetLoggerBuilder.Level level = isFailure ? NetLoggerBuilder.Level.ERROR : NetLoggerBuilder.Level.INFO;
                 NetLoggerBuilder log = new NetLoggerBuilder(level, "org.dcache.srm.request").omitNullValues();
                 log.add("host.remote", Axis.getRemoteAddress());
-                log.add("dn", Axis.getDN().orElse("-"));
                 log.add("request.method", requestName);
+                log.add("user.dn", Axis.getDN().orElse("-"));
+                if (user != null) {
+                    log.add("user.mapped", user.getDescriptiveName());
+                }
                 String requestToken = getRequestToken(request, response);
                 if (requestToken != null) {
                     log.add("request.token", requestToken);
@@ -757,7 +770,7 @@ public class SRMServerV2 implements ISRM  {
         }
 
         @Override
-        public void response(String requestName, Object request, Object response, long time)
+        public void response(String requestName, Object request, Object response, SRMUser user, long time)
         {
             TReturnStatus status = getReturnStatus(response);
             if (status != null && FAILURES.contains(status.getStatusCode())) {
@@ -774,7 +787,7 @@ public class SRMServerV2 implements ISRM  {
         }
 
         @Override
-        public void response(String requestName, Object request, Object response, long time)
+        public void response(String requestName, Object request, Object response, SRMUser user, long time)
         {
             srmServerGauges.update(request.getClass(), time);
         }

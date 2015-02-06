@@ -24,6 +24,7 @@ import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.Subjects;
 import org.dcache.srm.SRMUser;
+import org.dcache.util.NetLoggerBuilder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -86,5 +87,11 @@ public class DcacheUser implements SRMUser
     public String getDisplayName()
     {
         return Subjects.getDisplayName(subject);
+    }
+
+    @Override
+    public CharSequence getDescriptiveName()
+    {
+        return NetLoggerBuilder.describeSubject(subject);
     }
 }

@@ -84,8 +84,8 @@ public class AccessLogHandler extends SimpleChannelHandler
             Subject subject = loginReply.getSubject();
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.xrootd.login").omitNullValues();
             log.add("session", CDC.getSession());
-            log.add("dn", Subjects.getDn(subject));
-            log.add("user", getUser(subject));
+            log.add("user.dn", Subjects.getDn(subject));
+            log.add("user.mapped", subject);
             log.toLogger(logger);
         }
         super.handleUpstream(ctx, e);
@@ -359,45 +359,6 @@ public class AccessLogHandler extends SimpleChannelHandler
         default:
             return String.valueOf(request.getRequestId());
         }
-    }
-
-    private static CharSequence getUser(Subject subject)
-    {
-        Long uid = null;
-        Long gid = null;
-        boolean hasSecondaryGid = false;
-        for (Principal principal : subject.getPrincipals()) {
-            if (principal instanceof UidPrincipal) {
-                if (((UidPrincipal) principal).getUid() == 0) {
-                    return "root";
-                }
-                uid = ((UidPrincipal) principal).getUid();
-            } else if (principal instanceof GidPrincipal) {
-                if (((GidPrincipal) principal).isPrimaryGroup()) {
-                    gid = ((GidPrincipal) principal).getGid();
-                } else {
-                    hasSecondaryGid = true;
-                }
-            }
-        }
-        if (uid == null) {
-            return "nobody";
-        }
-        StringBuilder s = new StringBuilder();
-        s.append(uid).append(':');
-        if (gid != null) {
-            s.append(gid).append(',');
-        }
-        if (hasSecondaryGid) {
-            for (Principal principal : subject.getPrincipals()) {
-                if (principal instanceof GidPrincipal) {
-                    if (!((GidPrincipal) principal).isPrimaryGroup()) {
-                        s.append(((GidPrincipal) principal).getGid()).append(',');
-                    }
-                }
-            }
-        }
-        return s.subSequence(0, s.length() - 1);
     }
 
     private static String getAddress(InetSocketAddress addr)

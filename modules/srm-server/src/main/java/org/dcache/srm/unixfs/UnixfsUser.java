@@ -67,6 +67,11 @@ public class UnixfsUser implements SRMUser
       return Integer.toString(uid);
   }
 
+  @Override
+  public CharSequence getDescriptiveName() {
+      return uid + ":" + gid;
+  }
+
   /** */
   public boolean equals(Object o) {
     if( ! (o instanceof UnixfsUser)) {
