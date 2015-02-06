@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages.poollist;
 
 import org.apache.wicket.authroles.authorization.strategies.role.metadata.MetaDataRoleAuthorizationStrategy;
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
 import org.apache.wicket.markup.html.form.DropDownChoice;
@@ -74,6 +75,11 @@ public class PoolList extends SortableBasePage {
         }
         submitFormCalled = false;
         return _poolBeans;
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("space", response);
     }
 
     private DropDownChoice<SelectOption> createPoolModeDropDown(String id) {
