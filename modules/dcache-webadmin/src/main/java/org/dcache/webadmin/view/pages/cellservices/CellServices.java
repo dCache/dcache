@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.pages.cellservices;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
@@ -30,6 +31,11 @@ public class CellServices extends SortableBasePage {
                 new PropertyModel(this, "cellBeans"));
         form.add(cellServicesPanel);
         add(form);
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("cells", response);
     }
 
     private CellsService getCellsService() {
