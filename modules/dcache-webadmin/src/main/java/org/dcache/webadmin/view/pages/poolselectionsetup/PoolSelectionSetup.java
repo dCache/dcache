@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.dcache.webadmin.controller.PoolSelectionSetupService;
 import org.dcache.webadmin.controller.exceptions.PoolSelectionSetupServiceException;
-import org.dcache.webadmin.view.pages.basepage.SortableBasePage;
+import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.DCacheEntity;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.DCacheEntityContainerBean;
 import org.dcache.webadmin.view.pages.poolselectionsetup.beans.EntityReference;
@@ -40,7 +40,7 @@ import org.dcache.webadmin.view.pages.poolselectionsetup.panels.simulatedioreque
  *
  * @author jans
  */
-public class PoolSelectionSetup extends SortableBasePage {
+public class PoolSelectionSetup extends BasePage {
 
     private static final String EMPTY_STRING = "";
     private static final Logger _log = LoggerFactory.getLogger(PoolSelectionSetup.class);
