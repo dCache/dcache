@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.pages.poolqueues;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.slf4j.Logger;
@@ -39,6 +40,11 @@ public class PoolQueues extends SortableBasePage {
                         new ArrayList<PoolQueueBean>());
         getPoolQueuesAction(allPoolsGroup);
         return allPoolsGroup;
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("queues", response);
     }
 
     private PoolQueuesService getPoolQueuesService() {

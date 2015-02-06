@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.pages.spacetokens;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
@@ -35,6 +36,11 @@ public class SpaceTokens extends SortableBasePage {
 
     public SpaceTokens() {
         createMarkup();
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("tokens", response);
     }
 
     private void createMarkup() {
