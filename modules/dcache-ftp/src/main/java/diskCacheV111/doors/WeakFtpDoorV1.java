@@ -113,6 +113,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
         try {
             login(subject);
+            println("230 User " + _user + " logged in");
         } catch (PermissionDeniedCacheException e) {
             warn("Login denied for " + subject);
             println("530 Login incorrect");
@@ -120,8 +121,6 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
             error("Login failed for " + subject + ": " + e);
             println("530 Login failed: " + e.getMessage());
         }
-
-        println("230 User " + _user + " logged in");
     }
 
     @Override
