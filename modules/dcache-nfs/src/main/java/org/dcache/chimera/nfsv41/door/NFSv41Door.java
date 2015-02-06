@@ -152,8 +152,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     private CellStub _poolStub;
     private CellStub _poolManagerStub;
     private CellStub _billingStub;
-    private String _cellName;
-    private String _domainName;
     private PnfsHandler _pnfsHandler;
 
     private String _ioQueue;
@@ -202,6 +200,11 @@ public class NFSv41Door extends AbstractCellComponent implements
             new RoundRobinStripingPattern<>();
 
     private VfsCacheConfig _vfsCacheConfig;
+
+    /**
+     * indicates is this cell a well-known cell or not
+     */
+    private boolean _isWellKnown;
 
     public void setEnableRpcsecGss(boolean enable) {
         _enableRpcsecGss = enable;
@@ -259,8 +262,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     public void init() throws Exception {
 
-        _cellName = getCellName();
-        _domainName = getCellDomainName();
+        _isWellKnown = getArgs().getBooleanOption("export");
 
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withPort(_port)
@@ -285,10 +287,9 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
                     break;
                 case V41:
-                     final NFSv41DeviceManager _dm = this;
-                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
-                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory( this.getCellName(), this.getCellDomainName()
-                            , _proxyIoFactory, new MDSOperationFactory()),
+                    final NFSv41DeviceManager _dm = this;
+                    _proxyIoFactory = new NfsProxyIoFactory(_dm);
+                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     _loginBrokerHandler.start();
@@ -297,7 +298,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     throw new IllegalArgumentException("Unsupported NFS version: " + version);
             }
         }
-
 
         _rpcService.start();
 
@@ -445,10 +445,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             throws IOException {
 
         FsInode inode = _fileFileSystemProvider.inodeFromBytes(nfsInode.getFileId());
-        CDC cdc = CDC.reset(_cellName, _domainName);
+        Transfer.initSession(_isWellKnown, false);
+        NDC.push(inode.toString());
+        NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
-            NDC.push(inode.toString());
-            NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             deviceid4 deviceid;
 
             if (layoutType != layouttype4.LAYOUT4_NFSV4_1_FILES) {
@@ -467,7 +467,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                 final PnfsId pnfsId = new PnfsId(inode.toString());
                 final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid));
 
-                Transfer.initSession(getArgs().getBooleanOption("export"), false);
                 NfsTransfer transfer = _ioMessages.get(stateid);
                 if (transfer == null) {
                     transfer = new NfsTransfer(_pnfsHandler, nfsInode,
@@ -560,10 +559,12 @@ public class NFSv41Door extends AbstractCellComponent implements
                 throw new LayoutTryLaterException();
             }
         } catch (InterruptedException e) {
-	    cleanStateAndKillMover(stateid);
+            cleanStateAndKillMover(stateid);
             throw new LayoutTryLaterException();
         } finally {
-            cdc.close();
+            CDC.clearMessageContext();
+            NDC.pop();
+            NDC.pop();
         }
 
     }
