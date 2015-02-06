@@ -110,6 +110,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1664,12 +1665,18 @@ public abstract class AbstractFtpDoorV1
     //
     protected void reply(String answer, boolean resetReply)
     {
-        reply(_commandLine, answer, resetReply);
+        reply(_commandLine, answer, resetReply, Collections.emptyMap());
     }
 
     protected void reply(String commandLine, String answer, boolean resetReply)
     {
-        logReply(commandLine, answer);
+        reply(commandLine, answer, resetReply, Collections.emptyMap());
+    }
+
+    protected void reply(String commandLine, String answer, boolean resetReply,
+            Map<String,Object> loginAttributes)
+    {
+        logReply(commandLine, answer, loginAttributes);
         switch (_gReplyType) {
         case "clear":
             println(answer);
@@ -1689,7 +1696,8 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void logReply(String commandLine, String response)
+    private void logReply(String commandLine, String response,
+            Map<String,Object> loginAttributes)
     {
         if (ACCESS_LOGGER.isInfoEnabled()) {
             String event = _isHello ? "org.dcache.ftp.hello" :
@@ -1714,8 +1722,12 @@ public abstract class AbstractFtpDoorV1
 
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
             log.add("host.remote", _remoteSocketAddress);
-            addUserAttribute(log);
-            log.add("user.mapped", _subject);
+            if (!loginAttributes.isEmpty()) {
+                for (Map.Entry<String,Object> e : loginAttributes.entrySet()) {
+                    log.add(e.getKey(), e.getValue());
+                }
+                log.add("user.mapped", _subject);
+            }
             log.add("session", CDC.getSession());
             log.addInQuotes("command", commandLine);
             log.addInQuotes("reply", response);
@@ -1730,17 +1742,17 @@ public abstract class AbstractFtpDoorV1
         reply(answer, true);
     }
 
+    protected void reply(String answer, Map<String,Object> loginAttributes)
+    {
+        reply(_commandLine, answer, true, loginAttributes);
+    }
+
     protected void reply(String commandLine, String answer)
     {
         reply(commandLine, answer, true);
     }
 
     protected abstract void secure_reply(String answer, String code);
-
-    /**
-     * Add the user identification to the logger.
-     */
-    protected abstract void addUserAttribute(NetLoggerBuilder log);
 
     protected void checkLoggedIn()
         throws FTPCommandException

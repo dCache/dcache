@@ -1,5 +1,6 @@
 package org.dcache.ftp.door;
 
+import com.google.common.collect.ImmutableMap;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -161,7 +162,8 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             try {
                 login(subject);
                 _user = arg;
-                reply("200 User " + arg + " logged in");
+                reply("200 User " + arg + " logged in", ImmutableMap.of(
+                            "user.dn", Subjects.getDn(_subject)));
             } catch (PermissionDeniedCacheException e) {
                 LOGGER.warn("Login denied for {}: {}",
                             X509Utils.getSubjectFromX509Chain(chain, false), e.getMessage());
@@ -174,17 +176,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
         } catch (GSSException | CertificateException | AuthenticationException e) {
             LOGGER.error("Failed to extract X509 chain: {}", e.toString());
             reply("530 Login failed: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void addUserAttribute(NetLoggerBuilder log)
-    {
-        try {
-            log.add("user.dn", Subjects.getDn(_subject));
-        } catch (IllegalArgumentException e) {
-            LOGGER.warn("Unable add user {} to access log: {}",
-                    Subjects.getDisplayName(_subject), e.getMessage());
         }
     }
 }

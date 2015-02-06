@@ -1,5 +1,6 @@
 package org.dcache.ftp.door;
 
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,6 @@ import dmg.util.CommandExitException;
 
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
-import org.dcache.util.NetLoggerBuilder;
 
 /**
  *
@@ -72,7 +72,8 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
         try {
             login(subject);
-            reply("230 User " + _user + " logged in");
+            reply("230 User " + _user + " logged in", ImmutableMap.of(
+                            "user.name", Subjects.getDisplayName(_subject)));
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}", subject);
             reply("530 Login denied");
@@ -94,14 +95,6 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
                 LOGGER.error("WeakFtpDoor: couldn't start tLog. " +
                         "Ignoring exception: {}", e.getMessage());
             }
-        }
-    }
-
-    @Override
-    public void addUserAttribute(NetLoggerBuilder log)
-    {
-        if (_subject != null) {
-            log.add("user", Subjects.getDisplayName(_subject));
         }
     }
 }

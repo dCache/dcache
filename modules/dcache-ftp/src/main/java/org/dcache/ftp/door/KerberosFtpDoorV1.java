@@ -1,5 +1,6 @@
 package org.dcache.ftp.door;
 
+import com.google.common.collect.ImmutableMap;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -147,24 +148,14 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
 
         try {
             login(subject);
-            reply("200 User " + arg + " logged in");
+            reply("200 User " + arg + " logged in", ImmutableMap.of(
+                            "user.kerberos", Subjects.getKerberosName(_subject)));
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}", subject);
             reply("530 Login denied");
         } catch (CacheException e) {
             LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
             reply("530 Login failed: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void addUserAttribute(NetLoggerBuilder log)
-    {
-        try {
-            log.add("kerberos", Subjects.getKerberosName(_subject));
-        } catch (IllegalArgumentException e) {
-            LOGGER.warn("Unable add user {} to access log: {}",
-                    Subjects.getDisplayName(_subject), e.getMessage());
         }
     }
 }
