@@ -1,6 +1,7 @@
 package org.dcache.webadmin.view.pages.pooladmin;
 
 import org.apache.wicket.AttributeModifier;
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.basic.MultiLineLabel;
 import org.apache.wicket.markup.html.form.Button;
@@ -46,6 +47,11 @@ public class PoolAdmin extends SortableBasePage implements AuthenticatedWebPage 
 
     public PoolAdmin() {
         addMarkup();
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("admin", response);
     }
 
     private void addMarkup() {
