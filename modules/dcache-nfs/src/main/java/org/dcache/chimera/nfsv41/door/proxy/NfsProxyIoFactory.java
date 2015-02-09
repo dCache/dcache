@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.NfsIoException;
@@ -133,7 +134,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
     }
 
     @Override
-    public Iterable<ProxyIoAdapter> getAdapters() {
-        return _proxyIO.asMap().values();
+    public void forEach(Consumer<ProxyIoAdapter> action) {
+        _proxyIO.asMap().values().forEach(action);
     }
 }
