@@ -641,10 +641,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             if (_proxyIoFactory != null) {
                 pw.println();
                 pw.println("  Known proxy adapters (proxy-io):");
-                for (ProxyIoAdapter proxyIoAdapter : _proxyIoFactory.getAdapters()) {
-                    pw.print("    ");
-                    pw.println(proxyIoAdapter);
-                }
+                _proxyIoFactory.forEach(a -> { pw.print("    "); pw.println(a); });
             }
 
             pw.println();
