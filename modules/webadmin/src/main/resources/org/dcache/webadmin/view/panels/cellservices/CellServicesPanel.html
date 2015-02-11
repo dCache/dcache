@@ -10,11 +10,11 @@
 </head>
 <body>
 <wicket:panel>
-    <wicket:message key="CellServicesPanel.quickFind"></wicket:message>&nbsp;<input type="text" class="quickfind"/>&nbsp;
-    <input type="button" value="Clear Filters" class="cleanfilters">
+    <wicket:message key="CellServicesPanel.quickFind"></wicket:message>&nbsp;<input id="cellservices.filter.text" type="text" class="quickfind"/>&nbsp;
+    <input id="cellservices.filter.clear" type="button" value="Clear Filters" class="cleanfilters">
     <div class="clear"></div>
     <br>
-    <table class="sortable">
+    <table id="cellservices.cells" class="sortable">
         <thead>
             <tr>
                <th><wicket:message key="CellServicesPanel.name.header"></wicket:message></th>

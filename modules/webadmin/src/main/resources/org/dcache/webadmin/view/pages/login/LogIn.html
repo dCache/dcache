@@ -18,25 +18,25 @@
             <tr>
                 <td align="right"><wicket:message key="table1.row1">missing</wicket:message></td>
             <td>
-                <input wicket:id="username" type="text" value="" size="30"/>
+                <input id="login.username" wicket:id="username" type="text" value="" size="30"/>
             </td>
             </tr>
             <tr>
                 <td align="right"><wicket:message key="table1.row2">missing</wicket:message></td>
             <td>
-                <input wicket:id="password" type="password" value="password" size="30"/>
+                <input id="login.password" wicket:id="password" type="password" value="password" size="30"/>
             </td>
             </tr>
             <tr wicket:id="rememberMeRow">
                 <td></td>
-                <td> <input wicket:id="remembering" type="checkbox" /><wicket:message key="table1.checkbox">missing</wicket:message></td>
+                <td> <input id="login.rememberme" wicket:id="remembering" type="checkbox" /><wicket:message key="table1.checkbox">missing</wicket:message></td>
             </tr>
             <tr>
                 <td></td>
                 <td>
-                    <input type="submit" wicket:id="submit" wicket:message="value:submitButton"/>
-                    <input type="reset" wicket:message="value:resetButton"/>
-                    <input type="submit" wicket:id="certsignin" wicket:message="value:certSignInButton"/>
+                    <input id="login.submit" type="submit" wicket:id="submit" wicket:message="value:submitButton"/>
+                    <input id="login.reset" type="reset" wicket:message="value:resetButton"/>
+                    <input id="login.certsignin" type="submit" wicket:id="certsignin" wicket:message="value:certSignInButton"/>
                 </td>
             </tr>
         </table>
