@@ -57,14 +57,16 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfsv41.door.proxy.DcapProxyIoFactory;
-import org.dcache.chimera.nfsv41.door.proxy.ProxyIoAdapter;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
-import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.DelayException;
+import org.dcache.nfs.status.LayoutTryLaterException;
+import org.dcache.nfs.status.NfsIoException;
+import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -97,6 +99,7 @@ import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.utils.Bytes;
+import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
 import org.dcache.xdr.OncRpcSvc;
@@ -256,12 +259,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         OncRpcSvcBuilder oncRpcSvcBuilder = new OncRpcSvcBuilder()
                 .withPort(_port)
                 .withTCP()
-		.withWorkerThreadIoStrategy()
-                .withAutoPublish();
+                .withAutoPublish()
+                .withWorkerThreadIoStrategy();
         if (_enableRpcsecGss) {
             oncRpcSvcBuilder.withGssSessionManager(new GssSessionManager(_idMapper));
         }
-	_rpcService = oncRpcSvcBuilder.build();
+        _rpcService = oncRpcSvcBuilder.build();
 
         _vfs = new VfsCache(new ChimeraVfs(_fileFileSystemProvider, _idMapper), _vfsCacheConfig);
 
@@ -371,6 +374,24 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
+    public DoorValidateMoverMessage messageArrived(DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.getChallenge();
+        stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
+
+        boolean isValid = false;
+        try {
+            NFS4Client nfsClient = _nfs4.getStateHandler().getClientIdByStateId(stateid);
+            // will throw exception if state does not exists
+            nfsClient.state(stateid);
+            isValid = true;
+        } catch (BadStateidException e) {
+        } catch (ChimeraNFSException e) {
+            _log.warn("Unexpected NFS exception: {}", e.getMessage() );
+        }
+        message.setIsValid(isValid);
+        return message;
+    }
+
     private int nextDeviceID() {
         return _nextDeviceID.incrementAndGet();
     }
@@ -473,19 +494,21 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         } catch (FileInCacheException e) {
 	    cleanStateAndKillMover(stateid);
-            throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
+            throw new NfsIoException(e.getMessage());
         } catch (CacheException e) {
 	   cleanStateAndKillMover(stateid);
             /*
              * error 243: file is broken on tape.
              * can't do a much. Tell it to client.
              */
-            int status = e.getRc() == CacheException.BROKEN_ON_TAPE ? nfsstat.NFSERR_IO : nfsstat.NFSERR_LAYOUTTRYLATER;
-            throw new ChimeraNFSException(status, e.getMessage());
+            if (e.getRc() == CacheException.BROKEN_ON_TAPE) {
+                throw new NfsIoException();
+            } else {
+                throw new LayoutTryLaterException();
+            }
         } catch (InterruptedException e) {
 	    cleanStateAndKillMover(stateid);
-            throw new ChimeraNFSException(nfsstat.NFSERR_LAYOUTTRYLATER,
-                    e.getMessage());
+            throw new LayoutTryLaterException();
         } finally {
             cdc.close();
         }
@@ -553,12 +576,12 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         try {
             if(!transfer.waitForMover(500)) {
-                throw new ChimeraNFSException(nfsstat.NFSERR_DELAY, "Mover not stopped");
+                throw new DelayException("Mover not stopped");
             }
         } catch (CacheException | InterruptedException e) {
             _log.info("Failed to kill mover: {}@{} : {}",
                     transfer.getMoverId(), transfer.getPool(), e.getMessage());
-            throw new ChimeraNFSException(nfsstat.NFSERR_IO, e.getMessage());
+            throw new NfsIoException(e.getMessage());
         }
     }
 
@@ -593,7 +616,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
             pw.println();
             pw.println("  Known clients:");
-            for (NFS4Client client : _nfs4.getClients()) {
+            for (NFS4Client client : _nfs4.getStateHandler().getClients()) {
                 pw.println(String.format("    %s", client));
                 for (NFSv41Session session : client.sessions()) {
                     pw.println(String.format("        %s, max slot: %d/%d",

@@ -22,7 +22,6 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import java.net.Inet4Address;
-import java.util.Arrays;
 
 import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -70,7 +69,8 @@ public class NfsTransferService extends AbstractCellComponent
             portRange = new PortRange(0);
         }
 
-        _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName());
+        _door = new CellStub(getCellEndpoint());
+        _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
         _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
 
         /*
@@ -84,8 +84,6 @@ public class NfsTransferService extends AbstractCellComponent
             }
         }
         _sortMultipathList = ipv4Count > 1;
-
-        _door = new CellStub(getCellEndpoint());
     }
 
     @Required
@@ -193,7 +191,7 @@ public class NfsTransferService extends AbstractCellComponent
     public String ac_nfs_sessions(Args args) {
 
        StringBuilder sb = new StringBuilder();
-        for (NFS4Client client : _nfsIO.getNFSServer().getClients()) {
+        for (NFS4Client client : _nfsIO.getNFSServer().getStateHandler().getClients()) {
             sb.append(client).append('\n');
             for (NFSv41Session session : client.sessions()) {
                 sb.append("  ")
