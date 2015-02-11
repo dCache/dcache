@@ -182,7 +182,7 @@ public class BasicNavigationPanel extends BasePanel {
             NavLink navLink = item.getModelObject();
 
             Link link = new BookmarkablePageLink("link", navLink.getPage());
-            link.add(new AttributeModifier("id", navLink.getId()));
+            link.add(new AttributeModifier("id", "nav." + navLink.getId()));
             link.add(new Label("text", navLink.getLinkText(BasicNavigationPanel.this)));
 
             Label disabled = new Label("disabled");

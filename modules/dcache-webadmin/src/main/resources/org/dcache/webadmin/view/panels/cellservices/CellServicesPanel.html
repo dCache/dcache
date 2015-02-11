@@ -14,17 +14,17 @@
     <wicket:panel>
         <wicket:message key="CellServicesPanel.quickFind"></wicket:message>
         &nbsp;
-        <input
+        <input id="cellservices.filter.text"
             type="text"
             class="quickfind-cells"/>
         &nbsp;
-        <input
+        <input id="cellservices.filter.clear"
             type="button"
             value="Clear Filters"
             class="cleanfilters-cells"/>
         <div class="clear"></div>
         <br>
-        <table class="sortable-cells">
+        <table id="cellservices.cells" name="cells" class="sortable-cells">
             <thead>
                 <tr>
                     <th><wicket:message key="CellServicesPanel.name.header"></wicket:message></th>
