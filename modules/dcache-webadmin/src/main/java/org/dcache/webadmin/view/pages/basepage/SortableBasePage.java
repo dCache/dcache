@@ -1,9 +1,8 @@
 package org.dcache.webadmin.view.pages.basepage;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.JavaScriptHeaderItem;
 import org.apache.wicket.markup.head.OnLoadHeaderItem;
-
-import org.apache.wicket.markup.head.IHeaderResponse;
 
 public abstract class SortableBasePage extends BasePage {
 
@@ -17,13 +16,16 @@ public abstract class SortableBasePage extends BasePage {
         super.renderHeadInternal(response);
         response.render(JavaScriptHeaderItem.forUrl("js/picnet.table.filter.full.js"));
         response.render(JavaScriptHeaderItem.forUrl("js/jquery.tablesorter.min.js"));
-        response.render(OnLoadHeaderItem.forScript(
-                        "                $('.sortable').tablesorter();\n"
-                      + "                // Initialise Plugin\n"
-                      + "                var options1 = {\n"
-                      + "                    additionalFilterTriggers: [$('.quickfind')],\n"
-                      + "                    clearFiltersControls: [$('.cleanfilters')],\n"
-                      + "                };\n"
-                      + "                $('.sortable').tableFilter(options1);\n"));
+    }
+
+    protected void addFilterSelectScript(String id, IHeaderResponse response) {
+        response.render(OnLoadHeaderItem
+                        .forScript("                $('.sortable" + id + "').tablesorter();\n"
+                                 + "                // Initialise Plugin\n"
+                                 + "                var options1 = {\n"
+                                 + "                    additionalFilterTriggers: [$('.quickfind" + id + "')],\n"
+                                 + "                    clearFiltersControls: [$('.cleanfilters" + id + "')],\n"
+                                 + "                };\n"
+                                 + "                $('.sortable" + id + "').tableFilter(options1);\n"));
     }
 }
