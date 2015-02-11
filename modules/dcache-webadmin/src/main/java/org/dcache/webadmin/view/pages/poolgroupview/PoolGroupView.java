@@ -2,6 +2,7 @@ package org.dcache.webadmin.view.pages.poolgroupview;
 
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.MarkupContainer;
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -54,6 +55,11 @@ public class PoolGroupView extends SortableBasePage {
 
     public PoolGroupView() {
         addMarkup();
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("group", response);
     }
 
     private void addMarkup() {
