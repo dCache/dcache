@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.panels.navigation;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.authroles.authorization.strategies.role.Roles;
@@ -50,6 +51,7 @@ public class BasicNavigationPanel extends BasePanel {
                     TapeTransferQueue.class, ActiveTransfers.class, UnavailablePage.class,
                     PoolSelectionSetup.class, PoolAdmin.class, CellAdmin.class,
                     SpaceTokens.class, InfoXml.class, AlarmsPage.class);
+    private static final ImmutableMap<Class<? extends BasePage>,String> LINK_ID = buildLinkIdMap();
     private static final Logger _log = LoggerFactory.getLogger(BasicNavigationPanel.class);
 
     public BasicNavigationPanel(String id, Class currentPage) {
@@ -57,6 +59,29 @@ public class BasicNavigationPanel extends BasePanel {
         _currentPage = currentPage;
         _log.debug(currentPage.getSimpleName());
         add(new LinkListView<Class>("linkList", _linkList));
+    }
+
+    private static ImmutableMap<Class<? extends BasePage>,String> buildLinkIdMap()
+    {
+        ImmutableMap.Builder<Class<? extends BasePage>,String> builder = ImmutableMap.builder();
+
+        builder.put(DCacheServices.class, "home");
+        builder.put(CellServices.class, "cells");
+        builder.put(PoolList.class, "pools");
+        builder.put(PoolQueues.class, "poolqueues");
+        builder.put(PoolQueuePlots.class, "poolqueueplots");
+        builder.put(PoolGroupView.class, "poolgroup");
+        builder.put(TapeTransferQueue.class, "tapetransfers");
+        builder.put(ActiveTransfers.class, "activetransfers");
+        builder.put(BillingPlots.class, "billing");
+        builder.put(PoolSelectionSetup.class, "poolselection");
+        builder.put(PoolAdmin.class, "pooladmin");
+        builder.put(CellAdmin.class, "celladmin");
+        builder.put(SpaceTokens.class, "space");
+        builder.put(InfoXml.class, "info");
+        builder.put(AlarmsPage.class, "alarms");
+
+        return builder.build();
     }
 
     private class LinkListView<T> extends ListView<T> {
@@ -73,6 +98,7 @@ public class BasicNavigationPanel extends BasePanel {
             BookmarkablePageLink link = new BookmarkablePageLink("link",
                             targetPage);
             handleAdminPage(targetPage, item);
+            link.add(new AttributeModifier("id", "nav." + LINK_ID.get(targetPage)));
             setLinkTitle(link, item.getIndex());
             handleActivePage(targetPage, item);
             item.add(link);
