@@ -284,38 +284,40 @@ class FsSqlDriver {
             throw new DirNotEmptyHimeraFsException("directory is not empty");
         }
 
-        removeEntryInParent(dbConnection, inode, ".");
-        removeEntryInParent(dbConnection, inode, "..");
-        // decrease reference count ( '.' , '..', and in parent directory ,
-        // and inode itself)
-        decNlink(dbConnection, inode, 2);
-        removeTag(dbConnection, inode);
+        if (removeEntryInParent(dbConnection, parent, name)) {
+            removeEntryInParent(dbConnection, inode, ".");
+            removeEntryInParent(dbConnection, inode, "..");
+            // decrease reference count ( '.' , '..', and in parent directory ,
+            // and inode itself)
+            decNlink(dbConnection, inode, 2);
+            removeTag(dbConnection, inode);
 
-        removeEntryInParent(dbConnection, parent, name);
-        decNlink(dbConnection, parent);
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
+            decNlink(dbConnection, parent);
+            setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
 
-        removeInode(dbConnection, inode);
+            removeInode(dbConnection, inode);
+        }
     }
 
     private void removeFile(Connection dbConnection, FsInode parent, FsInode inode, String name) throws ChimeraFsException, SQLException {
 
         boolean isLast = inode.stat().getNlink() == 1;
 
-        decNlink(dbConnection, inode);
-        removeEntryInParent(dbConnection, parent, name);
+        if (removeEntryInParent(dbConnection, parent, name)) {
+            decNlink(dbConnection, inode);
 
-        if (isLast) {
-            removeInode(dbConnection, inode);
+            if (isLast) {
+                removeInode(dbConnection, inode);
+            }
+
+            /* During bulk deletion of files in the same directory,
+             * updating the parent inode is often a contention point. The
+             * link count on the parent is updated last to reduce the time
+             * in which the directory inode is locked by the database.
+             */
+            decNlink(dbConnection, parent);
+            setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
         }
-
-        /* During bulk deletion of files in the same directory,
-         * updating the parent inode is often a contention point. The
-         * link count on the parent is updated last to reduce the time
-         * in which the directory inode is locked by the database.
-         */
-        decNlink(dbConnection, parent);
-        setFileMTime(dbConnection, parent, 0, System.currentTimeMillis());
     }
 
     void remove(Connection dbConnection, FsInode parent, FsInode inode) throws ChimeraFsException, SQLException {
@@ -864,7 +866,8 @@ class FsSqlDriver {
     }
     private static final String sqlRemoveEntryInParentByName = "DELETE FROM t_dirs WHERE iname=? AND iparent=?";
 
-    void removeEntryInParent(Connection dbConnection, FsInode parent, String name) throws SQLException {
+    boolean removeEntryInParent(Connection dbConnection, FsInode parent, String name) throws SQLException {
+        boolean removed;
         PreparedStatement stRemoveFromParentByName = null; // remove entry from parent
         try {
 
@@ -872,12 +875,12 @@ class FsSqlDriver {
             stRemoveFromParentByName.setString(1, name);
             stRemoveFromParentByName.setString(2, parent.toString());
 
-            stRemoveFromParentByName.executeUpdate();
+            removed = stRemoveFromParentByName.executeUpdate() > 0;
 
         } finally {
             SqlHelper.tryToClose(stRemoveFromParentByName);
         }
-
+        return removed;
     }
     private static final String sqlGetParentOf = "SELECT iparent FROM t_dirs WHERE ipnfsid=? AND iname != '.' and iname != '..'";
 
