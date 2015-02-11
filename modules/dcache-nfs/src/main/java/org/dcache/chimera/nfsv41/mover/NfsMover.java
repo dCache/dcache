@@ -115,7 +115,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      * the {@link CompletionHandler#failed(Throwable, A)} method will be called.
      * @param error error to report, or {@code null} on success
      */
-    private void disable(Throwable error) {
+    void disable(Throwable error) {
         _nfsIO.remove(NfsMover.this);
         detachSession();
         try {
@@ -162,7 +162,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
         @Override
         protected void dispose() {
-            disable(new InterruptedException("Killing mover due to client inactivity"));
+            detachSession();
         }
     }
 
@@ -174,5 +174,9 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
     public verifier4 getBootVerifier() {
         return _bootVerifier;
+    }
+
+    public synchronized boolean hasSession() {
+        return (_session != null);
     }
 }
