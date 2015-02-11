@@ -12,12 +12,12 @@
 </head>
 <body>
     <wicket:panel>
-        <wicket:enclosure child="logout">Logged in as <b><span
+        <wicket:enclosure child="logout">Logged in as <b><span id="userpannel.username"
                     wicket:id="username">[name]</span></b>
             <span class="stripe">&nbsp;&nbsp;&#124;&nbsp;&nbsp;</span>
-            <a wicket:id="logout">logout</a>
+            <a id="userpannel.action" wicket:id="logout">logout</a>
         </wicket:enclosure>
-        <a wicket:id="login">login</a>
+        <a id="userpannel.action" wicket:id="login">login</a>
     </wicket:panel>
 </body>
 </html>
