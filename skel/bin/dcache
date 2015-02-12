@@ -1133,6 +1133,13 @@ case "$1" in
         done
         ;;
 
+    list-domains)
+        shift
+        . ${lib}/utils.sh
+        . ${lib}/services.sh
+        printDomains "$@"
+        ;;
+
     *)
         usage
         ;;

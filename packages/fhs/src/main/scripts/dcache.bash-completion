@@ -1,47 +1,63 @@
-# file: dcache.sh
-# dcache parameter-completion
-
-_dcache ()
+have dcache &&
+_dcache()
 {
-  local cur
+  local dccmd cur prev
 
-  COMPREPLY=()   # Array variable storing the possible completions.
-  cur="${COMP_WORDS[COMP_CWORD]}"
-  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  dccmd=${COMP_WORDS[1]}
+  cur=${COMP_WORDS[COMP_CWORD]}
+  prev=${COMP_WORDS[COMP_CWORD-1]}
 
-  if [ ${#COMP_WORDS[@]} -ge 4 ]
-  then
-   return 0
-  fi
-
-  case "$prev" in
-	database)
-		COMPREPLY=($(compgen -o nospace -W 'ls update tag rollback rollbackToDate listLocks releaseLocks doc' -- "$cur"))
-            return 0
-            ;;
-        dump)
-		COMPREPLY=($(compgen -o nospace -W 'heap threads' -- "$cur"))
-            return 0
-            ;;
-        import)
-		COMPREPLY=($(compgen -o nospace -W 'hostcert cacerts' -- "$cur"))
-            return 0
-            ;;
-        pool)
-		COMPREPLY=($(compgen -o nospace -W 'create reconstruct ls' -- "$cur"))
-            return 0
-            ;;
-        *)
+  case ${COMP_CWORD} in
+    1)
+        COMPREPLY=( $( compgen -W 'alarm billing check-config condrestart database dump import kpwd ports pool restart services start status stop version' -- "$cur" ) )
+        return 0
         ;;
-    esac
-
-  if [ ${#COMP_WORDS[@]} -ge 3 ]
-  then
-   return 0
-  fi
-
-  COMPREPLY=($(compgen -W 'condrestart restart services check-config start status stop version kpwd database dump import pool' -- "$cur"))
-  return 0
-}
-
+    2)
+        case $prev in
+          alarm)
+              COMPREPLY=( $( compgen -W 'list send add modify remove' -- "$cur" ) )
+              return 0
+              ;;
+          database)
+            COMPREPLY=( $( compgen -W 'ls update showUpdateSQL tag rollback rollbackToDate listLocks releaseLocks doc' -- "$cur" ) )
+              return 0
+              ;;
+          dump)
+            COMPREPLY=( $( compgen -W 'heap threads' -- "$cur" ) )
+              return 0
+              ;;
+          import)
+            COMPREPLY=( $( compgen -W 'hostcert cacerts' -- "$cur" ) )
+              return 0
+              ;;
+          pool)
+            COMPREPLY=( $( compgen -W 'convert create reconstruct ls yaml' -- "$cur" ) )
+              return 0
+              ;;
+          billing)
+              COMPREPLY=( $( compgen -o nospace -W '--format= --since= --until= -f=' -- "$cur" ) )
+              return 0
+              ;;
+          start|stop|restart|condrestart)
+              domains=$(dcache list-domains)
+              COMPREPLY=( $( compgen -W "${domains}" -- "$cur" ) )
+              return 0
+              ;;
+        esac
+        ;;
+    *)
+        case $dccmd in
+          billing)
+              COMPREPLY=( $( compgen -o nospace -W '--format= --since= --until= -f=' -- "$cur" ) )
+              return 0
+              ;;
+          start|stop|restart|condrestart)
+              domains=$(dcache list-domains)
+              COMPREPLY=( $( compgen -W "${domains}" -- "$cur" ) )
+              return 0
+              ;;
+        esac
+        ;;
+  esac
+} &&
 complete -F _dcache dcache
