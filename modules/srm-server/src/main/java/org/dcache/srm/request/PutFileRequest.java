@@ -528,10 +528,11 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 return new TReturnStatus(TStatusCode.SRM_ABORTED, "The SURL has been aborted.");
             case FAILED:
                 TStatusCode statusCode = getStatusCode();
+                String description = getLastJobChange().getDescription();
                 if (statusCode != null) {
-                    return new TReturnStatus(statusCode, "Upload failed.");
+                    return new TReturnStatus(statusCode, description);
                 }
-                return new TReturnStatus(TStatusCode.SRM_FAILURE, "Upload failed.");
+                return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
             default:
                 setStateAndStatusCode(State.FAILED, "SrmPutDone called before TURL was made available.", TStatusCode.SRM_INVALID_PATH);
                 return new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
