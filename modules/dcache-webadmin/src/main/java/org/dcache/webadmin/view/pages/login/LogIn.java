@@ -209,6 +209,8 @@ public class LogIn extends BasePage {
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         add(new Label("dCacheInstanceName",
                         getWebadminApplication().getDcacheName()));
+        add(new Label("dCacheInstanceDescription",
+                        getWebadminApplication().getDcacheDescription()));
         add(feedback);
         add(new LogInForm("LogInForm"));
     }

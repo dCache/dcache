@@ -100,6 +100,7 @@ public class WebAdminInterface extends WebApplication {
     private AlarmDisplayService _alarmDisplayService;
     private ThumbnailPanelProvider _thumbnailPanelProvider;
     private String _dcacheName;
+    private String _dcacheDescription;
     private String _authDestination;
     private int _adminGid;
     private int _httpsPort;
@@ -134,6 +135,10 @@ public class WebAdminInterface extends WebApplication {
 
     public String getDcacheName() {
         return _dcacheName;
+    }
+
+    public String getDcacheDescription() {
+        return _dcacheDescription;
     }
 
     @Override
@@ -249,6 +254,11 @@ public class WebAdminInterface extends WebApplication {
     @Required
     public void setDcacheName(String dCacheName) {
         _dcacheName = dCacheName;
+    }
+
+    @Required
+    public void setDcacheDescription(String description) {
+        _dcacheDescription = description;
     }
 
     @Required

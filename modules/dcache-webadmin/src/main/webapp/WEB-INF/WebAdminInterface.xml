@@ -330,6 +330,7 @@
         <property name="authenticatedMode" value="${httpd.enable.authn}"/>
         <property name="adminGid" value="${httpd.authz.admin-gid}"/>
         <property name="dcacheName" value="${httpd.html.dcache-instance-name}"/>
+        <property name="dcacheDescription" value="${httpd.html.dcache-instance-description}"/>
         <property name="authDestination" value="${httpd.service.gplazma}"/>
         <property name="generatePlots" value="${httpd.enable.plots.billing}"/>
         <property name="poolQueuePlotsEnabled" value="${httpd.enable.plots.pool-queue}"/>

@@ -24,6 +24,8 @@ public class DCacheServices extends BasePage {
         add(new FeedbackPanel("feedback"));
         add(new Label("dCacheInstanceName",
                 getWebadminApplication().getDcacheName()));
+        add(new Label("dCacheInstanceDescription",
+                getWebadminApplication().getDcacheDescription()));
         Link login = new CustomLink("loginLink", LogIn.class);
         login.add(new Image("loginImage", new PackageResourceReference(
                 DCacheServices.class, "login.gif")));
