@@ -27,7 +27,7 @@ import static java.util.concurrent.TimeUnit.*;
 /**
  * InvocationHandler to access a cached PoolMonitor that is periodically imported from pool manager.
  */
-public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Refreshable
+public class RemotePoolMonitorInvocationHandler implements InvocationHandler, RemovableRefreshable
 {
     /* Fake key to register the pool monitor in a cache. */
     private static final String KEY = "key";
@@ -84,6 +84,12 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
     }
 
     @Override
+    public void remove()
+    {
+        _poolMonitor.invalidate(KEY);
+    }
+
+    @Override
     public long getRefreshCount()
     {
         return _poolMonitor.stats().loadCount();
@@ -109,7 +115,8 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
     public Object invoke(Object proxy, Method method, Object[] args)
             throws Throwable
     {
-        if (method.getDeclaringClass() == Refreshable.class) {
+
+        if (method.getDeclaringClass().isAssignableFrom(RemovableRefreshable.class)) {
             return method.invoke(this, args);
         }
         return method.invoke(getPoolMonitor(), args);

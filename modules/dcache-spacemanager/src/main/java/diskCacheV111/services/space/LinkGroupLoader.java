@@ -13,13 +13,15 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import diskCacheV111.util.VOInfo;
-import org.dcache.poolmanager.PoolLinkGroupInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Command;
+import dmg.util.command.Option;
 
+import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.poolmanager.RemovableRefreshable;
 import org.dcache.poolmanager.Utils;
 
 public class LinkGroupLoader
@@ -101,6 +103,7 @@ public class LinkGroupLoader
                     LOGGER.error("Link group update failed: " +  e.toString(), e);
                 }
                 synchronized(updateLinkGroupsSyncObject) {
+                    updateLinkGroupsSyncObject.notifyAll();
                     try {
                         updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
                     }
@@ -188,16 +191,38 @@ public class LinkGroupLoader
                      "asynchronous update of the link group information.")
     public class UpdateLinkGroupsCommand implements Callable<String>
     {
+        @Option(name = "blocking",
+                usage = "Wait for update to complete.")
+        boolean blocking;
+
         @Override
         public String call()
         {
-            if (poolMonitor instanceof Refreshable) {
+            String response = "Update started";
+            String extra = "";
+
+            if (blocking && poolMonitor instanceof RemovableRefreshable) {
+                extra = ", cached pool information was removed";
+                ((RemovableRefreshable) poolMonitor).remove();
+            } else if (poolMonitor instanceof Refreshable) {
+                extra = ", refreshing cached pool information";
                 ((Refreshable) poolMonitor).refresh();
             }
+
             synchronized (updateLinkGroupsSyncObject) {
                 updateLinkGroupsSyncObject.notify();
+
+                if (blocking) {
+                    response = "Update completed";
+                    try {
+                        updateLinkGroupsSyncObject.wait();
+                    } catch (InterruptedException e) {
+                        response = "Interrupted while updating";
+                    }
+                }
             }
-            return "Update started.";
+
+            return response + extra + ".";
         }
     }
 }
