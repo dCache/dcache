@@ -131,7 +131,7 @@ public class ChimeraNameSpaceProvider
     }
 
     private FsInode pathToInode(Subject subject, String path)
-        throws IOException, ChimeraFsException, CacheException
+        throws ChimeraFsException, CacheException
     {
         if (Subjects.isRoot(subject)) {
             return _fs.path2inode(path);
@@ -988,7 +988,7 @@ public class ChimeraNameSpaceProvider
     }
 
     private ExtendedInode mkdir(Subject subject, ExtendedInode parent, String name, int uid, int gid, int mode)
-            throws IOException, CacheException
+            throws ChimeraFsException, CacheException
     {
         if (!Subjects.isRoot(subject)) {
             FileAttributes attributesOfParent
@@ -1017,7 +1017,7 @@ public class ChimeraNameSpaceProvider
         return parent.mkdir(name, uid, gid, mode);
     }
 
-    private ExtendedInode installDirectory(Subject subject, FsPath path, int uid, int gid, int mode) throws IOException, CacheException
+    private ExtendedInode installDirectory(Subject subject, FsPath path, int uid, int gid, int mode) throws ChimeraFsException, CacheException
     {
         ExtendedInode inode;
         try {
@@ -1035,7 +1035,7 @@ public class ChimeraNameSpaceProvider
         return inode;
     }
 
-    private ExtendedInode lookupDirectory(Subject subject, FsPath path) throws IOException, CacheException
+    private ExtendedInode lookupDirectory(Subject subject, FsPath path) throws ChimeraFsException, CacheException
     {
         try {
             ExtendedInode inode = new ExtendedInode(pathToInode(subject, path.toString()));
@@ -1129,9 +1129,11 @@ public class ChimeraNameSpaceProvider
              */
             FsInode inodeOfUploadDir = installDirectory(Subjects.ROOT, uploadDirectory, 0, 0, 0711);
             if (inodeOfUploadDir.statCache().getUid() != 0) {
+                _log.error("Owner must be root: {}", uploadDirectory);
                 throw new CacheException("Owner must be root: " + uploadDirectory);
             }
             if ((inodeOfUploadDir.statCache().getMode() & UnixPermission.S_PERMS) != 0711) {
+                _log.error("File mode must be 0711: {}", uploadDirectory);
                 throw new CacheException("File mode must be 0711: " + uploadDirectory);
             }
 
@@ -1160,7 +1162,8 @@ public class ChimeraNameSpaceProvider
             _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, tags);
 
             return new FsPath(uploadDirectory, uuid.toString(), path.getName());
-        } catch (IOException e) {
+        } catch (ChimeraFsException e) {
+            _log.error("Problem with database: {}", e.getMessage());
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
         }
