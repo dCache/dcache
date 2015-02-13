@@ -58,13 +58,13 @@ public class H2FsSqlDriver extends FsSqlDriver {
     }
 
     @Override
-    public boolean isDuplicatedKeyError(String sqlState) {
-        return "23505".equals(sqlState);
+    public boolean isDuplicatedKeyError(SQLException e) {
+        return "23505".equals(e.getSQLState());
     }
 
     @Override
-    public boolean isForeignKeyError(String sqlState) {
-        return "23506".endsWith(sqlState);
+    public boolean isForeignKeyError(SQLException e) {
+        return "23506".endsWith(e.getSQLState());
     }
 
 }

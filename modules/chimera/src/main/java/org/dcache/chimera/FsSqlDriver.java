@@ -2475,21 +2475,19 @@ class FsSqlDriver {
     }
 
      /**
-      * Check <i>sqlState</i> for unique key violation.
-      * @param sqlState
+      * Check <i>SQLException</i> for unique key violation.
       * @return true is sqlState is a unique key violation and false other wise
       */
-    public boolean isDuplicatedKeyError(String sqlState) {
-        return sqlState.equals(DUPLICATE_KEY_ERROR);
+    public boolean isDuplicatedKeyError(SQLException e) {
+        return e.getSQLState().equals(DUPLICATE_KEY_ERROR);
     }
 
     /**
-     * Check <i>sqlState</i> for foreign key violation.
-     * @param sqlState
+     * Check <i>SQLException</i> for foreign key violation.
      * @return true is sqlState is a foreign key violation and false other wise
      */
-    public boolean isForeignKeyError(String sqlState) {
-        return sqlState.equals(FOREIGN_KEY_ERROR);
+    public boolean isForeignKeyError(SQLException e) {
+        return e.getSQLState().equals(FOREIGN_KEY_ERROR);
     }
 
     /**
