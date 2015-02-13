@@ -236,7 +236,10 @@ public final class ReserveSpaceRequest extends Request {
             sb.append("   Expires: ").
                 append(relativeTimestamp(getCreationTime()+getLifetime(), now)).append('\n');
             sb.append("   Reservation lifetime: ").append(describeReservationLifetime()).append('\n');
-            sb.append("   AccessLatency: ").append(getAccessLatency()).append('\n');
+            TAccessLatency al = getAccessLatency();
+            if (al != null) {
+                sb.append("   AccessLatency: ").append(al).append('\n');
+            }
             sb.append("   RetentionPolicy: ").append(getRetentionPolicy()).append('\n');
             sb.append("   History:\n");
             sb.append(getHistory("   "));
