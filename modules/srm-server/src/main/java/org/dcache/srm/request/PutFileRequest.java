@@ -309,9 +309,18 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             if (getSize() != null) {
                 sb.append(padding).append("   Size: ").append(getSize()).append('\n');
             }
-            sb.append(padding).append("   Access latency: ").append(getAccessLatency()).append('\n');
-            sb.append(padding).append("   Retention policy: ").append(getRetentionPolicy()).append('\n');
-            sb.append(padding).append("   Space reservation: ").append(getSpaceReservationId()).append('\n');
+            TAccessLatency al = getAccessLatency();
+            if (al != null) {
+                sb.append(padding).append("   Access latency: ").append(al).append('\n');
+            }
+            TRetentionPolicy rp = getRetentionPolicy();
+            if (rp != null) {
+                sb.append(padding).append("   Retention policy: ").append(rp).append('\n');
+            }
+            String space = getSpaceReservationId();
+            if (space != null) {
+                sb.append(padding).append("   Space reservation: ").append(space).append('\n');
+            }
             TStatusCode status = getStatusCode();
             if (status != null) {
                 sb.append(padding).append("   Status:").append(status).append('\n');
