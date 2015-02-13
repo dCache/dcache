@@ -659,7 +659,7 @@ public class ChimeraNameSpaceProvider
     }
 
     private FileAttributes getFileAttributesForPermissionHandler(@Nullable FsInode inode)
-        throws IOException, CacheException
+        throws ChimeraFsException, CacheException
     {
         return (inode == null)
                 ? null
@@ -667,13 +667,13 @@ public class ChimeraNameSpaceProvider
     }
 
     private FileAttributes getFileAttributesForPermissionHandler(@Nonnull ExtendedInode inode)
-        throws IOException, CacheException
+        throws ChimeraFsException, CacheException
     {
         return getFileAttributes(inode, _permissionHandler.getRequiredAttributes());
     }
 
     private FileAttributes getFileAttributes(ExtendedInode inode, Set<FileAttribute> attr)
-        throws IOException, ChimeraFsException, CacheException
+        throws ChimeraFsException, CacheException
     {
         if (!inode.exists()) {
             throw new FileNotFoundHimeraFsException();
