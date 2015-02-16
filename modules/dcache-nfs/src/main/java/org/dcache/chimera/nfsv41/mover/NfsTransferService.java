@@ -1,6 +1,5 @@
 package org.dcache.chimera.nfsv41.mover;
 
-import com.google.common.base.Function;
 import com.google.common.io.Files;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -17,10 +16,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -193,17 +190,7 @@ public class NfsTransferService extends AbstractCellComponent
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor) throws CacheException
     {
-        ChecksumFactory checksumFactory;
-        if (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
-            try {
-                checksumFactory = _checksumModule.getPreferredChecksumFactory(handle);
-            } catch (NoSuchAlgorithmException e) {
-                throw new CacheException("Failed to instantiate NFS mover due to unsupported checksum type: " + e.getMessage(), e);
-            }
-        } else {
-            checksumFactory = null;
-        }
-        return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler, checksumFactory);
+        return new NfsMover(handle, message, pathToDoor, this, _pnfsHandler, _checksumModule);
     }
 
     @Override

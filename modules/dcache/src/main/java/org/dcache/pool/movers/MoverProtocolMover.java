@@ -29,6 +29,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.util.Checksum;
 
 /**
@@ -42,9 +43,10 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     protected final MoverProtocol _moverProtocol;
 
     public MoverProtocolMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-                              TransferService<MoverProtocolMover> transferService, MoverProtocol moverProtocol)
+                    TransferService<MoverProtocolMover> transferService,
+                    MoverProtocol moverProtocol, ChecksumModule checksumModule)
     {
-        super(handle, message, pathToDoor, transferService);
+        super(handle, message, pathToDoor, transferService, checksumModule);
         _moverProtocol = moverProtocol;
     }
 
@@ -64,16 +66,6 @@ public class MoverProtocolMover extends AbstractMover<ProtocolInfo, MoverProtoco
     public long getLastTransferred()
     {
         return _moverProtocol.getLastTransferred();
-    }
-
-    @Override
-    public Set<Checksum> getActualChecksums()
-    {
-        if (_moverProtocol instanceof ChecksumMover) {
-            return Optional.fromNullable(((ChecksumMover) _moverProtocol).getActualChecksum()).asSet();
-        } else {
-            return Collections.emptySet();
-        }
     }
 
     @Override

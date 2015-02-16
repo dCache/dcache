@@ -33,7 +33,6 @@ import dmg.util.command.Command;
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
-import org.dcache.pool.movers.ChecksumMover;
 import org.dcache.pool.movers.Mover;
 import org.dcache.pool.movers.MoverFactory;
 import org.dcache.pool.movers.MoverProtocol;
@@ -91,7 +90,8 @@ public class MoverProtocolTransferService extends AbstractCellComponent
         ProtocolInfo info = message.getProtocolInfo();
         try {
             MoverProtocol moverProtocol = createMoverProtocol(getMoverProtocolClass(info));
-            return new MoverProtocolMover(handle, message, pathToDoor, this, moverProtocol);
+            return new MoverProtocolMover(handle, message, pathToDoor, this,
+                    moverProtocol, _checksumModule);
         } catch (InvocationTargetException e) {
             throw new CacheException(27, "Could not create mover for " + info, e.getTargetException());
         } catch (ClassNotFoundException e) {
@@ -173,12 +173,6 @@ public class MoverProtocolTransferService extends AbstractCellComponent
                     switch (_mover.getIoMode()) {
                     case WRITE:
                         try {
-                            MoverProtocol moverProtocol = _mover.getMover();
-                            if (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)
-                                    && moverProtocol instanceof ChecksumMover) {
-                                ((ChecksumMover) moverProtocol).enableTransferChecksum(
-                                        _checksumModule.getPreferredChecksumFactory(_mover.getIoHandle()).getType());
-                            }
                             runMover(fileIoChannel);
                         } finally {
                             try {

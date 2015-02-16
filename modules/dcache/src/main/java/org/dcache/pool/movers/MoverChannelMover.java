@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 
@@ -41,9 +42,10 @@ public abstract class MoverChannelMover<P extends ProtocolInfo, M extends MoverC
     public MoverChannelMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                              CellPath pathToDoor,
                              TransferService<M> transferService,
-                             MoverChannel.AllocatorMode allocatorMode)
+                             MoverChannel.AllocatorMode allocatorMode,
+                             ChecksumModule checksumModule)
     {
-        super(handle, message, pathToDoor, transferService);
+        super(handle, message, pathToDoor, transferService, checksumModule);
         _allocatorMode = allocatorMode;
     }
 

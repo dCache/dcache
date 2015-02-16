@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,16 +20,10 @@ package org.dcache.chimera.nfsv41.mover;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-
 import java.io.IOException;
 import java.nio.channels.CompletionHandler;
-import java.util.Collections;
-import java.util.Set;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -41,17 +35,11 @@ import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.pool.classic.Cancellable;
-import org.dcache.pool.movers.ChecksumChannel;
-import org.dcache.pool.movers.IoMode;
-
+import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.MoverChannelMover;
 import org.dcache.pool.repository.ReplicaDescriptor;
-import org.dcache.pool.repository.RepositoryChannel;
-import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
-
-import static com.google.common.base.Preconditions.checkState;
 
 public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
 
@@ -63,53 +51,14 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     private volatile CompletionHandler<Void, Void> _completionHandler;
     private final verifier4 _bootVerifier;
 
-    private final ChecksumFactory _checksumFactory;
-    private ChecksumChannel _checksumChannel;
-
     public NfsMover(ReplicaDescriptor handle, PoolIoFileMessage message, CellPath pathToDoor,
-            NfsTransferService nfsTransferService, PnfsHandler pnfsHandler,
-            ChecksumFactory checksumFactory) {
-        super(handle, message, pathToDoor, nfsTransferService, MoverChannel.AllocatorMode.SOFT);
+            NfsTransferService nfsTransferService, PnfsHandler pnfsHandler, ChecksumModule checksumModule) {
+        super(handle, message, pathToDoor, nfsTransferService, MoverChannel.AllocatorMode.SOFT, checksumModule);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
         _state = new MoverState(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         _namespace = pnfsHandler;
         _bootVerifier = nfsTransferService.getBootVerifier();
-        _checksumFactory = checksumFactory;
-    }
-
-    @Override
-    public Set<Checksum> getActualChecksums() {
-        return (_checksumChannel == null)
-                ? Collections.<Checksum>emptySet()
-                : Optional.fromNullable(_checksumChannel.getChecksum()).asSet();
-    }
-
-    @Override
-    public Set<Checksum> getExpectedChecksums() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public synchronized RepositoryChannel openChannel() throws DiskErrorCacheException {
-        checkState(_checksumChannel == null);
-        RepositoryChannel channel = super.openChannel();
-        try {
-            if (getIoMode() == IoMode.WRITE && _checksumFactory != null) {
-                channel = _checksumChannel = new ChecksumChannel(channel, _checksumFactory);
-            }
-        } catch (Throwable t) {
-            /* This should only happen in case of JVM Errors or if the checksum digest cannot be
-             * instantiated (which, barring bugs, should never happen).
-             */
-            try {
-                channel.close();
-            } catch (IOException e) {
-                t.addSuppressed(e);
-            }
-            Throwables.propagate(t);
-        }
-        return channel;
     }
 
     public stateid4 getStateId() {

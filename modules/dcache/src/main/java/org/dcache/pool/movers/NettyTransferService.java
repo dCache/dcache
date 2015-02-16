@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
-import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -52,7 +51,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -351,24 +349,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         return lastServerAddress;
     }
 
-    private ChecksumFactory getChecksumFactoryFor(ReplicaDescriptor handle) throws CacheException
-    {
-        if (checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
-            try {
-                return checksumModule.getPreferredChecksumFactory(handle);
-            } catch (NoSuchAlgorithmException e) {
-                throw new CacheException("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage(), e);
-            }
-        }
-        return null;
-    }
-
     @Override
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                                 CellPath pathToDoor) throws CacheException
     {
-        return new NettyMover<>(handle, message, pathToDoor, this, getChecksumFactoryFor(handle),
-                                createUuid((P) message.getProtocolInfo()));
+        return new NettyMover<>(handle, message, pathToDoor, this,
+                                createUuid((P) message.getProtocolInfo()), checksumModule);
     }
 
     @Override
