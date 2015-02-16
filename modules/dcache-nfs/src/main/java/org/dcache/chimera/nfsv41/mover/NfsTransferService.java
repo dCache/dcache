@@ -126,7 +126,7 @@ public class NfsTransferService extends AbstractCellComponent
     }
 
     @Override
-    public Cancellable execute(final NfsMover mover, final CompletionHandler<Void,Void> completionHandler) {
+    public Cancellable executeMover(final NfsMover mover, final CompletionHandler<Void, Void> completionHandler) {
         try {
 
             final Cancellable cancellableMover = mover.enable(completionHandler);
@@ -153,7 +153,7 @@ public class NfsTransferService extends AbstractCellComponent
     }
 
     @Override
-    public void close(NfsMover mover, CompletionHandler<Void, Void> completionHandler)
+    public void closeMover(NfsMover mover, CompletionHandler<Void, Void> completionHandler)
     {
         _postTransferService.execute(mover, completionHandler);
     }

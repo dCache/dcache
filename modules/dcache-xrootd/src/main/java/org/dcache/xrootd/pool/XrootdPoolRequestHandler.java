@@ -163,10 +163,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
                 if (descriptor.isPersistOnSuccessfulClose()) {
-                    _server.close(descriptor.getChannel(), new FileCorruptedCacheException(
+                    _server.closeChannel(descriptor.getChannel(), new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
                 } else {
-                    _server.close(descriptor.getChannel(), new CacheException(
+                    _server.closeChannel(descriptor.getChannel(), new CacheException(
                             "Client disconnected without closing file."));
                 }
             }
@@ -184,11 +184,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             for (FileDescriptor descriptor : _descriptors) {
                 if (descriptor != null) {
                     if (descriptor.isPersistOnSuccessfulClose()) {
-                        _server.close(descriptor.getChannel(), new FileCorruptedCacheException(
+                        _server.closeChannel(descriptor.getChannel(), new FileCorruptedCacheException(
                                 "File was opened with Persist On Successful Close and client was disconnected due to an error: " +
-                                        t.getMessage(), t));
+                                t.getMessage(), t));
                     } else {
-                        _server.close(descriptor.getChannel(), (Exception) t);
+                        _server.closeChannel(descriptor.getChannel(), (Exception) t);
                     }
                 }
             }
@@ -230,7 +230,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the " + UUID_PREFIX + " property.");
             }
 
-            MoverChannel<XrootdProtocolInfo> file = _server.open(uuid, false);
+            MoverChannel<XrootdProtocolInfo> file = _server.openChannel(uuid, false);
             if (file == null) {
                 _log.warn("No mover found for {}", msg);
                 throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid.");
@@ -262,7 +262,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 return new OpenResponse(msg, fd, null, null, stat);
             } finally {
                 if (file != null) {
-                    _server.close(file);
+                    _server.closeChannel(file);
                 }
             }
         }  catch (IOException e) {
@@ -525,7 +525,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                              "open file.");
         }
 
-        _server.close(_descriptors.set(fd, null).getChannel());
+        _server.closeChannel(_descriptors.set(fd, null).getChannel());
         return withOk(msg);
     }
 

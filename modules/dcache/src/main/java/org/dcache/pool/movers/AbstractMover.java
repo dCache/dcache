@@ -177,7 +177,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     @Override @SuppressWarnings("unchecked")
     public void close(CompletionHandler<Void, Void> completionHandler)
     {
-        _transferService.close((M) this, completionHandler);
+        _transferService.closeMover((M) this, completionHandler);
     }
 
     @Override
@@ -188,7 +188,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
             public Cancellable executeWithCancellable()
                     throws Exception
             {
-                return _transferService.execute((M) AbstractMover.this, this);
+                return _transferService.executeMover((M) AbstractMover.this, this);
             }
 
             @Override

@@ -320,7 +320,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     }
 
     @Override
-    public Cancellable execute(final NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
+    public Cancellable executeMover(final NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
             throws IOException, CacheException, NoRouteToCellException
     {
         return new TryCatchTemplate<Void, Void>(completionHandler) {
@@ -349,7 +349,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     }
 
     @Override
-    public void close(NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
+    public void closeMover(NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
     {
         postTransferService.execute(mover, completionHandler);
     }
@@ -385,13 +385,13 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         return (entry == null) ? null : entry.getFileAttributes();
     }
 
-    public MoverChannel<P> open(UUID uuid, boolean exclusive)
+    public MoverChannel<P> openChannel(UUID uuid, boolean exclusive)
     {
         Entry entry = uuids.get(uuid);
         return (entry == null) ? null : entry.open(exclusive);
     }
 
-    public void close(MoverChannel<P> channel)
+    public void closeChannel(MoverChannel<P> channel)
     {
         Entry entry = channels.get(channel);
         if (entry != null) {
@@ -399,7 +399,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         }
     }
 
-    public void close(MoverChannel<P> channel, Exception exception)
+    public void closeChannel(MoverChannel<P> channel, Exception exception)
     {
         Entry entry = channels.get(channel);
         if (entry != null) {

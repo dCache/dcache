@@ -482,7 +482,7 @@ public class HttpPoolRequestHandlerTests
                     null, null, path,
                     new URI("http", "localhost", path, null)));
         given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
-        given(_server.open(eq(file.getUuid()), anyBoolean())).willReturn(channel);
+        given(_server.openChannel(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
     private void givenDoorHasOrganisedWriteOf(final FileInfo file)
@@ -499,8 +499,8 @@ public class HttpPoolRequestHandlerTests
                         null, null, path,
                         new URI("http", "localhost", path, null)));
 
-        given(_server.open(eq(file
-                .getUuid()), anyBoolean())).willReturn(channel);
+        given(_server.openChannel(eq(file
+                                             .getUuid()), anyBoolean())).willReturn(channel);
     }
 
     private long sizeOfFile(FileInfo file)

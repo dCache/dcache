@@ -193,9 +193,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         _logger.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
         for (MoverChannel<HttpProtocolInfo> file: _files) {
             if (file == _writeChannel) {
-                _server.close(file, new FileCorruptedCacheException("Connection lost before end of file."));
+                _server.closeChannel(file, new FileCorruptedCacheException("Connection lost before end of file."));
             } else {
-                _server.close(file);
+                _server.closeChannel(file);
             }
         }
         _files.clear();
@@ -213,7 +213,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 } else {
                     cause = new CacheException(t.toString(), t);
                 }
-                _server.close(file, cause);
+                _server.closeChannel(file, cause);
             }
             _files.clear();
             ctx.channel().close();
@@ -473,7 +473,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
 
         UUID uuid = UUID.fromString(uuidList.get(0));
-        MoverChannel<HttpProtocolInfo> file = _server.open(uuid, exclusive);
+        MoverChannel<HttpProtocolInfo> file = _server.openChannel(uuid, exclusive);
         if (file == null) {
             throw new IllegalArgumentException("Request is no longer valid. " +
                                                "Please resubmit to door.");
@@ -499,9 +499,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     private void close(MoverChannel<HttpProtocolInfo> channel, Exception exception)
     {
         if (exception == null) {
-            _server.close(channel);
+            _server.closeChannel(channel);
         } else {
-            _server.close(channel, exception);
+            _server.closeChannel(channel, exception);
         }
         _files.remove(channel);
     }

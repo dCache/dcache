@@ -134,7 +134,7 @@ public class MoverProtocolTransferService extends AbstractCellComponent
 
 
     @Override
-    public Cancellable execute(MoverProtocolMover mover, CompletionHandler<Void,Void> completionHandler)
+    public Cancellable executeMover(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
     {
         MoverTask task = new MoverTask(mover, completionHandler);
         _executor.execute(task);
@@ -142,7 +142,7 @@ public class MoverProtocolTransferService extends AbstractCellComponent
     }
 
     @Override
-    public void close(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
+    public void closeMover(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
     {
         _postTransferService.execute(mover, completionHandler);
     }
