@@ -29,17 +29,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.channels.CompletionHandler;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.vehicles.HttpDoorUrlInfoMessage;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
@@ -47,14 +43,9 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.movers.AbstractNettyTransferService;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.TryCatchTemplate;
 
 /**
  * Netty-based HTTP transfer service.
@@ -77,35 +68,11 @@ public class HttpTransferService extends AbstractNettyTransferService<HttpProtoc
     private static final String QUERY_PARAM_ASSIGN = "=";
     private static final String PROTOCOL_HTTP = "http";
 
-    private long connectTimeout;
-    private TimeUnit connectTimeoutUnit;
     private int chunkSize;
 
     public HttpTransferService()
     {
         super("http");
-    }
-
-    public long getConnectTimeout()
-    {
-        return connectTimeout;
-    }
-
-    @Required
-    public void setConnectTimeout(long connectTimeout)
-    {
-        this.connectTimeout = connectTimeout;
-    }
-
-    public TimeUnit getConnectTimeoutUnit()
-    {
-        return connectTimeoutUnit;
-    }
-
-    @Required
-    public void setConnectTimeoutUnit(TimeUnit connectTimeoutUnit)
-    {
-        this.connectTimeoutUnit = connectTimeoutUnit;
     }
 
     public int getChunkSize()
@@ -120,37 +87,17 @@ public class HttpTransferService extends AbstractNettyTransferService<HttpProtoc
     }
 
     @Override
-    public Cancellable execute(final NettyMover<HttpProtocolInfo> mover, CompletionHandler<Void, Void> completionHandler) throws Exception
+    protected UUID createUuid(NettyMover<HttpProtocolInfo> mover)
     {
-        return new TryCatchTemplate<Void, Void>(completionHandler) {
-            @Override
-            public void execute()
-                    throws IOException, CacheException, NoRouteToCellException
-            {
-                UUID uuid = UUID.randomUUID();
-                MoverChannel<HttpProtocolInfo> channel = autoclose(mover.open());
-                setCancellable(register(channel, uuid, connectTimeoutUnit.toMillis(connectTimeout), this));
-                sendAddressToDoor(mover, getServerAddress().getPort(), uuid);
-            }
-
-            @Override
-            public void onFailure(Throwable t, Void attachment) throws CacheException
-            {
-                if (t instanceof DiskErrorCacheException) {
-                    faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
-                            t.getMessage(), t));
-                } else if (t instanceof NoRouteToCellException) {
-                    throw new CacheException("Failed to send redirect message to door: " + t.getMessage(), t);
-                }
-            }
-        };
+        return UUID.randomUUID();
     }
 
     /**
      * Send the network address of this mover to the door, along with the UUID
-     * identifying it
+     * identifying it.
      */
-    private void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port, UUID uuid)
+    @Override
+    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port, UUID uuid)
             throws SocketException, CacheException, NoRouteToCellException
     {
         HttpProtocolInfo protocolInfo = mover.getProtocolInfo();

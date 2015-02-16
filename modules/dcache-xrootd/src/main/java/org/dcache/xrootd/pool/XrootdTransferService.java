@@ -26,29 +26,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.channels.CompletionHandler;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.DiskErrorCacheException;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.pool.FaultAction;
-import org.dcache.pool.FaultEvent;
-import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.movers.AbstractNettyTransferService;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.util.NetworkUtils;
-import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.XrootdDecoder;
@@ -95,9 +87,6 @@ public class XrootdTransferService extends AbstractNettyTransferService<XrootdPr
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);
 
-    private static final long CONNECT_TIMEOUT =
-            TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
-
     private int maxFrameSize;
     private List<ChannelHandlerFactory> plugins;
 
@@ -131,38 +120,15 @@ public class XrootdTransferService extends AbstractNettyTransferService<XrootdPr
     }
 
     @Override
-    public Cancellable execute(final NettyMover<XrootdProtocolInfo> mover, CompletionHandler<Void, Void> completionHandler)
-            throws IOException, CacheException, NoRouteToCellException
+    protected UUID createUuid(NettyMover<XrootdProtocolInfo> mover)
     {
-        return new TryCatchTemplate<Void, Void>(completionHandler) {
-            @Override
-            public void execute()
-                    throws IOException, CacheException, NoRouteToCellException
-            {
-                UUID uuid = mover.getProtocolInfo().getUUID();
-                MoverChannel<XrootdProtocolInfo> channel = autoclose(mover.open());
-                setCancellable(register(channel, uuid, CONNECT_TIMEOUT, this));
-                sendAddressToDoor(mover, getServerAddress().getPort());
-            }
-
-            @Override
-            public void onFailure(Throwable t, Void attachment)
-                    throws CacheException
-            {
-                if (t instanceof DiskErrorCacheException) {
-                    faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
-                            t.getMessage(), t));
-                } else if (t instanceof NoRouteToCellException) {
-                    throw new CacheException("Failed to send redirect message to door: " + t.getMessage(), t);
-                }
-            }
-        };
+        return mover.getProtocolInfo().getUUID();
     }
 
     /**
      * Sends our address to the door. Copied from the old xrootd mover.
      */
-    private void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
+    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port, UUID uuid)
             throws SocketException, CacheException, NoRouteToCellException
     {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();

@@ -45,14 +45,18 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
+import org.dcache.pool.FaultAction;
+import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.ChecksumModule;
@@ -61,6 +65,7 @@ import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
 import org.dcache.util.PortRange;
+import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 
 /**
@@ -113,6 +118,9 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     protected TimeUnit clientIdleTimeoutUnit;
     protected CellStub doorStub;
 
+    private long connectTimeout;
+    private TimeUnit connectTimeoutUnit;
+
     public AbstractNettyTransferService(String name)
     {
         this.name = name;
@@ -164,6 +172,29 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     {
         this.clientIdleTimeoutUnit = clientIdleTimeoutUnit;
     }
+
+    public long getConnectTimeout()
+    {
+        return connectTimeout;
+    }
+
+    @Required
+    public void setConnectTimeout(long connectTimeout)
+    {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public TimeUnit getConnectTimeoutUnit()
+    {
+        return connectTimeoutUnit;
+    }
+
+    @Required
+    public void setConnectTimeoutUnit(TimeUnit connectTimeoutUnit)
+    {
+        this.connectTimeoutUnit = connectTimeoutUnit;
+    }
+
 
     @Required
     public void setDoorStub(CellStub stub)
@@ -289,12 +320,41 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     }
 
     @Override
+    public Cancellable execute(final NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
+            throws IOException, CacheException, NoRouteToCellException
+    {
+        return new TryCatchTemplate<Void, Void>(completionHandler) {
+            @Override
+            public void execute()
+                    throws Exception
+            {
+                UUID uuid = createUuid(mover);
+                MoverChannel<P> channel = autoclose(mover.open());
+                setCancellable(register(channel, uuid, connectTimeoutUnit.toMillis(connectTimeout), this));
+                sendAddressToDoor(mover, getServerAddress().getPort(), uuid);
+            }
+
+            @Override
+            public void onFailure(Throwable t, Void attachment)
+                    throws CacheException
+            {
+                if (t instanceof DiskErrorCacheException) {
+                    faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
+                                                               t.getMessage(), t));
+                } else if (t instanceof NoRouteToCellException) {
+                    throw new CacheException("Failed to send redirect message to door: " + t.getMessage(), t);
+                }
+            }
+        };
+    }
+
+    @Override
     public void close(NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
     {
         postTransferService.execute(mover, completionHandler);
     }
 
-    public synchronized Cancellable register(
+    private synchronized Cancellable register(
             MoverChannel<P> channel, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
         throws IOException
     {
@@ -464,4 +524,9 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
      * @return ChannelPipelineFactory adapted to child class.
      */
     protected abstract ChannelInitializer newChannelInitializer();
+
+    protected abstract void sendAddressToDoor(NettyMover<P> mover, int port, UUID uuid)
+        throws Exception;
+
+    protected abstract UUID createUuid(NettyMover<P> mover);
 }

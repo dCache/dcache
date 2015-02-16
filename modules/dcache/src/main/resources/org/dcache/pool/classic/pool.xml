@@ -349,6 +349,8 @@
       <property name="threads" value="${pool.mover.xrootd.disk-threads}"/>
       <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
       <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
+      <property name="connectTimeout" value="${pool.mover.xrootd.timeout.connect}"/>
+      <property name="connectTimeoutUnit" value="${pool.mover.xrootd.timeout.connect.unit}"/>
       <property name="maxFrameSize" value="${pool.mover.xrootd.frame-size}"/>
       <property name="plugins">
           <bean class="org.dcache.xrootd.spring.ChannelHandlerFactoryFactoryBean">
