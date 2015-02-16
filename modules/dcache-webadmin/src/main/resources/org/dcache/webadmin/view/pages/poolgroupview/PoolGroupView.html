@@ -25,7 +25,20 @@
                 style="position: absolute; visibility: show; left: 25px; top: -100px; z-index: +1"
                 onmouseover="overdiv='1';"
                 onmouseout="overdiv='0'; setTimeout('hideBox()',2000)"></div>
-            <table class="sortable">
+            <br>
+            <wicket:message key="PoolGroupView.quickfind"></wicket:message>
+            &nbsp;
+            <input
+                    type="text"
+                    class="quickfind-group"/>
+            &nbsp;
+            <input
+                    type="button"
+                    value="Clear Filters"
+                    class="cleanfilters-group"/>
+            <div class="clear"></div>
+            <br>
+            <table class="sortable-group">
                 <thead>
                     <tr>
                         <th><wicket:message
