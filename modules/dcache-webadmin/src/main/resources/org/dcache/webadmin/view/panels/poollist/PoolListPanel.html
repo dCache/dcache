@@ -12,7 +12,19 @@
 </head>
 <body>
     <wicket:panel>
-        <table class="sortable">
+        <wicket:message key="PoolPanel.quickfind"></wicket:message>
+        &nbsp;
+        <input
+                type="text"
+                class="quickfind-space"/>
+        &nbsp;
+        <input
+                type="button"
+                value="Clear Filters"
+                class="cleanfilters-space"/>
+        <div class="clear"></div>
+        <br>
+        <table class="sortable-space">
             <thead>
                 <tr>
                     <th wicket:id="selectBoxHeader" />

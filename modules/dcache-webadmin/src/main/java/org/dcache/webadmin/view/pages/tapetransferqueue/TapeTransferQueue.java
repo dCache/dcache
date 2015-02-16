@@ -1,5 +1,6 @@
 package org.dcache.webadmin.view.pages.tapetransferqueue;
 
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.list.ListItem;
@@ -70,5 +71,10 @@ public class TapeTransferQueue extends SortableBasePage {
             _log.debug("getRestoresAction failed {}", ex.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    protected void renderHeadInternal(IHeaderResponse response) {
+        super.renderHeadInternal(response);
+        addFilterSelectScript("tape", response);
     }
 }
