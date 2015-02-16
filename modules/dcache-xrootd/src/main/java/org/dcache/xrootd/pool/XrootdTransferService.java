@@ -18,7 +18,6 @@
 package org.dcache.xrootd.pool;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -31,7 +30,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 
@@ -90,8 +88,6 @@ public class XrootdTransferService extends AbstractNettyTransferService<XrootdPr
     private int maxFrameSize;
     private List<ChannelHandlerFactory> plugins;
 
-    private int numberClientConnections;
-
     public XrootdTransferService()
     {
         super("xrootd");
@@ -141,54 +137,28 @@ public class XrootdTransferService extends AbstractNettyTransferService<XrootdPr
     }
 
     @Override
-    protected ChannelInitializer newChannelInitializer() {
-        return new XrootdPoolChannelInitializer();
-    }
-
-    /**
-     * Only shutdown the server if no client connection left.
-     */
-    @Override
-    protected synchronized void conditionallyStopServer() {
-        if (numberClientConnections == 0) {
-            super.conditionallyStopServer();
-        }
-    }
-
-    public synchronized void clientConnected()
+    protected void initChannel(Channel ch) throws Exception
     {
-        numberClientConnections++;
-    }
+        super.initChannel(ch);
 
-    public synchronized void clientDisconnected() {
-        numberClientConnections--;
-        conditionallyStopServer();
-    }
+        ChannelPipeline pipeline = ch.pipeline();
 
-    private class XrootdPoolChannelInitializer extends ChannelInitializer
-    {
-        @Override
-        protected void initChannel(Channel ch) throws Exception
-        {
-            ChannelPipeline pipeline = ch.pipeline();
-
-            pipeline.addLast("encoder", new XrootdEncoder());
-            pipeline.addLast("decoder", new XrootdDecoder());
-            if (LOGGER.isDebugEnabled()) {
-                pipeline.addLast("logger", new LoggingHandler());
-            }
-            pipeline.addLast("handshake",
-                             new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
-            for (ChannelHandlerFactory plugin: plugins) {
-                pipeline.addLast("plugin:" + plugin.getName(),
-                                 plugin.createHandler());
-            }
-            pipeline.addLast("timeout", new IdleStateHandler(0,
-                                                             0,
-                                                             clientIdleTimeout,
-                                                             clientIdleTimeoutUnit));
-            pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
-            pipeline.addLast("transfer", new XrootdPoolRequestHandler(XrootdTransferService.this));
+        pipeline.addLast("encoder", new XrootdEncoder());
+        pipeline.addLast("decoder", new XrootdDecoder());
+        if (LOGGER.isDebugEnabled()) {
+            pipeline.addLast("logger", new LoggingHandler());
         }
+        pipeline.addLast("handshake",
+                         new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
+        for (ChannelHandlerFactory plugin: plugins) {
+            pipeline.addLast("plugin:" + plugin.getName(),
+                             plugin.createHandler());
+        }
+        pipeline.addLast("timeout", new IdleStateHandler(0,
+                                                         0,
+                                                         clientIdleTimeout,
+                                                         clientIdleTimeoutUnit));
+        pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
+        pipeline.addLast("transfer", new XrootdPoolRequestHandler(this, maxFrameSize));
     }
 }

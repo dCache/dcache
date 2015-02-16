@@ -35,6 +35,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.namespace.FileAttribute;
+import org.dcache.pool.movers.AbstractNettyTransferService;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -120,21 +121,17 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     /**
      * The server on which this request handler is running.
      */
-    private XrootdTransferService _server;
-
-    public XrootdPoolRequestHandler(XrootdTransferService server) {
-        _server = server;
-    }
+    private AbstractNettyTransferService<XrootdProtocolInfo> _server;
 
     /**
-     * @throws IOException opening a server socket to handle the connection
-     *                     fails
+     * Maximum size of frame used for xrootd replies.
      */
-    @Override
-    public void channelActive(ChannelHandlerContext ctx)
-            throws Exception
+    private final int _maxFrameSize;
+
+    public XrootdPoolRequestHandler(AbstractNettyTransferService<XrootdProtocolInfo> server, int maxFrameSize)
     {
-        _server.clientConnected();
+        _server = server;
+        _maxFrameSize = maxFrameSize;
     }
 
     @Override
@@ -163,16 +160,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
                 if (descriptor.isPersistOnSuccessfulClose()) {
-                    _server.closeChannel(descriptor.getChannel(), new FileCorruptedCacheException(
+                    _server.closeFile(descriptor.getChannel(), new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
                 } else {
-                    _server.closeChannel(descriptor.getChannel(), new CacheException(
+                    _server.closeFile(descriptor.getChannel(), new CacheException(
                             "Client disconnected without closing file."));
                 }
             }
         }
-
-        _server.clientDisconnected();
     }
 
     @Override
@@ -184,11 +179,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             for (FileDescriptor descriptor : _descriptors) {
                 if (descriptor != null) {
                     if (descriptor.isPersistOnSuccessfulClose()) {
-                        _server.closeChannel(descriptor.getChannel(), new FileCorruptedCacheException(
+                        _server.closeFile(descriptor.getChannel(), new FileCorruptedCacheException(
                                 "File was opened with Persist On Successful Close and client was disconnected due to an error: " +
                                 t.getMessage(), t));
                     } else {
-                        _server.closeChannel(descriptor.getChannel(), (Exception) t);
+                        _server.closeFile(descriptor.getChannel(), (Exception) t);
                     }
                 }
             }
@@ -230,7 +225,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the " + UUID_PREFIX + " property.");
             }
 
-            MoverChannel<XrootdProtocolInfo> file = _server.openChannel(uuid, false);
+            MoverChannel<XrootdProtocolInfo> file = _server.openFile(uuid, false);
             if (file == null) {
                 _log.warn("No mover found for {}", msg);
                 throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid.");
@@ -262,7 +257,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 return new OpenResponse(msg, fd, null, null, stat);
             } finally {
                 if (file != null) {
-                    _server.closeChannel(file);
+                    _server.closeFile(file);
                 }
             }
         }  catch (IOException e) {
@@ -389,7 +384,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         if (msg.bytesToRead() == 0) {
             return withOk(msg);
         } else {
-            return new ChunkedFileDescriptorReadResponse(msg, _server.getMaxFrameSize(), _descriptors.get(fd));
+            return new ChunkedFileDescriptorReadResponse(msg, _maxFrameSize, _descriptors.get(fd));
         }
     }
 
@@ -425,15 +420,15 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             int totalBytesToRead = req.BytesToRead() +
                 ReadVResponse.READ_LIST_HEADER_SIZE;
 
-            if (totalBytesToRead > _server.getMaxFrameSize()) {
+            if (totalBytesToRead > _maxFrameSize) {
                 _log.warn("Vector read of {} bytes requested, exceeds " +
                           "maximum frame size of {} bytes!", totalBytesToRead,
-                          _server.getMaxFrameSize());
+                          _maxFrameSize);
                 throw new XrootdException(kXR_ArgInvalid, "Single readv transfer is too large.");
             }
         }
 
-        return new ChunkedFileDescriptorReadvResponse(msg, _server.getMaxFrameSize(), new ArrayList<>(_descriptors));
+        return new ChunkedFileDescriptorReadvResponse(msg, _maxFrameSize, new ArrayList<>(_descriptors));
     }
 
     /**
@@ -525,7 +520,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                              "open file.");
         }
 
-        _server.closeChannel(_descriptors.set(fd, null).getChannel());
+        _server.closeFile(_descriptors.set(fd, null).getChannel());
         return withOk(msg);
     }
 
@@ -541,7 +536,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     s.append(0);
                     break;
                 case "readv_ior_max":
-                    s.append(_server.getMaxFrameSize() - ReadVResponse.READ_LIST_HEADER_SIZE);
+                    s.append(_maxFrameSize - ReadVResponse.READ_LIST_HEADER_SIZE);
                     break;
                 case "readv_iov_max":
                     s.append(READV_IOV_MAX);

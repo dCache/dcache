@@ -18,7 +18,6 @@
 package org.dcache.http;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
@@ -136,39 +135,24 @@ public class HttpTransferService extends AbstractNettyTransferService<HttpProtoc
     }
 
     @Override
-    protected ChannelInitializer newChannelInitializer()
+    protected void initChannel(Channel ch) throws Exception
     {
-        return new HttpChannelInitializer();
-    }
+        super.initChannel(ch);
 
-    /**
-     * Factory that creates new server handler.
-     *
-     * The pipeline can handle HTTP compression and chunked transfers.
-     *
-     * @author tzangerl
-     *
-     */
-    class HttpChannelInitializer extends ChannelInitializer
-    {
-        @Override
-        protected void initChannel(Channel ch) throws Exception
-        {
-            ChannelPipeline pipeline = ch.pipeline();
+        ChannelPipeline pipeline = ch.pipeline();
 
-            pipeline.addLast("decoder", new HttpRequestDecoder());
-            pipeline.addLast("encoder", new HttpResponseEncoder());
+        pipeline.addLast("decoder", new HttpRequestDecoder());
+        pipeline.addLast("encoder", new HttpResponseEncoder());
 
-            if (LOGGER.isDebugEnabled()) {
-                pipeline.addLast("logger", new LoggingHandler());
-            }
-            pipeline.addLast("idle-state-handler",
-                             new IdleStateHandler(0,
-                                                  0,
-                                                  clientIdleTimeout,
-                                                  clientIdleTimeoutUnit));
-            pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
-            pipeline.addLast("transfer", new HttpPoolRequestHandler(HttpTransferService.this, chunkSize));
+        if (LOGGER.isDebugEnabled()) {
+            pipeline.addLast("logger", new LoggingHandler());
         }
+        pipeline.addLast("idle-state-handler",
+                         new IdleStateHandler(0,
+                                              0,
+                                              clientIdleTimeout,
+                                              clientIdleTimeoutUnit));
+        pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+        pipeline.addLast("transfer", new HttpPoolRequestHandler(this, chunkSize));
     }
 }

@@ -21,10 +21,15 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -82,44 +87,58 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     private static final Logger LOGGER =
             LoggerFactory.getLogger(AbstractNettyTransferService.class);
 
-    /**
-     * Manages connection timeouts.
-     */
+    /** Manages connection timeouts. */
     private ScheduledExecutorService timeoutScheduler;
 
+    /** Event loop for the server channel. */
     private NioEventLoopGroup acceptGroup;
+
+    /** Event loop for the child channels. */
     private NioEventLoopGroup socketGroup;
 
-    /**
-     * Shared Netty server channel
-     */
+    /** Shared Netty server channel. */
     private Channel serverChannel;
 
-    /**
-     * Socket address of the last server channel created.
-     */
+    /** All open Netty cild channels. */
+    private ChannelGroup openChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+
+    /** Socket address of the last server channel created. */
     private InetSocketAddress lastServerAddress;
 
+    /** Port range in which Netty will listen. */
     private PortRange portRange;
 
-    private final ConcurrentMap<UUID, Entry> uuids =
-            Maps.newConcurrentMap();
-    private final ConcurrentMap<MoverChannel<P>, Entry> channels =
-            Maps.newConcurrentMap();
+    /** UUID to Entry map. */
+    private final ConcurrentMap<UUID, Entry> uuids = Maps.newConcurrentMap();
 
+    /** Mover channel to Entry map. */
+    private final ConcurrentMap<MoverChannel<P>, Entry> files = Maps.newConcurrentMap();
+
+    /** Server name. */
     private String name;
+
+    /** Number of IO threads. */
     private int threads;
 
+    /** Service to post process movers. */
     private PostTransferService postTransferService;
+
+    /** Listener for critical pool faults. */
     protected FaultListener faultListener;
+
+    /** Service to calculsate and verify checksums. */
     protected ChecksumModule checksumModule;
 
+    /** Timeout for when to disconnect an idle client. */
     protected long clientIdleTimeout;
     protected TimeUnit clientIdleTimeoutUnit;
-    protected CellStub doorStub;
 
+    /** Timeout for when to give up waiting for a client connection. */
     private long connectTimeout;
     private TimeUnit connectTimeoutUnit;
+
+    /** Communication stub for talking to doors. */
+    protected CellStub doorStub;
 
     public AbstractNettyTransferService(String name)
     {
@@ -213,6 +232,26 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         return portRange;
     }
 
+    protected void initChannel(Channel ch) throws Exception
+    {
+        ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+            @Override
+            public void channelActive(ChannelHandlerContext ctx) throws Exception
+            {
+                openChannels.add(ctx.channel());
+                super.channelActive(ctx);
+            }
+
+            @Override
+            public void channelInactive(ChannelHandlerContext ctx) throws Exception
+            {
+                super.channelInactive(ctx);
+                openChannels.remove(ctx.channel());
+                conditionallyStopServer();
+            }
+        });
+    }
+
     /**
      * Start netty server.
      *
@@ -225,7 +264,14 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
                     .channel(NioServerSocketChannel.class)
                     .childOption(ChannelOption.TCP_NODELAY, false)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
-                    .childHandler(newChannelInitializer());
+                    .childHandler(new ChannelInitializer<Channel>()
+                    {
+                        @Override
+                        protected void initChannel(Channel ch) throws Exception
+                        {
+                            AbstractNettyTransferService.this.initChannel(ch);
+                        }
+                    });
 
             serverChannel = portRange.bind(bootstrap);
             lastServerAddress = (InetSocketAddress) serverChannel.localAddress();
@@ -288,7 +334,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
      * Stop server if there are no channels.
      */
     protected synchronized void conditionallyStopServer() {
-        if (uuids.isEmpty()) {
+        if (openChannels.isEmpty() && uuids.isEmpty()) {
             stopServer();
         }
     }
@@ -355,15 +401,15 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     }
 
     private synchronized Cancellable register(
-            MoverChannel<P> channel, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
+            MoverChannel<P> file, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
         throws IOException
     {
-        Entry entry = new Entry(channel, uuid, connectTimeout, completionHandler);
+        Entry entry = new Entry(file, uuid, connectTimeout, completionHandler);
 
         if (uuids.putIfAbsent(uuid, entry) != null) {
             throw new IllegalStateException("UUID conflict");
         }
-        if (channels.putIfAbsent(channel, entry) != null) {
+        if (files.putIfAbsent(file, entry) != null) {
             uuids.remove(uuid);
             throw new IllegalStateException("Mover is already registered");
         }
@@ -374,7 +420,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
 
     private synchronized void unregister(Entry entry)
     {
-        channels.remove(entry._channel);
+        files.remove(entry._file);
         uuids.remove(entry._uuid);
         conditionallyStopServer();
     }
@@ -385,23 +431,23 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         return (entry == null) ? null : entry.getFileAttributes();
     }
 
-    public MoverChannel<P> openChannel(UUID uuid, boolean exclusive)
+    public MoverChannel<P> openFile(UUID uuid, boolean exclusive)
     {
         Entry entry = uuids.get(uuid);
         return (entry == null) ? null : entry.open(exclusive);
     }
 
-    public void closeChannel(MoverChannel<P> channel)
+    public void closeFile(MoverChannel<P> channel)
     {
-        Entry entry = channels.get(channel);
+        Entry entry = files.get(channel);
         if (entry != null) {
             entry.close();
         }
     }
 
-    public void closeChannel(MoverChannel<P> channel, Exception exception)
+    public void closeFile(MoverChannel<P> channel, Exception exception)
     {
-        Entry entry = channels.get(channel);
+        Entry entry = files.get(channel);
         if (entry != null) {
             entry.close(exception);
         }
@@ -410,14 +456,14 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     private class Entry implements Cancellable
     {
         private final Sync _sync = new Sync();
-        private final MoverChannel<P> _channel;
+        private final MoverChannel<P> _file;
         private final UUID _uuid;
         private final Future<?> _timeout;
         private final CompletionHandler<Void, Void> _completionHandler;
         private final CDC _cdc = new CDC();
 
-        Entry(MoverChannel<P> channel, UUID uuid, final long connectTimeout, CompletionHandler<Void, Void> completionHandler) {
-            _channel = channel;
+        Entry(MoverChannel<P> file, UUID uuid, final long connectTimeout, CompletionHandler<Void, Void> completionHandler) {
+            _file = file;
             _uuid = uuid;
             _completionHandler = completionHandler;
             _timeout = timeoutScheduler.schedule(new Runnable()
@@ -467,7 +513,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
 
         public FileAttributes getFileAttributes()
         {
-            return _channel.getFileAttributes();
+            return _file.getFileAttributes();
         }
 
         private class Sync
@@ -483,7 +529,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
                 _isExclusive = exclusive;
                 _open++;
                 _timeout.cancel(false);
-                return _channel;
+                return _file;
             }
 
             synchronized boolean onClose() {
@@ -518,12 +564,6 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
             }
         }
     }
-
-    /**
-     * Child classes should produce suitable pipeline factories here.
-     * @return ChannelPipelineFactory adapted to child class.
-     */
-    protected abstract ChannelInitializer newChannelInitializer();
 
     protected abstract void sendAddressToDoor(NettyMover<P> mover, int port, UUID uuid)
         throws Exception;
