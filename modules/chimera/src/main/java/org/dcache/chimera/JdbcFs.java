@@ -324,6 +324,11 @@ public class JdbcFs implements FileSystemProvider {
                         dbConnection.commit();
 
                     } catch (SQLException se) {
+                        try {
+                            dbConnection.rollback();
+                        } catch (SQLException e) {
+                            _log.error("create File rollback ", e);
+                        }
                         // according to SQL-92 standard, class-code 23 is
                         // Constraint Violation, in our case
                         // same pool for the same file,
@@ -332,11 +337,6 @@ public class JdbcFs implements FileSystemProvider {
                             throw new FileExistsChimeraFsException(name);
                         }
                         _log.error("create File: ", se);
-                        try {
-                            dbConnection.rollback();
-                        } catch (SQLException e) {
-                            _log.error("create File rollback ", e);
-                        }
                     }
                 }
 
@@ -357,17 +357,17 @@ public class JdbcFs implements FileSystemProvider {
                             dbConnection.commit();
 
                         } catch (SQLException se) {
+                            try {
+                                dbConnection.rollback();
+                            } catch (SQLException e) {
+                                _log.error("create File rollback ", e);
+                            }
                             // according to SQL-92 standard, class-code 23 is
                             // Constraint Violation, in our case file exist
                             if (se.getSQLState().startsWith("23")) {
                                 throw new FileExistsChimeraFsException(name);
                             }
                             _log.error("create File: ", se);
-                            try {
-                                dbConnection.rollback();
-                            } catch (SQLException e) {
-                                _log.error("create File rollback ", e);
-                            }
                         }
                     }
                 }
