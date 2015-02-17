@@ -17,6 +17,9 @@
  */
 package org.dcache.xrootd.pool;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -27,9 +30,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -104,7 +109,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      * Store file descriptors of open files.
      */
     private final List<FileDescriptor> _descriptors =
-        new ArrayList<>();
+            Collections.synchronizedList(new ArrayList<>());
 
     /**
      * Use for timeout handling - a handler is always newly instantiated in
@@ -519,8 +524,28 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                              "open file.");
         }
 
-        _descriptors.set(fd, null).getChannel().release();
-        return withOk(msg);
+        ListenableFuture<Void> future = _descriptors.get(fd).getChannel().release();
+        future.addListener(() -> {
+            try {
+                Uninterruptibles.getUninterruptibly(future);
+                respond(ctx, withOk(msg));
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof FileCorruptedCacheException) {
+                    respond(ctx, withError(msg, kXR_ChkSumErr, cause.getMessage()));
+                } else if (cause instanceof CacheException) {
+                    respond(ctx, withError(msg, kXR_ServerError, cause.getMessage()));
+                } else if (cause instanceof IOException) {
+                    respond(ctx, withError(msg, kXR_IOError, cause.getMessage()));
+                } else {
+                    respond(ctx, withError(msg, kXR_ServerError, cause.toString()));
+                }
+            } finally {
+                _descriptors.set(fd, null);
+            }
+        }, MoreExecutors.directExecutor());
+
+        return null;
     }
 
     @Override

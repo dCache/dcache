@@ -19,6 +19,7 @@ import javax.security.auth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.regex.Pattern;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileCorruptedCacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
@@ -882,8 +884,7 @@ public class ChimeraNameSpaceProvider
                             if (!existingSum.isPresent()) {
                                 _fs.setInodeChecksum(inode, type.getType(), value);
                             } else if (!existingSum.get().equals(sum)) {
-                                throw new CacheException(CacheException.INVALID_ARGS,
-                                                         "Checksum mismatch");
+                                throw new FileCorruptedCacheException(existingSum.asSet(), Collections.singleton(new Checksum(type, value)));
                             }
                         }
                         break;

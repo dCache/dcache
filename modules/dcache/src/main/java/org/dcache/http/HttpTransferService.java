@@ -86,7 +86,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
     }
 
     @Override
-    protected UUID createUuid(NettyMover<HttpProtocolInfo> mover)
+    protected UUID createUuid(HttpProtocolInfo protocolInfo)
     {
         return UUID.randomUUID();
     }
@@ -96,13 +96,13 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
      * identifying it.
      */
     @Override
-    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port, UUID uuid)
+    protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port)
             throws SocketException, CacheException, NoRouteToCellException
     {
         HttpProtocolInfo protocolInfo = mover.getProtocolInfo();
         String uri;
         try {
-            uri = getUri(protocolInfo, port, uuid).toASCIIString();
+            uri = getUri(protocolInfo, port, mover.getUuid()).toASCIIString();
         } catch (URISyntaxException e) {
             throw new RuntimeException("Failed to create URI for HTTP mover. Please report to support@dcache.org", e);
         }

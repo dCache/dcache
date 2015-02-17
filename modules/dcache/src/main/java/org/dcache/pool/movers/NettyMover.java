@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -44,16 +45,24 @@ import static com.google.common.base.Preconditions.checkState;
 public class NettyMover<P extends ProtocolInfo> extends MoverChannelMover<P, NettyMover<P>>
 {
     private final ChecksumFactory checksumFactory;
+    private final UUID uuid;
     private ChecksumChannel checksumChannel;
 
     public NettyMover(ReplicaDescriptor handle,
                       PoolIoFileMessage message,
                       CellPath pathToDoor,
                       TransferService<NettyMover<P>> transferService,
-                      ChecksumFactory checksumFactory)
+                      ChecksumFactory checksumFactory,
+                      UUID uuid)
     {
         super(handle, message, pathToDoor, transferService, MoverChannel.AllocatorMode.HARD);
         this.checksumFactory = checksumFactory;
+        this.uuid = uuid;
+    }
+
+    public UUID getUuid()
+    {
+        return uuid;
     }
 
     @Override

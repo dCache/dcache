@@ -116,15 +116,16 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     }
 
     @Override
-    protected UUID createUuid(NettyMover<XrootdProtocolInfo> mover)
+    protected UUID createUuid(XrootdProtocolInfo protocolInfo)
     {
-        return mover.getProtocolInfo().getUUID();
+        return protocolInfo.getUUID();
     }
 
     /**
      * Sends our address to the door. Copied from the old xrootd mover.
      */
-    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port, UUID uuid)
+    @Override
+    protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
             throws SocketException, CacheException, NoRouteToCellException
     {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();

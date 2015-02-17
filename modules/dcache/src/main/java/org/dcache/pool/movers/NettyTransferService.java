@@ -18,6 +18,8 @@
 package org.dcache.pool.movers;
 
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -365,7 +367,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     public Mover<?> createMover(ReplicaDescriptor handle, PoolIoFileMessage message,
                                 CellPath pathToDoor) throws CacheException
     {
-        return new NettyMover<>(handle, message, pathToDoor, this, getChecksumFactoryFor(handle));
+        return new NettyMover<>(handle, message, pathToDoor, this, getChecksumFactoryFor(handle),
+                                createUuid((P) message.getProtocolInfo()));
     }
 
     @Override
@@ -377,10 +380,16 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             public void execute()
                     throws Exception
             {
-                UUID uuid = createUuid(mover);
-                MoverChannel<P> channel = autoclose(mover.open());
-                setCancellable(register(channel, uuid, connectTimeoutUnit.toMillis(connectTimeout), this));
-                sendAddressToDoor(mover, getServerAddress().getPort(), uuid);
+                UUID uuid = mover.getUuid();
+                NettyMoverChannel channel =
+                        autoclose(new NettyMoverChannel(mover.open(), uuid,
+                                                        connectTimeoutUnit.toMillis(connectTimeout), this));
+                if (uuids.putIfAbsent(uuid, channel) != null) {
+                    throw new IllegalStateException("UUID conflict");
+                }
+                conditionallyStartServer();
+                setCancellable(channel);
+                sendAddressToDoor(mover, getServerAddress().getPort());
             }
 
             @Override
@@ -400,27 +409,33 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     @Override
     public void closeMover(NettyMover<P> mover, CompletionHandler<Void, Void> completionHandler)
     {
-        postTransferService.execute(mover, completionHandler);
-    }
+        new TryCatchTemplate<Void, Void>(completionHandler) {
+            @Override
+            protected void execute() throws Exception
+            {
+                postTransferService.execute(mover, this);
+            }
 
-    private synchronized NettyMoverChannel register(
-            MoverChannel<P> file, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
-        throws IOException
-    {
-        NettyMoverChannel channel = new NettyMoverChannel(file, uuid, connectTimeout, completionHandler);
+            @Override
+            protected void onSuccess(Void result, Void attachment) throws Exception
+            {
+                NettyMoverChannel channel = uuids.remove(mover.getUuid());
+                if (channel != null) {
+                    channel.done();
+                    conditionallyStopServer();
+                }
+            }
 
-        if (uuids.putIfAbsent(uuid, channel) != null) {
-            throw new IllegalStateException("UUID conflict");
-        }
-
-        conditionallyStartServer();
-        return channel;
-    }
-
-    private synchronized void unregister(NettyMoverChannel channel)
-    {
-        uuids.remove(channel.uuid);
-        conditionallyStopServer();
+            @Override
+            protected void onFailure(Throwable t, Void attachment) throws Exception
+            {
+                NettyMoverChannel channel = uuids.remove(mover.getUuid());
+                if (channel != null) {
+                    channel.done(t);
+                    conditionallyStopServer();
+                }
+            }
+        };
     }
 
     public FileAttributes getFileAttributes(UUID uuid)
@@ -447,6 +462,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         private final Future<?> timeout;
         private final CompletionHandler<Void, Void> completionHandler;
         private final CDC cdc = new CDC();
+        private final SettableFuture<Void> closeFuture = SettableFuture.create();
 
         public NettyMoverChannel(MoverChannel<P> file, UUID uuid,
                                  long connectTimeout,
@@ -527,13 +543,14 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             return sync.open(exclusive) ? this : null;
         }
 
-        public void release()
+        public ListenableFuture<Void> release()
         {
             try (CDC ignored = cdc.restore()) {
                 if (sync.onClose()) {
                     completionHandler.completed(null, null);
                 }
             }
+            return closeFuture;
         }
 
         public void release(Throwable t)
@@ -543,6 +560,16 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
                     completionHandler.failed(t, null);
                 }
             }
+        }
+
+        public void done()
+        {
+            closeFuture.set(null);
+        }
+
+        public void done(Throwable t)
+        {
+            closeFuture.setException(t);
         }
 
         @Override
@@ -578,30 +605,29 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
 
             synchronized boolean onClose() {
                 open--;
-                return open <= 0 && unregister();
+                return open <= 0 && close();
             }
 
             synchronized boolean onFailure() {
                 open--;
-                return unregister();
+                return close();
             }
 
             synchronized boolean onCancel()
             {
-                return unregister();
+                return close();
             }
 
             synchronized boolean onTimeout()
             {
-                return (open == 0) && unregister();
+                return (open == 0) && close();
             }
 
-            private boolean unregister()
+            private boolean close()
             {
                 if (!isClosed) {
                     isClosed = true;
                     timeout.cancel(false);
-                    NettyTransferService.this.unregister(NettyMoverChannel.this);
                     return true;
                 }
                 return false;
@@ -609,8 +635,8 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
         }
     }
 
-    protected abstract void sendAddressToDoor(NettyMover<P> mover, int port, UUID uuid)
+    protected abstract void sendAddressToDoor(NettyMover<P> mover, int port)
         throws Exception;
 
-    protected abstract UUID createUuid(NettyMover<P> mover);
+    protected abstract UUID createUuid(P protocolInfo);
 }
