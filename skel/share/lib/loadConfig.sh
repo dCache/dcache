@@ -108,7 +108,7 @@ printPluginClassPath() # $1 = domain
         fi
     done
 
-    echo $classpath
+    echo ${classpath%:}
 }
 
 # Prints the classpath of a domain
@@ -142,7 +142,7 @@ printLimitedClassPath() # $1..$n = list of jar files
         classpath="${classpath}:${jar}"
     done
 
-    echo $classpath
+    echo ${classpath#:}
 }
 
 quickJava()
