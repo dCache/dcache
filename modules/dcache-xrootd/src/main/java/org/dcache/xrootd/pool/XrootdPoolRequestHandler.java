@@ -35,9 +35,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
 
 import org.dcache.namespace.FileAttribute;
-import org.dcache.pool.movers.AbstractNettyTransferService;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
@@ -121,14 +120,14 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
     /**
      * The server on which this request handler is running.
      */
-    private AbstractNettyTransferService<XrootdProtocolInfo> _server;
+    private NettyTransferService<XrootdProtocolInfo> _server;
 
     /**
      * Maximum size of frame used for xrootd replies.
      */
     private final int _maxFrameSize;
 
-    public XrootdPoolRequestHandler(AbstractNettyTransferService<XrootdProtocolInfo> server, int maxFrameSize)
+    public XrootdPoolRequestHandler(NettyTransferService<XrootdProtocolInfo> server, int maxFrameSize)
     {
         _server = server;
         _maxFrameSize = maxFrameSize;
@@ -160,10 +159,10 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
         for (FileDescriptor descriptor : _descriptors) {
             if (descriptor != null) {
                 if (descriptor.isPersistOnSuccessfulClose()) {
-                    _server.closeFile(descriptor.getChannel(), new FileCorruptedCacheException(
+                    descriptor.getChannel().release(new FileCorruptedCacheException(
                             "File was opened with Persist On Successful Close and not closed."));
                 } else {
-                    _server.closeFile(descriptor.getChannel(), new CacheException(
+                    descriptor.getChannel().release(new CacheException(
                             "Client disconnected without closing file."));
                 }
             }
@@ -179,11 +178,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
             for (FileDescriptor descriptor : _descriptors) {
                 if (descriptor != null) {
                     if (descriptor.isPersistOnSuccessfulClose()) {
-                        _server.closeFile(descriptor.getChannel(), new FileCorruptedCacheException(
+                        descriptor.getChannel().release(new FileCorruptedCacheException(
                                 "File was opened with Persist On Successful Close and client was disconnected due to an error: " +
                                 t.getMessage(), t));
                     } else {
-                        _server.closeFile(descriptor.getChannel(), (Exception) t);
+                        descriptor.getChannel().release(t);
                     }
                 }
             }
@@ -225,7 +224,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 throw new XrootdException(kXR_NotAuthorized, "Request lacks the " + UUID_PREFIX + " property.");
             }
 
-            MoverChannel<XrootdProtocolInfo> file = _server.openFile(uuid, false);
+            NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid, false);
             if (file == null) {
                 _log.warn("No mover found for {}", msg);
                 throw new XrootdException(kXR_NotAuthorized, UUID_PREFIX + " is no longer valid.");
@@ -257,7 +256,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 return new OpenResponse(msg, fd, null, null, stat);
             } finally {
                 if (file != null) {
-                    _server.closeFile(file);
+                    file.release();
                 }
             }
         }  catch (IOException e) {
@@ -520,7 +519,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                              "open file.");
         }
 
-        _server.closeFile(_descriptors.set(fd, null).getChannel());
+        _descriptors.set(fd, null).getChannel().release();
         return withOk(msg);
     }
 

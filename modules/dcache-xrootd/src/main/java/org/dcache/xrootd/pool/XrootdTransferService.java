@@ -36,7 +36,7 @@ import diskCacheV111.util.CacheException;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.pool.movers.AbstractNettyTransferService;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
@@ -80,7 +80,7 @@ import org.dcache.xrootd.stream.ChunkedResponseWriteHandler;
  * * At least for vector read, the behaviour when reading beyond the
  *   end of the file is wrong.
  */
-public class XrootdTransferService extends AbstractNettyTransferService<XrootdProtocolInfo>
+public class XrootdTransferService extends NettyTransferService<XrootdProtocolInfo>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(XrootdTransferService.class);

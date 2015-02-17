@@ -39,6 +39,7 @@ import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
@@ -73,6 +74,8 @@ import org.dcache.util.PortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * Abstract base class for Netty based transfer services. This class provides
  * most methods needed by a pool-side Netty mover.
@@ -81,11 +84,11 @@ import org.dcache.vehicles.FileAttributes;
  * on the mover closing the MoverChannel, thus as a side effect causing
  * the Netty channel to close.
  */
-public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
+public abstract class NettyTransferService<P extends ProtocolInfo>
     implements TransferService<NettyMover<P>>, MoverFactory
 {
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(AbstractNettyTransferService.class);
+            LoggerFactory.getLogger(NettyTransferService.class);
 
     /** Manages connection timeouts. */
     private ScheduledExecutorService timeoutScheduler;
@@ -108,11 +111,8 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     /** Port range in which Netty will listen. */
     private PortRange portRange;
 
-    /** UUID to Entry map. */
-    private final ConcurrentMap<UUID, Entry> uuids = Maps.newConcurrentMap();
-
-    /** Mover channel to Entry map. */
-    private final ConcurrentMap<MoverChannel<P>, Entry> files = Maps.newConcurrentMap();
+    /** UUID to channel map. */
+    private final ConcurrentMap<UUID, NettyMoverChannel> uuids = Maps.newConcurrentMap();
 
     /** Server name. */
     private String name;
@@ -140,7 +140,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     /** Communication stub for talking to doors. */
     protected CellStub doorStub;
 
-    public AbstractNettyTransferService(String name)
+    public NettyTransferService(String name)
     {
         this.name = name;
     }
@@ -269,7 +269,7 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
                         @Override
                         protected void initChannel(Channel ch) throws Exception
                         {
-                            AbstractNettyTransferService.this.initChannel(ch);
+                            NettyTransferService.this.initChannel(ch);
                         }
                     });
 
@@ -324,7 +324,8 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     /**
      * Start server if there are any registered channels.
      */
-    protected synchronized void conditionallyStartServer() throws IOException {
+    protected synchronized void conditionallyStartServer() throws IOException
+    {
         if (!uuids.isEmpty()) {
             startServer();
         }
@@ -333,7 +334,8 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     /**
      * Stop server if there are no channels.
      */
-    protected synchronized void conditionallyStopServer() {
+    protected synchronized void conditionallyStopServer()
+    {
         if (openChannels.isEmpty() && uuids.isEmpty()) {
             stopServer();
         }
@@ -342,7 +344,8 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
     /**
      * @return The address to which the server channel was last bound.
      */
-    public synchronized InetSocketAddress getServerAddress() {
+    public synchronized InetSocketAddress getServerAddress()
+    {
         return lastServerAddress;
     }
 
@@ -400,103 +403,144 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         postTransferService.execute(mover, completionHandler);
     }
 
-    private synchronized Cancellable register(
+    private synchronized NettyMoverChannel register(
             MoverChannel<P> file, UUID uuid, long connectTimeout, CompletionHandler<Void, Void> completionHandler)
         throws IOException
     {
-        Entry entry = new Entry(file, uuid, connectTimeout, completionHandler);
+        NettyMoverChannel channel = new NettyMoverChannel(file, uuid, connectTimeout, completionHandler);
 
-        if (uuids.putIfAbsent(uuid, entry) != null) {
+        if (uuids.putIfAbsent(uuid, channel) != null) {
             throw new IllegalStateException("UUID conflict");
-        }
-        if (files.putIfAbsent(file, entry) != null) {
-            uuids.remove(uuid);
-            throw new IllegalStateException("Mover is already registered");
         }
 
         conditionallyStartServer();
-        return entry;
+        return channel;
     }
 
-    private synchronized void unregister(Entry entry)
+    private synchronized void unregister(NettyMoverChannel channel)
     {
-        files.remove(entry._file);
-        uuids.remove(entry._uuid);
+        uuids.remove(channel.uuid);
         conditionallyStopServer();
     }
 
     public FileAttributes getFileAttributes(UUID uuid)
     {
-        Entry entry = uuids.get(uuid);
-        return (entry == null) ? null : entry.getFileAttributes();
+        NettyMoverChannel channel = uuids.get(uuid);
+        return (channel == null) ? null : channel.getFileAttributes();
     }
 
-    public MoverChannel<P> openFile(UUID uuid, boolean exclusive)
+    public NettyMoverChannel openFile(UUID uuid, boolean exclusive)
     {
-        Entry entry = uuids.get(uuid);
-        return (entry == null) ? null : entry.open(exclusive);
+        NettyMoverChannel channel = uuids.get(uuid);
+        return (channel == null) ? null : channel.acquire(exclusive);
     }
 
-    public void closeFile(MoverChannel<P> channel)
+    /**
+     * Decorator for MoverChannel which tracks the number of clients that
+     * have "acquired" the file. Invokes a CompletionHandler once all clients
+     * have released the file.
+     */
+    public class NettyMoverChannel extends MoverChannelDecorator<P> implements Cancellable
     {
-        Entry entry = files.get(channel);
-        if (entry != null) {
-            entry.close();
-        }
-    }
+        private final Sync sync = new Sync();
+        private final UUID uuid;
+        private final Future<?> timeout;
+        private final CompletionHandler<Void, Void> completionHandler;
+        private final CDC cdc = new CDC();
 
-    public void closeFile(MoverChannel<P> channel, Exception exception)
-    {
-        Entry entry = files.get(channel);
-        if (entry != null) {
-            entry.close(exception);
-        }
-    }
-
-    private class Entry implements Cancellable
-    {
-        private final Sync _sync = new Sync();
-        private final MoverChannel<P> _file;
-        private final UUID _uuid;
-        private final Future<?> _timeout;
-        private final CompletionHandler<Void, Void> _completionHandler;
-        private final CDC _cdc = new CDC();
-
-        Entry(MoverChannel<P> file, UUID uuid, final long connectTimeout, CompletionHandler<Void, Void> completionHandler) {
-            _file = file;
-            _uuid = uuid;
-            _completionHandler = completionHandler;
-            _timeout = timeoutScheduler.schedule(new Runnable()
+        public NettyMoverChannel(MoverChannel<P> file, UUID uuid,
+                                 long connectTimeout,
+                                 CompletionHandler<Void, Void> completionHandler)
+        {
+            super(file);
+            this.uuid = uuid;
+            this.completionHandler = completionHandler;
+            timeout = timeoutScheduler.schedule(new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    try (CDC ignored = _cdc.restore()) {
-                        if (_sync.onTimeout()) {
-                            _completionHandler.failed(new TimeoutCacheException("No connection from client after " +
-                                    TimeUnit.MILLISECONDS.toSeconds(connectTimeout) + " seconds. Giving up."), null);
+                    try (CDC ignored = cdc.restore()) {
+                        if (sync.onTimeout()) {
+                            NettyMoverChannel.this.completionHandler.failed(
+                                    new TimeoutCacheException("No connection from client after " +
+                                                              TimeUnit.MILLISECONDS.toSeconds(
+                                                                      connectTimeout) + " seconds. Giving up."),
+                                    null);
                         }
                     }
                 }
             }, connectTimeout, TimeUnit.MILLISECONDS);
         }
 
-        MoverChannel<P> open(boolean exclusive) {
-            return _sync.open(exclusive);
+        @Override
+        public int read(ByteBuffer dst) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.read(dst);
         }
 
-        void close() {
-            try (CDC ignored = _cdc.restore()) {
-                if (_sync.onClose()) {
-                    _completionHandler.completed(null, null);
+        @Override
+        public MoverChannel<P> position(long position) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.position(position);
+        }
+
+        @Override
+        public long write(ByteBuffer[] srcs) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.write(srcs);
+        }
+
+        @Override
+        public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.write(srcs, offset, length);
+        }
+
+        @Override
+        public int write(ByteBuffer src) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.write(src);
+        }
+
+        @Override
+        public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.read(dsts, offset, length);
+        }
+
+        @Override
+        public long read(ByteBuffer[] dsts) throws IOException
+        {
+            checkState(sync.isExclusive());
+            return super.read(dsts);
+        }
+
+        NettyMoverChannel acquire(boolean exclusive)
+        {
+            return sync.open(exclusive) ? this : null;
+        }
+
+        public void release()
+        {
+            try (CDC ignored = cdc.restore()) {
+                if (sync.onClose()) {
+                    completionHandler.completed(null, null);
                 }
             }
         }
 
-        void close(Exception exception) {
-            try (CDC ignored = _cdc.restore()) {
-                if (_sync.onFailure()) {
-                    _completionHandler.failed(exception, null);
+        public void release(Throwable t)
+        {
+            try (CDC ignored = cdc.restore()) {
+                if (sync.onFailure()) {
+                    completionHandler.failed(t, null);
                 }
             }
         }
@@ -504,41 +548,41 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
         @Override
         public void cancel()
         {
-            try (CDC ignored = _cdc.restore()) {
-                if (_sync.onCancel()) {
-                    _completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
+            try (CDC ignored = cdc.restore()) {
+                if (sync.onCancel()) {
+                    completionHandler.failed(new InterruptedException("Transfer was interrupted"), null);
                 }
             }
-        }
-
-        public FileAttributes getFileAttributes()
-        {
-            return _file.getFileAttributes();
         }
 
         private class Sync
         {
-            private int _open;
-            private boolean _isExclusive;
-            private boolean _isClosed;
+            private int open;
+            private boolean isExclusive;
+            private boolean isClosed;
 
-            synchronized MoverChannel<P> open(boolean exclusive) {
-                if (_isExclusive || _isClosed) {
-                    return null;
+            public boolean isExclusive()
+            {
+                return isExclusive;
+            }
+
+            synchronized boolean open(boolean exclusive) {
+                if (isExclusive || isClosed) {
+                    return false;
                 }
-                _isExclusive = exclusive;
-                _open++;
-                _timeout.cancel(false);
-                return _file;
+                isExclusive = exclusive;
+                open++;
+                timeout.cancel(false);
+                return true;
             }
 
             synchronized boolean onClose() {
-                _open--;
-                return _open <= 0 && unregister();
+                open--;
+                return open <= 0 && unregister();
             }
 
             synchronized boolean onFailure() {
-                _open--;
+                open--;
                 return unregister();
             }
 
@@ -549,15 +593,15 @@ public abstract class AbstractNettyTransferService<P extends ProtocolInfo>
 
             synchronized boolean onTimeout()
             {
-                return (_open == 0) && unregister();
+                return (open == 0) && unregister();
             }
 
             private boolean unregister()
             {
-                if (!_isClosed) {
-                    _isClosed = true;
-                    _timeout.cancel(false);
-                    AbstractNettyTransferService.this.unregister(Entry.this);
+                if (!isClosed) {
+                    isClosed = true;
+                    timeout.cancel(false);
+                    NettyTransferService.this.unregister(NettyMoverChannel.this);
                     return true;
                 }
                 return false;

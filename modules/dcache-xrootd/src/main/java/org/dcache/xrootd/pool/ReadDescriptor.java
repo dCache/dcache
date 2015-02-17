@@ -3,7 +3,7 @@ package org.dcache.xrootd.pool;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
@@ -16,9 +16,9 @@ public class ReadDescriptor implements FileDescriptor
     /**
      * Update mover meta-information
      */
-    protected MoverChannel<XrootdProtocolInfo> _channel;
+    protected NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel _channel;
 
-    public ReadDescriptor(MoverChannel<XrootdProtocolInfo> channel)
+    public ReadDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel)
     {
         _channel = channel;
     }
@@ -52,7 +52,7 @@ public class ReadDescriptor implements FileDescriptor
     }
 
     @Override
-    public MoverChannel<XrootdProtocolInfo> getChannel()
+    public NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel getChannel()
     {
         return _channel;
     }

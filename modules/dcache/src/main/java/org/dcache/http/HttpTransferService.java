@@ -42,7 +42,7 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.pool.movers.AbstractNettyTransferService;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.NettyMover;
 import org.dcache.util.NetworkUtils;
 
@@ -58,7 +58,7 @@ import org.dcache.util.NetworkUtils;
  * The netty server are started on demand and shared by all http transfers of
  * a pool. All transfers are handled on the same port.
  */
-public class HttpTransferService extends AbstractNettyTransferService<HttpProtocolInfo>
+public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpTransferService.class);
 

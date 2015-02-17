@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 
-import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
@@ -44,7 +44,7 @@ public interface FileDescriptor
     /**
      * Returns the FileChannel of this descriptor.
      */
-    MoverChannel<XrootdProtocolInfo> getChannel();
+    NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel getChannel();
 
     /**
      * Whether the file was opened with kXR_posc.

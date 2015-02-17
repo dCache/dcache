@@ -36,9 +36,8 @@ import java.util.UUID;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import org.dcache.pool.movers.AbstractNettyTransferService;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -76,7 +75,7 @@ public class HttpPoolRequestHandlerTests
     private static final int SOME_CHUNK_SIZE = 4096;
 
     private HttpPoolRequestHandler _handler;
-    private AbstractNettyTransferService<HttpProtocolInfo> _server;
+    private NettyTransferService<HttpProtocolInfo> _server;
     private Map<String,FileInfo> _files;
     private List<Object> _additionalWrites;
     private HttpResponse _response;
@@ -85,7 +84,7 @@ public class HttpPoolRequestHandlerTests
     @Before
     public void setup()
     {
-        _server = mock(AbstractNettyTransferService.class);
+        _server = mock(NettyTransferService.class);
         _handler = new HttpPoolRequestHandler(_server, SOME_CHUNK_SIZE);
         _channel = new EmbeddedChannel(_handler);
         _files = Maps.newHashMap();
@@ -466,8 +465,8 @@ public class HttpPoolRequestHandlerTests
 
         file.withSize(sizeOfFile(file));
 
-        MoverChannel<HttpProtocolInfo> channel =
-            mock(MoverChannel.class);
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel =
+            mock(NettyTransferService.NettyMoverChannel.class);
 
         try {
             given(channel.size()).willReturn(file.getSize());
@@ -490,8 +489,8 @@ public class HttpPoolRequestHandlerTests
     {
         String path = file.getPath();
 
-        MoverChannel<HttpProtocolInfo> channel =
-                mock(MoverChannel.class);
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel =
+                mock(NettyTransferService.NettyMoverChannel.class);
         given(channel.getIoMode()).willReturn(IoMode.WRITE);
         given(channel.getProtocolInfo())
                 .willReturn(new HttpProtocolInfo("Http", 1, 1,
@@ -814,8 +813,8 @@ public class HttpPoolRequestHandlerTests
 
             ReusableChunkedNioFile ci = (ReusableChunkedNioFile) o;
 
-            MoverChannel<HttpProtocolInfo> channel =
-                (MoverChannel<HttpProtocolInfo>) ci.getChannel();
+            NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel =
+                    (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel) ci.getChannel();
 
             if(!_path.equals(channel.getProtocolInfo().getPath())) {
                 return false;

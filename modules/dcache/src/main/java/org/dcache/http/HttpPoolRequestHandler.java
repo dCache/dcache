@@ -39,9 +39,8 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
-import org.dcache.pool.movers.AbstractNettyTransferService;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
-import org.dcache.pool.movers.MoverChannel;
 import org.dcache.vehicles.FileAttributes;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -76,13 +75,13 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     /**
      * The mover channels that were opened.
      */
-    private final Multiset<MoverChannel<HttpProtocolInfo>> _files =
+    private final Multiset<NettyTransferService<HttpProtocolInfo>.NettyMoverChannel> _files =
         HashMultiset.create();
 
     /**
      * The server in the context of which this handler is executed
      */
-    private final AbstractNettyTransferService<HttpProtocolInfo> _server;
+    private final NettyTransferService<HttpProtocolInfo> _server;
 
     private final int _chunkSize;
 
@@ -92,9 +91,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * have been split into several chunks. Hence we have to keep a
      * reference to the file in between channel events.
      */
-    private MoverChannel<HttpProtocolInfo> _writeChannel;
+    private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel _writeChannel;
 
-    public HttpPoolRequestHandler(AbstractNettyTransferService<HttpProtocolInfo> server, int chunkSize)
+    public HttpPoolRequestHandler(NettyTransferService<HttpProtocolInfo> server, int chunkSize)
     {
         _server = server;
         _chunkSize = chunkSize;
@@ -191,11 +190,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     public void channelInactive(ChannelHandlerContext ctx) throws Exception
     {
         _logger.debug("HTTP connection from {} closed", ctx.channel().remoteAddress());
-        for (MoverChannel<HttpProtocolInfo> file: _files) {
+        for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file: _files) {
             if (file == _writeChannel) {
-                _server.closeFile(file, new FileCorruptedCacheException("Connection lost before end of file."));
+                file.release(new FileCorruptedCacheException("Connection lost before end of file."));
             } else {
-                _server.closeFile(file);
+                file.release();
             }
         }
         _files.clear();
@@ -206,14 +205,14 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         if (t instanceof ClosedChannelException) {
             _logger.info("Connection {} unexpectedly closed.", ctx.channel());
         } else if (t instanceof Exception) {
-            for (MoverChannel<HttpProtocolInfo> file : _files) {
+            for (NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file : _files) {
                 CacheException cause;
                 if (file == _writeChannel) {
                     cause = new FileCorruptedCacheException("Connection lost before end of file: " + t, t);
                 } else {
                     cause = new CacheException(t.toString(), t);
                 }
-                _server.closeFile(file, cause);
+                file.release(cause);
             }
             _files.clear();
             ctx.channel().close();
@@ -251,7 +250,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                            HttpRequest request)
     {
         ChannelFuture future = null;
-        MoverChannel<HttpProtocolInfo> file;
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
         List<HttpByteRange> ranges;
         long fileSize;
 
@@ -336,7 +335,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     protected void doOnPut(ChannelHandlerContext context, HttpRequest request)
     {
         ChannelFuture future = null;
-        MoverChannel<HttpProtocolInfo> file = null;
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = null;
         Exception exception = null;
 
         try {
@@ -418,7 +417,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     @Override
     protected void doOnHead(ChannelHandlerContext context, HttpRequest request) {
         ChannelFuture future = null;
-        MoverChannel<HttpProtocolInfo> file;
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
 
         try {
             file = open(request, false);
@@ -451,7 +450,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * @throws IllegalArgumentException Request did not include UUID or no
      *         mover channel found for UUID in the request
      */
-    private MoverChannel<HttpProtocolInfo> open(HttpRequest request, boolean exclusive)
+    private NettyTransferService<HttpProtocolInfo>.NettyMoverChannel open(HttpRequest request, boolean exclusive)
             throws IllegalArgumentException, URISyntaxException
     {
         QueryStringDecoder queryStringDecoder =
@@ -473,7 +472,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         }
 
         UUID uuid = UUID.fromString(uuidList.get(0));
-        MoverChannel<HttpProtocolInfo> file = _server.openFile(uuid, exclusive);
+        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = _server.openFile(uuid, exclusive);
         if (file == null) {
             throw new IllegalArgumentException("Request is no longer valid. " +
                                                "Please resubmit to door.");
@@ -496,12 +495,12 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         return file;
     }
 
-    private void close(MoverChannel<HttpProtocolInfo> channel, Exception exception)
+    private void close(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel, Exception exception)
     {
         if (exception == null) {
-            _server.closeFile(channel);
+            channel.release();
         } else {
-            _server.closeFile(channel, exception);
+            channel.release(exception);
         }
         _files.remove(channel);
     }
@@ -521,7 +520,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * @return ChunkedInput View upon the file suitable for sending with
      *         netty and representing the requested parts.
      */
-    private ChunkedInput read(MoverChannel<HttpProtocolInfo> file,
+    private ChunkedInput read(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file,
                               long lowerRange, long upperRange)
     {
         /* need to count position 0 as well */
@@ -530,7 +529,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         return new ReusableChunkedNioFile(file, lowerRange, length, _chunkSize);
     }
 
-    private static String buildDigest(MoverChannel<HttpProtocolInfo> file)
+    private static String buildDigest(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
     {
         FileAttributes attributes = file.getFileAttributes();
         return attributes.getChecksumsIfPresent().transform(TO_RFC3230).or("");
@@ -538,7 +537,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private static class HttpGetResponse extends DefaultHttpResponse
     {
-        public HttpGetResponse(long fileSize, MoverChannel<HttpProtocolInfo> file)
+        public HttpGetResponse(long fileSize, NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
         {
             super(HTTP_1_1, OK);
             HttpProtocolInfo protocolInfo = file.getProtocolInfo();
@@ -594,7 +593,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
     private static class HttpPutResponse extends HttpTextResponse
     {
-        public HttpPutResponse(MoverChannel<HttpProtocolInfo> file)
+        public HttpPutResponse(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file)
                 throws IOException
         {
             /* RFC 2616: 9.6. If a new resource is created, the origin server

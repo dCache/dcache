@@ -3,7 +3,7 @@ package org.dcache.xrootd.pool;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import org.dcache.pool.movers.MoverChannel;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
@@ -15,7 +15,7 @@ public class WriteDescriptor extends ReadDescriptor
 {
     private boolean posc;
 
-    public WriteDescriptor(MoverChannel<XrootdProtocolInfo> channel, boolean posc)
+    public WriteDescriptor(NettyTransferService<XrootdProtocolInfo>.NettyMoverChannel channel, boolean posc)
     {
         super(channel);
         this.posc = posc;
