@@ -369,7 +369,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             future = context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         } finally {
             if (file != null) {
-                close(file, exception);
+                file.release(exception);
+                _files.remove(file);
             }
             if (future != null) {
                 future.addListener(ChannelFutureListener.CLOSE);
@@ -381,8 +382,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     protected void doOnContent(ChannelHandlerContext context, HttpContent content)
     {
         if (_writeChannel != null) {
-            Exception exception = null;
-            ChannelFuture future = null;
             try {
                 ByteBuf data = content.content();
                 while (data.isReadable()) {
@@ -391,25 +390,28 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 if (content instanceof LastHttpContent) {
                     checkContentHeader(((LastHttpContent) content).trailingHeaders().names(),
                                        asList(CONTENT_LENGTH));
-                    future = context.writeAndFlush(new HttpPutResponse(_writeChannel));
+                    ChannelFuture future = context.writeAndFlush(new HttpPutResponse(_writeChannel));
+                    _writeChannel.release();
+                    _files.remove(_writeChannel);
+                    _writeChannel = null;
+                    if (!isKeepAlive()) {
+                        future.addListener(ChannelFutureListener.CLOSE);
+                    }
                 }
             } catch (IOException e) {
-                exception = e;
-                future = context.channel().writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR,
-                                                                             e.getMessage()));
+                context.channel()
+                        .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
+                        .addListener(ChannelFutureListener.CLOSE);
+                _writeChannel.release(e);
+                _files.remove(_writeChannel);
+                _writeChannel = null;
             } catch (HttpException e) {
-                exception = e;
-                future = context.channel().writeAndFlush(
-                        createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()),
-                                            e.getMessage()));
-            } finally {
-                if (content instanceof LastHttpContent || exception != null) {
-                    close(_writeChannel, exception);
-                    _writeChannel = null;
-                }
-                if (future != null && (!isKeepAlive() || exception != null)) {
-                    future.addListener(ChannelFutureListener.CLOSE);
-                }
+                context.channel()
+                        .writeAndFlush(createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()))
+                        .addListener(ChannelFutureListener.CLOSE);
+                _writeChannel.release(e);
+                _files.remove(_writeChannel);
+                _writeChannel = null;
             }
         }
     }
@@ -493,16 +495,6 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
         _files.add(file);
 
         return file;
-    }
-
-    private void close(NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel, Exception exception)
-    {
-        if (exception == null) {
-            channel.release();
-        } else {
-            channel.release(exception);
-        }
-        _files.remove(channel);
     }
 
     /**
