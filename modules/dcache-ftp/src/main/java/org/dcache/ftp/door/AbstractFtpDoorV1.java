@@ -1721,7 +1721,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
-            log.add("host.remote", _remoteSocketAddress);
+            log.add("socket.remote", _remoteSocketAddress);
             if (!loginAttributes.isEmpty()) {
                 for (Map.Entry<String,Object> e : loginAttributes.entrySet()) {
                     log.add(e.getKey(), e.getValue());

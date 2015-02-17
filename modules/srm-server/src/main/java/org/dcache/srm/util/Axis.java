@@ -1,5 +1,6 @@
 package org.dcache.srm.util;
 
+import com.google.common.net.InetAddresses;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
@@ -9,6 +10,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 
+import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
@@ -92,6 +94,14 @@ public class Axis
         HttpServletRequest request = (HttpServletRequest)
                 msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
         return request.getRemoteAddr();
+    }
+
+    public static InetSocketAddress getRemoteSocketAddress()
+    {
+        MessageContext msgContext = MessageContext.getCurrentContext();
+        HttpServletRequest r = (HttpServletRequest)
+                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
+        return new InetSocketAddress(InetAddresses.forString(r.getRemoteAddr()), r.getRemotePort());
     }
 
     public static String getUserAgent()

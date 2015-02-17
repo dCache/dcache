@@ -1,5 +1,6 @@
 package org.dcache.webdav;
 
+import com.google.common.net.InetAddresses;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
@@ -11,8 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 
 import dmg.cells.nucleus.CDC;
@@ -52,7 +56,9 @@ public class LoggingFilter implements Filter
         log.add("response.code", code);
         log.add("response.reason", getReason(response));
         log.add("location", ServletResponse.getResponse().getHeader("Location"));
-        log.add("host.remote", request.getFromAddress());
+        HttpServletRequest r = ServletRequest.getRequest();
+        InetAddress addr = InetAddresses.forString(r.getRemoteAddr());
+        log.add("socket.remote", new InetSocketAddress(addr, r.getRemotePort()));
         log.add("user-agent", request.getUserAgentHeader());
 
         log.add("user.dn", getCertificateName());

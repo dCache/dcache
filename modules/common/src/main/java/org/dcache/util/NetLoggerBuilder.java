@@ -3,10 +3,14 @@ package org.dcache.util;
 import com.google.common.base.CharMatcher;
 import com.google.common.escape.CharEscaperBuilder;
 import com.google.common.escape.Escaper;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 
 import javax.security.auth.Subject;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -164,6 +168,24 @@ public class NetLoggerBuilder
         if (!omitNullValues || subject != null) {
             s.append(' ').append(name).append('=');
             appendSubject(s, subject);
+        }
+        return this;
+    }
+
+    /**
+     * Add a key-value pair that describes an socket address.  No attempt is
+     * made to resolve the IP address and the value is recorded as
+     * {@literal <addr>:<port>}.  If the supplied value is null and
+     * {@link #omitNullValues} has not been called then {@literal unknown} is
+     * recorded.
+     */
+    public NetLoggerBuilder add(String name, InetSocketAddress sock)
+    {
+        if (!omitNullValues || sock != null) {
+            s.append(' ').append(name).append('=');
+            if (sock != null) {
+                s.append(InetAddresses.toUriString(sock.getAddress())).append(':').append(sock.getPort());
+            }
         }
         return this;
     }

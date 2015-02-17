@@ -92,8 +92,8 @@ public class AccessLogHandler extends ChannelDuplexHandler
     {
         NetLoggerBuilder log = new NetLoggerBuilder(INFO, "org.dcache.xrootd.connection.start").omitNullValues();
         log.add("session", CDC.getSession());
-        log.add("socket.remote", getAddress((InetSocketAddress) ctx.channel().remoteAddress()));
-        log.add("socket.local", getAddress((InetSocketAddress) ctx.channel().localAddress()));
+        log.add("socket.remote", (InetSocketAddress) ctx.channel().remoteAddress());
+        log.add("socket.local", (InetSocketAddress) ctx.channel().localAddress());
         log.toLogger(logger);
         ctx.fireChannelActive();
     }
@@ -353,10 +353,5 @@ public class AccessLogHandler extends ChannelDuplexHandler
         default:
             return String.valueOf(request.getRequestId());
         }
-    }
-
-    private static String getAddress(InetSocketAddress addr)
-    {
-        return addr.getAddress().getHostAddress() + ":" + addr.getPort();
     }
 }

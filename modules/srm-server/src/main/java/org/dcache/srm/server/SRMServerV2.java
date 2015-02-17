@@ -737,7 +737,7 @@ public class SRMServerV2 implements ISRM  {
 
                 NetLoggerBuilder.Level level = isFailure ? NetLoggerBuilder.Level.ERROR : NetLoggerBuilder.Level.INFO;
                 NetLoggerBuilder log = new NetLoggerBuilder(level, "org.dcache.srm.request").omitNullValues();
-                log.add("host.remote", Axis.getRemoteAddress());
+                log.add("socket.remote", Axis.getRemoteSocketAddress());
                 log.add("request.method", requestName);
                 log.add("user.dn", Axis.getDN().orElse("-"));
                 if (user != null) {
