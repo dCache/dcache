@@ -22,7 +22,6 @@ import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Objects;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -38,8 +37,8 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.util.CertificateFactories;
+import org.dcache.util.NetLoggerBuilder;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Arrays.asList;
 
 /**
@@ -142,7 +141,8 @@ public class SecurityFilter implements Filter
         } catch (RedirectException e) {
             manager.getResponseHandler().respondRedirect(response, request, e.getUrl());
         } catch (PermissionDeniedCacheException e) {
-            _log.warn("{} for path {} and {}", e.getMessage(), request.getAbsolutePath(), subject);
+            _log.warn("{} for path {} and user {}", e.getMessage(), request.getAbsolutePath(),
+                    NetLoggerBuilder.describeSubject(subject));
             manager.getResponseHandler().respondUnauthorised(new EmptyResource(request), response, request);
         } catch (CacheException e) {
             _log.error("Internal server error: " + e);
