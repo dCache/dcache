@@ -1,7 +1,9 @@
 package org.dcache.acl.parser;
 
+import com.google.common.base.Splitter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
@@ -97,5 +99,16 @@ public class ACLParser {
      */
     public static ACL parseAdm(RsType rsType, String aces_spec) throws IllegalArgumentException {
         return new ACL(rsType, ACEParser.parseAdm(aces_spec));
+    }
+
+    public static ACL parseLinuxAcl(RsType rsType, String acl) {
+        return new ACL(rsType,
+                Splitter.on(' ')
+                        .trimResults()
+                        .omitEmptyStrings()
+                        .splitToList(acl)
+                        .stream()
+                        .map(a -> ACEParser.parseLinuxAce(a))
+                        .collect(Collectors.toList()));
     }
 }

@@ -1,5 +1,6 @@
 package org.dcache.acl.parser;
 
+import com.google.common.base.Splitter;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,8 @@ import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.Who;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class ACEParser {
 
@@ -272,4 +275,126 @@ public class ACEParser {
         return aces;
     }
 
+    /**
+     * Create an {@link ACE} from string representation. The string
+     * must be in linux nfs4_acl format. The format refined as:
+     *
+     * <pre>
+     *        4-field string in the following format:
+     *                <i>type</i>:<i>flags</i>:<i>principal</i>:<i>permissions</i>
+     *     <b>ACE</b> <b>TYPES:</b>
+     *         There are four <i>types</i> of ACEs, each represented by a  single  character.
+     *         An ACE must have exactly one <i>type</i>.
+     *         <b>A</b>      Allow  -	allow  <i>principal</i>  to perform actions requiring <i>permis-</i>
+     *                <i>sions</i>.
+     *         <b>D</b>      Deny - prevent <i>principal</i> from performing actions requiring  <i>per-</i>
+     *                <i>missions</i>.
+     *         <b>U</b>      Audit  -	log  any  attempted access by <i>principal</i> which requires
+     *                <i>permissions</i>.  Requires one or both of the successful-access  and
+     *                failed-access  <i>flags</i>.   System-dependent;  not  supported by all
+     *                servers.
+     *         <b>L</b>      Alarm - generate a system alarm at any attempted access by <i>prin-</i>
+     *                <i>cipal</i>  which  requires <i>permissions</i>.  Requires one or both of the
+     *                successful-access and  failed-access  <i>flags</i>.   System-dependent;
+     *                not supported by all servers.
+     *     <b>ACE</b> <b>FLAGS:</b>
+     *         There are three kinds of ACE <i>flags</i>: group, inheritance, and administra-
+     *         tive.  An Allow or Deny ACE may contain zero or more  <i>flags</i>,  while  an
+     *         Audit  or  Alarm ACE must contain at least one of the successful-access
+     *         and failed-access <i>flags</i>.
+     *         Note that ACEs are inherited from the parent  directory's  ACL  at  the
+     *         time a file or subdirectory is created.	Accordingly, inheritance flags
+     *         can be used only in ACEs  in  a	directory's  ACL  (and	are  therefore
+     *         stripped  from  inherited  ACEs	in  a new file's ACL).	Please see the
+     *         <b>INHERITANCE</b> <b>FLAGS</b> <b>COMMENTARY</b> section for more information.
+     *         <b>GROUP</b> <b>FLAG</b> - can be used in any ACE
+     *         <b>g</b>      group - indicates that <i>principal</i> represents a group instead of a
+     *                user.
+     *         <b>INHERITANCE</b> <b>FLAGS</b> - can be used in any directory ACE
+     *         <b>d</b>      directory-inherit  -  newly-created  subdirectories will inherit
+     *                the ACE.
+     *         <b>f</b>      file-inherit - newly-created files will inherit the  ACE,  minus
+     *                its   inheritance   <i>flags</i>.   Newly-created  subdirectories  will
+     *                inherit the ACE; if directory-inherit is not also  specified  in
+     *                the parent ACE, inherit-only will be added to the inherited ACE.
+     *         <b>n</b>      no-propagate-inherit - newly-created subdirectories will inherit
+     *                the ACE, minus its inheritance <i>flags</i>.
+     *         <b>i</b>      inherit-only  - the ACE is not considered in permissions checks,
+     *                but it is heritable; however, the inherit-only <i>flag</i> is  stripped
+     *                from inherited ACEs.
+     *         <b>ADMINISTRATIVE</b> <b>FLAGS</b> - can be used in <b>Audit</b> and <b>Alarm</b> ACEs
+     *         <b>S</b>      successful-access  -  trigger  an  alarm/audit when <i>principal</i> is
+     *                allowed to perform an action covered by <i>permissions</i>.
+     *         <b>F</b>      failed-access - trigger an alarm/audit when  <i>principal</i>  is  pre-
+     *                vented from performing an action covered by <i>permissions</i>.
+     *     <b>ACE</b> <b>PRINCIPALS:</b>
+     *         A  <i>principal</i>  is  either a named user (e.g., `myuser@nfsdomain.org') or
+     *         group (provided the group <i>flag</i> is also set), or one  of	three  special
+     *         <i>principals</i>:  `OWNER@',  `GROUP@',  and  `EVERYONE@', which are, respec-
+     *         tively, analogous to the POSIX user/group/other distinctions  used  in,
+     *         e.g., <a href="?query=chmod&amp;sektion=1&amp;apropos=0&amp;manpath=CentOS+Linux%2famd64+6.3"><b>chmod</b>(1)</a>.
+     *     <b>ACE</b> <b>PERMISSIONS:</b>
+     *         There  are a variety of different ACE <i>permissions</i> (13 for files, 14 for
+     *         directories), each represented by a single character.   An  ACE	should
+     *         have one or more of the following <i>permissions</i> specified:
+     *         <b>r</b>      read-data (files) / list-directory (directories)
+     *         <b>w</b>      write-data (files) / create-file (directories)
+     *         <b>a</b>      append-data (files) / create-subdirectory (directories)
+     *         <b>x</b>      execute (files) / change-directory (directories)
+     *         <b>d</b>      delete  -  delete the file/directory.  Some servers will allow a
+     *                delete to  occur	if  either  this  <i>permission</i>  is  set  in  the
+     *                file/directory  or  if the delete-child <i>permission</i> is set in its
+     *                parent direcory.
+     *         <b>D</b>      delete-child - remove a file or  subdirectory  from  within  the
+     *                given directory (directories only)
+     *         <b>t</b>      read-attributes - read the attributes of the file/directory.
+     *         <b>T</b>      write-attributes - write the attributes of the file/directory.
+     *         <b>n</b>      read-named-attributes   -  read  the  named  attributes  of  the
+     *                file/directory.
+     *         <b>N</b>      write-named-attributes -	write  the  named  attributes  of  the
+     *                file/directory.
+     *         <b>c</b>      read-ACL - read the file/directory NFSv4 ACL.
+     *         <b>C</b>      write-ACL - write the file/directory NFSv4 ACL.
+     *         <b>o</b>      write-owner - change ownership of the file/directory.
+     *         <b>y</b>      synchronize  -  allow  clients  to  use synchronous I/O with the
+     *                server.
+     *
+     *         (from original man page by David Richter and J. Bruce Fields)
+     * </pre>
+     * @param s ace in linux nfs4_acl format
+     * @return ACE represented by the provided string
+     * @throws IllegalArgumentException if ACE can't be parsed
+     */
+    public static ACE parseLinuxAce(String s) throws IllegalArgumentException {
+        Splitter splitter = Splitter.on(':');
+        List<String> splitted = splitter.splitToList(s);
+
+        checkArgument(splitted.size() == 4, "Invalid ACE format: expected <type:flags:principal:permissions> got: <" + s +">");
+
+        checkArgument(splitted.get(0).length() == 1, "Invalid ACE format: type must be a single character. Got : <" + splitted.get(0).length() + ">");
+        AceType type = AceType.fromAbbreviation(splitted.get(0).charAt(0));
+        int flags = 0;
+        int accessMask = 0;
+        Who who;
+        int id = -1;
+        String principal;
+
+        for(char c: splitted.get(1).toCharArray()) {
+            flags |= AceFlags.fromAbbreviation(c).getValue();
+        }
+
+        principal = splitted.get(2);
+        if (principal.charAt(principal.length() -1) == '@') {
+            who = Who.fromAbbreviation(principal);
+        } else {
+            who = (flags & AceFlags.IDENTIFIER_GROUP.getValue()) == 0 ? Who.USER : Who.GROUP;
+            id = Integer.parseInt(principal);
+        }
+
+        for (char c : splitted.get(3).toCharArray()) {
+            accessMask |= AccessMask.fromAbbreviation(c).getValue();
+        }
+
+        return new ACE(type, flags,  accessMask, who, id, ACE.DEFAULT_ADDRESS_MSK);
+    }
 }
