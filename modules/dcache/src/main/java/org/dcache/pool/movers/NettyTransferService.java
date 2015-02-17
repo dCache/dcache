@@ -380,11 +380,9 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
             public void execute()
                     throws Exception
             {
-                UUID uuid = mover.getUuid();
                 NettyMoverChannel channel =
-                        autoclose(new NettyMoverChannel(mover.open(), uuid,
-                                                        connectTimeoutUnit.toMillis(connectTimeout), this));
-                if (uuids.putIfAbsent(uuid, channel) != null) {
+                        autoclose(new NettyMoverChannel(mover.open(), connectTimeoutUnit.toMillis(connectTimeout), this));
+                if (uuids.putIfAbsent(mover.getUuid(), channel) != null) {
                     throw new IllegalStateException("UUID conflict");
                 }
                 conditionallyStartServer();
@@ -458,18 +456,16 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     public class NettyMoverChannel extends MoverChannelDecorator<P> implements Cancellable
     {
         private final Sync sync = new Sync();
-        private final UUID uuid;
         private final Future<?> timeout;
         private final CompletionHandler<Void, Void> completionHandler;
         private final CDC cdc = new CDC();
         private final SettableFuture<Void> closeFuture = SettableFuture.create();
 
-        public NettyMoverChannel(MoverChannel<P> file, UUID uuid,
+        public NettyMoverChannel(MoverChannel<P> file,
                                  long connectTimeout,
                                  CompletionHandler<Void, Void> completionHandler)
         {
             super(file);
-            this.uuid = uuid;
             this.completionHandler = completionHandler;
             timeout = timeoutScheduler.schedule(new Runnable()
             {
