@@ -48,7 +48,7 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
 
     @Override
     public void saveJob(J job, boolean force) throws DataAccessException {
-        if(job.getState().isFinal()) {
+        if (force || job.getState().isFinal()) {
             jobStorage.saveJob(job, force);
         }
     }
