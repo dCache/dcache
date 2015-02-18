@@ -6,6 +6,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
@@ -459,7 +460,7 @@ public class HttpPoolRequestHandlerTests
     }
 
     private void givenDoorHasOrganisedReadOf(final FileInfo file)
-            throws URISyntaxException
+            throws URISyntaxException, IOException
     {
         String path = file.getPath();
 
@@ -468,19 +469,16 @@ public class HttpPoolRequestHandlerTests
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel channel =
             mock(NettyTransferService.NettyMoverChannel.class);
 
-        try {
-            given(channel.size()).willReturn(file.getSize());
-        } catch (IOException e) {
-            throw new RuntimeException("Mock mover threw exception.", e);
-        }
+        given(channel.size()).willReturn(file.getSize());
 
         given(channel.getIoMode()).willReturn(IoMode.READ);
         given(channel.getProtocolInfo())
             .willReturn(new HttpProtocolInfo("Http", 1, 1,
-                    new InetSocketAddress((InetAddress) null, 0),
-                    null, null, path,
-                    new URI("http", "localhost", path, null)));
+                                             new InetSocketAddress((InetAddress) null, 0),
+                                             null, null, path,
+                                             new URI("http", "localhost", path, null)));
         given(channel.getFileAttributes()).willReturn(file.getFileAttributes());
+        given(channel.release()).willReturn(Futures.immediateCheckedFuture(null));
         given(_server.openFile(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
@@ -497,9 +495,9 @@ public class HttpPoolRequestHandlerTests
                         new InetSocketAddress((InetAddress) null, 0),
                         null, null, path,
                         new URI("http", "localhost", path, null)));
+        given(channel.release()).willReturn(Futures.immediateCheckedFuture(null));
 
-        given(_server.openFile(eq(file
-                                          .getUuid()), anyBoolean())).willReturn(channel);
+        given(_server.openFile(eq(file.getUuid()), anyBoolean())).willReturn(channel);
     }
 
     private long sizeOfFile(FileInfo file)

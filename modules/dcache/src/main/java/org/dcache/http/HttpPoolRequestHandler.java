@@ -3,6 +3,9 @@ package org.dcache.http;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -30,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileCorruptedCacheException;
@@ -43,6 +47,7 @@ import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.util.concurrent.Uninterruptibles.*;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
@@ -390,13 +395,43 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 if (content instanceof LastHttpContent) {
                     checkContentHeader(((LastHttpContent) content).trailingHeaders().names(),
                                        asList(CONTENT_LENGTH));
-                    ChannelFuture future = context.writeAndFlush(new HttpPutResponse(_writeChannel));
-                    _writeChannel.release();
-                    _files.remove(_writeChannel);
+
+                    context.channel().config().setAutoRead(false);
+
+                    NettyTransferService<HttpProtocolInfo>.NettyMoverChannel writeChannel = _writeChannel;
                     _writeChannel = null;
-                    if (!isKeepAlive()) {
-                        future.addListener(ChannelFutureListener.CLOSE);
-                    }
+                    _files.remove(writeChannel);
+
+                    ListenableFuture<Void> releaseFuture = writeChannel.release();
+                    releaseFuture.addListener(() -> {
+                        try {
+                            getUninterruptibly(releaseFuture);
+                            ChannelFuture future = context.writeAndFlush(new HttpPutResponse(writeChannel));
+                            if (!isKeepAlive()) {
+                                future.addListener(ChannelFutureListener.CLOSE);
+                            }
+                            context.channel().config().setAutoRead(true);
+                        } catch (ExecutionException e) {
+                            Throwable cause = e.getCause();
+                            if (cause instanceof FileCorruptedCacheException) {
+                                context.channel()
+                                        .writeAndFlush(createErrorResponse(BAD_REQUEST, cause.getMessage()))
+                                        .addListener(ChannelFutureListener.CLOSE);
+                            } else if (cause instanceof CacheException) {
+                                context.channel()
+                                        .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.getMessage()))
+                                        .addListener(ChannelFutureListener.CLOSE);
+                            } else {
+                                context.channel()
+                                        .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.toString()))
+                                        .addListener(ChannelFutureListener.CLOSE);
+                            }
+                        } catch (IOException e) {
+                            context.channel()
+                                    .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
+                                    .addListener(ChannelFutureListener.CLOSE);
+                        }
+                    }, MoreExecutors.directExecutor());
                 }
             } catch (IOException e) {
                 context.channel()
