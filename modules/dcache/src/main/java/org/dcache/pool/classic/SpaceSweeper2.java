@@ -5,10 +5,13 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
@@ -35,6 +38,8 @@ import org.dcache.pool.repository.StickyChangeEvent;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
+import static java.util.Comparator.naturalOrder;
+
 public class SpaceSweeper2
     implements Runnable, CellCommandListener, StateChangeListener,
                SpaceSweeperPolicy
@@ -51,7 +56,7 @@ public class SpaceSweeper2
                 }
             };
 
-    private final Set<PnfsId> _list  = new LinkedHashSet<>();
+    private LruQueue<PnfsId> _queue = new LruQueue<>();
 
     private Repository _repository;
 
@@ -101,28 +106,16 @@ public class SpaceSweeper2
      */
     private synchronized PnfsId getEldest()
     {
-        if (_list.isEmpty()) {
-            return null;
-        }
-        return _list.iterator().next();
+        return _queue.getLeastRecentlyUsedElement();
     }
 
     /**
-     * Returns the last accss time of the eldest removable entry.
+     * Returns the last access time of the eldest removable entry.
      */
     @Override
     public long getLru()
     {
-        try {
-            PnfsId id = getEldest();
-            if (id == null) {
-                return 0;
-            }
-
-            return _repository.getEntry(id).getLastAccessTime();
-        } catch (InterruptedException | CacheException e) {
-            return 0L;
-        }
+        return _queue.getTimeOfLeastRecentlyUsedElement();
     }
 
     /**
@@ -137,7 +130,7 @@ public class SpaceSweeper2
         }
 
         PnfsId id = entry.getPnfsId();
-        if (_list.add(id)) {
+        if (_queue.add(id, entry.getLastAccessTime())) {
             _log.debug("Added {} to sweeper", id);
             /* The sweeper thread may be waiting for more files to
              * delete.
@@ -151,7 +144,7 @@ public class SpaceSweeper2
     private synchronized boolean remove(CacheEntry entry)
     {
         PnfsId id = entry.getPnfsId();
-        if (_list.remove(id)) {
+        if (_queue.remove(id)) {
             _log.debug("Removed {} from sweeper", id);
             return true;
         }
@@ -159,7 +152,7 @@ public class SpaceSweeper2
     }
 
     @Override
-    public void stateChanged(StateChangeEvent event)
+    public synchronized void stateChanged(StateChangeEvent event)
     {
         CacheEntry entry = event.getNewEntry();
         switch (event.getNewState()) {
@@ -178,7 +171,7 @@ public class SpaceSweeper2
     }
 
     @Override
-    public void stickyChanged(StickyChangeEvent event)
+    public synchronized void stickyChanged(StickyChangeEvent event)
     {
         CacheEntry entry = event.getNewEntry();
         if (isRemovable(entry)) {
@@ -189,7 +182,7 @@ public class SpaceSweeper2
     }
 
     @Override
-    public void accessTimeChanged(EntryChangeEvent event)
+    public synchronized void accessTimeChanged(EntryChangeEvent event)
     {
         CacheEntry entry = event.getNewEntry();
         if (remove(entry)) {
@@ -250,7 +243,7 @@ public class SpaceSweeper2
             StringBuilder sb = new StringBuilder();
             List<PnfsId> list;
             synchronized (SpaceSweeper2.this) {
-                list = new ArrayList<>(_list);
+                list = _queue.values();
             }
             int i = 0;
             for (PnfsId id : list) {
@@ -321,10 +314,7 @@ public class SpaceSweeper2
         /* We copy the entries into a tmp list to avoid
          * ConcurrentModificationException.
          */
-        List<PnfsId> tmpList;
-        synchronized (this) {
-            tmpList = new ArrayList<>(_list);
-        }
+        List<PnfsId> tmpList = _queue.values();
 
         /* Delete the files.
          */
@@ -408,6 +398,69 @@ public class SpaceSweeper2
              */
         } finally {
             _repository.removeListener(this);
+        }
+    }
+
+    /**
+     * Queue of keys ordered by a timestamp.
+     */
+    private static class LruQueue<T extends Comparable<T>>
+    {
+        /**
+         * Tracks the time stamp of each element in the queue.
+         */
+        private final Map<T, Long> timeStamps = new HashMap<>();
+
+        /**
+         * Elements sorted by access time and value.
+         * <p>
+         * The comparator uses {@code timeStamps} to look up the time of keys. A compound comparator is used
+         * to ensure consistency with equals (otherwise two keys with the same time would be collapsed to
+         * a single element in the set).
+         * <p>
+         * Any element inserted into this set must have its access time recorded in {@code timeStamps}
+         * before being inserted into the set. The time must not change while the key is in the set.
+         */
+        private final SortedSet<T> queue =
+                new TreeSet<>(Comparator.<T, Long>comparing(k -> timeStamps.getOrDefault(k, 0L)).thenComparing(naturalOrder()));
+
+        public synchronized boolean add(T key, long time)
+        {
+            if (timeStamps.putIfAbsent(key, time) == null) {
+                queue.add(key);
+                return true;
+            }
+            return false;
+        }
+
+        public synchronized boolean remove(T key)
+        {
+            if (queue.remove(key)) {
+                timeStamps.remove(key);
+                return true;
+            }
+            return false;
+        }
+
+        public synchronized T getLeastRecentlyUsedElement()
+        {
+            if (queue.isEmpty()) {
+                return null;
+            }
+            return queue.first();
+        }
+
+        public synchronized long getTimeOfLeastRecentlyUsedElement()
+        {
+            if (queue.isEmpty()) {
+                return 0;
+            }
+            return timeStamps.get(queue.first());
+        }
+
+        public synchronized List<T> values()
+        {
+            return new ArrayList<>(queue);
         }
     }
 }

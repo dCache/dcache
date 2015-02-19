@@ -45,7 +45,6 @@ import org.dcache.pool.repository.EntryChangeEvent;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.MetaDataCache;
-import org.dcache.pool.repository.MetaDataLRUOrder;
 import org.dcache.pool.repository.MetaDataRecord;
 import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.ReplicaDescriptor;
@@ -383,7 +382,6 @@ public class CacheRepositoryV5
                  * sweeper relies on the LRU order.
                  */
                 _log.info("Registering files in sweeper");
-                Collections.sort(entries, new MetaDataLRUOrder());
                 for (MetaDataRecord entry: entries) {
                     synchronized (entry) {
                         CacheEntry cacheEntry = new CacheEntryImpl(entry);
