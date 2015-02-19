@@ -338,6 +338,7 @@
       <property name="pnfsHandler" ref="pnfs"/>
       <property name="faultListener" ref="pool"/>
       <property name="doorStub" ref="doorStub"/>
+      <property name="checksumModule" ref="csm"/>
   </bean>
 
   <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"

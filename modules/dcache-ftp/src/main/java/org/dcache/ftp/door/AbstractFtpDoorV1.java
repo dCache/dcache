@@ -1721,14 +1721,16 @@ public abstract class AbstractFtpDoorV1
             }
 
             NetLoggerBuilder log = new NetLoggerBuilder(INFO, event).omitNullValues();
-            log.add("socket.remote", _remoteSocketAddress);
+            log.add("session", CDC.getSession());
+            if (_isHello) {
+                log.add("socket.remote", _remoteSocketAddress);
+            }
             if (!loginAttributes.isEmpty()) {
                 for (Map.Entry<String,Object> e : loginAttributes.entrySet()) {
                     log.add(e.getKey(), e.getValue());
                 }
                 log.add("user.mapped", _subject);
             }
-            log.add("session", CDC.getSession());
             log.addInQuotes("command", commandLine);
             log.addInQuotes("reply", response);
             log.toLogger(ACCESS_LOGGER);

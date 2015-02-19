@@ -50,7 +50,8 @@ public class LoggingFilter implements Filter
 
         NetLoggerBuilder log = new NetLoggerBuilder(logLevel(code),
                 "org.dcache.webdav.request").omitNullValues();
-
+        log.add("session", CDC.getSession());
+        log.add("transaction", getTransaction());
         log.add("request.method", request.getMethod());
         log.add("request.url", request.getAbsoluteUrl());
         log.add("response.code", code);
@@ -63,8 +64,6 @@ public class LoggingFilter implements Filter
 
         log.add("user.dn", getCertificateName());
         log.add("user.mapped", getSubject());
-        log.add("session", CDC.getSession());
-        log.add("transaction", getTransaction());
         log.toLogger(ACCESS_LOGGER);
     }
 
