@@ -1,16 +1,9 @@
 package org.dcache.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import diskCacheV111.util.PnfsId;
 
 /**
  * This class contains useful static methods for working with Java
@@ -18,8 +11,6 @@ import diskCacheV111.util.PnfsId;
  */
 public class ReflectionUtils
 {
-    private static final Logger _log = LoggerFactory.getLogger(ReflectionUtils.class);
-
     private static final Map<String,Method> methodCache =
         new HashMap<>();
 
@@ -84,32 +75,31 @@ public class ReflectionUtils
         }
     }
 
+    public static boolean hasDeclaredException(Method method, Exception exception)
+    {
+        for (Class<?> clazz: method.getExceptionTypes()) {
+            if (clazz.isAssignableFrom(exception.getClass())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * If <code>o</code> has a public getPnfsId method with an empty
-     * parameter list and a PnfsId return type, then the return value
-     * of that method is returned. Otherwise null is returned.
+     * Like Class#getMethod, but also returns non-public methods. Differs from
+     * Class#getDeclaredMethod by also searching super classes.
      */
-    public static PnfsId getPnfsId(Object o)
+    public static Method getAnyMethod(Class<?> clazz, String name, Class<?>... parameterTypes) throws NoSuchMethodException
     {
         try {
-            Class<?> c = o.getClass();
-            Method m = c.getMethod("getPnfsId");
-            if (PnfsId.class.isAssignableFrom(m.getReturnType()) &&
-                Modifier.isPublic(m.getModifiers())) {
-                m.setAccessible(true);
-                return (PnfsId)m.invoke(o);
-            }
+            // Because execute is protected, we cannot use getMethod.
+            return clazz.getDeclaredMethod(name, parameterTypes);
         } catch (NoSuchMethodException e) {
-            // Not having a getPnfsId method is quite valid
-        } catch (IllegalAccessException e) {
-            // Having a non-public getPnfsId is unfortunate, but quite
-            // valid. Still we log it to better track the issue.
-            _log.debug("Failed to extract PNFS ID from object: "
-                       + e.getMessage(), e);
-        } catch (InvocationTargetException e) {
-            _log.error("Failed to extract PNFS ID from message: "
-                       + e.getMessage(), e);
+            Class<?> superclass = clazz.getSuperclass();
+            if (superclass != null) {
+                return getAnyMethod(superclass, name, parameterTypes);
+            }
+            throw e;
         }
-        return null;
     }
 }
