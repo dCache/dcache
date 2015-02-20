@@ -490,7 +490,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
     private String toOwner(String voGroup, String voRole)
     {
-        if (voGroup.charAt(0) != '/' || voRole == null || voRole.equals("*")) {
+        if (voGroup == null) {
+            return null;
+        } else if (voGroup.charAt(0) != '/' || voRole == null || voRole.equals("*")) {
             return voGroup;
         } else {
             return voGroup + "/Role=" + voRole;
@@ -645,8 +647,8 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     }
 
     @Command(name = "reserve space", hint = "create space reservation",
-             description = "A space reservation has a size, an access latency, a retention policy, " +
-                     "and an owner. It may have a description, and a lifetime. If the lifetime " +
+             description = "A space reservation has a size, an access latency, and a retention policy. " +
+                     "It may have a description, a lifetime, and an owner. If the lifetime " +
                      "is exceeded, the reservation expires and the files in it are released. " +
                      "The owner is only used to authorize creation of the reservation in the " +
                      "link group, and to authorize the release of the reservation - it is " +
