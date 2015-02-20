@@ -102,8 +102,6 @@ public class CDCExecutorServiceDecorator<E extends ExecutorService> extends Forw
             {
                 try (CDC ignored = cdc.restore()) {
                     task.run();
-                } finally {
-                    CDC.clear();
                 }
             }
         };
