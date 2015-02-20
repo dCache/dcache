@@ -12,6 +12,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import diskCacheV111.util.ChecksumFactory;
 
@@ -32,7 +34,7 @@ public class ChecksumChannelTest {
 
     private ChecksumChannel chksumChannel;
 
-    private byte[] data = "\0Just\0A\0Short\0Test\0String\0To\0Verify\0Checksumming\0Works\12\0".getBytes(StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
+    private byte[] data = "\0Just\0A\0Short\0TestString\0To\0Verify\0\0Checksumming\0\0Works\12".getBytes(StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
     private Checksum expectedChecksum;
     private int blocksize = 2;
     private int blockcount = data.length/blocksize;
@@ -43,10 +45,11 @@ public class ChecksumChannelTest {
     @Before
     public void setUp() throws NoSuchAlgorithmException, IOException {
         testFile = File.createTempFile("ChecksumChannelTest", ".tmp");
-        RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, "rw")  ;
+        RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, "rw");
         ChecksumFactory checksumFactory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
         chksumChannel = new ChecksumChannel(mockRepositoryChannel, checksumFactory);
         chksumChannel._readBackBuffer = ByteBuffer.allocate(2);
+        chksumChannel._zerosBuffer = ByteBuffer.allocate(1);
         expectedChecksum = new Checksum(ChecksumType.MD5_TYPE, checksumFactory.create().digest(data));
         for (int b = 0; b < blockcount; b++) {
             buffers[b] = ByteBuffer.wrap(Arrays.copyOfRange(data, b*blocksize, (b+1)*blocksize));
@@ -136,22 +139,6 @@ public class ChecksumChannelTest {
         if (blocksize == 1) {
             fail("Pick a blocksize > 1 for testing correct handling of partly overlapping writes!");
         }
-
-        assertThat(chksumChannel.getChecksum(), equalTo(null));
-    }
-
-    @Test
-    public void shouldReturnNullDigestOnIncompleteWrite() throws IOException {
-        chksumChannel.write(buffers[0], 0);
-        chksumChannel.write(buffers[2], 2*blocksize);
-
-        assertThat(chksumChannel.getChecksum(), equalTo(null));
-    }
-
-    @Test
-    public void shouldThrowExceptionOnMissingFileBeginning() throws IOException {
-        chksumChannel.write(buffers[1], blocksize);
-        chksumChannel.close();
 
         assertThat(chksumChannel.getChecksum(), equalTo(null));
     }
@@ -256,6 +243,29 @@ public class ChecksumChannelTest {
     public void shouldThrowIllegalStateExceptionOnWritesAfterGetChecksum() throws IOException {
         chksumChannel.getChecksum();
         chksumChannel.write(buffers[0], 0);
+    }
+
+    @Test
+    public void shouldFillUpRangeGapsWithZerosOnGetChecksum() throws IOException {
+        Map<Long, ByteBuffer> nonZeroBlocksFromByteArray = getNonZeroBlocksFromByteArray(data);
+        for (Long position : nonZeroBlocksFromByteArray.keySet()) {
+            chksumChannel.write(nonZeroBlocksFromByteArray.get(position), position);
+        }
+
+        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+    }
+
+    private Map<Long, ByteBuffer> getNonZeroBlocksFromByteArray(byte[] bytes) {
+        Map<Long, ByteBuffer> result = new TreeMap<>();
+        for (int position = 0; position < bytes.length; position++) {
+            if (bytes[position] > 0) {
+                int blockEnd = position;
+                while (blockEnd < bytes.length && bytes[blockEnd] != 0) { blockEnd++; }
+                result.put((long) position, ByteBuffer.wrap(Arrays.copyOfRange(bytes, position, blockEnd)));
+                position = blockEnd;
+            }
+        }
+        return result;
     }
 
     private int[] getRandomPermutationOfBlockOrder() {

@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,6 +24,7 @@ import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * A wrapper for RepositoryChannel that computes a digest
@@ -81,6 +83,13 @@ public class ChecksumChannel implements RepositoryChannel
      */
     @VisibleForTesting
     ByteBuffer _readBackBuffer = ByteBuffer.allocate(256 * 1024);
+
+    /**
+     * Buffer to be used for feeding the checksum digester with 0s to fill up
+     * gaps in ranges.
+     */
+    @VisibleForTesting
+    ByteBuffer _zerosBuffer = ByteBuffer.allocate(256 * 1024);
 
     public ChecksumChannel(RepositoryChannel inner,
                            ChecksumFactory checksumFactory)
@@ -260,13 +269,29 @@ public class ChecksumChannel implements RepositoryChannel
             }
 
             if (_dataRangeSet.asRanges().size() != 1 || _fileStartRange.isEmpty()) {
-                _log.debug("ChecksumChannel: Returned null for sparse file.");
-                return null;
+                feedZerosToDigesterForRangeGaps();
             }
 
             return _checksumFactory.create(_digest.digest());
+        } catch (IOException e) {
+            _log.info("Unable to generate checksum of sparse file: {}", e.toString());
+            return null;
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void feedZerosToDigesterForRangeGaps() throws IOException {
+        ArrayList<Range<Long>> complement = newArrayList(_dataRangeSet.complement().subRangeSet(Range.closed(0L, size())).asRanges());
+        complement.sort((r1, r2) -> r1.lowerEndpoint().compareTo(r2.lowerEndpoint()));
+
+        for (Range<Long> range : complement) {
+            long rangeLength = range.upperEndpoint() - range.lowerEndpoint();
+            for (int totalDigestedZeros = 0; totalDigestedZeros < rangeLength; totalDigestedZeros += _zerosBuffer.limit()) {
+                _zerosBuffer.clear();
+                _zerosBuffer.limit((int) Math.min(rangeLength - totalDigestedZeros, _zerosBuffer.capacity()));
+                updateChecksum(_zerosBuffer, range.lowerEndpoint() + totalDigestedZeros, _zerosBuffer.limit());
+            }
         }
     }
 
