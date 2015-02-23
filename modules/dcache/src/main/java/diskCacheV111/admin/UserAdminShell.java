@@ -2,7 +2,7 @@ package diskCacheV111.admin ;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import jline.Completor;
+import jline.console.completer.Completer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +73,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
   */
 public class UserAdminShell
     extends CommandInterpreter
-    implements Completor
+    implements Completer
 {
     private static final Logger _log =
         LoggerFactory.getLogger(UserAdminShell.class);
@@ -93,7 +93,7 @@ public class UserAdminShell
     private final String      _instance ;
     private Position    _currentPosition = new Position() ;
     private final boolean     _debug    = false ;
-    private Completor _completor;
+    private Completer _completer;
 
     private class Position {
         private CellPath    remote;
@@ -1197,7 +1197,7 @@ public class UserAdminShell
 
        Position newPosition;
 
-       _completor = null;
+       _completer = null;
 
        if( path.isDomain() ){
             //
@@ -1287,14 +1287,14 @@ public class UserAdminShell
     public int complete(String buffer, int cursor, List candidates)
     {
         try {
-            if (_completor == null) {
+            if (_completer == null) {
                 Object help = executeCommand("help");
                 if (help == null) {
                     return -1;
                 }
-                _completor = new HelpCompletor(String.valueOf(help));
+                _completer = new HelpCompleter(String.valueOf(help));
             }
-            return _completor.complete(buffer, cursor, candidates);
+            return _completer.complete(buffer, cursor, candidates);
         } catch (Exception e) {
             _log.info("Completion failed: " + e.toString());
             return -1;
@@ -1312,7 +1312,7 @@ public class UserAdminShell
        if( str.equals("..") ){
           _currentPosition.clearHyperMode() ;
           _currentPosition.gotoLocal() ;
-          _completor = null;
+          _completer = null;
           return "" ;
        }
 

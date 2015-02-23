@@ -1,6 +1,6 @@
 package diskCacheV111.admin ;
 
-import jline.Completor;
+import jline.console.completer.Completer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,11 +10,11 @@ import java.util.List;
  * Simple completor for JLine that uses the dCache help output to
  * suggest command completions.
  */
-public class HelpCompletor implements Completor
+public class HelpCompleter implements Completer
 {
     final List<String> completions = new ArrayList<>();
 
-    public HelpCompletor(String help)
+    public HelpCompleter(String help)
     {
         for (String line: help.split("\n")) {
             completions.add(scan(line.trim()));

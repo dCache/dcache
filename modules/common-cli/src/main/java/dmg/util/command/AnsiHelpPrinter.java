@@ -17,9 +17,11 @@
  */
 package dmg.util.command;
 
-import jline.ANSIBuffer;
-
 import org.dcache.commons.util.Strings;
+
+import static org.fusesource.jansi.Ansi.Attribute.UNDERLINE;
+import static org.fusesource.jansi.Ansi.Attribute.UNDERLINE_OFF;
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Utility class to produce help texts suitable for an ANSI terminal.
@@ -35,18 +37,18 @@ public class AnsiHelpPrinter extends TextHelpPrinter
     @Override
     protected String value(String value)
     {
-        return new ANSIBuffer().underscore(value.toLowerCase()).toString();
+        return ansi().a(UNDERLINE).a(value.toLowerCase()).a(UNDERLINE_OFF).toString();
     }
 
     @Override
     protected String literal(String option)
     {
-        return new ANSIBuffer().bold(option).toString();
+        return ansi().bold().a(option).boldOff().toString();
     }
 
     @Override
     protected String heading(String heading)
     {
-        return new ANSIBuffer().bold(heading).toString();
+        return ansi().bold().a(heading).boldOff().toString();
     }
 }

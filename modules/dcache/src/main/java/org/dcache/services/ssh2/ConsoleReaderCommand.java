@@ -1,24 +1,24 @@
 package org.dcache.services.ssh2;
 
-import com.google.common.base.Charsets;
-import jline.ANSIBuffer;
-import jline.ConsoleReader;
-import jline.History;
-import jline.UnixTerminal;
+import jline.TerminalSupport;
+import jline.console.ConsoleReader;
+import jline.console.history.FileHistory;
+import jline.console.history.MemoryHistory;
+import jline.console.history.PersistentHistory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 
 import diskCacheV111.admin.UserAdminShell;
 
@@ -34,6 +34,9 @@ import dmg.util.CommandThrowableException;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.commons.util.Strings;
+
+import static org.fusesource.jansi.Ansi.Color.CYAN;
+import static org.fusesource.jansi.Ansi.Color.RED;
 
 /**
  * This class implements the Command Interface, which is part of the sshd-core
@@ -51,17 +54,13 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private final static Logger _logger =
         LoggerFactory.getLogger(ConsoleReaderCommand.class);
     private static final int HISTORY_SIZE = 50;
-    private static final String NL = "\r\n";
-    private static final String CONTROL_C_ANSWER =
-        "Got interrupt. Please issue \'logoff\' from "
-        + "within the Admin Cell to end this session.\n";
     private UserAdminShell _userAdminShell;
     private InputStream _in;
     private ExitCallback _exitCallback;
-    private OutputStreamWriter _outWriter;
+    private OutputStream _out;
     private Thread _adminShellThread;
     private ConsoleReader _console;
-    private History _history;
+    private MemoryHistory _history;
     private boolean _useColors;
     private final CellEndpoint _endpoint;
 
@@ -71,7 +70,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
         _endpoint = endpoint;
         if (historyFile != null && historyFile.isFile()) {
             try {
-                _history = new History(historyFile);
+                _history  = new FileHistory(historyFile);
                 _history.setMaxSize(HISTORY_SIZE);
             } catch (IOException e) {
                 _logger.warn("History creation failed: " + e.getMessage());
@@ -103,15 +102,14 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void setOutputStream(OutputStream out) {
-        _outWriter = new SshOutputStreamWriter(out);
+        _out = new SshOutputStream(out);
     }
 
     @Override
     public void start(Environment env) throws IOException {
         String user = env.getEnv().get(Environment.ENV_USER);
-        _userAdminShell = new UserAdminShell(user, _endpoint,
-                _endpoint.getArgs());
-        _console = new ConsoleReader(_in, _outWriter, null, new ConsoleReaderTerminal(env));
+        _userAdminShell = new UserAdminShell(user, _endpoint, _endpoint.getArgs());
+        _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env));
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
     }
@@ -137,38 +135,22 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private void initAdminShell() throws IOException {
         if (_history != null) {
             _console.setHistory(_history);
-            _console.setUseHistory(true);
-            _logger.debug("History enabled.");
         }
 
         String hello = "";
         if (_userAdminShell != null) {
-            _console.addCompletor(_userAdminShell);
+            _console.addCompleter(_userAdminShell);
             hello = _userAdminShell.getHello();
         }
 
-        _console.addTriggeredAction(ConsoleReader.CTRL_C, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                try {
-                    _console.printString(CONTROL_C_ANSWER);
-                    _console.printString(NL);
-                    _console.printString("\r");
-                    _console.flushConsole();
-                } catch (IOException e) {
-                    _logger.warn("I/O failure for Ctrl-C: " + e);
-                }
-            }
-        });
-
-        _console.printString(hello);
-        _console.printString(NL);
-        _console.flushConsole();
+        _console.println(hello);
+        _console.flush();
     }
 
     private void runAsciiMode() throws IOException {
+        Ansi.setEnabled(_useColors);
         while (!_adminShellThread.isInterrupted()) {
-            String prompt = new ANSIBuffer().bold(_userAdminShell.getPrompt()).toString(_useColors);
+            String prompt = Ansi.ansi().bold().a(_userAdminShell.getPrompt()).boldOff().toString();
             String str = _console.readLine(prompt);
             Object result;
             try {
@@ -237,111 +219,75 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 String s;
                 if (result instanceof CommandSyntaxException) {
                     CommandSyntaxException e = (CommandSyntaxException) result;
-                    ANSIBuffer sb = new ANSIBuffer();
-                    sb.red("Syntax error: " + e.getMessage() + "\n");
+                    Ansi sb = Ansi.ansi();
+                    sb.fg(RED).a("Syntax error: ").a(e.getMessage()).newline();
                     String help = e.getHelpText();
                     if (help != null) {
-                        sb.cyan("Help : \n");
-                        sb.cyan(help);
+                        sb.fg(CYAN);
+                        sb.a("Help : ").newline();
+                        sb.a(help);
                     }
-                    s = sb.toString(_useColors);
+                    s = sb.reset().toString();
                 } else {
                     s = Strings.toMultilineString(result);
                 }
 
                 if (!s.isEmpty()) {
-                    _console.printString(s);
-                    _console.printNewline();
+                    _console.println(s);
                 }
             }
         }
     }
 
     private void cleanUp() throws IOException {
-        if (_history != null) {
-            PrintWriter out = _history.getOutput();
-            if (out != null) {
-                out.close();
-            }
+        if (_history instanceof PersistentHistory) {
+            ((PersistentHistory) _history).flush();
         }
-        _console.printString(NL);
-        _console.flushConsole();
-        _outWriter.close();
+        _console.println();
+        _console.flush();
     }
 
-    private static class ConsoleReaderTerminal extends UnixTerminal {
-
-        private final static int DEFAULT_WIDTH = 80;
-        private final static int DEFAULT_HEIGHT = 24;
+    private static class ConsoleReaderTerminal extends TerminalSupport
+    {
         private final Environment _env;
 
-        private ConsoleReaderTerminal(Environment env) {
+        private ConsoleReaderTerminal(Environment env)
+        {
+            super(true);
             _env = env;
+            setAnsiSupported(true);
+            setEchoEnabled(false);
         }
 
         @Override
-        public void initializeTerminal()
-            throws IOException, InterruptedException
-        {
-            /* UnixTerminal expects a tty to have been allocated. That
-             * is not the case for StreamObjectCell and hence we skip
-             * the usual initialization.
-             */
-        }
-
-        @Override
-        public int readCharacter(InputStream in) throws IOException
-        {
-            int c = super.readCharacter(in);
-            if (c == DELETE) {
-                c = BACKSPACE;
-            }
-            return c;
-        }
-
-        @Override
-        public int getTerminalHeight() {
+        public int getHeight() {
             String h = _env.getEnv().get(Environment.ENV_LINES);
-            if(h != null) {
+            if (h != null) {
                 try {
                     return Integer.parseInt(h);
-                }catch(NumberFormatException e) {
-                    // nop
+                } catch(NumberFormatException ignored) {
                 }
             }
-            return DEFAULT_HEIGHT;
+            return super.getHeight();
         }
 
         @Override
-        public int getTerminalWidth() {
-            String h = _env.getEnv().get(Environment.ENV_COLUMNS);
-            if(h != null) {
+        public int getWidth() {
+            String w = _env.getEnv().get(Environment.ENV_COLUMNS);
+            if (w != null) {
                 try {
-                    return Integer.parseInt(h);
-                }catch(NumberFormatException e) {
-                    // nop
+                    return Integer.parseInt(w);
+                } catch(NumberFormatException ignored) {
                 }
             }
-            return DEFAULT_WIDTH;
+            return super.getWidth();
         }
     }
 
-    private static class SshOutputStreamWriter extends OutputStreamWriter {
-
-        public SshOutputStreamWriter(OutputStream out) {
-            super(out, Charsets.UTF_8);
-        }
-
-        @Override
-        public void write(char[] c) throws IOException {
-            write(c, 0, c.length);
-        }
-
-        @Override
-        public void write(char[] c, int off, int len) throws IOException {
-            for (int i = off; i < (off + len); i++) {
-                write((int) c[i]);
-            }
+    private static class SshOutputStream extends FilterOutputStream
+    {
+        public SshOutputStream(OutputStream out) {
+            super(out);
         }
 
         @Override
@@ -351,20 +297,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 super.write(0xd);
             } else {
                 super.write(c);
-            }
-        }
-
-        @Override
-        public void write(String str) throws IOException {
-            for (int i = 0; i < str.length(); i++) {
-                write(str.charAt(i));
-            }
-        }
-
-        @Override
-        public void write(String str, int off, int len) throws IOException {
-            for (int i = off; i < (off + len); i++) {
-                write(str.charAt(i));
             }
         }
     }

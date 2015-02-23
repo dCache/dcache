@@ -3,8 +3,8 @@ package org.dcache.util.cli;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.LineProcessor;
-import jline.ANSIBuffer;
-import jline.ConsoleReader;
+import jline.console.ConsoleReader;
+import org.fusesource.jansi.Ansi;
 
 import java.io.BufferedInputStream;
 import java.io.Closeable;
@@ -25,9 +25,9 @@ import dmg.util.command.Command;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.util.Args;
-import org.dcache.util.cli.CommandInterpreter.HelpCommands;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.fusesource.jansi.Ansi.Color.RED;
 
 /**
  * A simple framework for providing a CLI Shell.  A basic application has as
@@ -53,7 +53,7 @@ public abstract class ShellApplication implements Closeable
         commandInterpreter = new CommandInterpreter(this);
         commandInterpreter.addCommandListener(commandInterpreter.new HelpCommands());
         hasConsole = System.console() != null;
-        isAnsiSupported = console.getTerminal().isANSISupported() && hasConsole;
+        isAnsiSupported = console.getTerminal().isAnsiSupported() && hasConsole;
     }
 
     /**
@@ -67,6 +67,8 @@ public abstract class ShellApplication implements Closeable
             System.out.println("Use '" + getCommandName() + " help' for an overview of available commands.");
             System.exit(0);
         }
+
+        Ansi.setEnabled(isAnsiSupported);
 
         if (args.hasOption("f")) {
             try (InputStream in = new FileInputStream(args.getOption("f"))) {
@@ -149,24 +151,24 @@ public abstract class ShellApplication implements Closeable
                 throw e.getCause();
             }
         } catch (CommandSyntaxException e) {
-            ANSIBuffer sb = new ANSIBuffer();
-            sb.red("Syntax error: " + e.getMessage() + "\n");
+            Ansi sb = Ansi.ansi();
+            sb.fg(RED).a("Syntax error: " + e.getMessage() + "\n").reset();
             String help  = e.getHelpText();
             if (help != null) {
-                sb.append(help);
+                sb.a(help);
             }
-            out = sb.toString(isAnsiSupported);
+            out = sb.toString();
         } catch (CommandExitException e) {
             throw e;
         } catch (Exception e) {
-            out = new ANSIBuffer().red(e.getMessage()).toString(isAnsiSupported);
+            out = Ansi.ansi().fg(RED).a(e.getMessage()).reset().toString();
         }
         if (!isNullOrEmpty(out)) {
-            console.printString(out);
+            console.print(out);
             if (out.charAt(out.length() - 1) != '\n') {
-                console.printNewline();
+                console.println();
             }
-            console.flushConsole();
+            console.flush();
         }
     }
 
@@ -180,10 +182,10 @@ public abstract class ShellApplication implements Closeable
         onInteractiveStart();
         try {
             while (true) {
-                String prompt = new ANSIBuffer().bold(getPrompt()).toString(isAnsiSupported);
+                String prompt = Ansi.ansi().bold().a(getPrompt()).boldOff().toString();
                 String str = console.readLine(prompt);
                 if (str == null) {
-                    console.printNewline();
+                    console.println();
                     break;
                 }
                 execute(new Args(str));
@@ -197,8 +199,8 @@ public abstract class ShellApplication implements Closeable
      */
     protected void onInteractiveStart() throws IOException
     {
-        console.printString("Type 'help' for help on commands.\n");
-        console.printString("Type 'exit' or Ctrl+D to exit.\n");
+        console.println("Type 'help' for help on commands.");
+        console.println("Type 'exit' or Ctrl+D to exit.");
     }
 
     /**

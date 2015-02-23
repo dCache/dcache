@@ -379,7 +379,7 @@ public class SrmShell extends ShellApplication
                             .value("time", getTime(entry).getTime())
                             .value("name", new File(entry.getPath()).getName());
                 }
-                console.printString(writer.toString());
+                console.print(writer.toString());
             } else {
                 List<String> names = new ArrayList<>();
                 for (TMetaDataPathDetail entry : fs.list(lookup(path), verbose)) {

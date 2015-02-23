@@ -317,8 +317,7 @@ public class Shell extends ShellApplication
                 }
             }
 
-            console.printString("total " + totalBlocks);
-            console.printNewline();
+            console.println("total " + totalBlocks);
             printEntry(dot);
             printEntry(dotdot);
             for (HimeraDirectoryEntry entry : entries) {
@@ -361,8 +360,7 @@ public class Shell extends ShellApplication
                                          dateOf(time),
                                          entry.getName());
 
-                console.printString(s);
-                console.printNewline();
+                console.println(s);
             }
         }
 
@@ -475,11 +473,9 @@ public class Shell extends ShellApplication
         public Serializable call() throws IOException
         {
             String[] tags = fs.tags(lookup(path));
-            console.printString("Total: " + tags.length);
-            console.printNewline();
+            console.println("Total: " + tags.length);
             for (String tag : tags) {
-                console.printString(tag);
-                console.printNewline();
+                console.println(tag);
             }
             return null;
         }
@@ -595,8 +591,7 @@ public class Shell extends ShellApplication
             Stat stat = fs.statTag(inode, tag);
             byte[] data = new byte[(int) stat.getSize()];
             fs.getTag(inode, tag, data, 0, data.length);
-            console.printString(new String(data));
-            console.printNewline();
+            console.println(new String(data));
             return null;
         }
     }
@@ -778,8 +773,7 @@ public class Shell extends ShellApplication
             FsInode inode = lookup(path);
             List<ACE> acl = fs.getACL(inode);
             for (ACE ace : acl) {
-                console.printString(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE));
-                console.printNewline();
+                console.println(ace.toExtraFormat(inode.isDirectory() ? RsType.DIR : RsType.FILE));
             }
             return null;
         }
@@ -840,8 +834,7 @@ public class Shell extends ShellApplication
         {
             FsInode inode = lookup(path);
             for (Checksum checksum : fs.getInodeChecksums(inode)) {
-                    console.printString(checksum.getType().getName() + ":" + checksum.getValue());
-                    console.printNewline();
+                    console.println(checksum.getType().getName() + ":" + checksum.getValue());
             }
             return null;
         }
@@ -863,11 +856,10 @@ public class Shell extends ShellApplication
             Optional<Checksum> checksum = Checksum.forType(fs.getInodeChecksums(inode), type);
 
             if (checksum.isPresent()) {
-                console.printString(checksum.get().getValue());
+                console.println(checksum.get().getValue());
             } else {
-                console.printString("No checksum of type " + type.getName());
+                console.println("No checksum of type " + type.getName());
             }
-            console.printNewline();
             return null;
         }
     }
