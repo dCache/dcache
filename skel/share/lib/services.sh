@@ -157,11 +157,11 @@ printLimitedClassPath() # $1..$n = list of jar files
 
     classes_path="$(getProperty dcache.paths.classes)"
     for name in "$@"; do
-	jar="$(echo $classes_path/$name-*.jar)"
-	classpath="${classpath}:${jar}"
+        jar="$(echo $classes_path/$name-*.jar)"
+        classpath="${classpath}:${jar}"
     done
 
-    echo $classpath
+    echo ${classpath#:}
 }
 
 # Prints the classpath to include plugins for a given domain
@@ -191,7 +191,7 @@ printPluginClassPath() # $1 = domain
         fi
     done
 
-    echo $classpath
+    echo ${classpath%:}
 }
 
 
