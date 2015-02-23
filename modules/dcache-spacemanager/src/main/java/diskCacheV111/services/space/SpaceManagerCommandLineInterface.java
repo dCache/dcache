@@ -657,9 +657,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
              description = "A space reservation has a size, an access latency, and a retention policy. " +
                      "It may have a description, a lifetime, and an owner. If the lifetime " +
                      "is exceeded, the reservation expires and the files in it are released. " +
-                     "The owner is only used to authorize creation of the reservation in the " +
-                     "link group, and to authorize the release of the reservation - it is " +
-                     "not used to authorize uploads to the reservation.\n\n" +
+                     "The owner is only used to authorize the release of the reservation - it is " +
+                     "not used to authorize uploads to the reservation. Reservations without an owner " +
+                     "can only be administratively released.\n\n" +
 
                      "Space reservations are created in link groups. The link group authorizes " +
                      "reservations. The owner of the reservation as well as its file type " +

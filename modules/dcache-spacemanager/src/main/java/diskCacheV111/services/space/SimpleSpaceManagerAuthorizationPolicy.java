@@ -11,10 +11,6 @@ import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.Subjects;
 
-/**
- *
- * @author timur
- */
 public class SimpleSpaceManagerAuthorizationPolicy
         implements SpaceManagerAuthorizationPolicy {
 	private static Logger logger =
@@ -26,23 +22,19 @@ public class SimpleSpaceManagerAuthorizationPolicy
         String spaceGroup = space.getVoGroup();
         String spaceRole  = space.getVoRole();
 
-        if (spaceGroup == null && spaceRole != null) {
-            logger.debug("Space {} has no owner and can be released by anybody", space);
-            return;
-        }
-        if (spaceGroup != null && spaceGroup.equals(Subjects.getUserName(subject)) && spaceRole == null) {
-            logger.debug("Subject with user name {} has permission to release space {}",
-                    Subjects.getUserName(subject), space);
-            return;
-        }
-
-        for (FQANPrincipal principal : subject.getPrincipals(FQANPrincipal.class)) {
-            FQAN fqan = principal.getFqan();
-            if ((spaceGroup == null || spaceGroup.equals(fqan.getGroup())) &&
-                    (spaceRole == null || spaceRole.equals(fqan.getRole()))) {
-                logger.debug("Subject with fqan {} has permission to release space {}",
-                        fqan, space);
+        if (spaceGroup != null) {
+            if (spaceRole == null && spaceGroup.equals(Subjects.getUserName(subject))) {
+                logger.debug("Subject with user name {} has permission to release space {}",
+                             Subjects.getUserName(subject), space);
                 return;
+            }
+            for (FQANPrincipal principal : subject.getPrincipals(FQANPrincipal.class)) {
+                FQAN fqan = principal.getFqan();
+                if (spaceGroup.equals(fqan.getGroup()) && (spaceRole == null || spaceRole.equals(fqan.getRole()))) {
+                    logger.debug("Subject with fqan {} has permission to release space {}",
+                                 fqan, space);
+                    return;
+                }
             }
         }
 
