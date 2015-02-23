@@ -36,6 +36,7 @@ import dmg.util.command.Option;
 import dmg.util.command.PlainHelpPrinter;
 
 import org.dcache.util.Args;
+import org.dcache.util.ReflectionUtils;
 
 import static com.google.common.collect.Iterables.*;
 import static java.util.Arrays.asList;
@@ -135,15 +136,8 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                  * those declared to be thrown by the method as
                  * bugs and propagate them.
                  */
-                boolean declared = false;
                 Method method = command.getClass().getMethod("call");
-                for (Class<?> clazz: method.getExceptionTypes()) {
-                    if (clazz.isAssignableFrom(e.getClass())) {
-                        declared = true;
-                    }
-                }
-
-                if (!declared) {
+                if (!ReflectionUtils.hasDeclaredException(method, e)) {
                     throw new CommandPanicException("Command failed: " + e.toString(),  e);
                 }
                 throw new CommandThrowableException(
