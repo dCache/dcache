@@ -20,7 +20,6 @@ package dmg.util.command;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
-import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Multimap;
 
@@ -84,7 +83,7 @@ public abstract class TextHelpPrinter implements AnnotatedCommandHelpPrinter
     protected String valuespec(String valuespec)
     {
         StringBuilder out = new StringBuilder();
-        for (String s : Splitter.on(VALUESPEC_SEPARATOR).split(valuespec)) {
+        for (String s : VALUESPEC_SEPARATOR.split(valuespec, 0)) {
             switch (s) {
             case "[":
             case "]":
