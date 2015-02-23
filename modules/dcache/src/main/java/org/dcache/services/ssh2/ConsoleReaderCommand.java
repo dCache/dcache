@@ -12,13 +12,15 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.PrintWriter;
 
 import diskCacheV111.admin.UserAdminShell;
 
@@ -55,14 +57,19 @@ public class ConsoleReaderCommand implements Command, Runnable {
         LoggerFactory.getLogger(ConsoleReaderCommand.class);
     private static final int HISTORY_SIZE = 50;
     private UserAdminShell _userAdminShell;
-    private InputStream _in;
     private ExitCallback _exitCallback;
+    private InputStream _in;
+    private PrintWriter _error;
     private OutputStream _out;
     private Thread _adminShellThread;
     private ConsoleReader _console;
     private MemoryHistory _history;
     private boolean _useColors;
     private final CellEndpoint _endpoint;
+
+    private PipedOutputStream _pipedOut;
+    private PipedInputStream _pipedIn;
+    private Thread _pipeThread;
 
     public ConsoleReaderCommand(CellEndpoint endpoint,
             File historyFile, boolean useColor) {
@@ -80,14 +87,14 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void destroy() {
-        if (_adminShellThread != null) {
-            _adminShellThread.interrupt();
+        if (_pipeThread != null) {
+            _pipeThread.interrupt();
         }
     }
 
     @Override
     public void setErrorStream(OutputStream err) {
-        // we don't use the error stream
+        _error = new PrintWriter(new SshOutputStream(err));
     }
 
     @Override
@@ -108,10 +115,14 @@ public class ConsoleReaderCommand implements Command, Runnable {
     @Override
     public void start(Environment env) throws IOException {
         String user = env.getEnv().get(Environment.ENV_USER);
+        _pipedOut = new PipedOutputStream();
+        _pipedIn = new PipedInputStream(_pipedOut);
         _userAdminShell = new UserAdminShell(user, _endpoint, _endpoint.getArgs());
-        _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env));
+        _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env));
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
+        _pipeThread = new Thread(new Pipe());
+        _pipeThread.start();
     }
 
     @Override
@@ -149,65 +160,74 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     private void runAsciiMode() throws IOException {
         Ansi.setEnabled(_useColors);
-        while (!_adminShellThread.isInterrupted()) {
+        while (true) {
             String prompt = Ansi.ansi().bold().a(_userAdminShell.getPrompt()).boldOff().toString();
-            String str = _console.readLine(prompt);
             Object result;
             try {
-                if (str == null) {
-                    throw new CommandExitException();
-                }
-                if (_useColors) {
-                    String trimmed = str.trim();
-                    if (trimmed.startsWith("help ")) {
-                        str = "help -format=" + HelpFormat.ANSI + trimmed.substring(4);
-                    } else if (trimmed.equals("help")) {
-                        str = "help -format=" + HelpFormat.ANSI;
+                String str = _console.readLine(prompt);
+                try {
+                    if (str == null) {
+                        throw new CommandExitException();
                     }
+                    if (_useColors) {
+                        String trimmed = str.trim();
+                        if (trimmed.startsWith("help ")) {
+                            str = "help -format=" + HelpFormat.ANSI + trimmed.substring(4);
+                        } else if (trimmed.equals("help")) {
+                            str = "help -format=" + HelpFormat.ANSI;
+                        }
+                    }
+                    result = _userAdminShell.executeCommand(str);
+                } catch (IllegalArgumentException e) {
+                    result = e.getMessage()
+                             + " (Please check the spelling of your command or your config file(s)!)";
+                } catch (SerializationException e) {
+                    result =
+                            "There is a bug here, please report to support@dcache.org";
+                    _logger.error("This must be a bug, please report to support@dcache.org.", e);
+                } catch (CommandSyntaxException e) {
+                    result = e;
+                } catch (CommandEvaluationException e) {
+                    result = e.getMessage();
+                } catch (CommandExitException e) {
+                    break;
+                } catch (CommandPanicException e) {
+                    result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
+                             "); the service log file contains additional information. Please " +
+                             "contact support@dcache.org.";
+                } catch (CommandThrowableException e) {
+                    result = e.getTargetException().getMessage();
+                    if (result == null) {
+                        result = e.getTargetException().getClass().getSimpleName() + ": (null)";
+                    }
+                } catch (CommandException e) {
+                    result =
+                            "There is a bug here, please report to support@dcache.org: "
+                            + e.getMessage();
+                    _logger.warn("Unexpected exception, please report this "
+                                 + "bug to support@dcache.org");
+                } catch (NoRouteToCellException e) {
+                    result =
+                            "Cell name does not exist or cell is not started: "
+                            + e.getMessage();
+                    _logger.warn("The cell the command was sent to is no "
+                                 + "longer there: {}", e.getMessage());
+                } catch (RuntimeException e) {
+                    result = String.format("Command '%s' triggered a bug (%s); please" +
+                                           " locate this message in the log file of the admin service and" +
+                                           " send an email to support@dcache.org with this line and the" +
+                                           " following stack-trace", str, e);
+                    _logger.error((String) result, e);
                 }
-                result = _userAdminShell.executeCommand(str);
-            } catch (IllegalArgumentException e) {
-                result = e.getMessage()
-                + " (Please check the spelling of your command or your config file(s)!)";
-            } catch (SerializationException e) {
-                result =
-                    "There is a bug here, please report to support@dcache.org";
-                _logger.error("This must be a bug, please report to support@dcache.org.", e);
-            } catch (CommandSyntaxException e) {
-                result = e;
-            } catch (CommandEvaluationException e) {
-                result = e.getMessage();
-            } catch (CommandExitException e) {
-                break;
-            } catch (CommandPanicException e) {
-                result = "Command '" + str + "' triggered a bug (" + e.getTargetException() +
-                         "); the service log file contains additional information. Please " +
-                         "contact support@dcache.org.";
-            } catch (CommandThrowableException e) {
-                result = e.getTargetException().getMessage();
-                if(result == null) {
-                    result = e.getTargetException().getClass().getSimpleName() + ": (null)";
-                }
-            } catch (CommandException e) {
-                result =
-                    "There is a bug here, please report to support@dcache.org: "
-                    + e.getMessage();
-                _logger.warn("Unexpected exception, please report this "
-                        + "bug to support@dcache.org");
-            } catch (NoRouteToCellException e) {
-                result =
-                    "Cell name does not exist or cell is not started: "
-                    + e.getMessage();
-                _logger.warn("The cell the command was sent to is no "
-                        + "longer there: {}", e.getMessage());
+            } catch (InterruptedIOException e) {
+                _console.getCursorBuffer().clear();
+                _console.println();
+                result = null;
             } catch (InterruptedException e) {
-                result = e.getMessage();
-            } catch (RuntimeException e) {
-                result = String.format("Command '%s' triggered a bug (%s); please" +
-                                       " locate this message in the log file of the admin service and" +
-                                       " send an email to support@dcache.org with this line and the" +
-                                       " following stack-trace", str, e);
-                _logger.error((String) result, e);
+                _error.println("^C");
+                _error.flush();
+                _console.getCursorBuffer().clear();
+                result = null;
             } catch (Exception e) {
                 result = e.getMessage();
                 if(result == null) {
@@ -216,7 +236,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
             }
 
             if (result != null) {
-                String s;
                 if (result instanceof CommandSyntaxException) {
                     CommandSyntaxException e = (CommandSyntaxException) result;
                     Ansi sb = Ansi.ansi();
@@ -227,13 +246,14 @@ public class ConsoleReaderCommand implements Command, Runnable {
                         sb.a("Help : ").newline();
                         sb.a(help);
                     }
-                    s = sb.reset().toString();
+                    _error.println(sb.reset().toString());
+                    _error.flush();
                 } else {
+                    String s;
                     s = Strings.toMultilineString(result);
-                }
-
-                if (!s.isEmpty()) {
-                    _console.println(s);
+                    if (!s.isEmpty()) {
+                        _console.println(s);
+                    }
                 }
             }
         }
@@ -297,6 +317,36 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 super.write(0xd);
             } else {
                 super.write(c);
+            }
+        }
+    }
+
+    private class Pipe implements Runnable
+    {
+        public static final int CTRL_C = 3;
+
+        public void run() {
+            try {
+                while (!Thread.interrupted()) {
+                    try {
+                        int c = _in.read();
+                        if (c == -1) {
+                            return;
+                        } else if (c == CTRL_C) {
+                            _adminShellThread.interrupt();
+                        }
+                        _pipedOut.write(c);
+                        _pipedOut.flush();
+                    } catch (Throwable t) {
+                        return;
+                    }
+                }
+            } finally {
+                try {
+                    _pipedOut.close();
+                } catch (IOException ignored) {
+                }
+                _adminShellThread.interrupt();
             }
         }
     }

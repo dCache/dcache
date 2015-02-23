@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -88,7 +89,7 @@ public class UserAdminShell
     private final CellStub _cellStub;
     private String      _user;
     private String      _authUser;
-    private long        _timeout  = 10000 ;
+    private long        _timeout  = TimeUnit.MINUTES.toMillis(5);
     private boolean     _fullException;
     private final String      _instance ;
     private Position    _currentPosition = new Position() ;
