@@ -160,7 +160,7 @@ class AcCommandExecutor implements CommandExecutor
                 }
 
                 if (!declared) {
-                    throw new CommandPanicException("Command failed: " + e.toString(),  e);
+                    throw new CommandPanicException("Command failed: " + te.toString(),  te);
                 }
             }
 
