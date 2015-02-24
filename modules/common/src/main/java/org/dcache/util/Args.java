@@ -571,7 +571,17 @@ public class Args implements Serializable
             }
 
             if (!isEof()) {
-                word.append(readChar());
+                char c = readChar();
+                switch (c) {
+                case '\'':
+                case '"':
+                case '\\':
+                    word.append(c);
+                    break;
+                default:
+                    word.append('\\').append(c);
+                    break;
+                }
             }
         }
     }

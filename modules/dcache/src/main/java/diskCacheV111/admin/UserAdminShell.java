@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -56,6 +57,8 @@ import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -1248,6 +1251,52 @@ public class UserAdminShell
 
        return "" ;
     }
+
+    @Command(name = "\\c", hint = "connect to cell",
+            description = "Connect to new cell. May optionally switch to another user.")
+    class ConnectCommand implements Callable<String>
+    {
+        @Argument(required = false, index = 0, valueSpec = "CELL|CELL@DOMAIN",
+                usage = "Well known or fully qualified cell name. If omitted the shell switches to local mode.")
+        String name;
+
+        @Argument(required = false, index = 1,
+                usage = "Account to connect with.")
+        String user;
+
+        @Override
+        public String call() throws Exception
+        {
+            if (name == null) {
+                _currentPosition.clearHyperMode();
+                _currentPosition.gotoLocal();
+                _completer = null;
+            } else {
+                String oldUser = _user;
+                try {
+                    if (user != null) {
+                        if (!user.equals(_authUser) && !user.equals(_user)) {
+                            try {
+                                checkPermission("system.*.newuser");
+                            } catch (AclException acle) {
+                                checkPermission("system." + user + ".newuser");
+                            }
+                        }
+                        _user = user;
+                    }
+                    checkCdPermission(name);
+                    Position newPosition = new Position(name);
+                    checkCellExists(newPosition.remote);
+                    _currentPosition = newPosition;
+                } catch (Throwable e) {
+                    _user = oldUser;
+                    throw e;
+                }
+            }
+            return "";
+        }
+    }
+
     private void checkCdPermission( String remoteName ) throws AclException {
        int pos = remoteName.indexOf('-') ;
        String prefix = null ;
@@ -1319,7 +1368,7 @@ public class UserAdminShell
 
        Args args = new Args( str ) ;
 
-       if( _currentPosition.remote == null ){
+       if( _currentPosition.remote == null || str.startsWith("\\")) {
            return localCommand( args ) ;
        }else{
            if( _currentPosition.hyperMode ){
