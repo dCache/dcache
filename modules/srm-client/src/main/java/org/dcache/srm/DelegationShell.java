@@ -28,7 +28,6 @@ import org.globus.axis.transport.HTTPSSender;
 import org.globus.axis.util.Util;
 import org.globus.common.CoGProperties;
 import org.globus.gsi.CredentialException;
-import org.globus.gsi.GSIConstants.CertificateType;
 import org.globus.gsi.X509Credential;
 import org.globus.gsi.bc.BouncyCastleCertProcessingFactory;
 
@@ -563,7 +562,7 @@ public class DelegationShell extends ShellApplication
             }
 
             if (this.id == null) {
-                console.printString("Delegated credential has id " + id + "\n");
+                console.println("Delegated credential has id " + id);
             }
 
             return null;
@@ -576,7 +575,7 @@ public class DelegationShell extends ShellApplication
             for (X509Certificate certificate : certificates) {
                 if (certificate.getNotAfter().before(expiry)) {
                     expiry = certificate.getNotAfter();
-                    console.printString("Generated certificate expire " + expiry + "\n");
+                    console.println("Generated certificate expire " + expiry);
                 }
             }
 
