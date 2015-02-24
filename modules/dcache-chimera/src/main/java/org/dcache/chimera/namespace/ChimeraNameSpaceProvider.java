@@ -1181,14 +1181,20 @@ public class ChimeraNameSpaceProvider
              * the upload directory.
              */
             Map<String, byte[]> tags = Maps.newHashMap(parentOfPath.getTags());
+            if (spaceToken != null) {
+                tags.put(TAG_WRITE_TOKEN, spaceToken.getBytes(Charsets.UTF_8));
+
+                /* If client provides space token to upload to, the access latency and
+                 * retention policy tags of the upload directory must be disregarded.
+                 */
+                tags.remove(TAG_ACCESS_LATENCY);
+                tags.remove(TAG_RETENTION_POLICY);
+            }
             if (al != null) {
                 tags.put(TAG_ACCESS_LATENCY, al.toString().getBytes(Charsets.UTF_8));
             }
             if (rp != null) {
                 tags.put(TAG_RETENTION_POLICY, rp.toString().getBytes(Charsets.UTF_8));
-            }
-            if (spaceToken != null) {
-                tags.put(TAG_WRITE_TOKEN, spaceToken.getBytes(Charsets.UTF_8));
             }
             if (size != null) {
                 tags.put(TAG_EXPECTED_SIZE, size.toString().getBytes(Charsets.UTF_8));
