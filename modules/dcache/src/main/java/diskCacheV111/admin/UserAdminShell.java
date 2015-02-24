@@ -59,6 +59,8 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.HelpFormat;
+import dmg.util.command.Option;
 
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
@@ -1297,6 +1299,57 @@ public class UserAdminShell
         }
     }
 
+    @Command(name = "\\?", hint = "display help for shell commands",
+            description = "Shows help for shell commands. Commands that begin with a backslash are always " +
+                          "accessible, while other commands are only available when not connected to a cell." +
+                          "\n\n" +
+                          "When invoked with a specific command, detailed help for that " +
+                          "command is displayed. When invoked with a partial command or without " +
+                          "an argument, a summary of all matching commands is shown.")
+    class ShellHelpCommand implements Callable<String>
+    {
+        @Option(name = "format", usage = "Output format.")
+        HelpFormat format = HelpFormat.PLAIN;
+
+        @Argument(valueSpec = "COMMAND", required = false,
+                usage = "Partial or full command for which to show help.")
+        String[] command = {};
+
+        @Override
+        public String call()
+        {
+            return getHelp(format, command);
+        }
+    }
+
+    @Command(name = "\\h", hint = "display help for cell commands",
+            description = "Shows help for cell commands." +
+                          "\n\n" +
+                          "When invoked with a specific command, detailed help for that " +
+                          "command is displayed. When invoked with a partial command or without " +
+                          "an argument, a summary of all matching commands is shown.")
+    class HelpCommand implements Callable<Serializable>
+    {
+        @Option(name = "format", usage = "Output format.")
+        HelpFormat format = HelpFormat.PLAIN;
+
+        @Argument(valueSpec = "COMMAND", required = false,
+                usage = "Partial or full command for which to show help.")
+        String[] command = {};
+
+        @Override
+        public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException
+        {
+            if ( _currentPosition.remote == null) {
+                return "You are not connected to any cell. Use \\? to display shell commands.";
+            } else {
+                return sendObject(_currentPosition.remote,
+                                  new AuthorizedString(_user, "help -format=" + format + " " + String.join(" ", command)));
+            }
+        }
+    }
+
+
     private void checkCdPermission( String remoteName ) throws AclException {
        int pos = remoteName.indexOf('-') ;
        String prefix = null ;
@@ -1393,7 +1446,7 @@ public class UserAdminShell
        }
     }
 
-    private Object localCommand( Args args ) throws CommandException
+    private Serializable localCommand( Args args ) throws CommandException
     {
            _log.info("Local command {}", args);
            Object or = command(args);
@@ -1412,17 +1465,18 @@ public class UserAdminShell
 
 
     }
-    private Object sendObject(String cellPath, Serializable object)
+
+    private Serializable sendObject(String cellPath, Serializable object)
             throws NoRouteToCellException, InterruptedException, CommandException
     {
         return sendObject(new CellPath(cellPath), object);
     }
 
-    private Object sendObject(CellPath cellPath, Serializable object)
+    private Serializable sendObject(CellPath cellPath, Serializable object)
             throws NoRouteToCellException, InterruptedException, CommandException
     {
        try {
-           return _cellStub.send(cellPath, object, Object.class).get();
+           return _cellStub.send(cellPath, object, Serializable.class).get();
        } catch (ExecutionException e) {
            Throwable cause = e.getCause();
            if (_fullException) {
@@ -1435,7 +1489,7 @@ public class UserAdminShell
        }
     }
 
-    private Object getStackTrace(Throwable obj)
+    private String getStackTrace(Throwable obj)
     {
         CharArrayWriter ca = new CharArrayWriter();
         obj.printStackTrace(new PrintWriter(ca));

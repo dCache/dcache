@@ -309,7 +309,7 @@ public class CommandInterpreter
         public class HelpCommand implements Callable<String>
         {
             @Option(name = "format", usage = "Output format.")
-            HelpFormat format;
+            HelpFormat format = HelpFormat.PLAIN;
 
             @Argument(valueSpec = "COMMAND", required = false,
                       usage = "When invoked with a specific command, detailed help for that " +
@@ -320,7 +320,7 @@ public class CommandInterpreter
             @Override
             public String call()
             {
-                return getHelp((format == null) ? HelpFormat.PLAIN : format, command);
+                return getHelp(format, command);
             }
         }
     }
