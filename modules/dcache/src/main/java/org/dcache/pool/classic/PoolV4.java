@@ -1079,7 +1079,7 @@ public class PoolV4
 
         List<StickyRecord> stickyRecords = Collections.emptyList();
         _p2pClient.newCompanion(poolName, fileAttributes,
-                                targetState, stickyRecords, callback, false);
+                                targetState, stickyRecords, callback, false, null);
         return callback;
     }
 

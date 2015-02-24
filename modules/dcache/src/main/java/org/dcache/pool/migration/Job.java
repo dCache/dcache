@@ -115,7 +115,7 @@ public class Job
                                              context.getExecutor(), definition.selectionStrategy,
                                              definition.poolList, definition.isEager,
                                              definition.computeChecksumOnUpdate, definition.forceSourceMode,
-                                             definition.replicas);
+                                             definition.maintainAtime, definition.replicas);
 
         _pinPrefix = context.getPinManagerStub().getDestinationPath().getDestinationAddress().getCellName();
 
@@ -471,7 +471,7 @@ public class Job
                     Task task = new Task(_taskParameters, this, _context.getPoolName(),
                                          entry.getPnfsId(),
                                          getTargetState(entry), getTargetStickyRecords(entry),
-                                         getPins(entry), entry.getFileAttributes());
+                                         getPins(entry), entry.getFileAttributes(), entry.getLastAccessTime());
                     _running.put(pnfsId, task);
                     _statistics.addAttempt();
                     task.run();

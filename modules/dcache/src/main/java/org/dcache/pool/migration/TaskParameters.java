@@ -76,6 +76,11 @@ public class TaskParameters
     public final boolean forceSourceMode;
 
     /**
+     * Whether to maintain the last access time on copy.
+     */
+    public final boolean maintainAtime;
+
+    /**
      * Number of replicas to create.
      */
     public final int replicas;
@@ -83,7 +88,8 @@ public class TaskParameters
     public TaskParameters(CellStub pool, CellStub pnfs, CellStub pinManager,
                           ScheduledExecutorService executor,
                           PoolSelectionStrategy selectionStrategy, RefreshablePoolList poolList, boolean isEager,
-                          boolean computeChecksumOnUpdate, boolean forceSourceMode, int replicas)
+                          boolean computeChecksumOnUpdate, boolean forceSourceMode, boolean maintainAtime,
+                          int replicas)
     {
         this.pool = pool;
         this.pnfs = pnfs;
@@ -94,6 +100,7 @@ public class TaskParameters
         this.isEager = isEager;
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;
         this.forceSourceMode = forceSourceMode;
+        this.maintainAtime = maintainAtime;
         this.replicas = replicas;
     }
 }

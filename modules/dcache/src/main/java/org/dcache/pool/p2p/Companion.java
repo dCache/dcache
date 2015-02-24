@@ -56,7 +56,6 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -103,6 +102,9 @@ class Companion
     /** Companion ID identifying the transfer. */
     private final int _id;
 
+    /** Last access time to set the new replica to. */
+    private final Long _atime;
+
     /** Storage info for the file. */
     private FileAttributes _fileAttributes;
 
@@ -136,6 +138,7 @@ class Companion
      * @param stickyRecords The sticky flags used for the new replica
      * @param callback    Callback to which success or failure is reported
      * @param forceSourceMode Ignores disabled state of pools
+     * @param atime       Last access time for the new replica
      */
     Companion(ScheduledExecutorService executor,
               InetAddress address,
@@ -150,7 +153,8 @@ class Companion
               EntryState targetState,
               List<StickyRecord> stickyRecords,
               CacheFileAvailable callback,
-              boolean forceSourceMode)
+              boolean forceSourceMode,
+              Long atime)
     {
         _fsm = new CompanionContext(this);
 
@@ -172,6 +176,7 @@ class Companion
 
         _callback = callback;
         _forceSourceMode = forceSourceMode;
+        _atime = atime;
         _targetState = targetState;
         _stickyRecords = new ArrayList<>(stickyRecords);
 
@@ -299,6 +304,9 @@ class Companion
             } finally {
                 setThread(null);
                 Thread.interrupted();
+            }
+            if (_atime != null) {
+                handle.setLastAccessTime(_atime);
             }
             handle.commit();
         } catch (Throwable e) {

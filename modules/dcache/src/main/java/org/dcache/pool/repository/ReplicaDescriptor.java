@@ -106,4 +106,13 @@ public interface ReplicaDescriptor extends Allocator
      * @param checksum Checksum of the file
      */
     void addChecksums(Iterable<Checksum> checksum);
+
+    /**
+     * Sets the last access time of the replica.
+     *
+     * Only applicable to writes.
+     *
+     * @param time
+     */
+    void setLastAccessTime(long time);
 }

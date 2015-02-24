@@ -92,6 +92,11 @@ public class JobDefinition
     public final boolean forceSourceMode;
 
     /**
+     * Whether to maintain the last access time on copy.
+     */
+    public final boolean maintainAtime;
+
+    /**
      * Number of replicas to create.
      */
     public final int replicas;
@@ -109,6 +114,7 @@ public class JobDefinition
                          int replicas,
                          boolean mustMovePins,
                          boolean computeChecksumOnUpdate,
+                         boolean maintainAtime,
                          Expression pauseWhen,
                          Expression stopWhen,
                          boolean forceSourceMode)
@@ -126,6 +132,7 @@ public class JobDefinition
         this.replicas = replicas;
         this.mustMovePins = mustMovePins;
         this.computeChecksumOnUpdate = computeChecksumOnUpdate;
+        this.maintainAtime = maintainAtime;
         this.pauseWhen = pauseWhen;
         this.stopWhen = stopWhen;
         this.forceSourceMode = forceSourceMode;

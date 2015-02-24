@@ -88,6 +88,12 @@ public class MetaDataRepositoryHelper implements MetaDataStore {
         }
 
         @Override
+        public void setLastAccessTime(long time)
+        {
+            _lastAccess = time;
+        }
+
+        @Override
         public synchronized int getLinkCount()
         {
             return _linkCount;

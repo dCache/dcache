@@ -14,6 +14,7 @@ import java.io.ObjectOutputStream;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
@@ -139,6 +140,16 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
+    public void setLastAccessTime(long time) throws CacheException
+    {
+        if (!_dataFile.setLastModified(time)) {
+            throw new DiskErrorCacheException("Failed to set modification time: " + _dataFile);
+        }
+        _lastAccess = System.currentTimeMillis();
+
+    }
+
+    @Override
     public synchronized PnfsId getPnfsId() {
         return _pnfsId;
     }
@@ -228,9 +239,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             throw new
                 CacheException("Io Error creating : "+_dataFile ) ;
         }
-
-        _lastAccess = System.currentTimeMillis();
-        _dataFile.setLastModified(_lastAccess);
+        setLastAccessTime(System.currentTimeMillis());
     }
 
     private synchronized StorageInfo getStorageInfo()

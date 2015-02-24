@@ -58,6 +58,8 @@ public interface MetaDataRecord
 
     public long getLastAccessTime();
 
+    public void setLastAccessTime(long time) throws CacheException;
+
     public void touch() throws CacheException;
 
     public void decrementLinkCount();

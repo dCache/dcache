@@ -69,6 +69,7 @@ public class Task
     private final List<StickyRecord> _targetStickyRecords;
     private final List<StickyRecord> _pinsToMove;
     private final FileAttributes _fileAttributes;
+    private final long _atime;
 
     private ScheduledFuture<?> _timerTask;
     private Deque<String> _locations = new ArrayDeque<>(0);
@@ -82,7 +83,8 @@ public class Task
                 EntryState targetState,
                 List<StickyRecord> targetStickyRecords,
                 List<StickyRecord> pinsToMove,
-                FileAttributes fileAttributes)
+                FileAttributes fileAttributes,
+                long atime)
     {
         _parameters = parameters;
         _pnfsId = pnfsId;
@@ -95,6 +97,7 @@ public class Task
         _fsm = new TaskContext(this);
         _callbackHandler = callbackHandler;
         _source = source;
+        _atime = atime;
     }
 
     public boolean getMustMovePins()
@@ -292,7 +295,8 @@ public class Task
                                                     _targetState,
                                                     _targetStickyRecords,
                                                     _parameters.computeChecksumOnUpdate,
-                                                    _parameters.forceSourceMode);
+                                                    _parameters.forceSourceMode,
+                                                    _parameters.maintainAtime ? _atime : null);
         CellStub.addCallback(_parameters.pool.send(_target, copyReplicaMessage),
                              new Callback<PoolMigrationCopyReplicaMessage>("copy_") {
                                  @Override

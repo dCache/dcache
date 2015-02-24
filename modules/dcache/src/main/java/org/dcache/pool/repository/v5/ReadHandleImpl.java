@@ -94,6 +94,12 @@ class ReadHandleImpl implements ReplicaDescriptor
     }
 
     @Override
+    public void setLastAccessTime(long time)
+    {
+        throw new IllegalStateException("Read-only handle");
+    }
+
+    @Override
     public void commit() throws IllegalStateException, InterruptedException, CacheException {
         // NOP
     }

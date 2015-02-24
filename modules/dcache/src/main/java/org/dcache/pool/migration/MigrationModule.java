@@ -420,6 +420,11 @@ public class MigrationModule
                         "lifetime is in seconds.")
         String targetMode = "same";
 
+        @Option(name="atime",
+                category="Transfer options",
+                usage="Maintain last access time.")
+        boolean maintainAtime;
+
         @Option(name="verify",
                 category="Transfer options",
                 usage="Force checksum computation when an existing target is updated.")
@@ -819,6 +824,7 @@ public class MigrationModule
                             replicas,
                             mustMovePins,
                             verify,
+                            maintainAtime,
                             createLifetimePredicate(pauseWhen),
                             createLifetimePredicate(stopWhen),
                             forceSourceMode);
@@ -870,6 +876,7 @@ public class MigrationModule
             refresh = 300;
             pins = "move";
             verify = true;
+            maintainAtime = true;
         }
     }
 

@@ -40,9 +40,7 @@ public class P2PClient
     implements CellMessageReceiver,
                CellCommandListener
 {
-    private final static Logger _log = LoggerFactory.getLogger(P2PClient.class);
-
-    private final Map<Integer, Companion> _companions = new HashMap();
+    private final Map<Integer, Companion> _companions = new HashMap<>();
     private ScheduledExecutorService _executor;
     private Repository _repository;
     private ChecksumModule _checksumModule;
@@ -225,7 +223,8 @@ public class P2PClient
                                          EntryState targetState,
                                          List<StickyRecord> stickyRecords,
                                          CacheFileAvailable callback,
-                                         boolean forceSourceMode)
+                                         boolean forceSourceMode,
+                                         Long atime)
         throws IOException, CacheException, InterruptedException
     {
         if (getCellEndpoint() == null) {
@@ -261,7 +260,8 @@ public class P2PClient
                           getCellName(),
                           getCellDomainName(),
                           targetState, stickyRecords,
-                          cb, forceSourceMode);
+                          cb, forceSourceMode,
+                          atime);
 
         int id = addCompanion(companion);
         cb.setId(id);
@@ -379,7 +379,7 @@ public class P2PClient
         String pool = args.argv(1);
         List<StickyRecord> stickyRecords = Collections.emptyList();
         newCompanion(pool, fileAttributes, EntryState.CACHED, stickyRecords, null,
-                false);
+                false, null);
         return "Transfer Initiated";
     }
 

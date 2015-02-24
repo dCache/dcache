@@ -153,6 +153,16 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
+    public void setLastAccessTime(long time) throws CacheException
+    {
+        File file = getDataFile();
+        if (!file.setLastModified(time)) {
+            throw new DiskErrorCacheException("Failed to set modification time: " + file);
+        }
+        _lastAccess = time;
+    }
+
+    @Override
     public synchronized void setSize(long size)
     {
         if (size < 0) {
@@ -268,11 +278,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             throw new DiskErrorCacheException("IO error creating: " + file);
         }
 
-        long now = System.currentTimeMillis();
-        if (!file.setLastModified(now)) {
-            throw new DiskErrorCacheException("Failed to set modification time: " + file);
-        }
-        _lastAccess = now;
+        setLastAccessTime(System.currentTimeMillis());
     }
 
     @Override

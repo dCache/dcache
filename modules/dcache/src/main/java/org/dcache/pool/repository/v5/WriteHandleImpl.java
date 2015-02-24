@@ -82,6 +82,9 @@ class WriteHandleImpl implements ReplicaDescriptor
     /** Current thread which performs allocation. */
     private Thread _allocationThread;
 
+    /** Last access time of new replica. */
+    private Long _atime;
+
     WriteHandleImpl(CacheRepositoryV5 repository,
                     Allocator allocator,
                     PnfsHandler pnfs,
@@ -333,7 +336,11 @@ class WriteHandleImpl implements ReplicaDescriptor
         }
 
         try {
-            _entry.touch();
+            if (_atime == null) {
+                _entry.touch();
+            } else {
+                _entry.setLastAccessTime(_atime);
+            }
 
             long length = getFile().length();
             adjustReservation(length);
@@ -480,5 +487,14 @@ class WriteHandleImpl implements ReplicaDescriptor
             }
             _fileAttributes.setChecksums(Sets.newHashSet(newChecksums));
         }
+    }
+
+    @Override
+    public void setLastAccessTime(long time)
+    {
+        if (_state == HandleState.CLOSED) {
+            throw new IllegalStateException("Handle is closed");
+        }
+        _atime = time;
     }
 }

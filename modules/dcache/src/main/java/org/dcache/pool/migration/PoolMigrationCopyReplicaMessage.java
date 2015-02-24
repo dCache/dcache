@@ -1,5 +1,6 @@
 package org.dcache.pool.migration;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import java.util.List;
@@ -13,7 +14,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * MigrationModuleServer message to request that a replica is
- * transfered.
+ * transferred.
  */
 @ParametersAreNonnullByDefault
 public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
@@ -25,13 +26,15 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     private final List<StickyRecord> _stickyRecords;
     private final boolean _computeChecksumOnUpdate;
     private final boolean _forceSourceMode;
+    private final Long _atime;
 
     public PoolMigrationCopyReplicaMessage(UUID uuid, String pool,
                                            FileAttributes fileAttributes,
                                            EntryState state,
                                            List<StickyRecord> stickyRecords,
                                            boolean computeChecksumOnUpdate,
-                                           boolean forceSourceMode)
+                                           boolean forceSourceMode,
+                                           Long atime)
     {
         super(uuid, pool, fileAttributes.getPnfsId());
         _fileAttributes = checkNotNull(fileAttributes);
@@ -39,6 +42,7 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
         _stickyRecords = checkNotNull(stickyRecords);
         _computeChecksumOnUpdate = computeChecksumOnUpdate;
         _forceSourceMode = forceSourceMode;
+        _atime = atime;
     }
 
     public EntryState getState()
@@ -64,5 +68,15 @@ public class PoolMigrationCopyReplicaMessage extends PoolMigrationMessage
     public boolean isForceSourceMode()
     {
         return _forceSourceMode;
+    }
+
+    /**
+     * Last access time to use for target replica. null means that no access time is provided
+     * and the target should decide which access time to use.
+     */
+    @Nullable
+    public Long getAtime()
+    {
+        return _atime;
     }
 }
