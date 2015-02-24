@@ -52,6 +52,11 @@ public class ChecksumChannel implements RepositoryChannel
     private MessageDigest _digest;
 
     /**
+     * Cached checksum after getChecksum is called the first time.
+     */
+    private Checksum _finalChecksum;
+
+    /**
      * RangeSet to keep track of written bytes
      */
     private final RangeSet<Long> _dataRangeSet = TreeRangeSet.create();
@@ -253,20 +258,30 @@ public class ChecksumChannel implements RepositoryChannel
     }
 
     /**
-     * Returns the computed digest or null if the write is either
-     * not complete, yet, or if parts of the file have been written
-     * multiple times.
+     * @return final checksum of this channel
      */
     public Checksum getChecksum()
     {
+        if (!_isChecksumViable) {
+            return null;
+        }
+
+        if (_finalChecksum == null) {
+            _finalChecksum = finalizeChecksum();
+        }
+        return _finalChecksum;
+    }
+
+    /**
+     * Returns the computed digest or null if overlapping writes have been detected.
+     *
+     * @return Checksum
+     */
+    private Checksum finalizeChecksum() {
         Lock lock = _checksumLock.writeLock();
         lock.lock();
         try {
             _isWritable = false;
-
-            if (!_isChecksumViable) {
-                return null;
-            }
 
             if (_dataRangeSet.asRanges().size() != 1 || _fileStartRange.isEmpty()) {
                 feedZerosToDigesterForRangeGaps();

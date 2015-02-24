@@ -74,6 +74,16 @@ public class ChecksumChannelTest {
     }
 
     @Test
+    public void shouldReturnSameChecksumOnSecondCall() throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap( data );
+
+        chksumChannel.write(buffer, 0);
+
+        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+        assertThat(chksumChannel.getChecksum(), equalTo(expectedChecksum));
+    }
+
+    @Test
     public void shouldSucceedIfWrittenInOrder() throws IOException {
         for (int block = 0; block < blockcount; block++) {
             chksumChannel.write(buffers[block], block * blocksize);
