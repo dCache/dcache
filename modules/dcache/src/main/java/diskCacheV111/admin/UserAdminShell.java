@@ -14,7 +14,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -73,12 +72,6 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-/**
-  *
-  *
- * @author Christian Bernardt, Patrick Fuhrmann
- * @version 0.2, 10 December 2010
-  */
 public class UserAdminShell
     extends CommandInterpreter
     implements Completer
@@ -100,172 +93,25 @@ public class UserAdminShell
     private boolean     _fullException;
     private final String      _instance ;
     private Position    _currentPosition = new Position() ;
-    private final boolean     _debug    = false ;
     private Completer _completer;
 
-    private class Position {
-        private CellPath    remote;
-        private String      remoteName;
-        private boolean     hyperMode;
-        private List<String> hyperPath  = new ArrayList<>() ;
-        private String      moduleName;
-        private Position(){}
-        private Position( Position position ){
-            remote     = position.remote ;
-            remoteName = position.remoteName ;
-            hyperMode  = position.hyperMode ;
-            hyperPath  = new ArrayList<>( position.hyperPath ) ;
-            moduleName = position.moduleName ;
-        }
-        private Position( String removeCell ){
-            hyperMode  = false ;
-            remoteName = removeCell ;
-            remote     = remoteName == null ? null : new CellPath(remoteName) ;
-        }
-        private void clearHyperMode(){
-           hyperMode  = false ;
-           remoteName = null ;
-           remote     = null ;
-           hyperPath  = new ArrayList<>() ;
-           moduleName = null ;
-        }
-        private void gotoLocal(){
-           remoteName = null ;
-           remote     = null ;
-           hyperPath  = new ArrayList<>() ;
-           moduleName = null ;
-        }
-        private String getPrefix(){
-            if( ( hyperPath == null ) || ( hyperPath.size() < 3 ) ) {
-                return "";
-            }
-            StringBuilder sb = new StringBuilder() ;
-            for( int i = 2 , n = hyperPath.size() ; i < n ; i++ ) {
-                sb.append(hyperPath.get(i)).append(" ");
-            }
-            return sb.toString() ;
-        }
-        private void finish(){
-           if( ! hyperMode  ) {
-               return;
-           }
-
-           int size = hyperPath.size() ;
-
-           String domainName = size > 0 ? hyperPath.get(0) : null ;
-           String cellName   = size > 1 ? hyperPath.get(1) : null ;
-
-           moduleName = size > 2 ? hyperPath.get(2) : null ;
-
-           if( domainName == null ){
-
-               remoteName = null ;
-
-           }else if( cellName == null ){
-
-               remoteName = domainName.equals("*") ?
-                            "topo" :  "System@"+domainName ;
-
-           }else{
-               remoteName = domainName.equals("*") ?
-                            cellName :  cellName+"@"+domainName ;
-
-           }
-
-
-           remote = remoteName == null ? null : new CellPath(remoteName) ;
-
-        }
-       private void mergePath( Path path ){
-           hyperMode = true ;
-           String [] pathString = path.getPath() ;
-
-            if( path.isAbsolutePath() ){
-                hyperPath = new ArrayList<>() ;
-                Collections.addAll(hyperPath, pathString);
-            }else{
-
-                for (String pathElement : pathString) {
-                    switch (pathElement) {
-                    case ".":
-                        break;
-                    case "..":
-                        int currentSize = hyperPath.size();
-                        if (currentSize == 0) {
-                            continue;
-                        }
-                        hyperPath.remove(currentSize - 1);
-                        break;
-                    default:
-                        hyperPath.add(pathElement);
-                        break;
-                    }
-                }
-            }
-
-            finish() ;
-
-       }
-    }
-
-    private class Path {
-
-        private String  _pathString;
-        private boolean _isAbsolutePath;
-        private boolean _isPath;
-        private boolean _isDomain;
-
-        private String  [] _path;
-
-        private Path( String pathString )
+    private static class Position
+    {
+        private final CellPath    remote;
+        private final String      remoteName;
+        private Position()
         {
-            _pathString = pathString ;
-            if( _pathString.indexOf('@') > -1 ){
-                _isDomain = true ;
-                StringTokenizer st = new StringTokenizer( pathString , "@" ) ;
-                _path = new String[2] ;
-                _path[0] = st.nextToken() ;
-                _path[1] = st.nextToken() ;
-            }else if( _pathString.indexOf('/') > -1 ){
-                _isPath         = true ;
-                _isAbsolutePath = _pathString.startsWith("/");
-                StringTokenizer st = new StringTokenizer(_pathString,"/");
-                int count = st.countTokens() ;
-                _path = new String[count] ;
-                for( int i = 0 ; i < _path.length ; i++ ) {
-                    _path[i] = st.nextToken();
-                }
-            }else{
-                _path = new String[1] ;
-                _path[0] = _pathString;
-            }
+            remote = null;
+            remoteName = null;
         }
-        private boolean isAbsolutePath(){
-            return _isAbsolutePath ;
-        }
-        private boolean isDomain(){
-            return _isDomain ;
-        }
-        private boolean isPath(){
-            return _isPath ;
-        }
-        private String getItem(int i ){
-           return ( ( i < 0 ) || ( i >= _path.length ) ) ? "" : _path[i] ;
-        }
-        private String [] getPath(){ return _path ; }
-        @Override
-        public String toString(){ return _pathString ;}
-        public String toLongString(){
-            StringBuilder sb = new StringBuilder() ;
-            for( int i = 0 ; i < _path.length ; i++ ){
-                sb.append("(").append(i).append(")=").append(_path[i]).append(";");
-            }
-            sb.append("isPath=").append(_isPath).append(";");
-            sb.append("isAbsolutePath=").append(_isAbsolutePath).append(";");
-            sb.append("isDomain=").append(_isDomain).append(";");
-            return sb.toString() ;
+
+        private Position(String removeCell)
+        {
+            remoteName = removeCell;
+            remote = (remoteName == null) ? null : new CellPath(remoteName);
         }
     }
+
     public UserAdminShell(String user, CellEndpoint cellEndpoint, Args args) {
         cellEndPoint = cellEndpoint;
        _user     = user ;
@@ -289,7 +135,6 @@ public class UserAdminShell
        }else{
            _instance = null;
        }
-       addCommandListener(new HelpCommands());
     }
 
     @Override
@@ -352,45 +197,9 @@ public class UserAdminShell
       return "\n    dCache Admin (VII) (user="+getUser()+")\n\n" ;
     }
     public String getPrompt(){
-        if( _currentPosition.hyperMode ){
-            StringBuilder sb = new StringBuilder() ;
-
-            sb.append("(").append(getUser()).append(") ");
-            if( _debug ){
-                String remote = _currentPosition.remoteName == null ? "local" : _currentPosition.remoteName;
-                sb.append("[").append(remote).append("] ");
-            }
-            sb.append(_instance == null ? "/" : ( "/" + _instance  ) ) ;
-            for (Object pathElement : _currentPosition.hyperPath) {
-                sb.append("/").append(pathElement.toString());
-            }
-            sb.append(" > ");
-            return sb.toString();
-        }else{
-            return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
-                    ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
-                    getUser()+" > " ;
-        }
-    }
-    public Object ac_logoff( Args args ) throws CommandException {
-       throw new CommandExitException( "Done" , 0  ) ;
-    }
-    public static final String hh_su = "<userName>" ;
-    public String ac_su_$_1( Args args )throws Exception {
-        String user = args.argv(0) ;
-        if( user.equals(_authUser) ){
-           _user = _authUser ;
-           return "User changed BACK to "+_user ;
-        }else if( user.equals(_user) ){
-           return "User not changed, still "+_user ;
-        }
-        try{
-           checkPermission( "system.*.newuser" ) ;
-        }catch( AclException acle ){
-           checkPermission( "system."+user+".newuser" ) ;
-        }
-        _user = user ;
-        return "User changed to "+_user ;
+        return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
+                ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
+                getUser()+" > " ;
     }
     public static final String hh_set_exception = "message|detail" ;
     public String ac_set_exception_$_0_1( Args args ) throws CommandException {
@@ -1196,100 +1005,11 @@ public class UserAdminShell
 
     }
 
-    //
-    //   input                        remoteName
-    // ----------------------------------------------------------------
-    //   /                              null
-    //   /*                             null [no really defined]
-    //   /<domain>                      System@<domain>
-    //   /<domain>/<cell>               <cell>@<domain>
-    //   /*/<cells>                     <cell>
-    //   /<domain>|*/<cells>/<module>  see above
-    //
-    public static final String fh_cd =
-          "  SYNTAX I :\n" +
-          "     cd <cellPath>\n" +
-          "          <cellPath> : <cellName>[@<domainName>]\n" +
-          "     The cd command will send all subsequent commands to the specified cell.\n" +
-          "     Use '..' to get back to local mode\n"+
-          ""+
-          "  SYNTAX II : \n"+
-          "     cd <cellDirectoryPath>\n"+
-          "           <cellDirecotryPath> : /<domainName>[/<cellName>[/<moduleName[...]]]"+
-          "     The cd command will send all subsequent commands to the specified cell resp. module.\n" +
-          "     Use the standard unix directory syntax to navigate though the cell/domain realm.\n"+
-          "     Simple '..' will bring you back to 'SYNTAX I'\n"+
-          "       Special paths : "+
-          "            /*/<cellName>     : use the * directory for wellknown cells.\n"+
-          "            /local            : use the local directory for the local domain\n"+
-          "            /<domain>         : if no cell is given, the system cell is selected\n"+
-          "                                except for the /* director where the topo cell is\n"+
-          "                                chosen, if available\n"+
-          "\n" ;
-    public static final String hh_cd = "<cellPath> | <cellDirectoryPath> # see 'help cd'";
-    public String ac_cd_$_1( Args args )throws Exception {
-
-       String remoteCell = args.argv(0) ;
-       Path   path       = new Path(remoteCell);
-
-       Position newPosition;
-
-       _completer = null;
-
-       if( path.isDomain() ){
-            //
-           // switch back do domain mode (hyper mode or not)
-           //
-           newPosition = new Position( remoteCell ) ;
-
-       }else if( _currentPosition.hyperMode ){
-           //
-           // we are and stay in hyper mode
-           //
-           newPosition = new Position( _currentPosition ) ;
-           newPosition.mergePath( path ) ;
-
-       }else if( path.isPath() ){
-
-           if( path.isAbsolutePath() ){
-
-               newPosition = new Position( _currentPosition ) ;
-               newPosition.mergePath( path ) ;
-
-           }else{
-               //
-               // not hyper mode, got a path but not an absolute one.
-               // so we wouldn't know what to do.
-               //
-              throw new
-              IllegalArgumentException("Need absolute path to switch to directory mode");
-           }
-
-        }else{
-           //
-           //
-           //
-           newPosition = new Position( remoteCell ) ;
-
-       }
-
-       if( newPosition.remoteName != null ) {
-           checkCellExists( newPosition.remote);
-           checkCdPermission( newPosition.remoteName ) ;
-       }
-
-       synchronized( this ){
-           _currentPosition = newPosition ;
-       }
-
-       return "" ;
-    }
-
     @Command(name = "\\c", hint = "connect to cell",
             description = "Connect to new cell. May optionally switch to another user.")
     class ConnectCommand implements Callable<String>
     {
-        @Argument(required = false, index = 0, valueSpec = "CELL|CELL@DOMAIN",
+        @Argument(index = 0, valueSpec = "CELL|CELL@DOMAIN",
                 usage = "Well known or fully qualified cell name. If omitted the shell switches to local mode.")
         String name;
 
@@ -1300,31 +1020,25 @@ public class UserAdminShell
         @Override
         public String call() throws Exception
         {
-            if (name == null) {
-                _currentPosition.clearHyperMode();
-                _currentPosition.gotoLocal();
-                _completer = null;
-            } else {
-                String oldUser = _user;
-                try {
-                    if (user != null) {
-                        if (!user.equals(_authUser) && !user.equals(_user)) {
-                            try {
-                                checkPermission("system.*.newuser");
-                            } catch (AclException acle) {
-                                checkPermission("system." + user + ".newuser");
-                            }
+            String oldUser = _user;
+            try {
+                if (user != null) {
+                    if (!user.equals(_authUser) && !user.equals(_user)) {
+                        try {
+                            checkPermission("system.*.newuser");
+                        } catch (AclException acle) {
+                            checkPermission("system." + user + ".newuser");
                         }
-                        _user = user;
                     }
-                    checkCdPermission(name);
-                    Position newPosition = new Position(name);
-                    checkCellExists(newPosition.remote);
-                    _currentPosition = newPosition;
-                } catch (Throwable e) {
-                    _user = oldUser;
-                    throw e;
+                    _user = user;
                 }
+                checkCdPermission(name);
+                Position newPosition = new Position(name);
+                checkCellExists(newPosition.remote);
+                _currentPosition = newPosition;
+            } catch (Throwable e) {
+                _user = oldUser;
+                throw e;
             }
             return "";
         }
@@ -1488,36 +1202,11 @@ public class UserAdminShell
            return "";
        }
 
-       if( str.equals("..") ){
-          _currentPosition.clearHyperMode() ;
-          _currentPosition.gotoLocal() ;
-          _completer = null;
-          return "" ;
-       }
-
        Args args = new Args( str ) ;
 
        if( _currentPosition.remote == null || str.startsWith("\\")) {
            return localCommand( args ) ;
        }else{
-           if( _currentPosition.hyperMode ){
-              if( ( args.argc() == 1 ) && ( args.argv(0).equals("cd") ) ){
-                  _currentPosition.gotoLocal() ;
-                  return "" ;
-              }else if( ( args.argc() > 1 ) && ( args.argv(0).equals("cd") ) ){
-                  return localCommand( args ) ;
-              }
-              String prefix = _currentPosition.getPrefix() ;
-              if( prefix.length() > 0 ){
-                  if( ( args.argc() >= 1 ) && ( args.argv(0).equals("help") ) ){
-                      if( args.argc() == 1 ) {
-                          str = "help " + prefix;
-                      }
-                  }else{
-                      str = prefix + " " + str ;
-                  }
-              }
-           }
            return sendObject( _currentPosition.remote ,  new AuthorizedString(_user,str) ) ;
        }
     }
