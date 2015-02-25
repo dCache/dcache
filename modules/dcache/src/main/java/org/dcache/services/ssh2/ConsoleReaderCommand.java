@@ -59,7 +59,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
     private InputStream _in;
-    private PrintWriter _error;
     private OutputStream _out;
     private Thread _adminShellThread;
     private ConsoleReader _console;
@@ -94,7 +93,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void setErrorStream(OutputStream err) {
-        _error = new PrintWriter(new SshOutputStream(err));
     }
 
     @Override
@@ -224,8 +222,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
                 _console.println();
                 result = null;
             } catch (InterruptedException e) {
-                _error.println("^C");
-                _error.flush();
+                _console.println("^C");
+                _console.flush();
                 _console.getCursorBuffer().clear();
                 result = null;
             } catch (Exception e) {
@@ -246,8 +244,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
                         sb.a("Help : ").newline();
                         sb.a(help);
                     }
-                    _error.println(sb.reset().toString());
-                    _error.flush();
+                    _console.println(sb.reset().toString());
+                    _console.flush();
                 } else {
                     String s;
                     s = Strings.toMultilineString(result);
