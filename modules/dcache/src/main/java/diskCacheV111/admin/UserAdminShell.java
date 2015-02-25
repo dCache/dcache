@@ -1330,6 +1330,16 @@ public class UserAdminShell
         }
     }
 
+    @Command(name = "\\q", hint = "quit")
+    class QuitCommand implements Callable<Serializable>
+    {
+        @Override
+        public Serializable call() throws Exception
+        {
+            throw new CommandExitException("Done", 0);
+        }
+    }
+
     @Command(name = "\\?", hint = "display help for shell commands",
             description = "Shows help for shell commands. Commands that begin with a backslash are always " +
                           "accessible, while other commands are only available when not connected to a cell." +
