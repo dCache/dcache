@@ -1611,6 +1611,13 @@ public class CellShell extends CommandInterpreter
                     println(out, answer.toString());
                 } else {
                     Throwable error = (Throwable) answer;
+
+                    if (error instanceof CommandPanicException) {
+                        _log.error("Bug detected in dCache; please report this " +
+                                "to <support@dcache.org> with the following " +
+                                "information.", error.getCause());
+                    }
+
                     if (_doOnExit != null) {
                         String msg =
                             String.format("%s: line %d: %s", source, no,
