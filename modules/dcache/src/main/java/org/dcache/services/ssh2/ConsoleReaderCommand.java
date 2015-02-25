@@ -168,14 +168,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
                     if (str == null) {
                         throw new CommandExitException();
                     }
-                    if (_useColors) {
-                        String trimmed = str.trim();
-                        if (trimmed.startsWith("help ")) {
-                            str = "help -format=" + HelpFormat.ANSI + trimmed.substring(4);
-                        } else if (trimmed.equals("help")) {
-                            str = "help -format=" + HelpFormat.ANSI;
-                        }
-                    }
                     result = _userAdminShell.executeCommand(str);
                 } catch (IllegalArgumentException e) {
                     result = e.getMessage()

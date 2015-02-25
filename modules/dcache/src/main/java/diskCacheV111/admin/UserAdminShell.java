@@ -3,6 +3,7 @@ package diskCacheV111.admin ;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import jline.console.completer.Completer;
+import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1065,7 +1066,7 @@ public class UserAdminShell
     class ShellHelpCommand implements Callable<String>
     {
         @Option(name = "format", usage = "Output format.")
-        HelpFormat format = HelpFormat.PLAIN;
+        HelpFormat format = Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
 
         @Argument(valueSpec = "COMMAND", required = false,
                 usage = "Partial or full command for which to show help.")
@@ -1087,7 +1088,7 @@ public class UserAdminShell
     class HelpCommand implements Callable<Serializable>
     {
         @Option(name = "format", usage = "Output format.")
-        HelpFormat format = HelpFormat.PLAIN;
+        HelpFormat format = Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
 
         @Argument(valueSpec = "COMMAND", required = false,
                 usage = "Partial or full command for which to show help.")
