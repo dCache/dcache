@@ -67,6 +67,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
+import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -194,7 +195,7 @@ public class UserAdminShell
     }
 
     public String getHello(){
-      return "\n    dCache Admin (VII) (user="+getUser()+")\n\n" ;
+      return "dCache (" + Version.of(UserAdminShell.class).getVersion() + ")\n" + "Type \"\\?\" for help.\n";
     }
     public String getPrompt(){
         return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
