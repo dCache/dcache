@@ -34,6 +34,11 @@
     <property name="useColor" value="${admin.enable.colors}"/>
   </bean>
 
+  <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">
+    <property name="historyFile" value="${admin.paths.history}"/>
+    <property name="useColor" value="${admin.enable.colors}"/>
+  </bean>
+
   <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory"/>
 
   <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
@@ -48,6 +53,7 @@
     <property name="subsystemFactories">
       <list>
         <ref bean="pcells-factory"/>
+        <ref bean="legacy-factory"/>
       </list>
     </property>
     <property name="idleTimeout" value="#{T(org.dcache.commons.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />

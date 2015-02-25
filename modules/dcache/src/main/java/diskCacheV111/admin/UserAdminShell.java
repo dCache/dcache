@@ -1386,42 +1386,10 @@ public class UserAdminShell
        }
     }
 
-    protected Object sendCommand( String destination , String command )
-            throws InterruptedException, NoRouteToCellException, TimeoutCacheException
-    {
-
-        try {
-            Object obj = _cellStub.sendAndWait(new CellPath(destination),
-                                               new AuthorizedString( _user , command),
-                                               Object.class,
-                                               _timeout);
-            if (obj instanceof Throwable && _fullException) {
-                return getStackTrace((Throwable) obj);
-            }
-            return obj ;
-        } catch (TimeoutCacheException e) {
-            throw new TimeoutCacheException("Request timed out");
-        } catch (CacheException e) {
-            if (_fullException) {
-                return getStackTrace(e);
-            }
-            return e;
-        }
-    }
-
     private Object getStackTrace(Throwable obj)
     {
         CharArrayWriter ca = new CharArrayWriter();
         obj.printStackTrace(new PrintWriter(ca));
         return ca.toString();
     }
-
-    public Object executeCommand( String destination , Object str )
-            throws InterruptedException, TimeoutCacheException, NoRouteToCellException
-    {
-       _log.info( "Object command ("+destination+") "+str) ;
-
-       return sendCommand( destination  , str.toString() ) ;
-    }
-
 }

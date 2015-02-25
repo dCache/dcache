@@ -14,7 +14,7 @@ import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import diskCacheV111.admin.UserAdminShell;
+import diskCacheV111.admin.LegacyAdminShell;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
@@ -26,7 +26,7 @@ public class PcellsCommand implements Command, Runnable
             LoggerFactory.getLogger(PcellsCommand.class);
 
     private final CellEndpoint _endpoint;
-    private UserAdminShell _userAdminShell;
+    private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
     private OutputStream _out;
@@ -67,7 +67,7 @@ public class PcellsCommand implements Command, Runnable
     public void start(Environment env) throws IOException
     {
         String user = env.getEnv().get(Environment.ENV_USER);
-        _userAdminShell = new UserAdminShell(user, _endpoint, _endpoint.getArgs());
+        _shell = new LegacyAdminShell(user, _endpoint, _endpoint.getArgs());
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
     }
@@ -103,9 +103,9 @@ public class PcellsCommand implements Command, Runnable
                         Object result;
                         try {
                             if (frame.getDestination() == null) {
-                                result = _userAdminShell.executeCommand(frame.getPayload().toString());
+                                result = _shell.executeCommand(frame.getPayload().toString());
                             } else {
-                                result = _userAdminShell.executeCommand(frame.getDestination(), frame.getPayload());
+                                result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
                             }
                         } catch (CommandException e) {
                             result = e;
