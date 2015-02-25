@@ -20,7 +20,6 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.PrintWriter;
 
 import diskCacheV111.admin.UserAdminShell;
 
@@ -33,7 +32,6 @@ import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-import dmg.util.command.HelpFormat;
 
 import org.dcache.commons.util.Strings;
 
@@ -117,6 +115,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
         _pipedIn = new PipedInputStream(_pipedOut);
         _userAdminShell = new UserAdminShell(user, _endpoint, _endpoint.getArgs());
         _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env));
+        _useColors &= _console.getTerminal().isAnsiSupported();
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
         _pipeThread = new Thread(new Pipe());
@@ -273,7 +272,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
         {
             super(true);
             _env = env;
-            setAnsiSupported(true);
+            setAnsiSupported(_env.getEnv().get(Environment.ENV_TERM) != null);
             setEchoEnabled(false);
         }
 
