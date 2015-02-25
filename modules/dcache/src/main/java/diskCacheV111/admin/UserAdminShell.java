@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
@@ -73,6 +74,8 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.fusesource.jansi.Ansi.Color.GREEN;
+import static org.fusesource.jansi.Ansi.Color.RED;
 
 public class UserAdminShell
     extends CommandInterpreter
@@ -1139,6 +1142,57 @@ public class UserAdminShell
         public Serializable call() throws InterruptedException, NoRouteToCellException, CommandException
         {
             return sendObject(_poolManager.getDestinationPath(), args.toString());
+        }
+    }
+
+    @Command(name = "\\s", hint = "execute command", allowAnyOption = true,
+            description = "Sends COMMAND to one or more cells.")
+    class SendCommand implements Callable<Serializable>
+    {
+        @Argument(index = 0, valueSpec = "CELL[@DOMAIN][,CELL[@DOMAIN]]...")
+        String destination;
+
+        @Argument(index = 1)
+        String[] command;
+
+        @CommandLine
+        Args args;
+
+        @Override
+        public Serializable call() throws InterruptedException, NoRouteToCellException, CommandException, AclException
+        {
+            // TODO: Submit the messages in parallel
+
+            String[] cells = this.destination.split(",");
+            try {
+                checkPermission("cell.*.execute");
+            } catch (AclException e) {
+                for (String cell : cells) {
+                    checkPermission("cell." + cell + ".execute");
+                }
+            }
+
+            args.shift();
+            StringBuilder result = new StringBuilder();
+            for (String cell : cells) {
+                result.append(Ansi.ansi().bold().a(cell).boldOff()).append(":");
+                try {
+                    String reply = Objects.toString(sendObject(cell, args.toString()), "");
+                    if (reply.isEmpty()) {
+                        result.append(Ansi.ansi().fg(GREEN).a(" OK").reset()).append("\n");
+                    } else {
+                        result.append("\n");
+                        for (String s : reply.split("\n")) {
+                            result.append("    ").append(s).append("\n");
+                        }
+                    }
+                } catch (NoRouteToCellException e) {
+                    result.append(Ansi.ansi().fg(RED).a(" Cell is unreachable.").reset()).append("\n");
+                } catch (CommandException e) {
+                    result.append(" ").append(Ansi.ansi().fg(RED).a(e.getMessage()).reset()).append("\n");
+                }
+            }
+            return result.toString();
         }
     }
 
