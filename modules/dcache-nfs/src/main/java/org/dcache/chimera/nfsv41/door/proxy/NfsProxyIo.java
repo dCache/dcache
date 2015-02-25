@@ -15,6 +15,8 @@ import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.v4.client.CompoundBuilder;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.COMPOUND4res;
+import org.dcache.nfs.v4.xdr.READ4resok;
+import org.dcache.nfs.v4.xdr.WRITE4resok;
 import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
@@ -25,6 +27,7 @@ import org.dcache.nfs.v4.xdr.sessionid4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.state_protect_how4;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcClient;
@@ -89,7 +92,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
     }
 
     @Override
-    public synchronized int read(ByteBuffer dst, long position) throws IOException {
+    public synchronized ReadResult read(ByteBuffer dst, long position) throws IOException {
 
         int needToRead = dst.remaining();
         COMPOUND4args args = new CompoundBuilder()
@@ -99,12 +102,13 @@ public class NfsProxyIo implements ProxyIoAdapter {
                 .withTag("pNFS read")
                 .build();
         COMPOUND4res compound4res = sendCompound(args);
-        dst.put(compound4res.resarray.get(2).opread.resok4.data);
-        return needToRead - dst.remaining();
+        READ4resok res = compound4res.resarray.get(2).opread.resok4;
+        dst.put(res.data);
+        return new ReadResult(needToRead - dst.remaining(), res.eof);
     }
 
     @Override
-    public synchronized int write(ByteBuffer src, long position) throws IOException {
+    public synchronized VirtualFileSystem.WriteResult write(ByteBuffer src, long position) throws IOException {
 
         byte[] data = new byte[src.remaining()];
         src.get(data);
@@ -117,7 +121,8 @@ public class NfsProxyIo implements ProxyIoAdapter {
                 .build();
 
         COMPOUND4res compound4res = sendCompound(args);
-        return compound4res.resarray.get(2).opwrite.resok4.count.value;
+        WRITE4resok res = compound4res.resarray.get(2).opwrite.resok4;
+        return new VirtualFileSystem.WriteResult(VirtualFileSystem.StabilityLevel.fromStableHow(res.committed), res.count.value);
     }
 
     @Override
@@ -126,11 +131,6 @@ public class NfsProxyIo implements ProxyIoAdapter {
                 stateid,
                 remoteClient.getAddress().getHostAddress(),
                 transport.getRemoteSocketAddress().getAddress().getHostAddress());
-    }
-
-    @Override
-    public long size() {
-        return 0L;
     }
 
     @Override

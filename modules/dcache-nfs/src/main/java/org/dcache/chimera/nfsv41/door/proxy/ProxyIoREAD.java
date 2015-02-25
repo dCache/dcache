@@ -52,7 +52,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
             int count = _args.opread.count.value;
             stateid4 stateid = _args.opread.stateid;
 
-	    int bytesReaded;
+            ProxyIoAdapter.ReadResult readResult;
 	    ProxyIoAdapter proxyIoAdapter;
 	    ByteBuffer bb = ByteBuffer.allocate(count);
 	    if (Stateids.isStateLess(stateid)) {
@@ -69,7 +69,7 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
 		 */
 		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, stateid, context, false)) {
 		    proxyIoAdapter = oneUseProxyIoAdapter;
-		    bytesReaded = oneUseProxyIoAdapter.read(bb, offset);
+		    readResult = oneUseProxyIoAdapter.read(bb, offset);
 		}
 	    } else {
                 if (context.getMinorversion() == 0) {
@@ -82,18 +82,15 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
                     context.getStateHandler().updateClientLeaseTime(stateid);
                 }
 		proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid, context, false);
-		bytesReaded = proxyIoAdapter.read(bb, offset);
+		readResult = proxyIoAdapter.read(bb, offset);
 	    }
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new READ4resok();
             res.resok4.data = bb;
+            res.resok4.eof = readResult.isEof();
 
-            if( offset + bytesReaded == proxyIoAdapter.size() ) {
-                res.resok4.eof = true;
-            }
-
-            _log.debug("MOVER: {}@{} readed, {} requested.", bytesReaded, offset, _args.opread.count.value);
+            _log.debug("MOVER: {}@{} readed, {} requested.", readResult.isEof(), offset, _args.opread.count.value);
 
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();

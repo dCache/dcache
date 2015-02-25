@@ -104,7 +104,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         deviceid4 dsId = fileLayoutSegment.nfl_deviceid;
         device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, dsId);
         nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = GetDeviceListStub.decodeFileDevice(deviceAddr.da_addr_body);
-        // we assume that only device points only to one server
+        // we assume that device points only to one server
         for(netaddr4 na: nfs4DeviceAddr.nflda_multipath_ds_list[0].value) {
             if (na.na_r_netid.equals("tcp") || na.na_r_netid.equals("tcp6") ) {
                 InetSocketAddress poolAddress = InetSocketAddresses.forUaddrString(na.na_r_addr);

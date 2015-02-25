@@ -21,10 +21,10 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
-import org.dcache.nfs.v4.xdr.stable_how4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 
 public class ProxyIoWRITE extends AbstractNFSv4Operation {
 
@@ -56,7 +56,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
             ByteBuffer data = _args.opwrite.data;
             stateid4 stateid = _args.opwrite.stateid;
 
-	    int bytesWritten;
+            VirtualFileSystem.WriteResult writeResult;
 	    if (Stateids.isStateLess(stateid)) {
 
 		/*
@@ -70,7 +70,7 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
 		 * use try-with-resource as wee need to close adapter on each request
 		 */
 		try (ProxyIoAdapter oneUseProxyIoAdapter = proxyIoFactory.createIoAdapter(inode, stateid, context, true)) {
-		    bytesWritten = oneUseProxyIoAdapter.write(data, offset);
+		    writeResult = oneUseProxyIoAdapter.write(data, offset);
 		}
 	    } else {
 
@@ -90,17 +90,17 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
                     context.getStateHandler().updateClientLeaseTime(stateid);
                 }
 		ProxyIoAdapter proxyIoAdapter = proxyIoFactory.getOrCreateProxy(inode, stateid, context, true);
-		bytesWritten = proxyIoAdapter.write(data, offset);
+		writeResult = proxyIoAdapter.write(data, offset);
 	    }
 
             res.status = nfsstat.NFS_OK;
             res.resok4 = new WRITE4resok();
-            res.resok4.count = new count4(bytesWritten);
-            res.resok4.committed = stable_how4.FILE_SYNC4;
+            res.resok4.count = new count4(writeResult.getBytesWritten());
+            res.resok4.committed = writeResult.getStabilityLevel().toStableHow();
             res.resok4.writeverf = new verifier4();
             res.resok4.writeverf.value = new byte[nfs4_prot.NFS4_VERIFIER_SIZE];
 
-            _log.debug("MOVER: {}@{} written.", bytesWritten, offset);
+            _log.debug("MOVER: {}@{} written.", writeResult.getBytesWritten(), offset);
 
         }catch(ChimeraNFSException he) {
             res.status = he.getStatus();
