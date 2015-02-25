@@ -52,6 +52,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.AclException;
 import dmg.util.AuthorizedString;
+import dmg.util.CommandAclException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
@@ -59,6 +60,7 @@ import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
 import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
 
@@ -290,7 +292,36 @@ public class UserAdminShell
        addCommandListener(new HelpCommands());
     }
 
+    @Override
+    protected Serializable doExecute(CommandEntry entry, Args args, String[] acls)
+            throws CommandException
+    {
+        try {
+            checkPermission(acls);
+            return super.doExecute(entry, args, acls);
+        } catch (AclException e) {
+            throw new CommandAclException(e.getPrincipal(), e.getAcl());
+        }
+    }
+
     protected String getUser(){ return _user ; }
+
+    protected void checkPermission(String [] acls) throws AclException
+    {
+        if (acls.length > 0) {
+            AclException e = null;
+            for (String acl : acls) {
+                try {
+                    checkPermission(acl);
+                    return;
+                } catch (AclException ce) {
+                    e = ce;
+                }
+            }
+            throw e;
+        }
+    }
+
     public void checkPermission( String aclName )
            throws AclException {
 
@@ -1349,6 +1380,41 @@ public class UserAdminShell
         }
     }
 
+    @Command(name = "\\sn", hint = "execute pnfsmanager command", allowAnyOption = true,
+            acl = { "cell.*.execute", "cell.PnfsManager.execute" },
+            description = "Sends COMMAND to the pnfsmanager service. Use \\sn help for a list of supported commands.")
+    class NameSpaceCommand implements Callable<Serializable>
+    {
+        @Argument
+        String[] command;
+
+        @CommandLine
+        Args args;
+
+        @Override
+        public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException
+        {
+            return sendObject(_pnfsManager.getDestinationPath(), args.toString());
+        }
+    }
+
+    @Command(name = "\\sp", hint = "execute poolmanager command", allowAnyOption = true,
+            acl = { "cell.*.execute", "cell.PoolManager.execute" },
+            description = "Sends COMMAND to the poolmanager service. Use \\sp help for a list of supported commands.")
+    class PoolManagerCommand implements Callable<Serializable>
+    {
+        @Argument
+        String[] command;
+
+        @CommandLine
+        Args args;
+
+        @Override
+        public Serializable call() throws InterruptedException, NoRouteToCellException, CommandException
+        {
+            return sendObject(_poolManager.getDestinationPath(), args.toString());
+        }
+    }
 
     private void checkCdPermission( String remoteName ) throws AclException {
        int pos = remoteName.indexOf('-') ;
@@ -1357,7 +1423,7 @@ public class UserAdminShell
            prefix = remoteName.substring(0, pos);
        }
        try{
-         checkPermission( "cell.*.execute" ) ;
+           checkPermission( "cell.*.execute" ) ;
        }catch( AclException acle ){
           try{
              checkPermission( "cell."+remoteName+".execute" ) ;

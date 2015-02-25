@@ -214,7 +214,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
 
     private static List<Handler> createFieldHandlers(Command command, Class<? extends Callable<?>> clazz)
     {
-        Set<String> names = new HashSet<>();
+        Set<String> optionNames = new HashSet<>();
 
         List<Handler> handlers = Lists.newArrayList();
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
@@ -222,7 +222,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
                 Option option = field.getAnnotation(Option.class);
                 if (option != null) {
                     handlers.add(createFieldHandler(field, option));
-                    names.add(option.name());
+                    optionNames.add(option.name());
                 }
 
                 Argument argument = field.getAnnotation(Argument.class);
@@ -243,7 +243,9 @@ public class AnnotatedCommandExecutor implements CommandExecutor
             handlers.add(new MaxArgumentsHandler(maxArgs));
         }
 
-        handlers.add(new CheckOptionsKnownHandler(names));
+        if (!command.allowAnyOption()) {
+            handlers.add(new CheckOptionsKnownHandler(optionNames));
+        }
 
         return handlers;
     }

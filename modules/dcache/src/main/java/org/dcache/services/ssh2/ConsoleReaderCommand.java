@@ -26,6 +26,7 @@ import diskCacheV111.admin.UserAdminShell;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
+import dmg.util.CommandAclException;
 import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
@@ -185,7 +186,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
                     _logger.error("This must be a bug, please report to support@dcache.org.", e);
                 } catch (CommandSyntaxException e) {
                     result = e;
-                } catch (CommandEvaluationException e) {
+                } catch (CommandEvaluationException | CommandAclException e) {
                     result = e.getMessage();
                 } catch (CommandExitException e) {
                     break;
