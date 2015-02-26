@@ -8,7 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -215,7 +219,7 @@ public class RoutingManager
     @Override
     public void messageArrived(CellMessage msg)
     {
-        Object obj = msg.getMessageObject();
+        Serializable obj = msg.getMessageObject();
         if (obj instanceof String[]){
             String[] info = (String[])obj;
             if (info.length < 1){
@@ -237,6 +241,28 @@ public class RoutingManager
                         }
                     }
                 });
+            }
+        } else if (obj instanceof GetAllDomainsRequest) {
+            if (_defaultInstalled) {
+                try {
+                    _nucleus.sendMessage(new CellMessage(new CellPath(_nucleus.getCellName()), obj), false, true);
+                    return;
+                } catch (NoRouteToCellException e) {
+                    // we have just become the root
+                }
+            }
+
+            try {
+                Map<String,Collection<String>> domains = new HashMap<>();
+                domains.put(_nucleus.getCellDomainName(), new ArrayList<>(_localExports));
+                for (Map.Entry<String, Set<String>> entry : _domainHash.entrySet()) {
+                    domains.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+                }
+                msg.revertDirection();
+                msg.setMessageObject(new GetAllDomainsReply(domains));
+                sendMessage(msg);
+            } catch (NoRouteToCellException e) {
+                _log.debug(e.getMessage());
             }
         } else {
             _log.warn("Unidentified message ignored: {}", obj);

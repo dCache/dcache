@@ -597,7 +597,6 @@ public class CellShell extends CommandInterpreter
    public String ac_ps_$_0_99( Args args ){
       StringBuilder sb = new StringBuilder() ;
       if( args.argc() == 0 ){
-         sb.append( "  Cell List\n------------------\n" ) ;
          List<String> list = _nucleus.getCellNames();
          if (args.optc() > 0) {
              for (String name: list) {

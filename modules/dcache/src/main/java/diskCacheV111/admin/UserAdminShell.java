@@ -2,6 +2,8 @@ package diskCacheV111.admin ;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.util.concurrent.ListenableFuture;
 import jline.console.completer.Completer;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -15,15 +17,20 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -49,8 +56,11 @@ import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
+import dmg.cells.services.GetAllDomainsReply;
+import dmg.cells.services.GetAllDomainsRequest;
 import dmg.util.AclException;
 import dmg.util.AuthorizedString;
 import dmg.util.CommandAclException;
@@ -73,7 +83,12 @@ import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static com.google.common.collect.Maps.immutableEntry;
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.dcache.util.Glob.parseGlobToPattern;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.RED;
 
@@ -87,7 +102,7 @@ public class UserAdminShell
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
 
-    private final CellEndpoint cellEndPoint ;
+    private final CellEndpoint _cellEndpoint;
     private final CellStub _acmStub;
     private final CellStub _poolManager;
     private final CellStub _pnfsManager;
@@ -118,7 +133,7 @@ public class UserAdminShell
     }
 
     public UserAdminShell(String user, CellEndpoint cellEndpoint, Args args) {
-        cellEndPoint = cellEndpoint;
+       _cellEndpoint = cellEndpoint;
        _user     = user ;
        _authUser = user ;
 
@@ -406,7 +421,7 @@ public class UserAdminShell
 
     private Map<CellPath,String> askPoolsForRepLs(FileAttributes fileAttributes, PnfsId pnfsId) {
 
-        SpreadAndWait<String> spreader = new SpreadAndWait<>(new CellStub(cellEndPoint, null, _timeout));
+        SpreadAndWait<String> spreader = new SpreadAndWait<>(new CellStub(_cellEndpoint, null, _timeout));
 
         for (String poolName : fileAttributes.getLocations()) {
             spreader.send(new CellPath(poolName), String.class, "rep ls " + pnfsId);
@@ -762,9 +777,9 @@ public class UserAdminShell
                 new Pool2PoolTransferMsg( source , dest , fileAttributes ) ;
 
 
-            cellEndPoint.sendMessage(
-                       new CellMessage( new CellPath(dest) , p2p )
-                               ) ;
+            _cellEndpoint.sendMessage(
+                    new CellMessage(new CellPath(dest), p2p)
+            ) ;
 
            return "P2p of "+pnfsId+" initiated from "+source+" to "+dest ;
        }else{
@@ -1008,6 +1023,74 @@ public class UserAdminShell
 
        return map.getPnfsId().toString() ;
 
+    }
+
+    @Command(name = "\\l", hint = "list cells",
+            description = "Lists all matching cells. The argument is interpreted as a glob. If no " +
+                          "domain suffix is provided, only well known cells are listed. Otherwise " +
+                          "all matching cells in all matching domains are listed.")
+    class ListCommand implements Callable<String>
+    {
+        @Argument(required = false, valueSpec = "CELL[@DOMAIN]",
+                usage = "A glob pattern. An empty CELL or DOMAIN string matches any name.")
+        String pattern;
+
+        @Override
+        public String call() throws Exception
+        {
+            Map<String, Collection<String>> domains =
+                    _cellStub
+                            .sendAndWait(new CellPath("RoutingMgr"), new GetAllDomainsRequest(),
+                                         GetAllDomainsReply.class)
+                            .getDomains();
+
+            /* If no domain pattern is given, only well-known cells are returned. */
+            if (pattern == null) {
+                return domains.values().stream()
+                        .flatMap(Collection::stream)
+                        .sorted(CASE_INSENSITIVE_ORDER)
+                        .collect(joining("\n"));
+            }
+            String[] s = pattern.split("@", 2);
+            Predicate<String> matchesCellName =
+                    s[0].isEmpty() ? (String) -> true : parseGlobToPattern(s[0]).asPredicate();
+            if (s.length == 1) {
+                return domains.values().stream()
+                        .flatMap(Collection::stream)
+                        .filter(matchesCellName)
+                        .sorted(CASE_INSENSITIVE_ORDER)
+                        .collect(joining("\n"));
+            }
+
+            /* Query the cells of each matching domain.
+             */
+            Predicate<String> matchesDomainName =
+                    s[1].isEmpty() ? (String) -> true : parseGlobToPattern(s[1]).asPredicate();
+            List<Map.Entry<String, ListenableFuture<String>>> futuresByDomain =
+                    domains.keySet().stream()
+                            .filter(matchesDomainName)
+                            .sorted(CASE_INSENSITIVE_ORDER)
+                            .map(domain -> immutableEntry(domain, _cellStub.send(new CellPath("System", domain), "ps",
+                                                                                 String.class)))
+                            .collect(toList());
+
+            /* Collect and filter the result.
+             */
+            List<String> cells = new ArrayList<>();
+            for (Map.Entry<String, ListenableFuture<String>> entry : futuresByDomain) {
+                try {
+                    Arrays.stream(entry.getValue().get().split("\n"))
+                            .filter(matchesCellName)
+                            .sorted(CASE_INSENSITIVE_ORDER)
+                            .map(cell -> cell + "@" + entry.getKey())
+                            .forEach(cells::add);
+                } catch (ExecutionException e) {
+                    _log.debug("Failed to query the System cell of {}: {}", entry.getKey(), e.getCause());
+                }
+            }
+
+            return String.join("\n", cells);
+        }
     }
 
     @Command(name = "\\c", hint = "connect to cell",
