@@ -71,7 +71,6 @@
         <version.wicket>6.19.0</version.wicket>
         <version.xrootd4j>2.0.0</version.xrootd4j>
         <version.jglobus>2.0.6-rc8.d</version.jglobus>
-        <version.openmq>4.5.2</version.openmq>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
@@ -372,16 +371,6 @@
                 <version>6.1.5</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.mq</groupId>
-                <artifactId>jms</artifactId>
-                <version>${version.openmq}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.mq</groupId>
-                <artifactId>imq</artifactId>
-                <version>${version.openmq}</version>
-            </dependency>
-            <dependency>
                 <groupId>javax.jdo</groupId>
                 <artifactId>jdo-api</artifactId>
                 <version>3.0.1</version>
@@ -630,24 +619,6 @@
                     <exclusion>
                         <groupId>xml-apis</groupId>
                         <artifactId>xml-apis</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-core</artifactId>
-                <version>5.7.0</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.xbean</groupId>
-                <artifactId>xbean-spring</artifactId>
-                <version>3.11.1</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1288,8 +1259,8 @@
         <module>modules/gplazma2-gsi</module>
         <module>modules/gplazma2-htpasswd</module>
         <module>modules/javatunnel</module>
-	<module>modules/dcache-vehicles</module>
-	<module>modules/dcache-nearline-spi</module>
+        <module>modules/dcache-vehicles</module>
+        <module>modules/dcache-nearline-spi</module>
         <module>modules/dcache</module>
         <module>modules/dcache-chimera</module>
         <module>modules/dcache-ftp</module>
@@ -1297,7 +1268,6 @@
         <module>modules/dcache-xrootd</module>
         <module>modules/dcache-dcap</module>
         <module>modules/dcache-gplazma</module>
-        <module>modules/dcache-jms</module>
         <module>modules/dcache-webadmin</module>
         <module>modules/dcache-nfs</module>
         <module>modules/dcache-srm</module>

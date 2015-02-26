@@ -8,7 +8,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.util.Args;
 
 /**
- * CellsTopology for dCache installation with classic (non-JMS) cells
+ * CellsTopology for dCache installation with classic cells
  * communication.
  */
 public class ClassicCellsTopology

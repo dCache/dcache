@@ -1,9 +1,0 @@
-onerror shutdown
-check -strong dcache.broker.openmq.host
-check -strong dcache.broker.openmq.port
-check -strong dcache.broker.openmq.reconnect-interval
-check -strong dcache.broker.openmq.reconnect-interval.unit
-
-create org.dcache.cells.UniversalSpringCell JMS \
-     "-cellType=System -cellClass=JMS classpath:org/dcache/cells/openmq.xml"
-
