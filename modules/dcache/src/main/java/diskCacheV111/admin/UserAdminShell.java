@@ -2,8 +2,9 @@ package diskCacheV111.admin ;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import jline.console.completer.Completer;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -23,14 +24,12 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -55,8 +54,8 @@ import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.cells.services.GetAllDomainsReply;
@@ -112,23 +111,18 @@ public class UserAdminShell
     private long        _timeout  = TimeUnit.MINUTES.toMillis(5);
     private boolean     _fullException;
     private final String      _instance ;
-    private Position    _currentPosition = new Position() ;
+    private Position    _currentPosition = null;
     private Completer _completer;
 
     private static class Position
     {
-        private final CellPath    remote;
-        private final String      remoteName;
-        private Position()
-        {
-            remote = null;
-            remoteName = null;
-        }
+        final String remoteName;
+        final CellPath remote;
 
-        private Position(String removeCell)
+        Position(String name, CellPath path)
         {
-            remoteName = removeCell;
-            remote = (remoteName == null) ? null : new CellPath(remoteName);
+            remoteName = name;
+            remote = path;
         }
     }
 
@@ -218,7 +212,7 @@ public class UserAdminShell
     }
     public String getPrompt(){
         return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
-                ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
+                ( _currentPosition == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
                 getUser()+" > " ;
     }
     public static final String hh_set_exception = "message|detail" ;
@@ -1098,7 +1092,7 @@ public class UserAdminShell
     class ConnectCommand implements Callable<String>
     {
         @Argument(index = 0, valueSpec = "CELL|CELL@DOMAIN",
-                usage = "Well known or fully qualified cell name. If omitted the shell switches to local mode.")
+                usage = "Well known or fully qualified cell name.")
         String name;
 
         @Argument(required = false, index = 1,
@@ -1121,14 +1115,54 @@ public class UserAdminShell
                     _user = user;
                 }
                 checkCdPermission(name);
-                Position newPosition = new Position(name);
-                checkCellExists(newPosition.remote);
-                _currentPosition = newPosition;
+                _currentPosition = resolve(name);
             } catch (Throwable e) {
                 _user = oldUser;
                 throw e;
             }
             return "";
+        }
+
+        private Position resolve(String cell) throws InterruptedException
+        {
+            CellPath address = new CellPath(cell);
+            try {
+                SettableFuture<CellPath> future = SettableFuture.create();
+                _cellEndpoint.sendMessage(new CellMessage(address, ADMIN_COMMAND_NOOP),
+                                          new CellMessageAnswerable()
+                                          {
+                                              @Override
+                                              public void answerArrived(CellMessage request, CellMessage answer)
+                                              {
+                                                  future.set(answer.getSourcePath());
+                                              }
+
+                                              @Override
+                                              public void exceptionArrived(CellMessage request, Exception exception)
+                                              {
+                                                  future.setException(exception);
+                                              }
+
+                                              @Override
+                                              public void answerTimedOut(CellMessage request)
+                                              {
+                                                  future.setException(new NoRouteToCellException("No reply"));
+                                              }
+                                          }, MoreExecutors.directExecutor(), CD_PROBE_MESSAGE_TIMEOUT_MS);
+                CellPath returnPath = future.get();
+                if (address.hops() == 1 && address.getCellDomainName().equals("local")) {
+                    return new Position(returnPath.getSourceAddress().toString(), returnPath.revert());
+                } else {
+                    return new Position(cell, returnPath.revert());
+                }
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof NoRouteToCellException) {
+                    throw new IllegalArgumentException("Cell does not exist.");
+                }
+                // Some other failure, but apparently the cell exists
+                _log.info("Cell probe failed: {}", e.getCause().toString());
+                return new Position(cell, address);
+            }
         }
     }
 
@@ -1183,7 +1217,7 @@ public class UserAdminShell
         @Override
         public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException
         {
-            if ( _currentPosition.remote == null) {
+            if ( _currentPosition == null) {
                 return "You are not connected to any cell. Use \\? to display shell commands.";
             } else {
                 return sendObject(_currentPosition.remote,
@@ -1286,7 +1320,7 @@ public class UserAdminShell
            prefix = remoteName.substring(0, pos);
        }
        try{
-           checkPermission( "cell.*.execute" ) ;
+           checkPermission("cell.*.execute") ;
        }catch( AclException acle ){
           try{
              checkPermission( "cell."+remoteName+".execute" ) ;
@@ -1301,18 +1335,6 @@ public class UserAdminShell
               }
           }
        }
-    }
-    private void checkCellExists( CellPath remoteCell) {
-        try {
-            _cellStub.sendAndWait(remoteCell, ADMIN_COMMAND_NOOP, Object.class, CD_PROBE_MESSAGE_TIMEOUT_MS);
-        } catch (TimeoutCacheException e) {
-            throw new IllegalArgumentException("Cannot cd to this cell as it doesn't exist.");
-        } catch (CacheException e) {
-            // Some other failure, but apparently the cell exists
-            _log.info("Cell probe failed: {}", e.getMessage());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     @Override
@@ -1343,7 +1365,7 @@ public class UserAdminShell
 
        Args args = new Args( str ) ;
 
-       if( _currentPosition.remote == null || str.startsWith("\\")) {
+       if( _currentPosition == null || str.startsWith("\\")) {
            return localCommand( args ) ;
        }else{
            return sendObject( _currentPosition.remote ,  new AuthorizedString(_user,str) ) ;
