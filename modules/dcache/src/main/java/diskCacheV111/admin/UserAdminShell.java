@@ -252,8 +252,7 @@ public class UserAdminShell
         List<ListenableFuture<List<String>>> futures = new ArrayList<>();
         for (String pattern : patterns) {
             String[] s = pattern.split("@", 2);
-            Predicate<String> matchesCellName =
-                    s[0].isEmpty() ? (String) -> true : parseGlobToPattern(s[0]).asPredicate();
+            Predicate<String> matchesCellName = toGlobPredicate(s[0]);
             if (s.length == 1) {
                 /* Add matching well-known cells. */
                 domains.values().stream()
@@ -266,8 +265,7 @@ public class UserAdminShell
             } else {
                 /* Query the cells of each matching domain.
                  */
-                Predicate<String> matchesDomainName =
-                        s[1].isEmpty() ? (String) -> true : parseGlobToPattern(s[1]).asPredicate();
+                Predicate<String> matchesDomainName = toGlobPredicate(s[1]);
                 domains.keySet().stream()
                         .filter(matchesDomainName)
                         .sorted(CASE_INSENSITIVE_ORDER)
@@ -278,6 +276,11 @@ public class UserAdminShell
 
         /* Collect and flatten the result. */
         return allAsList(futures).get().stream().flatMap(Collection::stream).collect(toList());
+    }
+
+    private Predicate<String> toGlobPredicate(String s)
+    {
+        return s.isEmpty() ? (String) -> true : parseGlobToPattern(s).asPredicate();
     }
 
 
@@ -1405,6 +1408,11 @@ public class UserAdminShell
                 return -1;
             }
             candidates.addAll(expandCellPatterns(Collections.singletonList(command[1] + "*")));
+            if (!command[1].contains("@") && _currentPosition != null) {
+                /* Add local cells in the connected domain too. */
+                candidates.addAll(
+                        getCells(_currentPosition.remote.getCellDomainName(), toGlobPredicate(command[1] + "*")).get());
+            }
             return command[0].length() + 1;
         case "\\sp":
             return completeShell("PoolManager", command[0], command[1], cursor, candidates);
