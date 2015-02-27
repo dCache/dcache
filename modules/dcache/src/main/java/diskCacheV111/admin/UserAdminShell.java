@@ -2,6 +2,7 @@ package diskCacheV111.admin ;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
@@ -20,6 +21,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -78,14 +80,17 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
+import org.dcache.util.Glob;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
-import static com.google.common.collect.Maps.immutableEntry;
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.util.concurrent.Futures.*;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.util.Glob.parseGlobToPattern;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
@@ -206,6 +211,71 @@ public class UserAdminShell
              throw new AclException(getUser(), aclName);
          }
     }
+
+    /**
+     * Asynchronously queries the cells of {@code domain} matching {@code cellPredicate}.
+     *
+     * The resulting list is sorted and fully qualified. Errors are logged and otherwise ignored.
+     */
+    private ListenableFuture<List<String>> getCells(String domain, Predicate<String> cellPredicate)
+    {
+        /* Query System cell and split, filter, sort and expand the answer. */
+        ListenableFuture<List<String>> future = transform(
+                _cellStub.send(new CellPath("System", domain), "ps", String.class),
+                (String s) ->
+                        Arrays.stream(s.split("\n"))
+                                .filter(cellPredicate)
+                                .sorted(CASE_INSENSITIVE_ORDER)
+                                .map(cell -> cell + "@" + domain)
+                                .collect(toList()));
+        /* Log and ignore any errors. */
+        return withFallback(future,
+                            t -> {
+                                _log.debug("Failed to query the System cell of domain {}: {}", domain, t);
+                                return immediateFuture(Collections.emptyList());
+                            });
+    }
+
+    private List<String> expandCellPatterns(List<String> patterns)
+            throws CacheException, InterruptedException, ExecutionException
+    {
+        Map<String, Collection<String>> domains =
+                _cellStub
+                        .sendAndWait(new CellPath("RoutingMgr"), new GetAllDomainsRequest(),
+                                     GetAllDomainsReply.class)
+                        .getDomains();
+
+        List<ListenableFuture<List<String>>> futures = new ArrayList<>();
+        for (String pattern : patterns) {
+            String[] s = pattern.split("@", 2);
+            Predicate<String> matchesCellName =
+                    s[0].isEmpty() ? (String) -> true : parseGlobToPattern(s[0]).asPredicate();
+            if (s.length == 1) {
+                /* Add matching well-known cells. */
+                domains.values().stream()
+                        .flatMap(Collection::stream)
+                        .filter(matchesCellName)
+                        .sorted(CASE_INSENSITIVE_ORDER)
+                        .map(Collections::singletonList)
+                        .map(Futures::immediateFuture)
+                        .forEach(futures::add);
+            } else {
+                /* Query the cells of each matching domain.
+                 */
+                Predicate<String> matchesDomainName =
+                        s[1].isEmpty() ? (String) -> true : parseGlobToPattern(s[1]).asPredicate();
+                domains.keySet().stream()
+                        .filter(matchesDomainName)
+                        .sorted(CASE_INSENSITIVE_ORDER)
+                        .map(domain -> getCells(domain, matchesCellName))
+                        .forEach(futures::add);
+            }
+        }
+
+        /* Collect and flatten the result. */
+        return allAsList(futures).get().stream().flatMap(Collection::stream).collect(toList());
+    }
+
 
     public String getHello(){
       return "dCache (" + Version.of(UserAdminShell.class).getVersion() + ")\n" + "Type \"\\?\" for help.\n";
@@ -658,7 +728,7 @@ public class UserAdminShell
             throws Exception {
 
        PnfsId pnfsId;
-       if( destination.startsWith( "/pnfs" ) ){
+       if( destination.startsWith("/pnfs") ){
 
           PnfsMapPathMessage map = new PnfsMapPathMessage( destination ) ;
 
@@ -688,7 +758,7 @@ public class UserAdminShell
        try{
           checkPermission( "pnfs.*.update" ) ;
        }catch( AclException ee ){
-          checkPermission( "pnfs."+key+"."+dbId+".update" ) ;
+          checkPermission("pnfs." + key + "." + dbId + ".update") ;
        }
 
 
@@ -1027,63 +1097,12 @@ public class UserAdminShell
     {
         @Argument(required = false, valueSpec = "CELL[@DOMAIN]",
                 usage = "A glob pattern. An empty CELL or DOMAIN string matches any name.")
-        String pattern;
+        String[] pattern = { "*" };
 
         @Override
         public String call() throws Exception
         {
-            Map<String, Collection<String>> domains =
-                    _cellStub
-                            .sendAndWait(new CellPath("RoutingMgr"), new GetAllDomainsRequest(),
-                                         GetAllDomainsReply.class)
-                            .getDomains();
-
-            /* If no domain pattern is given, only well-known cells are returned. */
-            if (pattern == null) {
-                return domains.values().stream()
-                        .flatMap(Collection::stream)
-                        .sorted(CASE_INSENSITIVE_ORDER)
-                        .collect(joining("\n"));
-            }
-            String[] s = pattern.split("@", 2);
-            Predicate<String> matchesCellName =
-                    s[0].isEmpty() ? (String) -> true : parseGlobToPattern(s[0]).asPredicate();
-            if (s.length == 1) {
-                return domains.values().stream()
-                        .flatMap(Collection::stream)
-                        .filter(matchesCellName)
-                        .sorted(CASE_INSENSITIVE_ORDER)
-                        .collect(joining("\n"));
-            }
-
-            /* Query the cells of each matching domain.
-             */
-            Predicate<String> matchesDomainName =
-                    s[1].isEmpty() ? (String) -> true : parseGlobToPattern(s[1]).asPredicate();
-            List<Map.Entry<String, ListenableFuture<String>>> futuresByDomain =
-                    domains.keySet().stream()
-                            .filter(matchesDomainName)
-                            .sorted(CASE_INSENSITIVE_ORDER)
-                            .map(domain -> immutableEntry(domain, _cellStub.send(new CellPath("System", domain), "ps",
-                                                                                 String.class)))
-                            .collect(toList());
-
-            /* Collect and filter the result.
-             */
-            List<String> cells = new ArrayList<>();
-            for (Map.Entry<String, ListenableFuture<String>> entry : futuresByDomain) {
-                try {
-                    Arrays.stream(entry.getValue().get().split("\n"))
-                            .filter(matchesCellName)
-                            .sorted(CASE_INSENSITIVE_ORDER)
-                            .map(cell -> cell + "@" + entry.getKey())
-                            .forEach(cells::add);
-                } catch (ExecutionException e) {
-                    _log.debug("Failed to query the System cell of {}: {}", entry.getKey(), e.getCause());
-                }
-            }
-
-            return String.join("\n", cells);
+            return String.join("\n", expandCellPatterns(asList(pattern)));
         }
     }
 
@@ -1091,7 +1110,7 @@ public class UserAdminShell
             description = "Connect to new cell. May optionally switch to another user.")
     class ConnectCommand implements Callable<String>
     {
-        @Argument(index = 0, valueSpec = "CELL|CELL@DOMAIN",
+        @Argument(index = 0, valueSpec = "CELL[@DOMAIN]",
                 usage = "Well known or fully qualified cell name.")
         String name;
 
@@ -1266,7 +1285,8 @@ public class UserAdminShell
             description = "Sends COMMAND to one or more cells.")
     class SendCommand implements Callable<Serializable>
     {
-        @Argument(index = 0, valueSpec = "CELL[@DOMAIN][,CELL[@DOMAIN]]...")
+        @Argument(index = 0, valueSpec = "CELL[@DOMAIN][,CELL[@DOMAIN]]...",
+                usage = "List of cell addresses. Wildcards are expanded. An empty CELL or DOMAIN string matches any name.")
         String destination;
 
         @Argument(index = 1)
@@ -1276,22 +1296,21 @@ public class UserAdminShell
         Args args;
 
         @Override
-        public Serializable call() throws InterruptedException, NoRouteToCellException, CommandException, AclException
+        public Serializable call() throws InterruptedException, ExecutionException, CacheException, AclException
         {
-            // TODO: Submit the messages in parallel
+            Iterable<String> destinations = getDestinations();
 
-            String[] cells = this.destination.split(",");
             try {
                 checkPermission("cell.*.execute");
             } catch (AclException e) {
-                for (String cell : cells) {
+                for (String cell : destinations) {
                     checkPermission("cell." + cell + ".execute");
                 }
             }
 
             args.shift();
             StringBuilder result = new StringBuilder();
-            for (String cell : cells) {
+            for (String cell : destinations) {
                 result.append(Ansi.ansi().bold().a(cell).boldOff()).append(":");
                 try {
                     String reply = Objects.toString(sendObject(cell, args.toString()), "");
@@ -1310,6 +1329,16 @@ public class UserAdminShell
                 }
             }
             return result.toString();
+        }
+
+        private Iterable<String> getDestinations() throws CacheException, InterruptedException, ExecutionException
+        {
+            Predicate<String> isExpandable =
+                    s -> !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s));
+            Map<Boolean, List<String>> expandable =
+                    Arrays.stream(destination.split(",")).collect(partitioningBy(isExpandable));
+
+            return concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
         }
     }
 

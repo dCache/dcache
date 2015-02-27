@@ -34,7 +34,7 @@ public class Glob implements Serializable
 
     public boolean isGlob()
     {
-        return WILDCARD.matchesAnyOf(_pattern);
+        return isGlob(_pattern);
     }
 
     @Override
@@ -110,5 +110,10 @@ public class Glob implements Serializable
         s.append(Pattern.quote(glob.substring(j)));
         s.append("$");
         return Pattern.compile(s.toString());
+    }
+
+    public static boolean isGlob(String s)
+    {
+        return WILDCARD.matchesAnyOf(s);
     }
 }
