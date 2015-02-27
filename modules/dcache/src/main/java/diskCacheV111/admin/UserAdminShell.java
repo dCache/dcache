@@ -1,5 +1,6 @@
 package diskCacheV111.admin ;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.Futures;
@@ -107,7 +108,7 @@ public class UserAdminShell
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
     public static final StringsCompleter SHELL_COMMAND_COMPLETER =
-            new StringsCompleter("\\l", "\\s", "\\sn", "\\sp", "\\q", "\\h", "\\?");
+            new StringsCompleter("\\c", "\\l", "\\s", "\\sn", "\\sp", "\\q", "\\h", "\\?");
 
     private final CellEndpoint _cellEndpoint;
     private final CellStub _acmStub;
@@ -1391,7 +1392,7 @@ public class UserAdminShell
     }
 
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
-            throws InterruptedException, CommandException, NoRouteToCellException
+            throws InterruptedException, CommandException, NoRouteToCellException, CacheException, ExecutionException
     {
         String[] command = buffer.split("\\s+", 2);
         if (command.length == 1) {
@@ -1399,6 +1400,12 @@ public class UserAdminShell
         }
 
         switch (command[0]) {
+        case "\\c":
+            if (CharMatcher.WHITESPACE.matchesAnyOf(command[1])) {
+                return -1;
+            }
+            candidates.addAll(expandCellPatterns(Collections.singletonList(command[1] + "*")));
+            return command[0].length() + 1;
         case "\\sp":
             return completeShell("PoolManager", command[0], command[1], cursor, candidates);
         case "\\sn":
