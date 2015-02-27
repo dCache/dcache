@@ -3,6 +3,7 @@ package diskCacheV111.admin ;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -88,6 +89,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Maps.*;
 import static com.google.common.util.concurrent.Futures.*;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Arrays.asList;
@@ -1316,11 +1318,20 @@ public class UserAdminShell
             }
 
             args.shift();
-            StringBuilder result = new StringBuilder();
+
+            /* Submit commands. */
+            AuthorizedString command = new AuthorizedString(_user, args.toString());
+            List<Map.Entry<String,ListenableFuture<Serializable>>> futures = new ArrayList<>();
             for (String cell : destinations) {
-                result.append(Ansi.ansi().bold().a(cell).boldOff()).append(":");
+                futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), command, Serializable.class)));
+            }
+
+            /* Collect results. */
+            StringBuilder result = new StringBuilder();
+            for (Map.Entry<String, ListenableFuture<Serializable>> entry : futures) {
+                result.append(Ansi.ansi().bold().a(entry.getKey()).boldOff()).append(":");
                 try {
-                    String reply = Objects.toString(sendObject(cell, args.toString()), "");
+                    String reply = Objects.toString(entry.getValue().get(), "");
                     if (reply.isEmpty()) {
                         result.append(Ansi.ansi().fg(GREEN).a(" OK").reset()).append("\n");
                     } else {
@@ -1329,12 +1340,16 @@ public class UserAdminShell
                             result.append("    ").append(s).append("\n");
                         }
                     }
-                } catch (NoRouteToCellException e) {
-                    result.append(Ansi.ansi().fg(RED).a(" Cell is unreachable.").reset()).append("\n");
-                } catch (CommandException e) {
-                    result.append(" ").append(Ansi.ansi().fg(RED).a(e.getMessage()).reset()).append("\n");
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof NoRouteToCellException) {
+                        result.append(Ansi.ansi().fg(RED).a(" Cell is unreachable.").reset()).append("\n");
+                    } else {
+                        result.append(" ").append(Ansi.ansi().fg(RED).a(cause.getMessage()).reset()).append("\n");
+                    }
                 }
             }
+
             return result.toString();
         }
 
