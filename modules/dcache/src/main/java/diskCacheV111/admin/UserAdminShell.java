@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import jline.console.completer.Completer;
+import jline.console.completer.StringsCompleter;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,8 @@ public class UserAdminShell
 
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
+    public static final StringsCompleter SHELL_COMMAND_COMPLETER =
+            new StringsCompleter("\\l", "\\s", "\\sn", "\\sp", "\\q", "\\h", "\\?");
 
     private final CellEndpoint _cellEndpoint;
     private final CellStub _acmStub;
@@ -1367,9 +1370,12 @@ public class UserAdminShell
     }
 
     @Override
-    public int complete(String buffer, int cursor, List candidates)
+    public int complete(String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
+            if (buffer.startsWith("\\") || _currentPosition == null) {
+                return completeShell(buffer, cursor, candidates);
+            }
             if (_completer == null) {
                 Object help = executeCommand("help");
                 if (help == null) {
@@ -1382,6 +1388,36 @@ public class UserAdminShell
             _log.info("Completion failed: " + e.toString());
             return -1;
         }
+    }
+
+    private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
+            throws InterruptedException, CommandException, NoRouteToCellException
+    {
+        String[] command = buffer.split("\\s+", 2);
+        if (command.length == 1) {
+            return SHELL_COMMAND_COMPLETER.complete(buffer, cursor, candidates);
+        }
+
+        switch (command[0]) {
+        case "\\sp":
+            return completeShell("PoolManager", command[0], command[1], cursor, candidates);
+        case "\\sn":
+            return completeShell("PnfsManager", command[0], command[1], cursor, candidates);
+        default:
+            return -1;
+        }
+    }
+
+    private int completeShell(String cell, String command, String buffer, int cursor, List<CharSequence> candidates)
+            throws InterruptedException, CommandException, NoRouteToCellException
+    {
+        Serializable help = sendObject(cell, "help");
+        if (help == null) {
+            return -1;
+        }
+        HelpCompleter completer = new HelpCompleter(String.valueOf(help));
+        int i = completer.complete(buffer, cursor, candidates);
+        return i == -1 ? -1 : i + command.length() + 1;
     }
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException

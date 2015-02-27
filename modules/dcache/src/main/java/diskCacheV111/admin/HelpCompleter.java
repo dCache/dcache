@@ -25,7 +25,6 @@ public class HelpCompleter implements Completer
     protected String scan(String line)
     {
         StringBuilder completion = new StringBuilder();
-        loop:
         for (String s: line.split(" ")) {
             if (s.startsWith("#")) {
                 break;
@@ -38,7 +37,7 @@ public class HelpCompleter implements Completer
     }
 
     @Override
-    public int complete(String buffer, int cursor, List candidates)
+    public int complete(String buffer, int cursor, List<CharSequence> candidates)
     {
         if (cursor < buffer.length()) {
             return -1;
