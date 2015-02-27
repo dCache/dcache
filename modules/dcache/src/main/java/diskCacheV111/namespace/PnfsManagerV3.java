@@ -528,11 +528,10 @@ public class PnfsManagerV3
     }
 
     public static final String fh_storageinfoof =
-        "   storageinfoof <pnfsid>|<globalPath> [-v] [-n] [-se]\n"+
+        "   storageinfoof <pnfsid>|<globalPath> [-v] [-n]\n"+
         "        -v    verbose\n"+
-        "        -n    don't resolve links\n"+
-        "        -se   suppress exceptions\n" ;
-    public static final String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
+        "        -n    don't resolve links\n";
+    public static final String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n]" ;
     public String ac_storageinfoof_$_1( Args args )
     {
         PnfsId    pnfsId;
@@ -578,11 +577,10 @@ public class PnfsManagerV3
         return sb.toString() ;
     }
     public static final String fh_metadataof =
-        "   storageinfoof <pnfsid>|<globalPath> [-v] [-n] [-se]\n"+
+        "   metadataof <pnfsid>|<globalPath> [-v] [-n]\n"+
         "        -v    verbose\n"+
-        "        -n    don't resolve links\n"+
-        "        -se   suppress exceptions\n" ;
-    public static final String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
+        "        -n    don't resolve links\n";
+    public static final String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n]";
     public String ac_metadataof_$_1( Args args )
     {
         PnfsId    pnfsId;
