@@ -1380,18 +1380,24 @@ public class UserAdminShell
             if (buffer.startsWith("\\") || _currentPosition == null) {
                 return completeShell(buffer, cursor, candidates);
             }
-            if (_completer == null) {
-                Object help = executeCommand("help");
-                if (help == null) {
-                    return -1;
-                }
-                _completer = new HelpCompleter(String.valueOf(help));
-            }
-            return _completer.complete(buffer, cursor, candidates);
+            return completeRemote(buffer, cursor, candidates);
         } catch (Exception e) {
             _log.info("Completion failed: " + e.toString());
             return -1;
         }
+    }
+
+    private int completeRemote(String buffer, int cursor,
+                               List<CharSequence> candidates) throws CommandException, InterruptedException, NoRouteToCellException
+    {
+        if (_completer == null) {
+            Object help = executeCommand("help");
+            if (help == null) {
+                return -1;
+            }
+            _completer = new HelpCompleter(String.valueOf(help));
+        }
+        return _completer.complete(buffer, cursor, candidates);
     }
 
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
@@ -1402,28 +1408,39 @@ public class UserAdminShell
             return SHELL_COMMAND_COMPLETER.complete(buffer, cursor, candidates);
         }
 
+        int i = -1;
         switch (command[0]) {
+        case "\\?":
+            i = SHELL_COMMAND_COMPLETER.complete(command[1], cursor, candidates);
+            break;
+        case "\\h":
+            if (_currentPosition != null) {
+                i = completeRemote(command[1], cursor, candidates);
+            }
+            break;
         case "\\c":
-            if (CharMatcher.WHITESPACE.matchesAnyOf(command[1])) {
-                return -1;
+            if (!CharMatcher.WHITESPACE.matchesAnyOf(command[1])) {
+                candidates.addAll(expandCellPatterns(Collections.singletonList(command[1] + "*")));
+                if (!command[1].contains("@") && _currentPosition != null) {
+                    /* Add local cells in the connected domain too. */
+                    candidates.addAll(
+                            getCells(_currentPosition.remote.getCellDomainName(),
+                                     toGlobPredicate(command[1] + "*")).get());
+                }
+                i = 0;
             }
-            candidates.addAll(expandCellPatterns(Collections.singletonList(command[1] + "*")));
-            if (!command[1].contains("@") && _currentPosition != null) {
-                /* Add local cells in the connected domain too. */
-                candidates.addAll(
-                        getCells(_currentPosition.remote.getCellDomainName(), toGlobPredicate(command[1] + "*")).get());
-            }
-            return command[0].length() + 1;
+            break;
         case "\\sp":
-            return completeShell("PoolManager", command[0], command[1], cursor, candidates);
+            i = completeShell("PoolManager", command[1], cursor, candidates);
+            break;
         case "\\sn":
-            return completeShell("PnfsManager", command[0], command[1], cursor, candidates);
-        default:
-            return -1;
+            i = completeShell("PnfsManager", command[1], cursor, candidates);
+            break;
         }
+        return i == -1 ? -1 : command[0].length() + 1;
     }
 
-    private int completeShell(String cell, String command, String buffer, int cursor, List<CharSequence> candidates)
+    private int completeShell(String cell, String buffer, int cursor, List<CharSequence> candidates)
             throws InterruptedException, CommandException, NoRouteToCellException
     {
         Serializable help = sendObject(cell, "help");
@@ -1431,8 +1448,7 @@ public class UserAdminShell
             return -1;
         }
         HelpCompleter completer = new HelpCompleter(String.valueOf(help));
-        int i = completer.complete(buffer, cursor, candidates);
-        return i == -1 ? -1 : i + command.length() + 1;
+        return completer.complete(buffer, cursor, candidates);
     }
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
