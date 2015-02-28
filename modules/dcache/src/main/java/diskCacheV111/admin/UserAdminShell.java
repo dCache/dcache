@@ -3,7 +3,6 @@ package diskCacheV111.admin ;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -32,6 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -1347,6 +1347,17 @@ public class UserAdminShell
                     } else {
                         result.append(" ").append(Ansi.ansi().fg(RED).a(cause.getMessage()).reset()).append("\n");
                     }
+                } catch (InterruptedException e) {
+                    result.append(" ^C\n");
+
+                    /* Cancel all uncompleted tasks. Doesn't actually cancel any requests, but will cause
+                     * the remaining uncompleted futures to throw a CancellationException.
+                     */
+                    for (Map.Entry<String, ListenableFuture<Serializable>> entry2 : futures) {
+                        entry2.getValue().cancel(true);
+                    }
+                } catch (CancellationException e) {
+                    result.append(" ^C\n");
                 }
             }
 
