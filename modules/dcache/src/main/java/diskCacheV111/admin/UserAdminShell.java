@@ -1305,10 +1305,28 @@ public class UserAdminShell
         Args args;
 
         @Override
-        public Serializable call() throws InterruptedException, ExecutionException, CacheException, AclException
+        public Serializable call()
+                throws InterruptedException, ExecutionException, CacheException, AclException,
+                CommandException, NoRouteToCellException
         {
-            Iterable<String> destinations = getDestinations();
+            args.shift();
+            AuthorizedString command = new AuthorizedString(_user, args.toString());
 
+            /* Special case non-wildcard single cell destinations to avoid the indentation and
+             * addition of a cell name header. Makes the command nicer to use in scripts.
+             */
+            if (!destination.contains(",") && !isExpandable(destination)) {
+                return sendObject(destination,  command);
+            }
+
+            /* Expand wildcards.
+             */
+            Map<Boolean, List<String>> expandable =
+                    Arrays.stream(destination.split(",")).collect(partitioningBy(this::isExpandable));
+            Iterable<String> destinations = concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
+
+            /* Check permissions.
+             */
             try {
                 checkPermission("cell.*.execute");
             } catch (AclException e) {
@@ -1317,10 +1335,7 @@ public class UserAdminShell
                 }
             }
 
-            args.shift();
-
             /* Submit commands. */
-            AuthorizedString command = new AuthorizedString(_user, args.toString());
             List<Map.Entry<String,ListenableFuture<Serializable>>> futures = new ArrayList<>();
             for (String cell : destinations) {
                 futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), command, Serializable.class)));
@@ -1364,14 +1379,9 @@ public class UserAdminShell
             return result.toString();
         }
 
-        private Iterable<String> getDestinations() throws CacheException, InterruptedException, ExecutionException
+        private boolean isExpandable(String s)
         {
-            Predicate<String> isExpandable =
-                    s -> !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s));
-            Map<Boolean, List<String>> expandable =
-                    Arrays.stream(destination.split(",")).collect(partitioningBy(isExpandable));
-
-            return concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
+            return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s));
         }
     }
 
