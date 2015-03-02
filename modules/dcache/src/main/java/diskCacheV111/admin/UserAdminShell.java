@@ -1415,6 +1415,10 @@ public class UserAdminShell
         return completeRemote(buffer, cursor, candidates);
     }
 
+    /**
+     * Completion function using the currently connected remote cell as a source
+     * for completion candidates.
+     */
     private int completeRemote(String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
@@ -1434,6 +1438,10 @@ public class UserAdminShell
         }
     }
 
+    /**
+     * Completes the \c command with well-known cells and local cells of the connected domain
+     * as a source for completion candidates.
+     */
     private int completeConnectCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
@@ -1456,6 +1464,56 @@ public class UserAdminShell
         }
     }
 
+    /**
+     * Completes a cell address wildcard. Does not provide completion for cell paths.
+     */
+    private int completeCellWildcard(String buffer, int cursor, List<CharSequence> candidates)
+    {
+        if (buffer.contains(":")) {
+            return -1;
+        }
+
+        try {
+            int i = buffer.indexOf('@');
+            if (i > -1) {
+                expandCellPatterns(asList(buffer + "*")).stream()
+                        .map(s -> s.substring(s.indexOf("@") + 1))
+                        .forEach(candidates::add);
+                return i + 1;
+            } else {
+                /* Complete on well-known and cells local to current domain. */
+                candidates.addAll(expandCellPatterns(asList(buffer + "*")));
+                if (_currentPosition != null) {
+                    candidates.addAll(
+                            getCells(_currentPosition.remote.getCellDomainName(),
+                                     toGlobPredicate(buffer + "*")).get());
+                }
+                return 0;
+            }
+        } catch (CacheException | ExecutionException e) {
+            _log.info("Completion failed: {}", e.toString());
+            return -1;
+        } catch (InterruptedException e) {
+            return -1;
+        }
+    }
+
+    /**
+     * Completes the \l command.
+     */
+    private int completeListCommand(String buffer, int cursor, List<CharSequence> candidates)
+    {
+        int lastDestinationStart = buffer.lastIndexOf(' ') + 1;
+        String lastDestination = buffer.substring(lastDestinationStart);
+        int i = completeCellWildcard(lastDestination, lastDestination.length(), candidates);
+        return (i == -1) ? -1 : lastDestinationStart + i;
+    }
+
+    /**
+     * Completes the \s command. Is able to complete the last address of the destination
+     * argument. If only a single cell is provided as a destination, the command argument
+     * itself is completed too (using that cell as a source for completion candidates).
+     */
     private int completeSendCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
         Completable destination = new Completable(buffer, cursor, candidates);
@@ -1463,40 +1521,17 @@ public class UserAdminShell
         if (!destination.hasArguments()) {
             int lastDestinationStart = destination.value.lastIndexOf(',') + 1;
             String lastDestination = destination.value.substring(lastDestinationStart);
-
-            if (lastDestination.contains(":")) {
-                return -1;
-            }
-
-            try {
-                int i = lastDestination.indexOf('@');
-                if (i > -1) {
-                    expandCellPatterns(asList(lastDestination + "*")).stream()
-                            .map(s -> s.substring(s.indexOf("@") + 1))
-                            .forEach(candidates::add);
-                    return lastDestinationStart + i + 1;
-                } else {
-                    /* Complete on well-known and cells local to current domain. */
-                    candidates.addAll(expandCellPatterns(asList(lastDestination + "*")));
-                    if (!buffer.contains("@") && _currentPosition != null) {
-                        candidates.addAll(
-                                getCells(_currentPosition.remote.getCellDomainName(),
-                                         toGlobPredicate(buffer + "*")).get());
-                    }
-                    return lastDestinationStart;
-                }
-            } catch (CacheException | ExecutionException e) {
-                _log.info("Completion failed: {}", e.toString());
-                return -1;
-            } catch (InterruptedException e) {
-                return -1;
-            }
+            int i = completeCellWildcard(lastDestination, lastDestination.length(), candidates);
+            return (i == -1) ? -1 : lastDestinationStart + i;
         } else if (!destination.value.contains(",") && !isExpandable(destination.value)) {
             return destination.completeArguments(createRemoteCompleter(destination.value));
         }
         return -1;
     }
 
+    /**
+     *  Completes local shell commands.
+     */
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
     {
         Completable command = new Completable(buffer, cursor, candidates);
@@ -1514,6 +1549,8 @@ public class UserAdminShell
             break;
         case "\\c":
             return command.completeArguments(this::completeConnectCommand);
+        case "\\l":
+            return command.completeArguments(this::completeListCommand);
         case "\\s":
             return command.completeArguments(this::completeSendCommand);
         case "\\sp":
@@ -1529,6 +1566,9 @@ public class UserAdminShell
         return (buffer, cursor, candidates) -> completeRemote(cell, buffer, cursor, candidates);
     }
 
+    /**
+     * Completes remote commands using a particular cell as a source for completion candidates.
+     */
     private int completeRemote(String cell, String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
