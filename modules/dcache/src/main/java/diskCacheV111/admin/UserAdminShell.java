@@ -111,6 +111,8 @@ public class UserAdminShell
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
     public static final StringsCompleter SHELL_COMMAND_COMPLETER =
             new StringsCompleter("\\c", "\\l", "\\s", "\\sn", "\\sp", "\\q", "\\h", "\\?");
+    private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
+    private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
 
     private final CellEndpoint _cellEndpoint;
     private final CellStub _acmStub;
@@ -1322,7 +1324,7 @@ public class UserAdminShell
             /* Expand wildcards.
              */
             Map<Boolean, List<String>> expandable =
-                    Arrays.stream(destination.split(",")).collect(partitioningBy(this::isExpandable));
+                    Arrays.stream(destination.split(",")).collect(partitioningBy(UserAdminShell::isExpandable));
             Iterable<String> destinations = concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
 
             /* Check permissions.
@@ -1378,11 +1380,6 @@ public class UserAdminShell
 
             return result.toString();
         }
-
-        private boolean isExpandable(String s)
-        {
-            return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s));
-        }
     }
 
     private void checkCdPermission( String remoteName ) throws AclException {
@@ -1412,79 +1409,98 @@ public class UserAdminShell
     @Override
     public int complete(String buffer, int cursor, List<CharSequence> candidates)
     {
+        if (buffer.startsWith("\\") || _currentPosition == null) {
+            return completeShell(buffer, cursor, candidates);
+        }
+        return completeRemote(buffer, cursor, candidates);
+    }
+
+    private int completeRemote(String buffer, int cursor, List<CharSequence> candidates)
+    {
         try {
-            if (buffer.startsWith("\\") || _currentPosition == null) {
-                return completeShell(buffer, cursor, candidates);
+            if (_completer == null) {
+                Object help = executeCommand("help");
+                if (help == null) {
+                    return -1;
+                }
+                _completer = new HelpCompleter(String.valueOf(help));
             }
-            return completeRemote(buffer, cursor, candidates);
-        } catch (Exception e) {
-            _log.info("Completion failed: " + e.toString());
+            return _completer.complete(buffer, cursor, candidates);
+        } catch (CommandException | NoRouteToCellException e) {
+            _log.info("Completion failed: {}", e.toString());
+            return -1;
+        } catch (InterruptedException e) {
             return -1;
         }
     }
 
-    private int completeRemote(String buffer, int cursor,
-                               List<CharSequence> candidates) throws CommandException, InterruptedException, NoRouteToCellException
+    private int completeConnectCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
-        if (_completer == null) {
-            Object help = executeCommand("help");
-            if (help == null) {
+        try {
+            if (CharMatcher.WHITESPACE.matchesAnyOf(buffer)) {
                 return -1;
             }
-            _completer = new HelpCompleter(String.valueOf(help));
+            candidates.addAll(expandCellPatterns(Collections.singletonList(buffer + "*")));
+            if (!buffer.contains("@") && _currentPosition != null) {
+                /* Add local cells in the connected domain too. */
+                candidates.addAll(
+                        getCells(_currentPosition.remote.getCellDomainName(),
+                                 toGlobPredicate(buffer + "*")).get());
+            }
+            return 0;
+        } catch (CacheException | ExecutionException e) {
+            _log.info("Completion failed: {}", e.toString());
+            return -1;
+        } catch (InterruptedException e) {
+            return -1;
         }
-        return _completer.complete(buffer, cursor, candidates);
     }
 
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
-            throws InterruptedException, CommandException, NoRouteToCellException, CacheException, ExecutionException
     {
-        String[] command = buffer.split("\\s+", 2);
-        if (command.length == 1) {
-            return SHELL_COMMAND_COMPLETER.complete(buffer, cursor, candidates);
+        Completable command = new Completable(buffer, cursor, candidates);
+        if (!command.hasArguments()) {
+            return command.complete(SHELL_COMMAND_COMPLETER);
         }
 
-        int i = -1;
-        switch (command[0]) {
+        switch (command.value) {
         case "\\?":
-            i = SHELL_COMMAND_COMPLETER.complete(command[1], cursor, candidates);
-            break;
+            return command.completeArguments(SHELL_COMMAND_COMPLETER);
         case "\\h":
             if (_currentPosition != null) {
-                i = completeRemote(command[1], cursor, candidates);
+                return command.completeArguments(this::completeRemote);
             }
             break;
         case "\\c":
-            if (!CharMatcher.WHITESPACE.matchesAnyOf(command[1])) {
-                candidates.addAll(expandCellPatterns(Collections.singletonList(command[1] + "*")));
-                if (!command[1].contains("@") && _currentPosition != null) {
-                    /* Add local cells in the connected domain too. */
-                    candidates.addAll(
-                            getCells(_currentPosition.remote.getCellDomainName(),
-                                     toGlobPredicate(command[1] + "*")).get());
-                }
-                i = 0;
-            }
-            break;
+            return command.completeArguments(this::completeConnectCommand);
         case "\\sp":
-            i = completeShell("PoolManager", command[1], cursor, candidates);
-            break;
+            return command.completeArguments(POOL_MANAGER_COMPLETER);
         case "\\sn":
-            i = completeShell("PnfsManager", command[1], cursor, candidates);
-            break;
+            return command.completeArguments(PNFS_MANAGER_COMPLETER);
         }
-        return i == -1 ? -1 : command[0].length() + 1;
+        return -1;
     }
 
-    private int completeShell(String cell, String buffer, int cursor, List<CharSequence> candidates)
-            throws InterruptedException, CommandException, NoRouteToCellException
+    private Completer createRemoteCompleter(String cell)
     {
-        Serializable help = sendObject(cell, "help");
-        if (help == null) {
+        return (buffer, cursor, candidates) -> completeRemote(cell, buffer, cursor, candidates);
+    }
+
+    private int completeRemote(String cell, String buffer, int cursor, List<CharSequence> candidates)
+    {
+        try {
+            Serializable help = sendObject(cell, "help");
+            if (help == null) {
+                return -1;
+            }
+            HelpCompleter completer = new HelpCompleter(String.valueOf(help));
+            return completer.complete(buffer, cursor, candidates);
+        } catch (NoRouteToCellException | CommandException e) {
+            _log.info("Completion failed: {}", e.toString());
+            return -1;
+        } catch (InterruptedException e) {
             return -1;
         }
-        HelpCompleter completer = new HelpCompleter(String.valueOf(help));
-        return completer.complete(buffer, cursor, candidates);
     }
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
@@ -1552,5 +1568,57 @@ public class UserAdminShell
         CharArrayWriter ca = new CharArrayWriter();
         obj.printStackTrace(new PrintWriter(ca));
         return ca.toString();
+    }
+
+    private static boolean isExpandable(String s)
+    {
+        return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s));
+    }
+
+    /**
+     * Utility class for completing an input buffer.
+     */
+    private static class Completable
+    {
+        final String buffer;
+        final String value;
+        final String arguments;
+        final int argumentPosition;
+        final int cursor;
+        final List<CharSequence> candidates;
+
+        Completable(String buffer, int cursor, List<CharSequence> candidates)
+        {
+            int offset = CharMatcher.WHITESPACE.indexIn(buffer);
+            if (offset > -1) {
+                value = buffer.substring(0, offset);
+                int i = CharMatcher.WHITESPACE.negate().indexIn(buffer, offset);
+                offset = (i > -1) ? i : buffer.length();
+                arguments = buffer.substring(offset);
+            } else {
+                value = buffer;
+                arguments = null;
+            }
+            this.buffer = buffer;
+            this.argumentPosition = offset;
+            this.cursor = cursor;
+            this.candidates = candidates;
+        }
+
+        boolean hasArguments()
+        {
+            return arguments != null;
+        }
+
+        int complete(Completer completer)
+        {
+            return completer.complete(buffer, cursor, candidates);
+        }
+
+        int completeArguments(Completer completer)
+        {
+            int i = completer.complete(arguments, cursor - argumentPosition, candidates);
+            return (i == -1) ? -1 : i + argumentPosition;
+        }
     }
 }
