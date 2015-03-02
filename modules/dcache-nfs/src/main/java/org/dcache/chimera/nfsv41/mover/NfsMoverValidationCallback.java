@@ -48,7 +48,7 @@ public class NfsMoverValidationCallback extends AbstractMessageCallback<DoorVali
     private void kill() {
         NfsMover mover = moverRef.get();
         if (mover != null) {
-            LOGGER.info("Killing abandoned mover: {}", mover);
+            LOGGER.warn("Killing abandoned mover: {}", mover);
             mover.disable(new CacheException(CacheException.THIRD_PARTY_TRANSFER_FAILED, "Abandoned mover"));
         }
     }
