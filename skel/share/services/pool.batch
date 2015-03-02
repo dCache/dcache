@@ -21,9 +21,7 @@ check -strong pool.plugins.sweeper
 check -strong pool.mover.ftp.allow-incoming-connections
 check -strong pool.mover.ftp.mmap
 check -strong pool.mover.ftp.read-ahead
-check -strong pool.mover.xrootd.disk-threads
-check -strong pool.mover.xrootd.memory-per-connection
-check -strong pool.mover.xrootd.memory
+check -strong pool.mover.xrootd.threads
 check -strong pool.mover.xrootd.timeout.idle
 check -strong pool.mover.xrootd.timeout.idle.unit
 check -strong pool.mover.xrootd.timeout.connect
