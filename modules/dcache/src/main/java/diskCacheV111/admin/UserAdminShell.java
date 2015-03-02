@@ -89,7 +89,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Maps.*;
+import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.util.concurrent.Futures.*;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Arrays.asList;
@@ -1456,6 +1456,47 @@ public class UserAdminShell
         }
     }
 
+    private int completeSendCommand(String buffer, int cursor, List<CharSequence> candidates)
+    {
+        Completable destination = new Completable(buffer, cursor, candidates);
+
+        if (!destination.hasArguments()) {
+            int lastDestinationStart = destination.value.lastIndexOf(',') + 1;
+            String lastDestination = destination.value.substring(lastDestinationStart);
+
+            if (lastDestination.contains(":")) {
+                return -1;
+            }
+
+            try {
+                int i = lastDestination.indexOf('@');
+                if (i > -1) {
+                    expandCellPatterns(asList(lastDestination + "*")).stream()
+                            .map(s -> s.substring(s.indexOf("@") + 1))
+                            .forEach(candidates::add);
+                    return lastDestinationStart + i + 1;
+                } else {
+                    /* Complete on well-known and cells local to current domain. */
+                    candidates.addAll(expandCellPatterns(asList(lastDestination + "*")));
+                    if (!buffer.contains("@") && _currentPosition != null) {
+                        candidates.addAll(
+                                getCells(_currentPosition.remote.getCellDomainName(),
+                                         toGlobPredicate(buffer + "*")).get());
+                    }
+                    return lastDestinationStart;
+                }
+            } catch (CacheException | ExecutionException e) {
+                _log.info("Completion failed: {}", e.toString());
+                return -1;
+            } catch (InterruptedException e) {
+                return -1;
+            }
+        } else if (!destination.value.contains(",") && !isExpandable(destination.value)) {
+            return destination.completeArguments(createRemoteCompleter(destination.value));
+        }
+        return -1;
+    }
+
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
     {
         Completable command = new Completable(buffer, cursor, candidates);
@@ -1473,6 +1514,8 @@ public class UserAdminShell
             break;
         case "\\c":
             return command.completeArguments(this::completeConnectCommand);
+        case "\\s":
+            return command.completeArguments(this::completeSendCommand);
         case "\\sp":
             return command.completeArguments(POOL_MANAGER_COMPLETER);
         case "\\sn":
