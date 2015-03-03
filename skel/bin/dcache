@@ -1,4 +1,4 @@
-#!/bin/sh
+
 #
 # chkconfig: 2345 92 8
 # description: dCache init script
@@ -54,6 +54,7 @@ usage()
     echo "   pool ls"
     echo "   pool reconstruct <directory> <target dir>"
     echo "   pool yaml <name>"
+    echo "   property <property-name> [<domain-name> [<cell-name>]]"
     echo "   restart [<domain>]..."
     echo "   services"
     echo "   start [<domain>]..."
@@ -1068,11 +1069,9 @@ case "$1" in
         done
         ;;
 
-    list-domains)
+    property)
         shift
-        . ${lib}/utils.sh
-        . ${lib}/services.sh
-        printDomains "$@"
+        getProperty "$@"
         ;;
 
     *)

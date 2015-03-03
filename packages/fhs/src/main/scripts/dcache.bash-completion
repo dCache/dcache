@@ -9,7 +9,7 @@ _dcache()
 
   case ${COMP_CWORD} in
     1)
-        COMPREPLY=( $( compgen -W 'alarm billing check-config condrestart database dump kpwd ports pool restart services start status stop version' -- "$cur" ) )
+        COMPREPLY=( $( compgen -W 'alarm billing check-config condrestart database dump kpwd ports pool property restart services start status stop version' -- "$cur" ) )
         return 0
         ;;
     2)
@@ -30,12 +30,17 @@ _dcache()
             COMPREPLY=( $( compgen -W 'convert create reconstruct ls yaml' -- "$cur" ) )
               return 0
               ;;
+          property)
+            defaultsdir="$(dcache property dcache.paths.share)/defaults"
+            COMPREPLY=( $( compgen -W "$(grep -P '^(\(((one-of\?)|(immutable)|(not-for-services))[^)]+\))? {0,2}[a-zA-Z][a-zA-Z\._-]*(?= *=)' -o -h ${defaultsdir}/*|grep -e '[a-zA-Z][a-zA-Z\._-]*$' -o)" -- "$cur" ) )
+            return 0
+            ;;
           billing)
               COMPREPLY=( $( compgen -o nospace -W '--format= --since= --until= -f=' -- "$cur" ) )
               return 0
               ;;
           start|stop|restart|condrestart)
-              domains=$(dcache list-domains)
+              domains=$(dcache property dcache.domains)
               COMPREPLY=( $( compgen -W "${domains}" -- "$cur" ) )
               return 0
               ;;
@@ -47,8 +52,24 @@ _dcache()
               COMPREPLY=( $( compgen -o nospace -W '--format= --since= --until= -f=' -- "$cur" ) )
               return 0
               ;;
+          property)
+              configdir=$(dcache property dcache.paths.config)
+              [ -f "${configdir}/cache" ] && . "${configdir}/cache"
+              case ${COMP_CWORD} in
+                3)
+                  domains=$(dcache property dcache.domains)
+                  COMPREPLY=( $( compgen -W "${domains}" -- "$cur" ) )
+                  return 0
+                  ;;
+                4)
+                  cells=$(dcache property dcache.domain.cells "$3")
+                  COMPREPLY=( $( compgen -W "${cells}" -- "$cur") )
+                  return 0
+                  ;;
+              esac
+              ;;
           start|stop|restart|condrestart)
-              domains=$(dcache list-domains)
+              domains=$(dcache property dcache.domains)
               COMPREPLY=( $( compgen -W "${domains}" -- "$cur" ) )
               return 0
               ;;
