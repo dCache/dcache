@@ -94,6 +94,7 @@ import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.util.concurrent.Futures.*;
@@ -116,7 +117,7 @@ public class UserAdminShell
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
     public static final StringsCompleter SHELL_COMMAND_COMPLETER =
             new StringsCompleter("\\c", "\\exception", "\\l", "\\s", "\\sl", "\\sn",
-                                 "\\sp", "\\q", "\\h", "\\?");
+                                 "\\sp", "\\timeout", "\\q", "\\h", "\\?");
     private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
     private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
 
@@ -332,18 +333,23 @@ public class UserAdminShell
         }
     }
 
-    public static final String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
-    public String ac_set_timeout_$_0_1( Args args ){
-        if( args.argc() > 0 ){
-           long timeout = Integer.parseInt(args.argv(0)) * 1000L ;
-           if( timeout < 1000L ) {
-               throw new
-                       IllegalArgumentException("<timeout> >= 1");
-           }
-           _timeout = timeout;
-        }
-        return "Timeout = "+(_timeout/1000L) ;
+    @Command(name = "\\timeout", hint = "sets the command timeout",
+            description = "Sets the timeout after which command execution is cancelled. " +
+                          "Commands can always be cancelled interactively by pressing Ctrl-C.")
+    class TimeoutCommand implements Callable<String>
+    {
+        @Argument(required = false)
+        Integer seconds;
 
+        @Override
+        public String call() throws Exception
+        {
+            if (seconds != null) {
+                checkArgument(seconds >= 1, "Timeout must be positive.");
+                _timeout = TimeUnit.SECONDS.toMillis(seconds);
+            }
+            return "Timeout is " + (_timeout / 1000) + " seconds.";
+        }
     }
 
     public static final String hh_getpoolbylink = "<linkName> [-size=<filesize>] [-service=<serviceCellName]" ;
