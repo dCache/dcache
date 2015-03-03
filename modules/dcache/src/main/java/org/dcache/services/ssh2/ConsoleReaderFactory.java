@@ -9,10 +9,10 @@ import java.io.File;
 import diskCacheV111.admin.UserAdminShell;
 
 import dmg.cells.nucleus.CellEndpoint;
-
 import dmg.cells.nucleus.CellMessageSender;
 
 import org.dcache.cells.CellStub;
+import org.dcache.util.list.ListDirectoryHandler;
 
 public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
 {
@@ -23,6 +23,7 @@ public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
     private CellStub _poolManager;
     private CellStub _acm;
     private String _prompt;
+    private ListDirectoryHandler _list;
 
     @Required
     public void setHistoryFile(File historyFile)
@@ -60,6 +61,12 @@ public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
         _prompt = prompt;
     }
 
+    @Required
+    public void setListHandler(ListDirectoryHandler list)
+    {
+        _list = list;
+    }
+
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
     {
@@ -79,6 +86,7 @@ public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
         shell.setPnfsManager(_pnfsManager);
         shell.setPoolManager(_poolManager);
         shell.setAcm(_acm);
+        shell.setListHandler(_list);
         return shell;
     }
 }

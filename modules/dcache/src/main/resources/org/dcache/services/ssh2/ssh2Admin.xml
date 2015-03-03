@@ -54,6 +54,15 @@
         <property name="poolManager" ref="poolmanager"/>
         <property name="acm" ref="acm"/>
         <property name="prompt" value="${admin.prompt}"/>
+        <property name="listHandler">
+            <bean class="org.dcache.util.list.ListDirectoryHandler">
+                <constructor-arg>
+                    <bean class="diskCacheV111.util.PnfsHandler">
+                        <constructor-arg ref="pnfsmanager"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </property>
     </bean>
 
     <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">

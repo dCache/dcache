@@ -3,6 +3,8 @@ package diskCacheV111.admin ;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Range;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -17,9 +19,7 @@ import java.io.CharArrayWriter;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,6 +38,7 @@ import java.util.function.Predicate;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.SpreadAndWait;
 import diskCacheV111.util.TimeoutCacheException;
@@ -79,12 +80,17 @@ import dmg.util.command.CommandLine;
 import dmg.util.command.HelpFormat;
 import dmg.util.command.Option;
 
+import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Glob;
 import org.dcache.util.Version;
+import org.dcache.util.list.DirectoryEntry;
+import org.dcache.util.list.DirectoryStream;
+import org.dcache.util.list.ListDirectoryHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
@@ -109,7 +115,7 @@ public class UserAdminShell
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
     public static final StringsCompleter SHELL_COMMAND_COMPLETER =
-            new StringsCompleter("\\c", "\\l", "\\s", "\\sn", "\\sp", "\\q", "\\h", "\\?");
+            new StringsCompleter("\\c", "\\l", "\\s", "\\sl", "\\sn", "\\sp", "\\q", "\\h", "\\?");
     private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
     private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
 
@@ -118,6 +124,7 @@ public class UserAdminShell
     private CellStub _poolManager;
     private CellStub _pnfsManager;
     private CellStub _cellStub;
+    private ListDirectoryHandler _list;
     private String      _user;
     private String      _authUser;
     private long        _timeout  = TimeUnit.MINUTES.toMillis(5);
@@ -167,6 +174,11 @@ public class UserAdminShell
     public void setPnfsManager(CellStub stub)
     {
         _pnfsManager = stub;
+    }
+
+    public void setListHandler(ListDirectoryHandler list)
+    {
+        _list = list;
     }
 
     @Override
@@ -1259,12 +1271,12 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\sn", hint = "execute pnfsmanager command", allowAnyOption = true,
+    @Command(name = "\\sn", hint = "send pnfsmanager command", allowAnyOption = true,
             acl = { "cell.*.execute", "cell.PnfsManager.execute" },
             description = "Sends COMMAND to the pnfsmanager service. Use \\sn help for a list of supported commands.")
     class NameSpaceCommand implements Callable<Serializable>
     {
-        @Argument
+        @Argument(usage = "A pnfsmanager command.")
         String[] command;
 
         @CommandLine
@@ -1277,12 +1289,12 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\sp", hint = "execute poolmanager command", allowAnyOption = true,
+    @Command(name = "\\sp", hint = "send poolmanager command", allowAnyOption = true,
             acl = { "cell.*.execute", "cell.PoolManager.execute" },
             description = "Sends COMMAND to the poolmanager service. Use \\sp help for a list of supported commands.")
     class PoolManagerCommand implements Callable<Serializable>
     {
-        @Argument
+        @Argument(usage = "A poolmanager command.")
         String[] command;
 
         @CommandLine
@@ -1295,7 +1307,7 @@ public class UserAdminShell
         }
     }
 
-    @Command(name = "\\s", hint = "execute command", allowAnyOption = true,
+    @Command(name = "\\s", hint = "send command", allowAnyOption = true,
             description = "Sends COMMAND to one or more cells.")
     class SendCommand implements Callable<Serializable>
     {
@@ -1303,7 +1315,7 @@ public class UserAdminShell
                 usage = "List of cell addresses. Wildcards are expanded. An empty CELL or DOMAIN string matches any name.")
         String destination;
 
-        @Argument(index = 1)
+        @Argument(index = 1, usage = "A cell command")
         String[] command;
 
         @CommandLine
@@ -1330,58 +1342,34 @@ public class UserAdminShell
                     Arrays.stream(destination.split(",")).collect(partitioningBy(UserAdminShell::isExpandable));
             Iterable<String> destinations = concat(expandable.get(false), expandCellPatterns(expandable.get(true)));
 
-            /* Check permissions.
-             */
-            try {
-                checkPermission("cell.*.execute");
-            } catch (AclException e) {
-                for (String cell : destinations) {
-                    checkPermission("cell." + cell + ".execute");
-                }
-            }
+            return sendToMany(destinations, command);
+        }
+    }
 
-            /* Submit commands. */
-            List<Map.Entry<String,ListenableFuture<Serializable>>> futures = new ArrayList<>();
-            for (String cell : destinations) {
-                futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), command, Serializable.class, _timeout)));
-            }
+    @Command(name = "\\sl", hint = "send to locations", allowAnyOption = true,
+            description = "Sends COMMAND to all pools hosting a copy of the given file. If the " +
+                          "string $1 occurs in the command, the string is replaced by the PNFS ID " +
+                          "of the given file.")
+    class SendLocationsCommand implements Callable<String>
+    {
+        @Argument(index = 0, valueSpec = "PNFSID|PATH",
+                usage = "The command is submitted to all pools hosting a copy of this file.")
+        String file;
 
-            /* Collect results. */
-            StringBuilder result = new StringBuilder();
-            for (Map.Entry<String, ListenableFuture<Serializable>> entry : futures) {
-                result.append(Ansi.ansi().bold().a(entry.getKey()).boldOff()).append(":");
-                try {
-                    String reply = Objects.toString(entry.getValue().get(), "");
-                    if (reply.isEmpty()) {
-                        result.append(Ansi.ansi().fg(GREEN).a(" OK").reset()).append("\n");
-                    } else {
-                        result.append("\n");
-                        for (String s : reply.split("\n")) {
-                            result.append("    ").append(s).append("\n");
-                        }
-                    }
-                } catch (ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof NoRouteToCellException) {
-                        result.append(Ansi.ansi().fg(RED).a(" Cell is unreachable.").reset()).append("\n");
-                    } else {
-                        result.append(" ").append(Ansi.ansi().fg(RED).a(cause.getMessage()).reset()).append("\n");
-                    }
-                } catch (InterruptedException e) {
-                    result.append(" ^C\n");
+        @Argument(index = 1, usage = "A pool command. $1 is substituted for the PNFS ID.")
+        String[] command;
 
-                    /* Cancel all uncompleted tasks. Doesn't actually cancel any requests, but will cause
-                     * the remaining uncompleted futures to throw a CancellationException.
-                     */
-                    for (Map.Entry<String, ListenableFuture<Serializable>> entry2 : futures) {
-                        entry2.getValue().cancel(true);
-                    }
-                } catch (CancellationException e) {
-                    result.append(" ^C\n");
-                }
-            }
+        @CommandLine
+        Args args;
 
-            return result.toString();
+        @Override
+        public String call() throws Exception
+        {
+            FileAttributes attributes = getFileAttributes(file);
+            args.shift();
+            AuthorizedString command =
+                    new AuthorizedString(_user, args.toString().replace("$1", attributes.getPnfsId().toString()));
+            return sendToMany(attributes.getLocations(), command);
         }
     }
 
@@ -1532,6 +1520,77 @@ public class UserAdminShell
         return -1;
     }
 
+    private int completePath(String buffer, int cursor, List<CharSequence> candidates)
+    {
+        if (buffer.isEmpty()) {
+            candidates.add("/");
+            return 0;
+        } else if (buffer.startsWith("/")) {
+            int endIndex = buffer.lastIndexOf('/');
+            String dir = buffer.length() == 1 ? "/" : buffer.substring(0, endIndex);
+            String file = buffer.substring(endIndex + 1);
+
+            try (DirectoryStream stream = list(dir, file + "*")) {
+                for (DirectoryEntry entry : stream) {
+                    if (entry.getFileAttributes().getFileType() == FileType.DIR) {
+                        candidates.add(entry.getName() + "/");
+                    } else {
+                        candidates.add(entry.getName());
+                    }
+                }
+            } catch (InterruptedException e) {
+                return -1;
+            } catch (CacheException e) {
+                _log.info("Completion failed: {}", e.toString());
+                return -1;
+            }
+            return endIndex + 1;
+        }
+        return -1;
+    }
+
+    private int completeSendLocationsCommand(String buffer, int cursor, List<CharSequence> candidates)
+    {
+        Completable path = new Completable(buffer, cursor, candidates);
+
+        if (!path.hasArguments()) {
+            return path.complete(this::completePath);
+        } else {
+            try {
+                Collection<String> locations = getFileAttributes(path.value).getLocations();
+                if (!locations.isEmpty()) {
+                    /* Assume all pools have the same commands. */
+                    return path.completeArguments(createRemoteCompleter(Iterables.get(locations, 0)));
+                }
+            } catch (CacheException e) {
+                _log.info("Completion failed: {}", e.toString());
+                return -1;
+            } catch (InterruptedException e) {
+                return -1;
+            }
+        }
+        return -1;
+    }
+
+    private DirectoryStream list(String dir, String pattern) throws InterruptedException, CacheException
+    {
+        return _list.list(Subjects.ROOT, new FsPath(dir), new Glob(pattern), Range.<Integer>all(), EnumSet.of(
+                FileAttribute.TYPE));
+    }
+
+    private FileAttributes getFileAttributes(String file) throws CacheException, InterruptedException
+    {
+        /* Lookup file in name space */
+        PnfsGetFileAttributes request;
+        EnumSet<FileAttribute> attributeSet = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);
+        if (PnfsId.isValid(file)) {
+            request = new PnfsGetFileAttributes(new PnfsId(file), attributeSet);
+        } else {
+            request = new PnfsGetFileAttributes(file, attributeSet);
+        }
+        return _pnfsManager.sendAndWait(request).getFileAttributes();
+    }
+
     /**
      *  Completes local shell commands.
      */
@@ -1556,6 +1615,8 @@ public class UserAdminShell
             return command.completeArguments(this::completeListCommand);
         case "\\s":
             return command.completeArguments(this::completeSendCommand);
+        case "\\sl":
+            return command.completeArguments(this::completeSendLocationsCommand);
         case "\\sp":
             return command.completeArguments(POOL_MANAGER_COMPLETER);
         case "\\sn":
@@ -1647,6 +1708,61 @@ public class UserAdminShell
            Throwables.propagateIfInstanceOf(cause, CommandException.class);
            throw new CommandThrowableException(cause.toString(), cause);
        }
+    }
+
+    private String sendToMany(Iterable<String> destinations, Serializable object) throws AclException
+    {
+        /* Check permissions */
+        try {
+            checkPermission("cell.*.execute");
+        } catch (AclException e) {
+            for (String cell : destinations) {
+                checkPermission("cell." + cell + ".execute");
+            }
+        }
+
+        /* Submit */
+        List<Map.Entry<String,ListenableFuture<Serializable>>> futures = new ArrayList<>();
+        for (String cell : destinations) {
+            futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), object, Serializable.class, _timeout)));
+        }
+
+        /* Collect results */
+        StringBuilder result = new StringBuilder();
+        for (Map.Entry<String, ListenableFuture<Serializable>> entry : futures) {
+            result.append(Ansi.ansi().bold().a(entry.getKey()).boldOff()).append(":");
+            try {
+                String reply = Objects.toString(entry.getValue().get(), "");
+                if (reply.isEmpty()) {
+                    result.append(Ansi.ansi().fg(GREEN).a(" OK").reset()).append("\n");
+                } else {
+                    result.append("\n");
+                    for (String s : reply.split("\n")) {
+                        result.append("    ").append(s).append("\n");
+                    }
+                }
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof NoRouteToCellException) {
+                    result.append(Ansi.ansi().fg(RED).a(" Cell is unreachable.").reset()).append("\n");
+                } else {
+                    result.append(" ").append(Ansi.ansi().fg(RED).a(cause.getMessage()).reset()).append("\n");
+                }
+            } catch (InterruptedException e) {
+                result.append(" ^C\n");
+
+                /* Cancel all uncompleted tasks. Doesn't actually cancel any requests, but will cause
+                 * the remaining uncompleted futures to throw a CancellationException.
+                 */
+                for (Map.Entry<String, ListenableFuture<Serializable>> entry2 : futures) {
+                    entry2.getValue().cancel(true);
+                }
+            } catch (CancellationException e) {
+                result.append(" ^C\n");
+            }
+        }
+
+        return result.toString();
     }
 
     private String getStackTrace(Throwable obj)
