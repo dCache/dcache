@@ -1,7 +1,5 @@
 package diskCacheV111.util;
 
-import org.apache.commons.codec.binary.Base64;
-
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -9,6 +7,7 @@ import java.security.PublicKey;
 import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.Base64;
 
 /**
  * {@link AuthorizedKeyParser} creates a {@link PublicKey} representation of a
@@ -42,7 +41,7 @@ public class AuthorizedKeyParser {
         // both ssh-rsa and ssh-dss begin with "AAAA" due to the length bytes
         for (String part : keyLine.split(" ")) {
             if (part.startsWith("AAAA")) {
-                bytes = Base64.decodeBase64(part);
+                bytes = Base64.getDecoder().decode(part);
                 break;
             }
         }

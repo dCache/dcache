@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.AuthorizedKeyParser;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
+import java.util.function.Function;
 import org.dcache.auth.*;
 
 import static java.util.stream.Collectors.toList;
@@ -241,7 +242,15 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
 
     private class AdminPublickeyAuthenticator implements PublickeyAuthenticator {
 
-        private final Logger _logger = LoggerFactory.getLogger(AdminPublickeyAuthenticator.class);
+        private PublicKey toPublicKey(String s) {
+            try {
+                AuthorizedKeyParser decoder = new AuthorizedKeyParser();
+                return decoder.decodePublicKey(s);
+            } catch (InvalidKeySpecException | NoSuchAlgorithmException | IllegalArgumentException e) {
+                _log.warn("can't decode public key from file: {} ", e.getMessage());
+            }
+            return null;
+        }
 
         @Override
         public boolean authenticate(String userName, PublicKey key,
@@ -249,41 +258,21 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
             _log.debug("Authentication username set to: {} publicKey: {}",
                     userName, key);
             try {
-                AuthorizedKeyParser decoder = new AuthorizedKeyParser();
-                List<String> keyLines;
                 try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
-                    keyLines = fileStream
+                    return fileStream
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
-                        .collect(toList());
-                }
-
-                for (String keyLine : keyLines) {
-                    PublicKey decodedKey = decoder.decodePublicKey(keyLine);
-                    if (decodedKey.equals(key)) {
-                        _log.debug("Key found! Decoded Key:"
-                                + " {}, SshReceivedKey: {}", decodedKey, key);
-                        return true;
-                    }
+                        .map(this::toPublicKey)
+                        .filter(k -> k != null)
+                        .filter(k -> key.equals(k))
+                        .findFirst()
+                        .isPresent();
                 }
             } catch (FileNotFoundException e) {
                 _log.debug("File not found: {}", _authorizedKeyList);
-                return false;
             } catch (IOException e) {
                 _log.error("Failed to read {}: {}", _authorizedKeyList,
                         e.getMessage());
-                return false;
-            } catch (IllegalArgumentException e) {
-                _log.warn("One of the keys in {} is of an unknown type: {}",
-                        _authorizedKeyList, e.getMessage());
-            } catch (InvalidKeySpecException e) {
-                _log.warn("One of the keys in {} has an unknown key "
-                        + "specification.", _authorizedKeyList);
-            } catch (NoSuchAlgorithmException e) {
-                _log.warn("The cryptographic algorithm of one of the "
-                        + "keys in {} is not known.", _authorizedKeyList);
             }
-            _log.debug("User {} failed authenticate since supplied {} not in {}",
-                    userName, key.getAlgorithm(), _authorizedKeyList);
             return false;
         }
     }
