@@ -115,7 +115,8 @@ public class UserAdminShell
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
     public static final StringsCompleter SHELL_COMMAND_COMPLETER =
-            new StringsCompleter("\\c", "\\l", "\\s", "\\sl", "\\sn", "\\sp", "\\q", "\\h", "\\?");
+            new StringsCompleter("\\c", "\\exception", "\\l", "\\s", "\\sl", "\\sn",
+                                 "\\sp", "\\q", "\\h", "\\?");
     private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
     private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
 
@@ -313,20 +314,24 @@ public class UserAdminShell
                 ( _currentPosition == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
                 getUser()+" > " ;
     }
-    public static final String hh_set_exception = "message|detail" ;
-    public String ac_set_exception_$_0_1( Args args ) throws CommandException {
-       if( args.argc() > 0 ){
-          if( args.argv(0).equals( "message" ) ){
-             _fullException = false ;
-          }else if ( args.argv(0).equals("detail") ){
-             _fullException = true ;
-          }else {
-              throw new
-                      CommandSyntaxException("set exception message|detail");
-          }
-       }
-       return "Exception = " +( _fullException ? "detail" : "message" ) ;
+
+    @Command(name = "\\exception", hint = "controls display of stack traces",
+            description = "When enabled, full Java stack traces are displayed on errors.")
+    class SetExceptionCommand implements Callable<String>
+    {
+        @Argument(required = false)
+        Boolean trace;
+
+        @Override
+        public String call() throws Exception
+        {
+            if (trace != null) {
+                _fullException = trace;
+            }
+            return "Stack traces on errors are " + (_fullException ? "enabled" : "disabled") + ".";
+        }
     }
+
     public static final String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
     public String ac_set_timeout_$_0_1( Args args ){
         if( args.argc() > 0 ){

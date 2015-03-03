@@ -22,6 +22,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 import diskCacheV111.admin.UserAdminShell;
+import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
@@ -167,8 +168,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
                     }
                     result = _userAdminShell.executeCommand(str);
                 } catch (IllegalArgumentException e) {
-                    result = e.getMessage()
-                             + " (Please check the spelling of your command or your config file(s)!)";
+                    result = e.toString();
                 } catch (SerializationException e) {
                     result =
                             "There is a bug here, please report to support@dcache.org";
@@ -184,9 +184,11 @@ public class ConsoleReaderCommand implements Command, Runnable {
                              "); the service log file contains additional information. Please " +
                              "contact support@dcache.org.";
                 } catch (CommandThrowableException e) {
-                    result = e.getTargetException().getMessage();
-                    if (result == null) {
-                        result = e.getTargetException().getClass().getSimpleName() + ": (null)";
+                    Throwable cause = e.getTargetException();
+                    if (cause instanceof CacheException) {
+                        result = cause.getMessage();
+                    } else {
+                        result = cause.toString();
                     }
                 } catch (CommandException e) {
                     result =
