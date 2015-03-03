@@ -93,7 +93,6 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.util.concurrent.Futures.*;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.util.Glob.parseGlobToPattern;
@@ -114,11 +113,11 @@ public class UserAdminShell
     private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
     private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
 
-    private final CellEndpoint _cellEndpoint;
-    private final CellStub _acmStub;
-    private final CellStub _poolManager;
-    private final CellStub _pnfsManager;
-    private final CellStub _cellStub;
+    private CellEndpoint _cellEndpoint;
+    private CellStub _acmStub;
+    private CellStub _poolManager;
+    private CellStub _pnfsManager;
+    private CellStub _cellStub;
     private String      _user;
     private String      _authUser;
     private long        _timeout  = TimeUnit.MINUTES.toMillis(5);
@@ -139,29 +138,35 @@ public class UserAdminShell
         }
     }
 
-    public UserAdminShell(String user, CellEndpoint cellEndpoint, Args args) {
-       _cellEndpoint = cellEndpoint;
-       _user     = user ;
-       _authUser = user ;
+    public UserAdminShell(String prompt)
+    {
+        _instance = prompt;
+    }
 
-        _acmStub = new CellStub(cellEndpoint, new CellPath("acm"));
-        _poolManager = new CellStub(cellEndpoint, new CellPath("PoolManager"));
-        _pnfsManager = new CellStub(cellEndpoint, new CellPath("PnfsManager"), 30000, MILLISECONDS);
-        _cellStub = new CellStub(cellEndpoint);
+    public void setUser(String user)
+    {
+        _user = _authUser = user;
+    }
 
-       String prompt = args.getOpt("dCacheInstance");
-       if( prompt == null || !prompt.equals("hide") ){
-           if( prompt == null || prompt.length() == 0 ){
-               try{
-                   prompt = InetAddress.getLocalHost().getHostName() ;
-               }catch(UnknownHostException ee){
-                   prompt = null;
-               }
-           }
-           _instance = prompt;
-       }else{
-           _instance = null;
-       }
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _cellEndpoint = endpoint;
+        _cellStub = new CellStub(_cellEndpoint);
+    }
+
+    public void setAcm(CellStub stub)
+    {
+        _acmStub = stub;
+    }
+
+    public void setPoolManager(CellStub stub)
+    {
+        _poolManager = stub;
+    }
+
+    public void setPnfsManager(CellStub stub)
+    {
+        _pnfsManager = stub;
     }
 
     @Override
@@ -205,7 +210,7 @@ public class UserAdminShell
          request[4] = aclName ;
          Object[] r;
          try{
-            r = _acmStub.sendAndWait(request, Object[].class, _timeout);
+            r = _acmStub.sendAndWait(request, Object[].class);
          } catch (TimeoutCacheException e) {
              throw new AclException(e.getMessage());
          } catch (CacheException | InterruptedException e) {
@@ -852,9 +857,7 @@ public class UserAdminShell
                 new Pool2PoolTransferMsg( source , dest , fileAttributes ) ;
 
 
-            _cellEndpoint.sendMessage(
-                    new CellMessage(new CellPath(dest), p2p)
-            ) ;
+            _cellStub.notify(new CellPath(dest), p2p);
 
            return "P2p of "+pnfsId+" initiated from "+source+" to "+dest ;
        }else{
@@ -1340,7 +1343,7 @@ public class UserAdminShell
             /* Submit commands. */
             List<Map.Entry<String,ListenableFuture<Serializable>>> futures = new ArrayList<>();
             for (String cell : destinations) {
-                futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), command, Serializable.class)));
+                futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), command, Serializable.class, _timeout)));
             }
 
             /* Collect results. */
@@ -1633,7 +1636,7 @@ public class UserAdminShell
             throws NoRouteToCellException, InterruptedException, CommandException
     {
        try {
-           return _cellStub.send(cellPath, object, Serializable.class).get();
+           return _cellStub.send(cellPath, object, Serializable.class, _timeout).get();
        } catch (ExecutionException e) {
            Throwable cause = e.getCause();
            if (_fullException) {

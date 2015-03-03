@@ -64,16 +64,15 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private ConsoleReader _console;
     private MemoryHistory _history;
     private boolean _useColors;
-    private final CellEndpoint _endpoint;
 
     private PipedOutputStream _pipedOut;
     private PipedInputStream _pipedIn;
     private Thread _pipeThread;
 
-    public ConsoleReaderCommand(CellEndpoint endpoint,
-            File historyFile, boolean useColor) {
+    public ConsoleReaderCommand(File historyFile, boolean useColor, UserAdminShell shell)
+    {
         _useColors = useColor;
-        _endpoint = endpoint;
+        _userAdminShell = shell;
         if (historyFile != null && historyFile.isFile()) {
             try {
                 _history  = new FileHistory(historyFile);
@@ -112,10 +111,9 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void start(Environment env) throws IOException {
-        String user = env.getEnv().get(Environment.ENV_USER);
         _pipedOut = new PipedOutputStream();
         _pipedIn = new PipedInputStream(_pipedOut);
-        _userAdminShell = new UserAdminShell(user, _endpoint, _endpoint.getArgs());
+        _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
         _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env));
         _useColors &= _console.getTerminal().isAnsiSupported();
         _adminShellThread = new Thread(this);

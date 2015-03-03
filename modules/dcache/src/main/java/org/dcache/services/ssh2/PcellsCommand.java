@@ -33,10 +33,12 @@ public class PcellsCommand implements Command, Runnable
     private Thread _adminShellThread;
     private ExecutorService _executor = Executors.newCachedThreadPool();
     private volatile boolean _done = false;
+    private String _prompt;
 
-    public PcellsCommand(CellEndpoint endpoint)
+    public PcellsCommand(CellEndpoint endpoint, String prompt)
     {
         _endpoint = endpoint;
+        _prompt = prompt;
     }
 
     @Override
@@ -67,7 +69,7 @@ public class PcellsCommand implements Command, Runnable
     public void start(Environment env) throws IOException
     {
         String user = env.getEnv().get(Environment.ENV_USER);
-        _shell = new LegacyAdminShell(user, _endpoint, _endpoint.getArgs());
+        _shell = new LegacyAdminShell(user, _endpoint, _prompt);
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
     }

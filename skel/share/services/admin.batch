@@ -5,6 +5,17 @@ check -strong admin.net.port
 check -strong admin.paths.dsa-host-key.private
 check -strong admin.paths.dsa-host-key.public
 check -strong admin.service.gplazma
+check -strong admin.service.gplazma.timeout
+check -strong admin.service.gplazma.timeout.unit
+check -strong admin.service.poolmanager
+check -strong admin.service.poolmanager.timeout
+check -strong admin.service.poolmanager.timeout.unit
+check -strong admin.service.pnfsmanager
+check -strong admin.service.pnfsmanager.timeout
+check -strong admin.service.pnfsmanager.timeout.unit
+check -strong admin.service.acm
+check -strong admin.service.acm.timeout
+check -strong admin.service.acm.timeout.unit
 check -strong admin.authz.gid
 check admin.paths.authorized-keys
 

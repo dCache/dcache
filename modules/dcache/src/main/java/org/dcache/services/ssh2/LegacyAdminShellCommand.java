@@ -32,6 +32,7 @@ import dmg.util.CommandThrowableException;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.commons.util.Strings;
+import org.dcache.util.Args;
 
 import static org.fusesource.jansi.Ansi.Color.CYAN;
 import static org.fusesource.jansi.Ansi.Color.RED;
@@ -53,11 +54,13 @@ public class LegacyAdminShellCommand implements Command, Runnable
     private MemoryHistory _history;
     private boolean _useColors;
     private final CellEndpoint _endpoint;
+    private String _prompt;
 
-    public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, boolean useColor)
+    public LegacyAdminShellCommand(CellEndpoint endpoint, File historyFile, String prompt, boolean useColor)
     {
         _useColors = useColor;
         _endpoint = endpoint;
+        _prompt = prompt;
         if (historyFile != null && (!historyFile.exists() || historyFile.isFile())) {
             try {
                 _history  = new FileHistory(historyFile);
@@ -98,7 +101,7 @@ public class LegacyAdminShellCommand implements Command, Runnable
     @Override
     public void start(Environment env) throws IOException {
         String user = env.getEnv().get(Environment.ENV_USER);
-        _shell = new LegacyAdminShell(user, _endpoint, _endpoint.getArgs());
+        _shell = new LegacyAdminShell(user, _endpoint, _prompt);
         _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env));
         _adminShellThread = new Thread(this);
         _adminShellThread.start();

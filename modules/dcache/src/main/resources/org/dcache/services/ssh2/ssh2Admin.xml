@@ -7,56 +7,82 @@
            http://www.springframework.org/schema/context
            http://www.springframework.org/schema/context/spring-context.xsd ">
 
-  <context:annotation-config/>
-  <context:property-placeholder/>
+    <context:annotation-config/>
+    <context:property-placeholder/>
 
-  <bean id="login-stub" class="org.dcache.cells.CellStub">
-    <description>Login serviceunication stub</description>
-    <property name="destination" value="${admin.service.gplazma}"/>
-    <property name="timeout"     value="${admin.service.gplazma.timeout}"/>
-    <property name="timeoutUnit" value="${admin.service.gplazma.timeout.unit}"/>
-  </bean>
+    <bean id="gplazma" class="org.dcache.cells.CellStub">
+        <description>gPlazma communication stub</description>
+        <property name="destination" value="${admin.service.gplazma}"/>
+        <property name="timeout"     value="${admin.service.gplazma.timeout}"/>
+        <property name="timeoutUnit" value="${admin.service.gplazma.timeout.unit}"/>
+    </bean>
 
-  <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
-    <description>Processes login requests</description>
-    <property name="loginStrategies">
-      <list>
-        <bean class="org.dcache.services.login.RemoteLoginStrategy">
-          <property name="cellStub" ref="login-stub"/>
-        </bean>
-      </list>
-    </property>
-    <property name="anonymousAccess" value="NONE"/>
-  </bean>
+    <bean id="poolmanager" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${admin.service.poolmanager}"/>
+        <property name="timeout" value="${admin.service.poolmanager.timeout}"/>
+        <property name="timeoutUnit" value="${admin.service.poolmanager.timeout.unit}"/>
+    </bean>
 
-  <bean id="shell-factory" class="org.dcache.services.ssh2.ConsoleReaderFactory">
-    <property name="historyFile" value="${admin.paths.history}"/>
-    <property name="useColor" value="${admin.enable.colors}"/>
-  </bean>
+    <bean id="pnfsmanager" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${admin.service.pnfsmanager}"/>
+        <property name="timeout" value="${admin.service.pnfsmanager.timeout}"/>
+        <property name="timeoutUnit" value="${admin.service.pnfsmanager.timeout.unit}"/>
+    </bean>
 
-  <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">
-    <property name="historyFile" value="${admin.paths.history}"/>
-    <property name="useColor" value="${admin.enable.colors}"/>
-  </bean>
+    <bean id="acm" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${admin.service.acm}"/>
+        <property name="timeout" value="${admin.service.acm.timeout}"/>
+        <property name="timeoutUnit" value="${admin.service.acm.timeout.unit}"/>
+    </bean>
 
-  <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory"/>
+    <bean id="login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+        <description>Processes login requests</description>
+        <property name="loginStrategies">
+            <list>
+                <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                    <property name="cellStub" ref="gplazma"/>
+                </bean>
+            </list>
+        </property>
+        <property name="anonymousAccess" value="NONE"/>
+    </bean>
 
-  <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
-    <property name="host" value="#{ '${admin.net.listen}'.equals('any') ? null : '${admin.net.listen}' }"/>
-    <property name="port"               value="${admin.net.port}"/>
-    <property name="hostKeyPrivate"     value="${admin.paths.dsa-host-key.private}"/>
-    <property name="hostKeyPublic"      value="${admin.paths.dsa-host-key.public}"/>
-    <property name="authorizedKeyList"  value="${admin.paths.authorized-keys}"/>
-    <property name="loginStrategy"      ref="login-strategy"/>
-    <property name="adminGroupId"       value="${admin.authz.gid}"/>
-    <property name="shellFactory"       ref="shell-factory"/>
-    <property name="subsystemFactories">
-      <list>
-        <ref bean="pcells-factory"/>
-        <ref bean="legacy-factory"/>
-      </list>
-    </property>
-    <property name="idleTimeout" value="#{T(org.dcache.commons.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />
-    <property name="idleTimeoutUnit" value="${admin.ssh.idle-timeout.unit}" />
-  </bean>
+    <bean id="shell-factory" class="org.dcache.services.ssh2.ConsoleReaderFactory">
+        <property name="historyFile" value="${admin.paths.history}"/>
+        <property name="useColor" value="${admin.enable.colors}"/>
+        <property name="pnfsManager" ref="pnfsmanager"/>
+        <property name="poolManager" ref="poolmanager"/>
+        <property name="acm" ref="acm"/>
+        <property name="prompt" value="${admin.prompt}"/>
+    </bean>
+
+    <bean id="legacy-factory" class="org.dcache.services.ssh2.LegacySubsystemFactory">
+        <property name="historyFile" value="${admin.paths.history}"/>
+        <property name="useColor" value="${admin.enable.colors}"/>
+        <property name="prompt" value="${admin.prompt}"/>
+    </bean>
+
+    <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory">
+        <property name="prompt" value="${admin.prompt}"/>
+    </bean>
+
+
+    <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
+        <property name="host" value="#{ '${admin.net.listen}'.equals('any') ? null : '${admin.net.listen}' }"/>
+        <property name="port"               value="${admin.net.port}"/>
+        <property name="hostKeyPrivate"     value="${admin.paths.dsa-host-key.private}"/>
+        <property name="hostKeyPublic"      value="${admin.paths.dsa-host-key.public}"/>
+        <property name="authorizedKeyList"  value="${admin.paths.authorized-keys}"/>
+        <property name="loginStrategy"      ref="login-strategy"/>
+        <property name="adminGroupId"       value="${admin.authz.gid}"/>
+        <property name="shellFactory"       ref="shell-factory"/>
+        <property name="subsystemFactories">
+            <list>
+                <ref bean="pcells-factory"/>
+                <ref bean="legacy-factory"/>
+            </list>
+        </property>
+        <property name="idleTimeout" value="#{T(org.dcache.commons.util.Strings).parseLong('${admin.ssh.idle-timeout}')}" />
+        <property name="idleTimeoutUnit" value="${admin.ssh.idle-timeout.unit}" />
+    </bean>
 </beans>

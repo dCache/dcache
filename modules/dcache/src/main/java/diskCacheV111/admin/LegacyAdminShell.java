@@ -278,7 +278,7 @@ public class LegacyAdminShell
         }
     }
 
-    public LegacyAdminShell(String user, CellEndpoint cellEndpoint, Args args)
+    public LegacyAdminShell(String user, CellEndpoint cellEndpoint, String prompt)
     {
         cellEndPoint = cellEndpoint;
         _user = user;
@@ -289,19 +289,7 @@ public class LegacyAdminShell
         _pnfsManager = new CellStub(cellEndpoint, new CellPath("PnfsManager"), 30000, MILLISECONDS);
         _cellStub = new CellStub(cellEndpoint);
 
-        String prompt = args.getOpt("dCacheInstance");
-        if( prompt == null || !prompt.equals("hide") ){
-            if( prompt == null || prompt.length() == 0 ){
-                try{
-                    prompt = InetAddress.getLocalHost().getHostName() ;
-                }catch(UnknownHostException ee){
-                    prompt = null;
-                }
-            }
-            _instance = prompt;
-        }else{
-            _instance = null;
-        }
+        _instance = prompt;
 
         addCommandListener(new HelpCommands());
     }
@@ -1464,7 +1452,7 @@ public class LegacyAdminShell
             throws NoRouteToCellException, InterruptedException, CommandException
     {
         try {
-            return _cellStub.send(cellPath, object, Object.class).get();
+            return _cellStub.send(cellPath, object, Object.class, _timeout).get();
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (_fullException) {
