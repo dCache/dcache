@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -68,6 +69,9 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
@@ -422,9 +426,6 @@ public class PnfsManagerV3
         pw.println(_foldedCounters.toString());
     }
 
-    public static final String hh_flags_set    = "<pnfsId> <key=value> [...]" ;
-    public static final String hh_flags_remove = "<pnfsId> <key> [...]" ;
-    public static final String hh_flags_ls     = "<pnfsId>" ;
     public static final String hh_pnfsidof     = "<globalPath>" ;
     public String ac_pnfsidof_$_1( Args args )
     {
@@ -645,55 +646,72 @@ public class PnfsManagerV3
         return sb.toString() ;
     }
 
-    public String ac_flags_set_$_2_99(Args args) throws CacheException
+    @Command(name = "flags set", allowAnyOption = true, hint = "set flags",
+            description = "Files in dCache can be associated with arbitrary key-value pairs called " +
+                          "flags. This command allows one or more flags to be set on a file.")
+    class FlagsSetCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        Map<String,String> flags = new HashMap<>();
-        for (int i = 1; i < args.argc(); i++) {
-            String t = args.argv(i);
-            int l = t.length();
-            if (l > 0) {
-                int p = t.indexOf('=');
-                if ((p < 0) || (p == (l - 1))) {
-                    flags.put(t, "");
-                } else if (p > 0) {
-                    flags.put(t.substring(0, p), t.substring(p + 1));
-                }
+        @Argument(valueSpec = "PATH|PNFSID -FLAG=VALUE...")
+        PnfsIdOrPath file;
+
+        @CommandLine
+        Args args;
+
+        @Override
+        public String call() throws CacheException
+        {
+            FileAttributes attributes = new FileAttributes();
+            attributes.setFlags(args.optionsAsMap());
+            _nameSpaceProvider.setFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider), attributes,
+                                                 EnumSet.noneOf(FileAttribute.class));
+            return "";
+        }
+    }
+
+    @Command(name = "flags remove", allowAnyOption = true, hint = "clear flags",
+            description = "Files in dCache can be associated with arbitrary key-value pairs called " +
+                          "flags. This command allows one or more flags to be cleared on a file.")
+    class FlagsRemoveCommand implements Callable<String>
+    {
+        @Argument(valueSpec = "PATH|PNFSID -FLAG...")
+        PnfsIdOrPath file;
+
+        @CommandLine
+        Args args;
+
+        @Override
+        public String call() throws CacheException
+        {
+            PnfsId pnfsId = file.toPnfsId(_nameSpaceProvider);
+
+            for (String flag : args.options().keySet()) {
+                _nameSpaceProvider.removeFileAttribute(ROOT, pnfsId, flag);
             }
+            return "";
         }
-
-        FileAttributes attributes = new FileAttributes();
-        attributes.setFlags(flags);
-        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
-                EnumSet.noneOf(FileAttribute.class));
-
-        return "" ;
     }
 
-    public String ac_flags_remove_$_2_99( Args args )throws Exception {
-        PnfsId    pnfsId = new PnfsId( args.argv(0) ) ;
-
-        for( int i = 1 ; i < args.argc() ; i++ ){
-            String t = args.argv(i) ;
-            _nameSpaceProvider.removeFileAttribute(ROOT, pnfsId, t);
-        }
-
-        return "" ;
-    }
-
-    public String ac_flags_ls_$_1(Args args) throws CacheException
+    @Command(name = "flags ls", allowAnyOption = true, hint = "list flags",
+            description = "Files in dCache can be associated with arbitrary key-value pairs called " +
+                          "flags. This command lists the flags of a file.")
+    class FlagsListCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        FileAttributes attributes =
-            _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
-                                                 EnumSet.of(FileAttribute.FLAGS));
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String,String> e: attributes.getFlags().entrySet()) {
-            sb.append(e.getKey()).append(" -> ").append(e.getValue()).append("\n");
-        }
-        return sb.toString();
-    }
+        @Argument(valueSpec = "PATH|PNFSID")
+        PnfsIdOrPath file;
 
+        @Override
+        public String call() throws Exception
+        {
+            FileAttributes attributes =
+                    _nameSpaceProvider.getFileAttributes(ROOT, file.toPnfsId(_nameSpaceProvider),
+                                                         EnumSet.of(FileAttribute.FLAGS));
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String,String> e: attributes.getFlags().entrySet()) {
+                sb.append("-").append(e.getKey()).append("=").append(e.getValue()).append("\n");
+            }
+            return sb.toString();
+        }
+    }
     public static final String fh_dumpthreadqueues = "   dumpthreadqueues [<threadId>]\n"
         + "        dumthreadqueus prints the context of\n"
         + "        thread[s] queue[s] into the error log file";

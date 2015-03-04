@@ -58,12 +58,14 @@ public class ChimeraCacheInfo implements Serializable {
                                     continue;
                                 }
 				int i = t.indexOf('=');
-				if ((i < 0) || (i == (l - 1))) {
+				if (i < 0) {
 					_hash.put(t, "");
+				} else if (i == (l - 1)) {
+					_hash.put(t.substring(0, i), "");
 				} else if (i > 0) {
 					_hash.put(t.substring(0, i), t.substring(i + 1));
 				}
-			}
+            }
 		}
 
 		public String get(String key) {
