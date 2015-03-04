@@ -907,7 +907,7 @@ public class UserAdminShell
           return "p2p -> "+select.getPoolName() ;
        }
     }
-    public String ac_modify_poolmode =
+    public String fh_modify_poolmode =
         " a) modify poolmode enable <poolname>[,<poolname>...]\n"+
         " b) modify poolmode [OPTIONS] disable <poolname>[,<poolname>...] [<code> [<message>]]\n"+
         "      OPTIONS :\n"+
