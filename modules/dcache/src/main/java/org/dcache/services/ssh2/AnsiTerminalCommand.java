@@ -51,10 +51,10 @@ import static org.fusesource.jansi.Ansi.Color.RED;
  * @author bernardt
  */
 
-public class ConsoleReaderCommand implements Command, Runnable {
+public class AnsiTerminalCommand implements Command, Runnable {
 
     private final static Logger _logger =
-        LoggerFactory.getLogger(ConsoleReaderCommand.class);
+        LoggerFactory.getLogger(AnsiTerminalCommand.class);
     private static final int HISTORY_SIZE = 50;
     private UserAdminShell _userAdminShell;
     private ExitCallback _exitCallback;
@@ -69,7 +69,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
     private PipedInputStream _pipedIn;
     private Thread _pipeThread;
 
-    public ConsoleReaderCommand(File historyFile, boolean useColor, UserAdminShell shell)
+    public AnsiTerminalCommand(File historyFile, boolean useColor, UserAdminShell shell)
     {
         _useColors = useColor;
         _userAdminShell = shell;
@@ -115,7 +115,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
         _pipedIn = new PipedInputStream(_pipedOut);
         _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
         _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env));
-        _useColors &= _console.getTerminal().isAnsiSupported();
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
         _pipeThread = new Thread(new Pipe());
@@ -144,14 +143,8 @@ public class ConsoleReaderCommand implements Command, Runnable {
         if (_history != null) {
             _console.setHistory(_history);
         }
-
-        String hello = "";
-        if (_userAdminShell != null) {
-            _console.addCompleter(_userAdminShell);
-            hello = _userAdminShell.getHello();
-        }
-
-        _console.println(hello);
+        _console.addCompleter(_userAdminShell);
+        _console.println(_userAdminShell.getHello());
         _console.flush();
     }
 
@@ -237,7 +230,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
                         sb.a(help);
                     }
                     _console.println(sb.reset().toString());
-                    _console.flush();
                 } else {
                     String s;
                     s = Strings.toMultilineString(result);
@@ -246,6 +238,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
                     }
                 }
             }
+            _console.flush();
         }
     }
 
@@ -265,7 +258,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
         {
             super(true);
             _env = env;
-            setAnsiSupported(_env.getEnv().get(Environment.ENV_TERM) != null);
+            setAnsiSupported(true);
             setEchoEnabled(false);
         }
 

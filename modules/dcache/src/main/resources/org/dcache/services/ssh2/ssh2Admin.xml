@@ -47,7 +47,7 @@
         <property name="anonymousAccess" value="NONE"/>
     </bean>
 
-    <bean id="shell-factory" class="org.dcache.services.ssh2.ConsoleReaderFactory">
+    <bean id="shell-factory" class="org.dcache.services.ssh2.ShellFactory">
         <property name="historyFile" value="${admin.paths.history}"/>
         <property name="useColor" value="${admin.enable.colors}"/>
         <property name="pnfsManager" ref="pnfsmanager"/>

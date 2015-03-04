@@ -14,7 +14,7 @@ import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.cells.CellStub;
 import org.dcache.util.list.ListDirectoryHandler;
 
-public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
+public class ShellFactory implements Factory<Command>, CellMessageSender
 {
     private CellEndpoint _endpoint;
     private File _historyFile;
@@ -76,7 +76,7 @@ public class ConsoleReaderFactory implements Factory<Command>, CellMessageSender
     @Override
     public Command create()
     {
-        return new ConsoleReaderCommand(_historyFile, _useColor, createShell());
+        return new ShellCommand(_historyFile, _useColor, createShell());
     }
 
     private UserAdminShell createShell()
