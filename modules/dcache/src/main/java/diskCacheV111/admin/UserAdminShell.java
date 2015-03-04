@@ -1,4 +1,4 @@
-package diskCacheV111.admin ;
+package diskCacheV111.admin;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Throwables;
@@ -85,11 +85,11 @@ import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.RED;
 
 public class UserAdminShell
-    extends CommandInterpreter
-    implements Completer
+        extends CommandInterpreter
+        implements Completer
 {
     private static final Logger _log =
-        LoggerFactory.getLogger(UserAdminShell.class);
+            LoggerFactory.getLogger(UserAdminShell.class);
 
     private static final String ADMIN_COMMAND_NOOP = "xyzzy";
     private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
@@ -105,25 +105,13 @@ public class UserAdminShell
     private CellStub _pnfsManager;
     private CellStub _cellStub;
     private ListDirectoryHandler _list;
-    private String      _user;
-    private String      _authUser;
-    private long        _timeout  = TimeUnit.MINUTES.toMillis(5);
-    private boolean     _fullException;
-    private final String      _instance ;
-    private Position    _currentPosition = null;
+    private String _user;
+    private String _authUser;
+    private long _timeout = TimeUnit.MINUTES.toMillis(5);
+    private boolean _fullException;
+    private final String _instance;
+    private Position _currentPosition = null;
     private Completer _completer;
-
-    private static class Position
-    {
-        final String remoteName;
-        final CellPath remote;
-
-        Position(String name, CellPath path)
-        {
-            remoteName = name;
-            remote = path;
-        }
-    }
 
     public UserAdminShell(String prompt)
     {
@@ -173,9 +161,12 @@ public class UserAdminShell
         }
     }
 
-    protected String getUser(){ return _user ; }
+    protected String getUser()
+    {
+        return _user;
+    }
 
-    protected void checkPermission(String [] acls) throws AclException
+    protected void checkPermission(String[] acls) throws AclException
     {
         if (acls.length > 0) {
             AclException e = null;
@@ -191,35 +182,35 @@ public class UserAdminShell
         }
     }
 
-    public void checkPermission( String aclName )
-           throws AclException {
-
-         Object [] request = new Object[5] ;
-         request[0] = "request" ;
-         request[1] = "<nobody>" ;
-         request[2] = "check-permission" ;
-         request[3] = getUser() ;
-         request[4] = aclName ;
-         Object[] r;
-         try{
+    public void checkPermission(String aclName)
+            throws AclException
+    {
+        Object[] request = new Object[5];
+        request[0] = "request";
+        request[1] = "<nobody>";
+        request[2] = "check-permission";
+        request[3] = getUser();
+        request[4] = aclName;
+        Object[] r;
+        try {
             r = _acmStub.sendAndWait(request, Object[].class);
-         } catch (TimeoutCacheException e) {
-             throw new AclException(e.getMessage());
-         } catch (CacheException | InterruptedException e) {
-             throw new AclException("Problem: " + e.getMessage());
-         }
-         if (r.length < 6 | !(r[5] instanceof Boolean)) {
-             throw new AclException("Protocol violation 4456");
-         }
+        } catch (TimeoutCacheException e) {
+            throw new AclException(e.getMessage());
+        } catch (CacheException | InterruptedException e) {
+            throw new AclException("Problem: " + e.getMessage());
+        }
+        if (r.length < 6 | !(r[5] instanceof Boolean)) {
+            throw new AclException("Protocol violation 4456");
+        }
 
-         if (!((Boolean) r[5])) {
-             throw new AclException(getUser(), aclName);
-         }
+        if (!((Boolean) r[5])) {
+            throw new AclException(getUser(), aclName);
+        }
     }
 
     /**
      * Asynchronously queries the cells of {@code domain} matching {@code cellPredicate}.
-     *
+     * <p>
      * The resulting list is sorted and fully qualified. Errors are logged and otherwise ignored.
      */
     private ListenableFuture<List<String>> getCells(String domain, Predicate<String> cellPredicate)
@@ -287,14 +278,14 @@ public class UserAdminShell
 
     public String getHello()
     {
-      return "dCache (" + Version.of(UserAdminShell.class).getVersion() + ")\n" + "Type \"\\?\" for help.\n";
+        return "dCache (" + Version.of(UserAdminShell.class).getVersion() + ")\n" + "Type \"\\?\" for help.\n";
     }
 
     public String getPrompt()
     {
-        return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
-                ( _currentPosition == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
-                getUser()+" > " ;
+        return (_instance == null ? "" : ("[" + _instance + "] ")) +
+               (_currentPosition == null ? "(local) " : ("(" + _currentPosition.remoteName + ") ")) +
+               getUser() + " > ";
     }
 
     @Command(name = "\\exception", hint = "controls display of stack traces",
@@ -367,7 +358,7 @@ public class UserAdminShell
     {
         @Argument(required = false, valueSpec = "CELL[@DOMAIN]",
                 usage = "A glob pattern. An empty CELL or DOMAIN string matches any name.")
-        String[] pattern = { "*" };
+        String[] pattern = {"*"};
 
         @Override
         public String call() throws Exception
@@ -506,17 +497,18 @@ public class UserAdminShell
         @Override
         public Serializable call() throws InterruptedException, CommandException, NoRouteToCellException
         {
-            if ( _currentPosition == null) {
+            if (_currentPosition == null) {
                 return "You are not connected to any cell. Use \\? to display shell commands.";
             } else {
                 return sendObject(_currentPosition.remote,
-                                  new AuthorizedString(_user, "help -format=" + format + " " + String.join(" ", command)));
+                                  new AuthorizedString(_user,
+                                                       "help -format=" + format + " " + String.join(" ", command)));
             }
         }
     }
 
     @Command(name = "\\sn", hint = "send pnfsmanager command", allowAnyOption = true,
-            acl = { "cell.*.execute", "cell.PnfsManager.execute" },
+            acl = {"cell.*.execute", "cell.PnfsManager.execute"},
             description = "Sends COMMAND to the pnfsmanager service. Use \\sn help for a list of supported commands.")
     class NameSpaceCommand implements Callable<Serializable>
     {
@@ -534,7 +526,7 @@ public class UserAdminShell
     }
 
     @Command(name = "\\sp", hint = "send poolmanager command", allowAnyOption = true,
-            acl = { "cell.*.execute", "cell.PoolManager.execute" },
+            acl = {"cell.*.execute", "cell.PoolManager.execute"},
             description = "Sends COMMAND to the poolmanager service. Use \\sp help for a list of supported commands.")
     class PoolManagerCommand implements Callable<Serializable>
     {
@@ -577,7 +569,7 @@ public class UserAdminShell
              * addition of a cell name header. Makes the command nicer to use in scripts.
              */
             if (!destination.contains(",") && !isExpandable(destination)) {
-                return sendObject(destination,  command);
+                return sendObject(destination, command);
             }
 
             /* Expand wildcards.
@@ -617,28 +609,29 @@ public class UserAdminShell
         }
     }
 
-    private void checkCdPermission( String remoteName ) throws AclException {
-       int pos = remoteName.indexOf('-') ;
-       String prefix = null ;
-       if( pos > 0 ) {
-           prefix = remoteName.substring(0, pos);
-       }
-       try{
-           checkPermission("cell.*.execute") ;
-       }catch( AclException acle ){
-          try{
-             checkPermission( "cell."+remoteName+".execute" ) ;
-          }catch( AclException acle2 ){
-             if( prefix == null ) {
-                 throw acle2;
-             }
-              try {
-                  checkPermission("cell." + prefix + "-pools.execute");
-              } catch (AclException acle3) {
-                  throw new AclException(getUser(), remoteName);
-              }
-          }
-       }
+    private void checkCdPermission(String remoteName) throws AclException
+    {
+        int pos = remoteName.indexOf('-');
+        String prefix = null;
+        if (pos > 0) {
+            prefix = remoteName.substring(0, pos);
+        }
+        try {
+            checkPermission("cell.*.execute");
+        } catch (AclException acle) {
+            try {
+                checkPermission("cell." + remoteName + ".execute");
+            } catch (AclException acle2) {
+                if (prefix == null) {
+                    throw acle2;
+                }
+                try {
+                    checkPermission("cell." + prefix + "-pools.execute");
+                } catch (AclException acle3) {
+                    throw new AclException(getUser(), remoteName);
+                }
+            }
+        }
     }
 
     @Override
@@ -836,7 +829,7 @@ public class UserAdminShell
     }
 
     /**
-     *  Completes local shell commands.
+     * Completes local shell commands.
      */
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
     {
@@ -896,37 +889,37 @@ public class UserAdminShell
 
     public Object executeCommand(String str) throws CommandException, InterruptedException, NoRouteToCellException
     {
-       _log.info( "String command (super) "+str ) ;
+        _log.info("String command (super) " + str);
 
-       if( str.trim().equals("") ) {
-           return "";
-       }
+        if (str.trim().equals("")) {
+            return "";
+        }
 
-       Args args = new Args( str ) ;
+        Args args = new Args(str);
 
-       if( _currentPosition == null || str.startsWith("\\")) {
-           return localCommand( args ) ;
-       }else{
-           return sendObject( _currentPosition.remote ,  new AuthorizedString(_user,str) ) ;
-       }
+        if (_currentPosition == null || str.startsWith("\\")) {
+            return localCommand(args);
+        } else {
+            return sendObject(_currentPosition.remote, new AuthorizedString(_user, str));
+        }
     }
 
-    private Serializable localCommand( Args args ) throws CommandException
+    private Serializable localCommand(Args args) throws CommandException
     {
-           _log.info("Local command {}", args);
-           Object or = command(args);
-           if( or == null ) {
-               return "";
-           }
-           String r = or.toString() ;
-           if(  r.length() < 1) {
-               return "";
-           }
-           if( r.substring(r.length()-1).equals("\n" ) ) {
-               return r;
-           } else {
-               return r + "\n";
-           }
+        _log.info("Local command {}", args);
+        Object or = command(args);
+        if (or == null) {
+            return "";
+        }
+        String r = or.toString();
+        if (r.length() < 1) {
+            return "";
+        }
+        if (r.substring(r.length() - 1).equals("\n")) {
+            return r;
+        } else {
+            return r + "\n";
+        }
 
 
     }
@@ -940,18 +933,18 @@ public class UserAdminShell
     private Serializable sendObject(CellPath cellPath, Serializable object)
             throws NoRouteToCellException, InterruptedException, CommandException
     {
-       try {
-           return _cellStub.send(cellPath, object, Serializable.class, _timeout).get();
-       } catch (ExecutionException e) {
-           Throwable cause = e.getCause();
-           if (_fullException) {
-               return getStackTrace(cause);
-           }
-           Throwables.propagateIfInstanceOf(cause, Error.class);
-           Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
-           Throwables.propagateIfInstanceOf(cause, CommandException.class);
-           throw new CommandThrowableException(cause.toString(), cause);
-       }
+        try {
+            return _cellStub.send(cellPath, object, Serializable.class, _timeout).get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (_fullException) {
+                return getStackTrace(cause);
+            }
+            Throwables.propagateIfInstanceOf(cause, Error.class);
+            Throwables.propagateIfInstanceOf(cause, NoRouteToCellException.class);
+            Throwables.propagateIfInstanceOf(cause, CommandException.class);
+            throw new CommandThrowableException(cause.toString(), cause);
+        }
     }
 
     private String sendToMany(Iterable<String> destinations, Serializable object) throws AclException
@@ -966,7 +959,7 @@ public class UserAdminShell
         }
 
         /* Submit */
-        List<Map.Entry<String,ListenableFuture<Serializable>>> futures = new ArrayList<>();
+        List<Map.Entry<String, ListenableFuture<Serializable>>> futures = new ArrayList<>();
         for (String cell : destinations) {
             futures.add(immutableEntry(cell, _cellStub.send(new CellPath(cell), object, Serializable.class, _timeout)));
         }
@@ -1065,6 +1058,18 @@ public class UserAdminShell
         {
             int i = completer.complete(arguments, cursor - argumentPosition, candidates);
             return (i == -1) ? -1 : i + argumentPosition;
+        }
+    }
+
+    private static class Position
+    {
+        final String remoteName;
+        final CellPath remote;
+
+        Position(String name, CellPath path)
+        {
+            remoteName = name;
+            remote = path;
         }
     }
 }
