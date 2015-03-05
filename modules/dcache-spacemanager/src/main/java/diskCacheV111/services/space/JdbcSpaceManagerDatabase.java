@@ -227,15 +227,11 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
     {
         long id;
         try {
-            LinkGroup group =
-                    getJdbcTemplate().queryForObject(
-                            "SELECT * FROM " + LINKGROUP_TABLE + " WHERE  name = ? FOR UPDATE",
-                            this::toLinkGroup,
-                            linkGroupName);
-            id = group.getId();
+            /* FOR UPDATE to avoid lock upgrade below */
+            id = getJdbcTemplate().queryForObject("SELECT id FROM " + LINKGROUP_TABLE + " WHERE name = ? FOR UPDATE", Long.class, linkGroupName);
             getJdbcTemplate().update(
                     "UPDATE " + LINKGROUP_TABLE + " SET availableSpaceInBytes=?-reservedSpaceInBytes,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"
-                            + "replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?",
+                            + "replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE id = ?",
                     freeSpace,
                     updateTime,
                     (onlineAllowed ? 1 : 0),
