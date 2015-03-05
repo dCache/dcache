@@ -5,10 +5,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.aop.target.dynamic.Refreshable;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.RecoverableDataAccessException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.remoting.RemoteAccessException;
+import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.TransactionException;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
@@ -94,28 +101,20 @@ public class LinkGroupLoader
 
     @Override
     public void run(){
-            while(true) {
-                try {
-                    updateLinkGroups();
-                } catch (RemoteAccessException e) {
-                    LOGGER.error("Link group update failed: {}", e.getMessage());
-                } catch (RuntimeException e) {
-                    LOGGER.error("Link group update failed: " +  e.toString(), e);
-                }
-                synchronized(updateLinkGroupsSyncObject) {
+        try {
+            while (true) {
+                updateLinkGroups();
+                synchronized (updateLinkGroupsSyncObject) {
                     updateLinkGroupsSyncObject.notifyAll();
-                    try {
-                        updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
-                    }
-                    catch (InterruptedException ie) {
-                        LOGGER.trace("update LinkGroup thread has been interrupted");
-                        return;
-                    }
+                    updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
                 }
             }
+        } catch (InterruptedException ie) {
+            LOGGER.trace("update LinkGroup thread has been interrupted");
+        }
     }
 
-    private void updateLinkGroupAuthorizationFile() {
+    private void loadLinkGroupAuthorizationFile() {
         File file = authorizationFileName;
         if(file == null) {
             return;
@@ -129,44 +128,57 @@ public class LinkGroupLoader
             try {
                 linkGroupAuthorizationFile =
                         new LinkGroupAuthorizationFile(file);
-            }
-            catch(Exception e) {
-                LOGGER.error("failed to parse LinkGroupAuthorizationFile: {}",
-                             e.getMessage());
+            } catch (IOException | ParseException e) {
+                LOGGER.error("Failed to read {}: {}", file, e.toString());
             }
         }
     }
 
-    private void updateLinkGroups() {
-        currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
-        long currentTime = System.currentTimeMillis();
-        Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(),
-                                                                            poolMonitor.getCostModule()).values();
-        if (linkGroupInfos.isEmpty()) {
-            latestUpdateTime = currentTime;
-            return;
-        }
-
-        currentUpdateLinkGroupsPeriod = updateLinkGroupsPeriod;
-
-        updateLinkGroupAuthorizationFile();
-        for (PoolLinkGroupInfo info : linkGroupInfos) {
-            String linkGroupName = info.getName();
-            long avalSpaceInBytes = info.getAvailableSpaceInBytes();
-            VOInfo[] vos = null;
-            boolean onlineAllowed = info.isOnlineAllowed();
-            boolean nearlineAllowed = info.isNearlineAllowed();
-            boolean replicaAllowed = info.isReplicaAllowed();
-            boolean outputAllowed = info.isOutputAllowed();
-            boolean custodialAllowed = info.isCustodialAllowed();
-            if (linkGroupAuthorizationFile != null) {
-                LinkGroupAuthorizationRecord record =
-                        linkGroupAuthorizationFile
-                                .getLinkGroupAuthorizationRecord(linkGroupName);
-                if (record != null) {
-                    vos = record.getVOInfoArray();
-                }
+    private void updateLinkGroups() throws InterruptedException
+    {
+        try {
+            currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
+            long currentTime = System.currentTimeMillis();
+            Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(),
+                                                                                poolMonitor.getCostModule()).values();
+            if (linkGroupInfos.isEmpty()) {
+                latestUpdateTime = currentTime;
+                return;
             }
+
+            currentUpdateLinkGroupsPeriod = updateLinkGroupsPeriod;
+
+            loadLinkGroupAuthorizationFile();
+            for (PoolLinkGroupInfo info : linkGroupInfos) {
+                saveLinkGroup(currentTime, info);
+            }
+            latestUpdateTime = currentTime;
+        } catch (RemoteAccessException | DataAccessException | TransactionException e) {
+            LOGGER.error("Link group update failed: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.error("Link group update failed: " + e.toString(), e);
+        }
+    }
+
+    private void saveLinkGroup(long currentTime, PoolLinkGroupInfo info) throws InterruptedException
+    {
+        String linkGroupName = info.getName();
+        long avalSpaceInBytes = info.getAvailableSpaceInBytes();
+        VOInfo[] vos = null;
+        boolean onlineAllowed = info.isOnlineAllowed();
+        boolean nearlineAllowed = info.isNearlineAllowed();
+        boolean replicaAllowed = info.isReplicaAllowed();
+        boolean outputAllowed = info.isOutputAllowed();
+        boolean custodialAllowed = info.isCustodialAllowed();
+        if (linkGroupAuthorizationFile != null) {
+            LinkGroupAuthorizationRecord record =
+                    linkGroupAuthorizationFile
+                            .getLinkGroupAuthorizationRecord(linkGroupName);
+            if (record != null) {
+                vos = record.getVOInfoArray();
+            }
+        }
+        while (true) {
             try {
                 db.updateLinkGroup(linkGroupName,
                                    avalSpaceInBytes,
@@ -177,12 +189,16 @@ public class LinkGroupLoader
                                    outputAllowed,
                                    custodialAllowed,
                                    vos);
-            } catch (DataAccessException sqle) {
-                LOGGER.error("Update of link group {} failed: {}",
-                             linkGroupName, sqle.getMessage());
+                break;
+            } catch (DeadlockLoserDataAccessException e) {
+                LOGGER.info("Update of link group {} lost deadlock race and will be retried: {}",
+                            linkGroupName, e.toString());
+            } catch (TransientDataAccessException | RecoverableDataAccessException | CannotCreateTransactionException e) {
+                LOGGER.warn("Update of link group {} failed and will be retried: {}",
+                            linkGroupName, e.getMessage());
             }
+            Thread.sleep(500);
         }
-        latestUpdateTime = currentTime;
     }
 
     @Command(name = "update link groups", hint = "trigger link group update",
