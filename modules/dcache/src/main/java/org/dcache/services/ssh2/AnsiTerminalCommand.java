@@ -73,7 +73,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
     {
         _useColors = useColor;
         _userAdminShell = shell;
-        if (historyFile != null && historyFile.isFile()) {
+        if (historyFile != null && (!historyFile.exists() || historyFile.isFile())) {
             try {
                 _history  = new FileHistory(historyFile);
                 _history.setMaxSize(HISTORY_SIZE);
