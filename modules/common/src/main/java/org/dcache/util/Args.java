@@ -575,6 +575,8 @@ public class Args implements Serializable
                 switch (c) {
                 case '\'':
                 case '"':
+                case ' ':
+                case '-':
                 case '\\':
                     word.append(c);
                     break;
