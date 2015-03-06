@@ -47,7 +47,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
             NfsMover mover = _activeIO.get( _args.opwrite.stateid);
             if (mover == null) {
-                throw new BadStateidException("No mover associated with given stateid");
+                throw new BadStateidException("No mover associated with given stateid: " + _args.opwrite.stateid);
             }
 
             mover.attachSession(context.getSession());
