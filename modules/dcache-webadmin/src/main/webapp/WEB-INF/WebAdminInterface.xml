@@ -63,7 +63,7 @@
 
     <bean id="SpaceTokenCollectorCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
-        <property name="destination" value="SrmSpaceManager"/>
+        <property name="destination" value="${httpd.service.spacemanager}"/>
         <property name="timeout" value="${httpd.service.spacetoken-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.spacetoken-collector.timeout.unit}"/>
     </bean>

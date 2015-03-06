@@ -15,7 +15,7 @@ import org.dcache.services.info.stateInfo.SimpleIntegerMapVisitor;
 import org.dcache.services.info.stateInfo.SimpleStringMapVisitor;
 
 /**
- * The SrmSpaceManager records some capacity information about a linkgroup; specifically,
+ * The SpaceManager records some capacity information about a linkgroup; specifically,
  * just the Free and Reserved spaces.   The Total and Used sizes are not maintained, so
  * must be calculated from other information.
  * <p>

@@ -107,7 +107,7 @@
 
   <bean id="spacemanager" class="diskCacheV111.services.space.SpaceManagerService"
          init-method="start" destroy-method="stop">
-    <description>SrmSpaceManager</description>
+    <description>Space manager</description>
     <property name="database" ref="database"/>
     <property name="linkGroupLoader" ref="linkgroup-loader"/>
     <property name="pnfsHandler" ref="pnfs"/>

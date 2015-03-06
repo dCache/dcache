@@ -2457,14 +2457,14 @@ public final class Storage
             throw new SRMException("Cannot parse space token: " +
                                    e.getMessage(), e);
         } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("SrmSpaceManager is unavailable: " + e.getMessage(), e);
+            throw new SRMInternalErrorException("Space manager is unavailable: " + e.getMessage(), e);
         } catch (CacheException e) {
             throw new SRMException("srmExtendReservationLifetime failed, " +
                                    "ExtendLifetime.returnCode="+
                                    e.getRc()+" errorObject = "+
                                    e.getMessage());
         } catch (InterruptedException e) {
-            throw new SRMInternalErrorException("Request to SrmSpaceManager got interrupted", e);
+            throw new SRMInternalErrorException("Request to space manager got interrupted", e);
         }
     }
 

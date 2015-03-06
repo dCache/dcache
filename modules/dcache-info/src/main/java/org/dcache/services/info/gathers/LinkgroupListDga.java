@@ -17,7 +17,7 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
 
 	private static Logger _log = LoggerFactory.getLogger( LinkgroupListDga.class);
 
-	private static final String SRM_CELL_NAME = "SrmSpaceManager";
+	private static final String SRM_CELL_NAME = "SpaceManager";
 
 	/** Assume that a message might be lost and allow for 50% jitter */
 	private static final double SAFETY_FACTOR = 2.5;

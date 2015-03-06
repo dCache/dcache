@@ -114,7 +114,7 @@ public final class SrmReleaseSpaceCompanion
     @Override
     public void noroute(CellPath path)
     {
-        LOGGER.error("No Route to SrmSpaceManager");
+        LOGGER.error("No route to {}", path);
         callback.internalError("Space manager is unavailable");
     }
 

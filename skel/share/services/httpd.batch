@@ -27,6 +27,7 @@ check -strong httpd.service.loginbroker
 check -strong httpd.service.gplazma
 check -strong httpd.service.pnfsmanager
 check -strong httpd.service.poolmanager
+check -strong httpd.service.spacemanager
 check -strong httpd.limits.idle-time
 check -strong httpd.limits.idle-time.unit
 check -strong httpd.limits.threads
