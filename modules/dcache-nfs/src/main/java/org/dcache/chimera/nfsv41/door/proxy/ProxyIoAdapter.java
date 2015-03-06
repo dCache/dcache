@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.door.proxy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 
 /**
  *
@@ -16,11 +17,10 @@ public interface ProxyIoAdapter extends Closeable {
      * @param dst The buffer into which bytes are to be transferred
      * @param position The file position at which the transfer is to begin; must
      * be non-negative
-     * @return The number of bytes read, possibly zero, or -1 if the given
-     * position is greater than or equal to the file's current size
+     * @return {@link ReadResult}
      * @throws IOException
      */
-    int read(ByteBuffer dst, long position) throws IOException;
+    ReadResult read(ByteBuffer dst, long position) throws IOException;
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer,
@@ -29,16 +29,38 @@ public interface ProxyIoAdapter extends Closeable {
      * @param src The buffer from which bytes are to be transferred
      * @param position The file position at which the transfer is to begin; must
      * be non-negative
-     * @return The number of bytes written, possibly zero
+     * @return {@link VirtualFileSystem.WriteResult}
      * @throws IOException
      */
-    int write(ByteBuffer src, long position) throws IOException;
-
-    /**
-     * Returns the size of the file access by this adapter.
-     * @return size of the files,  measured in bytes
-     */
-    long size();
+    VirtualFileSystem.WriteResult write(ByteBuffer src, long position) throws IOException;
 
     int getSessionId();
+
+    // FIXME: move into generic NFS code
+    public static class ReadResult {
+
+        private final int bytesRead;
+        private final boolean isEof;
+
+        public ReadResult(int bytesRead, boolean isEof) {
+            this.bytesRead = bytesRead;
+            this.isEof = isEof;
+        }
+
+        /**
+         * Get number of bytes read.
+         * @return number of bytes
+         */
+        public int getBytesRead() {
+            return bytesRead;
+        }
+
+        /**
+         * Indicated is EOF reached
+         * @return true, iff EOF reached.
+         */
+        public boolean isEof() {
+            return isEof;
+        }
+    }
 }
