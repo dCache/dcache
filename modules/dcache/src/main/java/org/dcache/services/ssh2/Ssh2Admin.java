@@ -31,6 +31,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 import org.dcache.auth.*;
 
 import static java.util.stream.Collectors.toList;
+import java.util.stream.Stream;
 import static org.dcache.util.Files.checkFile;
 
 /**
@@ -249,9 +250,12 @@ public class Ssh2Admin implements CellCommandListener, CellLifeCycleAware
                     userName, key);
             try {
                 AuthorizedKeyParser decoder = new AuthorizedKeyParser();
-                List<String> keyLines = java.nio.file.Files.lines(_authorizedKeyList.toPath())
+                List<String> keyLines;
+                try(Stream<String> fileStream = java.nio.file.Files.lines(_authorizedKeyList.toPath())) {
+                    keyLines = fileStream
                         .filter(l -> !l.isEmpty() && !l.matches(" *#.*"))
                         .collect(toList());
+                }
 
                 for (String keyLine : keyLines) {
                     PublicKey decodedKey = decoder.decodePublicKey(keyLine);
