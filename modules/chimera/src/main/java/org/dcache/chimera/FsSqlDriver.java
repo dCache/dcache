@@ -1705,7 +1705,9 @@ class FsSqlDriver {
                 ret.setMode(statResult.getInt("imode"));
                 ret.setNlink(statResult.getInt("inlink"));
                 ret.setIno((int) dir.id());
+                ret.setGeneration(statResult.getTimestamp("imtime").getTime());
                 ret.setDev(17);
+                ret.setRdev(13);
 
             } else {
                 // file not found
