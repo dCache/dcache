@@ -347,7 +347,7 @@
       <property name="postTransferService" ref="post-transfer-service"/>
       <property name="checksumModule" ref="csm"/>
       <property name="faultListener" ref="pool"/>
-      <property name="threads" value="${pool.mover.xrootd.disk-threads}"/>
+      <property name="threads" value="${pool.mover.xrootd.threads}"/>
       <property name="clientIdleTimeout" value="${pool.mover.xrootd.timeout.idle}"/>
       <property name="clientIdleTimeoutUnit" value="${pool.mover.xrootd.timeout.idle.unit}"/>
       <property name="connectTimeout" value="${pool.mover.xrootd.timeout.connect}"/>
