@@ -310,12 +310,12 @@ public class MigrationModuleServer
                                               record.expire(),
                                               false);
                     }
+                    finished(null);
                     break;
                 default:
                     finished(new CacheException("Cannot update file in state " + state));
-
+                    break;
                 }
-                finished(null);
             } catch (IOException e) {
                 finished(new DiskErrorCacheException("I/O error during checksum calculation: " + e.getMessage()));
             } catch (InterruptedException e) {
