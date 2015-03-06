@@ -57,7 +57,7 @@ class TunnelConverter implements Convertable,UserBindible  {
             throw new IOException("short read: " + total + new String(buf, 0, total));
         }
 
-        return Base64.getDecoder().decode(Arrays.copyOfRange(buf, 4, total - 5));
+        return  Base64.getDecoder().decode(Arrays.copyOfRange(buf, 4, total - 1));
     }
 
     @Override
