@@ -112,6 +112,19 @@
             <attr name="GlueChunkKey">
               <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
             </attr>
+
+            <choose>
+              <optionally>
+                <when test="true">&info-provider.enable.space-reservation;</when>
+
+                <!-- The following two attributes should depend in whether we are
+                     publishing SRM v1.1 or SRM v2.2.  We currently don't publish
+                     SRM v1.1 interface, so this doesn't matter -->
+                <attr name="GlueSEControlProtocolCapability">space allocation</attr>
+                <attr name="GlueSEControlProtocolCapability">space manager</attr>
+              </optionally>
+            </choose>
+
           </object>
 
 
@@ -1027,10 +1040,8 @@
 
       <attr name="GlueSEImplementationVersion" not-empty="1">
         <map name="cell-version-to-dcache-version">
-          <!-- The following xpath expression depends on there being
-               exactly one 'PoolManager' cell running. -->
           <lookup default="UNDEFINEDVALUE"
-                  path="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+                  path="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='&info-provider.service.poolmanager;']/d:version/d:metric[@name='release'][1]"/>
         </map> (ns=<map name="cleaner-class-to-namespace-impl">
           <lookup path="/d:dCache/d:domains/d:domain/d:cells/d:cell/d:metric[@name='class'][.='org.dcache.chimera.namespace.ChimeraCleaner']">
             <lookup default="UNDEFINEDVALUE"
@@ -1192,27 +1203,10 @@
       <!-- For now we hard-code this, which is wrong -->
       <attr name="GlueSEControlProtocolVersion">2.2.0</attr>
 
-      <!-- The following two attributes should depend in whether we are
-           publishing SRM v1.1 or SRM v2.2.  We currently don't publish
-           SRM v1.1 interface, so this doesn't matter -->
-
-      <!-- We make publishing these attributes dependent on whether
-           the SrmSpaceManager is running.  Note the following xpath
-           expression depends on there being, at most, one
-           'SrmSpaceManager' cell running. -->
-      <attr select="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='SrmSpaceManager']"
-            name="GlueSEControlProtocolCapability">space allocation</attr>
-
-      <!-- The same for the space manager -->
-      <attr select="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='SrmSpaceManager']"
-            name="GlueSEControlProtocolCapability">space manager</attr>
-
       <!-- As with the previous two attributes, we emit a
            GlueSEControlProtocolCapability attribute with the value
-           'file pinning' only if the PinManager is running.  Note the
-           following xpath expression assumes there is, at most, one
-           PinManager cell running. -->
-      <attr select="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='PinManager']"
+           'file pinning' only if the pin-manager is running. -->
+      <attr select="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='&info-provider.service.pinmanager;'][1]"
             name="GlueSEControlProtocolCapability">file pinning</attr>
     </class>
 

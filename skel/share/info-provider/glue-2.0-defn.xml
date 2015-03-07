@@ -147,10 +147,8 @@
             <attr name="GLUE2ManagerProductName">dCache</attr>
             <attr name="GLUE2ManagerProductVersion">
               <map name="cell-version-to-dcache-version">
-		<!-- Note the following xpath expression assumes there
-		     is exactly one 'PoolManager' cell running. -->
                 <lookup default="UNDEFINEDVALUE"
-                        path="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='PoolManager']/d:version/d:metric[@name='release']"/>
+                        path="/d:dCache/d:domains/d:domain/d:cells/d:cell[@name='&info-provider.service.poolmanager;']/d:version/d:metric[@name='release'][1]"/>
               </map>
             </attr>
 
