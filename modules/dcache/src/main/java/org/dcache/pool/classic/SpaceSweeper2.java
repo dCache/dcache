@@ -3,10 +3,11 @@ package org.dcache.pool.classic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,15 +47,8 @@ public class SpaceSweeper2
 {
     private static final Logger _log = LoggerFactory.getLogger(SpaceSweeper2.class);
 
-    private static final ThreadLocal<SimpleDateFormat> __format =
-            new ThreadLocal<SimpleDateFormat>()
-            {
-                @Override
-                protected SimpleDateFormat initialValue()
-                {
-                    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-                }
-            };
+    private static final DateTimeFormatter ISO8601_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneId.systemDefault());
 
     private LruQueue<PnfsId> _queue = new LruQueue<>();
 
@@ -255,8 +249,8 @@ public class SpaceSweeper2
                         sb.append(entry.getState()).append("  ");
                         sb.append(Formats.field(""+entry.getReplicaSize(), 11, Formats.RIGHT));
                         sb.append(" ");
-                        sb.append(__format.get().format(new Date(entry.getCreationTime()))).append(" ");
-                        sb.append(__format.get().format(new Date(entry.getLastAccessTime()))).append(" ");
+                        sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getCreationTime()))).append(" ");
+                        sb.append(ISO8601_FORMAT.format(Instant.ofEpochMilli(entry.getLastAccessTime()))).append(" ");
                         if (showStorageInfo) {
                             FileAttributes attributes = entry.getFileAttributes();
                             if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
