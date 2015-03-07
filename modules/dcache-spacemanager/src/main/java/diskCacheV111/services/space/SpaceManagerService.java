@@ -467,7 +467,7 @@ public final class SpaceManagerService
             } catch (NoFreeSpaceException e) {
                 message.setFailedConditionally(CacheException.RESOURCE, e);
             } catch (SpaceException e) {
-                message.setFailedConditionally(CacheException.DEFAULT_ERROR_CODE, e);
+                message.setFailedConditionally(CacheException.INVALID_ARGS, e);
             } catch (IllegalArgumentException e) {
                 LOGGER.error("Message processing failed: {}", e.getMessage(), e);
                 message.setFailedConditionally(CacheException.INVALID_ARGS, e.getMessage());
@@ -920,12 +920,12 @@ public final class SpaceManagerService
                 if (!fileAttributes.isDefined(FileAttribute.ACCESS_LATENCY)) {
                     fileAttributes.setAccessLatency(space.getAccessLatency());
                 } else if (fileAttributes.getAccessLatency() != space.getAccessLatency()) {
-                    throw new IllegalArgumentException("Access latency conflicts with access latency defined by space reservation.");
+                    throw new SpaceException("Access latency conflicts with access latency defined by space reservation.");
                 }
                 if (!fileAttributes.isDefined(FileAttribute.RETENTION_POLICY)) {
                     fileAttributes.setRetentionPolicy(space.getRetentionPolicy());
                 } else if (fileAttributes.getRetentionPolicy() != space.getRetentionPolicy()) {
-                    throw new IllegalArgumentException("Retention policy conflicts with retention policy defined by space reservation.");
+                    throw new SpaceException("Retention policy conflicts with retention policy defined by space reservation.");
                 }
 
                 if (space.getDescription() != null) {
