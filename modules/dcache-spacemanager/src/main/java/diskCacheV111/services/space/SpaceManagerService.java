@@ -237,7 +237,9 @@ public final class SpaceManagerService
                 }
                 executor.awaitTermination(1, TimeUnit.SECONDS);
             } finally {
-                executor.shutdownNow();
+                for (Runnable runnable : executor.shutdownNow()) {
+                    notifyShutdown(((FibonacciBackoffMessageProcessor) runnable).getEnvelope());
+                }
             }
         }
 
@@ -1144,7 +1146,7 @@ public final class SpaceManagerService
      * reenqueues the request if processing fails while blocking the thread with
      * a Fibonacci backoff.
      */
-    private abstract static class FibonacciBackoffMessageProcessor implements Runnable
+    private abstract class FibonacciBackoffMessageProcessor implements Runnable
     {
         private final CellMessage envelope;
         private final Executor executor;
@@ -1155,6 +1157,11 @@ public final class SpaceManagerService
         {
             this.executor = executor;
             this.envelope = envelope;
+        }
+
+        public CellMessage getEnvelope()
+        {
+            return envelope;
         }
 
         protected abstract void process() throws Exception;
@@ -1181,6 +1188,7 @@ public final class SpaceManagerService
                     process();
                 }
             } catch (InterruptedException ignored) {
+                notifyShutdown(envelope);
             } catch (Exception e) {
                 /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
                  * retrying the same operation over and over in a tight loop.
