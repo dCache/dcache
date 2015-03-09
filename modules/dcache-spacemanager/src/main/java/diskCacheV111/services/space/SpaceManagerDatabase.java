@@ -116,9 +116,9 @@ public interface SpaceManagerDatabase
     {
         LinkGroupCriterion whereUpdateTimeAfter(long latestLinkGroupUpdateTime);
 
-        LinkGroupCriterion allowsAccessLatency(AccessLatency al);
+        LinkGroupCriterion allowsAccessLatency(@Nullable AccessLatency al);
 
-        LinkGroupCriterion allowsRetentionPolicy(RetentionPolicy rp);
+        LinkGroupCriterion allowsRetentionPolicy(@Nullable RetentionPolicy rp);
 
         LinkGroupCriterion whereNameMatches(Glob name);
 
