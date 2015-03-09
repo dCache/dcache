@@ -97,7 +97,7 @@ public class ACEParserTest {
         parseLinuxAce("H:g:123:w");
     }
 
-    @Test//(expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testWrongTypeLen() {
         parseLinuxAce("AB:g:123:w");
     }
