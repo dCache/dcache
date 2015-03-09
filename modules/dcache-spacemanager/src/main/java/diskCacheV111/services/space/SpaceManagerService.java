@@ -538,6 +538,10 @@ public final class SpaceManagerService
                 while (true) {
                     try {
                         expireSpaceReservations();
+                    } catch (DeadlockLoserDataAccessException e) {
+                        LOGGER.debug("Expiration failed: {}", e.getMessage());
+                    } catch (TransientDataAccessException e) {
+                        LOGGER.warn("Expiration failed: {}", e.getMessage());
                     } catch (DataAccessException e) {
                         LOGGER.error("Expiration failed: {}", e.getMessage());
                     } catch (Exception e) {
