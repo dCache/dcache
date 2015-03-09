@@ -45,10 +45,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -360,18 +358,17 @@ public final class SpaceManagerService
                 if (!isNotificationMessage(message) && !isSpaceManagerMessage(message)) {
                     messageToForward(envelope, message);
                 } else if (isSpaceManagerEnabled) {
-                    executor.execute(new Runnable()
+                    executor.execute(new FibonacciBackoffMessageProcessor(executor, envelope)
                     {
                         @Override
-                        public void run()
+                        public void process() throws DeadlockLoserDataAccessException
                         {
                             processMessage(message);
                             if (message.getReplyRequired()) {
                                 try {
                                     envelope.revertDirection();
                                     sendMessage(envelope);
-                                }
-                                catch (NoRouteToCellException e) {
+                                } catch (NoRouteToCellException e) {
                                     LOGGER.error("Failed to send reply: {}", e.getMessage());
                                 }
                             }
@@ -405,10 +402,10 @@ public final class SpaceManagerService
 
             if (envelope.nextDestination()) {
                 if (isSpaceManagerEnabled && isInterceptedMessage(message)) {
-                    executor.execute(new Runnable()
+                    executor.execute(new FibonacciBackoffMessageProcessor(executor, envelope)
                     {
                         @Override
-                        public void run()
+                        public void process() throws DeadlockLoserDataAccessException
                         {
                             processMessage(message);
 
@@ -438,7 +435,7 @@ public final class SpaceManagerService
             }
         }
 
-        private void processMessage(Message message)
+        private void processMessage(Message message) throws DeadlockLoserDataAccessException
         {
             try {
                 boolean isSuccessful = false;
@@ -453,7 +450,8 @@ public final class SpaceManagerService
                         }
                         isSuccessful = true;
                     } catch (DeadlockLoserDataAccessException e) {
-                        LOGGER.debug("Transaction lost deadlock race and will be retried: {}", e.toString());
+                        LOGGER.debug("Transaction lost deadlock race and will be retried: {}", e.getMessage());
+                        throw e;
                     } catch (TransientDataAccessException | RecoverableDataAccessException e) {
                         if (attempts >= 3) {
                             throw e;
@@ -471,6 +469,8 @@ public final class SpaceManagerService
             } catch (IllegalArgumentException e) {
                 LOGGER.error("Message processing failed: {}", e.getMessage(), e);
                 message.setFailedConditionally(CacheException.INVALID_ARGS, e.getMessage());
+            } catch (DeadlockLoserDataAccessException e) {
+                throw e;
             } catch (DataAccessException e) {
                 LOGGER.error("Message processing failed: {}", e.toString());
                 message.setFailedConditionally(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -1071,4 +1071,59 @@ public final class SpaceManagerService
                     }
                 }
         }
+
+    /**
+     * Utility runnable that does nothing if a request has exceeded its TTL and
+     * reenqueues the request if processing fails while blocking the thread with
+     * a Fibonacci backoff.
+     */
+    private abstract static class FibonacciBackoffMessageProcessor implements Runnable
+    {
+        private final CellMessage envelope;
+        private final Executor executor;
+        private long previous = 0;
+        private long current = 1;
+
+        public FibonacciBackoffMessageProcessor(Executor executor, CellMessage envelope)
+        {
+            this.executor = executor;
+            this.envelope = envelope;
+        }
+
+        protected abstract void process() throws Exception;
+
+        /** Returns the fibonacci numbers. */
+        public long next()
+        {
+            long next = current + previous;
+            previous = current;
+            current = next;
+            return previous;
+        }
+
+        @Override
+        public void run()
+        {
+            try {
+                if (envelope.getLocalAge() > envelope.getAdjustedTtl()) {
+                    LOGGER.warn(
+                            "Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
+                            envelope.getMessageObject().getClass().getSimpleName(), envelope.getLocalAge(),
+                            envelope.getAdjustedTtl());
+                } else {
+                    process();
+                }
+            } catch (InterruptedException ignored) {
+            } catch (Exception e) {
+                /* Put the request at the end of the queue to (a) avoid starving other requests, (b) avoid
+                 * retrying the same operation over and over in a tight loop.
+                 */
+                try {
+                    Thread.sleep(next());
+                } catch (InterruptedException ignored) {
+                }
+                executor.execute(this);
+            }
+        }
+    }
 }
