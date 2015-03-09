@@ -10,18 +10,12 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
-    <bean id="executor"
-          class="org.dcache.util.BoundedExecutor"
-          destroy-method="shutdown">
-        <description>Thread pool for message processing</description>
-        <constructor-arg>
-            <bean class="java.util.concurrent.Executors"
-                  factory-method="newCachedThreadPool"
-                  destroy-method="shutdown">
-            </bean>
-        </constructor-arg>
-        <constructor-arg value="${spacemanager.limits.threads}"/>
-    </bean>
+  <bean id="executor"
+        class="java.util.concurrent.Executors"
+        factory-method="newCachedThreadPool"
+        destroy-method="shutdown">
+      <description>Thread pool for message processing</description>
+  </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
@@ -117,8 +111,9 @@
     <property name="database" ref="database"/>
     <property name="linkGroupLoader" ref="linkgroup-loader"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="poolManager" value="${srm.service.poolmanager}"/>
+    <property name="poolManager" value="${spacemanager.service.poolmanager}"/>
     <property name="poolMonitor" ref="pool-monitor"/>
+    <property name="maxThreads" value="${spacemanager.limits.threads}"/>
     <property name="executor" ref="executor"/>
     <property name="perishedSpacePurgeDelay"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(

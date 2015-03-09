@@ -95,6 +95,7 @@ import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolMonitor;
+import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.vehicles.FileAttributes;
 
@@ -126,12 +127,14 @@ public final class SpaceManagerService
 
         private SpaceManagerAuthorizationPolicy authorizationPolicy;
 
-        private Executor executor;
+        private ExecutorService executor;
 
         private PoolMonitor poolMonitor;
         private SpaceManagerDatabase db;
         private LinkGroupLoader linkGroupLoader;
         private long perishedSpacePurgeDelay;
+        private int threads;
+        private volatile boolean isStopped;
 
         @Required
         public void setPoolManager(CellPath poolManager)
@@ -182,9 +185,15 @@ public final class SpaceManagerService
         }
 
         @Required
+        public void setMaxThreads(int threads)
+        {
+            this.threads = threads;
+        }
+
+        @Required
         public void setExecutor(ExecutorService executor)
         {
-            this.executor = new CDCExecutorServiceDecorator<>(executor);
+            this.executor = executor;
         }
 
         @Required
@@ -213,15 +222,23 @@ public final class SpaceManagerService
 
         public void start()
         {
+                executor = new CDCExecutorServiceDecorator<>(new BoundedExecutor(executor, threads));
                 (expireSpaceReservations = new Thread(this,"ExpireThreadReservations")).start();
         }
 
         public void stop() throws InterruptedException
         {
+            try {
+                isStopped = true;
+                executor.shutdown();
                 if (expireSpaceReservations != null) {
-                        expireSpaceReservations.interrupt();
-                        expireSpaceReservations.join();
+                    expireSpaceReservations.interrupt();
+                    expireSpaceReservations.join();
                 }
+                executor.awaitTermination(1, TimeUnit.SECONDS);
+            } finally {
+                executor.shutdownNow();
+            }
         }
 
 
@@ -350,6 +367,18 @@ public final class SpaceManagerService
                        || (message instanceof PoolAcceptFileMessage && ((PoolAcceptFileMessage) message).getFileAttributes().getStorageInfo().getKey("LinkGroupId") != null && (!message.isReply() || message.getReturnCode() != 0));
         }
 
+        /**
+         * Returns true if message should not be discarded during shutdown.
+         */
+        private boolean isImportantMessage(Message message)
+        {
+            return message.isReply() ||
+                   message instanceof PoolRemoveFilesMessage ||
+                   message instanceof PoolFileFlushedMessage ||
+                   message instanceof PnfsDeleteEntryNotificationMessage ||
+                   message instanceof DoorTransferFinishedMessage;
+        }
+
         public void messageArrived(final CellMessage envelope,
                                    final Message message)
         {
@@ -365,26 +394,19 @@ public final class SpaceManagerService
                         @Override
                         public void process() throws DeadlockLoserDataAccessException
                         {
-                            processMessage(message);
-                            if (message.getReplyRequired()) {
-                                try {
-                                    envelope.revertDirection();
-                                    sendMessage(envelope);
-                                } catch (NoRouteToCellException e) {
-                                    LOGGER.error("Failed to send reply: {}", e.getMessage());
+                            if (!isStopped || isImportantMessage(message)) {
+                                processMessage(message);
+                                if (message.getReplyRequired()) {
+                                    returnMessage(envelope);
                                 }
+                            } else {
+                                notifyShutdown(envelope);
                             }
                         }
                     });
                 } else if (message.getReplyRequired()) {
-                    try {
-                        message.setReply(1, "Space manager is disabled in configuration");
-                        envelope.revertDirection();
-                        sendMessage(envelope);
-                    }
-                    catch (NoRouteToCellException e) {
-                        LOGGER.error("Failed to send reply: {}", e.getMessage());
-                    }
+                    message.setReply(1, "Space manager is disabled in configuration");
+                    returnMessage(envelope);
                 }
             }
         }
@@ -409,10 +431,13 @@ public final class SpaceManagerService
                         @Override
                         public void process() throws DeadlockLoserDataAccessException
                         {
-                            processMessage(message);
-
-                            if (message.getReturnCode() != 0 && !isEnRouteToDoor) {
-                                envelope.revertDirection();
+                            if (!isStopped || isImportantMessage(message)) {
+                                processMessage(message);
+                                if (message.getReturnCode() != 0 && !isEnRouteToDoor) {
+                                    envelope.revertDirection();
+                                }
+                            } else {
+                                notifyShutdown(envelope);
                             }
 
                             forwardMessage(envelope, isEnRouteToDoor);
@@ -421,6 +446,29 @@ public final class SpaceManagerService
                 } else {
                     forwardMessage(envelope, isEnRouteToDoor);
                 }
+            }
+        }
+
+        private void notifyShutdown(CellMessage envelope)
+        {
+            try {
+                envelope.setMessageObject(new NoRouteToCellException(
+                        envelope.getUOID(), envelope.getDestinationPath(),
+                        "Space manager is shutting down."));
+                envelope.revertDirection();
+                sendMessage(envelope);
+            } catch (NoRouteToCellException e) {
+                LOGGER.debug("Failed to notify cell of space manager shutdown: {}", e.getMessage());
+            }
+        }
+
+        private void returnMessage(CellMessage envelope)
+        {
+            try {
+                envelope.revertDirection();
+                sendMessage(envelope);
+            } catch (NoRouteToCellException e) {
+                LOGGER.error("Failed to send reply: {}", e.getMessage());
             }
         }
 

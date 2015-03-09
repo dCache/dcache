@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
@@ -31,6 +32,7 @@ import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.auth.FQAN;
+import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.ColumnWriter;
 import org.dcache.util.Glob;
 
@@ -46,9 +48,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
     private Executor executor;
 
     @Required
-    public void setExecutor(Executor executor)
+    public void setExecutor(ExecutorService executor)
     {
-        this.executor = executor;
+        this.executor = new CDCExecutorServiceDecorator<>(executor);
     }
 
     @Required
