@@ -1,7 +1,5 @@
 package org.dcache.util;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
 import java.util.Collection;
@@ -15,7 +13,7 @@ import java.util.concurrent.TimeoutException;
 
 import dmg.cells.nucleus.CDC;
 
-import static com.google.common.collect.Iterables.transform;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Decorates a ExecutorService and makes tasks CDC aware.
@@ -92,19 +90,15 @@ public class CDCExecutorServiceDecorator<E extends ExecutorService> extends Forw
         _delegate.execute(wrap(command));
     }
 
+    @Override
+    public List<Runnable> shutdownNow()
+    {
+        return unwrap(super.shutdownNow());
+    }
+
     protected Runnable wrap(final Runnable task)
     {
-        final CDC cdc = new CDC();
-        return new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try (CDC ignored = cdc.restore()) {
-                    task.run();
-                }
-            }
-        };
+        return new WrappedRunnable(new CDC(), task);
     }
 
     protected <T> Callable<T> wrap(final Callable<T> task)
@@ -123,6 +117,41 @@ public class CDCExecutorServiceDecorator<E extends ExecutorService> extends Forw
 
     protected <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks)
     {
-        return Lists.newArrayList(transform(tasks, task -> wrap(task)));
+        return tasks.stream().map(this::wrap).collect(toList());
+    }
+
+    private Runnable unwrap(Runnable runnable)
+    {
+        return (runnable instanceof WrappedRunnable) ? ((WrappedRunnable) runnable).getInner() : runnable;
+    }
+
+    private List<Runnable> unwrap(List<Runnable> runnables)
+    {
+        return runnables.stream().map(this::unwrap).collect(toList());
+    }
+
+    private static class WrappedRunnable implements Runnable
+    {
+        private final CDC cdc;
+        private final Runnable task;
+
+        public WrappedRunnable(CDC cdc, Runnable task)
+        {
+            this.cdc = cdc;
+            this.task = task;
+        }
+
+        public Runnable getInner()
+        {
+            return task;
+        }
+
+        @Override
+        public void run()
+        {
+            try (CDC ignored = cdc.restore()) {
+                task.run();
+            }
+        }
     }
 }
