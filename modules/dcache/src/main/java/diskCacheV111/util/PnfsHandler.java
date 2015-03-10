@@ -336,22 +336,22 @@ public class PnfsHandler
         return pnfsRequest(new PnfsDeleteEntryMessage(null, path, allowed)).getPnfsId();
     }
 
-    public void deletePnfsEntry(PnfsId pnfsid)  throws CacheException
+    public int deletePnfsEntry(PnfsId pnfsid)  throws CacheException
     {
-        deletePnfsEntry(pnfsid, null);
+        return deletePnfsEntry(pnfsid, null);
     }
 
-    public void deletePnfsEntry(PnfsId pnfsid, String path)
+    public int deletePnfsEntry(PnfsId pnfsid, String path)
         throws CacheException
     {
-        deletePnfsEntry(pnfsid, path, EnumSet.allOf(FileType.class));
+        return deletePnfsEntry(pnfsid, path, EnumSet.allOf(FileType.class));
     }
 
-    public void deletePnfsEntry(PnfsId pnfsid, String path,
+    public int deletePnfsEntry(PnfsId pnfsid, String path,
                                 Set<FileType> allowed)
         throws CacheException
     {
-        pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path, allowed));
+        return pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path, allowed)).getRemainingLinks();
     }
 
    /**
@@ -364,7 +364,7 @@ public class PnfsHandler
 
    /**
     * Setter for property __pnfsTimeout.
-    * @param __pnfsTimeout New value of property __pnfsTimeout.
+    * @param pnfsTimeout New value of property __pnfsTimeout.
     */
    public void setPnfsTimeout(long pnfsTimeout) {
        _cellStub.setTimeout(pnfsTimeout);

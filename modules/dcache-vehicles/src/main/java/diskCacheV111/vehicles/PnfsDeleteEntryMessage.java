@@ -22,14 +22,19 @@ public class PnfsDeleteEntryMessage extends PnfsMessage
      */
     private final Set<FileType> _allowed;
 
+    /**
+     * remaining hardlinks for the file
+     */
+    private int _remainingLinks;
+
     public PnfsDeleteEntryMessage(String path)
     {
-	this(null, path);
+        this(null, path);
     }
 
     public PnfsDeleteEntryMessage(PnfsId pnfsId)
     {
-	this(pnfsId, (String) null);
+        this(pnfsId, (String) null);
     }
 
     public PnfsDeleteEntryMessage(PnfsId pnfsId, String path)
@@ -50,16 +55,24 @@ public class PnfsDeleteEntryMessage extends PnfsMessage
     public PnfsDeleteEntryMessage(PnfsId pnfsId, String path,
                                   Set<FileType> allowed)
     {
-	super(pnfsId);
+        super(pnfsId);
         _allowed = allowed;
-	_path = path;
+        _path = path;
         setPnfsPath(path);
-	setReplyRequired(false);
+        setReplyRequired(false);
+    }
+
+    public void setRemainingLinks(int nLinks) {
+        _remainingLinks = nLinks;
+    }
+
+    public int getRemainingLinks() {
+        return _remainingLinks;
     }
 
     public String getPath()
     {
-	return _path;
+        return _path;
     }
 
     public Set<FileType> getAllowedFileTypes()
