@@ -999,11 +999,11 @@ public class LocationManager extends CellAdapter {
          CellMessage   msg = getThisMessage() ;
          String portString = args.argv(1) ;
 
-         try{
-             _registered  = InetAddress.getLocalHost().getHostName()+":"+portString ;
-         }catch( UnknownHostException uhe ){
-             _log.warn("Couldn't resolve hostname : "+uhe);
-             return null ;
+         try {
+             _registered = InetAddress.getLocalHost().getCanonicalHostName() + ":" + portString;
+         } catch (UnknownHostException uhe) {
+             _log.warn("Couldn't resolve hostname: " + uhe);
+             return null;
          }
 
          String request = "listeningOn "+getCellDomainName()+" "+_registered ;
@@ -1236,7 +1236,7 @@ public class LocationManager extends CellAdapter {
               // we are a server and a client
               //
               port = Integer.parseInt( _args.argv(0) );
-              host = InetAddress.getByName("localhost") ;
+              host = InetAddress.getLoopbackAddress();
               _server = new Server( port , _args ) ;
               _log.info("Server Setup Done") ;
            }else{
