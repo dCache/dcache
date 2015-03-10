@@ -85,14 +85,13 @@ public class NetLoggerBuilder
         if (hasSecondaryGid) {
             boolean firstLoop = true;
             for (Principal principal : subject.getPrincipals()) {
-                if (!firstLoop || gid != null) {
-                    sb.append(',');
-                }
-                firstLoop = false;
-                if (principal instanceof GidPrincipal) {
-                    if (!((GidPrincipal) principal).isPrimaryGroup()) {
-                        sb.append(((GidPrincipal) principal).getGid());
+                if (principal instanceof GidPrincipal &&
+                        !((GidPrincipal) principal).isPrimaryGroup()) {
+                    if (!firstLoop) {
+                        sb.append(',');
                     }
+                    firstLoop = false;
+                    sb.append(((GidPrincipal) principal).getGid());
                 }
             }
         }
