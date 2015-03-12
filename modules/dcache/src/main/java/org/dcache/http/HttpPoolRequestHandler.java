@@ -220,11 +220,11 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 file.release(cause);
             }
             _files.clear();
-            ctx.channel().close();
+            ctx.close();
         } else {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
-            ctx.channel().close();
+            ctx.close();
         }
     }
 
@@ -416,35 +416,29 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                         } catch (ExecutionException e) {
                             Throwable cause = e.getCause();
                             if (cause instanceof FileCorruptedCacheException) {
-                                context.channel()
-                                        .writeAndFlush(createErrorResponse(BAD_REQUEST, cause.getMessage()))
+                                context.writeAndFlush(createErrorResponse(BAD_REQUEST, cause.getMessage()))
                                         .addListener(ChannelFutureListener.CLOSE);
                             } else if (cause instanceof CacheException) {
-                                context.channel()
-                                        .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.getMessage()))
+                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.getMessage()))
                                         .addListener(ChannelFutureListener.CLOSE);
                             } else {
-                                context.channel()
-                                        .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.toString()))
+                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.toString()))
                                         .addListener(ChannelFutureListener.CLOSE);
                             }
                         } catch (IOException e) {
-                            context.channel()
-                                    .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
+                            context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
                                     .addListener(ChannelFutureListener.CLOSE);
                         }
                     }, MoreExecutors.directExecutor());
                 }
             } catch (IOException e) {
-                context.channel()
-                        .writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
+                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
                         .addListener(ChannelFutureListener.CLOSE);
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
                 _writeChannel = null;
             } catch (HttpException e) {
-                context.channel()
-                        .writeAndFlush(createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()))
+                context.writeAndFlush(createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()))
                         .addListener(ChannelFutureListener.CLOSE);
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);

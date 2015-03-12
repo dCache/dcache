@@ -192,11 +192,11 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                 }
             }
             _descriptors.clear();
-            ctx.channel().close();
+            ctx.close();
         } else {
             Thread me = Thread.currentThread();
             me.getUncaughtExceptionHandler().uncaughtException(me, t);
-            ctx.channel().close();
+            ctx.close();
         }
     }
 
