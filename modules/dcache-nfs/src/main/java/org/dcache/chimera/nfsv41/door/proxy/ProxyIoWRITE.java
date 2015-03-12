@@ -40,8 +40,8 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final WRITE4res res = result.opwrite;
 
+        NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
-	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
 
             if (!context.getFs().hasIOLayout(inode)) {
@@ -112,6 +112,8 @@ public class ProxyIoWRITE extends AbstractNFSv4Operation {
         }catch(Exception e) {
             _log.error("DSWRITE: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
+        } finally {
+            NDC.pop();
         }
     }
 }

@@ -37,8 +37,8 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) {
         final READ4res res = result.opread;
 
+        NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
-	    NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
             Inode inode = context.currentInode();
             if (!context.getFs().hasIOLayout(inode)) {
                 /*
@@ -102,6 +102,8 @@ public class ProxyIoREAD extends AbstractNFSv4Operation {
         }catch(Exception e) {
             _log.error("DSREAD: ", e);
             res.status = nfsstat.NFSERR_SERVERFAULT;
+        } finally {
+            NDC.pop();
         }
     }
 }
