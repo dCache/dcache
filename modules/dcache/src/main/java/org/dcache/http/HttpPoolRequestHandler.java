@@ -3,6 +3,8 @@ package org.dcache.http;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.buffer.ByteBuf;
@@ -10,6 +12,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -251,10 +254,9 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
      * remote peer in chunks to avoid server side memory issues.
      */
     @Override
-    protected void doOnGet(ChannelHandlerContext context,
-                           HttpRequest request)
+    protected ChannelFuture doOnGet(ChannelHandlerContext context,
+                                    HttpRequest request)
     {
-        ChannelFuture future = null;
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
         List<HttpByteRange> ranges;
         long fileSize;
@@ -270,78 +272,70 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             fileSize = file.size();
             ranges = parseHttpRange(request, 0, fileSize - 1);
         } catch (HttpException e) {
-            context.writeAndFlush(createErrorResponse(e.getErrorCode(), e.getMessage()));
-            return;
+            return context.writeAndFlush(createErrorResponse(e.getErrorCode(), e.getMessage()));
         } catch (URISyntaxException e) {
-            context.writeAndFlush(createErrorResponse(BAD_REQUEST, "URI not valid: " + e.getMessage()));
-            return;
+            return context.writeAndFlush(createErrorResponse(BAD_REQUEST, "URI not valid: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
-            context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
-            return;
+            return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (IOException e) {
-            context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
-            return;
+            return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
 
-        try {
-            if (ranges == null || ranges.isEmpty()) {
-                /*
-                 * GET for a whole file
-                 */
-                future = context.write(new HttpGetResponse(fileSize, file));
-                future = context.write(read(file, 0, fileSize - 1));
-                future = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-            } else if (ranges.size() == 1) {
-                /* RFC 2616: 14.16. A response to a request for a single range
-                 * MUST NOT be sent using the multipart/byteranges media type.
-                 */
-                HttpByteRange range = ranges.get(0);
-                future = context.write(new HttpPartialContentResponse(range.getLower(), range.getUpper(),
-                                                                      fileSize, buildDigest(file)));
-                future = context.write(read(file, range.getLower(), range.getUpper()));
-                future = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-            } else {
-                /*
-                 * GET for multiple ranges
-                 */
+        if (ranges == null || ranges.isEmpty()) {
+            /*
+             * GET for a whole file
+             */
+            context.write(new HttpGetResponse(fileSize, file))
+                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            context.write(read(file, 0, fileSize - 1))
+                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        } else if (ranges.size() == 1) {
+            /* RFC 2616: 14.16. A response to a request for a single range
+             * MUST NOT be sent using the multipart/byteranges media type.
+             */
+            HttpByteRange range = ranges.get(0);
+            context.write(new HttpPartialContentResponse(range.getLower(), range.getUpper(),
+                                                         fileSize, buildDigest(file)))
+                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            context.write(read(file, range.getLower(), range.getUpper()))
+                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        } else {
+            /*
+             * GET for multiple ranges
+             */
 
-                long totalLen = 0;
-                ByteBuf[] fragmentMarkers = new ByteBuf[ranges.size()];
-                for (int i = 0; i < ranges.size(); i++) {
-                    HttpByteRange range = ranges.get(i);
-                    long upper = range.getUpper();
-                    long lower = range.getLower();
-                    totalLen += upper - lower + 1;
+            long totalLen = 0;
+            ByteBuf[] fragmentMarkers = new ByteBuf[ranges.size()];
+            for (int i = 0; i < ranges.size(); i++) {
+                HttpByteRange range = ranges.get(i);
+                long upper = range.getUpper();
+                long lower = range.getLower();
+                totalLen += upper - lower + 1;
 
-                    ByteBuf buffer = fragmentMarkers[i] = createMultipartFragmentMarker(lower, upper, fileSize);
-                    totalLen += buffer.readableBytes();
-                }
-                ByteBuf endMarker = createMultipartEnd();
-                totalLen += endMarker.readableBytes();
-
-                future = context.write(new HttpMultipartResponse(buildDigest(file), totalLen));
-                for (int i = 0; i < ranges.size(); i++) {
-                    HttpByteRange range = ranges.get(i);
-                    context.write(fragmentMarkers[i]);
-                    context.write(read(file, range.getLower(), range.getUpper()));
-                }
-                future = context.writeAndFlush(new DefaultLastHttpContent(endMarker));
+                ByteBuf buffer = fragmentMarkers[i] = createMultipartFragmentMarker(lower, upper, fileSize);
+                totalLen += buffer.readableBytes();
             }
-        } finally {
-            if (future != null) {
-                if (isKeepAlive()) {
-                    future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-                } else {
-                    future.addListener(ChannelFutureListener.CLOSE);
-                }
+            ByteBuf endMarker = createMultipartEnd();
+            totalLen += endMarker.readableBytes();
+
+            context.write(new HttpMultipartResponse(buildDigest(file), totalLen))
+                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            for (int i = 0; i < ranges.size(); i++) {
+                HttpByteRange range = ranges.get(i);
+                context.write(fragmentMarkers[i])
+                        .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                context.write(read(file, range.getLower(), range.getUpper()))
+                        .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
+            return context.writeAndFlush(new DefaultLastHttpContent(endMarker));
         }
     }
 
     @Override
-    protected void doOnPut(ChannelHandlerContext context, HttpRequest request)
+    protected ChannelFuture doOnPut(ChannelHandlerContext context, HttpRequest request)
     {
-        ChannelFuture errorResponse = null;
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = null;
         Exception exception = null;
 
@@ -356,37 +350,36 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             }
 
             if (is100ContinueExpected(request)) {
-                context.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
+                context.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE))
+                        .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
             }
             _writeChannel = file;
             file = null;
+            return null;
         } catch (HttpException e) {
             exception = e;
-            errorResponse = context.writeAndFlush(
+            return context.writeAndFlush(
                     createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()));
         } catch (URISyntaxException e) {
             exception = e;
-            errorResponse = context.writeAndFlush(
+            return context.writeAndFlush(
                     createErrorResponse(BAD_REQUEST, "URI is not valid: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             exception = e;
-            errorResponse = context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
+            return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (RuntimeException e) {
             exception = e;
-            errorResponse = context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
+            return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         } finally {
             if (file != null) {
                 file.release(exception);
                 _files.remove(file);
             }
-            if (errorResponse != null) {
-                errorResponse.addListener(ChannelFutureListener.CLOSE);
-            }
         }
     }
 
     @Override
-    protected void doOnContent(ChannelHandlerContext context, HttpContent content)
+    protected ChannelFuture doOnContent(ChannelHandlerContext context, HttpContent content)
     {
         if (_writeChannel != null) {
             try {
@@ -404,69 +397,67 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     _writeChannel = null;
                     _files.remove(writeChannel);
 
-                    ListenableFuture<Void> releaseFuture = writeChannel.release();
-                    releaseFuture.addListener(() -> {
-                        try {
-                            getUninterruptibly(releaseFuture);
-                            ChannelFuture future = context.writeAndFlush(new HttpPutResponse(writeChannel));
-                            if (!isKeepAlive()) {
-                                future.addListener(ChannelFutureListener.CLOSE);
+                    ChannelPromise promise = context.newPromise();
+                    Futures.addCallback(writeChannel.release(), new FutureCallback<Void>()
+                    {
+                        @Override
+                        public void onSuccess(Void result)
+                        {
+                            try {
+                                context.writeAndFlush(new HttpPutResponse(writeChannel), promise);
+                            } catch (IOException e) {
+                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()), promise);
                             }
                             context.channel().config().setAutoRead(true);
-                        } catch (ExecutionException e) {
-                            Throwable cause = e.getCause();
-                            if (cause instanceof FileCorruptedCacheException) {
-                                context.writeAndFlush(createErrorResponse(BAD_REQUEST, cause.getMessage()))
-                                        .addListener(ChannelFutureListener.CLOSE);
-                            } else if (cause instanceof CacheException) {
-                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.getMessage()))
-                                        .addListener(ChannelFutureListener.CLOSE);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t)
+                        {
+                            if (t instanceof FileCorruptedCacheException) {
+                                context.writeAndFlush(createErrorResponse(BAD_REQUEST, t.getMessage()), promise);
+                            } else if (t instanceof CacheException) {
+                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, t.getMessage()),
+                                                      promise);
                             } else {
-                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, cause.toString()))
-                                        .addListener(ChannelFutureListener.CLOSE);
+                                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, t.toString()),
+                                                      promise);
                             }
-                        } catch (IOException e) {
-                            context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
-                                    .addListener(ChannelFutureListener.CLOSE);
+                            context.channel().config().setAutoRead(true);
                         }
                     }, MoreExecutors.directExecutor());
+                    return promise;
                 }
             } catch (IOException e) {
-                context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()))
-                        .addListener(ChannelFutureListener.CLOSE);
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
                 _writeChannel = null;
+                return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
             } catch (HttpException e) {
-                context.writeAndFlush(createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()))
-                        .addListener(ChannelFutureListener.CLOSE);
                 _writeChannel.release(e);
                 _files.remove(_writeChannel);
                 _writeChannel = null;
+                return context.writeAndFlush(createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()));
             }
         }
+        return null;
     }
 
     @Override
-    protected void doOnHead(ChannelHandlerContext context, HttpRequest request) {
-        ChannelFuture future = null;
-        NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file;
+    protected ChannelFuture doOnHead(ChannelHandlerContext context, HttpRequest request) {
 
         try {
-            file = open(request, false);
-            future = context.write(new HttpGetResponse(file.size(), file));
-            future = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+            NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = open(request, false);
+            context.write(new HttpGetResponse(file.size(), file))
+                    .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            return context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } catch (IOException | IllegalArgumentException e) {
-            future = context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
+            return context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (URISyntaxException e) {
-            future = context.writeAndFlush(createErrorResponse(BAD_REQUEST,
-                                                               "URI not valid: " + e.getMessage()));
+            return context.writeAndFlush(createErrorResponse(BAD_REQUEST,
+                                                             "URI not valid: " + e.getMessage()));
         } catch (RuntimeException e) {
-            future = context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
-        } finally {
-            if (future != null && !isKeepAlive()) {
-                future.addListener(ChannelFutureListener.CLOSE);
-            }
+            return context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         }
     }
 

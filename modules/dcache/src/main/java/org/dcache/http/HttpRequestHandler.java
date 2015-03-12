@@ -46,62 +46,76 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<Object>
 
             _isKeepAlive = HttpHeaders.isKeepAlive(request);
 
+            ChannelFuture future;
             if (request.getMethod() == HttpMethod.GET) {
-                doOnGet(ctx, request);
+                future = doOnGet(ctx, request);
             } else if (request.getMethod() == HttpMethod.PUT) {
-                doOnPut(ctx, request);
+                future = doOnPut(ctx, request);
             } else if (request.getMethod() == HttpMethod.POST) {
-                doOnPost(ctx, request);
+                future = doOnPost(ctx, request);
             } else if (request.getMethod() == HttpMethod.DELETE) {
-                doOnDelete(ctx, request);
+                future = doOnDelete(ctx, request);
             } else if (request.getMethod() == HttpMethod.HEAD) {
-                doOnHead(ctx, request);
+                future = doOnHead(ctx, request);
             } else {
-                unsupported(ctx);
+                future = unsupported(ctx);
+            }
+            if (future != null) {
+                future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                if (!isKeepAlive()) {
+                    future.addListener(ChannelFutureListener.CLOSE);
+                }
+                return;
             }
         }
         if (msg instanceof HttpContent) {
-            doOnContent(ctx, (HttpContent) msg);
+            ChannelFuture future = doOnContent(ctx, (HttpContent) msg);
+            if (future != null) {
+                future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+                if (!isKeepAlive()) {
+                    future.addListener(ChannelFutureListener.CLOSE);
+                }
+            }
         }
     }
 
-    protected void doOnGet(ChannelHandlerContext context, HttpRequest request)
+    protected ChannelFuture doOnGet(ChannelHandlerContext context, HttpRequest request)
     {
         LOGGER.debug("Received a GET request, writing a default response.");
-        unsupported(context);
+        return unsupported(context);
     }
 
-    protected void doOnPut(ChannelHandlerContext context, HttpRequest request)
+    protected ChannelFuture doOnPut(ChannelHandlerContext context, HttpRequest request)
     {
         LOGGER.debug("Received a PUT request, writing a default response.");
-        unsupported(context);
+        return unsupported(context);
     }
 
-    protected void doOnPost(ChannelHandlerContext context, HttpRequest request)
+    protected ChannelFuture doOnPost(ChannelHandlerContext context, HttpRequest request)
     {
         LOGGER.debug("Received a POST request, writing default response.");
-        unsupported(context);
+        return unsupported(context);
     }
 
-    protected void doOnDelete(ChannelHandlerContext context, HttpRequest request)
+    protected ChannelFuture doOnDelete(ChannelHandlerContext context, HttpRequest request)
     {
         LOGGER.debug("Received a DELETE request, writing default response.");
-        unsupported(context);
+        return unsupported(context);
     }
 
-    protected void doOnContent(ChannelHandlerContext context, HttpContent chunk)
+    protected ChannelFuture doOnContent(ChannelHandlerContext context, HttpContent chunk)
     {
         LOGGER.debug("Received an HTTP chunk, writing default response.");
-        unsupported(context);
+        return unsupported(context);
     }
 
-    protected void doOnHead(ChannelHandlerContext context, HttpRequest request)
+    protected ChannelFuture doOnHead(ChannelHandlerContext context, HttpRequest request)
     {
         LOGGER.debug("Received a HEAD request, writing default response.");
-        unsupported(context);
+        return unsupported(context);
     }
 
-    protected static ChannelFuture unsupported(
+    protected  ChannelFuture unsupported(
             ChannelHandlerContext context)
     {
         return context.writeAndFlush(createErrorResponse(NOT_IMPLEMENTED, "The requested operation is not supported by dCache"));
