@@ -5,7 +5,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -13,6 +12,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -43,11 +43,11 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.util.HttpException;
 
-import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.util.concurrent.Uninterruptibles.*;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.BYTES;
 import static io.netty.handler.codec.http.HttpHeaders.is100ContinueExpected;
@@ -289,7 +289,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                  * GET for a whole file
                  */
                 future = context.write(new HttpGetResponse(fileSize, file));
-                future = context.writeAndFlush(read(file, 0, fileSize - 1));
+                future = context.write(read(file, 0, fileSize - 1));
+                future = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
             } else if (ranges.size() == 1) {
                 /* RFC 2616: 14.16. A response to a request for a single range
                  * MUST NOT be sent using the multipart/byteranges media type.
@@ -297,7 +298,8 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                 HttpByteRange range = ranges.get(0);
                 future = context.write(new HttpPartialContentResponse(range.getLower(), range.getUpper(),
                                                                       fileSize, buildDigest(file)));
-                future = context.writeAndFlush(read(file, range.getLower(), range.getUpper()));
+                future = context.write(read(file, range.getLower(), range.getUpper()));
+                future = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
             } else {
                 /*
                  * GET for multiple ranges
@@ -323,12 +325,12 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
                     context.write(fragmentMarkers[i]);
                     context.write(read(file, range.getLower(), range.getUpper()));
                 }
-                future = context.writeAndFlush(endMarker);
+                future = context.writeAndFlush(new DefaultLastHttpContent(endMarker));
             }
         } finally {
             if (future != null) {
                 if (isKeepAlive()) {
-                    future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                    future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
                 } else {
                     future.addListener(ChannelFutureListener.CLOSE);
                 }
@@ -339,7 +341,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
     @Override
     protected void doOnPut(ChannelHandlerContext context, HttpRequest request)
     {
-        ChannelFuture future = null;
+        ChannelFuture errorResponse = null;
         NettyTransferService<HttpProtocolInfo>.NettyMoverChannel file = null;
         Exception exception = null;
 
@@ -360,25 +362,25 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
             file = null;
         } catch (HttpException e) {
             exception = e;
-            future = context.writeAndFlush(
+            errorResponse = context.writeAndFlush(
                     createErrorResponse(HttpResponseStatus.valueOf(e.getErrorCode()), e.getMessage()));
         } catch (URISyntaxException e) {
             exception = e;
-            future = context.writeAndFlush(
+            errorResponse = context.writeAndFlush(
                     createErrorResponse(BAD_REQUEST, "URI is not valid: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             exception = e;
-            future = context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
+            errorResponse = context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));
         } catch (RuntimeException e) {
             exception = e;
-            future = context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
+            errorResponse = context.writeAndFlush(createErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage()));
         } finally {
             if (file != null) {
                 file.release(exception);
                 _files.remove(file);
             }
-            if (future != null) {
-                future.addListener(ChannelFutureListener.CLOSE);
+            if (errorResponse != null) {
+                errorResponse.addListener(ChannelFutureListener.CLOSE);
             }
         }
     }
@@ -458,7 +460,7 @@ public class HttpPoolRequestHandler extends HttpRequestHandler
 
         try {
             file = open(request, false);
-            context.write(new HttpGetResponse(file.size(), file));
+            future = context.write(new HttpGetResponse(file.size(), file));
             future = context.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
         } catch (IOException | IllegalArgumentException e) {
             future = context.writeAndFlush(createErrorResponse(BAD_REQUEST, e.getMessage()));

@@ -2,18 +2,25 @@ package org.dcache.http;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -30,6 +37,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,8 +45,8 @@ import java.util.UUID;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.HttpProtocolInfo;
 
-import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.IoMode;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.vehicles.FileAttributes;
@@ -147,8 +155,9 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -170,8 +179,9 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0), isCompleteRead("/path/to/file"));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -193,9 +203,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
                 isCompleteRead("/path/to/file?here"));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -217,9 +228,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
                 isCompleteRead("/path/to/file\\\"here"));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -246,9 +258,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(ACCEPT_RANGES, BYTES));
         assertThat(_response, not(hasHeader(CONTENT_RANGE)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
                 isCompleteRead("/path/to/\u16A0\u16C7\u16BB"));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
 
@@ -269,9 +282,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
                 isPartialRead("/path/to/file", 0, 499));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -292,9 +306,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, hasHeader(DIGEST, "adler32=03da0195"));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
                 isPartialRead("/path/to/file", 0, 499));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -314,9 +329,10 @@ public class HttpPoolRequestHandlerTests
         assertThat(_response, not(hasHeader(DIGEST)));
         assertThat(_response, not(hasHeader(CONTENT_DISPOSITION)));
 
-        assertThat(_additionalWrites, hasSize(1));
+        assertThat(_additionalWrites, hasSize(2));
         assertThat(_additionalWrites.get(0),
-                isCompleteRead("/path/to/file"));
+                   isCompleteRead("/path/to/file"));
+        assertThat(_additionalWrites.get(1), instanceOf(LastHttpContent.class));
     }
 
     @Test
@@ -648,6 +664,9 @@ public class HttpPoolRequestHandlerTests
         _response = (HttpResponse) _channel.readOutbound();
         _additionalWrites.addAll(_channel.outboundMessages());
         _channel.outboundMessages().clear();
+        if (!(Iterables.getLast(_additionalWrites, _response) instanceof LastHttpContent)) {
+            throw new RuntimeException("Reply lacks LastHttpContent.");
+        }
     }
 
     private HttpRequest buildRequest(RequestInfo info)
@@ -867,6 +886,9 @@ public class HttpPoolRequestHandlerTests
         @Override
         public boolean matches(Object o)
         {
+            if (o instanceof HttpContent) {
+                o = ((HttpContent) o).content();
+            }
             if(!(o instanceof ByteBuf)) {
                 return false;
             }
