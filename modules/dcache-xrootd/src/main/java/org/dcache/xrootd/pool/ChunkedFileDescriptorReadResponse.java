@@ -9,8 +9,6 @@ import java.nio.ByteBuffer;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.stream.AbstractChunkedReadResponse;
 
-import static io.netty.buffer.Unpooled.wrappedBuffer;
-
 public class ChunkedFileDescriptorReadResponse extends AbstractChunkedReadResponse
 {
     private final FileDescriptor descriptor;
@@ -27,9 +25,10 @@ public class ChunkedFileDescriptorReadResponse extends AbstractChunkedReadRespon
     public ByteBuf read(ByteBufAllocator alloc, long position, int length)
             throws IOException
     {
-        ByteBuffer chunk = ByteBuffer.allocate(length);
-        descriptor.read(chunk, position);
-        chunk.flip();
-        return wrappedBuffer(chunk);
+        ByteBuf chunk = alloc.ioBuffer(length);
+        ByteBuffer buffer = chunk.nioBuffer(0, length);
+        descriptor.read(buffer, position);
+        chunk.writerIndex(buffer.position());
+        return chunk;
     }
 }

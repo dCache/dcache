@@ -11,7 +11,6 @@ import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.stream.AbstractChunkedReadvResponse;
 
-import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_FileNotOpen;
 
 public class ChunkedFileDescriptorReadvResponse extends AbstractChunkedReadvResponse
@@ -44,9 +43,12 @@ public class ChunkedFileDescriptorReadvResponse extends AbstractChunkedReadvResp
         }
 
         FileDescriptor descriptor = descriptors.get(fd);
-        byte[] chunkArray = new byte[length];
-        ByteBuffer chunk = ByteBuffer.wrap(chunkArray);
-        descriptor.read(chunk, position);
-        return wrappedBuffer(chunkArray, 0, chunkArray.length - chunk.remaining());
+
+        ByteBuf chunk = alloc.ioBuffer(length);
+        ByteBuffer buffer = chunk.nioBuffer(0, length);
+        descriptor.read(buffer, position);
+        chunk.writerIndex(buffer.position());
+
+        return chunk;
     }
 }

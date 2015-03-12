@@ -96,23 +96,24 @@ public class ReusableChunkedNioFile implements ChunkedInput<ByteBuf>
             return null;
         }
 
-        int chunkSize = (int) Math.min(_chunkSize, _endOffset - offset);
-        byte [] chunkArray = new byte[chunkSize];
+        int length = (int) Math.min(_chunkSize, _endOffset - offset);
 
-        ByteBuffer chunk = ByteBuffer.wrap(chunkArray);
+        ByteBuf chunk = ctx.alloc().ioBuffer(length);
+        ByteBuffer buffer = chunk.nioBuffer(0, length);
 
-        while (chunk.hasRemaining()) {
+        while (buffer.hasRemaining()) {
             /* use position independent thread safe call */
-            int bytes = _channel.read(chunk, offset);
+            int bytes = _channel.read(buffer, offset);
             if (bytes < 0) {
                 break;
             }
             offset += bytes;
         }
+        chunk.writerIndex(buffer.position());
 
         _offset = offset;
 
-        return Unpooled.wrappedBuffer(chunkArray);
+        return chunk;
     }
 
     /**
