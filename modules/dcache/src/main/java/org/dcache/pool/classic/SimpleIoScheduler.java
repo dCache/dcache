@@ -437,6 +437,10 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         public synchronized void kill()
         {
+            if (_state == CANCELED || _state == DONE) {
+                return;
+            }
+
             if (_cancellable != null) {
                 _cancellable.cancel();
             } else {
