@@ -94,7 +94,7 @@ public class ReusableChunkedNioFile implements ChunkedInput
     public Object nextChunk() throws Exception {
         long offset = _offset;
 
-        if (_offset >= _endOffset) {
+        if (offset >= _endOffset) {
             return null;
         }
 
@@ -102,24 +102,17 @@ public class ReusableChunkedNioFile implements ChunkedInput
         byte [] chunkArray = new byte[chunkSize];
 
         ByteBuffer chunk = ByteBuffer.wrap(chunkArray);
-        int readBytes = 0;
 
-        while (true) {
-            /* use call that does not change the channel's position */
-            int localReadBytes = _channel.read(chunk, _offset);
-
-            if (localReadBytes < 0) {
+        while (chunk.hasRemaining()) {
+            /* use position independent thread safe call */
+            int bytes = _channel.read(chunk, offset);
+            if (bytes < 0) {
                 break;
             }
-
-            readBytes += localReadBytes;
-
-            if (readBytes == chunkSize) {
-                break;
-            }
+            offset += bytes;
         }
 
-        _offset += readBytes;
+        _offset = offset;
 
         return ChannelBuffers.wrappedBuffer(chunkArray);
     }
