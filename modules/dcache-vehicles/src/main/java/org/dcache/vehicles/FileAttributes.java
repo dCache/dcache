@@ -509,8 +509,11 @@ public class FileAttributes implements Serializable {
     private void writeObject(ObjectOutputStream stream)
             throws IOException
     {
-        _definedAttributes.remove(CACHECLASS); // For compatibility with pre-2.12 - remove after next golden
+        boolean wasCacheClassDefined = _definedAttributes.remove(CACHECLASS); // For compatibility with pre-2.12 - remove after next golden
         stream.defaultWriteObject();
+        if (wasCacheClassDefined) {
+            _definedAttributes.add(CACHECLASS);
+        }
     }
 
     private void readObject(ObjectInputStream stream)
