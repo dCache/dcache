@@ -64,6 +64,10 @@
         <artifactId>jetty-security</artifactId>
     </dependency>
     <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-rewrite</artifactId>
+    </dependency>
+    <dependency>
         <groupId>org.antlr</groupId>
         <artifactId>ST4</artifactId>
     </dependency>

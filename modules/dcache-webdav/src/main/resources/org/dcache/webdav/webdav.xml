@@ -160,6 +160,11 @@
       <property name="prefix" value="webdav.templates.config"/>
   </bean>
 
+  <bean id="custom-headers"
+	class="org.dcache.util.ConfigurationMapFactoryBean">
+      <property name="prefix" value="webdav.custom-response-header"/>
+  </bean>
+
   <bean id="resource-factory" class="org.dcache.webdav.DcacheResourceFactory">
       <description>Exposes dCache resources to Milton WebDAV library</description>
 
@@ -298,7 +303,27 @@
                 <ref bean="server-connector"/>
             </list>
         </property>
-        <property name="handler" ref="handlers"/>
+        <property name="handler">
+	  <!--+
+              |  The RewriteHandler allows modification of the
+              |  HttpServletResponse headers.  This allows
+              |  injection of the admin-supplied non-standard
+              |  response headers.  Note that these header values
+              |  are set before the request handler processes the
+              |  request, allowing the handler to adjust any
+              |  admin-supplied header.  While this weakens the
+              |  feature, it also prevents the admin from
+              |  mistakenly breaking the response.
+	      +-->
+            <bean class="org.eclipse.jetty.rewrite.handler.RewriteHandler">
+                <property name="rules">
+                    <bean class="org.dcache.util.jetty.HeaderRewriteRuleContainerFactoryBean">
+                        <property name="headers" ref="custom-headers"/>
+                    </bean>
+                </property>
+                <property name="handler" ref="handlers"/>
+            </bean>
+        </property>
 
         <property name="beans">
             <list>

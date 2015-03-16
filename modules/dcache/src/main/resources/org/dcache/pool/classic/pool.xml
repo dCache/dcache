@@ -387,6 +387,7 @@
               <constructor-arg value="${pool.mover.http.port.max}"/>
           </bean>
       </property>
+      <property name="customHeaders" ref="custom-headers"/>
   </bean>
 
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
@@ -408,6 +409,11 @@
             <entry key="Http-1" value-ref="http-transfer-service"/>
         </map>
       </property>
+  </bean>
+
+  <bean id="custom-headers"
+	class="org.dcache.util.ConfigurationMapFactoryBean">
+      <property name="prefix" value="pool.mover.http.custom-response-header"/>
   </bean>
 
   <beans profile="healthcheck-true">

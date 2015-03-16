@@ -2,7 +2,12 @@ package org.dcache.webdav;
 
 import com.google.common.collect.ImmutableMap;
 import io.milton.config.HttpManagerBuilder;
+import io.milton.http.Auth;
+import io.milton.http.AuthenticationService;
 import io.milton.http.HttpManager;
+import io.milton.http.Response;
+import io.milton.http.Response.Status;
+import io.milton.http.http11.DefaultHttp11ResponseHandler;
 import io.milton.http.webdav.DefaultWebDavResponseHandler;
 import io.milton.http.webdav.WebDavResponseHandler;
 import org.springframework.beans.factory.FactoryBean;
@@ -10,6 +15,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.dcache.webdav.federation.FederationResponseHandler;
 
@@ -40,6 +46,29 @@ public class HttpManagerFactory extends HttpManagerBuilder implements FactoryBea
         dcacheResponseHandler.setBuffering(getBuffering());
 
         return buildHttpManager();
+    }
+
+    @Override
+    protected DefaultHttp11ResponseHandler createDefaultHttp11ResponseHandler(AuthenticationService authenticationService)
+    {
+        // Subclass DefaultHttp11ResponseHandler to avoid adding a "Server" response header.
+        return new DefaultHttp11ResponseHandler(authenticationService,
+                eTagGenerator, contentGenerator) {
+            @Override
+            protected void setRespondCommonHeaders(Response response,
+                    io.milton.resource.Resource resource, Status status, Auth auth)
+            {
+                response.setStatus(status);
+                // The next line is omitted to avoid setting the Server header
+                // response.setNonStandardHeader("Server", "milton.io-" + miltonVerson);
+                response.setDateHeader(new Date());
+                response.setNonStandardHeader("Accept-Ranges", "bytes");
+                String etag = eTagGenerator.generateEtag(resource);
+                if (etag != null) {
+                        response.setEtag(etag);
+                }
+            }
+        };
     }
 
     @Override

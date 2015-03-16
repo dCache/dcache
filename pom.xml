@@ -458,6 +458,11 @@
                 <artifactId>jetty-security</artifactId>
                 <version>${version.jetty}</version>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-rewrite</artifactId>
+                <version>${version.jetty}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.antlr</groupId>

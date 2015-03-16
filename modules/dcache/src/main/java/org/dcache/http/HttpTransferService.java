@@ -17,6 +17,7 @@
  */
 package org.dcache.http;
 
+import com.google.common.collect.ImmutableMap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -67,6 +68,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
     private static final String PROTOCOL_HTTP = "http";
 
     private int chunkSize;
+    private ImmutableMap<String,String> customHeaders;
 
     public HttpTransferService()
     {
@@ -82,6 +84,12 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
     public void setChunkSize(int chunkSize)
     {
         this.chunkSize = chunkSize;
+    }
+
+    @Required
+    public void setCustomHeaders(ImmutableMap<String,String> headers)
+    {
+        customHeaders = headers;
     }
 
     @Override
@@ -152,6 +160,11 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
                                               clientIdleTimeout,
                                               clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+
+        if (!customHeaders.isEmpty()) {
+            pipeline.addLast("custom-headers", new CustomResponseHeadersHandler(customHeaders));
+        }
+
         pipeline.addLast("transfer", new HttpPoolRequestHandler(this, chunkSize));
     }
 }
