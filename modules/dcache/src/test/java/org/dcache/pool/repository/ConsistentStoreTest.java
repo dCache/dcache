@@ -10,10 +10,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
@@ -61,25 +63,24 @@ public class ConsistentStoreTest
         _fileStore.shutdown();
     }
 
-    private static StorageInfo createStorageInfo(long size)
+    private static FileAttributes createFileAttributes(PnfsId pnfsId)
         throws URISyntaxException
     {
         StorageInfo info = new OSMStorageInfo("h1", "rawd");
         info.addLocation(new URI("osm://mystore/?store=mystore&group=mygroup&bdid=1"));
-        info.setLegacySize(size);
-        return info;
-    }
-
-    private static FileAttributes
-        fileAttributes(PnfsId pnfsId, StorageInfo info)
-    {
         FileAttributes attributes = new FileAttributes();
-        attributes.setSize(info.getLegacySize());
-        attributes.setAccessLatency(info.getLegacyAccessLatency());
-        attributes.setRetentionPolicy(info.getLegacyRetentionPolicy());
-        attributes.setChecksums(Collections.<Checksum>emptySet());
         attributes.setPnfsId(pnfsId);
         attributes.setStorageInfo(info);
+        attributes.setAccessLatency(AccessLatency.NEARLINE);
+        attributes.setRetentionPolicy(RetentionPolicy.CUSTODIAL);
+        return attributes;
+    }
+
+    private static FileAttributes createFileAttributes(PnfsId pnfsId, long size)
+        throws URISyntaxException
+    {
+        FileAttributes attributes = createFileAttributes(pnfsId);
+        attributes.setSize(size);
         return attributes;
     }
 
@@ -92,14 +93,11 @@ public class ConsistentStoreTest
 	inode.setStat(stat);
     }
 
-    private void givenMetaDataStoreHas(PnfsId pnfsId, EntryState state,
-                                              StorageInfo info)
+    private void givenMetaDataStoreHas(EntryState state, FileAttributes attributes)
         throws DuplicateEntryException, CacheException
     {
-        MetaDataRecord entry = _metaDataStore.create(pnfsId);
+        MetaDataRecord entry = _metaDataStore.create(attributes.getPnfsId());
         entry.setState(state);
-        FileAttributes attributes = StorageInfos.injectInto(info, new FileAttributes());
-        attributes.setPnfsId(pnfsId);
         entry.setFileAttributes(attributes);
     }
 
@@ -112,12 +110,11 @@ public class ConsistentStoreTest
 
         // and given the meta data indicates a different size, but is
         // otherwise in a valid non-transient state
-        StorageInfo info = createStorageInfo(20);
-        givenMetaDataStoreHas(PNFSID, CACHED, info);
+        FileAttributes info = createFileAttributes(PNFSID, 20);
+        givenMetaDataStoreHas(CACHED, info);
 
         // and given that the name space provides the same storage info
-        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
-            .willReturn(fileAttributes(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet())).willReturn(info);
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -143,19 +140,17 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica is an incomplete upload
-        StorageInfo info = createStorageInfo(0);
-        givenMetaDataStoreHas(PNFSID, FROM_CLIENT, info);
+        FileAttributes info = createFileAttributes(PNFSID);
+        givenMetaDataStoreHas(FROM_CLIENT, info);
 
         // and given the name space entry exists without any size
-        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
-            .willReturn(fileAttributes(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet())).willReturn(info);
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
 
-        // then the correct size is set in storage info
-        assertThat(_metaDataStore.get(PNFSID).getFileAttributes().getSize(),
-                   is(17L));
+        // then the correct size is set in file attributes info
+        assertThat(_metaDataStore.get(PNFSID).getFileAttributes().getSize(), is(17L));
 
         // and the correct file size and location is registered in
         // the name space
@@ -177,8 +172,8 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica is in an incomplete upload
-        StorageInfo info = createStorageInfo(0);
-        givenMetaDataStoreHas(PNFSID, FROM_CLIENT, info);
+        FileAttributes info = createFileAttributes(PNFSID, 0);
+        givenMetaDataStoreHas(FROM_CLIENT, info);
 
         // and given the name space entry does not exist
         given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
@@ -242,12 +237,11 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica is marked broken
-        StorageInfo info = createStorageInfo(0);
-        givenMetaDataStoreHas(PNFSID, BROKEN, info);
+        FileAttributes info = createFileAttributes(PNFSID);
+        givenMetaDataStoreHas(BROKEN, info);
 
         // and given the name space entry exists without any size
-        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
-                .willReturn(fileAttributes(PNFSID, info));
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet())).willReturn(info);
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -278,8 +272,8 @@ public class ConsistentStoreTest
         // and given the replica meta data indicates the file was
         // being restored from tape and has is supposed to have a
         // different file size,
-        StorageInfo info = createStorageInfo(20);
-        givenMetaDataStoreHas(PNFSID, FROM_STORE, info);
+        FileAttributes info = createFileAttributes(PNFSID, 20);
+        givenMetaDataStoreHas(FROM_STORE, info);
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -307,9 +301,8 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the name space entry reports a different size
-        StorageInfo info = createStorageInfo(20);
-        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet()))
-            .willReturn(fileAttributes(PNFSID, info));
+        FileAttributes info = createFileAttributes(PNFSID, 20);
+        given(_pnfs.getFileAttributes(eq(PNFSID), Mockito.anySet())).willReturn(info);
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
@@ -330,7 +323,7 @@ public class ConsistentStoreTest
         givenStoreHasFileOfSize(PNFSID, 17);
 
         // and given the replica has intact meta data
-        givenMetaDataStoreHas(PNFSID, CACHED, createStorageInfo(17));
+        givenMetaDataStoreHas(CACHED, createFileAttributes(PNFSID, 17));
 
         // when reading the meta data record
         MetaDataRecord record = _consistentStore.get(PNFSID);
