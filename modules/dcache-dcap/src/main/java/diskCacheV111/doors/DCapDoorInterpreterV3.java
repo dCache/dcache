@@ -1043,7 +1043,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _attributes = EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE, SIZE,
                     CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, PNFSID);
             if (!metaDataOnly) {
-                _attributes.add(STORAGEINFO);
+                _attributes.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             }
 
             String tmp = args.getOpt("timeout");

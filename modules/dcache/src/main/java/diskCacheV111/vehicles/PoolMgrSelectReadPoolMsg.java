@@ -56,8 +56,6 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
                                     Context context)
     {
         this(fileAttributes, protocolInfo, context, RequestContainerV5.allStates);
-        checkArgument(fileAttributes.isDefined(getRequiredAttributes()),
-                "Required attributes are missing");
     }
 
     /**
@@ -72,6 +70,7 @@ public class PoolMgrSelectReadPoolMsg extends PoolMgrSelectPoolMsg
                                     EnumSet<RequestContainerV5.RequestState> allowedStates)
     {
         super(fileAttributes, protocolInfo, allowedStates);
+        checkArgument(fileAttributes.isDefined(getRequiredAttributes()), "Required attributes are missing.");
         _context = (context == null) ? new Context() : context;
     }
 
