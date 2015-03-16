@@ -396,6 +396,7 @@ public class UserAdminShell
                 }
                 checkCdPermission(name);
                 _currentPosition = resolve(name);
+                _completer = null;
             } catch (Throwable e) {
                 _user = oldUser;
                 throw e;
