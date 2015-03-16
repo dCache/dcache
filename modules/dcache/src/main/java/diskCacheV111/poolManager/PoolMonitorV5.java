@@ -10,9 +10,6 @@ import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,7 +17,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
@@ -32,7 +28,6 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolManagerPoolInformation;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellMessage;
@@ -426,7 +421,14 @@ public class PoolMonitorV5
             _log.debug("[pin] Online pools: {}", onlinePools.values());
 
             boolean isRequestSatisfiable = false;
-            for (PoolPreferenceLevel level: match(DirectionType.READ)) {
+            String hostName = getHostName();
+            String protocol = getProtocol();
+            PoolPreferenceLevel[] levels = _selectionUnit.match(DirectionType.READ,
+                                                                hostName,
+                                                                protocol,
+                                                                _fileAttributes,
+                                                                _linkGroup);
+            for (PoolPreferenceLevel level: levels) {
                 List<String> pools = level.getPoolList();
                 if (!pools.isEmpty()) {
                     /* Now we know that the file could be pinned/read if
@@ -441,11 +443,25 @@ public class PoolMonitorV5
                 }
             }
 
-            if (isRequestSatisfiable &&
-                (!onlinePools.isEmpty() || _fileAttributes.getStorageInfo().isStored())) {
-                throw new FileNotOnlineCacheException("File is not on online");
+            if (levels.length == 0) {
+                throw new CacheException(CacheException.NO_POOL_CONFIGURED, "No read links configured [" +
+                                                                            "net=" + hostName +
+                                                                            ",protocol=" + protocol +
+                                                                            ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
+                                                                            ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
+                                                                            ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+            } else if (!isRequestSatisfiable) {
+                throw new CacheException(CacheException.NO_POOL_ONLINE,
+                                         "No read pools online for [" +
+                                         "net=" + hostName +
+                                         ",protocol=" + protocol +
+                                         ",store=" + _fileAttributes.getStorageClass() + "@" + _fileAttributes.getHsm() +
+                                         ",cache=" + nullToEmpty(_fileAttributes.getCacheClass()) +
+                                         ",linkgroup=" + nullToEmpty(_linkGroup) + "]");
+            } else if (onlinePools.isEmpty() && !_fileAttributes.getStorageInfo().isStored()) {
+                throw new FileNotInCacheException("File is unavailable.");
             } else {
-                throw new FileNotInCacheException("File is unavailable");
+                throw new FileNotOnlineCacheException("File is nearline.");
             }
         }
     }
