@@ -17,6 +17,8 @@
  */
 package org.dcache.pool.nearline.spi;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.File;
 import java.net.URI;
 import java.util.Set;
@@ -44,4 +46,19 @@ public interface FlushRequest extends NearlineRequest<Set<URI>>
      * @return Attributes of the file
      */
     FileAttributes getFileAttributes();
+
+    /**
+     * Signals that the request is being activated and returns the path of the file.
+     *
+     * Similar to <code>activate</code>, but in addition to marking the request as
+     * active, this method resolves the path of the file. Resolving the path of a
+     * file is relatively expensive, which is why <code>activate</code> doesn't do
+     * it. If a file has several hard-links, only one of the paths is returned.
+     *
+     * @return An asynchronous reply indicating when to proceed with processing
+     *         the request. The activation may fail and a NearlineStorage must
+     *         fail the entire request by calling {@code failed} with the exception
+     *         returned by the future. The result carries the path of the file.
+     */
+    ListenableFuture<String> activateWithPath();
 }
