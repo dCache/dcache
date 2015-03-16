@@ -1,10 +1,7 @@
-// $Id: PoolMgrGetPoolMsg.java,v 1.3 2004-11-05 12:07:19 tigran Exp $
-
 package diskCacheV111.vehicles;
 
 import javax.annotation.Nonnull;
 
-import java.util.Collection;
 import java.util.EnumSet;
 
 import diskCacheV111.util.PnfsId;
@@ -15,10 +12,7 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.namespace.FileAttribute.HSM;
-import static org.dcache.namespace.FileAttribute.PNFSID;
-import static org.dcache.namespace.FileAttribute.STORAGECLASS;
-import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+import static org.dcache.namespace.FileAttribute.*;
 
 public class PoolMgrGetPoolMsg extends PoolManagerMessage
 {
@@ -30,7 +24,7 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
 
     public PoolMgrGetPoolMsg(FileAttributes fileAttributes)
     {
-        checkArgument(fileAttributes.getDefinedAttributes().containsAll(getRequiredAttributes()), "Required attributes are missing");
+        checkArgument(fileAttributes.isDefined(getRequiredAttributes()), "Required attributes are missing.");
 
 	_fileAttributes = fileAttributes;
 	setReplyRequired(true);
@@ -87,7 +81,7 @@ public class PoolMgrGetPoolMsg extends PoolManagerMessage
         }
     }
 
-    public static Collection<FileAttribute> getRequiredAttributes()
+    public static EnumSet<FileAttribute> getRequiredAttributes()
     {
         return EnumSet.of(PNFSID, STORAGEINFO, STORAGECLASS, HSM);
     }

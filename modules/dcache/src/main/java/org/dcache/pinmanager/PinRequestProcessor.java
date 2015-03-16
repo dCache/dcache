@@ -25,7 +25,6 @@ import diskCacheV111.util.FileNotOnlineCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
@@ -91,9 +90,6 @@ public class PinRequestProcessor
      * account for clock drift.
      */
     private final static long CLOCK_DRIFT_MARGIN = MINUTES.toMillis(30);
-
-    private final static Set<FileAttribute> REQUIRED_ATTRIBUTES =
-        PoolMgrSelectReadPoolMsg.getRequiredAttributes();
 
     private ScheduledExecutorService _scheduledExecutor;
     private Executor _executor;
@@ -201,7 +197,7 @@ public class PinRequestProcessor
 
         PinTask task = createTask(message, reply);
         if (task != null) {
-            if (!task.getFileAttributes().isDefined(REQUIRED_ATTRIBUTES)) {
+            if (!task.getFileAttributes().isDefined(PoolMgrSelectReadPoolMsg.getRequiredAttributes())) {
                 rereadNameSpaceEntry(task);
             } else {
                 selectReadPool(task);
