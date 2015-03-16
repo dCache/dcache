@@ -13,10 +13,12 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 
+import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
@@ -46,24 +48,34 @@ public class ConsistentStore
     private final static String RECOVERING_MSG =
         "Recovering %1$s...";
     private final static String MISSING_MSG =
-        "Recovering: Reconstructing meta data for %1$s";
+        "Recovering: Reconstructing meta data for %1$s.";
     private final static String PARTIAL_FROM_TAPE_MSG =
-        "Recovering: Removed %1$s because it was not fully staged";
+        "Recovering: Removed %1$s because it was not fully staged.";
     private final static String FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS =
-        "Recovering: Fetched storage info for %1$s from PNFS";
+        "Recovering: Fetched storage info for %1$s from name space.";
     private final static String FILE_NOT_FOUND_MSG =
-        "Recovering: Removed %1$s because name space entry was deleted";
+        "Recovering: Removed %1$s because name space entry was deleted.";
     private final static String UPDATE_SIZE_MSG =
-        "Recovering: Setting size of %1$s in PNFS to %2$d";
+        "Recovering: Setting size of %1$s in name space to %2$d.";
+    private final static String UPDATE_ACCESS_LATENCY_MSG =
+        "Recovering: Setting access latency of %1$s in name space to %2$d.";
+    private final static String UPDATE_RETENTION_POLICY_MSG =
+        "Recovering: Setting retention policy of %1$s in name space to %2$d.";
+    private final static String UPDATE_CHECKSUM_MSG =
+        "Recovering: Setting checksum of %1$s in name space to %2$d.";
     private final static String MARKED_MSG =
-        "Recovering: Marked %1$s as %2$s";
+        "Recovering: Marked %1$s as %2$s.";
     private final static String REMOVING_REDUNDANT_META_DATA =
-        "Removing redundant meta data for %s";
+        "Removing redundant meta data for %s.";
 
     private final static String BAD_MSG =
-        "Marked %1$s bad: %2$s";
+        "Marked %1$s bad: %2$s.";
     private final static String BAD_SIZE_MSG =
         "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
+    private final static String MISSING_ACCESS_LATENCY =
+        "Missing access latency for %1$s.";
+    private final static String MISSING_RETENTION_POLICY =
+        "Missing retention policy for %1$s.";
 
     private final EnumSet<FileAttribute> REQUIRED_ATTRIBUTES =
             EnumSet.of(STORAGEINFO, ACCESS_LATENCY, RETENTION_POLICY, SIZE, CHECKSUM);
@@ -219,8 +231,7 @@ public class ConsistentStore
                }
 
                _log.warn(String.format(FETCHED_STORAGE_INFO_FOR_1$S_FROM_PNFS, id));
-               FileAttributes fileAttributes = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
-               entry.setFileAttributes(fileAttributes);
+               FileAttributes attributesInNameSpace = _pnfsHandler.getFileAttributes(id, REQUIRED_ATTRIBUTES);
 
                 /* If the intended file size is known, then compare it
                  * to the actual file size on disk. Fail in case of a
@@ -229,13 +240,12 @@ public class ConsistentStore
                  * may thus safe some time for incomplete files.
                  */
                 long length = entry.getDataFile().length();
-                if ((state != EntryState.FROM_CLIENT ||
-                     fileAttributes.isDefined(FileAttribute.SIZE) &&
-                         fileAttributes.getSize() != 0)
-                    && fileAttributes.getSize() != length) {
+                if (attributesInNameSpace.isDefined(FileAttribute.SIZE)
+                    && (state != EntryState.FROM_CLIENT || attributesInNameSpace.getSize() != 0)
+                    && attributesInNameSpace.getSize() != length) {
                     String message = String.format(BAD_SIZE_MSG,
                                                    id,
-                                                   fileAttributes.getSize(),
+                                                   attributesInNameSpace.getSize(),
                                                    length);
                     _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE,
                                                             id.toString(),
@@ -246,7 +256,7 @@ public class ConsistentStore
 
                 /* Verify checksum. Will fail if there is a mismatch.
                  */
-                Iterable<Checksum> expectedChecksums = fileAttributes.getChecksums();
+                Iterable<Checksum> expectedChecksums = attributesInNameSpace.getChecksumsIfPresent().or(Collections.<Checksum>emptySet());
                 Iterable<Checksum> actualChecksums;
                 if (_checksumModule != null &&
                         (_checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_WRITE) ||
@@ -262,36 +272,78 @@ public class ConsistentStore
                 FileAttributes attributesToUpdate = new FileAttributes();
                 attributesToUpdate.setLocations(Collections.singleton(_poolName));
 
+
                 /* If file size was not registered in the name space, we now replay the registration just as it would happen
                  * in WriteHandleImpl. This includes initializing access latency, retention policy, and checksums.
                  */
-                if (state == EntryState.FROM_CLIENT && (fileAttributes.isUndefined(FileAttribute.SIZE) || fileAttributes.getSize() == 0)) {
-                    attributesToUpdate.setSize(length);
-                    attributesToUpdate.setAccessLatency(fileAttributes.getAccessLatency());
-                    attributesToUpdate.setRetentionPolicy(fileAttributes.getRetentionPolicy());
+                if (state == EntryState.FROM_CLIENT) {
+                    if (attributesInNameSpace.isUndefined(ACCESS_LATENCY)) {
+                        /* Access latency must have been injected by space manager, so we hope we still
+                         * got it stored on the pool.
+                         */
+                        FileAttributes attributesOnPool = entry.getFileAttributes();
+                        if (attributesOnPool.isUndefined(ACCESS_LATENCY)) {
+                            String message = String.format(MISSING_ACCESS_LATENCY, id);
+                            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
+                                                                    _poolName), message);
+                            throw new CacheException(message);
+                        }
+
+                        AccessLatency accessLatency = attributesOnPool.getAccessLatency();
+                        attributesToUpdate.setAccessLatency(accessLatency);
+                        attributesInNameSpace.setAccessLatency(accessLatency);
+
+                        _log.warn(String.format(UPDATE_ACCESS_LATENCY_MSG, id, accessLatency));
+                    }
+                    if (attributesInNameSpace.isUndefined(RETENTION_POLICY)) {
+                        /* Retention policy must have been injected by space manager, so we hope we still
+                         * got it stored on the pool.
+                         */
+                        FileAttributes attributesOnPool = entry.getFileAttributes();
+                        if (attributesOnPool.isUndefined(RETENTION_POLICY)) {
+                            String message = String.format(MISSING_RETENTION_POLICY, id);
+                            _log.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.BROKEN_FILE, id.toString(),
+                                                                    _poolName), message);
+                            throw new CacheException(message);
+                        }
+
+                        RetentionPolicy retentionPolicy = attributesInNameSpace.getRetentionPolicy();
+                        attributesToUpdate.setRetentionPolicy(retentionPolicy);
+                        attributesInNameSpace.setRetentionPolicy(retentionPolicy);
+
+                        _log.warn(String.format(UPDATE_RETENTION_POLICY_MSG, id, retentionPolicy));
+                    }
+                    if (attributesInNameSpace.isUndefined(SIZE) || attributesInNameSpace.getSize() == 0) {
+                        attributesToUpdate.setSize(length);
+                        attributesInNameSpace.setSize(length);
+
+                        _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
+                    }
                     if (!isEmpty(actualChecksums)) {
                         attributesToUpdate.setChecksums(Sets.newHashSet(actualChecksums));
-                        fileAttributes.setChecksums(Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
+                        attributesInNameSpace.setChecksums(
+                                Sets.newHashSet(concat(expectedChecksums, actualChecksums)));
+                        _log.warn(String.format(UPDATE_CHECKSUM_MSG, id, actualChecksums));
                     }
-                    fileAttributes.setSize(length);
-                    entry.setFileAttributes(fileAttributes);
-
-                    _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
                 }
 
-                /* Update file size, location, access_latency and
-                 * retention_policy within namespace (pnfs or chimera).
+                /* Update file size, location, checksum, access_latency and
+                 * retention_policy within namespace.
                  */
                 _pnfsHandler.setFileAttributes(id, attributesToUpdate);
+
+                /* Update the pool meta data.
+                 */
+                entry.setFileAttributes(attributesInNameSpace);
 
                 /* If not already precious or cached, we move the entry to
                  * the target state of a newly uploaded file.
                  */
                 if (state != EntryState.CACHED && state != EntryState.PRECIOUS) {
                     EntryState targetState =
-                        _replicaStatePolicy.getTargetState(fileAttributes);
+                        _replicaStatePolicy.getTargetState(attributesInNameSpace);
                     List<StickyRecord> stickyRecords =
-                        _replicaStatePolicy.getStickyRecords(fileAttributes);
+                        _replicaStatePolicy.getStickyRecords(attributesInNameSpace);
 
                     for (StickyRecord record: stickyRecords) {
                         entry.setSticky(record.owner(), record.expire(), false);
@@ -300,6 +352,7 @@ public class ConsistentStore
                     entry.setState(targetState);
                     _log.warn(String.format(MARKED_MSG, id, targetState));
                 }
+
                 return entry;
     }
 
