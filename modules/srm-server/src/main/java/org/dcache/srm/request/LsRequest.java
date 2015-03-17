@@ -151,7 +151,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         @Override
-        public void onSrmRestart(Scheduler scheduler)
+        public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
         {
             // Nothing to do.
         }

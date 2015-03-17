@@ -209,7 +209,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     }
 
     @Override
-    public void onSrmRestart(Scheduler scheduler)
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
     {
         // Nothing to do.
     }

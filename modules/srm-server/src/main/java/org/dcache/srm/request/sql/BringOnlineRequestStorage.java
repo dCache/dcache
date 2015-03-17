@@ -148,9 +148,9 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     }
 
     @Override
-    protected void dbInit(boolean clean) throws DataAccessException
+    protected void dbInit() throws DataAccessException
     {
-            super.dbInit(clean);
+            super.dbInit();
             if (droppedOldTable) {
                     dropTable(getProtocolsTableName());
             }
