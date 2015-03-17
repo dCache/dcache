@@ -104,14 +104,14 @@ public class SchedulerContainer
         return sb;
     }
 
-    public void restoreJobsOnSrmStart(Iterable<? extends Job> activeJobs)
+    public void restoreJobsOnSrmStart(Iterable<? extends Job> activeJobs, boolean shouldFailJobs)
     {
         Scheduler<?> scheduler = null;
 
         for (Job job : activeJobs) {
             scheduler = getScheduler(scheduler, job.getSchedulerType());
             if (scheduler.getId().equals(job.getSchedulerId())) {
-                job.onSrmRestart(scheduler);
+                job.onSrmRestart(scheduler, shouldFailJobs);
             } // else another SRM instance is handling this job
         }
     }

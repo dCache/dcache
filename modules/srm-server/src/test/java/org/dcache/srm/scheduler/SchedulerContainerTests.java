@@ -231,10 +231,10 @@ public class SchedulerContainerTests
     {
         LsFileRequest job = mockJob(LsFileRequest.class, ASYNCWAIT, "ls_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(lsScheduler));
     }
 
@@ -244,10 +244,10 @@ public class SchedulerContainerTests
         BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class,
                 ASYNCWAIT, "bring_online_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(bringOnlineScheduler));
     }
 
@@ -257,10 +257,10 @@ public class SchedulerContainerTests
         GetFileRequest job = mockJob(GetFileRequest.class, ASYNCWAIT,
                 "get_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(getScheduler));
     }
 
@@ -269,10 +269,10 @@ public class SchedulerContainerTests
     {
         CopyRequest job = mockJob(CopyRequest.class, ASYNCWAIT, "copy_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(genericScheduler));
     }
 
@@ -282,10 +282,10 @@ public class SchedulerContainerTests
         CopyFileRequest job = mockJob(CopyFileRequest.class, ASYNCWAIT,
                 "copy_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(genericScheduler));
     }
 
@@ -295,10 +295,10 @@ public class SchedulerContainerTests
         PutFileRequest job = mockJob(PutFileRequest.class, ASYNCWAIT,
                 "put_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(putScheduler));
     }
 
@@ -308,10 +308,10 @@ public class SchedulerContainerTests
         ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class, ASYNCWAIT,
                 "reserve_space_localhost");
 
-        container.restoreJobsOnSrmStart(Lists.newArrayList(job));
+        container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
         ArgumentCaptor<Scheduler> schedCapture = ArgumentCaptor.forClass(Scheduler.class);
-        verify(job, times(1)).onSrmRestart(schedCapture.capture());
+        verify(job, times(1)).onSrmRestart(schedCapture.capture(), eq(false));
         assertThat(schedCapture.getValue(), is(reserveSpaceScheduler));
     }
 }
