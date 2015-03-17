@@ -148,7 +148,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         this.jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
         this.transactionTemplate = new TransactionTemplate(configuration.getTransactionManager());
 
-        dbInit(configuration.isCleanPendingRequestsOnRestart());
+        dbInit();
     }
 
     @Override
@@ -212,7 +212,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         return getTableName().toLowerCase()+"history";
     }
 
-    protected void dbInit(boolean clean)
+    protected void dbInit()
             throws DataAccessException
     {
         createTable(srmStateTableName, createStateTable);
@@ -223,7 +223,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                 " CONSTRAINT fk_"+tableName+"_ST FOREIGN KEY (STATE) REFERENCES "+
                 srmStateTableName +" (ID) "+
                 " )";
-        createTable(tableName,createStatement,true,clean);
+        createTable(tableName,createStatement,true);
         String historyTableName = getHistoryTableName();
         if (droppedOldTable) {
             dropTable(historyTableName);
@@ -615,10 +615,10 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected void createTable(String tableName, String createStatement)
             throws DataAccessException
     {
-        createTable(tableName, createStatement,false,false);
+        createTable(tableName, createStatement,false);
     }
 
-    protected void createTable(final String tableName, final String createStatement, final boolean verify, final boolean clean)
+    protected void createTable(final String tableName, final String createStatement, final boolean verify)
             throws DataAccessException
     {
             jdbcTemplate.execute((Connection con) -> {
@@ -657,24 +657,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                                 logger.debug("executing statement: {}", createStatement);
                                 s.executeUpdate(createStatement);
                             }
-                        }
-                    }
-                    if (clean) {
-                        String sqlStatementString = "UPDATE " + getTableName() +
-                                " SET STATE=" + State.DONE.getStateId() +
-                                " WHERE STATE=" + State.READY.getStateId();
-                        try (Statement s = con.createStatement()) {
-                            logger.debug("executing statement: {}", sqlStatementString);
-                            s.executeUpdate(sqlStatementString);
-                        }
-                        sqlStatementString = "UPDATE " + getTableName() +
-                                " SET STATE=" + State.FAILED.getStateId() +
-                                " WHERE STATE !=" + State.FAILED.getStateId() + " AND" +
-                                " STATE !=" + State.CANCELED.getStateId() + " AND " +
-                                " STATE !=" + State.DONE.getStateId();
-                        try (Statement s = con.createStatement()) {
-                            logger.debug("executing statement: {}", sqlStatementString);
-                            s.executeUpdate(sqlStatementString);
                         }
                     }
                 }

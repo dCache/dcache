@@ -224,7 +224,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     }
 
     @Override
-    public void onSrmRestart(Scheduler scheduler)
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
     {
         // Nothing to do.
     }

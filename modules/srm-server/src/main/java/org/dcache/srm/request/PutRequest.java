@@ -226,7 +226,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     }
 
     @Override
-    public void onSrmRestart(Scheduler scheduler)
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
     {
         // Nothing to do.
     }
