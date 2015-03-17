@@ -106,7 +106,7 @@ public class SrmPrepareToGet
                         surls,
                         protocols,
                         lifetime,
-                        configuration.getGetRetryTimeout(),
+                        configuration.getGetMaxPollPeriod(),
                         request.getUserRequestDescription(),
                         clientHost);
         try (JDC ignored = r.applyJdc()) {
