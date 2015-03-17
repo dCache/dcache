@@ -148,7 +148,7 @@ public class SrmPrepareToPut
                         wantPermanent,
                         protocols,
                         lifetime,
-                        configuration.getGetRetryTimeout(),
+                        configuration.getPutMaxPollPeriod(),
                         clientHost,
                         spaceToken,
                         retentionPolicy,

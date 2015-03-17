@@ -36,6 +36,8 @@ public class Configuration extends org.dcache.srm.util.Configuration
     private int getReadyQueueSize=1000;
     private int getMaxReadyJobs=60;
     private int getMaxRunningBySameOwner=10;
+    private int getMaxNumOfRetries = 10;
+    private long getRetryTimeout = 60000;
 
     private int lsReqTQueueSize=1000;
     private int lsThreadPoolSize=30;
@@ -43,6 +45,8 @@ public class Configuration extends org.dcache.srm.util.Configuration
     private int lsReadyQueueSize=1000;
     private int lsMaxReadyJobs=60;
     private int lsMaxRunningBySameOwner=10;
+    private int lsMaxNumOfRetries = 10;
+    private long lsRetryTimeout = 60000;
 
     private int bringOnlineReqTQueueSize=1000;
     private int bringOnlineThreadPoolSize=30;
@@ -50,6 +54,8 @@ public class Configuration extends org.dcache.srm.util.Configuration
     private int bringOnlineReadyQueueSize=1000;
     private int bringOnlineMaxReadyJobs=60;
     private int bringOnlineMaxRunningBySameOwner=10;
+    private int bringOnlineMaxNumOfRetries = 10;
+    private long bringOnlineRetryTimeout = 60000;
 
     private int putReqTQueueSize=1000;
     private int putThreadPoolSize=30;
@@ -57,11 +63,15 @@ public class Configuration extends org.dcache.srm.util.Configuration
     private int putReadyQueueSize=1000;
     private int putMaxReadyJobs=60;
     private int putMaxRunningBySameOwner=10;
+    private int putMaxNumOfRetries = 10;
+    private long putRetryTimeout = 60000;
 
     private int copyReqTQueueSize=1000;
     private int copyThreadPoolSize=30;
     private int copyMaxWaitingRequests=1000;
     private int copyMaxRunningBySameOwner=10;
+    private int copyMaxNumOfRetries = 10;
+    private long copyRetryTimeout = 60000;
 
     private int reserveSpaceReqTQueueSize=1000;
     private int reserveSpaceThreadPoolSize=30;
@@ -69,6 +79,8 @@ public class Configuration extends org.dcache.srm.util.Configuration
     private int reserveSpaceReadyQueueSize=1000;
     private int reserveSpaceMaxReadyJobs=60;
     private int reserveSpaceMaxRunningBySameOwner=10;
+    private int reserveSpaceMaxNumOfRetries = 10;
+    private long reserveSpaceRetryTimeout = 60000;
 
     public Configuration()
     {

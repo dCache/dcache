@@ -149,27 +149,21 @@ public class Configuration {
 
     // scheduler parameters
 
-    protected int getMaxNumOfRetries=10;
-    protected long getRetryTimeout=60000;
+    protected long getMaxPollPeriod =60000;
     private long getSwitchToAsynchronousModeDelay = 0;
 
-    protected int lsMaxNumOfRetries=10;
-    protected long lsRetryTimeout=60000;
+    protected long lsMaxPollPeriod =60000;
     private long lsSwitchToAsynchronousModeDelay = 0;
 
-    protected long bringOnlineRetryTimeout=60000;
-    protected int bringOnlineMaxNumOfRetries=10;
+    protected long bringOnlineMaxPollPeriod =60000;
     private long bringOnlineSwitchToAsynchronousModeDelay = 0;
 
-    protected int putMaxNumOfRetries=10;
-    protected long putRetryTimeout=60000;
+    protected long putMaxPollPeriod =60000;
     private long putSwitchToAsynchronousModeDelay = 0;
 
-    protected int reserveSpaceMaxNumOfRetries=10;
-    protected long reserveSpaceRetryTimeout=60000;
+    protected long reserveSpaceMaxPollPeriod =60000;
 
-    protected int copyMaxNumOfRetries=10;
-    protected long copyRetryTimeout=60000;
+    protected long copyMaxPollPeriod =60000;
 
 
     protected long getLifetime = 24*60*60*1000;
@@ -507,37 +501,31 @@ public class Configuration {
         sb.append("\n\tuseDcapForSrmCopy=").append(this.useDcapForSrmCopy);
         sb.append("\n\tuseFtpForSrmCopy=").append(this.useFtpForSrmCopy);
         sb.append("\n\t\t *** GetRequests Parameters **");
-        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.getLifetime);
-        sb.append("\n\t\t maximum number of retries = ").append(this.getMaxNumOfRetries);
-        sb.append("\n\t\t retry timeout in miliseconds =").append(this.getRetryTimeout);
+        sb.append("\n\t\t request Lifetime in milliseconds =").append(this.getLifetime);
+        sb.append("\n\t\t max poll period in milliseconds =").append(this.getMaxPollPeriod);
         sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.getSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** BringOnlineRequests Parameters **");
-        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.bringOnlineLifetime);
-        sb.append("\n\t\t maximum number of retries = ").append(this.bringOnlineMaxNumOfRetries);
-        sb.append("\n\t\t retry timeout in miliseconds =").append(this.bringOnlineRetryTimeout);
+        sb.append("\n\t\t request Lifetime in milliseconds =").append(this.bringOnlineLifetime);
+        sb.append("\n\t\t max poll period in milliseconds =").append(this.bringOnlineMaxPollPeriod);
         sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.bringOnlineSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** LsRequests Parameters **");
-        sb.append("\n\t\t maximum number of retries = ").append(this.lsMaxNumOfRetries);
-        sb.append("\n\t\t retry timeout in miliseconds =").append(this.lsRetryTimeout);
+        sb.append("\n\t\t max poll period in milliseconds =").append(this.lsMaxPollPeriod);
         sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.lsSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** PutRequests Parameters **");
-        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.putLifetime);
-        sb.append("\n\t\t maximum number of retries = ").append(this.putMaxNumOfRetries);
-        sb.append("\n\t\t retry timeout in miliseconds =").append(this.putRetryTimeout);
+        sb.append("\n\t\t request Lifetime in milliseconds =").append(this.putLifetime);
+        sb.append("\n\t\t max poll period in milliseconds =").append(this.putMaxPollPeriod);
         sb.append("\n\t\t switch to async mode delay=").append(timeToString(this.putSwitchToAsynchronousModeDelay));
 
         sb.append("\n\t\t *** ReserveSpaceRequests Parameters **");
-        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.reserveSpaceLifetime);
-        sb.append("\n\t\t maximum number of retries = ").append(this.reserveSpaceMaxNumOfRetries);
-        sb.append("\n\t\t retry timeout in miliseconds =").append(this.reserveSpaceRetryTimeout);
+        sb.append("\n\t\t request Lifetime in milliseconds =").append(this.reserveSpaceLifetime);
+        sb.append("\n\t\t max poll period in milliseconds =").append(this.reserveSpaceMaxPollPeriod);
 
         sb.append("\n\t\t *** CopyRequests Parameters **");
-        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.copyLifetime);
-        sb.append("\n\t\t maximum number of retries = ").append(this.copyMaxNumOfRetries);
-        sb.append("\n\t\t retry timeout in miliseconds =").append(this.copyRetryTimeout);
+        sb.append("\n\t\t request Lifetime in milliseconds =").append(this.copyLifetime);
+        sb.append("\n\t\t max poll period in milliseconds =").append(this.copyMaxPollPeriod);
 
         databaseParameters.values().forEach(sb::append);
 
@@ -760,131 +748,67 @@ public class Configuration {
     }
 
     /**
-     * Getter for property getMaxNumOfRetries.
-     * @return Value of property getMaxNumOfRetries.
+     * Getter for property getMaxPollPeriod.
+     * @return Value of property getMaxPollPeriod.
      */
-    public int getGetMaxNumOfRetries() {
-        return getMaxNumOfRetries;
+    public long getGetMaxPollPeriod() {
+        return getMaxPollPeriod;
     }
 
     /**
-     * Setter for property getMaxNumOfRetries.
-     * @param getMaxNumOfRetries New value of property getMaxNumOfRetries.
+     * Setter for property getMaxPollPeriod.
+     * @param getMaxPollPeriod New value of property getMaxPollPeriod.
      */
-    public void setGetMaxNumOfRetries(int getMaxNumOfRetries) {
-        this.getMaxNumOfRetries = getMaxNumOfRetries;
+    public void setGetMaxPollPeriod(long getMaxPollPeriod) {
+        this.getMaxPollPeriod = getMaxPollPeriod;
     }
 
     /**
-     * Getter for property getRetryTimeout.
-     * @return Value of property getRetryTimeout.
+     * Getter for property putMaxPollPeriod.
+     * @return Value of property putMaxPollPeriod.
      */
-    public long getGetRetryTimeout() {
-        return getRetryTimeout;
+    public long getPutMaxPollPeriod() {
+        return putMaxPollPeriod;
     }
 
     /**
-     * Setter for property getRetryTimeout.
-     * @param getRetryTimeout New value of property getRetryTimeout.
+     * Setter for property putMaxPollPeriod.
+     * @param putMaxPollPeriod New value of property putMaxPollPeriod.
      */
-    public void setGetRetryTimeout(long getRetryTimeout) {
-        this.getRetryTimeout = getRetryTimeout;
+    public void setPutMaxPollPeriod(long putMaxPollPeriod) {
+        this.putMaxPollPeriod = putMaxPollPeriod;
     }
 
     /**
-     * Getter for property putMaxNumOfRetries.
-     * @return Value of property putMaxNumOfRetries.
+     * Getter for property copyMaxPollPeriod.
+     * @return Value of property copyMaxPollPeriod.
      */
-    public int getPutMaxNumOfRetries() {
-        return putMaxNumOfRetries;
+    public long getCopyMaxPollPeriod() {
+        return copyMaxPollPeriod;
     }
 
     /**
-     * Setter for property putMaxNumOfRetries.
-     * @param putMaxNumOfRetries New value of property putMaxNumOfRetries.
+     * Setter for property copyMaxPollPeriod.
+     * @param copyMaxPollPeriod New value of property copyMaxPollPeriod.
      */
-    public void setPutMaxNumOfRetries(int putMaxNumOfRetries) {
-        this.putMaxNumOfRetries = putMaxNumOfRetries;
+    public void setCopyMaxPollPeriod(long copyMaxPollPeriod) {
+        this.copyMaxPollPeriod = copyMaxPollPeriod;
     }
 
     /**
-     * Getter for property putRetryTimeout.
-     * @return Value of property putRetryTimeout.
+     * Getter for property reserveSpaceMaxPollPeriod.
+     * @return Value of property reserveSpaceMaxPollPeriod.
      */
-    public long getPutRetryTimeout() {
-        return putRetryTimeout;
+    public long getReserveSpaceMaxPollPeriod() {
+        return reserveSpaceMaxPollPeriod;
     }
 
     /**
-     * Setter for property putRetryTimeout.
-     * @param putRetryTimeout New value of property putRetryTimeout.
+     * Setter for property reserveSpaceMaxPollPeriod.
+     * @param reserveSpaceMaxPollPeriod New value of property reserveSpaceMaxPollPeriod.
      */
-    public void setPutRetryTimeout(long putRetryTimeout) {
-        this.putRetryTimeout = putRetryTimeout;
-    }
-
-    /**
-     * Getter for property copyMaxNumOfRetries.
-     * @return Value of property copyMaxNumOfRetries.
-     */
-    public int getCopyMaxNumOfRetries() {
-        return copyMaxNumOfRetries;
-    }
-
-    /**
-     * Setter for property copyMaxNumOfRetries.
-     * @param copyMaxNumOfRetries New value of property copyMaxNumOfRetries.
-     */
-    public void setCopyMaxNumOfRetries(int copyMaxNumOfRetries) {
-        this.copyMaxNumOfRetries = copyMaxNumOfRetries;
-    }
-
-    /**
-     * Getter for property copyRetryTimeout.
-     * @return Value of property copyRetryTimeout.
-     */
-    public long getCopyRetryTimeout() {
-        return copyRetryTimeout;
-    }
-
-    /**
-     * Setter for property copyRetryTimeout.
-     * @param copyRetryTimeout New value of property copyRetryTimeout.
-     */
-    public void setCopyRetryTimeout(long copyRetryTimeout) {
-        this.copyRetryTimeout = copyRetryTimeout;
-    }
-
-    /**
-     * Getter for property reserveSpaceMaxNumOfRetries.
-     * @return Value of property reserveSpaceMaxNumOfRetries.
-     */
-    public int getReserveSpaceMaxNumOfRetries() {
-        return reserveSpaceMaxNumOfRetries;
-    }
-
-    /**
-     * Setter for property reserveSpaceMaxNumOfRetries.
-     * @param reserveSpaceMaxNumOfRetries New value of property reserveSpaceMaxNumOfRetries.
-     */
-    public void setReserveSpaceMaxNumOfRetries(int reserveSpaceMaxNumOfRetries) {
-        this.reserveSpaceMaxNumOfRetries = reserveSpaceMaxNumOfRetries;
-    }
-
-    /**
-     * Getter for property reserveSpaceRetryTimeout.
-     * @return Value of property reserveSpaceRetryTimeout.
-     */
-    public long getReserveSpaceRetryTimeout() {
-        return reserveSpaceRetryTimeout;
-    }
-
-    /**
-     * Setter for property reserveSpaceRetryTimeout.
-     * @param reserveSpaceRetryTimeout New value of property reserveSpaceRetryTimeout.
-     */
-    public void setReserveSpaceRetryTimeout(long reserveSpaceRetryTimeout) {
-        this.reserveSpaceRetryTimeout = reserveSpaceRetryTimeout;
+    public void setReserveSpaceMaxPollPeriod(long reserveSpaceMaxPollPeriod) {
+        this.reserveSpaceMaxPollPeriod = reserveSpaceMaxPollPeriod;
     }
 
     /**
@@ -1070,20 +994,12 @@ public class Configuration {
         this.srmUserPersistenceManager = srmUserPersistenceManager;
     }
 
-    public int getBringOnlineMaxNumOfRetries() {
-        return bringOnlineMaxNumOfRetries;
+    public long getBringOnlineMaxPollPeriod() {
+        return bringOnlineMaxPollPeriod;
     }
 
-    public void setBringOnlineMaxNumOfRetries(int bringOnlineMaxNumOfRetries) {
-        this.bringOnlineMaxNumOfRetries = bringOnlineMaxNumOfRetries;
-    }
-
-    public long getBringOnlineRetryTimeout() {
-        return bringOnlineRetryTimeout;
-    }
-
-    public void setBringOnlineRetryTimeout(long bringOnlineRetryTimeout) {
-        this.bringOnlineRetryTimeout = bringOnlineRetryTimeout;
+    public void setBringOnlineMaxPollPeriod(long bringOnlineMaxPollPeriod) {
+        this.bringOnlineMaxPollPeriod = bringOnlineMaxPollPeriod;
     }
 
     public long getBringOnlineLifetime() {
@@ -1102,20 +1018,12 @@ public class Configuration {
         this.bringOnlinePriorityPolicyPlugin = bringOnlinePriorityPolicyPlugin;
     }
 
-    public int getLsMaxNumOfRetries() {
-        return lsMaxNumOfRetries;
+    public long getLsMaxPollPeriod() {
+        return lsMaxPollPeriod;
     }
 
-    public void setLsMaxNumOfRetries(int lsMaxNumOfRetries) {
-        this.lsMaxNumOfRetries = lsMaxNumOfRetries;
-    }
-
-    public long getLsRetryTimeout() {
-        return lsRetryTimeout;
-    }
-
-    public void setLsRetryTimeout(long lsRetryTimeout) {
-        this.lsRetryTimeout = lsRetryTimeout;
+    public void setLsMaxPollPeriod(long lsMaxPollPeriod) {
+        this.lsMaxPollPeriod = lsMaxPollPeriod;
     }
 
     public String getLsPriorityPolicyPlugin() {
