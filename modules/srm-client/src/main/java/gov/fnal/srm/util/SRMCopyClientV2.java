@@ -215,6 +215,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             if (storagetype!=null) {
                 req.setTargetFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
             }
+            req.setUserRequestDescription(configuration.getUserRequestDescription());
             req.setDesiredTotalRequestTime((int) configuration
                     .getRequestLifetime());
             TRetentionPolicy retentionPolicy = configuration.getRetentionPolicy() != null ?

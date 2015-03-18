@@ -192,6 +192,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
 
             SrmPrepareToPutRequest srmPrepareToPutRequest =
                 new SrmPrepareToPutRequest();
+            srmPrepareToPutRequest.setUserRequestDescription(configuration.getUserRequestDescription());
             String storagetype=configuration.getStorageType();
             if (storagetype!=null) {
                 srmPrepareToPutRequest.setDesiredFileStorageType(FileStorageType.fromString(storagetype.toUpperCase()).toTFileStorageType());
