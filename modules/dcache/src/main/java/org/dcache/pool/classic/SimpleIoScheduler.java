@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +31,7 @@ import org.dcache.util.LifoPriorityComparator;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.transform;
+import java.util.stream.Collectors;
 import static org.dcache.pool.classic.IoRequestState.*;
 
 /**
@@ -101,8 +101,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         _semaphore.setMaxPermits(2);
 
-        _worker = new Thread(this);
-        _worker.setName(_name);
+        _worker = new Thread(this, _name);
         _worker.start();
     }
 
@@ -166,11 +165,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     @Override
     public List<JobInfo> getJobInfos() {
-        List<JobInfo> jobs = new ArrayList<>();
-        for (PrioritizedRequest request : _jobs.values()) {
-            jobs.add(request.toJobInfo());
-        }
-        return Collections.unmodifiableList(jobs);
+
+        return Collections.unmodifiableList(_jobs.values().stream()
+                .map(PrioritizedRequest::toJobInfo)
+                .collect(Collectors.toList())
+        );
     }
 
     @Override
@@ -186,13 +185,9 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
     @Override
     public int getCountByPriority(IoPriority priority)
     {
-        int count = 0;
-        for (PrioritizedRequest request: _queue) {
-            if (request.getPriority() == priority) {
-                count++;
-            }
-        }
-        return count;
+        return (int)_queue.stream()
+                .filter(r -> r.getPriority() == priority)
+                .count();
     }
 
     @Override
@@ -248,9 +243,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     @Override
     public StringBuffer printJobQueue(StringBuffer sb) {
-        for (Map.Entry<Integer, PrioritizedRequest> job : _jobs.entrySet()) {
-            sb.append(job.getKey()).append(" : ").append(job.getValue()).append('\n');
-        }
+        _jobs.values()
+                .forEach(j -> sb.append(j.getId()).append(" : ").append(j).append('\n'));
         return sb;
     }
 
@@ -265,9 +259,8 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         if (!_shutdown) {
             _shutdown = true;
             _worker.interrupt();
-            for (PrioritizedRequest request : _jobs.values()) {
-                cancel(request);
-            }
+            _jobs.values().forEach(this::cancel);
+
             _log.info("Waiting for movers on queue '{}' to finish", _name);
             if (!_semaphore.tryAcquire(_semaphore.getMaxPermits(), 2000L, TimeUnit.MILLISECONDS)) {
                 // This is often due to a mover not reacting to interrupt or the transfer
@@ -397,6 +390,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
         @Override
         public boolean equals(Object o) {
+
+            if (o == this) {
+                return true;
+            }
+
             if (!(o instanceof PrioritizedRequest)) {
                 return false;
             }
