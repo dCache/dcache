@@ -66,6 +66,11 @@
       <property name="messageMetadataRepository" ref="message-handler-chain"/>
       <property name="messageSender" ref="message-handler-chain"/>
       <property name="stateExhibitor" ref="state"/>
+      <property name="dgaFactories">
+          <bean class="org.springframework.beans.factory.serviceloader.ServiceListFactoryBean">
+              <property name="serviceType" value="org.dcache.services.info.gathers.DgaFactoryService"/>
+          </bean>
+      </property>
   </bean>
 
 

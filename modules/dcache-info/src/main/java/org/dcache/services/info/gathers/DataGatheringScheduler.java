@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Required;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.ServiceLoader;
+import java.util.Map;
 
+import dmg.cells.nucleus.EnvironmentAware;
 import dmg.cells.nucleus.UOID;
 
 import org.dcache.commons.util.NDC;
@@ -28,7 +29,8 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class DataGatheringScheduler implements Runnable
+
+public class DataGatheringScheduler implements Runnable, EnvironmentAware
 {
     private static final long FIVE_MINUTES = 5*60*1000;
     private static final Logger LOGGER_SCHED = LoggerFactory.getLogger(DataGatheringScheduler.class);
@@ -36,6 +38,15 @@ public class DataGatheringScheduler implements Runnable
 
     private boolean _timeToQuit;
     private final List<RegisteredActivity> _activity = new ArrayList<>();
+    private Map<String,Object> _environment;
+    private Iterable<DgaFactoryService> _factories;
+
+    private StateUpdateManager _sum;
+    private StateExhibitor _exhibitor;
+    private MessageSender _sender;
+    private MessageMetadataRepository<UOID> _repository;
+    private Thread _thread;
+
 
     /**
      * Class holding a periodically repeated DataGatheringActivity
@@ -154,7 +165,6 @@ public class DataGatheringScheduler implements Runnable
             _enabled = false;
         }
 
-
         /**
          * Enable a periodic activity.
          */
@@ -196,19 +206,16 @@ public class DataGatheringScheduler implements Runnable
         }
     }
 
-    private StateUpdateManager _sum;
-    private StateExhibitor _exhibitor;
-    private MessageSender _sender;
-    private MessageMetadataRepository<UOID> _repository;
-    private Thread _thread;
-
     public synchronized void start()
     {
         checkState(_thread == null, "DataGatheringScheduler already started");
 
-        ServiceLoader<DgaFactoryService> loader = ServiceLoader.load(DgaFactoryService.class);
-        for (DgaFactoryService ds : loader) {
-            for (Schedulable dga : ds.createDgas(_exhibitor, _sender,
+        for (DgaFactoryService factory : _factories) {
+            if (factory instanceof EnvironmentAware) {
+                ((EnvironmentAware)factory).setEnvironment(_environment);
+            }
+
+            for (Schedulable dga : factory.createDgas(_exhibitor, _sender,
                     _sum, _repository)) {
                 _activity.add(new RegisteredActivity(dga));
             }
@@ -219,6 +226,17 @@ public class DataGatheringScheduler implements Runnable
         _thread.start();
     }
 
+    @Override
+    public void setEnvironment(Map<String,Object> environment)
+    {
+        _environment = environment;
+    }
+
+    @Required
+    public void setDgaFactories(Iterable<DgaFactoryService> factories)
+    {
+        _factories = factories;
+    }
 
     @Required
     public void setStateUpdateManager(StateUpdateManager sum)

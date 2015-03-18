@@ -1,5 +1,12 @@
 package org.dcache.services.info.gathers;
 
+import com.google.common.base.Splitter;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellMessage;
@@ -7,7 +14,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 
 /**
- * Instances of the SingleMessageDga class will, when triggered, send a CellMessage with
+ * Instances of the SingleMessageDga class will, when triggered, send CellMessages with
  * a specific payload, which is either a Message sub-class or a String.  It
  * does this with a default interval, which must be supplied when constructing the object.
  * <p>
@@ -27,23 +34,24 @@ import dmg.cells.nucleus.CellPath;
  */
 public class SingleMessageDga extends SkelPeriodicActivity
 {
-    private CellPath _cp;
-    private String _requestString;
-    private Message _requestMessage;
-    private CellMessageAnswerable _handler;
+    private final CellPath _target;
+    private final String _requestString;
+    private final Message _requestMessage;
+    private final CellMessageAnswerable _handler;
     private final MessageSender _sender;
 
     /**
      * Create a new Single-Message DataGatheringActivity.
-     * @param cellName The path to the dCache cell,
+     * @param sender component that sends messages
+     * @param targets A comma-separated list of cells to contact.
      * @param request the message string,
      * @param interval how often (in seconds) this should be sent.
      */
-    public SingleMessageDga(MessageSender sender, String cellName, String request, CellMessageAnswerable handler, long interval)
+    public SingleMessageDga(MessageSender sender, String target, String request, CellMessageAnswerable handler, long interval)
     {
         super(interval);
 
-        _cp = new CellPath(cellName);
+        _target = new CellPath(target);
         _requestMessage = null;
         _requestString = request;
         _handler = handler;
@@ -56,14 +64,14 @@ public class SingleMessageDga extends SkelPeriodicActivity
      * @param request the Message to send
      * @param interval how often (in seconds) this message should be sent.
      */
-    public SingleMessageDga(MessageHandlerChain mhc, String cellName, Message request, long interval)
+    public SingleMessageDga(MessageHandlerChain mhc, String target, Message request, long interval)
     {
         super(interval);
 
-        _cp = new CellPath(cellName);
+        _target = new CellPath(target);
         _requestMessage = request;
         _requestString = null;
-        // reply messages are handled by a MessageHandler chain.
+        _handler = null; // reply messages are handled by a MessageHandler chain.
         _sender = mhc;
     }
 
@@ -77,22 +85,18 @@ public class SingleMessageDga extends SkelPeriodicActivity
         super.trigger();
 
         if (_requestMessage != null) {
-            CellMessage msg = new CellMessage(_cp, _requestMessage);
-            _sender.sendMessage(0, null, msg);
+            _sender.sendMessage(metricLifetime(), null, new CellMessage(_target, _requestMessage));
         } else {
-            _sender.sendMessage(super
-                    .metricLifetime(), _handler, _cp, _requestString);
+            _sender.sendMessage(metricLifetime(), _handler, _target, _requestString);
         }
     }
-
 
     @Override
     public String toString()
     {
-        String msgName;
+        String message = _requestMessage != null ?
+                _requestMessage.getClass().getName() : "'" + _requestString + "'";
 
-        msgName = _requestMessage != null ? _requestMessage.getClass().getName() : "'" + _requestString + "'";
-
-        return this.getClass().getSimpleName() + "[" + _cp.getCellName() + ", " + msgName + "]";
+        return getClass().getSimpleName() + "[" + _target + " " + message + "]";
     }
 }

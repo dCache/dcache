@@ -10,6 +10,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.SkelPeriodicActivity;
 
+
 /**
  * A class to fire off requests for detailed information about SRM Spaces.
  * <p>
@@ -22,12 +23,11 @@ import org.dcache.services.info.gathers.SkelPeriodicActivity;
 public class SrmSpaceDetailsDga extends SkelPeriodicActivity
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SrmSpaceDetailsDga.class);
-    private static final String SRM_CELL_NAME = "SpaceManager";
 
     /** Assume that a message might be lost and allow for 50% jitter */
     private static final double SAFETY_FACTOR = 2.5;
 
-    private CellPath _cp = new CellPath(SRM_CELL_NAME);
+    private final CellPath _spacemanager;
     private final MessageSender _sender;
 
     /** The period between successive requests for data, in seconds */
@@ -37,12 +37,13 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity
      * Create new DGA for maintaining a list of all SRM Spaces.
      * @param interval how often the list of spaces should be updated, in seconds.
      */
-    public SrmSpaceDetailsDga(MessageSender sender, int interval)
+    public SrmSpaceDetailsDga(CellPath spacemanager, MessageSender sender, int interval)
     {
         super(interval);
 
         _sender = sender;
         _metricLifetime = Math.round(interval * SAFETY_FACTOR);
+        _spacemanager = spacemanager;
     }
 
     /**
@@ -55,7 +56,7 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity
 
         LOGGER.trace("Sending space token details request message");
 
-        _sender.sendMessage(_metricLifetime, _cp, new GetSpaceTokensMessage());
+        _sender.sendMessage(_metricLifetime, _spacemanager, new GetSpaceTokensMessage());
     }
 
     @Override

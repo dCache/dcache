@@ -4,36 +4,48 @@ import java.util.Map;
 import java.util.Properties;
 
 import dmg.util.Formats;
-import dmg.util.Replaceable;
 
 /**
  * Utility class for working with a Cell's environment
  */
 public class Environments
 {
+
     private Environments()
     {
         // prevent instantiation
     }
 
-    public static Properties toProperties(final Map<String,Object> env)
+    public static Properties toProperties(Map<String,Object> env)
     {
-        Replaceable replaceable = new Replaceable() {
-            @Override
-            public String getReplacement(String name)
-            {
-                Object value =  env.get(name);
-                return (value == null) ? null : value.toString().trim();
-            }
-        };
-
         Properties properties = new Properties();
-        for (Map.Entry<String,Object> e: env.entrySet()) {
-            String key = e.getKey();
-            String value = String.valueOf(e.getValue());
-            properties.put(key, Formats.replaceKeywords(value, replaceable));
-        }
+
+        env.forEach((k,v) -> properties.put(k, expand(v, env)));
 
         return properties;
+    }
+
+    public static String getValue(Map<String,Object> env, String name)
+    {
+        Object value = env.get(name);
+
+        if (value == null) {
+            throw new IllegalArgumentException("'" + name + "' is not set");
+        }
+
+        if (!(value instanceof String)) {
+            throw new IllegalArgumentException("Invalid value of '" + name +
+                    "': " + value);
+        }
+
+        return expand(value, env);
+    }
+
+    private static String expand(Object in, Map<String,Object> env)
+    {
+        return Formats.replaceKeywords(String.valueOf(in), n -> {
+                    Object t = env.get(n);
+                    return t == null ? null : t.toString().trim();
+                });
     }
 }

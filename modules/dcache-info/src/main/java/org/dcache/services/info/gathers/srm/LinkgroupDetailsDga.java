@@ -10,6 +10,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.SkelPeriodicActivity;
 
+
 /**
  * Class to send off requests for detailed information.
  * <p>
@@ -23,12 +24,11 @@ import org.dcache.services.info.gathers.SkelPeriodicActivity;
 public class LinkgroupDetailsDga extends SkelPeriodicActivity
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkgroupDetailsDga.class);
-    private static final String SRM_CELL_NAME = "SpaceManager";
 
     /** Assume that a message might be lost and allow for 50% jitter */
     private static final double SAFETY_FACTOR = 2.5;
 
-    private CellPath _cp = new CellPath(SRM_CELL_NAME);
+    private final CellPath _spacemanager;
     private final MessageSender _sender;
 
     /** The period between successive requests for data, in seconds */
@@ -38,11 +38,12 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity
      * Create new DGA for maintaining a list of LinkGroups.
      * @param interval how often the list of linkgroups should be updated, in seconds.
      */
-    public LinkgroupDetailsDga(MessageSender sender, int interval)
+    public LinkgroupDetailsDga(CellPath spacemanager, MessageSender sender, int interval)
     {
         super(interval);
         _sender = sender;
         _metricLifetime = Math.round(interval * SAFETY_FACTOR);
+        _spacemanager = spacemanager;
     }
 
     /**
@@ -55,7 +56,7 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity
 
         LOGGER.trace("Sending linkgroup details request message");
 
-        _sender.sendMessage(_metricLifetime, _cp, new GetLinkGroupsMessage());
+        _sender.sendMessage(_metricLifetime, _spacemanager, new GetLinkGroupsMessage());
     }
 
 
