@@ -166,6 +166,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
+            srmPrepareToGetRequest.setUserRequestDescription(configuration.getUserRequestDescription());
             srmPrepareToGetRequest.setDesiredTotalRequestTime(
                     (int) configuration.getRequestLifetime());
             TRetentionPolicy rp = configuration.getRetentionPolicy() != null ?

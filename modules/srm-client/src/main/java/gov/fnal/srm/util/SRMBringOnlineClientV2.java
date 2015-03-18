@@ -161,6 +161,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             Runtime.getRuntime().addShutdownHook(hook);
 
             SrmBringOnlineRequest srmBringOnlineRequest = new SrmBringOnlineRequest();
+            srmBringOnlineRequest.setUserRequestDescription(configuration.getUserRequestDescription());
             srmBringOnlineRequest.setDesiredTotalRequestTime(
                     (int) configuration.getRequestLifetime());
 
