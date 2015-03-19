@@ -49,6 +49,7 @@ import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.services.hsmcleaner.Sink;
 import org.dcache.util.Args;
 import org.dcache.util.BroadcastRegistrationTask;
+import org.dcache.util.CacheExceptionFactory;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -477,12 +478,14 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                                                 new PoolRemoveFilesMessage(poolName, removeList)));
             if (msg.getReturnCode() == 0) {
                 removeFiles(poolName, removeList);
-            } else {
+            } else if (msg.getReturnCode() == 1 && msg.getErrorObject() instanceof String[]) {
                 Set<String> notRemoved =
                         new HashSet<>(Arrays.asList((String[]) msg.getErrorObject()));
                 List<String> removed = new ArrayList<>(removeList);
                 removed.removeAll(notRemoved);
                 removeFiles(poolName, removed);
+            } else {
+                throw CacheExceptionFactory.exceptionOf(msg);
             }
         } catch (CacheException e) {
             _log.warn("Failed to remove files from {}: {}", poolName, e.getMessage());
