@@ -87,6 +87,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1188,54 +1189,59 @@ public class SRM {
     }
 
     public JobStorage<ReserveSpaceRequest> getReserveSpaceRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(ReserveSpaceRequest.class);
+        return databaseFactory.getJobStorage(ReserveSpaceRequest.class);
     }
 
     public JobStorage<LsRequest> getLsRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(LsRequest.class);
+        return databaseFactory.getJobStorage(LsRequest.class);
     }
 
     public JobStorage<LsFileRequest> getLsFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().
-                getJobStorage(LsFileRequest.class);
+        return databaseFactory.getJobStorage(LsFileRequest.class);
     }
 
     public JobStorage<BringOnlineRequest> getBringOnlineStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineRequest.class);
+        return databaseFactory.getJobStorage(BringOnlineRequest.class);
     }
 
     public JobStorage<GetRequest> getGetStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(GetRequest.class);
+        return databaseFactory.getJobStorage(GetRequest.class);
     }
 
     public JobStorage<PutRequest> getPutStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(PutRequest.class);
+        return databaseFactory.getJobStorage(PutRequest.class);
     }
 
     public JobStorage<CopyRequest> getCopyStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(CopyRequest.class);
+        return databaseFactory.getJobStorage(CopyRequest.class);
     }
 
     public JobStorage<BringOnlineFileRequest> getBringOnlineFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(BringOnlineFileRequest.class);
+        return databaseFactory.getJobStorage(BringOnlineFileRequest.class);
     }
 
     public JobStorage<GetFileRequest> getGetFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(GetFileRequest.class);
+        return databaseFactory.getJobStorage(GetFileRequest.class);
     }
 
     public JobStorage<PutFileRequest> getPutFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(PutFileRequest.class);
+        return databaseFactory.getJobStorage(PutFileRequest.class);
     }
 
     public JobStorage<CopyFileRequest> getCopyFileRequestStorage() {
-        return JobStorageFactory.getJobStorageFactory().getJobStorage(CopyFileRequest.class);
+        return databaseFactory.getJobStorage(CopyFileRequest.class);
     }
 
-    public static <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
+    public <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException
+    {
+        JobStorage<T> jobStorage = databaseFactory.getJobStorage(type);
+        return (jobStorage == null) ? Collections.<T>emptySet() : jobStorage.getActiveJobs();
+    }
+
+    public <T extends Job> Set<Long> getActiveJobIds(Class<T> type, String description)
             throws DataAccessException
     {
-        Set<T> jobs = Job.getActiveJobs(type);
+        Set<T> jobs = getActiveJobs(type);
         Set<Long> ids = new HashSet<>();
         for(Job job: jobs) {
             if(description != null ) {
@@ -1259,7 +1265,7 @@ public class SRM {
 
     private boolean hasActivePutRequests(URI surl) throws DataAccessException
     {
-        Set<PutFileRequest> requests = Job.getActiveJobs(PutFileRequest.class);
+        Set<PutFileRequest> requests = getActiveJobs(PutFileRequest.class);
         for (PutFileRequest request: requests) {
             if (request.getSurl().equals(surl)) {
                 return true;
@@ -1271,6 +1277,6 @@ public class SRM {
     public <T extends FileRequest<?>> Iterable<T> getActiveFileRequests(Class<T> type, final URI surl)
             throws DataAccessException
     {
-        return Iterables.filter(Job.getActiveJobs(type), request -> request.isTouchingSurl(surl));
+        return Iterables.filter(getActiveJobs(type), request -> request.isTouchingSurl(surl));
     }
 }

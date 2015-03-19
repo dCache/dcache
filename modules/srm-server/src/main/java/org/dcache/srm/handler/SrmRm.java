@@ -35,6 +35,7 @@ public class SrmRm
     private final SrmRmRequest request;
     private final SRMUser user;
     private final int sizeOfSingleRemoveBatch;
+    private final SRM srm;
     private SrmRmResponse response;
 
     public SrmRm(SRMUser user,
@@ -43,6 +44,7 @@ public class SrmRm
                  SRM srm,
                  String clientHost)
     {
+        this.srm = srm;
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
         this.storage = checkNotNull(storage);
@@ -112,7 +114,7 @@ public class SrmRm
             // SRM_ABORTED or SRM_INVALID_PATH. We choose SRM_ABORTED as it seems like the saner
             // of the two options.
             URI surl = URI.create(surls[i].toString());
-            for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl)) {
+            for (PutFileRequest request : srm.getActiveFileRequests(PutFileRequest.class, surl)) {
                 try {
                     request.abort("Upload aborted because the file was deleted by another request.");
                     returnStatus.setStatus(new TReturnStatus(TStatusCode.SRM_SUCCESS, "Upload was aborted."));
@@ -132,7 +134,7 @@ public class SrmRm
             // [SRM 2.2, 4.3.2, d)] srmLs,srmPrepareToGet or srmBringOnline must not find these
             // removed files any more. It must set file requests on SURL from srmPrepareToGet
             // as SRM_ABORTED.
-            for (GetFileRequest request : SRM.getSRM().getActiveFileRequests(GetFileRequest.class, surl)) {
+            for (GetFileRequest request : srm.getActiveFileRequests(GetFileRequest.class, surl)) {
                 try {
                     request.abort("Download aborted because the file was deleted by another request.");
                 } catch (IllegalStateTransition e) {

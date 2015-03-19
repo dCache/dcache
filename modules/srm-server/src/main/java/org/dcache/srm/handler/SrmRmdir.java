@@ -14,7 +14,6 @@ import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMNonEmptyDirectoryException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
@@ -32,6 +31,7 @@ public class SrmRmdir
     private final AbstractStorageElement storage;
     private final SrmRmdirRequest request;
     private final SRMUser user;
+    private final SRM srm;
     private SrmRmdirResponse response;
 
     public SrmRmdir(SRMUser user,
@@ -40,6 +40,7 @@ public class SrmRmdir
                     SRM srm,
                     String clientHost)
     {
+        this.srm = srm;
         this.request = checkNotNull(request);
         this.user = checkNotNull(user);
         this.storage = checkNotNull(storage);
@@ -76,7 +77,7 @@ public class SrmRmdir
          * non-empty. This is not strictly required by the SRM spec, however S2 tests
          * (usecase.RmdirBeingPutInto) check for this behaviour.
          */
-        for (PutFileRequest putFileRequest : Job.getActiveJobs(PutFileRequest.class)) {
+        for (PutFileRequest putFileRequest : srm.getActiveJobs(PutFileRequest.class)) {
             String requestPath = getPath(putFileRequest.getSurl());
             if (path.equals(requestPath)) {
                 throw new SRMInvalidPathException("Not a directory");

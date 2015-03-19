@@ -485,7 +485,7 @@ public class SrmCommandLineInterface
         }
 
         private <T extends Request> void listRequests(StringBuilder sb, Class<T> clazz) throws DataAccessException {
-            Set<T> requests = Job.getActiveJobs(clazz);
+            Set<T> requests = srm.getActiveJobs(clazz);
             for (T request: requests) {
                 request.toString(sb,false);
                 sb.append('\n');

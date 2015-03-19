@@ -21,7 +21,6 @@ import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.GetFileRequest;
 import org.dcache.srm.request.GetRequest;
-import org.dcache.srm.request.Job;
 import org.dcache.srm.request.Request;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.ArrayOfAnyURI;
@@ -200,7 +199,7 @@ public class SrmReleaseFiles
     {
         Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
         Set<BringOnlineFileRequest> requests = new HashSet<>();
-        for (BringOnlineFileRequest request : Job.getActiveJobs(BringOnlineFileRequest.class)) {
+        for (BringOnlineFileRequest request : SRM.getSRM().getActiveJobs(BringOnlineFileRequest.class)) {
             if (surlList.contains(request.getSurl())) {
                 requests.add(request);
             }
@@ -212,7 +211,7 @@ public class SrmReleaseFiles
     {
         Collection<URI> surlList = (surls.length > 2) ? new HashSet<>(asList(surls)) : asList(surls);
         Set<GetFileRequest> requests = new HashSet<>();
-        for (GetFileRequest request : Job.getActiveJobs(GetFileRequest.class)) {
+        for (GetFileRequest request : SRM.getSRM().getActiveJobs(GetFileRequest.class)) {
             if (surlList.contains(request.getSurl())) {
                 requests.add(request);
             }

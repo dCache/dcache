@@ -278,12 +278,6 @@ public abstract class Job  {
         throw new SRMInvalidRequestException("Id " + jobId + " does not correspond to any known job");
     }
 
-    public static <T extends Job> Set<T> getActiveJobs(Class<T> type) throws DataAccessException
-    {
-        JobStorage<T> jobStorage = JobStorageFactory.getJobStorageFactory().getJobStorage(type);
-        return (jobStorage == null) ? Collections.<T>emptySet() : jobStorage.getActiveJobs();
-    }
-
     /** Performs state transition checking the legality first.
      */
     public State getState() {
