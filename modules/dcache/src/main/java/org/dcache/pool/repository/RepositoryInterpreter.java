@@ -300,7 +300,7 @@ public class RepositoryInterpreter
         "         exists until zero is reached.\n"+
         "  SEE ALSO :\n"+
         "     rep rmclass ...\n";
-    public static final String hh_rep_rm = "<pnfsid> [-force]# removes the pnfsfile from the cache";
+    public static final String hh_rep_rm = "<pnfsid> [-force] # removes the pnfsfile from the cache";
     public String ac_rep_rm_$_1(Args args) throws Exception
     {
         boolean forced = args.hasOption("force");
@@ -370,7 +370,7 @@ public class RepositoryInterpreter
         @Override
         public void stateChanged(StateChangeEvent event)
         {
-            updateStatistics(event);
+            updateStatistics(event, event.getOldState(), event.getNewState());
         }
 
         @Override
@@ -381,7 +381,7 @@ public class RepositoryInterpreter
         @Override
         public void stickyChanged(StickyChangeEvent event)
         {
-            updateStatistics(event);
+            updateStatistics(event, event.getOldEntry().getState(), event.getNewEntry().getState());
         }
 
         private boolean isPrecious(CacheEntry entry)
@@ -411,10 +411,10 @@ public class RepositoryInterpreter
             statistics.remove(store);
         }
 
-        private synchronized void updateStatistics(EntryChangeEvent event)
+        private synchronized void updateStatistics(EntryChangeEvent event, EntryState oldState, EntryState newState)
         {
-            CacheEntry oldEntry = event.getOldEntry();
-            if (oldEntry.getState() == EntryState.CACHED || oldEntry.getState() == EntryState.PRECIOUS) {
+            if (oldState == EntryState.CACHED || oldState == EntryState.PRECIOUS) {
+                CacheEntry oldEntry = event.getOldEntry();
                 Statistics stats = getStatistics(oldEntry.getFileAttributes());
                 stats.bytes -= oldEntry.getReplicaSize();
                 stats.entries--;
@@ -434,8 +434,8 @@ public class RepositoryInterpreter
                     removeStatistics(oldEntry.getFileAttributes());
                 }
             }
-            CacheEntry newEntry = event.getNewEntry();
-            if (newEntry.getState() == EntryState.CACHED || newEntry.getState() == EntryState.PRECIOUS) {
+            if (newState == EntryState.CACHED || newState == EntryState.PRECIOUS) {
+                CacheEntry newEntry = event.getNewEntry();
                 Statistics stats = getStatistics(newEntry.getFileAttributes());
                 stats.bytes += newEntry.getReplicaSize();
                 stats.entries++;
