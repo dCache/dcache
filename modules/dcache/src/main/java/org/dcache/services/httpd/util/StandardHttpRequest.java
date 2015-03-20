@@ -18,9 +18,9 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import dmg.protocols.kerberos.Base64;
 import dmg.util.CollectionFactory;
 import dmg.util.HttpRequest;
+import java.util.Base64;
 
 /**
  * Basic implementation of internal interface used to hold objects for processing
@@ -145,7 +145,7 @@ public class StandardHttpRequest implements HttpRequest {
         if (!st.nextToken().equals("Basic")) {
             return;
         }
-        auth = new String(Base64.decode(st.nextToken()));
+        auth = new String(Base64.getDecoder().decode(st.nextToken()));
         logger.info("Authentication : >{}<", auth);
         st = new StringTokenizer(auth, ":");
         if (st.countTokens() < 2) {
