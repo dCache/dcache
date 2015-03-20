@@ -66,7 +66,14 @@ public class LoggingRPCProvider extends RPCProvider
             return result;
         } catch(InvocationTargetException e) {
             Throwable t = e.getCause();
-            if(t instanceof AxisFault) {
+
+            // Axis wraps RuntimeException (i.e., bugs) in an AxisFault without
+            // logging them.  We unwrap them here so we can log them.
+            if (t instanceof AxisFault && t.getCause() instanceof RuntimeException) {
+                t = t.getCause();
+            }
+
+            if (t instanceof AxisFault) {
                 AxisFault fault = (AxisFault) t;
                 /*
                 * All exceptions that are to be delivered as a SOAP Fault are
