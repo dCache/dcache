@@ -58,11 +58,11 @@ public class ConsistentStore
     private final static String UPDATE_SIZE_MSG =
         "Recovering: Setting size of %1$s in name space to %2$d.";
     private final static String UPDATE_ACCESS_LATENCY_MSG =
-        "Recovering: Setting access latency of %1$s in name space to %2$d.";
+        "Recovering: Setting access latency of %1$s in name space to %2$s.";
     private final static String UPDATE_RETENTION_POLICY_MSG =
-        "Recovering: Setting retention policy of %1$s in name space to %2$d.";
+        "Recovering: Setting retention policy of %1$s in name space to %2$s.";
     private final static String UPDATE_CHECKSUM_MSG =
-        "Recovering: Setting checksum of %1$s in name space to %2$d.";
+        "Recovering: Setting checksum of %1$s in name space to %2$s.";
     private final static String MARKED_MSG =
         "Recovering: Marked %1$s as %2$s.";
     private final static String REMOVING_REDUNDANT_META_DATA =
