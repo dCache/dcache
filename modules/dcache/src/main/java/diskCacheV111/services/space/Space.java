@@ -113,10 +113,9 @@ public class Space implements Serializable {
         sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
         sb.append("linkGroupId:").append(linkGroupId).append(' ');
         sb.append("size:").append(sizeInBytes).append(' ');
-        sb.append("created:").append((new Date(creationTime))).append(' ');
-        if (expirationTime != null) {
-            sb.append("expiration:").append(new Date(expirationTime).toString()).append(' ');
-        }
+        sb.append("created:").append(new Date(creationTime)).append(' ');
+        sb.append("lifetime:").append(expirationTime == null ? -1 : expirationTime - creationTime).append("ms ");
+        sb.append("expiration:").append(expirationTime == null ? "NEVER" : new Date(expirationTime)).append(' ');
         sb.append("description:").append(description).append(' ');
         sb.append("state:").append(state).append(' ');
         sb.append("used:").append(usedSizeInBytes).append(' ');
