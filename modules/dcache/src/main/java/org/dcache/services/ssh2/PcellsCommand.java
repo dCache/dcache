@@ -11,15 +11,24 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import diskCacheV111.admin.LegacyAdminShell;
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.message.GetLinkGroupsMessage;
+import diskCacheV111.services.space.message.GetSpaceTokensMessage;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
+
+import org.dcache.cells.CellStub;
 
 public class PcellsCommand implements Command, Runnable
 {
@@ -27,6 +36,7 @@ public class PcellsCommand implements Command, Runnable
             LoggerFactory.getLogger(PcellsCommand.class);
 
     private final CellEndpoint _endpoint;
+    private final CellStub _stub;
     private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -39,6 +49,7 @@ public class PcellsCommand implements Command, Runnable
     public PcellsCommand(CellEndpoint endpoint, String prompt)
     {
         _endpoint = endpoint;
+        _stub = new CellStub(_endpoint);
         _prompt = prompt;
     }
 
@@ -108,7 +119,19 @@ public class PcellsCommand implements Command, Runnable
                             if (frame.getDestination() == null) {
                                 result = _shell.executeCommand(frame.getPayload().toString());
                             } else {
-                                result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
+                                switch (frame.getDestination()) {
+                                case "SrmSpaceManager":
+                                    if (frame.getPayload().equals("ls -l")) {
+                                        result = listSpaceReservations();
+                                    } else {
+                                        result = _shell.executeCommand("SpaceManager", frame.getPayload());
+                                    }
+                                    break;
+
+                                default:
+                                    result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
+                                    break;
+                                }
                             }
                         } catch (CommandException e) {
                             result = e;
@@ -142,5 +165,37 @@ public class PcellsCommand implements Command, Runnable
         } finally {
             _exitCallback.onExit(0);
         }
+    }
+
+    private String listSpaceReservations() throws CacheException, InterruptedException
+    {
+        /* Query information from space manager. */
+        CellPath spaceManager = new CellPath("SpaceManager");
+        Collection<Space> spaces = _stub.sendAndWait(spaceManager, new GetSpaceTokensMessage()).getSpaceTokenSet();
+        Collection<LinkGroup> groups = _stub.sendAndWait(spaceManager, new GetLinkGroupsMessage()).getLinkGroups();
+
+        /* Build pcells compatible list. */
+        StringBuilder out = new StringBuilder();
+
+        out.append("Reservations:\n");
+        for (Space space : spaces) {
+            out.append(space).append('\n');
+        }
+        out.append("total number of reservations: ").append(spaces.size()).append('\n');
+        out.append("total number of bytes reserved: ")
+                .append(spaces.stream().mapToLong(Space::getSizeInBytes).sum()).append('\n');
+
+        out.append("\nLinkGroups:\n");
+        for (LinkGroup group : groups) {
+            out.append(group).append('\n');
+        }
+        out.append("total number of linkGroups: ").
+                append(groups.size()).append('\n');
+        out.append("total number of bytes reservable: ").
+                append(groups.stream().mapToLong(LinkGroup::getAvailableSpace).sum()).append('\n');
+        out.append("total number of bytes reserved  : ").
+                append(groups.stream().mapToLong(LinkGroup::getReservedSpace).sum()).append('\n');
+
+        return out.toString();
     }
 }
