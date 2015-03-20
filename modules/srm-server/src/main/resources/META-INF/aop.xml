@@ -3,10 +3,13 @@
 <aspectj>
   <weaver options="-Xset:weaveJavaxPackages=true">
     <include within="org.apache.axis.Message"/>
+    <include within="org.apache.axis.utils.JavaUtils"/>
+    <include within="org.apache.axis.encoding.DefaultTypeMappingImpl"/>
     <include within="org.dcache.srm.aspects.*"/>
   </weaver>
 
   <aspects>
     <aspect name="org.dcache.srm.aspects.EofExceptionAspect"/>
+    <aspect name="org.dcache.srm.aspects.DisableAttachmentSupport"/>
   </aspects>
 </aspectj>
