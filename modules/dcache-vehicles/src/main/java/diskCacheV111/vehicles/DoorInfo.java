@@ -11,7 +11,7 @@ public class DoorInfo implements Serializable {
 
    private String _cellName ;
    private String _cellDomainName ;
-   private String _protocolFamily  = "<unkown>" ;
+   private String _protocolFamily  = "<unknown>" ;
    private String _protocolVersion = "<unknown>" ;
    private String _owner           = "<unknown>" ;
    private String _process         = "<unknown>" ;

@@ -8,11 +8,13 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.VOInfo;
+import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
 
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
 import org.dcache.poolmanager.Partition;
+import org.dcache.util.TransferCollector;
 import org.dcache.webadmin.model.businessobjects.Pool;
 import org.dcache.webadmin.model.businessobjects.RestoreInfo;
 import org.dcache.webadmin.model.util.AccessLatency;
@@ -97,40 +99,41 @@ public class BeanDataMapper {
         return cellService;
     }
 
-    public static ActiveTransfersBean moverModelToView(MoverInfo moverInfo) {
-        ActiveTransfersBean transfer = new ActiveTransfersBean();
-        transfer.setCellDomainName(moverInfo.getIoDoorInfo().getDomainName());
-        transfer.setCellName(moverInfo.getIoDoorInfo().getCellName());
-        transfer.setOwner(moverInfo.getIoDoorInfo().getOwner());
-        if (moverInfo.getIoDoorEntry().getPnfsId() == null) {
-            transfer.setPnfsId("");
+    public static ActiveTransfersBean moverModelToView(TransferCollector.Transfer transfer) {
+        ActiveTransfersBean bean = new ActiveTransfersBean();
+        bean.setCellDomainName(transfer.door().getDomainName());
+        bean.setCellName(transfer.door().getCellName());
+        bean.setOwner(transfer.door().getOwner());
+        if (transfer.session().getPnfsId() == null) {
+            bean.setPnfsId("");
         } else {
-            transfer.setPnfsId(moverInfo.getIoDoorEntry().getPnfsId().toString());
+            bean.setPnfsId(transfer.session().getPnfsId().toString());
         }
-        if (moverInfo.getIoDoorEntry().getPool() != null) {
-            transfer.setPool(moverInfo.getIoDoorEntry().getPool());
+        if (transfer.session().getPool() != null) {
+            bean.setPool(transfer.session().getPool());
         }
-        transfer.setProcess(moverInfo.getIoDoorInfo().getProcess());
-        transfer.setProtocolFamily(moverInfo.getIoDoorInfo().getProtocolFamily());
-        transfer.setProtocolVersion(moverInfo.getIoDoorInfo().getProtocolVersion());
-        transfer.setReplyHost(moverInfo.getIoDoorEntry().getReplyHost());
-        transfer.setSerialId(moverInfo.getIoDoorEntry().getSerialId());
-        if (moverInfo.getIoDoorEntry().getStatus() == null) {
-            transfer.setStatus("");
+        bean.setProcess(transfer.door().getProcess());
+        bean.setProtocolFamily(transfer.door().getProtocolFamily());
+        bean.setProtocolVersion(transfer.door().getProtocolVersion());
+        bean.setReplyHost(transfer.session().getReplyHost());
+        bean.setSerialId(transfer.session().getSerialId());
+        if (transfer.session().getStatus() == null) {
+            bean.setStatus("");
         } else {
-            String status = moverInfo.getIoDoorEntry().getStatus();
+            String status = transfer.session().getStatus();
             status = status.replace(" ", "\n");
-            transfer.setStatus(status);
+            bean.setStatus(status);
         }
-        transfer.setWaitingSince(moverInfo.getIoDoorEntry().getWaitingSince());
-        if (moverInfo.hasJobInfo()) {
-            transfer.setBytesTransferred(moverInfo.getIoJobInfo().getBytesTransferred());
-            transfer.setJobId(moverInfo.getIoJobInfo().getJobId());
-            transfer.setLastTransferred(moverInfo.getIoJobInfo().getLastTransferred());
-            transfer.setState(moverInfo.getIoJobInfo().getStatus());
-            transfer.setTransferTime(moverInfo.getIoJobInfo().getTransferTime());
+        bean.setWaitingSince(transfer.session().getWaitingSince());
+        IoJobInfo mover = transfer.mover();
+        if (mover != null) {
+            bean.setBytesTransferred(mover.getBytesTransferred());
+            bean.setJobId(mover.getJobId());
+            bean.setLastTransferred(mover.getLastTransferred());
+            bean.setState(mover.getStatus());
+            bean.setTransferTime(mover.getTransferTime());
         }
-        return transfer;
+        return bean;
     }
 
     public static LinkGroupBean linkGroupModelToView(LinkGroup linkGroup) {

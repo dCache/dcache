@@ -1,7 +1,6 @@
-// $Id: TransferObserverV1.java,v 1.18 2007-09-27 15:03:17 behrmann Exp $
-
 package diskCacheV111.cells;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,24 +13,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.HTMLBuilder;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginBrokerInfo;
@@ -40,8 +33,11 @@ import dmg.cells.services.login.LoginManagerChildrenInfo;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.TransferCollector;
+import org.dcache.util.TransferCollector.Transfer;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 
 public class TransferObserverV1
     extends CellAdapter
@@ -53,10 +49,9 @@ public class TransferObserverV1
     private final CellNucleus   _nucleus;
     private final CellStub      _cellStub;
     private final Args          _args;
-    private final DoorHandler   _doors;
+    private final TransferCollector _collector;
     private final String        _loginBroker;
     private final Thread        _workerThread;
-    private       List<IoEntry> _ioList;
     private       long          _update         = 120000L;
     private       long          _timeUsed;
     private       long          _processCounter;
@@ -156,104 +151,6 @@ public class TransferObserverV1
         }
     }
 
-    private static class DoorHandler
-    {
-        private final Map<CellAddressCore, Entry> _doors = new ConcurrentHashMap<>();
-
-        private synchronized Entry defineDoor(CellAddressCore address)
-        {
-            Entry entry = _doors.get(address);
-            if (entry == null) {
-                entry = new Entry(address, true);
-                _doors.put(address, entry);
-            }
-            return entry;
-        }
-
-        private Set<CellAddressCore> doors()
-        {
-            return _doors.keySet();
-        }
-
-        private Collection<Entry> entries()
-        {
-            return _doors.values();
-        }
-
-        private Entry undefineDoor(CellAddressCore address)
-        {
-            Entry entry = _doors.get(address);
-            if (entry != null) {
-                entry.setFixed(false);
-            }
-            return entry;
-        }
-
-        private synchronized Entry addDoor(CellAddressCore door)
-        {
-            Entry entry = _doors.get(door);
-            if (entry == null) {
-                entry = new Entry(door, false);
-                _doors.put(door, entry);
-            }
-            return entry;
-        }
-
-        private Entry setDoorInfo(LoginManagerChildrenInfo info)
-        {
-            Entry entry =
-                    addDoor(new CellAddressCore(info.getCellName(), info.getCellDomainName()));
-            entry.setChildInfo(info);
-            return entry;
-        }
-
-        private synchronized void clear()
-        {
-            Iterator<Entry> i = _doors.values().iterator();
-            while (i.hasNext()) {
-                Entry entry = i.next();
-                if (entry.isFixed()) {
-                    entry.setChildInfo(null);
-                } else {
-                    i.remove();
-                }
-            }
-        }
-
-        private static class Entry
-        {
-            private boolean _isFixed;
-            private CellAddressCore _doorAddress;
-            private LoginManagerChildrenInfo _info;
-
-            private Entry(CellAddressCore doorAddress, boolean isFixed)
-            {
-                _isFixed  = isFixed;
-                _doorAddress = doorAddress;
-            }
-
-            private LoginManagerChildrenInfo getChildInfo()
-            {
-                return _info;
-            }
-
-            private void setChildInfo(LoginManagerChildrenInfo info)
-            {
-                _info = info;
-            }
-
-            private boolean isFixed()
-            {
-                return _isFixed;
-            }
-
-            private void setFixed(boolean fixed)
-            {
-                _isFixed = fixed;
-            }
-        }
-    }
-
     public TransferObserverV1(String name, String  args) throws Exception
     {
         super(name, TransferObserverV1.class.getName(), args);
@@ -261,24 +158,14 @@ public class TransferObserverV1
         _nucleus = getNucleus();
         _cellStub = new CellStub(this, null, 30, SECONDS);
         _args    = getArgs();
-        _doors   = new DoorHandler();
+        _loginBroker = _args.getOpt("loginBroker");
+        _collector = new TransferCollector(_cellStub,
+                                           Arrays.stream(_loginBroker.split(",")).map(CellPath::new).collect(toList()));
 
         try {
             if (_args.argc() < 0) {
                 throw new IllegalArgumentException("Usage : ... ");
             }
-
-            //
-            // check for 'doors' option. If present,
-            // load them into the doors (fixed)
-            //
-            String doorList = _args.getOpt("doors");
-            if (doorList != null) {
-                for (String s : doorList.split(",")) {
-                    _doors.defineDoor(new CellAddressCore(s));
-                }
-            }
-            //
 
             String updateString = _args.getOpt("update");
             try {
@@ -294,7 +181,6 @@ public class TransferObserverV1
             // worker will add the 'fixed' door list to the
             // list provided by the loginBroker.
             //
-            _loginBroker = _args.getOpt("loginBroker");
             //
             _fieldMap = new FieldMap(_args.getOpt("fieldMap"), _args);
             //
@@ -461,24 +347,23 @@ public class TransferObserverV1
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("    $Id: TransferObserverV1.java,v 1.18 2007-09-27 15:03:17 behrmann Exp $");
-        pw.println("    Update Time : "+(_update/1000L)+" seconds");
-        pw.println("        Counter : "+_processCounter);
-        pw.println(" Last Time Used : "+_timeUsed+" msec's");
+        pw.println("    Update Time : " + (_update / 1000L) + " seconds");
+        pw.println("        Counter : " + _processCounter);
+        pw.println(" Last Time Used : " + _timeUsed + " milliseconds");
     }
 
     @Override
     public void run()
     {
         try {
-            while (true) {
+            while (!Thread.interrupted()) {
                 try {
                     _processCounter++;
                     long start = System.currentTimeMillis();
                     collectDataSequentially();
                     _timeUsed = System.currentTimeMillis() - start;
-                } catch (Exception ee) {
-                    _log.warn(ee.toString(), ee);
+                } catch (RuntimeException ee) {
+                    _log.error(ee.toString(), ee);
                 }
 
                 synchronized (this) {
@@ -489,219 +374,51 @@ public class TransferObserverV1
             _log.info("Data collector interrupted");
         }
     }
-    //
-    // lowest priority transfer observer.
-    //
-     private static class IoEntry implements Comparable<IoEntry>
-     {
-         private final IoDoorInfo _ioDoorInfo ;
-         private final IoDoorEntry _ioDoorEntry ;
-         private IoJobInfo   _ioJobInfo;
 
-         private IoEntry(IoDoorInfo info, IoDoorEntry entry)
-         {
-             _ioDoorInfo = info ;
-             _ioDoorEntry = entry ;
-         }
-
-         @Override
-         public int compareTo(IoEntry other)
-         {
-             int tmp = _ioDoorInfo.getDomainName().compareTo(other._ioDoorInfo.getDomainName()) ;
-             if (tmp != 0) {
-                 return tmp;
-             }
-             tmp = _ioDoorInfo.getCellName().compareTo(other._ioDoorInfo.getCellName()) ;
-             if (tmp != 0) {
-                 return tmp;
-             }
-             return Long.valueOf(_ioDoorEntry.getSerialId()).
-                 compareTo(other._ioDoorEntry.getSerialId());
-         }
-
-         @Override
-         public boolean equals(Object obj)
-         {
-             if( obj == this ) {
-                 return true;
-             }
-             if( !(obj instanceof IoEntry ) ) {
-                 return false;
-             }
-
-             IoEntry other = (IoEntry)obj;
-             return _ioDoorInfo.getDomainName().equals(other._ioDoorInfo.getDomainName()) &&
-                 _ioDoorInfo.getCellName().equals(other._ioDoorInfo.getCellName()) &&
-
-                 (_ioDoorEntry.getSerialId() == other._ioDoorEntry.getSerialId());
-         }
-
-         @Override
-         public int hashCode() {
-             // required to by some Collections
-             return 17;
-         }
-    }
-
-    public static final String hh_go = "[-parallel]";
     public String ac_go(Args args )
     {
-        if (args.hasOption("parallel")) {
-            _nucleus.newThread(this::collectDataSequentially, "worker").start();
-            return "Started";
-        } else {
-            synchronized (this) {
-                notifyAll();
-            }
-            return "Process Notified";
-        }
-    }
-
-    private void getBrokerInfo()
-    {
-        //
-        // ask the broker for doors.
-        //
-        if (_loginBroker != null) {
-            List<LoginBrokerInfo> infoList = new ArrayList<>();
-
-            for (String loginBroker : _loginBroker.split(",")) {
-                _log.info("Requesting doorInfo from LoginBroker " + loginBroker);
-                try {
-                    CellAddressCore brokerAddress = new CellAddressCore(loginBroker);
-                    LoginBrokerInfo [] infos =
-                            _cellStub.sendAndWait(new CellPath(brokerAddress), "ls -binary -all",
-                                                  LoginBrokerInfo[].class);
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("LoginBroker (").append(loginBroker)
-                            .append(") : ");
-                    for (LoginBrokerInfo info : infos) {
-                        CellAddressCore doorAddress =
-                                new CellAddressCore(info.getCellName(), info.getDomainName());
-                        _doors.addDoor(doorAddress);
-                        sb.append(doorAddress).append(",");
-                    }
-                    _log.info(sb.toString());
-                    infoList.addAll(Arrays.asList(infos));
-                } catch (Exception e) {
-                    _log.info("Error from sendAndWait : " + e);
-                }
-            }
-            updateDoorPage(infoList.toArray(new LoginBrokerInfo[infoList.size()])) ;
-        }
-    }
-
-    private void collectDataSequentially()
-    {
-        _doors.clear();
-
-        getBrokerInfo();
-
-        _log.info("Asking doors for 'doorClientList' (one by one)");
-        for (CellAddressCore doorAddress : _doors.doors()) {
-            _log.info("Requesting client list from : {}", doorAddress);
-            try {
-                LoginManagerChildrenInfo info =
-                        _cellStub.sendAndWait(new CellPath(doorAddress), "get children -binary",
-                                              LoginManagerChildrenInfo.class);
-                _log.info(doorAddress + " reported about {} children", info.getChildrenCount());
-                _doors.setDoorInfo(info);
-            } catch (Exception e) {
-                _doors.undefineDoor(doorAddress);
-                _log.info("Exception : " + e);
-            }
-        }
-        //
-        // now we got all our Children ...
-        //
-        Map<String, IoEntry> ioList   = new HashMap<>();
-        Set<String>          poolHash = new HashSet<>();
-        for (DoorHandler.Entry entry : _doors.entries()) {
-            LoginManagerChildrenInfo info = entry.getChildInfo();
-
-            if (info == null) {
-                continue;
-            }
-
-            for (String child: info.getChildren()) {
-                CellAddressCore childDoor = new CellAddressCore(child, info.getCellDomainName());
-
-                _log.info("Requesting client info from: {}", childDoor);
-                try {
-                    IoDoorInfo ioDoorInfo =
-                            _cellStub.sendAndWait(new CellPath(childDoor), "get door info -binary", IoDoorInfo.class);
-
-                    _log.info(childDoor + " reply ok");
-
-                    List<IoDoorEntry> ioDoorEntries = ioDoorInfo.getIoDoorEntries();
-                    if (ioDoorEntries.size() == 0) {
-                        continue;
-                    }
-
-                    for (IoDoorEntry ioDoorEntry : ioDoorEntries) {
-                        _log.info("Adding ioEntry: {}", ioDoorEntry);
-                        ioList.put(childDoor + "#" + ioDoorEntry.getSerialId(),
-                                new IoEntry(ioDoorInfo, ioDoorEntry));
-                        String pool = ioDoorEntry.getPool();
-                        if (pool != null && pool.length() > 0 && !pool
-                                .startsWith("<")) {
-                            poolHash.add(pool);
-                        }
-                    }
-
-                } catch (Exception e) {
-                    _log.info("Exception: {}", e);
-                }
-            }
-        }
-        _log.info("Asking pools for io info");
-        for (String poolName : poolHash) {
-            _log.info("Asking pool: {}", poolName);
-            try {
-                IoJobInfo[] infos =
-                        _cellStub.sendAndWait(new CellPath(new CellAddressCore(poolName)), "mover ls -binary",
-                                              IoJobInfo[].class);
-
-                _log.info("{} reply ok", poolName);
-
-                //
-                // where is our client
-                //
-                for (IoJobInfo info : infos) {
-                    String client = info.getClientName()+"#"+
-                        info.getClientId() ;
-                    IoEntry ioEntry = ioList.get(client);
-                    if (ioEntry == null) {
-                        _log.info("No entry found for {}", client);
-                    } else {
-                        ioEntry._ioJobInfo = info;
-                    }
-                }
-            } catch (Exception e) {
-                _log.info("Exception: {}", e);
-            }
-        }
-        List<IoEntry> resultList;
         synchronized (this) {
-            _ioList = new ArrayList<>(new TreeSet<>(ioList.values()));
-            _nucleus.getDomainContext().put("transfers.list", _ioList);
-
-            resultList = _ioList;
+            notifyAll();
         }
-        _nucleus.getDomainContext().put("transfers.html",
-                                        createHtmlTable(resultList));
-        _nucleus.getDomainContext().put("transfers.txt",
-                                        createAsciiTable(resultList));
+        return "Update started.";
+    }
 
-        createDynamicTables(resultList);
+    private void collectDataSequentially() throws InterruptedException
+    {
+        try {
+            Collection<LoginBrokerInfo> loginBrokerInfos =
+                    _collector.collectLoginBrokerInfo().get();
+            Collection<LoginManagerChildrenInfo> loginManagerInfos =
+                    _collector.collectLoginManagerInfo(TransferCollector.getLoginManagers(loginBrokerInfos)).get();
+            Collection<IoDoorInfo> doorInfos =
+                    _collector.collectDoorInfo(TransferCollector.getDoors(loginManagerInfos)).get();
+            Collection<IoJobInfo> movers =
+                    _collector.collectMovers(TransferCollector.getPools(doorInfos)).get();
+
+            List<Transfer> transfers = TransferCollector.getTransfers(doorInfos, movers);
+            transfers.sort(new TransferCollector.ByDoorAndSequence());
+
+            Map<String, Object> domainContext = _nucleus.getDomainContext();
+            domainContext.put("doors.html", createDoorPage(loginBrokerInfos));
+            domainContext.put("transfers.list", transfers);
+            domainContext.put("transfers.html", createHtmlTable(transfers));
+            domainContext.put("transfers.txt", createAsciiTable(transfers));
+
+            synchronized (this) {
+                for (TableEntry entry : _tableHash.values()) {
+                    domainContext.put(entry.getName() + ".html", createDynamicTable(transfers, entry.getFields()));
+                }
+            }
+        } catch (ExecutionException e) {
+            throw Throwables.propagate(e.getCause());
+        }
     }
 
     //
     // the html stuff.
     //
 
-    private void updateDoorPage(LoginBrokerInfo [] infos)
+    private String createDoorPage(Collection<LoginBrokerInfo> doors)
     {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
@@ -715,36 +432,25 @@ public class TransferObserverV1
                         "port",     "Port",
                         "load",     "Load");
 
-        for (LoginBrokerInfo info : infos) {
+        for (LoginBrokerInfo door : doors) {
             InetAddress address =
-                    info.getAddresses().stream().max(Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
+                    door.getAddresses().stream().max(Comparator.comparing(NetworkUtils.InetAddressScope::of)).get();
             page.beginRow(null, "odd");
-            page.td("cell",     info.getCellName());
-            page.td("domain",   info.getDomainName());
-            page.td("protocol", info.getProtocolFamily());
-            page.td("version",  info.getProtocolVersion());
-            page.td("host",     address.getHostName());
-            page.td("port",     info.getPort());
-            page.td("load",     (int)(info.getLoad()*100.0));
+            page.td("cell", door.getCellName());
+            page.td("domain",   door.getDomainName());
+            page.td("protocol", door.getProtocolFamily());
+            page.td("version",  door.getProtocolVersion());
+            page.td("host", address.getHostName());
+            page.td("port",     door.getPort());
+            page.td("load", (int) (door.getLoad() * 100.0));
             page.endRow();
         }
         page.endTable();
 
-        page.addFooter(getClass().getName() + " [$Revision: 1.18 $]");
-        page.writeToContext("doors.html");
+        return page.toString();
     }
 
-    private synchronized void createDynamicTables(List<IoEntry> list)
-    {
-        for (TableEntry entry : _tableHash.values()) {
-            String tableName = entry.getName();
-            int [] array     = entry.getFields();
-            _nucleus.getDomainContext().
-                put(tableName + ".html", createDynamicTable(list, array));
-        }
-    }
-
-    private String createDynamicTable(List<IoEntry> ioList, int [] fields)
+    private String createDynamicTable(List<Transfer> transfers, int [] fields)
     {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
@@ -757,8 +463,8 @@ public class TransferObserverV1
         }
         page.endTHead();
 
-        for (IoEntry entry : ioList) {
-            List<String> values = createFieldList(entry);
+        for (Transfer transfer : transfers) {
+            List<String> values = createFieldList(transfer);
             for (int field : fields) {
                 if (field >= values.size()) {
                     page.td(__className[field], "");
@@ -775,32 +481,29 @@ public class TransferObserverV1
     public static final String hh_ls_iolist = "";
     public synchronized String ac_ls_iolist(Args args)
     {
-        if (_ioList == null) {
-            return "";
-        }
-        return createAsciiTable(_ioList);
+        return Objects.toString(_nucleus.getDomainContext().get("transfers.txt"), "");
     }
 
-    private String createAsciiTable(List<IoEntry> ioList)
+    private String createAsciiTable(List<Transfer> transfers)
     {
         long          now = System.currentTimeMillis();
         StringBuilder sb  = new StringBuilder();
 
-        for (IoEntry io : ioList) {
+        for (Transfer transfer : transfers) {
             List<String> args = new ArrayList<>();
-            args.add(io._ioDoorInfo.getCellName());
-            args.add(io._ioDoorInfo.getDomainName());
-            args.add(String.valueOf(io._ioDoorEntry.getSerialId()));
-            args.add(io._ioDoorInfo.getProtocolFamily() + "-" + io._ioDoorInfo.getProtocolVersion());
-            args.add(io._ioDoorInfo.getOwner());
-            args.add(io._ioDoorInfo.getProcess());
-            args.add(Objects.toString(io._ioDoorEntry.getPnfsId(), ""));
-            args.add(io._ioDoorEntry.getPool());
-            args.add(io._ioDoorEntry.getReplyHost());
-            args.add(io._ioDoorEntry.getStatus());
-            args.add(String.valueOf(now - io._ioDoorEntry.getWaitingSince()));
+            args.add(transfer.door().getCellName());
+            args.add(transfer.door().getDomainName());
+            args.add(String.valueOf(transfer.session().getSerialId()));
+            args.add(transfer.door().getProtocolFamily() + "-" + transfer.door().getProtocolVersion());
+            args.add(transfer.door().getOwner());
+            args.add(transfer.door().getProcess());
+            args.add(Objects.toString(transfer.session().getPnfsId(), ""));
+            args.add(transfer.session().getPool());
+            args.add(transfer.session().getReplyHost());
+            args.add(transfer.session().getStatus());
+            args.add(String.valueOf(now - transfer.session().getWaitingSince()));
 
-            IoJobInfo mover = io._ioJobInfo;
+            IoJobInfo mover = transfer.mover();
             if (mover == null) {
                 args.add("No-mover()-Found");
             } else {
@@ -819,38 +522,38 @@ public class TransferObserverV1
         return sb.toString();
     }
 
-    private List<String> createFieldList(IoEntry io)
+    private List<String> createFieldList(Transfer transfer)
     {
         long         now = System.currentTimeMillis();
         List<String> out = new ArrayList<>(20);
 
-        PnfsId pnfsid = io._ioDoorEntry.getPnfsId();
-        String status = io._ioDoorEntry.getStatus();
-        out.add(io._ioDoorInfo.getCellName());
-        out.add(io._ioDoorInfo.getDomainName());
-        out.add(String.valueOf(io._ioDoorEntry.getSerialId()));
-        out.add(io._ioDoorInfo.getProtocolFamily()+"-"+
-                io._ioDoorInfo.getProtocolVersion());
-        out.add(_fieldMap.mapOwner(io._ioDoorInfo.getOwner()));
-        out.add(io._ioDoorInfo.getProcess());
+        PnfsId pnfsid = transfer.session().getPnfsId();
+        String status = transfer.session().getStatus();
+        out.add(transfer.door().getCellName());
+        out.add(transfer.door().getDomainName());
+        out.add(String.valueOf(transfer.session().getSerialId()));
+        out.add(transfer.door().getProtocolFamily()+"-"+
+                transfer.door().getProtocolVersion());
+        out.add(_fieldMap.mapOwner(transfer.door().getOwner()));
+        out.add(transfer.door().getProcess());
         out.add(pnfsid == null ? "" : pnfsid.toString());
-        out.add(io._ioDoorEntry.getPool());
-        out.add(io._ioDoorEntry.getReplyHost());
+        out.add(transfer.session().getPool());
+        out.add(transfer.session().getReplyHost());
         out.add(status == null ? "" : status.replace(" ", "&nbsp;"));
-        out.add(getTimeString(now - io._ioDoorEntry.getWaitingSince()));
+        out.add(getTimeString(now - transfer.session().getWaitingSince()));
 
-        if (io._ioJobInfo != null) {
-            out.add(io._ioJobInfo.getStatus());
-            out.add(getTimeString(now - io._ioJobInfo.getSubmitTime()));
-            if (io._ioJobInfo.getStartTime() > 0L) {
-                long transferTime     = io._ioJobInfo.getTransferTime();
-                long bytesTransferred = io._ioJobInfo.getBytesTransferred();
+        if (transfer.mover() != null) {
+            out.add(transfer.mover().getStatus());
+            out.add(getTimeString(now - transfer.mover().getSubmitTime()));
+            if (transfer.mover().getStartTime() > 0L) {
+                long transferTime     = transfer.mover().getTransferTime();
+                long bytesTransferred = transfer.mover().getBytesTransferred();
                 out.add(getTimeString(transferTime));
                 out.add(Long.toString(bytesTransferred / 1024));
                 out.add(transferTime > 0 ?
                         String.valueOf((1000 * bytesTransferred) / (1024 * transferTime)) :
                         "-");
-                out.add(getTimeString(now - io._ioJobInfo.getStartTime()));
+                out.add(getTimeString(now - transfer.mover().getStartTime()));
             }
         }
         return out;
@@ -878,53 +581,53 @@ public class TransferObserverV1
         return sb.toString();
     }
 
-    private void createHtmlTableRow(HTMLBuilder page, IoEntry io)
+    private void createHtmlTableRow(HTMLBuilder page, Transfer transfer)
     {
         long now = System.currentTimeMillis();
 
         page.beginRow(null, "odd");
-        page.td("door", io._ioDoorInfo.getCellName());
-        page.td("domain", io._ioDoorInfo.getDomainName());
-        page.td("sequence", io._ioDoorEntry.getSerialId());
-        page.td("protocol", io._ioDoorInfo.getProtocolFamily() +
-                     "-" + io._ioDoorInfo.getProtocolVersion());
+        page.td("door", transfer.door().getCellName());
+        page.td("domain", transfer.door().getDomainName());
+        page.td("sequence", transfer.session().getSerialId());
+        page.td("protocol", transfer.door().getProtocolFamily() +
+                     "-" + transfer.door().getProtocolVersion());
 
-        String tmp = io._ioDoorInfo.getOwner() ;
+        String tmp = transfer.door().getOwner() ;
         tmp = tmp.contains("known") ? "?" : _fieldMap.mapOwner(tmp) ;
         page.td("owner", tmp);
 
-        tmp = io._ioDoorInfo.getProcess() ;
+        tmp = transfer.door().getProcess() ;
         tmp = tmp.contains("known") ? "?" : tmp ;
         page.td("process", tmp);
 
-        String poolName = io._ioDoorEntry.getPool() ;
+        String poolName = transfer.session().getPool() ;
         if (poolName == null || poolName.equals("<unknown>")) {
             poolName = "N.N.";
         }
-        page.td("pnfs", io._ioDoorEntry.getPnfsId());
+        page.td("pnfs", transfer.session().getPnfsId());
         page.td("pool", poolName);
-        page.td("host", io._ioDoorEntry.getReplyHost());
-        String status = io._ioDoorEntry.getStatus();
+        page.td("host", transfer.session().getReplyHost());
+        String status = transfer.session().getStatus();
         page.td("status", status != null ? status.replace(" ", "&nbsp;") : "");
-        page.td("wait", getTimeString(now - io._ioDoorEntry.getWaitingSince()));
+        page.td("wait", getTimeString(now - transfer.session().getWaitingSince()));
 
-        if (io._ioJobInfo == null) {
+        if (transfer.mover() == null) {
             if (poolName.equals("N.N.")) {
                 page.td(3, "staging", "Staging");
             }else{
                 page.td(3, "missing", "No Mover found");
             }
         } else {
-            page.td("state", io._ioJobInfo.getStatus());
-            if (io._ioJobInfo.getStartTime() > 0L) {
-                long transferTime     = io._ioJobInfo.getTransferTime() ;
-                long bytesTransferred = io._ioJobInfo.getBytesTransferred() ;
+            page.td("state", transfer.mover().getStatus());
+            if (transfer.mover().getStartTime() > 0L) {
+                long transferTime     = transfer.mover().getTransferTime() ;
+                long bytesTransferred = transfer.mover().getBytesTransferred() ;
                 //  appendCells(sbtransferTime/1000L);
                 page.td("transferred", bytesTransferred / 1024);
                 page.td("speed", transferTime > 0 ?
                              (1000 * bytesTransferred) / (1024 * transferTime) :
                              "-");
-                //  appendCells(sb, (now-io._ioJobInfo.getStartTime())/1000L);
+                //  appendCells(sb, (now-io.getMover().getStartTime())/1000L);
             } else {
                 page.td("transferred", "-");
                 page.td("speed", "-");
@@ -933,7 +636,7 @@ public class TransferObserverV1
         page.endRow();
     }
 
-    public String createHtmlTable(List<IoEntry> ioList)
+    public String createHtmlTable(List<Transfer> transfers)
     {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
@@ -953,15 +656,15 @@ public class TransferObserverV1
                         "state", "S",
                         "transferred", "Trans.&nbsp;(KB)",
                         "speed", "Speed&nbsp;(KB/s)");
-        for (IoEntry io : ioList) {
-            createHtmlTableRow(page, io);
+        for (Transfer transfer : transfers) {
+            createHtmlTableRow(page, transfer);
         }
         page.endTable();
         page.addFooter(getClass().getName() + " [$Revision: 1.18 $]");
         return page.toString();
     }
 
-    public String createErrorHtmlTable(List<IoEntry> ioList)
+    public String createErrorHtmlTable(List<Transfer> transfers)
     {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
@@ -982,9 +685,9 @@ public class TransferObserverV1
                         "transferred", "Trans.&nbsp;(KB)",
                         "speed", "Speed&nbsp;(KB/s)");
 
-        for (IoEntry io : ioList) {
-            if (io._ioJobInfo == null) {
-                createHtmlTableRow(page, io);
+        for (Transfer transfer : transfers) {
+            if (transfer.mover() == null) {
+                createHtmlTableRow(page, transfer);
             }
         }
         page.endTable();
