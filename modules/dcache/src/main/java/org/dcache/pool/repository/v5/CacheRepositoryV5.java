@@ -869,7 +869,7 @@ public class CacheRepositoryV5
 
             CacheEntryImpl newEntry = new CacheEntryImpl(entry);
 
-            if (oldState != NEW || state != REMOVED) {
+            if (!(oldState == NEW && state == REMOVED)) {
                 stateChanged(oldEntry, newEntry, oldState, state);
             }
 
