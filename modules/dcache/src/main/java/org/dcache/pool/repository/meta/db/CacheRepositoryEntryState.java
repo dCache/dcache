@@ -49,6 +49,7 @@ public class CacheRepositoryEntryState implements Serializable
             _error = true;
             break;
         case REMOVED:
+        case DESTROYED:
             _removed = true;
             break;
         default:
