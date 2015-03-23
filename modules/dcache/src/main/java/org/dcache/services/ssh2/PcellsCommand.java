@@ -26,6 +26,7 @@ import diskCacheV111.util.TimeoutCacheException;
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 
 import org.dcache.cells.CellStub;
@@ -141,7 +142,11 @@ public class PcellsCommand implements Command, Runnable
                             } catch (IOException ignored) {
                             }
                         } catch (TimeoutCacheException e) {
-                            result = null;
+                            if (e.getCause() instanceof NoRouteToCellException) {
+                                result = e.getCause();
+                            } else {
+                                result = null;
+                            }
                         } catch (Exception ae) {
                             result = ae;
                         }
