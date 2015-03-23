@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -776,34 +777,34 @@ public class TransferObserverV1
         StringBuilder sb  = new StringBuilder();
 
         for (IoEntry io : ioList) {
-            sb.append(io._ioDoorInfo.getCellName()).append(" ").
-                append(io._ioDoorInfo.getDomainName()).append(" ");
-            sb.append(io._ioDoorEntry.getSerialId()).append(" ");
-            sb.append(io._ioDoorInfo.getProtocolFamily()).append("-").
-                append(io._ioDoorInfo.getProtocolVersion()).append(" ");
-            sb.append(io._ioDoorInfo.getOwner()).append(" ").
-                append(io._ioDoorInfo.getProcess()).append(" ");
-            sb.append(io._ioDoorEntry.getPnfsId()).append(" ").
-                append(io._ioDoorEntry.getPool()).append(" ").
-                append(io._ioDoorEntry.getReplyHost()).append(" ").
-                append(io._ioDoorEntry.getStatus()).append(" ").
-                append((now -io._ioDoorEntry.getWaitingSince())).append(" ");
+            List<String> args = new ArrayList<>();
+            args.add(io._ioDoorInfo.getCellName());
+            args.add(io._ioDoorInfo.getDomainName());
+            args.add(String.valueOf(io._ioDoorEntry.getSerialId()));
+            args.add(io._ioDoorInfo.getProtocolFamily() + "-" + io._ioDoorInfo.getProtocolVersion());
+            args.add(io._ioDoorInfo.getOwner());
+            args.add(io._ioDoorInfo.getProcess());
+            args.add(Objects.toString(io._ioDoorEntry.getPnfsId(), ""));
+            args.add(io._ioDoorEntry.getPool());
+            args.add(io._ioDoorEntry.getReplyHost());
+            args.add(io._ioDoorEntry.getStatus());
+            args.add(String.valueOf(now - io._ioDoorEntry.getWaitingSince()));
 
-            if (io._ioJobInfo == null) {
-                sb.append("No-Mover-Found");
+            IoJobInfo mover = io._ioJobInfo;
+            if (mover == null) {
+                args.add("No-mover()-Found");
             } else {
-                sb.append(io._ioJobInfo.getStatus()).append(" ");
-                if (io._ioJobInfo.getStartTime() > 0L) {
-                    long transferTime     = io._ioJobInfo.getTransferTime();
-                    long bytesTransferred = io._ioJobInfo.getBytesTransferred();
-                    sb.append(transferTime).append(" ").
-                        append(bytesTransferred).append(" ").
-                        append( transferTime > 0 ? ( (double)bytesTransferred/(double)transferTime ) : 0 ).
-                        append(" ");
-                    sb.append((now-io._ioJobInfo.getStartTime())).append(" ");
+                args.add(mover.getStatus());
+                if (mover.getStartTime() > 0L) {
+                    long transferTime     = mover.getTransferTime();
+                    long bytesTransferred = mover.getBytesTransferred();
+                    args.add(String.valueOf(transferTime));
+                    args.add(String.valueOf(bytesTransferred));
+                    args.add(String.valueOf(transferTime > 0 ? ((double) bytesTransferred / (double) transferTime) : 0));
+                    args.add(String.valueOf(now - mover.getStartTime()));
                 }
             }
-            sb.append("\n");
+            sb.append(new Args(args)).append('\n');
         }
         return sb.toString();
     }
