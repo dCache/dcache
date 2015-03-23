@@ -60,7 +60,6 @@ public class NetLoggerBuilder
 
         Long uid = null;
         Long gid = null;
-        boolean hasSecondaryGid = false;
         for (Principal principal : subject.getPrincipals()) {
             if (principal instanceof UidPrincipal) {
                 if (((UidPrincipal) principal).getUid() == 0) {
@@ -70,8 +69,6 @@ public class NetLoggerBuilder
             } else if (principal instanceof GidPrincipal) {
                 if (((GidPrincipal) principal).isPrimaryGroup()) {
                     gid = ((GidPrincipal) principal).getGid();
-                } else {
-                    hasSecondaryGid = true;
                 }
             }
         }
@@ -82,17 +79,10 @@ public class NetLoggerBuilder
         if (gid != null) {
             sb.append(gid);
         }
-        if (hasSecondaryGid) {
-            boolean firstLoop = true;
-            for (Principal principal : subject.getPrincipals()) {
-                if (principal instanceof GidPrincipal &&
-                        !((GidPrincipal) principal).isPrimaryGroup()) {
-                    if (!firstLoop) {
-                        sb.append(',');
-                    }
-                    firstLoop = false;
-                    sb.append(((GidPrincipal) principal).getGid());
-                }
+        for (Principal principal : subject.getPrincipals()) {
+            if (principal instanceof GidPrincipal &&
+                    !((GidPrincipal) principal).isPrimaryGroup()) {
+                sb.append(',').append(((GidPrincipal) principal).getGid());
             }
         }
         return sb;
