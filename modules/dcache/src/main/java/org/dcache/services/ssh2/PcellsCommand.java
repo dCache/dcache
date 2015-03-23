@@ -1,5 +1,7 @@
 package org.dcache.services.ssh2;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -11,9 +13,16 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.admin.LegacyAdminShell;
 import diskCacheV111.services.space.LinkGroup;
@@ -22,6 +31,7 @@ import diskCacheV111.services.space.message.GetLinkGroupsMessage;
 import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
@@ -30,6 +40,9 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 
 import org.dcache.cells.CellStub;
+import org.dcache.util.Args;
+import org.dcache.util.TransferCollector;
+import org.dcache.util.TransferCollector.Transfer;
 
 public class PcellsCommand implements Command, Runnable
 {
@@ -44,13 +57,17 @@ public class PcellsCommand implements Command, Runnable
     private OutputStream _out;
     private Thread _adminShellThread;
     private ExecutorService _executor = Executors.newCachedThreadPool();
+    private ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean _done = false;
     private String _prompt;
+    private final TransferCollector _collector;
+    private volatile List<Transfer> _transfers = Collections.emptyList();
 
     public PcellsCommand(CellEndpoint endpoint, String prompt)
     {
         _endpoint = endpoint;
         _stub = new CellStub(_endpoint);
+        _collector = new TransferCollector(_stub, Arrays.asList(new CellPath("LoginBroker")));
         _prompt = prompt;
     }
 
@@ -85,6 +102,7 @@ public class PcellsCommand implements Command, Runnable
         _shell = new LegacyAdminShell(user, _endpoint, _prompt);
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
+        _scheduler.schedule(this::updateTransfers, 30, TimeUnit.SECONDS);
     }
 
     @Override
@@ -94,6 +112,7 @@ public class PcellsCommand implements Command, Runnable
             _adminShellThread.interrupt();
         }
         _executor.shutdownNow();
+        _scheduler.shutdownNow();
     }
 
     @Override
@@ -128,7 +147,13 @@ public class PcellsCommand implements Command, Runnable
                                         result = _shell.executeCommand("SpaceManager", frame.getPayload());
                                     }
                                     break;
-
+                                case "TransferObserver":
+                                    if (frame.getPayload().equals("ls iolist")) {
+                                        result = listTransfers(_transfers);
+                                    } else {
+                                        result = _shell.executeCommand("TransferObserver", frame.getPayload());
+                                    }
+                                    break;
                                 default:
                                     result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
                                     break;
@@ -202,5 +227,65 @@ public class PcellsCommand implements Command, Runnable
                 append(groups.stream().mapToLong(LinkGroup::getReservedSpace).sum()).append('\n');
 
         return out.toString();
+    }
+
+    private void updateTransfers()
+    {
+        Futures.addCallback(_collector.collectTransfers(),
+                            new FutureCallback<List<Transfer>>()
+                            {
+                                @Override
+                                public void onSuccess(List<Transfer> result)
+                                {
+                                    result.sort(new TransferCollector.ByDoorAndSequence());
+                                    _transfers = result;
+                                    _scheduler.schedule(PcellsCommand.this::updateTransfers, 2, TimeUnit.MINUTES);
+                                }
+
+                                @Override
+                                public void onFailure(Throwable t)
+                                {
+                                    LOGGER.error("Possible bug detected. Please contact support@dcache.org.", t);
+                                    _scheduler.schedule(PcellsCommand.this::updateTransfers, 30, TimeUnit.SECONDS);
+                                }
+                            }, _executor);
+    }
+
+    private String listTransfers(List<Transfer> transfers)
+    {
+        long now = System.currentTimeMillis();
+        StringBuilder sb  = new StringBuilder();
+
+        for (Transfer io : transfers) {
+            List<String> args = new ArrayList<>();
+            args.add(io.door().getCellName());
+            args.add(io.door().getDomainName());
+            args.add(String.valueOf(io.session().getSerialId()));
+            args.add(io.door().getProtocolFamily() + "-" + io.door().getProtocolVersion());
+            args.add(io.door().getOwner());
+            args.add(io.door().getProcess());
+            args.add(Objects.toString(io.session().getPnfsId(), ""));
+            args.add(io.session().getPool());
+            args.add(io.session().getReplyHost());
+            args.add(io.session().getStatus());
+            args.add(String.valueOf(now - io.session().getWaitingSince()));
+
+            IoJobInfo mover = io.mover();
+            if (mover == null) {
+                args.add("No-mover()-Found");
+            } else {
+                args.add(mover.getStatus());
+                if (mover.getStartTime() > 0L) {
+                    long transferTime     = mover.getTransferTime();
+                    long bytesTransferred = mover.getBytesTransferred();
+                    args.add(String.valueOf(transferTime));
+                    args.add(String.valueOf(bytesTransferred));
+                    args.add(String.valueOf(transferTime > 0 ? ((double) bytesTransferred / (double) transferTime) : 0));
+                    args.add(String.valueOf(now - mover.getStartTime()));
+                }
+            }
+            sb.append(new Args(args)).append('\n');
+        }
+        return sb.toString();
     }
 }
