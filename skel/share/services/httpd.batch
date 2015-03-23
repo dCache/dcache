@@ -223,7 +223,7 @@ define context TransferObserverSetup endDefine
   table define small 6,8,4,5,9,10,11,15
 endDefine
 
-create diskCacheV111.cells.TransferObserverV1 TransferObserver \
+create diskCacheV111.cells.TransferObserverV1 ${httpd.cell.name}TransferObserver \
               "default \
                -loginBroker=${httpd.service.loginbroker} \
                -update=60"
@@ -233,7 +233,7 @@ create diskCacheV111.cells.TransferObserverV1 TransferObserver \
 ####################################################################
 
 onerror shutdown
-create diskCacheV111.services.web.PoolInfoObserverV3 poolCollector \
+create diskCacheV111.services.web.PoolInfoObserverV3 ${httpd.cell.name}PoolCollector \
                "-refresh-time=60 \
                "
 
@@ -241,7 +241,7 @@ create diskCacheV111.services.web.PoolInfoObserverV3 poolCollector \
 ####################################################################
 
 onerror shutdown
-create diskCacheV111.cells.WebCollectorV3 collector \
+create diskCacheV111.cells.WebCollectorV3 ${httpd.cell.name}Collector \
     "PnfsManager \
      PoolManager \
      gPlazma \

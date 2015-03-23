@@ -194,7 +194,6 @@ public class TransferObserverV1
         }
         useInterpreter(true);
         start();
-        export();
     }
 
     private static class TableEntry
