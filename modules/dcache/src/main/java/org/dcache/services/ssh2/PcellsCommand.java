@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import diskCacheV111.admin.UserAdminShell;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
@@ -114,6 +115,8 @@ public class PcellsCommand implements Command, Runnable
                                 in.close();
                             } catch (IOException ignored) {
                             }
+                        } catch (TimeoutCacheException e) {
+                            result = null;
                         } catch (Exception ae) {
                             result = ae;
                         }
