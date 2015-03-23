@@ -1,15 +1,18 @@
 package org.dcache.util;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -53,6 +56,11 @@ public class Args implements Serializable
     }
 
     public Args(String[] args)
+    {
+        this(asList(args));
+    }
+
+    public Args(Iterable<String> args)
     {
         Scanner scanner = new Scanner();
         for (String arg : args) {
@@ -334,7 +342,14 @@ public class Args implements Serializable
             s.append("-- ");
         }
 
-        Joiner.on(' ').appendTo(s, _arguments);
+        Joiner.on(' ').appendTo(s, Iterables.transform(_arguments, new Function<String, CharSequence>()
+        {
+            @Override
+            public CharSequence apply(String s)
+            {
+                return quote(s);
+            }
+        }));
 
         return s.toString();
     }
