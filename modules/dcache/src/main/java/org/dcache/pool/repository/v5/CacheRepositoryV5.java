@@ -503,6 +503,7 @@ public class CacheRepositoryV5
                 case BROKEN:
                     throw new LockedCacheException("File is broken");
                 case REMOVED:
+                case DESTROYED:
                     throw new LockedCacheException("File has been removed");
                 case PRECIOUS:
                 case CACHED:
@@ -609,6 +610,7 @@ public class CacheRepositoryV5
                 case FROM_POOL:
                     throw new FileNotInCacheException("File is incomplete");
                 case REMOVED:
+                case DESTROYED:
                     throw new FileNotInCacheException("File has been removed");
                 case BROKEN:
                 case PRECIOUS:
@@ -653,6 +655,7 @@ public class CacheRepositoryV5
                 switch (source) {
                 case NEW:
                 case REMOVED:
+                case DESTROYED:
                     if (state == EntryState.REMOVED) {
                         /* File doesn't exist or is already
                          * deleted. That's all we care about.
@@ -976,6 +979,9 @@ public class CacheRepositoryV5
             EntryState state = entry.getState();
             PnfsId id = entry.getPnfsId();
             if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
+                /* Setting the entry to DESTROYED ensures that we only deallocate it once.
+                 */
+                setState(entry, DESTROYED);
                 _store.remove(id);
 
                 /* It is essential to free after we removed the file: This is the opposite

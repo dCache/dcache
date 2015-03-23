@@ -164,6 +164,7 @@ public class SpaceSweeper2
         CacheEntry entry = event.getNewEntry();
         switch (event.getNewState()) {
         case REMOVED:
+        case DESTROYED:
             remove(entry);
             break;
 

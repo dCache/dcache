@@ -108,24 +108,32 @@ public class CacheRepositoryEntryState
             }
             break;
         case CACHED:
-            if (_state == EntryState.REMOVED) {
+            if (_state == EntryState.REMOVED ||
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case PRECIOUS:
-            if (_state == EntryState.REMOVED) {
+            if (_state == EntryState.REMOVED ||
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case BROKEN:
-            if (_state == EntryState.REMOVED) {
+            if (_state == EntryState.REMOVED ||
+                _state == EntryState.DESTROYED) {
                 throw new IllegalStateException("Entry is " + _state);
             }
             break;
         case REMOVED:
+            if (_state == EntryState.DESTROYED) {
+                throw new IllegalStateException("Entry is " + _state);
+            }
             break;
-        default:
-            throw new IllegalArgumentException("Invalid state " + state);
+        case DESTROYED:
+            if (_state != EntryState.REMOVED) {
+                throw new IllegalStateException("Entry is " + _state);
+            }
         }
 
         _state = state;
@@ -146,7 +154,7 @@ public class CacheRepositoryEntryState
     public boolean setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException, IOException
     {
-        if (_state == EntryState.REMOVED) {
+        if (_state == EntryState.REMOVED || _state == EntryState.DESTROYED) {
             throw new IllegalStateException("Entry in removed state");
         }
 

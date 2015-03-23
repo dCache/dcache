@@ -10,6 +10,5 @@ public enum EntryState
     CACHED,
     PRECIOUS,
     REMOVED,
-    @Deprecated
-    DESTROYED    // Kept for backwards compatibility with pre-2.12 - drop after next golden + 1
+    DESTROYED;
 }
