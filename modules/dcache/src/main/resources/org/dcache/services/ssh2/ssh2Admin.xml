@@ -78,6 +78,8 @@
     </bean>
 
     <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory">
+        <property name="pnfsManager" ref="pnfsmanager"/>
+        <property name="poolManager" ref="poolmanager"/>
         <property name="spaceManager" ref="spacemanager"/>
         <property name="loginBrokers" value="${admin.service.loginbroker}"/>
     </bean>

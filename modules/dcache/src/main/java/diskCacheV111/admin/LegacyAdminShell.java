@@ -1465,12 +1465,12 @@ public class LegacyAdminShell
         }
     }
 
-    protected Object sendCommand(String destination, String command)
+    protected Object sendCommand(CellPath destination, String command)
             throws InterruptedException, NoRouteToCellException, TimeoutCacheException
     {
 
         try {
-            Object obj = _cellStub.sendAndWait(new CellPath(destination),
+            Object obj = _cellStub.sendAndWait(destination,
                                                new AuthorizedString(_user, command),
                                                Object.class,
                                                _timeout);
@@ -1495,10 +1495,10 @@ public class LegacyAdminShell
         return ca.toString();
     }
 
-    public Object executeCommand(String destination, Object str)
+    public Object executeCommand(CellPath destination, Object str)
             throws InterruptedException, TimeoutCacheException, NoRouteToCellException
     {
-        _log.info("Object command (" + destination + ") " + str);
+        _log.info("Object command ({}) {}",destination, str);
 
         return sendCommand(destination, str.toString());
     }

@@ -21,6 +21,8 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
 {
     private CellEndpoint endpoint;
     private CellStub spaceManager;
+    private CellStub poolManager;
+    private CellStub pnfsManager;
     private List<CellPath> loginBrokers;
 
     @Override
@@ -41,6 +43,18 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
         this.loginBrokers = Arrays.stream(loginBrokers.split(",")).map(CellPath::new).collect(toList());
     }
 
+    @Required
+    public void setPoolManager(CellStub poolManager)
+    {
+        this.poolManager = poolManager;
+    }
+
+    @Required
+    public void setPnfsManager(CellStub pnfsManager)
+    {
+        this.pnfsManager = pnfsManager;
+    }
+
     @Override
     public String getName()
     {
@@ -51,6 +65,6 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
     public Command create()
     {
         TransferCollector transferCollector = new TransferCollector(new CellStub(endpoint), loginBrokers);
-        return new PcellsCommand(endpoint, spaceManager, transferCollector);
+        return new PcellsCommand(endpoint, spaceManager, poolManager, pnfsManager, transferCollector);
     }
 }

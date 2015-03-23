@@ -33,8 +33,8 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.applets.login.DomainObjectFrame;
-import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 
@@ -50,6 +50,8 @@ public class PcellsCommand implements Command, Runnable
 
     private final CellEndpoint _endpoint;
     private final CellStub _spaceManager;
+    private final CellStub _poolManager;
+    private final CellStub _pnfsManager;
     private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -63,10 +65,14 @@ public class PcellsCommand implements Command, Runnable
 
     public PcellsCommand(CellEndpoint endpoint,
                          CellStub spaceManager,
+                         CellStub poolManager,
+                         CellStub pnfsManager,
                          TransferCollector transferCollector)
     {
         _endpoint = endpoint;
         _spaceManager = spaceManager;
+        _poolManager = poolManager;
+        _pnfsManager = pnfsManager;
         _collector = transferCollector;
     }
 
@@ -139,23 +145,28 @@ public class PcellsCommand implements Command, Runnable
                                 result = _shell.executeCommand(frame.getPayload().toString());
                             } else {
                                 switch (frame.getDestination()) {
+                                case "PnfsManager":
+                                    result = _shell.executeCommand(_pnfsManager.getDestinationPath(), frame.getPayload());
+                                    break;
+                                case "PoolManager":
+                                    result = _shell.executeCommand(_poolManager.getDestinationPath(), frame.getPayload());
+                                    break;
                                 case "SrmSpaceManager":
                                     if (frame.getPayload().equals("ls -l")) {
                                         result = listSpaceReservations();
                                     } else {
-                                        CellAddressCore address = _spaceManager.getDestinationPath().getDestinationAddress();
-                                        result = _shell.executeCommand(address.toString(), frame.getPayload());
+                                        result = _shell.executeCommand(_spaceManager.getDestinationPath(), frame.getPayload());
                                     }
                                     break;
                                 case "TransferObserver":
                                     if (frame.getPayload().equals("ls iolist")) {
                                         result = listTransfers(_transfers);
                                     } else {
-                                        result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
+                                        result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                     }
                                     break;
                                 default:
-                                    result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
+                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                     break;
                                 }
                             }
