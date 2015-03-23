@@ -73,7 +73,6 @@ documents or software obtained from this server.
  */
 package org.dcache.srm;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -593,7 +592,7 @@ public class SRM {
                     to_urls,
                     null, // no space reservation in v1
                     lifetime,
-                    configuration.getCopyRetryTimeout(),
+                    configuration.getCopyMaxPollPeriod(),
                     SRMProtocol.V1_1,
                     TFileStorageType.PERMANENT,
                     null,
@@ -662,7 +661,7 @@ public class SRM {
             GetRequest r =
                     new GetRequest(user, uris, protocols,
                             configuration.getGetLifetime(),
-                            configuration.getGetRetryTimeout(),
+                            configuration.getGetMaxPollPeriod(),
                             null,
                             client_host);
             schedule(r);
@@ -879,7 +878,7 @@ public class SRM {
             // create a new put request
             PutRequest r = new PutRequest(user, dests_urls, sizes,
                     wantPerm, protocols, configuration.getPutLifetime(),
-                    configuration.getPutRetryTimeout(),
+                    configuration.getPutMaxPollPeriod(),
                     clientHost,
                     null,
                     null,

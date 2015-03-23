@@ -130,13 +130,14 @@ public final class ReserveSpaceRequest extends Request {
     public ReserveSpaceRequest(
             SRMUser user,
             long lifetime,
+            long max_update_period,
             long sizeInBytes ,
             long spaceReservationLifetime,
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency,
             String description,
             String clienthost) {
-        super(user, 0, lifetime, description, clienthost);
+        super(user, max_update_period, lifetime, description, clienthost);
 
         this.sizeInBytes = sizeInBytes ;
         this.retentionPolicy = retentionPolicy;
@@ -162,6 +163,7 @@ public final class ReserveSpaceRequest extends Request {
             int numberOfRetries,
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
+            int retryDeltaTime,
             long sizeInBytes,
             long spaceReservationLifetime,
             String spaceToken,
@@ -182,7 +184,7 @@ public final class ReserveSpaceRequest extends Request {
                 numberOfRetries,
                 lastStateTransitionTime,
                 jobHistoryArray,//VVV
-                0,
+                retryDeltaTime,
                 false,
                 description,
                 clienthost,

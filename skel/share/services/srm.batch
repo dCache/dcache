@@ -74,6 +74,8 @@ check -strong srm.request.bring-online.retry-timeout.unit
 check -strong srm.request.bring-online.max-by-same-user
 check -strong srm.request.bring-online.switch-to-async-mode-delay
 check -strong srm.request.bring-online.switch-to-async-mode-delay.unit
+check -strong srm.request.bring-online.max-poll-period
+check -strong srm.request.bring-online.max-poll-period.unit
 check -strong srm.persistence.bring-online.enable
 check -strong srm.persistence.bring-online.enable.clean-pending-on-restart
 check -strong srm.persistence.bring-online.enable.store-transient-state
@@ -92,6 +94,8 @@ check -strong srm.request.copy.retries
 check -strong srm.request.copy.retry-timeout
 check -strong srm.request.copy.retry-timeout.unit
 check -strong srm.request.copy.max-by-same-user
+check -strong srm.request.copy.max-poll-period
+check -strong srm.request.copy.max-poll-period.unit
 check -strong srm.persistence.copy.enable
 check -strong srm.persistence.copy.enable.clean-pending-on-restart
 check -strong srm.persistence.copy.enable.store-transient-state
@@ -113,6 +117,8 @@ check -strong srm.request.get.retry-timeout.unit
 check -strong srm.request.get.max-by-same-user
 check -strong srm.request.get.switch-to-async-mode-delay
 check -strong srm.request.get.switch-to-async-mode-delay.unit
+check -strong srm.request.get.max-poll-period
+check -strong srm.request.get.max-poll-period.unit
 check -strong srm.persistence.get.enable
 check -strong srm.persistence.get.enable.clean-pending-on-restart
 check -strong srm.persistence.get.enable.store-transient-state
@@ -133,6 +139,8 @@ check -strong srm.request.ls.retry-timeout.unit
 check -strong srm.request.ls.max-by-same-user
 check -strong srm.request.ls.switch-to-async-mode-delay
 check -strong srm.request.ls.switch-to-async-mode-delay.unit
+check -strong srm.request.ls.max-poll-period
+check -strong srm.request.ls.max-poll-period.unit
 check -strong srm.persistence.ls.enable
 check -strong srm.persistence.ls.enable.clean-pending-on-restart
 check -strong srm.persistence.ls.enable.store-transient-state
@@ -154,6 +162,8 @@ check -strong srm.request.put.retry-timeout.unit
 check -strong srm.request.put.max-by-same-user
 check -strong srm.request.put.switch-to-async-mode-delay
 check -strong srm.request.put.switch-to-async-mode-delay.unit
+check -strong srm.request.put.max-poll-period
+check -strong srm.request.put.max-poll-period.unit
 check -strong srm.persistence.put.enable
 check -strong srm.persistence.put.enable.clean-pending-on-restart
 check -strong srm.persistence.put.enable.store-transient-state
@@ -172,6 +182,8 @@ check -strong srm.request.reserve-space.retries
 check -strong srm.request.reserve-space.retry-timeout
 check -strong srm.request.reserve-space.retry-timeout.unit
 check -strong srm.request.reserve-space.max-by-same-user
+check -strong srm.request.reserve-space.max-poll-period
+check -strong srm.request.reserve-space.max-poll-period.unit
 check -strong srm.persistence.reserve-space.enable
 check -strong srm.persistence.reserve-space.enable.clean-pending-on-restart
 check -strong srm.persistence.reserve-space.enable.store-transient-state

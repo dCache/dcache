@@ -77,7 +77,7 @@ public class SrmLs
         LsRequest r = new LsRequest(user,
                 surls,
                 TimeUnit.HOURS.toMillis(1),
-                configuration.getLsRetryTimeout(),
+                configuration.getLsMaxPollPeriod(),
                 clientHost,
                 count,
                 offset,

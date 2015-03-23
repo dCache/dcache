@@ -115,7 +115,7 @@ public class SrmCopy implements CredentialAwareHandler
                 to_urls,
                 spaceToken,
                 lifetime,
-                configuration.getCopyRetryTimeout(),
+                configuration.getCopyMaxPollPeriod(),
                 SRMProtocol.V2_1,  // Revisit: v2.1?
                 request.getTargetFileStorageType(),
                 targetRetentionPolicy,

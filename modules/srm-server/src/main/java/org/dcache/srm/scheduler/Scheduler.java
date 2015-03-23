@@ -1028,6 +1028,7 @@ public class Scheduler <T extends Job>
         formatter.column2("Total requests (max " + getMaxRequests() + ")", getTotalRequests());
         formatter.format("\n");
         formatter.format("    In progress per user soft limit : %d requests\n", maxRunningByOwner);
+        formatter.format("    Maximum number of retries       : %d\n", maxNumberOfRetries);
         formatter.format("    Retry timeout                   : %d ms\n", retryTimeout);
         formatter.format("    Retry limit                     : %d retries\n", maxNumberOfRetries);
     }

@@ -225,6 +225,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
             NUMOFRETR,
             LASTSTATETRANSITIONTIME,
             jobHistoryArray,
+            RETRYDELTATIME,
                 SIZEINBYTES,
                 RESERVATIONLIFETIME,
                 SPACETOKEN,

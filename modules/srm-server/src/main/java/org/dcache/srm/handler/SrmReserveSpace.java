@@ -88,6 +88,7 @@ public class SrmReserveSpace
                     new ReserveSpaceRequest(
                             user,
                             requestLifetime,
+                            configuration.getReserveSpaceMaxPollPeriod(),
                             size.longValue(),
                             lifetime,
                             retentionPolicy,

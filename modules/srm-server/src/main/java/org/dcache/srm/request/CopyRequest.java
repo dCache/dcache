@@ -470,7 +470,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 try {
                     setRemoteTurlClient(new RemoteTurlGetterV1(getStorage(),
                             credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyRetryTimeout(), 2,
+                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
                             clientTransport));
                     getRemoteTurlClient().getInitialRequest();
                     setRemoteSrmProtocol(SRMProtocol.V1_1);
@@ -478,7 +478,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     LOG.error("connecting to server using version 1.1 protocol failed, trying version 2.1.1");
                     setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
                             credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyRetryTimeout(), 2,
+                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
                             this.getRemainingLifetime(), clientTransport));
                     getRemoteTurlClient().getInitialRequest();
                     setRemoteSrmProtocol(SRMProtocol.V2_1);
@@ -487,7 +487,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 try {
                     setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
                             credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyRetryTimeout(), 2,
+                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
                             this.getRemainingLifetime(), clientTransport));
                     getRemoteTurlClient().getInitialRequest();
                     setRemoteSrmProtocol(SRMProtocol.V2_1);
@@ -495,7 +495,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                     LOG.error("connecting to server using version 2.1.1 protocol failed, trying version 1.1");
                     setRemoteTurlClient(new RemoteTurlGetterV1(getStorage(),
                             credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyRetryTimeout(), 2,
+                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
                             clientTransport));
                     getRemoteTurlClient().getInitialRequest();
                     setRemoteSrmProtocol(SRMProtocol.V1_1);
@@ -602,7 +602,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             try {
                 setRemoteTurlClient(new RemoteTurlPutterV1(getStorage(),
                         credential, destinationSurls, sizes, getProtocols(), this,
-                        getConfiguration().getCopyRetryTimeout(), 2,
+                        getConfiguration().getCopyMaxPollPeriod(), 2,
                         clientTransport));
                 getRemoteTurlClient().getInitialRequest();
                 setRemoteSrmProtocol(SRMProtocol.V1_1);
@@ -610,7 +610,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                  LOG.error("connecting with SRM v1.1 failed, trying with v2.2");
                  setRemoteTurlClient(new RemoteTurlPutterV2(getStorage(),
                          credential, destinationSurls, sizes, getProtocols(), this,
-                         getConfiguration().getCopyRetryTimeout(), 2,
+                         getConfiguration().getCopyMaxPollPeriod(), 2,
                          this.getRemainingLifetime(), getStorageType(),
                          getTargetRetentionPolicy(), getTargetAccessLatency(),
                          getOverwriteMode(), getTargetSpaceToken(),
@@ -622,7 +622,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             try {
                 setRemoteTurlClient(new RemoteTurlPutterV2(getStorage(),
                         credential, destinationSurls, sizes, getProtocols(), this,
-                        getConfiguration().getCopyRetryTimeout(), 2,
+                        getConfiguration().getCopyMaxPollPeriod(), 2,
                         this.getRemainingLifetime(), getStorageType(),
                         getTargetRetentionPolicy(), getTargetAccessLatency(),
                         getOverwriteMode(), getTargetSpaceToken(),
@@ -633,7 +633,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                  LOG.error("connecting with SRM v2.2 failed, trying with SRM v1.1");
                 setRemoteTurlClient(new RemoteTurlPutterV1(getStorage(),
                         credential, destinationSurls, sizes, getProtocols(), this,
-                        getConfiguration().getCopyRetryTimeout(), 2,
+                        getConfiguration().getCopyMaxPollPeriod(), 2,
                         clientTransport));
                 getRemoteTurlClient().getInitialRequest();
                 setRemoteSrmProtocol(SRMProtocol.V1_1);
@@ -751,25 +751,27 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     {
         synchronized (remoteSurlToFileReqIds) {
             try {
+                Scheduler<?> scheduler = Scheduler.getScheduler(schedulerId);
                 RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
                 if (getRemoteSrmProtocol() == SRMProtocol.V1_1) {
                     TurlGetterPutterV1.staticSetFileStatus(credential, surl,
                             Integer.parseInt(requestId), Integer.parseInt(fileId),
-                            "Done", getConfiguration().getCopyRetryTimeout(),
-                            getConfiguration().getCopyMaxNumOfRetries(),
+                            "Done",
+                            scheduler.getRetryTimeout(),
+                            scheduler.getMaxNumberOfRetries(),
                             clientTransport);
                 } else if (getRemoteSrmProtocol() == SRMProtocol.V2_1) {
                     if (isSourceSrm() && !isSourceLocal()) {
                        RemoteTurlGetterV2.staticReleaseFile(credential,
                                surl, requestId,
-                               getConfiguration().getCopyRetryTimeout(),
-                               getConfiguration().getCopyMaxNumOfRetries(),
+                               scheduler.getRetryTimeout(),
+                               scheduler.getMaxNumberOfRetries(),
                                clientTransport);
                     } else {
                         RemoteTurlPutterV2.staticPutDone(credential,
                                surl, requestId,
-                               getConfiguration().getCopyRetryTimeout(),
-                               getConfiguration().getCopyMaxNumOfRetries(),
+                               scheduler.getRetryTimeout(),
+                               scheduler.getMaxNumberOfRetries(),
                                clientTransport);
                     }
                 } else {

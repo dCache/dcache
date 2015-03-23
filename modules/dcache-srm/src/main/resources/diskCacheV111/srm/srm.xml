@@ -287,55 +287,46 @@
               value="${srm.enable.recursive-directory-creation}"/>
     <property name="advisoryDelete" value="${srm.enable.advisory-delete}"/>
 
-    <property name="getMaxNumOfRetries"
-              value="${srm.request.get.retries}"/>
-    <property name="getRetryTimeout"
+    <property name="getMaxPollPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.get.retry-timeout},
-                     '${srm.request.get.retry-timeout.unit}')}" />
+                     ${srm.request.get.max-poll-period},
+                     '${srm.request.get.max-poll-period.unit}')}" />
     <property name="getSwitchToAsynchronousModeDelay"
               value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.request.get.switch-to-async-mode-delay}',
                      '${srm.request.get.switch-to-async-mode-delay.unit}')}"/>
-    <property name="bringOnlineMaxNumOfRetries"
-              value="${srm.request.bring-online.retries}"/>
-    <property name="bringOnlineRetryTimeout"
+    <property name="bringOnlineMaxPollPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.bring-online.retry-timeout},
-                     '${srm.request.bring-online.retry-timeout.unit}')}" />
+                     ${srm.request.bring-online.max-poll-period},
+                     '${srm.request.bring-online.max-poll-period.unit}')}" />
     <property name="bringOnlineSwitchToAsynchronousModeDelay"
               value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.request.bring-online.switch-to-async-mode-delay}',
                      '${srm.request.bring-online.switch-to-async-mode-delay.unit}')}"/>
-    <property name="lsMaxNumOfRetries"
-              value="${srm.request.ls.retries}"/>
-    <property name="lsRetryTimeout"
+    <property name="lsMaxPollPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.ls.retry-timeout},
-                     '${srm.request.ls.retry-timeout.unit}')}" />
+                     ${srm.request.ls.max-poll-period},
+                     '${srm.request.ls.max-poll-period.unit}')}" />
     <property name="lsSwitchToAsynchronousModeDelay"
               value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.request.ls.switch-to-async-mode-delay}',
                      '${srm.request.ls.switch-to-async-mode-delay.unit}')}"/>
-    <property name="putMaxNumOfRetries" value="${srm.request.put.retries}"/>
-    <property name="putRetryTimeout"
+    <property name="putMaxPollPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.put.retry-timeout},
-                     '${srm.request.put.retry-timeout.unit}')}" />
+                     ${srm.request.put.max-poll-period},
+                     '${srm.request.put.max-poll-period.unit}')}" />
     <property name="putSwitchToAsynchronousModeDelay"
               value="#{T(org.dcache.commons.util.Strings).parseTime(
                      '${srm.request.put.switch-to-async-mode-delay}',
                      '${srm.request.put.switch-to-async-mode-delay.unit}')}"/>
-    <property name="copyMaxNumOfRetries" value="${srm.request.copy.retries}"/>
-    <property name="copyRetryTimeout"
+    <property name="copyMaxPollPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.copy.retry-timeout},
-                     '${srm.request.copy.retry-timeout.unit}')}" />
-    <property name="reserveSpaceMaxNumOfRetries" value="${srm.request.reserve-space.retries}"/>
-    <property name="reserveSpaceRetryTimeout"
+                     ${srm.request.copy.max-poll-period},
+                     '${srm.request.copy.max-poll-period.unit}')}" />
+    <property name="reserveSpaceMaxPollPeriod"
               value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.reserve-space.retry-timeout},
-                     '${srm.request.reserve-space.retry-timeout.unit}')}" />
+                     ${srm.request.reserve-space.max-poll-period},
+                     '${srm.request.reserve-space.max-poll-period.unit}')}" />
 
     <property name="maxQueuedJdbcTasksNum"
               value="${srm.limits.db.queue}"/>

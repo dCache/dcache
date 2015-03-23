@@ -100,7 +100,7 @@ public class SrmBringOnline
                         protocols,
                         requestTime,
                         desiredLifetimeInSeconds,
-                        configuration.getGetRetryTimeout(),
+                        configuration.getBringOnlineMaxPollPeriod(),
                         request.getUserRequestDescription(),
                         clientHost);
         try (JDC ignored = r.applyJdc()) {
