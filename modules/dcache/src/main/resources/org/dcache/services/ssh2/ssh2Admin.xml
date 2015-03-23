@@ -23,6 +23,12 @@
         <property name="timeoutUnit" value="${admin.service.poolmanager.timeout.unit}"/>
     </bean>
 
+    <bean id="spacemanager" class="org.dcache.cells.CellStub">
+        <property name="destination" value="${admin.service.spacemanager}"/>
+        <property name="timeout" value="${admin.service.spacemanager.timeout}"/>
+        <property name="timeoutUnit" value="${admin.service.spacemanager.timeout.unit}"/>
+    </bean>
+
     <bean id="pnfsmanager" class="org.dcache.cells.CellStub">
         <property name="destination" value="${admin.service.pnfsmanager}"/>
         <property name="timeout" value="${admin.service.pnfsmanager.timeout}"/>
@@ -72,9 +78,9 @@
     </bean>
 
     <bean id="pcells-factory" class="org.dcache.services.ssh2.PcellsSubsystemFactory">
-        <property name="prompt" value="${admin.prompt}"/>
+        <property name="spaceManager" ref="spacemanager"/>
+        <property name="loginBrokers" value="${admin.service.loginbroker}"/>
     </bean>
-
 
     <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">
         <property name="host" value="#{ '${admin.net.listen}'.equals('any') ? null : '${admin.net.listen}' }"/>

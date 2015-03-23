@@ -10,6 +10,10 @@ check -strong admin.service.gplazma.timeout.unit
 check -strong admin.service.poolmanager
 check -strong admin.service.poolmanager.timeout
 check -strong admin.service.poolmanager.timeout.unit
+check -strong admin.service.spacemanager
+check -strong admin.service.spacemanager.timeout
+check -strong admin.service.spacemanager.timeout.unit
+check -strong admin.service.loginbroker
 check -strong admin.service.pnfsmanager
 check -strong admin.service.pnfsmanager.timeout
 check -strong admin.service.pnfsmanager.timeout.unit

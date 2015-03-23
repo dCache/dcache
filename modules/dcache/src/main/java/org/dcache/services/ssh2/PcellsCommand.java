@@ -14,7 +14,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -34,8 +33,8 @@ import diskCacheV111.util.TimeoutCacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.applets.login.DomainObjectFrame;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 
@@ -50,7 +49,7 @@ public class PcellsCommand implements Command, Runnable
             LoggerFactory.getLogger(PcellsCommand.class);
 
     private final CellEndpoint _endpoint;
-    private final CellStub _stub;
+    private final CellStub _spaceManager;
     private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -59,16 +58,16 @@ public class PcellsCommand implements Command, Runnable
     private ExecutorService _executor = Executors.newCachedThreadPool();
     private ScheduledExecutorService _scheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean _done = false;
-    private String _prompt;
     private final TransferCollector _collector;
     private volatile List<Transfer> _transfers = Collections.emptyList();
 
-    public PcellsCommand(CellEndpoint endpoint, String prompt)
+    public PcellsCommand(CellEndpoint endpoint,
+                         CellStub spaceManager,
+                         TransferCollector transferCollector)
     {
         _endpoint = endpoint;
-        _stub = new CellStub(_endpoint);
-        _collector = new TransferCollector(_stub, Arrays.asList(new CellPath("LoginBroker")));
-        _prompt = prompt;
+        _spaceManager = spaceManager;
+        _collector = transferCollector;
     }
 
     @Override
@@ -99,7 +98,7 @@ public class PcellsCommand implements Command, Runnable
     public void start(Environment env) throws IOException
     {
         String user = env.getEnv().get(Environment.ENV_USER);
-        _shell = new LegacyAdminShell(user, _endpoint, _prompt);
+        _shell = new LegacyAdminShell(user, _endpoint, "");
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
         _scheduler.schedule(this::updateTransfers, 30, TimeUnit.SECONDS);
@@ -144,14 +143,15 @@ public class PcellsCommand implements Command, Runnable
                                     if (frame.getPayload().equals("ls -l")) {
                                         result = listSpaceReservations();
                                     } else {
-                                        result = _shell.executeCommand("SpaceManager", frame.getPayload());
+                                        CellAddressCore address = _spaceManager.getDestinationPath().getDestinationAddress();
+                                        result = _shell.executeCommand(address.toString(), frame.getPayload());
                                     }
                                     break;
                                 case "TransferObserver":
                                     if (frame.getPayload().equals("ls iolist")) {
                                         result = listTransfers(_transfers);
                                     } else {
-                                        result = _shell.executeCommand("TransferObserver", frame.getPayload());
+                                        result = _shell.executeCommand(frame.getDestination(), frame.getPayload());
                                     }
                                     break;
                                 default:
@@ -200,9 +200,8 @@ public class PcellsCommand implements Command, Runnable
     private String listSpaceReservations() throws CacheException, InterruptedException
     {
         /* Query information from space manager. */
-        CellPath spaceManager = new CellPath("SpaceManager");
-        Collection<Space> spaces = _stub.sendAndWait(spaceManager, new GetSpaceTokensMessage()).getSpaceTokenSet();
-        Collection<LinkGroup> groups = _stub.sendAndWait(spaceManager, new GetLinkGroupsMessage()).getLinkGroups();
+        Collection<Space> spaces = _spaceManager.sendAndWait(new GetSpaceTokensMessage()).getSpaceTokenSet();
+        Collection<LinkGroup> groups = _spaceManager.sendAndWait(new GetLinkGroupsMessage()).getLinkGroups();
 
         /* Build pcells compatible list. */
         StringBuilder out = new StringBuilder();
