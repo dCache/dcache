@@ -156,12 +156,14 @@ public class ConsistentStore
 
             try {
                 /* It is safe to remove FROM_STORE files: We have a
-                 * copy on HSM anyway. Files in REMOVED where about
-                 * to be deleted, so we can finish the job.
+                 * copy on HSM anyway. Files in REMOVED or DESTROYED
+                 * where about to be deleted, so we can finish the
+                 * job.
                  */
                 switch (entry.getState()) {
                 case FROM_STORE:
                 case REMOVED:
+                case DESTROYED:
                     delete(id, file);
                     _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     return null;

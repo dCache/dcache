@@ -1264,6 +1264,7 @@ public class PoolV4
 
             case NEW:
             case REMOVED:
+            case DESTROYED:
                 msg.setFailed(101, "File does not exist: " + pnfsId);
                 break;
             }

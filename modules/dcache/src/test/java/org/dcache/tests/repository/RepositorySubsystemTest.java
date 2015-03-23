@@ -543,6 +543,18 @@ public class RepositorySubsystemTest
         repository.setState(id1, NEW);
     }
 
+    @Test(expected=IllegalTransitionException.class)
+    public void testSetStateToDestroyed()
+            throws IOException, IllegalTransitionException,
+            CacheException, InterruptedException
+    {
+        repository.init();
+        repository.load();
+        stateChangeEvents.clear();
+
+        repository.setState(id1, DESTROYED);
+    }
+
     @Test(expected=IllegalStateException.class)
     public void testClosedReadHandleClose()
         throws IOException, CacheException, InterruptedException
@@ -634,6 +646,7 @@ public class RepositorySubsystemTest
             {
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
+                expectStateChangeEvent(id1, REMOVED, DESTROYED);
                 assertStep("Cache location cleared", 1);
                 assertEquals(repository.getState(id1), NEW);
             }
@@ -668,7 +681,7 @@ public class RepositorySubsystemTest
                 assertNoStateChangeEvent();
                 assertStep("Cache location cleared", 1);
                 handle1.close();
-                assertEquals(repository.getState(id1), NEW);
+                expectStateChangeEvent(id1, REMOVED, DESTROYED);
             }
         };
     }
