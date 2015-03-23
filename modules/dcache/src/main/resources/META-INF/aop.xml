@@ -6,10 +6,12 @@
         <include within="org.dcache.pinmanager.*"/>
         <include within="org.dcache.util.aspects.*"/>
         <include within="org.eclipse.jetty.server.HttpConnection"/>
+        <include within="org.apache.axis.description.JavaServiceDesc"/>
     </weaver>
 
     <aspects>
         <exclude within="org.springframework.transaction.aspectj.AnnotationTransactionAspect"/>
+        <aspect name="org.dcache.util.aspects.JavaServiceDescSynchronizationAspect"/>
         <aspect name="org.dcache.util.aspects.PerInstanceAnnotationTransactionAspect"/>
         <aspect name="org.dcache.util.aspects.LogSSLHandshakeExceptionAspect"/>
         <aspect name="org.dcache.util.aspects.ReturnUsefulExceptionMessagesAspect"/>
