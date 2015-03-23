@@ -40,6 +40,8 @@ public class LoginBrokerInfo implements Serializable
     private final String _protocolEngine;
     private final String _root;
     private final List<InetAddress> _addresses;
+    @Deprecated
+    private final String[] _hosts; // Kept for compatibility with pcells
     private final int _port;
     private final double _load;
     private final long _update;
@@ -65,6 +67,10 @@ public class LoginBrokerInfo implements Serializable
         _port = port;
         _load = load;
         _update = updateTime;
+        _hosts = new String[addresses.size()];
+        for (int i = 0; i < addresses.size(); i++) {
+            _hosts[i] = addresses.get(i).getHostAddress();
+        }
         checkArgument(!addresses.isEmpty());
     }
 
