@@ -96,6 +96,7 @@
         <object rdn="GLUE2ServiceID"
                 classes="GLUE2StorageService GLUE2Service">
 
+          <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
           <attr name="GLUE2ServiceID">glue:&info-provider.se-unique-id;/data</attr>
 
           <attr name="GLUE2EntityName"
@@ -110,14 +111,14 @@
           <attr name="GLUE2ServiceCapability">security.delegation</attr>
           <attr name="GLUE2ServiceAdminDomainForeignKey">&info-provider.site-unique-id;</attr>
 
-	  <!-- Publish an EMI version, if there is any -->
-	  <optionally>
-	    <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
-	    <attr name="GLUE2EntityOtherInfo">DistributionName=EMI</attr>
+          <!-- Publish an EMI version, if there is any -->
+          <optionally>
+            <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
+            <attr name="GLUE2EntityOtherInfo">DistributionName=EMI</attr>
             <attr name="GLUE2EntityOtherInfo"
                   select="/d:dCache/d:domains/d:domain/d:static/d:environment/d:distribution/d:metric[@name='emi-version']">
               <unique><lookup path="."/></unique>DistributionVersion=<lookup path="."/></attr>
-	  </optionally>
+          </optionally>
 
 
           <!--+
@@ -143,6 +144,7 @@
 
             <attr not-empty="1"
                   name="GLUE2EntityName">&info-provider.se-name;</attr>
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
 
             <attr name="GLUE2ManagerProductName">dCache</attr>
             <attr name="GLUE2ManagerProductVersion">
@@ -179,6 +181,7 @@
             <object rdn="GLUE2ResourceID"
                     classes="GLUE2DataStore GLUE2Resource">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2ResourceID">glue:&info-provider.se-unique-id;/data/ds/dCache/disk</attr>
 
               <attr name="GLUE2ResourceManagerForeignKey">
@@ -252,6 +255,7 @@
           <object rdn="GLUE2StorageServiceCapacityID"
                   classes="GLUE2StorageServiceCapacity">
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2StorageServiceCapacityID">glue:&info-provider.se-unique-id;/data/ssc/disk</attr>
 
             <attr name="GLUE2StorageServiceCapacityStorageServiceForeignKey">
@@ -338,6 +342,7 @@
             <object rdn="GLUE2StorageServiceCapacityID"
                     classes="GLUE2StorageServiceCapacity">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2StorageServiceCapacityID">glue:&info-provider.se-unique-id;/data/ssc/tape</attr>
 
               <attr name="GLUE2StorageServiceCapacityStorageServiceForeignKey">
@@ -389,6 +394,7 @@
               <lookup path="d:protocol/d:metric[@name='version']"/>
             </unique>
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2StorageAccessProtocolID">glue:&info-provider.se-unique-id;/data/ap/<lookup
                       path="d:protocol/d:metric[@name='family']"/>/<lookup
                       path="d:protocol/d:metric[@name='version']"/></attr>
@@ -414,9 +420,9 @@
               |
               |  These objects represent mechanisms that allow interaction
               |  with the StorageService.  For dCache, these are the doors.
-	      |
-	      |  We publish a GLUE2EndpointID for each door +
-	      |  interface-with-global-scope combination.
+              |
+              |  We publish a GLUE2EndpointID for each door +
+              |  interface-with-global-scope combination.
               |
               |  GLUE2StorageService
               |   |
@@ -428,6 +434,7 @@
                   select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global']"
                   classes="GLUE2StorageEndpoint GLUE2Endpoint">
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2EndpointID">glue:&info-provider.se-unique-id;/data/ep/<lookup
                     path="d:metric[@name='FQDN']"/>/<lookup
                     path="../../d:protocol/d:metric[@name='family']"/>/<lookup
@@ -444,12 +451,12 @@
               </map>
             </attr>
 
-	    <attr name="GLUE2EndpointImplementationName">dCache</attr>
-	    <attr name="GLUE2EndpointImplementationVersion">
+            <attr name="GLUE2EndpointImplementationName">dCache</attr>
+            <attr name="GLUE2EndpointImplementationVersion">
               <map name="cell-version-to-dcache-version">
-		<lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:cells/d:cell[@name=current()/../../d:metric[@name='cell']]/d:version/d:metric[@name='release']"/>
-	      </map>
-	    </attr>
+                <lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:cells/d:cell[@name=current()/../../d:metric[@name='cell']]/d:version/d:metric[@name='release']"/>
+              </map>
+            </attr>
 
             <choose>
               <optionally>
@@ -485,12 +492,12 @@
             <attr name="GLUE2EndpointHealthState">ok</attr>
             <attr name="GLUE2EndpointServingState">production</attr>
 
-	    <optionally>
-	      <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
+            <optionally>
+              <when check="not-empty"><lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></when>
 
-	      <attr name="GLUE2EntityOtherInfo">MiddlewareName=EMI</attr>
-	      <attr name="GLUE2EntityOtherInfo">MiddlewareVersion=<lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></attr>
-	    </optionally>
+              <attr name="GLUE2EntityOtherInfo">MiddlewareName=EMI</attr>
+              <attr name="GLUE2EntityOtherInfo">MiddlewareVersion=<lookup path="/d:dCache/d:domains/d:domain[@name=current()/../../d:metric[@name='domain']]/d:static/d:environment/d:distribution/d:metric[@name='emi-version']"/></attr>
+            </optionally>
 
 
             <!--+
@@ -511,6 +518,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2AccessPolicy GLUE2Policy">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2PolicyID">glue:&info-provider.se-unique-id;/data/ep/ap/basic</attr>
 
               <attr name="GLUE2AccessPolicyEndpointForeignKey">
@@ -567,6 +575,7 @@
                   select="/d:dCache/d:nas/d:nas/d:units/d:store/d:write/d:unitref"
                   classes="GLUE2StorageShare GLUE2Share">
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/nas/<map
                     name="GlueSALocalID-BDII-workaround">
                 <lookup path="../../../../@id"/>-write-<lookup path="@name"/>
@@ -626,6 +635,7 @@
                     select="../../../.."
                     classes="GLUE2StorageShareCapacity">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2StorageShareCapacityID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
 
@@ -697,6 +707,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2MappingPolicy GLUE2Policy">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2PolicyID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
 
@@ -779,6 +790,7 @@
                   select="/d:dCache/d:nas/d:nas[count(d:units/d:store/d:read/d:unitref) > 0 or count(d:units/d:store/d:stage/d:unitref) > 0]"
                   classes="GLUE2StorageShare GLUE2Share">
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/nas/<map
                     name="GlueSALocalID-BDII-workaround">
                 <lookup path="@id"/>
@@ -812,6 +824,7 @@
             <object rdn="GLUE2StorageShareCapacityID" select="."
                     classes="GLUE2StorageShareCapacity">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2StorageShareCapacityID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
 
@@ -884,6 +897,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2MappingPolicy GLUE2Policy">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2PolicyID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
 
@@ -963,6 +977,7 @@
                   select="/tape-info/collection"
                   classes="GLUE2StorageShare GLUE2Share">
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/tape/<lookup xml-src="tape-info" path="@id"/>
             </attr>
 
@@ -1000,6 +1015,7 @@
             <object rdn="GLUE2StorageShareCapacityID"
                     classes="GLUE2StorageShareCapacity">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2StorageShareCapacityID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/tape</attr>
 
@@ -1045,6 +1061,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2MappingPolicy GLUE2Policy">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2PolicyID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
 
@@ -1091,6 +1108,7 @@
               </map>
             </suppress>
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/offline/<item/>
             </attr>
 
@@ -1121,6 +1139,7 @@
             <object rdn="GLUE2StorageShareCapacityID"
                     classes="GLUE2StorageShareCapacity">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2StorageShareCapacityID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/disk</attr>
 
@@ -1154,6 +1173,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2MappingPolicy GLUE2Policy">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2PolicyID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
 
@@ -1187,6 +1207,7 @@
                   select="/d:dCache/d:summary/d:reservations/d:by-VO/d:VO/d:by-description/d:reservation-group"
                   classes="GLUE2StorageShare GLUE2Share">
 
+            <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
             <attr name="GLUE2ShareID">glue:&info-provider.se-unique-id;/data/ss/space/<lookup path="../../@name"/>/<lookup path="@description"/>
             </attr>
 
@@ -1236,11 +1257,11 @@
               </map>
             </attr>
 
-	    <attr name="GLUE2StorageSharePath">
-	      <map name="VO-to-path">
-		<lookup path="d:metric[@name='vo']"/>
-	      </map>
-	    </attr>
+            <attr name="GLUE2StorageSharePath">
+              <map name="VO-to-path">
+                <lookup path="d:metric[@name='vo']"/>
+              </map>
+            </attr>
 
             <attr name="GLUE2StorageShareTag">
               <lookup path="@description"/>
@@ -1262,6 +1283,7 @@
                     select="."
                     classes="GLUE2StorageShareCapacity">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2StorageShareCapacityID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>-disk</attr>
 
@@ -1332,6 +1354,7 @@
             <object rdn="GLUE2PolicyID"
                     classes="GLUE2MappingPolicy GLUE2Policy">
 
+              <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
               <attr name="GLUE2PolicyID">
                 <parent-rdn rdn="GLUE2ShareID" use="value"/>/mp/basic</attr>
 

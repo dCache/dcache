@@ -52,7 +52,12 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 version='1.0'
                 xmlns:exsl="http://exslt.org/common"
-                extension-element-prefixes="exsl">
+                xmlns:date="http://exslt.org/dates-and-times"
+                extension-element-prefixes="exsl date">
+
+<xsl:include href="date.format-date.function.xsl"/>
+<xsl:include href="date.add.function.xsl"/>
+<xsl:include href="date.duration.function.xsl"/>
 
 <!--+
     |
@@ -512,5 +517,46 @@
   </xsl:choose>
 </xsl:template>
 
+
+<!--+
+    |  The <date/> element
+    |
+    |  This expands to a formatted timestamp.
+    +-->
+<xsl:template match="date" mode="eval-attr">
+  <xsl:param name="depth"/>
+  <xsl:param name="path-stack"/>
+
+  <xsl:variable name="format" select="@format"/>
+
+  <xsl:choose>
+    <xsl:when test="not(@format)">
+      <xsl:message>Unable to generate timestamp: format attribute missing</xsl:message>
+    </xsl:when>
+
+    <xsl:when test="@format=''">
+      <xsl:message>Unable to generate timestamp: format attribute empty</xsl:message>
+    </xsl:when>
+
+    <xsl:when test="@tz and @tz != 'Z' and @tz != 'local'">
+      <xsl:message>Unable to generate timestamp: tz attribute (<xsl:value-of select='@tz'/>) not 'Z' or 'local'</xsl:message>
+    </xsl:when>
+
+    <xsl:when test="@tz = 'local'">
+      <xsl:value-of select="date:format-date(date:date-time(), @format)" />
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:variable name="tz" select="substring(date:time(),9)"/>
+      <xsl:variable name="sign">
+	<xsl:choose>
+	  <xsl:when test="substring($tz,1,1)='-'">+1</xsl:when>
+	  <xsl:otherwise>-1</xsl:otherwise>
+	</xsl:choose>
+      </xsl:variable>
+      <xsl:value-of select="date:format-date(concat(substring(date:add(date:date-time(), date:duration((floor(substring($tz,2,2))*60+floor(substring($tz,5,2)))*60*number($sign))),1,19),'Z'), @format)" />
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
 
 </xsl:stylesheet>

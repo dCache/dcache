@@ -25,7 +25,7 @@ and, optionally:
 
 The XSLT-processor software can be any program that understands the
 XSLT version 1.0 standard and provides the commonly available EXSL
-node-set() extension function.
+exsl:node-set() and dyn:evaluate() extension function.
 
 Occasionally, this document refers to a specific XSLT processor to
 give a complete example of Xylophone's usage.  In these places,
@@ -1254,10 +1254,10 @@ correct URI for the XML data:
   xsltproc -stringparam xml-src-uri http://www.example.org/data \
            ../xsl/xylophone.xsl structure.xml
 
-To locate the information that should be included, a path describing
-the information's location within the dynamic file must be specified.
-This path may be specified as the path attribute of lookup, or be
-provided within the lookup element; for example, both
+To locate the information that should be included, an XPath string
+describing the information's location within the dynamic file must be
+specified.  This path may be specified as the path attribute of
+lookup, or be provided within the lookup element; for example, both
 
   <lookup path="/animals/animal/name"/>
 
@@ -1307,14 +1307,14 @@ path selects the name of the third animal:
 
 The following selects the name of the first bird:
 
-  <lookup path="/animals/animal[class=bird]/name"/>
+  <lookup path="/animals/animal[@class='bird'][1]/name"/>
 
 The following selects the second bird
 
-  <lookup path="/animals/animal[class=bird][2]/name"/>
+  <lookup path="/animals/animal[@class='bird'][2]/name"/>
 
-As a special case, if the last path component with a '@' then the
-lookup element selects the attribute with the same name.  So,
+If the last path component with a '@' then the lookup element selects
+the attribute with the same name.  So,
 
   <lookup path="/animals/animal/@class"/>
 
@@ -1445,10 +1445,13 @@ of any child LDAP objects.
 
 A suppress XML element must have a test XML attribute and may have a
 check XML attribute.  The check attribute, if specified, must be one
-of the following: 'equals', 'starts-with', 'ends-with' or 'contains'.
-If no check attribute is specified then 'equals' is assumed.  The
-check attribute describes how the compare the contents with the value
-contained as the test attribute: 'equals' requires both to be
+of the following: 'is', 'starts-with', 'ends-with', 'contains',
+'equal', 'not-equal', 'less-than', 'less-than-or-equal',
+'greater-than' or 'greater-than-or-equal'.  If no check attribute is
+specified then 'is' is assumed.
+
+The check attribute describes how to compare the contents with the
+value contained as the test attribute: 'is' requires both to be
 identical before the object is suppressed, 'starts-with' requires that
 the string is the same size as test attribute value or longer and that
 the first characters match, etc.
@@ -1456,10 +1459,19 @@ the first characters match, etc.
 Each of the following would result in the object being suppressed:
 
   <suppress test="beethoven">beethoven</suppress>
-  <suppress test="beethoven" check="equals">beethoven</suppress>
+  <suppress test="beethoven" check="is">beethoven</suppress>
   <suppress test="beet" check="starts-with">beethoven</suppress>
-  <suppress test="ven" check="ends-with">beethoven</suppress>
+  <suppress test="ven"  check="ends-with">beethoven</suppress>
   <suppress test="thov" check="contains">beethoven</suppress>
+
+Numerical checks may also be preformed.  The following suppress also
+
+  <suppress test="42" check="equal">42</suppress>
+  <suppress test="42" check="not-equal">23</suppress>
+  <suppress test="42" check="less-than">23</suppress>
+  <suppress test="23" check="less-than-or-equal">23</suppress>
+  <suppress test="23" check="greater-than">42</suppress>
+  <suppress test="23" check="greater-than-or-equal">42</suppress>
 
 This is perhaps most useful when evaluating a list, perhaps in
 combination with a map, and not all items on the list should be
@@ -1534,3 +1546,204 @@ This produces the following output:
   dn: Name=Bill,group=birds
   Name: Bill
   Type: Budgerigar
+
+
+
+
+
+Conditional publishing
+
+
+The suppress and allow elements, which apply to objects and
+attributes, provide a basic mechanism to pick particular objects or
+attributes that should be published.
+
+Sometimes one wishes to group together a set of zero or more
+attributes and zero or more child objects and either jointly publish
+them or not.
+
+To support this mode of variable publishing, there is an if-then
+pattern and a multiple-choice pattern for selectively publishing
+attributes and child objects.
+
+The if-then publishing uses optionally element with a when child
+element; in the following example, additional information is published
+about the mammals.
+
+  <xylophone>
+    <publish>
+      <object rdn="GroupName" list="groups">
+        <attr name="GroupName"><item/></attr>
+
+        <optionally>
+          <when test="mammals"><item/></when>
+
+          <attr name="MammalAttribute">some-value</attr>
+
+          <object rdn="MammalName" list="mammals">
+	    <attr name="MammalName"><item/></attr>
+          </object>
+        </optionally>
+      </object>
+    </publish>
+
+    <lists>
+      <list name="groups">
+        <item>birds</item>
+        <item>mammals</item>
+      </list>
+
+      <list name="mammals">
+        <item>cats</item>
+        <item>dogs</item>
+      </list>
+    </lists>
+  </xylophone>
+
+This produces the following output:
+
+  dn: GroupName=birds
+  GroupName: birds
+
+  dn: GroupName=mammals
+  GroupName: mammals
+  MammalAttribute: some-value
+
+  dn: MammalName=cats,GroupName=mammals
+  MammalName: cats
+
+  dn: MammalName=dogs,GroupName=mammals
+  MammalName: dogs
+
+The multiple-choice pattern allows to publish at most one of a
+selection of available options.  The choose element surrounds one or
+more optionally elements and optionally an otherwise element.  The
+optionally elements behave as above, with a child while element that
+controls whether the optionally element's content is published.  The
+first optionally element with a matching when element is published.
+If no optionally element has a matching when element then the
+otherwise element is published, if present.
+
+The following example demonstrates this.
+
+  <xylophone>
+    <publish>
+      <object rdn="GroupName" list="groups">
+        <attr name="GroupName"><item/></attr>
+
+	<choose>
+          <optionally>
+            <when test="mammals"><item/></when>
+
+            <attr name="MammalAttribute">some-value</attr>
+
+            <object rdn="MammalName" list="mammals">
+	      <attr name="MammalName"><item/></attr>
+            </object>
+          </optionally>
+
+          <optionally>
+            <when test="birds"><item/></when>
+
+            <attr name="BirdAttribute">some-value</attr>
+
+            <object rdn="BirdName" list="birds">
+	      <attr name="BirdName"><item/></attr>
+            </object>
+          </optionally>
+
+	  <otherwise>
+            <attr name="OtherAttribute">some-value</attr>
+	  </otherwise>
+        </choose>
+
+      </object>
+    </publish>
+
+    <lists>
+      <list name="groups">
+        <item>birds</item>
+        <item>mammals</item>
+	<item>reptiles</item>
+      </list>
+
+      <list name="mammals">
+        <item>cats</item>
+        <item>dogs</item>
+      </list>
+
+      <list name="birds">
+        <item>albatross</item>
+        <item>duck</item>
+      </list>
+    </lists>
+  </xylophone>
+
+This produces the following output
+
+  dn: GroupName=birds
+  GroupName: birds
+  BirdAttribute: some-value
+
+  dn: BirdName=albatross,GroupName=birds
+  BirdName: albatross
+
+  dn: BirdName=duck,GroupName=birds
+  BirdName: duck
+
+  dn: GroupName=mammals
+  GroupName: mammals
+  MammalAttribute: some-value
+
+  dn: MammalName=cats,GroupName=mammals
+  MammalName: cats
+
+  dn: MammalName=dogs,GroupName=mammals
+  MammalName: dogs
+
+  dn: GroupName=reptiles
+  GroupName: reptiles
+  OtherAttribute: some-value
+
+
+Date/Time
+
+The current date or time may be included with the <date/> element.
+This takes a format attribute that describes how the current time
+should be represented and a tz attribute that describes in which
+timezone should be used.
+
+The format attribute follows the Java SimpleDateFormat description;
+see the Java description for a complete description.  Here are the
+supported letters:
+
+Letter  Date or Time Component  Presentation        Examples
+    G   Era designator          Text                AD
+    y   Year                    Year                1996; 96
+    M   Month in year           Month               July; Jul; 07
+    w   Week in year            Number              27
+    W   Week in month           Number              2
+    D   Day in year             Number              189
+    d   Day in month            Number              10
+    F   Day of week in month    Number              2
+    E   Day name in week        Text                Tuesday; Tue
+    a   Am/pm marker            Text                PM
+    H   Hour in day (0-23)      Number              0
+    k   Hour in day (1-24)      Number              24
+    K   Hour in am/pm (0-11)    Number              0
+    h   Hour in am/pm (1-12)    Number              12
+    m   Minute in hour          Number              30
+    s   Second in minute        Number              55
+    S   Millisecond             Number              978
+    z   Time zone               General time zone   Pacific Standard Time; PST; GMT-08:00
+    Z   Time zone               RFC 822 time zone   -0800
+    X   Time zone               ISO 8601 time zone  -08; -0800; -08:00
+
+Here are some examples:
+
+    "yyyy.MM.dd G 'at' HH:mm:ss z"    2001.07.04 AD at 12:08:56 PDT
+    "yyyy-MM-dd'T'HH:mm:ss.SSSZ"      2001-07-04T12:08:56.235-0700
+
+The tz attribute is either 'Z' or 'local' or missing.  If 'Z' then the
+current time is expressed in 'zulu time' (UTC), if 'local' then it is
+expressed in the local timezone, if missing then 'Z' is assumed.
