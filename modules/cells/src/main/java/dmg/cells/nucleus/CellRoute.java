@@ -11,19 +11,15 @@ import org.dcache.util.Args;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 
-/**
- * @author Patrick Fuhrmann
- * @version 0.1, 15 Feb 1998
- */
 /*
 * route add -default             <cell>[@<domain>]
 * route add -domain  <domain>    <cell>[@<domain>]
-*   WARNING : This Class is designed to be imutual.
+*   WARNING : This Class is designed to be immutable.
 *             All other class rely on that fact and
 *             a lot of things may fail at runtime
 *             if this design item is changed.
 */
-public class CellRoute implements Cloneable, Serializable
+public class CellRoute implements Serializable
 {
     private static final long serialVersionUID = 4566260400288960984L;
 
@@ -40,7 +36,11 @@ public class CellRoute implements Cloneable, Serializable
     public static final int DUMPSTER = 5;
     public static final int ALIAS = 6;
 
-    private final static String[] __typeNames =
+    private static final int DEST_LENGTH = 15;
+    private static final int DOMAIN_LENGTH = 15;
+    private static final int GATE_LENGTH = 25;
+
+    private static final String[] TYPE_NAMES =
             {"Auto", "Exact", "Wellknown", "Domain",
                     "Default", "Dumpster", "Alias"};
 
@@ -76,15 +76,18 @@ public class CellRoute implements Cloneable, Serializable
             break;
         }
 
-        if (args.argc() == 1) {
-            if ((type != DEFAULT) && (type != DUMPSTER)) {
+        switch (args.argc()) {
+        case 1:
+            if (type != DEFAULT && type != DUMPSTER) {
                 throw new IllegalArgumentException("Not enough arguments");
             }
-        } else if (args.argc() == 2) {
-            if ((type == DEFAULT) || (type == DUMPSTER)) {
+            break;
+        case 2:
+            if (type == DEFAULT || type == DUMPSTER) {
                 throw new IllegalArgumentException("Too many arguments");
             }
-        } else {
+            break;
+        default:
             throw new IllegalArgumentException("Too many arguments");
         }
 
@@ -93,7 +96,7 @@ public class CellRoute implements Cloneable, Serializable
 
     private static int getTypeOf(String type)
     {
-        int i = asList(__typeNames).indexOf(type);
+        int i = asList(TYPE_NAMES).indexOf(type);
         if (i == -1) {
             throw new IllegalArgumentException("Illegal Route Type: " + type);
         }
@@ -120,7 +123,7 @@ public class CellRoute implements Cloneable, Serializable
         _gateway = gateway;
 
         String cell, domain;
-        if ((dest == null) || (dest.equals(""))) {
+        if (dest == null || dest.isEmpty()) {
             cell = null;
             domain = null;
         } else {
@@ -234,12 +237,12 @@ public class CellRoute implements Cloneable, Serializable
 
     public String getRouteTypeName()
     {
-        return __typeNames[_type];
+        return TYPE_NAMES[_type];
     }
 
     public int hashCode()
     {
-        return Objects.hashCode(_destCell, _destDomain);
+        return _type ^ Objects.hashCode(_destCell, _destDomain, _gateway);
     }
 
     public boolean equals(Object o)
@@ -251,28 +254,26 @@ public class CellRoute implements Cloneable, Serializable
             return false;
         }
         CellRoute route = (CellRoute) o;
-        return (route._destCell.equals(_destCell)) &&
-                (route._destDomain.equals(_destDomain));
+        return route._destCell.equals(_destCell) &&
+               route._destDomain.equals(_destDomain) &&
+               route._gateway.equals(_gateway) &&
+               route._type == _type;
     }
-
-    private static final int _destLength = 15;
-    private static final int _domainLength = 15;
-    private static final int _gateLength = 25;
 
     public static String headerToString()
     {
-        return Formats.field("Dest Cell", _destLength, Formats.CENTER) +
-                Formats.field("Dest Domain", _domainLength, Formats.CENTER) +
-                Formats.field("Gateway", _gateLength, Formats.CENTER) +
+        return Formats.field("Dest Cell", DEST_LENGTH, Formats.CENTER) +
+                Formats.field("Dest Domain", DOMAIN_LENGTH, Formats.CENTER) +
+                Formats.field("Gateway", GATE_LENGTH, Formats.CENTER) +
                 Formats.field("Type", 10, Formats.CENTER);
     }
 
     public String toString()
     {
-        return Formats.field(_destCell, _destLength, Formats.CENTER) +
-                Formats.field(_destDomain, _domainLength, Formats.CENTER) +
-                Formats.field(_gateway, _gateLength, Formats.CENTER) +
-                Formats.field(__typeNames[_type], 10, Formats.LEFT);
+        return Formats.field(_destCell, DEST_LENGTH, Formats.CENTER) +
+                Formats.field(_destDomain, DOMAIN_LENGTH, Formats.CENTER) +
+                Formats.field(_gateway, GATE_LENGTH, Formats.CENTER) +
+                Formats.field(TYPE_NAMES[_type], 10, Formats.LEFT);
     }
 }
 
