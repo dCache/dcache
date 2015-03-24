@@ -11,15 +11,24 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import diskCacheV111.admin.UserAdminShell;
+import diskCacheV111.services.space.LinkGroup;
+import diskCacheV111.services.space.Space;
+import diskCacheV111.services.space.message.GetLinkGroupsMessage;
+import diskCacheV111.services.space.message.GetSpaceTokensMessage;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellPath;
 import dmg.util.CommandException;
+
+import org.dcache.cells.CellStub;
 
 public class PcellsCommand implements Command, Runnable
 {
@@ -27,6 +36,7 @@ public class PcellsCommand implements Command, Runnable
             LoggerFactory.getLogger(PcellsCommand.class);
 
     private final CellEndpoint _endpoint;
+    private final CellStub _stub;
     private UserAdminShell _userAdminShell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -38,6 +48,7 @@ public class PcellsCommand implements Command, Runnable
     public PcellsCommand(CellEndpoint endpoint)
     {
         _endpoint = endpoint;
+        _stub = new CellStub(_endpoint);
     }
 
     @Override
@@ -106,7 +117,19 @@ public class PcellsCommand implements Command, Runnable
                             if (frame.getDestination() == null) {
                                 result = _userAdminShell.executeCommand(frame.getPayload().toString());
                             } else {
-                                result = _userAdminShell.executeCommand(frame.getDestination(), frame.getPayload());
+                                switch (frame.getDestination()) {
+                                case "SrmSpaceManager":
+                                    if (frame.getPayload().equals("ls -l")) {
+                                        result = listSpaceReservations();
+                                    } else {
+                                        result = _userAdminShell.executeCommand("SrmSpaceManager", frame.getPayload());
+                                    }
+                                    break;
+
+                                default:
+                                    result = _userAdminShell.executeCommand(frame.getDestination(), frame.getPayload());
+                                    break;
+                                }
                             }
                         } catch (CommandException e) {
                             result = e;
@@ -140,5 +163,30 @@ public class PcellsCommand implements Command, Runnable
         } finally {
             _exitCallback.onExit(0);
         }
+    }
+
+    private String listSpaceReservations() throws CacheException, InterruptedException
+    {
+        /* Query information from space manager. */
+        CellPath spaceManager = new CellPath("SrmSpaceManager");
+        Collection<Space> spaces = _stub.sendAndWait(spaceManager, new GetSpaceTokensMessage()).getSpaceTokenSet();
+        Collection<LinkGroup> groups = _stub.sendAndWait(spaceManager, new GetLinkGroupsMessage()).getLinkGroups();
+
+        /* Build pcells compatible list. */
+        StringBuilder out = new StringBuilder();
+
+        out.append("Reservations:\n");
+        for (Space space : spaces) {
+            out.append(space).append('\n');
+        }
+        out.append("total number of reservations: ").append(spaces.size()).append('\n');
+
+        out.append("\nLinkGroups:\n");
+        for (LinkGroup group : groups) {
+            out.append(group).append('\n');
+        }
+        out.append("total number of linkGroups: ").append(groups.size()).append('\n');
+
+        return out.toString();
     }
 }
