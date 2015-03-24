@@ -59,6 +59,8 @@ import org.dcache.util.Args;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.PNFSID;
 import static org.dcache.namespace.FileAttribute.STORAGEINFO;
 import static org.dcache.pool.repository.EntryState.*;
@@ -573,9 +575,9 @@ public class CacheRepositoryV5
                CacheException,
                InterruptedException
     {
-        if (id == null) {
-            throw new IllegalArgumentException("Null argument not allowed");
-        }
+        checkNotNull(id);
+        checkNotNull(owner);
+        checkArgument(expire >= -1, "Expiration time must be -1 or non-negative");
 
         assertInitialized();
 
@@ -850,42 +852,45 @@ public class CacheRepositoryV5
      */
     void setState(MetaDataRecord entry, EntryState state)
     {
-        synchronized (entry) {
-            EntryState oldState = entry.getState();
-            if (oldState == state) {
-                return;
-            }
+        try {
+            synchronized (entry) {
+                EntryState oldState = entry.getState();
+                if (oldState == state) {
+                    return;
+                }
 
-            CacheEntry oldEntry = new CacheEntryImpl(entry);
+                CacheEntry oldEntry = new CacheEntryImpl(entry);
 
-            try {
                 entry.setState(state);
-            } catch (CacheException e) {
-                fail(FaultAction.READONLY, "Internal repository error", e);
-                throw new RuntimeException("Internal repository error", e);
-            }
 
-            CacheEntryImpl newEntry = new CacheEntryImpl(entry);
+                CacheEntryImpl newEntry = new CacheEntryImpl(entry);
 
-            if (!(oldState == NEW && state == REMOVED)) {
-                stateChanged(oldEntry, newEntry, oldState, state);
-            }
-
-            if (state == REMOVED) {
-                if (oldState != NEW) {
-                    _log.info("remove entry for: {}", entry.getPnfsId());
+                if (!(oldState == NEW && state == REMOVED)) {
+                    stateChanged(oldEntry, newEntry, oldState, state);
                 }
 
-                PnfsId id = entry.getPnfsId();
-                _pnfs.clearCacheLocation(id, _volatile);
+                if (state == REMOVED) {
+                    if (oldState != NEW) {
+                        _log.info("remove entry for: {}", entry.getPnfsId());
+                    }
 
-                ScheduledFuture<?> oldTask = _tasks.remove(id);
-                if (oldTask != null) {
-                    oldTask.cancel(false);
+                    PnfsId id = entry.getPnfsId();
+                    _pnfs.clearCacheLocation(id, _volatile);
+
+                    ScheduledFuture<?> oldTask = _tasks.remove(id);
+                    if (oldTask != null) {
+                        oldTask.cancel(false);
+                    }
+
+                    destroyWhenRemovedAndUnused(entry);
                 }
-
-                destroyWhenRemovedAndUnused(entry);
             }
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        } catch (Error | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error.", e);
+            throw e;
         }
     }
 
@@ -903,13 +908,6 @@ public class CacheRepositoryV5
          * expiration tasks if the repository is not OPEN.
          */
         try {
-            if (entry == null || owner == null) {
-                throw new IllegalArgumentException("Null argument not allowed");
-            }
-            if (expire < -1) {
-                throw new IllegalArgumentException("Expiration time must be -1 or non-negative");
-            }
-
             synchronized (entry) {
                 CacheEntry oldEntry = new CacheEntryImpl(entry);
                 if (entry.setSticky(owner, expire, overwrite) && _state == State.OPEN) {
@@ -921,6 +919,9 @@ public class CacheRepositoryV5
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
+        } catch (Error | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error.", e);
+            throw e;
         }
     }
 

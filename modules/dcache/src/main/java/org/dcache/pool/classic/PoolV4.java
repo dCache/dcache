@@ -523,7 +523,7 @@ public class PoolV4
             break;
 
         default:
-            poolState = "Pool disabled: ";
+            poolState = "Pool restart required: ";
             disablePool(PoolV2Mode.DISABLED_STRICT | PoolV2Mode.DISABLED_DEAD, 666,
                         poolState + event.getMessage());
             break;
