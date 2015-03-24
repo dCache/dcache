@@ -57,7 +57,7 @@ public class Account
     public synchronized void setTotal(long total)
     {
         if (total < _used) {
-            throw new IllegalArgumentException("Cannot set repository size below amount of used space");
+            throw new IllegalArgumentException("Cannot set repository size below amount of used space.");
         }
         _total = total;
         notifyAll();
@@ -69,10 +69,10 @@ public class Account
     public synchronized void free(long space)
     {
         if (space < 0) {
-            throw new IllegalArgumentException("Cannot free negative space");
+            throw new IllegalArgumentException("Cannot free negative space.");
         }
         if (_used < space) {
-            throw new IllegalArgumentException("Cannot set used space to a negattive value");
+            throw new IllegalArgumentException("Cannot set used space to a negative value.");
         }
 
         notifyAll();
@@ -90,7 +90,7 @@ public class Account
              throws InterruptedException
     {
         if (request < 0) {
-            throw new IllegalArgumentException("Cannot allocate negative space");
+            throw new IllegalArgumentException("Cannot allocate negative space.");
         }
         _requested += request;
         try {
@@ -119,7 +119,7 @@ public class Account
         throws InterruptedException
     {
         if (request < 0) {
-            throw new IllegalArgumentException("Cannot allocate negative space");
+            throw new IllegalArgumentException("Cannot allocate negative space.");
         }
         _requested += request;
         try {
@@ -138,10 +138,10 @@ public class Account
     {
         long removable = _removable + delta;
         if (removable < 0) {
-            throw new IllegalArgumentException("Negative removable space is not allowed");
+            throw new IllegalArgumentException("Negative removable space is not allowed.");
         }
         if (removable > _total) {
-            throw new IllegalArgumentException("Removable space would exceed repository size");
+            throw new IllegalArgumentException("Removable space would exceed repository size.");
         }
         _removable = removable;
         notifyAll();
@@ -151,10 +151,10 @@ public class Account
     {
         long precious = _precious + delta;
         if (precious < 0) {
-            throw new IllegalArgumentException("Negative precious space is not allowed");
+            throw new IllegalArgumentException("Negative precious space is not allowed.");
         }
         if (precious > _total) {
-            throw new IllegalArgumentException("Precious space would exceed repository size");
+            throw new IllegalArgumentException("Precious space would exceed repository size.");
         }
         _precious = precious;
         notifyAll();
