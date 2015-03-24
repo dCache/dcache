@@ -16,6 +16,11 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,10 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
-
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -86,7 +94,35 @@ public class JdbcFs implements FileSystemProvider {
      * Database connection pool
      */
     private final DataSource _dbConnectionsPool;
-    private final FsStatCache _fsStatCache;
+
+    /*
+     * A dummy constant key force bay cache interface. the value doesn't
+     * matter - only that it's the same value every time
+     */
+    private final Integer DUMMY_KEY = 0;
+    /**
+     * Cache value of FsStat
+     */
+    private final Executor _fsStatUpdateExecutor =
+            Executors.newSingleThreadExecutor(
+                    new ThreadFactoryBuilder()
+                        .setNameFormat("fsstat-updater-thread-%d")
+                        .build()
+            );
+
+    private final LoadingCache<Object, FsStat> _fsStatCache
+            = CacheBuilder.newBuilder()
+                .refreshAfterWrite(100, TimeUnit.MILLISECONDS)
+                .build(
+                    CacheLoader.asyncReloading(new CacheLoader<Object, FsStat>() {
+
+                        @Override
+                        public FsStat load(Object k) throws Exception {
+                            return JdbcFs.this.getFsStat0();
+                        }
+                    }
+            , _fsStatUpdateExecutor));
+
     /**
      * current fs id
      */
@@ -126,7 +162,6 @@ public class JdbcFs implements FileSystemProvider {
         } catch (Exception e) {
         }
         _wormID = wormID;
-        _fsStatCache = new FsStatCache(this);
     }
 
     private FsInode getWormID() throws ChimeraFsException {
@@ -2677,46 +2712,29 @@ public class JdbcFs implements FileSystemProvider {
         }
     }
 
-    /**
-     * internal class to hide caching mechanism.
-     */
-    static class FsStatCache {
-
-        private FsStat _fsStatCached;
-        private long _fsStatLastUpdate;
-        // FIXME: make it configurable
-        private long _fsStateLifetime = 3600000;
-        private final JdbcFs _fs;
-
-        FsStatCache(JdbcFs fs) {
-            _fs = fs;
+    public FsStat getFsStat0() throws ChimeraFsException {
+        FsStat fsStat = null;
+        Connection dbConnection = null;
+        try {
+            dbConnection = _dbConnectionsPool.getConnection();
+            fsStat = _sqlDriver.getFsStat(dbConnection);
+        } catch (SQLException e) {
+            _log.error("Failed to obtain FsStat: {}", e.getMessage());
+        } finally {
+            tryToClose(dbConnection);
         }
-
-        public synchronized FsStat getFsStat(DataSource dbConnectionsPool, FsSqlDriver driver) throws ChimeraFsException {
-
-            if (_fsStatLastUpdate == 0 || _fsStatLastUpdate + _fsStateLifetime < System.currentTimeMillis()) {
-                Connection dbConnection = null;
-                try {
-                    dbConnection = dbConnectionsPool.getConnection();
-                    _fsStatCached = driver.getFsStat(dbConnection);
-                } catch (SQLException e) {
-                    throw new IOHimeraFsException(e.getMessage());
-                } finally {
-                    tryToClose(dbConnection);
-                }
-                _log.debug("updateing cached value of FsStat");
-                _fsStatLastUpdate = System.currentTimeMillis();
-            } else {
-                _log.debug("using cached value of FsStat");
-            }
-
-            return _fsStatCached;
-        }
+        return fsStat;
     }
 
     @Override
     public FsStat getFsStat() throws ChimeraFsException {
-        return _fsStatCache.getFsStat(_dbConnectionsPool, _sqlDriver);
+        try {
+            return _fsStatCache.get(DUMMY_KEY);
+        }catch(ExecutionException e) {
+            Throwable t = e.getCause();
+            Throwables.propagateIfPossible(t, ChimeraFsException.class);
+            throw new ChimeraFsException(t.getMessage(), t);
+        }
     }
 
     ///////////////////////////////////////////////////////////////
