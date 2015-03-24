@@ -3,6 +3,7 @@ package org.dcache.pool.classic;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -18,6 +19,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolCellInfo;
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolFlushDoFlushMessage;
@@ -59,11 +61,18 @@ public class HsmFlushController
     private long _flushingInterval = TimeUnit.MINUTES.toMillis(1);
     private long _retryDelayOnError = TimeUnit.MINUTES.toMillis(1);
     private int _maxActive = 1000;
+    private PoolV2Mode _poolMode;
 
     public HsmFlushController(
             StorageClassContainer storageQueue)
     {
         _storageQueue = storageQueue;
+    }
+
+    @Required
+    public void setPoolMode(PoolV2Mode mode)
+    {
+        _poolMode = mode;
     }
 
     private ScheduledThreadPoolExecutor createFlushExecutor()
@@ -235,7 +244,11 @@ public class HsmFlushController
         @Override
         public void run()
         {
-            _storageQueue.flushAll(getMaxActive(), _retryDelayOnError);
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
+                LOGGER.warn("Pool mode prevents flushing to nearline storage.");
+            } else {
+                _storageQueue.flushAll(getMaxActive(), _retryDelayOnError);
+            }
         }
     }
 

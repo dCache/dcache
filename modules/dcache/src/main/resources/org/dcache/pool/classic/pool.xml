@@ -194,6 +194,7 @@
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
     <description>Controller for centralising flushing</description>
     <constructor-arg ref="queue"/>
+    <property name="poolMode" ref="pool-mode"/>
   </bean>
 
   <bean id="flush-notification-stub" class="org.dcache.cells.CellStub">
