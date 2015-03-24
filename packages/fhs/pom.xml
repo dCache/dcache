@@ -156,8 +156,8 @@
                                 <configuration>
                                     <name>rpm.version</name>
                                     <value>${project.version}</value>
-                                    <regex>-</regex>
-                                    <replacement/>
+                                    <regex>-SNAPSHOT</regex>
+                                    <replacement>.\${timestamp}</replacement>
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
