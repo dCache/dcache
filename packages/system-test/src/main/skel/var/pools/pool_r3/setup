@@ -31,7 +31,7 @@ mover set max active -queue=p2p 10
 # MigrationModule
 #
 #
-#  Pool to Pool (P2P) [$Revision$]
+#  Pool to Pool (P2P)
 #
 pp set max active 10
 pp set pnfs timeout 300

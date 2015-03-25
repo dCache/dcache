@@ -310,7 +310,7 @@ public class P2PClient
     @Override
     public synchronized void printSetup(PrintWriter pw)
     {
-        pw.println("#\n#  Pool to Pool (P2P) [$Revision$]\n#");
+        pw.println("#\n#  Pool to Pool (P2P)\n#");
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfs.getTimeoutInMillis() / 1000L));
         if (_interface != null) {

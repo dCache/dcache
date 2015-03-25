@@ -382,7 +382,6 @@ public class PnfsManagerV3
 
     @Override
     public void getInfo( PrintWriter pw ){
-        pw.println("$Revision$");
         pw.println( "NameSpace Provider: ");
         pw.println( _nameSpaceProvider.toString() );
         pw.println( "CacheLocation Provider: ");

@@ -430,7 +430,6 @@ public class CostModuleV1
     public void getInfo(PrintWriter pw)
     {
         pw.append( "Submodule : CostModule (cm) : ").println(getClass().getName());
-        pw.println("Version : $Revision$");
         pw.append(" Debug   : ").println(_debug?"on":"off");
         pw.append(" Update  : ").println(_update?"on":"off");
         pw.append(" Active  : ").println(_isActive?"yes":"no");
@@ -452,7 +451,6 @@ public class CostModuleV1
     {
         pw.append( "#\n# Submodule CostModule (cm) : ")
             .println(this.getClass().getName());
-        pw.println("# $Revision$ \n#\n") ;
         pw.println("cm set debug "+(_debug?"on":"off"));
         pw.println("cm set update "+(_update?"on":"off"));
         pw.println("cm set magic "+(_magic?"on":"off"));
