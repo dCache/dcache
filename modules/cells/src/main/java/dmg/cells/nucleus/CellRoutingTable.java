@@ -78,30 +78,30 @@ public class CellRoutingTable implements Serializable {
         case CellRoute.EXACT :
         case CellRoute.ALIAS :
            dest = route.getCellName()+"@"+route.getDomainName() ;
-           if( _exact.remove( dest ) == null ) {
+           if (!_exact.remove(dest, route)) {
                throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
            }
         break ;
         case CellRoute.WELLKNOWN :
            dest = route.getCellName() ;
-           if( _wellknown.remove( dest ) == null ) {
+           if (!_wellknown.remove(dest, route)) {
                throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
            }
         break ;
         case CellRoute.DOMAIN :
            dest = route.getDomainName() ;
-           if( _domain.remove( dest ) == null ) {
+           if (!_domain.remove(dest, route)) {
                throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
            }
         break ;
         case CellRoute.DEFAULT :
-           if( _default == null ) {
+           if (!route.equals(_default)) {
                throw new IllegalArgumentException("Route Entry Not Found for default");
            }
-           _default = null ;
+           _default = null;
         break ;
         case CellRoute.DUMPSTER :
-           if( _dumpster == null ) {
+           if (!route.equals(_dumpster)) {
                throw new IllegalArgumentException("Route Entry Not Found dumpster");
            }
            _dumpster = null ;

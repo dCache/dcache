@@ -304,12 +304,7 @@ public class LocationMgrTunnel
             try {
                 nucleus.routeAdd(route);
             } catch (IllegalArgumentException e) {
-                /* Crap, somehow the entry already exists. Well, we
-                 * insist on adding a new one, so we delete the old
-                 * one first.
-                 */
-                nucleus.routeDelete(route);
-                nucleus.routeAdd(route);
+                _log.warn("Failed to add route: {}", e.getMessage());
             }
 
             /* Keep track of what we did.
