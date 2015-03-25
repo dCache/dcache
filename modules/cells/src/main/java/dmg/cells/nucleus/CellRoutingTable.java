@@ -1,8 +1,11 @@
 package dmg.cells.nucleus;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.dcache.util.Args;
 
@@ -10,62 +13,54 @@ public class CellRoutingTable implements Serializable
 {
     private static final long serialVersionUID = -1456280129622980563L;
 
-    private final Map<String, CellRoute> _wellknown = new HashMap<>();
-    private final Map<String, CellRoute> _domain = new HashMap<>();
-    private final Map<String, CellRoute> _exact = new HashMap<>();
-    private CellRoute _dumpster = null;
-    private CellRoute _default = null;
+    private final ConcurrentMap<String, CellRoute> _wellknown = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CellRoute> _domain = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, CellRoute> _exact = new ConcurrentHashMap<>();
+    private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
+    private final AtomicReference<CellRoute> _default = new AtomicReference<>();
 
-    public synchronized void add(CellRoute route)
+    public void add(CellRoute route)
             throws IllegalArgumentException
     {
-
-        int type = route.getRouteType();
         String dest;
-        switch (type) {
+        switch (route.getRouteType()) {
         case CellRoute.EXACT:
         case CellRoute.ALIAS:
             dest = route.getCellName() + "@" + route.getDomainName();
-            if (_exact.get(dest) != null) {
+            if (_exact.putIfAbsent(dest, route) != null) {
                 throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
             }
-            _exact.put(dest, route);
             break;
         case CellRoute.WELLKNOWN:
             dest = route.getCellName();
-            if (_wellknown.get(dest) != null) {
+            if (_wellknown.putIfAbsent(dest, route) != null) {
                 throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
             }
-            _wellknown.put(dest, route);
             break;
         case CellRoute.DOMAIN:
             dest = route.getDomainName();
-            if (_domain.get(dest) != null) {
+            if (_domain.putIfAbsent(dest, route) != null) {
                 throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
             }
-            _domain.put(dest, route);
             break;
         case CellRoute.DEFAULT:
-            if (_default != null) {
+            if (!_default.compareAndSet(null, route)) {
                 throw new IllegalArgumentException("Duplicated route Entry for default.");
             }
-            _default = route;
             break;
         case CellRoute.DUMPSTER:
-            if (_dumpster != null) {
+            if (!_dumpster.compareAndSet(null, route)) {
                 throw new IllegalArgumentException("Duplicated route Entry for dumpster");
             }
-            _dumpster = route;
             break;
         }
     }
 
-    public synchronized void delete(CellRoute route)
+    public void delete(CellRoute route)
             throws IllegalArgumentException
     {
-        int type = route.getRouteType();
         String dest;
-        switch (type) {
+        switch (route.getRouteType()) {
         case CellRoute.EXACT:
         case CellRoute.ALIAS:
             dest = route.getCellName() + "@" + route.getDomainName();
@@ -86,21 +81,19 @@ public class CellRoutingTable implements Serializable
             }
             break;
         case CellRoute.DEFAULT:
-            if (!route.equals(_default)) {
+            if (!_default.compareAndSet(route, null)) {
                 throw new IllegalArgumentException("Route Entry Not Found for default");
             }
-            _default = null;
             break;
         case CellRoute.DUMPSTER:
-            if (!route.equals(_dumpster)) {
+            if (!_dumpster.compareAndSet(route, null)) {
                 throw new IllegalArgumentException("Route Entry Not Found dumpster");
             }
-            _dumpster = null;
             break;
         }
     }
 
-    public synchronized CellRoute find(CellAddressCore addr)
+    public CellRoute find(CellAddressCore addr)
     {
         String cellName = addr.getCellName();
         String domainName = addr.getCellDomainName();
@@ -125,59 +118,47 @@ public class CellRoutingTable implements Serializable
             }
         }
         route = _exact.get(cellName + "@" + domainName);
-        return route == null ? _default : route;
+        return route == null ? _default.get() : route;
     }
 
-    public synchronized String toString()
+    public String toString()
     {
         StringBuilder sb = new StringBuilder();
         sb.append(CellRoute.headerToString()).append("\n");
         for (CellRoute route : _exact.values()) {
-            sb.append(route.toString()).append("\n");
+            sb.append(route).append("\n");
         }
         for (CellRoute route : _wellknown.values()) {
-            sb.append(route.toString()).append("\n");
+            sb.append(route).append("\n");
         }
         for (CellRoute route : _domain.values()) {
-            sb.append(route.toString()).append("\n");
+            sb.append(route).append("\n");
         }
-        if (_default != null) {
-            sb.append(_default.toString()).append("\n");
+        CellRoute defaultRoute = _default.get();
+        if (defaultRoute != null) {
+            sb.append(defaultRoute).append("\n");
         }
-        if (_dumpster != null) {
-            sb.append(_dumpster.toString()).append("\n");
+        CellRoute dumpsterRoute = _dumpster.get();
+        if (dumpsterRoute != null) {
+            sb.append(dumpsterRoute).append("\n");
         }
-
         return sb.toString();
     }
 
-    public synchronized CellRoute[] getRoutingList()
+    public CellRoute[] getRoutingList()
     {
-        int total = _exact.size() +
-                    _wellknown.size() +
-                    _domain.size() +
-                    (_default != null ? 1 : 0) +
-                    (_dumpster != null ? 1 : 0);
-
-        CellRoute[] routes = new CellRoute[total];
-        int i = 0;
-
-        for (CellRoute route : _exact.values()) {
-            routes[i++] = route;
+        List<CellRoute> routes = new ArrayList<>();
+        routes.addAll(_exact.values());
+        routes.addAll(_wellknown.values());
+        routes.addAll(_domain.values());
+        CellRoute defaultRoute = _default.get();
+        if (defaultRoute != null) {
+            routes.add(defaultRoute);
         }
-        for (CellRoute route : _wellknown.values()) {
-            routes[i++] = route;
+        CellRoute dumpsterRoute = _dumpster.get();
+        if (dumpsterRoute != null) {
+            routes.add(dumpsterRoute);
         }
-        for (CellRoute route : _domain.values()) {
-            routes[i++] = route;
-        }
-        if (_default != null) {
-            routes[i++] = _default;
-        }
-        if (_dumpster != null) {
-            routes[i++] = _dumpster;
-        }
-
-        return routes;
+        return routes.toArray(new CellRoute[routes.size()]);
     }
 }
