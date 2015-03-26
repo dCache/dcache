@@ -959,11 +959,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         protected void sendReply( String tag , Message msg ){
-
-            sendReply( tag ,
-            msg.getReturnCode() ,
-            msg.getErrorObject().toString() ) ;
-
+            sendReply( tag, msg.getReturnCode(), String.valueOf(msg.getErrorObject()) ) ;
         }
 
         protected void addUs()
