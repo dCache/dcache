@@ -136,9 +136,14 @@ public boolean equals( Object obj ){
         _messageStream = null;
     }
 
-    private CellMessage cloneWithoutPayload()
+    protected CellMessage cloneWithoutFields()
     {
-        CellMessage copy = new CellMessage();
+        return new CellMessage();
+    }
+
+    protected CellMessage cloneWithoutPayload()
+    {
+        CellMessage copy = cloneWithoutFields();
         copy._destination = (CellPath) _destination.clone();
         copy._source = (CellPath) _source.clone();
         copy._creationTime = _creationTime;
@@ -156,19 +161,7 @@ public boolean equals( Object obj ){
         checkState(_mode == ORIGINAL_MODE);
         CellMessage encoded = cloneWithoutPayload();
         encoded._mode = STREAM_MODE;
-        ByteArrayOutputStream array = new ByteArrayOutputStream();
-        try (ObjectOutputStream out = new ObjectOutputStream(array)) {
-            out.writeObject(_message);
-        } catch (InvalidClassException e) {
-            throw new SerializationException("Failed to serialize object: "
-                    + e + "(this is usually a bug)", e);
-        } catch (NotSerializableException e) {
-            throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
-        } catch (IOException e) {
-            throw new SerializationException("Failed to serialize object: " + e, e);
-        }
-
-        encoded._messageStream = array.toByteArray();
+        encoded._messageStream = encode(_message);
         return encoded;
     }
 
@@ -177,19 +170,35 @@ public boolean equals( Object obj ){
         checkState(_mode == STREAM_MODE);
         CellMessage decoded = cloneWithoutPayload();
         decoded._mode = ORIGINAL_MODE;
-        ByteArrayInputStream in;
-        ObjectInputStream stream;
-        try {
-            in = new ByteArrayInputStream(_messageStream);
-            stream = new ObjectInputStream(in);
-            decoded._message = stream.readObject();
+        decoded._message = decode(_messageStream);
+        return decoded;
+    }
+
+    protected static byte[] encode(Object message)
+    {
+        ByteArrayOutputStream array = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(array)) {
+            out.writeObject(message);
+        } catch (InvalidClassException e) {
+            throw new SerializationException("Failed to serialize object: "
+                    + e + "(this is usually a bug)", e);
+        } catch (NotSerializableException e) {
+            throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
+        } catch (IOException e) {
+            throw new SerializationException("Failed to serialize object: " + e, e);
+        }
+        return array.toByteArray();
+    }
+
+    protected static Object decode(byte[] messageStream)
+    {
+        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(messageStream))) {
+            return stream.readObject();
         } catch (ClassNotFoundException e) {
             throw new SerializationException("Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?", e);
         } catch (IOException e) {
             throw new SerializationException("Failed to deserialize object: " + e, e);
         }
-
-        return decoded;
     }
 
     public void addSourceAddress( CellAddressCore source ){
