@@ -496,8 +496,7 @@ class CellGlue
     private static final int MAX_ROUTE_LEVELS = 16;
 
     void sendMessage(CellNucleus nucleus, CellMessage msg)
-            throws SerializationException,
-            NoRouteToCellException
+            throws SerializationException
     {
         sendMessage(nucleus, msg, true, true);
     }
@@ -506,8 +505,7 @@ class CellGlue
                      CellMessage msg,
                      boolean resolveLocally,
                      boolean resolveRemotely)
-            throws SerializationException,
-            NoRouteToCellException
+            throws SerializationException
     {
         boolean firstSend = !msg.isStreamMode();
 
@@ -573,16 +571,8 @@ class CellGlue
                 // and points to our domain.
                 //
                 if (destNucleus == null) {
-                    if (firstSend) {
-                        throw new
-                                NoRouteToCellException(
-                                transponder.getUOID(),
-                                destination,
-                                cellName + "@" + _cellDomainName + " not found");
-                    } else {
-                        sendException(nucleus, transponder, destination, cellName);
-                        return;
-                    }
+                    sendException(nucleus, transponder, destination, cellName);
+                    return;
                 }
                 if (iter == 0) {
                     //
@@ -618,16 +608,8 @@ class CellGlue
                     return;
                 } else if (iter == MAX_ROUTE_LEVELS) {
                     LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
-                    if (firstSend) {
-                        throw new
-                                NoRouteToCellException(
-                                transponder.getUOID(),
-                                destination,
-                                cellName + " not found and routing limit reached");
-                    } else {
-                        sendException(nucleus, transponder, destination, cellName);
-                        return;
-                    }
+                    sendException(nucleus, transponder, destination, cellName);
+                    return;
                 }
                 //
                 // destNuclues == null , is no problem in our case because
@@ -641,12 +623,8 @@ class CellGlue
                 // we are assumed not to deliver remotely AND
                 // we are not yet in the routing part
                 //
-                throw new
-                        NoRouteToCellException(
-                        transponder.getUOID(),
-                        destination,
-                        " ! resolve remotely : " + destCore);
-
+                sendException(nucleus, transponder, destination, cellName);
+                return;
             }
             //
             // so, the destination cell wasn't found locally.
@@ -655,16 +633,8 @@ class CellGlue
             CellRoute route = _routingTable.find(destCore);
             if ((route == null) || (iter == MAX_ROUTE_LEVELS)) {
                 LOGGER.trace("sendMessage : no route destination for : {}", destCore);
-                if (firstSend) {
-                    throw new
-                            NoRouteToCellException(
-                            transponder.getUOID(),
-                            destination,
-                            "Missing routing entry for " + destCore);
-                } else {
-                    sendException(nucleus, transponder, destination, destCore.toString());
-                    return;
-                }
+                sendException(nucleus, transponder, destination, destCore.toString());
+                return;
             }
             LOGGER.trace("sendMessage : using route : {}", route);
             destCore = route.getTarget();
@@ -679,8 +649,7 @@ class CellGlue
                                CellMessage msg,
                                CellPath destination,
                                String routeTarget)
-            throws SerializationException,
-            NoRouteToCellException
+            throws SerializationException
     {
         //
         // here we try to inform the last sender that we are
@@ -693,7 +662,7 @@ class CellGlue
                 new NoRouteToCellException(
                         msg.getUOID(),
                         destination,
-                        "Tunnel cell >" + routeTarget +
+                        "Route for >" + routeTarget +
                         "< not found at >" + _cellDomainName + "<");
         CellPath retAddr = msg.getSourcePath().revert();
         CellExceptionMessage ret =

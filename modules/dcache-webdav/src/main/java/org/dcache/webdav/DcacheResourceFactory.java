@@ -72,7 +72,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.auth.SubjectWrapper;
@@ -873,20 +872,15 @@ public class DcacheResourceFactory
 
     private void sendRemoveInfoToBilling(FileAttributes attributes, FsPath path)
     {
-        try {
-            DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
-            Subject subject = getSubject();
-            infoRemove.setSubject(subject);
-            infoRemove.setPath(path);
-            infoRemove.setPnfsId(attributes.getPnfsId());
-            infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
-            infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
-            _billingStub.notify(infoRemove);
-        } catch (NoRouteToCellException e) {
-            _log.error("Cannot send remove message to billing: {}",
-                       e.getMessage());
-        }
+        DoorRequestInfoMessage infoRemove =
+            new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
+        Subject subject = getSubject();
+        infoRemove.setSubject(subject);
+        infoRemove.setPath(path);
+        infoRemove.setPnfsId(attributes.getPnfsId());
+        infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
+        infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
+        _billingStub.notify(infoRemove);
     }
 
     /**
@@ -1023,12 +1017,7 @@ public class DcacheResourceFactory
     public void messageArrived(PoolIoFileMessage message)
     {
         if (message.getReturnCode() == 0) {
-            try {
-                _poolStub.notify(new PoolMoverKillMessage(message.getPoolName(), message.getMoverId()));
-            } catch (NoRouteToCellException e) {
-                _log.debug("Failed to kill mover {}/{}: {}", message.getPoolName(), message.getMoverId(),
-                           e.getMessage());
-            }
+            _poolStub.notify(new PoolMoverKillMessage(message.getPoolName(), message.getMoverId()));
         }
     }
 

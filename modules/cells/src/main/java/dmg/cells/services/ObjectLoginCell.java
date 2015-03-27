@@ -121,7 +121,7 @@ public class      ObjectLoginCell
          msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;
          sendMessage( msg ) ;
          _log.info( "sendMessage o.k. : "+msg ) ;
-      }catch( Exception e ){
+      }catch( RuntimeException e ){
          _log.warn( "Exception while sending : "+e ) ;
          return "Ok weh" ;
       }
@@ -142,7 +142,7 @@ public class      ObjectLoginCell
             _log.info( "Adding to hash "+msg.getUOID() ) ;
             _hash.put( msg.getUOID() , frame ) ;
          }
-      }catch( Exception e ){
+      }catch( RuntimeException e ){
          _log.warn( "Exception while sending : "+e ) ;
          frame.setObject( e ) ;
          sendObject( frame ) ;

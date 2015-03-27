@@ -28,7 +28,6 @@ import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -47,7 +46,7 @@ public class CellStubTest
     }
 
     @Test
-    public void shouldSendNotifications() throws NoRouteToCellException
+    public void shouldSendNotifications()
     {
         stub.notify("test");
 
@@ -56,12 +55,6 @@ public class CellStubTest
         assertThat(envelope.getValue().getMessageObject().toString(), is("test"));
     }
 
-    @Test(expected = NoRouteToCellException.class)
-    public void shouldRehrowNoRouteToCellExceptionOnNotification() throws NoRouteToCellException
-    {
-        doThrow(new NoRouteToCellException("")).when(endpoint).sendMessage(any(CellMessage.class));
-        stub.notify("test");
-    }
 
     @Test
     public void shouldTranslateSuccessForMessageCallback()

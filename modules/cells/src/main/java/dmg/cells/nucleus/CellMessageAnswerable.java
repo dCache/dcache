@@ -17,20 +17,19 @@ public interface CellMessageAnswerable {
      * @param answer the answer to the the request message.
      *               If answer is null, the the timeout had expired.
      */
-   public void answerArrived( CellMessage request ,
-                              CellMessage answer    ) ;
+   void answerArrived(CellMessage request, CellMessage answer);
                               
    /**
      * exceptionArrived is called whenever an exception is related
-     * to the request message. Currently this can only be
-     * a NoRouteToCellException and SerializationException.
+     * to the request message. This may be NoRouteToCellException
+     * to indicate that the message could not be routed to the
+     * sender, or any other error returned.
      *
      * @param request the request message which belong to the 
      *                answer received with this callback.
      * @param exception the exception related to the request.
      */
-   public void exceptionArrived( CellMessage request ,
-                                 Exception   exception ) ;
+   void exceptionArrived(CellMessage request, Exception exception);
    /**
      * answerTimedOut is called whenever the specified timeout
      * expired.
@@ -38,5 +37,5 @@ public interface CellMessageAnswerable {
      * @param request the request message which belong to the 
      *                answer received with this callback.
      */
-   public void answerTimedOut( CellMessage request ) ;
+   void answerTimedOut(CellMessage request);
 }

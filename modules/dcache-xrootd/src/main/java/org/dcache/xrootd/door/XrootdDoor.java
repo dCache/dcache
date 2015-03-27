@@ -59,7 +59,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.acl.enums.AccessType;
@@ -472,21 +471,16 @@ public class XrootdDoor
 
     private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path, Subject subject)
     {
-        try {
-            DoorRequestInfoMessage infoRemove =
-                    new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
-            infoRemove.setSubject(subject);
-            infoRemove.setPath(path);
-            infoRemove.setPnfsId(pnfsId);
-            Origin origin = Subjects.getOrigin(subject);
-            if (origin != null) {
-                infoRemove.setClient(origin.getAddress().getHostAddress());
-            }
-            _billingStub.notify(infoRemove);
-        } catch (NoRouteToCellException e) {
-            _log.error("Cannot send remove message to billing: {}",
-                       e.getMessage());
+        DoorRequestInfoMessage infoRemove =
+                new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
+        infoRemove.setSubject(subject);
+        infoRemove.setPath(path);
+        infoRemove.setPnfsId(pnfsId);
+        Origin origin = Subjects.getOrigin(subject);
+        if (origin != null) {
+            infoRemove.setClient(origin.getAddress().getHostAddress());
         }
+        _billingStub.notify(infoRemove);
     }
 
     /**
@@ -599,9 +593,6 @@ public class XrootdDoor
             _requestHandlers.put(uuid, requestHandler);
             pnfsHandler.send(msg);
             requestHandler.resetTimeout();
-        } catch (NoRouteToCellException e) {
-            _requestHandlers.remove(uuid);
-            callback.noroute(e.getDestinationPath());
         } catch (RejectedExecutionException ree) {
             _requestHandlers.remove(uuid);
             callback.failure(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
@@ -748,14 +739,10 @@ public class XrootdDoor
     {
         String pool = message.getPoolName();
         int moverId = message.getMoverId();
-        try {
-            PoolMoverKillMessage killMessage =
-                new PoolMoverKillMessage(pool, moverId);
-            killMessage.setReplyRequired(false);
-            _poolStub.notify(new CellPath(pool), killMessage);
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
-        }
+        PoolMoverKillMessage killMessage =
+            new PoolMoverKillMessage(pool, moverId);
+        killMessage.setReplyRequired(false);
+        _poolStub.notify(new CellPath(pool), killMessage);
     }
 
     public void messageArrived(XrootdDoorAdressInfoMessage msg)

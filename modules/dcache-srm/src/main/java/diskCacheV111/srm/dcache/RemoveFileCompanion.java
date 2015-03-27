@@ -73,7 +73,6 @@
 
 package diskCacheV111.srm.dcache;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +90,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
@@ -189,21 +187,16 @@ public class RemoveFileCompanion
 
     private void sendRemoveInfoToBilling(PnfsId pnfsid)
     {
-        try {
-            CellInfo info = _endpoint.getCellInfo();
-            DoorRequestInfoMessage msg =
-                new DoorRequestInfoMessage(info.getCellName() + "@" +
-                                           info.getDomainName(), "remove");
-            msg.setSubject(_subject);
-            msg.setPath(_path);
-            msg.setPnfsId(pnfsid);
-            msg.setClient(Subjects.getOrigin(_subject).getAddress().getHostAddress());
+        CellInfo info = _endpoint.getCellInfo();
+        DoorRequestInfoMessage msg =
+            new DoorRequestInfoMessage(info.getCellName() + "@" +
+                                       info.getDomainName(), "remove");
+        msg.setSubject(_subject);
+        msg.setPath(_path);
+        msg.setPnfsId(pnfsid);
+        msg.setClient(Subjects.getOrigin(_subject).getAddress().getHostAddress());
 
-            _endpoint.sendMessage(new CellMessage(BILLING_PATH, msg));
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to send remove message to billing: " +
-                       e.getMessage());
-        }
+        _endpoint.sendMessage(new CellMessage(BILLING_PATH, msg));
     }
 }
 

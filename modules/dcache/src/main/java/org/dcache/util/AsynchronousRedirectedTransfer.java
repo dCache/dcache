@@ -9,7 +9,6 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 /**
  * A transfer where the mover can send a redirect message to the door
@@ -92,14 +91,10 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
             Integer moverId = getMoverId();
             String pool = getPool();
             CellAddressCore poolAddress = getPoolAddress();
-            try {
-                PoolMoverKillMessage message =
-                        new PoolMoverKillMessage(pool, moverId);
-                message.setReplyRequired(false);
-                _pool.notify(new CellPath(poolAddress), message);
-            } catch (NoRouteToCellException e) {
-                _log.error("Failed to kill mover " + pool + "/" + moverId + ": " + e.getMessage());
-            }
+            PoolMoverKillMessage message =
+                    new PoolMoverKillMessage(pool, moverId);
+            message.setReplyRequired(false);
+            _pool.notify(new CellPath(poolAddress), message);
         }
     }
 

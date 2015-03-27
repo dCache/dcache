@@ -43,7 +43,6 @@ import diskCacheV111.vehicles.transferManager.TransferStatusQueryMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
@@ -529,7 +528,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         try {
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode, errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error(e.toString());
             //can not do much more here!!!
         }
@@ -581,7 +580,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         try {
             TransferFailedMessage errorReply = new TransferFailedMessage(transferRequest, replyCode, errorObject);
             manager.sendMessage(new CellMessage(requestor, errorReply));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error(e.toString());
             //can not do much more here!!!
         }
@@ -618,7 +617,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         try {
             TransferCompleteMessage errorReply = new TransferCompleteMessage(transferRequest);
             manager.sendMessage(new CellMessage(requestor, errorReply));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error(e.toString());
             //can not do much more here!!!
         }
@@ -632,13 +631,9 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
      */
     void sendDoorRequestInfo(int code, String msg)
     {
-        try {
-            info.setResult(code, msg);
-            log.debug("Sending info: " + info);
-            manager.getBillingStub().notify(info);
-        } catch (NoRouteToCellException e) {
-            log.error("Couldn't send billing info", e);
-        }
+        info.setResult(code, msg);
+        log.debug("Sending info: " + info);
+        manager.getBillingStub().notify(info);
     }
 
     public void timeout()
@@ -765,12 +760,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         log.debug("sending mover kill to pool {} for moverId={}", pool, moverId);
         PoolMoverKillMessage killMessage = new PoolMoverKillMessage(pool, moverId);
         killMessage.setReplyRequired(false);
-        try {
-            manager.getPoolStub().notify(new CellPath(poolAddress), killMessage);
-        } catch (NoRouteToCellException e) {
-            log.error("failed to kill mover {} on pool={}: {}", moverId, pool,
-                    e.toString());
-        }
+        manager.getPoolStub().notify(new CellPath(poolAddress), killMessage);
     }
 
     public void setState(int istate)

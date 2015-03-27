@@ -45,7 +45,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.acl.enums.AccessMask;
@@ -950,9 +949,6 @@ public class Transfer implements Comparable<Transfer>
             _log.warn("Failed to kill mover " + pool + "/" + moverId
                       + ": " + e.getMessage());
             Thread.currentThread().interrupt();
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to kill mover " + pool + "/" + moverId
-                       + ": " + e.getMessage());
         } finally {
             setStatus(null);
         }
@@ -1006,29 +1002,24 @@ public class Transfer implements Comparable<Transfer>
             return;
         }
 
-        try {
-            DoorRequestInfoMessage msg =
-                new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
-            msg.setSubject(_subject);
-            msg.setPath(_path);
-            msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
-            msg.setTransaction(getTransaction());
-            msg.setClient(_clientAddress.getAddress().getHostAddress());
-            msg.setPnfsId(getPnfsId());
-            if (_fileAttributes.isDefined(SIZE)) {
-                msg.setFileSize(_fileAttributes.getSize());
-            }
-            msg.setResult(code, error);
-            if (_fileAttributes.isDefined(STORAGEINFO)) {
-                msg.setStorageInfo(_fileAttributes.getStorageInfo());
-            }
-            _billing.notify(msg);
-
-            _isBillingNotified = true;
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to register transfer in billing: " +
-                       e.getMessage());
+        DoorRequestInfoMessage msg =
+            new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
+        msg.setSubject(_subject);
+        msg.setPath(_path);
+        msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
+        msg.setTransaction(getTransaction());
+        msg.setClient(_clientAddress.getAddress().getHostAddress());
+        msg.setPnfsId(getPnfsId());
+        if (_fileAttributes.isDefined(SIZE)) {
+            msg.setFileSize(_fileAttributes.getSize());
         }
+        msg.setResult(code, error);
+        if (_fileAttributes.isDefined(STORAGEINFO)) {
+            msg.setStorageInfo(_fileAttributes.getStorageInfo());
+        }
+        _billing.notify(msg);
+
+        _isBillingNotified = true;
     }
 
     /**

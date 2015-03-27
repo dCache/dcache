@@ -26,8 +26,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -43,9 +45,9 @@ import static java.util.concurrent.TimeUnit.*;
  */
 public class LoginBrokerHandler
     extends AbstractCellComponent
-    implements CellCommandListener
+    implements CellCommandListener, CellMessageReceiver
 {
-    private final static Logger _log =
+    private static final Logger _log =
             LoggerFactory.getLogger(LoginBrokerHandler.class);
 
     enum UpdateMode
@@ -117,19 +119,27 @@ public class LoginBrokerHandler
                         _protocolFamily, _protocolVersion, _protocolEngine, _root, addresses, _port, _load.getLoad(),
                         _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime));
 
-        UpdateMode newUpdateMode = UpdateMode.NORMAL;
         for (String loginBroker : _loginBrokers) {
-            try {
-                sendMessage(new CellMessage(new CellPath(loginBroker), info));
-            } catch (NoRouteToCellException e) {
-                _log.warn("No route to {}", loginBroker);
-                newUpdateMode = UpdateMode.EAGER;
-            }
+            sendMessage(new CellMessage(new CellPath(loginBroker), info));
         }
 
-        if (_currentUpdateMode != newUpdateMode) {
-            _currentUpdateMode = newUpdateMode;
+        if (_currentUpdateMode != UpdateMode.NORMAL) {
+            _currentUpdateMode = UpdateMode.NORMAL;
             rescheduleTask();
+        }
+    }
+
+    public synchronized void messageArrived(NoRouteToCellException e)
+    {
+        if (_currentUpdateMode != UpdateMode.EAGER) {
+            CellAddressCore destinationAddress = e.getDestinationPath().getDestinationAddress();
+            for (String loginBroker : _loginBrokers) {
+                if (destinationAddress.equals(new CellAddressCore(loginBroker))) {
+                    _currentUpdateMode = UpdateMode.EAGER;
+                    rescheduleTask();
+                    break;
+                }
+            }
         }
     }
 

@@ -276,7 +276,7 @@ public class SetupManager extends CellAdapter {
       try{
          message.revertDirection() ;
          sendMessage(message);
-      }catch(Exception ee ){
+      }catch(RuntimeException ee ){
          _log.warn("Problems sending reply to "+message);
       }
    }

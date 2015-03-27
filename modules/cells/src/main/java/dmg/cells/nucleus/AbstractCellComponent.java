@@ -84,12 +84,9 @@ public class AbstractCellComponent
      * @param envelope the cell message to be sent.
      * @throws SerializationException if the payload object of this
      *         message is not serializable.
-     * @throws NoRouteToCellException if the destination could not be
-     *         reached.
      */
     protected void sendMessage(CellMessage envelope)
-        throws SerializationException,
-            NoRouteToCellException
+        throws SerializationException
     {
         _endpoint.sendMessage(envelope);
     }

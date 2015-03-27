@@ -248,7 +248,7 @@ public class      SystemCell
         try{
            sendMessage( msg ) ;
            _packetsForwarded ++ ;
-        }catch( Exception eee ){
+        }catch( RuntimeException eee ){
            _exceptionCounter ++ ;
         }
    }
@@ -305,7 +305,7 @@ public class      SystemCell
                 _log.debug("Sending : {}", msg);
             }
             _packetsReplied++;
-        }catch( Exception e ){
+        }catch( RuntimeException e ){
             _exceptionCounter ++ ;
         }
    }

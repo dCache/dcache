@@ -37,7 +37,6 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 import dmg.cells.nucleus.CellEvent;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.Args;
 
@@ -541,23 +540,15 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     if (_XXcheckPoolHost) {
         try {
             for (int loop = 1; true; loop++) {
-                try {
-                    hostName = getPoolHost(poolName);
-                    if (hostName != null) {
-                        synchronized (_hostMap) {
-                            _hostMap.put(poolName, hostName);
-                            _log.debug("dbUpdatePool: _hostMap updated, pool=" + poolName
-                                   + " host=" + hostName );
-                        }
-                    }
-                    break;
-                } catch (NoRouteToCellException ex) {
-                    _log.warn(" dbUpdatePool - get hostname - No route to cell. retry=" + loop +
-                         " pool=" + poolName);
-                    if (loop == 4) {
-                        throw ex;
+                hostName = getPoolHost(poolName);
+                if (hostName != null) {
+                    synchronized (_hostMap) {
+                        _hostMap.put(poolName, hostName);
+                        _log.debug("dbUpdatePool: _hostMap updated, pool=" + poolName
+                               + " host=" + hostName );
                     }
                 }
+                break;
             }
         } catch (Exception ee) {
             _log.warn(" dbUpdatePool - Problem get/set host name for the pool " +

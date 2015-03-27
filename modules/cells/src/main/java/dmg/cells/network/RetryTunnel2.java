@@ -23,7 +23,6 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.MessageEvent;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.util.StreamEngine;
 
@@ -222,12 +221,8 @@ public class      RetryTunnel2
 
             _log.info( "receiverThread : Message from tunnel : "+msg ) ;
 
-            try{
-               sendMessage( msg ) ;
-               _messagesToSystem ++ ;
-            }catch( NoRouteToCellException nrtce ){
-                _log.warn( nrtce.toString(), nrtce ) ;
-            }
+           sendMessage( msg ) ;
+           _messagesToSystem ++ ;
          }
       }finally{
          _status = "<io-shutdown>" ;

@@ -466,7 +466,7 @@ public class FileHoppingManager extends CellAdapter {
                  try {
                      sendMessage(new CellMessage((CellPath) path
                              .clone(), replicate));
-                 } catch (Exception ee) {
+                 } catch (RuntimeException ee) {
                      _log.warn("Problem : couldn't forward message to : " + entry._path + " : " + ee);
                  }
 

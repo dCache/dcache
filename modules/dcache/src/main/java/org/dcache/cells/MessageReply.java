@@ -1,8 +1,5 @@
 package org.dcache.cells;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -14,7 +11,6 @@ import diskCacheV111.vehicles.Message;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
 import org.dcache.util.CacheExceptionFactory;
@@ -30,9 +26,6 @@ import org.dcache.util.CacheExceptionFactory;
 public class MessageReply<T extends Message>
     implements Reply, Future<T>
 {
-    private static final Logger _logger =
-        LoggerFactory.getLogger(MessageReply.class);
-
     private CellEndpoint _endpoint;
     private CellMessage _envelope;
     private T _msg;
@@ -83,20 +76,11 @@ public class MessageReply<T extends Message>
         notifyAll();
     }
 
-    protected void onNoRouteToCell(NoRouteToCellException e)
-    {
-        _logger.error("Failed to send reply: " + e.getMessage());
-    }
-
     protected synchronized void send()
     {
-        try {
-            _envelope.revertDirection();
-            _envelope.setMessageObject(_msg);
-            _endpoint.sendMessage(_envelope);
-        } catch (NoRouteToCellException e) {
-            onNoRouteToCell(e);
-        }
+        _envelope.revertDirection();
+        _envelope.setMessageObject(_msg);
+        _endpoint.sendMessage(_envelope);
     }
 
     @Override

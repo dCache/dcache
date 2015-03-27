@@ -15,7 +15,6 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 
 import org.dcache.util.Args;
@@ -100,7 +99,6 @@ public class MockCellEndpoint implements CellEndpoint
 
     @Override
     public void sendMessage(CellMessage envelope)
-            throws NoRouteToCellException
     {
         String destinations = envelope.getDestinationPath().getCellName();
 

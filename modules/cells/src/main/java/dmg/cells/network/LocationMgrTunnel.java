@@ -131,15 +131,11 @@ public class LocationMgrTunnel
     private void returnToSender(CellMessage msg, NoRouteToCellException e)
         throws SerializationException
     {
-        try {
-            if (!(msg instanceof CellExceptionMessage)) {
-                CellPath retAddr = msg.getSourcePath().revert();
-                CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
-                ret.setLastUOID(msg.getUOID());
-                _nucleus.sendMessage(ret, true, true);
-            }
-        } catch (NoRouteToCellException f) {
-            _log.warn("Unable to deliver message and unable to return it to sender: " + msg);
+        if (!(msg instanceof CellExceptionMessage)) {
+            CellPath retAddr = msg.getSourcePath().revert();
+            CellExceptionMessage ret = new CellExceptionMessage(retAddr, e);
+            ret.setLastUOID(msg.getUOID());
+            _nucleus.sendMessage(ret, true, true);
         }
     }
 
@@ -148,12 +144,8 @@ public class LocationMgrTunnel
     {
         CellMessage msg;
         while ((msg = _input.readObject()) != null) {
-            try {
-                sendMessage(msg);
-                _messagesToSystem++;
-            } catch (NoRouteToCellException e) {
-                returnToSender(msg, e);
-            }
+            sendMessage(msg);
+            _messagesToSystem++;
         }
     }
 

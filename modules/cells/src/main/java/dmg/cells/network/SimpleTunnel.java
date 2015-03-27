@@ -20,7 +20,6 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.MessageEvent;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
 
 import org.dcache.util.Args;
@@ -172,13 +171,9 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
            while( ( obj = _input.readObject() ) != null ){
               CellMessage msg = (CellMessage) obj ;
               _log.info( " Message from tunnel : "+msg ) ;
-              try{
-                  _nucleus.sendMessage(msg, true, true);
-              }catch( NoRouteToCellException nrtce ){
-                 _log.info( "Exception while resending message : "+nrtce ) ;
-              }
+               _nucleus.sendMessage(msg, true, true);
            }
-        }catch( Exception ioe ){
+        }catch(IOException | ClassNotFoundException | RuntimeException ioe ){
            _log.info( "Exception while receiving message : "+ioe ) ;
            _nucleus.kill() ;
         }

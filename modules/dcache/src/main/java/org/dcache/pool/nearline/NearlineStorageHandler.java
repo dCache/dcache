@@ -74,7 +74,6 @@ import diskCacheV111.vehicles.StorageInfoMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
@@ -857,15 +856,10 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
         private void notifyFlushMessageTarget(PnfsId pnfsId, FileAttributes fileAttributes)
         {
-            try {
-                PoolFileFlushedMessage poolFileFlushedMessage =
-                        new PoolFileFlushedMessage(getCellName(), pnfsId, fileAttributes);
-                poolFileFlushedMessage.setReplyRequired(false);
-                flushMessageTarget.notify(poolFileFlushedMessage);
-            } catch (NoRouteToCellException e) {
-                LOGGER.info("Failed to send message to {}: {}",
-                        flushMessageTarget.getDestinationPath(), e.getMessage());
-            }
+            PoolFileFlushedMessage poolFileFlushedMessage =
+                    new PoolFileFlushedMessage(getCellName(), pnfsId, fileAttributes);
+            poolFileFlushedMessage.setReplyRequired(false);
+            flushMessageTarget.notify(poolFileFlushedMessage);
         }
 
         private void done(Throwable cause)
@@ -878,21 +872,17 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 LOGGER.warn("Flush of {} failed with: {}.",
                             pnfsId, cause);
             }
-            try {
-                infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
-                infoMsg.setFileSize(getFileAttributes().getSize());
-                infoMsg.setTimeQueued(activatedAt - createdAt);
+            infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
+            infoMsg.setFileSize(getFileAttributes().getSize());
+            infoMsg.setTimeQueued(activatedAt - createdAt);
 
-                if (cause instanceof CacheException) {
-                    infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
-                } else if (cause != null) {
-                    infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.getMessage());
-                }
-
-                billingStub.notify(infoMsg);
-            } catch (NoRouteToCellException e) {
-                LOGGER.error("Failed to send message to billing: {}", e.getMessage());
+            if (cause instanceof CacheException) {
+                infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
+            } else if (cause != null) {
+                infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.getMessage());
             }
+
+            billingStub.notify(infoMsg);
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
@@ -1066,11 +1056,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.toString());
             }
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
-            try {
-                billingStub.notify(infoMsg);
-            } catch (NoRouteToCellException e) {
-                LOGGER.error("Failed to send message to billing: {}", e.getMessage());
-            }
+            billingStub.notify(infoMsg);
             stageRequests.removeAndCallback(pnfsId, cause);
         }
 

@@ -101,7 +101,7 @@ public class MessageEventTimer {
              _nucleus.sendMessage(message, true, true);
              scheduleEvent( event , message , TIMEOUT_EXPIRED , timeout ) ;
 
-         }catch(Exception ee ){
+         }catch(RuntimeException ee ){
              System.err.println( "Exception in sending : "+ee ) ;
              scheduleEvent( event ,
                             new CellMessage(null,ee) ,

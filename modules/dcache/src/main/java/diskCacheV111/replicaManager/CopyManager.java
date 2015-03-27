@@ -441,7 +441,7 @@ public class CopyManager extends CellAdapter {
            try{
                _log.info("sendQuery : sending query for " + entry ) ;
                sendMessage( msg ) ;
-           }catch(Exception ee ){
+           }catch(RuntimeException ee ){
                setEntryFinished( entry , 1 , ee ) ;
                return ;
            }
@@ -465,7 +465,7 @@ public class CopyManager extends CellAdapter {
                _log.info("sendQuery : sending query for " + entry ) ;
                sendMessage( out ) ;
                entry.state = PoolFileEntry.STATE ;
-           }catch(Exception ee ){
+           }catch(RuntimeException ee ){
                setEntryFinished( entry , 5 , ee ) ;
            }
 
@@ -487,7 +487,7 @@ public class CopyManager extends CellAdapter {
            try{
                _log.info("startTransfer : sending 'start transfer' for "+entry ) ;
                sendMessage( msg ) ;
-           }catch(Exception ee ){
+           }catch(RuntimeException ee ){
                setEntryFinished( entry , 1 , ee ) ;
                return ;
            }
@@ -524,7 +524,7 @@ public class CopyManager extends CellAdapter {
                    try{
                        sendMessage( out ) ;
                        entry.state = PoolFileEntry.STATE ;
-                   }catch(Exception ee ){
+                   }catch(RuntimeException ee ){
                        setEntryFinished( entry , 3 , ee ) ;
                    }
                }else{

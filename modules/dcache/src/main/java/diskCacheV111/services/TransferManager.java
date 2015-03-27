@@ -34,7 +34,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.TimebasedCounter;
 
@@ -555,8 +554,8 @@ public abstract class TransferManager extends AbstractCellComponent
         return super.getCellDomainName();
     }
 
-    public void sendMessage(CellMessage envelope) throws SerializationException,
-                                                         NoRouteToCellException {
+    public void sendMessage(CellMessage envelope) throws SerializationException
+    {
         super.sendMessage(envelope);
     }
 

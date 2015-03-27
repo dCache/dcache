@@ -462,38 +462,21 @@ public final class SpaceManagerService
 
     private void notifyShutdown(CellMessage envelope)
     {
-        try {
-            envelope.setMessageObject(new NoRouteToCellException(
-                    envelope.getUOID(), envelope.getDestinationPath(),
-                    "Space manager is shutting down."));
-            envelope.revertDirection();
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            LOGGER.debug("Failed to notify cell of space manager shutdown: {}", e.getMessage());
-        }
+        envelope.setMessageObject(new NoRouteToCellException(
+                envelope.getUOID(), envelope.getDestinationPath(),
+                "Space manager is shutting down."));
+        returnMessage(envelope);
     }
 
     private void returnMessage(CellMessage envelope)
     {
-        try {
-            envelope.revertDirection();
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            LOGGER.error("Failed to send reply: {}", e.getMessage());
-        }
+        envelope.revertDirection();
+        sendMessage(envelope);
     }
 
     private void forwardMessage(CellMessage envelope, boolean isEnRouteToDoor)
     {
-        try {
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            if (!isEnRouteToDoor) {
-                LOGGER.error("Failed to forward message: {}", e.getMessage());
-            } else {
-                LOGGER.debug("Failed to forward message: {}", e.getMessage());
-            }
-        }
+        sendMessage(envelope);
     }
 
     private void processMessage(Message message) throws DeadlockLoserDataAccessException

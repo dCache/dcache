@@ -75,7 +75,6 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.DelayedReply;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.util.CommandSyntaxException;
 
@@ -612,16 +611,12 @@ public class PoolV4
         public void stateChanged(StateChangeEvent event)
         {
             if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
-                try {
-                    CacheEntry entry = event.getNewEntry();
-                    RemoveFileInfoMessage msg =
-                        new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
-                    msg.setFileSize(entry.getReplicaSize());
-                    msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
-                    _billingStub.notify(msg);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Failed to register removal in billing: {}", e.getMessage());
-                }
+                CacheEntry entry = event.getNewEntry();
+                RemoveFileInfoMessage msg =
+                    new RemoveFileInfoMessage(getCellAddress().toString(), entry.getPnfsId());
+                msg.setFileSize(entry.getReplicaSize());
+                msg.setStorageInfo(entry.getFileAttributes().getStorageInfo());
+                _billingStub.notify(msg);
             }
         }
     }
@@ -813,12 +808,8 @@ public class PoolV4
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
                               "Failed to enqueue mover: " + e.getMessage());
         }
-        try {
-            envelope.revertDirection();
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            _log.error(e.toString());
-        }
+        envelope.revertDirection();
+        sendMessage(envelope);
     }
 
     // //////////////////////////////////////////////////////////////
@@ -866,14 +857,11 @@ public class PoolV4
                     Thread.currentThread().interrupt();
                 } catch (CacheException e) {
                     _log.error("Problem in sending replication request: " + e);
-                } catch (NoRouteToCellException e) {
-                    _log.error("Problem in sending replication request: " + e.getMessage());
                 }
             }
         }
 
         private void _initiateReplication(CacheEntry entry, String source)
-            throws NoRouteToCellException
         {
             PnfsId pnfsId = entry.getPnfsId();
             FileAttributes fileAttributes = entry.getFileAttributes();
@@ -1484,11 +1472,7 @@ public class PoolV4
 
         private void send(CellMessage msg)
         {
-            try {
-                sendMessage(msg);
-            } catch (NoRouteToCellException e){
-                _log.error("Failed to send ping message: " + e.getMessage());
-            }
+            sendMessage(msg);
         }
     }
 

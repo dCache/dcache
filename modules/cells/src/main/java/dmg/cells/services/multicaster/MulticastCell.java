@@ -162,7 +162,7 @@ public class MulticastCell extends CellAdapter {
        message.revertDirection() ;
        try{
           sendMessage(message);
-       }catch( Exception e ){
+       }catch (RuntimeException e){
           _log.warn( "Failed to reply : "+e) ;
        }
    }
@@ -260,9 +260,6 @@ public class MulticastCell extends CellAdapter {
                        sendMessage(msg);
                        client.setUOID(msg.getUOID());
                    }
-               } catch (NoRouteToCellException nrtce) {
-                   _log.warn("remove enforced for client " + path);
-                   entry.removeClient(path);
                } catch (Throwable t) {
                    _log.warn(t.toString(), t);
                }
@@ -275,7 +272,7 @@ public class MulticastCell extends CellAdapter {
           originalMessage.nextDestination() ;
           try{
              sendMessage( originalMessage ) ;
-          }catch( Exception ee ){
+          }catch (RuntimeException ee){
              _log.warn(ee.toString(), ee) ;
           }
        }

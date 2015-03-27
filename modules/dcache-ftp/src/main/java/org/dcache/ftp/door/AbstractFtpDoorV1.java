@@ -4266,19 +4266,14 @@ public abstract class AbstractFtpDoorV1
     }
 
     private void sendRemoveInfoToBilling(PnfsId pnfsId, FsPath path) {
-        try {
-            DoorRequestInfoMessage infoRemove =
-                new DoorRequestInfoMessage(_cellAddress.toString(), "remove");
-            infoRemove.setSubject(_subject);
-            infoRemove.setPath(path);
-            infoRemove.setPnfsId(pnfsId);
-            infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
+        DoorRequestInfoMessage infoRemove =
+            new DoorRequestInfoMessage(_cellAddress.toString(), "remove");
+        infoRemove.setSubject(_subject);
+        infoRemove.setPath(path);
+        infoRemove.setPnfsId(pnfsId);
+        infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 
-            _billingStub.notify(infoRemove);
-        } catch (NoRouteToCellException e) {
-            LOGGER.error("Can't send remove message to billing database: {}",
-                    e.getMessage());
-        }
+        _billingStub.notify(infoRemove);
      }
 
     /** A short format which only includes the file name. */

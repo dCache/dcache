@@ -18,10 +18,8 @@ import java.util.concurrent.TimeUnit;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CollectionFactory;
 
 import org.dcache.namespace.FileAttribute;
@@ -105,12 +103,6 @@ public class ListDirectoryHandler
             stream.waitForMoreEntries();
             success = true;
             return stream;
-        } catch (NoRouteToCellException e) {
-            /* No route to PnfsManager is essentially no different
-             * than not getting a reply, so we advertise it with the
-             * same exception.
-             */
-            throw new TimeoutCacheException(e.getMessage());
         } finally {
             if (!success) {
                 _replies.remove(uuid);

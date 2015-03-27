@@ -562,37 +562,25 @@ public final class Storage
     public void messageArrived(PnfsCreateUploadPath msg)
     {
         // Catches replies for which the callback timed out
-        try {
-            if (msg.isReply() && msg.getReturnCode() == 0) {
-                _pnfsStub.notify(
-                        new PnfsCancelUpload(msg.getSubject(), new FsPath(msg.getUploadPath()), msg.getPath()));
-            }
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to remove {}: No route to {}.", msg.getUploadPath(), _pnfsStub.getDestinationPath());
+        if (msg.isReply() && msg.getReturnCode() == 0) {
+            _pnfsStub.notify(
+                    new PnfsCancelUpload(msg.getSubject(), new FsPath(msg.getUploadPath()), msg.getPath()));
         }
     }
 
     public void messageArrived(PinManagerPinMessage msg)
     {
         // Catches replies for which the callback timed out
-        try {
-            if (msg.isReply() && msg.getReturnCode() == 0) {
-                _pinManagerStub.notify(new PinManagerUnpinMessage(msg.getPnfsId(), msg.getPinId()));
-            }
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to unpin {}: No route to {}.", msg.getPinId(), _pinManagerStub.getDestinationPath());
+        if (msg.isReply() && msg.getReturnCode() == 0) {
+            _pinManagerStub.notify(new PinManagerUnpinMessage(msg.getPnfsId(), msg.getPinId()));
         }
     }
 
     public void messageArrived(Reserve msg)
     {
         // Catches replies for which the callback timed out
-        try {
-            if (msg.isReply() && msg.getReturnCode() == 0) {
-                _spaceManagerStub.notify(new Release(msg.getSpaceToken(), null));
-            }
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to release {}: No route to {}.", msg.getSpaceToken(), _spaceManagerStub.getDestinationPath());
+        if (msg.isReply() && msg.getReturnCode() == 0) {
+            _spaceManagerStub.notify(new Release(msg.getSpaceToken(), null));
         }
     }
 
@@ -1148,8 +1136,6 @@ public final class Storage
             throw new SRMInternalErrorException(e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);
-        } catch (NoRouteToCellException e) {
-            _log.error(e.getMessage());
         }
     }
 
@@ -1181,8 +1167,6 @@ public final class Storage
             throw new SRMInternalErrorException(e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new SRMInternalErrorException("Operation interrupted", e);
-        } catch (NoRouteToCellException e) {
-            _log.error(e.getMessage());
         }
     }
 
@@ -1816,8 +1800,6 @@ public final class Storage
                     new CancelTransferMessage(info.transferId, callerId);
                 _transferManagerStub.notify(cancel);
             }
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to kill remote transfer: " + e.getMessage());
         } catch (NumberFormatException e) {
             _log.error("Failed to kill remote transfer: Cannot parse transfer ID");
         }

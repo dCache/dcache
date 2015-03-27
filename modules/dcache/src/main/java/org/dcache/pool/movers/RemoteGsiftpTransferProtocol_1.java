@@ -89,13 +89,11 @@ import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Allocator;
@@ -170,7 +168,6 @@ public class RemoteGsiftpTransferProtocol_1
                       Allocator allocator,
                       IoMode access)
         throws CacheException, IOException,
-               NoRouteToCellException,
                ServerException, ClientException,
                CredentialException, GSSException
     {

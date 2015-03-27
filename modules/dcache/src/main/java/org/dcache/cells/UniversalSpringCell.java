@@ -22,7 +22,6 @@ import org.springframework.beans.PropertyAccessorUtils;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -56,7 +55,6 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 
@@ -507,7 +505,7 @@ public class UniversalSpringCell
 
             @Override
             public String call()
-                    throws IOException, IllegalArgumentException, NoRouteToCellException
+                    throws IOException, IllegalArgumentException
             {
                 if ("none".equals(controller)) {
                     controller = null;
@@ -524,18 +522,14 @@ public class UniversalSpringCell
                     checkState(!Strings.isNullOrEmpty(_setupClass),
                                "Cannot save to a setup controller since the cell has no setup class.");
 
-                    try {
-                        StringWriter sw = new StringWriter();
-                        printSetup(new PrintWriter(sw));
+                    StringWriter sw = new StringWriter();
+                    printSetup(new PrintWriter(sw));
 
-                        SetupInfoMessage info =
-                                new SetupInfoMessage("put", getCellName(),
-                                                     _setupClass, sw.toString());
+                    SetupInfoMessage info =
+                            new SetupInfoMessage("put", getCellName(),
+                                                 _setupClass, sw.toString());
 
-                        sendMessage(new CellMessage(new CellPath(controller), info));
-                    } catch (NoRouteToCellException e) {
-                        throw new NoRouteToCellException("Failed to send setup to " + controller + ": " + e.getMessage());
-                    }
+                    sendMessage(new CellMessage(new CellPath(controller), info));
                 }
 
                 if (file != null) {
@@ -782,6 +776,11 @@ public class UniversalSpringCell
                 return "No such bean: " + name;
             }
         }
+    }
+
+    public void messageArrived(NoRouteToCellException e)
+    {
+        LOGGER.warn("Failed to send message: {}", e.getMessage());
     }
 
     public BeanQueryMessage messageArrived(BeanQueryAllPropertiesMessage message)

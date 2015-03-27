@@ -26,7 +26,7 @@ public class OptionShell {
 
     }
 
-    public String ac_xxx( Args args )throws Exception {
+    public String ac_xxx( Args args ){
         _nucleus.sendMessage(new CellMessage(
                 new CellPath(_nucleus.getCellName()),
                 new Vehicle("hallo", 4)), true, true);

@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.multicaster.BroadcastRegisterMessage;
 import dmg.cells.services.multicaster.BroadcastUnregisterMessage;
 
@@ -75,15 +74,11 @@ public class BroadcastRegistrationTask implements Runnable
      */
     public void register()
     {
-        try {
-            BroadcastRegisterMessage message =
-                new BroadcastRegisterMessage(_eventClass.getName(), _target);
-            message.setExpires(_expires);
-            message.setCancelOnFailure(_isCancelOnFailure);
-            _broadcast.notify(message);
-        } catch (NoRouteToCellException e) {
-            LOGGER.error("Failed to register with broadcast cell: No route to cell {}", _broadcast.getDestinationPath());
-        }
+        BroadcastRegisterMessage message =
+            new BroadcastRegisterMessage(_eventClass.getName(), _target);
+        message.setExpires(_expires);
+        message.setCancelOnFailure(_isCancelOnFailure);
+        _broadcast.notify(message);
     }
 
     /**
@@ -93,13 +88,9 @@ public class BroadcastRegistrationTask implements Runnable
      */
     public void unregister()
     {
-        try {
-            BroadcastUnregisterMessage message =
-                new BroadcastUnregisterMessage(_eventClass.getName(), _target);
-            _broadcast.notify(message);
-        } catch (NoRouteToCellException e) {
-            LOGGER.info("Failed to unregister with broadcast cell: No route to cell {}", _broadcast.getDestinationPath());
-        }
+        BroadcastUnregisterMessage message =
+            new BroadcastUnregisterMessage(_eventClass.getName(), _target);
+        _broadcast.notify(message);
     }
 }
 

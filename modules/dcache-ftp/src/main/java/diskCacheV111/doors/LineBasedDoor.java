@@ -19,6 +19,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
 
@@ -185,6 +186,11 @@ public class LineBasedDoor
              */
             kill();
         }
+    }
+
+    public void messageArrived(NoRouteToCellException e)
+    {
+        LOGGER.warn("Failed to send message: {}", e.getMessage());
     }
 
     /**

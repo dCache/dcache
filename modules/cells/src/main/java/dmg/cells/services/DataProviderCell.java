@@ -13,7 +13,6 @@ import java.util.Hashtable;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.Args;
 
@@ -119,13 +118,9 @@ public class DataProviderCell extends CellAdapter {
       }
    }
    private void reply( CellMessage msg , Serializable o ){
-      try{
-         _log.info( "returning message" + o.toString() ) ;
-         msg.setMessageObject( o ) ;
-         msg.revertDirection() ;
-         sendMessage( msg ) ;
-      }catch( NoRouteToCellException e ){
-
-      }
+       _log.info( "returning message" + o.toString() ) ;
+       msg.setMessageObject( o ) ;
+       msg.revertDirection() ;
+       sendMessage( msg ) ;
    }
 }

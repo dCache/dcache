@@ -34,7 +34,6 @@ import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.MoverInfoMessage;
 
 import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.pool.FaultAction;
@@ -158,15 +157,11 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setFileSize(fileSize);
         info.setResult(mover.getErrorCode(), mover.getErrorMessage());
         info.setTransferAttributes(mover.getBytesTransferred(),
-                mover.getTransferTime(),
-                mover.getProtocolInfo());
+                                   mover.getTransferTime(),
+                                   mover.getProtocolInfo());
         info.setPath(mover.getPath());
 
-        try {
-            _billing.notify(info);
-        } catch (NoRouteToCellException e) {
-            LOGGER.error("Failed to register transfer in billing: {}", e.getMessage());
-        }
+        _billing.notify(info);
     }
 
     public void sendFinished(Mover<?> mover) {
@@ -183,11 +178,7 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
             finished.setReply(mover.getErrorCode(), mover.getErrorMessage());
         }
 
-        try {
-            _door.notify(mover.getPathToDoor(), finished);
-        } catch (NoRouteToCellException e) {
-            LOGGER.error("Failed to notify door about transfer termination: {}", e.getMessage());
-        }
+        _door.notify(mover.getPathToDoor(), finished);
     }
 
     public void shutdown()

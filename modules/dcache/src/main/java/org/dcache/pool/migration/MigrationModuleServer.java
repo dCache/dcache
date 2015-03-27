@@ -21,12 +21,11 @@ import diskCacheV111.util.LockedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
 
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
-
 import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
+
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.EntryState;
@@ -261,16 +260,7 @@ public class MigrationModuleServer
                 }
             }
 
-            try {
-                sendMessage(new CellMessage(_requestor.revert(), message));
-            } catch (NoRouteToCellException f) {
-                // We cannot tell the requestor that the
-                // transfer has finished. Not much we can do
-                // about that. The requestor will eventually
-                // notice that nothing happens.
-                _log.error("Transfer completed, but failed to send acknowledgment: " +
-                           f.toString());
-            }
+            sendMessage(new CellMessage(_requestor.revert(), message));
         }
 
         @Override

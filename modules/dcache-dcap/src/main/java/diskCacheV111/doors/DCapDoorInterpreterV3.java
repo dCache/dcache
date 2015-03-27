@@ -63,12 +63,12 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
 import dmg.util.KeepAliveListener;
 
 import org.dcache.acl.enums.AccessMask;
+import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
@@ -81,7 +81,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.PinManagerPinMessage;
-import org.dcache.auth.CachingLoginStrategy;
 import org.dcache.services.login.RemoteLoginStrategy;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
@@ -796,7 +795,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         return "" ;
     }
     public static final String hh_retry = "<sessionId> [-weak]" ;
-    public String ac_retry_$_1( Args args ) throws Exception {
+    public String ac_retry_$_1( Args args ) throws CommandException
+    {
         int sessionId = Integer.parseInt(args.argv(0));
         SessionHandler session;
         if ((session = _sessions.get(sessionId)) == null) {
@@ -1097,11 +1097,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         protected void doStart()
             throws CacheException
         {
-            try {
-                askForFileAttributes();
-            } catch (NoRouteToCellException e) {
-                throw new CacheException(e.getMessage());
-            }
+            askForFileAttributes();
         }
 
         @Override
@@ -1118,7 +1114,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                     _log.warn("Restarting session {}", _sessionId);
                     try {
                         again(true);
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         sendReply("keepAlive", 111, e.getMessage());
                         removeUs() ;
                     }
@@ -1133,13 +1129,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         public void again(boolean strong)
-            throws IllegalArgumentException, NoRouteToCellException
+            throws IllegalArgumentException
         {
             askForFileAttributes();
         }
 
         protected void askForFileAttributes()
-            throws IllegalArgumentException, NoRouteToCellException
+            throws IllegalArgumentException
         {
             setTimer(60 * 1000);
 
@@ -1239,9 +1235,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                              null, 0);
                 _pinManagerStub.notify(message);
                 sendReply("storageInfoAvailable", 0, "");
-            } catch (NoRouteToCellException e) {
-                sendReply("storageInfoAvailable", 2,
-                          "Staging service is offline");
             } finally {
                 removeUs();
             }
@@ -1902,7 +1895,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void again(boolean strong)
-            throws IllegalArgumentException, NoRouteToCellException
+            throws IllegalArgumentException
         {
             if( strong ) {
                 _poolRequestDone = false;
@@ -2123,7 +2116,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                                                                ? _hsmManager
                                                                : _poolManagerName) ,
                                                   getPoolMessage));
-            } catch (Exception ie) {
+            } catch (RuntimeException ie) {
                 sendReply( "fileAttributesAvailable" , 2 ,
                            ie.toString() ) ;
                 removeUs()  ;
@@ -2156,7 +2149,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 flag.setValue(checksumString);
 
                 _pnfs.send(flag);
-            }catch(Exception eee ){
+            }catch(RuntimeException eee ){
                 _log.error("Failed to send crc to PnfsManager : {}", eee.toString());
             }
         }
@@ -2174,13 +2167,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             if (reply.getReturnCode() != 0) {
                 if (reply.getReturnCode() == CacheException.OUT_OF_DATE ||
                     _poolRetry == 0) {
-                    try {
-                        again(true);
-                    } catch (NoRouteToCellException e) {
-                        _log.error("No route to {}", e.getDestinationPath());
-                        sendReply( "poolMgrGetPoolArrived" , reply )  ;
-                        removeUs();
-                    }
+                    again(true);
                 } else {
                     setTimer(_poolRetry);
                 }
@@ -2253,7 +2240,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 }
                 _cell.sendMessage(new CellMessage(toPool, poolMessage));
                 _poolRequestDone = true ;
-            }catch(Exception ie){
+            }catch(RuntimeException ie){
                 sendReply( "poolMgrGetPoolArrived" , 2 ,
                            ie.toString() ) ;
                 removeUs()  ;
@@ -2270,12 +2257,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 // bad entry in cacheInfo and pool Manager did not check it ( for performance reason )
                 // try again
                 if (reply.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY) {
-                    try {
-                        again(true);
-                        return;
-                    } catch (NoRouteToCellException e) {
-                        _log.error("No route to {}", e.getDestinationPath());
-                    }
+                    again(true);
+                    return;
                 }
 
                 sendReply("poolIoFileArrived", reply);
@@ -2358,11 +2341,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 PoolMoverKillMessage message = new PoolMoverKillMessage(_pool, _moverId);
                 message.setReplyRequired(false);
 
-                try {
-                    _cell.sendMessage(new CellMessage(new CellPath(_pool), message));
-                } catch (NoRouteToCellException e) {
-                    _log.error("pool {} is unreachable", _pool);
-                }
+                _cell.sendMessage(new CellMessage(new CellPath(_pool), message));
             }
             super.removeUs();
         }
@@ -2423,7 +2402,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             try {
                 _cell.sendMessage(new CellMessage(new CellPath(_pool),
                                                   poolIoFileMessage));
-            } catch (Exception ie) {
+            } catch (RuntimeException ie) {
                 sendReply("poolMgrGetPoolArrived", 2, ie.toString());
                 removeUs();
             }
@@ -2626,10 +2605,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
     }
 
     private void postToBilling(DoorRequestInfoMessage info) {
-        try {
-            _cell.sendMessage(new CellMessage(_billingCellPath, info));
-        } catch (NoRouteToCellException ee) {
-            _log.info("Billing is not available.");
-        }
+        _cell.sendMessage(new CellMessage(_billingCellPath, info));
     }
 }

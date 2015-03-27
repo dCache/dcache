@@ -26,6 +26,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
@@ -232,6 +233,11 @@ public class DirectoryLookUpPool extends AbstractCell
         new Thread(service, "list[" + pnfsId + "]").start();
         message.setSucceeded();
         return message;
+    }
+
+    public void messageArrived(NoRouteToCellException e)
+    {
+        _log.warn("Failed to send message: {}", e.getMessage());
     }
 
     /**

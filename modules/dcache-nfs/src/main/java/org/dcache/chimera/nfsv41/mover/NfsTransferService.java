@@ -12,8 +12,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
+import java.security.NoSuchAlgorithmException;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.PoolIoFileMessage;
@@ -22,7 +24,6 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -46,9 +47,8 @@ import org.dcache.util.PortRange;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
 
-import static com.google.common.collect.Iterables.*;
-import diskCacheV111.util.ChecksumFactory;
-import java.security.NoSuchAlgorithmException;
+import static com.google.common.collect.Iterables.toArray;
+import static com.google.common.collect.Iterables.transform;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -164,7 +164,7 @@ public class NfsTransferService extends AbstractCellComponent
             _faultListener.faultOccurred(new FaultEvent("repository", FaultAction.DISABLED,
                     e.getMessage(), e));
             completionHandler.failed(e, null);
-        } catch (NoRouteToCellException | SocketException e) {
+        } catch (SocketException e) {
             completionHandler.failed(e, null);
         }
         return null;

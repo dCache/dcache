@@ -697,9 +697,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       }
    }
 
-   protected TaskObserver movePnfsId( PnfsId pnfsId , String source , String destination )
-      throws Exception {
-
+   protected TaskObserver movePnfsId( PnfsId pnfsId , String source , String destination ) throws InterruptedException
+   {
       FileAttributes fileAttributes = getFileAttributes(pnfsId);
 
       Collection<String> hash = new HashSet<>(getCacheLocationList( pnfsId , false )) ;
@@ -1463,13 +1462,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
-     *  @throws NoRouteToCellException if the cell environment couldn't find the PnfsManager.
      *  @throws InterruptedException if the method was interrupted.
      *
      */
    protected FileAttributes getFileAttributes(PnfsId pnfsId)
            throws MissingResourceException,
-                  NoRouteToCellException,
                   InterruptedException
      {
          try {
@@ -1507,13 +1504,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *         valid. May take significatly more time.
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
-     *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
-     *
      */
    protected List<String> getCacheLocationList(PnfsId pnfsId, boolean checked)
            throws MissingResourceException,
-                  NoRouteToCellException,
                   InterruptedException
    {
        PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(pnfsId);
@@ -1644,9 +1638,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    protected List<String> getPoolGroup(String pGroup)
-       throws InterruptedException,
-       NoRouteToCellException {
-
+       throws InterruptedException
+   {
      Object[] r;
      try {
        r = _poolManager.sendAndWait("psux ls pgroup " + pGroup, Object[].class);
@@ -1679,7 +1672,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    protected String getPoolHost(String poolName)
-           throws InterruptedException, NoRouteToCellException
+           throws InterruptedException
    {
        PoolCellInfo msg;
        try {
@@ -1706,13 +1699,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *          returns an illegal Object.
      *  @throws ConcurrentModificationException if the repository changes while
                 this list is produced.
-     *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      */
    protected List<CacheRepositoryEntryInfo> getPoolRepository( String poolName )
           throws MissingResourceException ,
                  ConcurrentModificationException ,
-                 NoRouteToCellException ,
                  InterruptedException
    {
        List<CacheRepositoryEntryInfo> list = new ArrayList<>();

@@ -363,7 +363,7 @@ public class PAMAuthentificator  extends CellAdapter {
       msg.setMessageObject( answer ) ;
       try{
          sendMessage( msg ) ;
-      }catch( Exception ioe ){
+      }catch( RuntimeException ioe ){
           _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
       }
   }

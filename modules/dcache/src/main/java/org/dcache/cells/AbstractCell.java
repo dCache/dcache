@@ -21,7 +21,6 @@ import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 import dmg.cells.nucleus.UOID;
 
@@ -687,17 +686,13 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
             }
         }
 
-        try {
-            if (result instanceof Reply) {
-                Reply reply = (Reply)result;
-                reply.deliver(endpoint, envelope);
-            } else {
-                envelope.revertDirection();
-                envelope.setMessageObject((Serializable) result);
-                endpoint.sendMessage(envelope);
-            }
-        } catch (NoRouteToCellException e) {
-            LOGGER.error("Cannot deliver reply: No route to " + envelope.getDestinationPath());
+        if (result instanceof Reply) {
+            Reply reply = (Reply)result;
+            reply.deliver(endpoint, envelope);
+        } else {
+            envelope.revertDirection();
+            envelope.setMessageObject((Serializable) result);
+            endpoint.sendMessage(envelope);
         }
     }
 
@@ -752,16 +747,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
             if (!envelope.nextDestination()) {
                 throw new RuntimeException(String.format(MSG_NO_NEXT_DESTINATION, envelope));
             }
-            try {
-                endpoint.sendMessage(envelope);
-            } catch (NoRouteToCellException e) {
-                if (!isReply) {
-                    sendReply(this, envelope, e);
-                } else {
-                    LOGGER.warn("Dropping message: No route to {}",
-                            envelope.getDestinationPath());
-                }
-            }
+            endpoint.sendMessage(envelope);
         }
     }
 

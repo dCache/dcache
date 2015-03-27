@@ -27,7 +27,6 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.util.Args;
@@ -292,23 +291,15 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             while (!Thread.interrupted()) {
                 _counter++;
                 for (CellAddressCore broker : _loginBrokerTable) {
-                    try {
-                        CellPath path = new CellPath(broker);
-                        _log.debug("Sending LoginBroker query to : {}", path);
-                        sendMessage(new CellMessage(path, "ls -binary"));
-                    } catch (NoRouteToCellException ee) {
-
-                    }
+                    CellPath path = new CellPath(broker);
+                    _log.debug("Sending LoginBroker query to : {}", path);
+                    sendMessage(new CellMessage(path, "ls -binary"));
                 }
                 //sendMessage(loginBrokerMessage);
                 synchronized (_infoLock) {
                     for (CellQueryInfo info : _infoMap.values()) {
-                        try {
-                            _log.debug("Sending query to : {}", info.getName());
-                            sendMessage(info.getCellMessage());
-                        } catch (NoRouteToCellException e) {
-
-                        }
+                        _log.debug("Sending query to : {}", info.getName());
+                        sendMessage(info.getCellMessage());
                     }
                 }
                 _sleepHandler.sleep();

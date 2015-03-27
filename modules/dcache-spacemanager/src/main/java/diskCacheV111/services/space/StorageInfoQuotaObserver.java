@@ -419,7 +419,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
        try{
            sendMessage( message ) ;
-       }catch(Exception ee ){
+       }catch(RuntimeException ee ){
            _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
 
@@ -469,7 +469,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
 
        try{
            sendMessage( message ) ;
-       }catch(Exception ee ){
+       }catch(RuntimeException ee ){
            _log.warn("Problem replying PoolMgrGetPoolLinks message");
        }
 
@@ -581,9 +581,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          _log.debug("Sending xgetcellinfo to "+_poolManagerName);
          CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , "xgetcellinfo" );
          sendMessage( msg );
-      }catch(NoRouteToCellException cee ){
-         _log.warn("NoPath to cell : "+_poolManagerName);
-      }catch(Exception ee){
+      }catch(RuntimeException ee){
          _log.warn("Exception in sending query to pool "+_poolManagerName);
       }
 
@@ -597,9 +595,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
           _log.debug("Sending poolManager query "+command+" to "+_poolManagerName);
           CellMessage msg = new CellMessage( new CellPath(_poolManagerName) , command );
           sendMessage( msg );
-       }catch(NoRouteToCellException cee ){
-          _log.warn("NoPath to cell : "+_poolManagerName);
-       }catch(Exception ee){
+       }catch(RuntimeException ee){
           _log.warn("Exception in sending query to pool : "+_poolManagerName);
        }
    }
@@ -628,9 +624,7 @@ public class StorageInfoQuotaObserver extends CellAdapter {
              _log.debug("Sending pool query 'rep ls -s binary' to {}", address);
              CellMessage msg = new CellMessage(new CellPath(address), "rep ls -s -sum -binary");
              sendMessage( msg );
-          }catch(NoRouteToCellException cee ){
-             _log.warn("NoPath to cell: {}", address);
-          }catch(Exception ee){
+          }catch(RuntimeException ee){
              _log.warn("Exception in sending query to pool: {}", address);
           }
 

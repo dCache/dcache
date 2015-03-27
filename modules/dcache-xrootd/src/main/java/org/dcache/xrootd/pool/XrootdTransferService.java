@@ -34,10 +34,9 @@ import java.util.UUID;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.NettyMover;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.NetworkUtils;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
@@ -126,7 +125,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
      */
     @Override
     protected void sendAddressToDoor(NettyMover<XrootdProtocolInfo> mover, int port)
-            throws SocketException, CacheException, NoRouteToCellException
+            throws SocketException, CacheException
     {
         XrootdProtocolInfo protocolInfo = mover.getProtocolInfo();
         InetAddress localIP = NetworkUtils.getLocalAddress(protocolInfo.getSocketAddress().getAddress());

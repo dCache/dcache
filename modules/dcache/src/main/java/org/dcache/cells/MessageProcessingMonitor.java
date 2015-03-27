@@ -13,7 +13,6 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 import dmg.util.command.Command;
 
@@ -126,8 +125,7 @@ public class MessageProcessingMonitor
 
         @Override
         public void sendMessage(CellMessage envelope)
-            throws SerializationException,
-                   NoRouteToCellException
+            throws SerializationException
         {
             boolean success = false;
             try {

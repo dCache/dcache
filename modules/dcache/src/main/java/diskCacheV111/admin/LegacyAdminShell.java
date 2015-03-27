@@ -961,7 +961,7 @@ public class LegacyAdminShell
 
     public static final String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]";
 
-    public String ac_p2p_$_1_3(Args args) throws Exception
+    public String ac_p2p_$_1_3(Args args) throws CacheException, InterruptedException
     {
 
         if (args.argc() >= 3) {

@@ -411,7 +411,7 @@ public class CellAdapter
      */
     @Override
     public void sendMessage(CellMessage msg)
-        throws SerializationException, NoRouteToCellException
+        throws SerializationException
     {
         getNucleus().sendMessage(msg, true, true);
     }
@@ -506,10 +506,8 @@ public class CellAdapter
         msg.nextDestination();
         try {
             _nucleus.sendMessage(msg, true, true);
-        } catch (NoRouteToCellException nrtc) {
-            _log.warn("CellAdapter : NoRouteToCell in messageToForward : "+nrtc);
-        } catch (Exception eee) {
-            _log.warn("CellAdapter : Exception in messageToForward : "+eee);
+        } catch (RuntimeException e) {
+            _log.warn("CellAdapter : Exception in messageToForward : {}", e.toString());
         }
     }
     public Class<?> loadClass(String className) throws ClassNotFoundException {
@@ -765,17 +763,13 @@ public class CellAdapter
         if (!_startGate.isOpen()) {
             CellMessage msg = me.getMessage();
             if (!msg.isReply()) {
-                try {
-                    NoRouteToCellException e =
-                            new NoRouteToCellException(msg.getUOID(),
-                                                       msg.getDestinationPath(),
-                                                       getCellName() + " is still initializing.");
-                    msg.revertDirection();
-                    msg.setMessageObject(e);
-                    _nucleus.sendMessage(msg, true, true);
-                } catch (NoRouteToCellException e) {
-                    _log.warn("PANIC : Problem returning answer : " + e);
-                }
+                NoRouteToCellException e =
+                        new NoRouteToCellException(msg.getUOID(),
+                                                   msg.getDestinationPath(),
+                                                   getCellName() + " is still initializing.");
+                msg.revertDirection();
+                msg.setMessageObject(e);
+                _nucleus.sendMessage(msg, true, true);
             }
         } else {
             CellMessage msg = me.getMessage();
@@ -812,17 +806,13 @@ public class CellAdapter
                         EventLogger.deliverEnd(msg.getSession(), uoid);
                     }
 
-                    try {
-                        if (o instanceof Reply) {
-                            Reply reply = (Reply) o;
-                            reply.deliver(this, msg);
-                        } else {
-                            msg.revertDirection();
-                            msg.setMessageObject(o);
-                            _nucleus.sendMessage(msg, true, true);
-                        }
-                    } catch (NoRouteToCellException e) {
-                        _log.warn("PANIC : Problem returning answer : " + e);
+                    if (o instanceof Reply) {
+                        Reply reply = (Reply) o;
+                        reply.deliver(this, msg);
+                    } else {
+                        msg.revertDirection();
+                        msg.setMessageObject(o);
+                        _nucleus.sendMessage(msg, true, true);
                     }
                 } else if ((obj instanceof PingMessage) && _answerPing) {
                     PingMessage ping = (PingMessage)obj;
@@ -832,11 +822,7 @@ public class CellAdapter
                     }
                     ping.setWayBack();
                     msg.revertDirection();
-                    try {
-                        _nucleus.sendMessage(msg, true, true);
-                    } catch (NoRouteToCellException ee) {
-                        _log.warn("Couldn't revert PingMessage : "+ee);
-                    }
+                    _nucleus.sendMessage(msg, true, true);
                 } else {
                     UOID uoid = msg.getUOID();
                     EventLogger.deliverBegin(msg);
@@ -848,12 +834,7 @@ public class CellAdapter
                 }
             } else if (obj instanceof PingMessage) {
                 msg.nextDestination();
-                try {
-                    _nucleus.sendMessage(msg, true, true);
-                } catch (NoRouteToCellException ee) {
-                    _log.warn("Couldn't forward PingMessage : " + ee);
-                }
-
+                _nucleus.sendMessage(msg, true, true);
              } else {
                 UOID uoid = msg.getUOID();
                 EventLogger.deliverBegin(msg);

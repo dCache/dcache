@@ -49,7 +49,6 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 
 import org.dcache.cells.CellMessageDispatcher;
@@ -649,8 +648,7 @@ class TestEndpoint implements CellEndpoint, CellMessageReceiver
 
     @Override
     public void sendMessage(CellMessage envelope)
-        throws SerializationException,
-               NoRouteToCellException
+        throws SerializationException
     {
         process(envelope);
     }

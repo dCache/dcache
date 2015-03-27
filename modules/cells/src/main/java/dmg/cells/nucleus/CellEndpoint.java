@@ -28,12 +28,9 @@ public interface CellEndpoint
      * @param envelope the cell message to be sent.
      * @throws SerializationException if the payload object of this
      *         message is not serializable.
-     * @throws NoRouteToCellException if the destination could not be
-     *         reached.
      */
     void sendMessage(CellMessage envelope)
-        throws SerializationException,
-               NoRouteToCellException;
+        throws SerializationException;
 
     /**
      * Sends <code>envelope</code>.

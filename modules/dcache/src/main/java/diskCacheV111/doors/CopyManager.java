@@ -29,7 +29,6 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
@@ -218,12 +217,8 @@ public class CopyManager extends AbstractCellComponent
         request.setReturnCode(1);
         request.setDescription(errormsg);
 
-        try {
-            envelope.revertDirection();
-            sendMessage(envelope);
-        } catch (NoRouteToCellException e) {
-            _log.warn(e.toString());
-        }
+        envelope.revertDirection();
+        sendMessage(envelope);
     }
 
     private class CopyHandler implements Runnable
@@ -345,7 +340,7 @@ public class CopyManager extends AbstractCellComponent
                         try {
                             _envelope.revertDirection();
                             sendMessage(_envelope);
-                        } catch (Exception e) {
+                        } catch (RuntimeException e) {
                             _log.warn(e.toString(), e);
                         }
                     }

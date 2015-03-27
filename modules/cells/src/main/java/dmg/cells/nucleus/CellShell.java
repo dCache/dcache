@@ -726,7 +726,7 @@ public class CellShell extends CommandInterpreter
        String message;
 
        @Override
-       public Serializable call() throws Exception
+       public Serializable call()
        {
            CellMessage msg = new CellMessage(address, message);
            if (wait) {
@@ -776,7 +776,6 @@ public class CellShell extends CommandInterpreter
    //
    public static final String hh_ping = "<destinationCell>  [<packetSize>] [-count=numOfPackets]" ;
    public String ac_ping_$_1_2( Args args )
-       throws NoRouteToCellException
    {
       String countString = args.getOpt("count") ;
       int count = 1 ;

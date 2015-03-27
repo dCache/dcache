@@ -9,12 +9,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.InetAddress;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellShell;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.ControlBufferedReader;
 import dmg.protocols.ssh.SshInputStreamReader;
 import dmg.util.CommandExitException;
@@ -183,7 +185,7 @@ public class      StreamLoginCell
                 sendMessage(msg )  ;
                 print( "Msg UOID ="+msg.getUOID()+"\n" )  ;
              }
-         }catch( Exception ex ){
+         }catch( InterruptedException | NoRouteToCellException | ExecutionException | RuntimeException ex ){
              print( "Problem : "+ex+"\n" )  ;
              ex.printStackTrace() ;
          }

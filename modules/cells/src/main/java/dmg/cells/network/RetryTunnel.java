@@ -24,7 +24,6 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
 import dmg.cells.nucleus.MessageEvent;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
 import dmg.util.StateEngine;
 import dmg.util.StateThread;
@@ -161,12 +160,8 @@ public class RetryTunnel implements Cell,
            while( ( ( obj = _input.readObject() ) != null ) && ! Thread.interrupted() ){
               CellMessage msg = (CellMessage) obj ;
               _log.info( "receiverThread : Message from tunnel : "+msg ) ;
-              try{
-                  _nucleus.sendMessage(msg, true, true);
-                  _messagesToSystem ++ ;
-              }catch( NoRouteToCellException nrtce ){
-                 _log.info( "receiverThread : Exception in sendMessage : "+nrtce ) ;
-              }
+              _nucleus.sendMessage(msg, true, true);
+              _messagesToSystem ++ ;
            }
         }catch( Exception ioe ){
            _log.info( "receiverThread : Exception in readObject : "+ioe ) ;

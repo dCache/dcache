@@ -493,6 +493,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
     }
 
+    public void messageArrived(NoRouteToCellException e)
+    {
+        _log.warn("Failed to send message: {}", e.getMessage());
+    }
+
     public void messageArrived(PoolManagerPoolUpMessage poolUpMessage) {
 
         String poolName = poolUpMessage.getPoolName();
@@ -556,21 +561,16 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             return;
         }
 
-        try {
-            PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("", fileList);
+        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("", fileList);
 
-            /*
-             * no rely required
-             */
-            msg.setReplyRequired(false);
+        /*
+         * no rely required
+         */
+        msg.setReplyRequired(false);
 
-            _broadcasterStub.notify(msg) ;
-            _log.debug("have broadcasted 'remove files' message to " +
-                                _broadcasterStub.getDestinationPath());
-        } catch (NoRouteToCellException e) {
-            _log.debug("Failed to broadcast 'remove files' message: " +
-                                e.getMessage());
-        }
+        _broadcasterStub.notify(msg) ;
+        _log.debug("have broadcasted 'remove files' message to " +
+                   _broadcasterStub.getDestinationPath());
      }
 
     //Select locations of all files stored on tape. In case itype=0  'ilocation' is an URI representing the location

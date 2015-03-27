@@ -28,7 +28,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellRoute;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.Args;
 
@@ -159,17 +158,10 @@ public class RoutingManager
 
         String destinationManager = _nucleus.getCellName();
         _log.info("Resending to {}: {}", destinationManager, all);
-        try {
-            CellPath path = new CellPath(destinationManager);
-            String[] arr = all.toArray(new String[all.size()]);
+        CellPath path = new CellPath(destinationManager);
+        String[] arr = all.toArray(new String[all.size()]);
 
-            _nucleus.sendMessage(new CellMessage(path, arr), false, true);
-
-        } catch (NoRouteToCellException e) {
-            /* This normally happens when there is no default route.
-             */
-            _log.info("Cannot send routing information to RoutingMgr: {}", e.getMessage());
-        }
+        _nucleus.sendMessage(new CellMessage(path, arr), false, true);
     }
 
     private synchronized void addRoutingInfo(String[] info)
@@ -244,15 +236,8 @@ public class RoutingManager
             }
         } else if (obj instanceof GetAllDomainsRequest) {
             if (_defaultInstalled) {
-                try {
-                    _nucleus.sendMessage(new CellMessage(new CellPath(_nucleus.getCellName()), obj), false, true);
-                    return;
-                } catch (NoRouteToCellException e) {
-                    // we have just become the root
-                }
-            }
-
-            try {
+                _nucleus.sendMessage(new CellMessage(new CellPath(_nucleus.getCellName()), obj), false, true);
+            } else {
                 Map<String,Collection<String>> domains = new HashMap<>();
                 domains.put(_nucleus.getCellDomainName(), new ArrayList<>(_localExports));
                 for (Map.Entry<String, Set<String>> entry : _domainHash.entrySet()) {
@@ -261,8 +246,6 @@ public class RoutingManager
                 msg.revertDirection();
                 msg.setMessageObject(new GetAllDomainsReply(domains));
                 sendMessage(msg);
-            } catch (NoRouteToCellException e) {
-                _log.debug(e.getMessage());
             }
         } else {
             _log.warn("Unidentified message ignored: {}", obj);

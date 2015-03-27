@@ -352,8 +352,7 @@ public class CellNucleus implements ThreadFactory
     public void  sendMessage(CellMessage msg,
                              boolean locally,
                              boolean remotely)
-        throws SerializationException,
-               NoRouteToCellException
+        throws SerializationException
     {
         if (!msg.isStreamMode()) {
             msg.touch();
@@ -555,7 +554,7 @@ public class CellNucleus implements ThreadFactory
             }
             EventLogger.sendEnd(msg);
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             synchronized (_waitHash) {
                 _waitHash.remove(uoid);
             }
@@ -1161,13 +1160,9 @@ public class CellNucleus implements ThreadFactory
                     LOGGER.trace("messageThread : delivering message done: {}", msg);
                 } catch (RuntimeException e) {
                     if (!msg.isReply()) {
-                        try {
-                            msg.revertDirection();
-                            msg.setMessageObject(e);
-                            sendMessage(msg, true, true);
-                        } catch (NoRouteToCellException f) {
-                            LOGGER.error("PANIC : Problem returning answer: {}", f);
-                        }
+                        msg.revertDirection();
+                        msg.setMessageObject(e);
+                        sendMessage(msg, true, true);
                     }
                     throw e;
                 } finally {

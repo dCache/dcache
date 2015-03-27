@@ -25,10 +25,10 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 
 import org.dcache.util.Args;
+
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -62,7 +62,7 @@ public class CellEndpointHelper implements CellEndpoint
 
     @Override
     public void sendMessage(CellMessage envelope)
-            throws SerializationException, NoRouteToCellException
+            throws SerializationException
     {
         currentTest().messageArrived(envelope);
     }

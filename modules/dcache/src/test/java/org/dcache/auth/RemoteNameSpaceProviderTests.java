@@ -43,7 +43,6 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SerializationException;
 
 import org.dcache.cells.CellStub;
@@ -745,7 +744,7 @@ public class RemoteNameSpaceProviderTests
                     return null;
               }}).when(_endpoint).sendMessage(any(CellMessage.class));
 
-        } catch (NoRouteToCellException | SerializationException e) {
+        } catch (SerializationException e) {
             throw new RuntimeException(e);
         }
     }
@@ -898,13 +897,9 @@ public class RemoteNameSpaceProviderTests
         ArgumentCaptor<CellMessage> argument =
                 ArgumentCaptor.forClass(CellMessage.class);
 
-        try {
-            verify(_endpoint).sendMessage(argument.capture(), any(CellMessageAnswerable.class), any(Executor.class), anyLong());
+        verify(_endpoint).sendMessage(argument.capture(), any(CellMessageAnswerable.class), any(Executor.class), anyLong());
 
-            verify(_endpoint, never()).sendMessage(any(CellMessage.class));
-        } catch (NoRouteToCellException e) {
-            throw new RuntimeException(e);
-        }
+        verify(_endpoint, never()).sendMessage(any(CellMessage.class));
 
         Object payload = argument.getValue().getMessageObject();
 
@@ -917,14 +912,10 @@ public class RemoteNameSpaceProviderTests
      */
     private <T extends PnfsMessage> T getSingleSentMessage(Class<T> type)
     {
-        try {
-            ArgumentCaptor<CellMessage> argument =
-                    ArgumentCaptor.forClass(CellMessage.class);
-            verify(_endpoint).sendMessage(argument.capture());
-            return type.cast(argument.getValue().getMessageObject());
-        } catch (NoRouteToCellException e) {
-            throw new RuntimeException(e);
-        }
+        ArgumentCaptor<CellMessage> argument =
+                ArgumentCaptor.forClass(CellMessage.class);
+        verify(_endpoint).sendMessage(argument.capture());
+        return type.cast(argument.getValue().getMessageObject());
     }
 
 

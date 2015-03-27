@@ -325,7 +325,8 @@ public class BroadcastCell extends CellAdapter {
 
     }
     public static final String hh_send = "[<class>]";
-    public String ac_send_$_0_1(Args args ) throws Exception {
+    public String ac_send_$_0_1(Args args ) throws ClassNotFoundException, IllegalAccessException, InstantiationException
+    {
         Serializable obj;
         if( args.argc() == 0 ){
             obj = new ArrayList() ;
@@ -385,11 +386,7 @@ public class BroadcastCell extends CellAdapter {
             event.setReturnValues(1, e);
         }
         msg.revertDirection() ;
-        try {
-            sendMessage(msg);
-        }catch (NoRouteToCellException e) {
-            _log.debug("Could not send reply: {}", e.toString());
-        }
+        sendMessage(msg);
     }
     @Override
     public void getInfo(  PrintWriter pw ){
@@ -486,12 +483,6 @@ public class BroadcastCell extends CellAdapter {
                 _log.debug("Forwarding to {}", origin);
                 sendMessage(msg);
                 _sent++;
-            } catch (NoRouteToCellException e) {
-                _log.warn("No route to {}", origin);
-                if (entry.isCancelOnFailure()) {
-                    list.add(entry);
-                }
-                entry._failed++;
             } catch (RuntimeException e) {
                 _log.error("FAILED to forwared to " + origin, e);
                 entry._failed++;
@@ -551,11 +542,7 @@ public class BroadcastCell extends CellAdapter {
                 }
                 _log.info("Replying MessageObject : "+obj ) ;
                 message.revertDirection() ;
-                try{
-                    sendMessage(message);
-                }catch(Exception ee){
-                    _log.warn("Problems sending : "+message+"("+ee+")");
-                }
+                sendMessage(message);
             }
         }
     }
@@ -563,7 +550,7 @@ public class BroadcastCell extends CellAdapter {
         public static final String hh_d_unreg = "<eventClass> [<destination>]" ;
         public static final String hh_d_send  = "<javaClass> [-destination=<cellName>] [-wait]";
 
-        public String ac_d_reg_$_1_2( Args args ) throws Exception {
+        public String ac_d_reg_$_1_2( Args args ) {
 
             OptionClass options = new OptionClass(args) ;
 
@@ -578,7 +565,7 @@ public class BroadcastCell extends CellAdapter {
 
             return "" ;
         }
-        public String ac_d_unreg_$_1_2( Args args ) throws Exception {
+        public String ac_d_unreg_$_1_2( Args args )  {
 
             OptionClass options = new OptionClass(args) ;
 
@@ -591,7 +578,8 @@ public class BroadcastCell extends CellAdapter {
 
             return "" ;
         }
-        public String ac_d_send_$_0_1( Args args ) throws Exception {
+        public String ac_d_send_$_0_1( Args args ) throws ClassNotFoundException, IllegalAccessException, InstantiationException
+        {
 
              Serializable obj = args.argc() == 0 ?
                           new ArrayList()  :

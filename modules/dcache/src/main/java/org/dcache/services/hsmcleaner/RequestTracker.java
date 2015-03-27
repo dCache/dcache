@@ -18,7 +18,6 @@ import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
@@ -242,21 +241,15 @@ public class RequestTracker implements CellMessageReceiver
         PoolInformation pool;
         while ((pool = _pools.getPoolWithHSM(hsm)) != null) {
             String name = pool.getName();
-            try {
-                PoolRemoveFilesFromHSMMessage message =
-                    new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
+            PoolRemoveFilesFromHSMMessage message =
+                new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
 
-                _poolStub.notify(new CellPath(name), message);
+            _poolStub.notify(new CellPath(name), message);
 
-                Timeout timeout = new Timeout(hsm, name);
-                _timer.schedule(timeout, _timeout);
-                _poolRequests.put(hsm, timeout);
-                break;
-            } catch (NoRouteToCellException e) {
-                _log.error("Failed to send message to " + name
-                           + ": e.getMessage()");
-                _pools.remove(pool.getName());
-            }
+            Timeout timeout = new Timeout(hsm, name);
+            _timer.schedule(timeout, _timeout);
+            _poolRequests.put(hsm, timeout);
+            break;
         }
 
         /* If there is no available pool, then we report failure on
@@ -285,7 +278,7 @@ public class RequestTracker implements CellMessageReceiver
      * the first case we will end up trying another pool. In the
      * second case, we should simply fix the bug in the pool.
      */
-    synchronized private void timeout(String hsm, String pool)
+    private synchronized void timeout(String hsm, String pool)
     {
         _log.error("Timeout deleting files on HSM " + hsm
                    + " attached to " + pool);
@@ -297,7 +290,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Message handler for responses from pools.
      */
-    synchronized public void messageArrived(PoolRemoveFilesFromHSMMessage msg)
+    public synchronized void messageArrived(PoolRemoveFilesFromHSMMessage msg)
     {
         /* In case of failure we rely on the timeout to invalidate the
          * entries.

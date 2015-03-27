@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
 import org.dcache.util.Args;
@@ -25,21 +24,11 @@ public class MulticastCommander extends CellAdapter {
 
    @Override
    public void messageToForward( CellMessage msg ){
-        CellPath source = msg.getSourcePath() ;
-
         msg.nextDestination() ;
 
         try{
            sendMessage( msg ) ;
-        }catch( NoRouteToCellException nrtc ){
-           _log.warn( "NoRouteToCell in messageToForward : "+nrtc ) ;
-           _log.warn( "Sending NoRouteToCellt to : "+source ) ;
-           try{
-              sendMessage( new CellMessage( source.revert() , nrtc ) ) ;
-           }catch(Exception ee ){
-              _log.warn( "can't return NoRouteToCell to : "+source ) ;
-           }
-        }catch( Exception eee ){
+        }catch(RuntimeException eee ){
            _log.warn( "Exception in messageToForward : "+eee ) ;
         }
    }
@@ -79,7 +68,7 @@ public class MulticastCommander extends CellAdapter {
    }
 
    public static final String hh_close = "<className> <instanceName>" ;
-   public String ac_close_$_2( Args args )throws Exception {
+   public String ac_close_$_2( Args args ){
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
       MulticastClose close =
@@ -89,7 +78,7 @@ public class MulticastCommander extends CellAdapter {
       return ""  ;
    }
    public static final String hh_unregister = "<className> <instanceName>" ;
-   public String ac_unregister_$_2( Args args )throws Exception {
+   public String ac_unregister_$_2( Args args ){
       String className    = args.argv(0) ;
       String instanceName = args.argv(1) ;
       MulticastUnregister unreg =

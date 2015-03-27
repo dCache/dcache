@@ -28,11 +28,10 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 
 import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.acl.enums.AccessMask;
-import dmg.cells.nucleus.CellMessageSender;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -125,11 +124,8 @@ public class PnfsHandler
 
     /**
      * Sends a PnfsMessage to PnfsManager.
-     *
-     * @throws NoRouteToCellException if the PnfsManager could not be reached
      */
     public void send(PnfsMessage msg)
-        throws NoRouteToCellException
     {
         if (_cellStub == null) {
             throw new IllegalStateException("Missing endpoint");
@@ -149,14 +145,8 @@ public class PnfsHandler
      */
     public void notify(PnfsMessage msg)
     {
-        try {
-            msg.setReplyRequired(false);
-            send(msg);
-        } catch (NoRouteToCellException e) {
-            _logNameSpace.warn("Failed to deliver message " +
-                               msg.getClass().getSimpleName() +
-                               " to PnfsManager: " + e.getMessage());
-        }
+        msg.setReplyRequired(false);
+        send(msg);
     }
 
    public void clearCacheLocation(PnfsId id)

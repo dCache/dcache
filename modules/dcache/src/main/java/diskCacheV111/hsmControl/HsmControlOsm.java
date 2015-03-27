@@ -91,7 +91,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
        msg.revertDirection() ;
        try{
           sendMessage( msg ) ;
-       }catch(Exception ee ){
+       }catch(RuntimeException ee ){
           _log.warn("Problem replying : "+ee ) ;
        }
     }
@@ -119,7 +119,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
                    msg.revertDirection() ;
                    try{
                       sendMessage( msg ) ;
-                   }catch(Exception ee ){
+                   }catch(RuntimeException ee ){
                       _log.warn("Problem replying : "+ee ) ;
                    }
                 }catch(Exception eee ){
@@ -129,7 +129,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
                    msg.revertDirection() ;
                    try{
                       sendMessage( msg ) ;
-                   }catch(Exception ee ){
+                   }catch(RuntimeException ee ){
                       _log.warn("Problem replying : "+ee ) ;
                    }
                 }

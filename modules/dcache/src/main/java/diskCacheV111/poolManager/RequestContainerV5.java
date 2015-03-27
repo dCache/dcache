@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
@@ -57,10 +59,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
@@ -673,8 +672,6 @@ public class RequestContainerV5
 
             sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
 
-        } catch (NoRouteToCellException e) {
-            commandReply = "P2P failed : " + e.getMessage();
         } catch (CacheException e) {
             commandReply = "P2P failed : " + e.getMessage();
         }
@@ -939,7 +936,6 @@ public class RequestContainerV5
         }
 
 	private boolean sendFetchRequest(PoolInfo pool)
-            throws NoRouteToCellException
         {
 	    CellMessage cellMessage = new CellMessage(
                                 new CellPath(pool.getAddress()),
@@ -963,7 +959,6 @@ public class RequestContainerV5
             return true ;
 	}
 	private void sendPool2PoolRequest(PoolInfo sourcePool, PoolInfo destPool)
-            throws NoRouteToCellException
         {
             Pool2PoolTransferMsg pool2pool =
                   new Pool2PoolTransferMsg(sourcePool.getName(), destPool.getName(), _fileAttributes);
@@ -1036,15 +1031,11 @@ public class RequestContainerV5
                 } else {
                     rpm.setFailed(_currentRc, _currentRm);
                 }
-                try {
-                    m.revertDirection();
-                    sendMessage(m);
+                m.revertDirection();
+                sendMessage(m);
+                _poolMonitor.messageToCostModule(m);
+                if (!rpm.getSkipCostUpdate()) {
                     _poolMonitor.messageToCostModule(m);
-                    if (!rpm.getSkipCostUpdate()) {
-                        _poolMonitor.messageToCostModule(m);
-                    }
-                } catch (NoRouteToCellException e) {
-                    _log.warn("Exception answering request: {}", e.toString());
                 }
                 messages.remove();
             }
@@ -1970,10 +1961,6 @@ public class RequestContainerV5
                 setError(e.getRc(), e.getMessage());
                 _log.warn("[p2p] {}", e.getMessage());
                 return RT_ERROR;
-            } catch (NoRouteToCellException e) {
-                setError(128, e.getMessage());
-                _log.error("[p2p] {}", e.toString());
-                return RT_ERROR;
             } catch (IllegalArgumentException e) {
                 setError(128, e.getMessage());
                 _log.error("[p2p] {}", e.getMessage());
@@ -2029,10 +2016,6 @@ public class RequestContainerV5
                 setError(e.getRc(), e.getMessage());
                 _log.warn("[stage] {}", e.getMessage());
                 return RT_NOT_FOUND;
-            } catch (NoRouteToCellException e) {
-                setError(128, e.getMessage());
-                _log.error("[stage] {}", e.toString());
-                return RT_ERROR;
             } catch (IllegalArgumentException e) {
                 setError(128, e.getMessage());
                 _log.error("[stage] {}", e.getMessage());
@@ -2051,7 +2034,6 @@ public class RequestContainerV5
     private void sendInfoMessage( PnfsId pnfsId , FsPath path,
                                   FileAttributes fileAttributes,
                                   int rc , String infoMessage ){
-      try{
         WarningPnfsFileInfoMessage info =
             new WarningPnfsFileInfoMessage(
                                     "PoolManager","PoolManager",pnfsId ,
@@ -2060,26 +2042,18 @@ public class RequestContainerV5
         info.setFileSize(fileAttributes.getSize());
         info.setPath(path);
         _billing.notify(info);
-      } catch (NoRouteToCellException e) {
-          _log.warn("Couldn't send WarningInfoMessage: {}", e.toString());
-      }
     }
 
     private void sendHitMsg(PnfsId pnfsId, FsPath path, String poolName,
                             FileAttributes fileAttributes, ProtocolInfo protocolInfo, boolean cached)
     {
-        try {
-            PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, pnfsId);
-            msg.setPath(path);
-            msg.setFileCached(cached);
-            msg.setStorageInfo(fileAttributes.getStorageInfo());
-            msg.setFileSize(fileAttributes.getSize());
-            msg.setProtocolInfo(protocolInfo);
-            _billing.notify(msg);
-        } catch (NoRouteToCellException e) {
-            _log.warn("Couldn't report hit info for {}: {}",
-                      pnfsId, e.toString());
-        }
+        PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, pnfsId);
+        msg.setPath(path);
+        msg.setFileCached(cached);
+        msg.setStorageInfo(fileAttributes.getStorageInfo());
+        msg.setFileSize(fileAttributes.getSize());
+        msg.setProtocolInfo(protocolInfo);
+        _billing.notify(msg);
     }
 
     public void setStageConfigurationFile(String path)

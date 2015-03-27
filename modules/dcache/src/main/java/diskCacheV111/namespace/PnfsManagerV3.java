@@ -16,7 +16,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -365,15 +364,12 @@ public class PnfsManagerV3
             for (CellMessage envelope : drained) {
                 Message msg = (Message) envelope.getMessageObject();
                 if (msg.getReplyRequired()) {
-                    try {
-                        UOID uoid = envelope.getUOID();
-                        CellExceptionMessage ret =
-                                new CellExceptionMessage(envelope.getSourcePath().revert(),
-                                                         new NoRouteToCellException(uoid, self, error));
-                        ret.setLastUOID(uoid);
-                        sendMessage(ret);
-                    } catch (NoRouteToCellException ignored) {
-                    }
+                    UOID uoid = envelope.getUOID();
+                    CellExceptionMessage ret =
+                            new CellExceptionMessage(envelope.getSourcePath().revert(),
+                                                     new NoRouteToCellException(uoid, self, error));
+                    ret.setLastUOID(uoid);
+                    sendMessage(ret);
                 }
             }
             queue.offer(SHUTDOWN_SENTINEL);
@@ -1352,18 +1348,9 @@ public class PnfsManagerV3
             _pnfsDeleteNotificationRelay != null ) {
             PnfsDeleteEntryNotificationMessage deleteNotification =
                 new PnfsDeleteEntryNotificationMessage(pnfsId,path);
-            try{
-
-                sendMessage( new CellMessage( _pnfsDeleteNotificationRelay,
-                                              deleteNotification ) ) ;
-
-            } catch (NoRouteToCellException e) {
-                _log.error("Failed to relay " + deleteNotification + " to "+
-                           _cacheModificationRelay + ": " + e.getMessage());
-            }
+            sendMessage( new CellMessage( _pnfsDeleteNotificationRelay,
+                                          deleteNotification ) ) ;
         }
-
-
     }
 
     public void rename(PnfsRenameMessage msg)
@@ -1493,16 +1480,10 @@ public class PnfsManagerV3
         {
             _msg.setReply();
 
-            try {
-                CellMessage envelope = new CellMessage(_requestor, _msg);
-                envelope.setLastUOID(_uoid);
-                sendMessage(envelope);
-                _messageCount++;
-            } catch (NoRouteToCellException e){
-                /* We cannot cancel, so log and ignore.
-                 */
-                _log.warn("Failed to send reply to " + _requestor + ": " + e.getMessage());
-            }
+            CellMessage envelope = new CellMessage(_requestor, _msg);
+            envelope.setLastUOID(_uoid);
+            sendMessage(envelope);
+            _messageCount++;
 
             _msg.clear();
         }
@@ -1625,11 +1606,7 @@ public class PnfsManagerV3
                         i.remove();
                         envelope.revertDirection();
 
-                        try {
-                            sendMessage(envelope);
-                        } catch (NoRouteToCellException e) {
-                            _log.warn("Failed to send reply: " + e.getMessage());
-                        }
+                        sendMessage(envelope);
                     }
                 }
             }
@@ -1718,12 +1695,7 @@ public class PnfsManagerV3
 
     private void forwardModifyCacheLocationMessage(PnfsMessage message)
     {
-        try {
-            sendMessage(new CellMessage(_cacheModificationRelay, message));
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to relay " + message + " to " +
-                               _cacheModificationRelay + ": " + e.getMessage());
-        }
+        sendMessage(new CellMessage(_cacheModificationRelay, message));
     }
 
     public void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
@@ -1810,12 +1782,8 @@ public class PnfsManagerV3
         if (! pnfsMessage.getReplyRequired() ){
             return;
         }
-        try {
-            message.revertDirection();
-            sendMessage(message);
-        } catch (NoRouteToCellException e) {
-            _log.warn("Failed to send reply: " + e.getMessage());
-        }
+        message.revertDirection();
+        sendMessage(message);
     }
 
     public void processFlushMessage(PoolFileFlushedMessage pnfsMessage)
@@ -1981,13 +1949,9 @@ public class PnfsManagerV3
     {
         Message msg = (Message) envelope.getMessageObject();
         if (msg.getReplyRequired()) {
-            try {
-                msg.setFailed(CacheException.TIMEOUT, error);
-                envelope.revertDirection();
-                sendMessage(envelope);
-            } catch (NoRouteToCellException e) {
-                _log.warn("Failed to send reply: " + e.getMessage());
-            }
+            msg.setFailed(CacheException.TIMEOUT, error);
+            envelope.revertDirection();
+            sendMessage(envelope);
         }
     }
 

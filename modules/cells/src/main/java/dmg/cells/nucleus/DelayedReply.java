@@ -1,8 +1,5 @@
 package dmg.cells.nucleus;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -10,7 +7,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DelayedReply implements Reply
 {
     private static final long serialVersionUID = -236693000550935733L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(DelayedReply.class);
 
     private CellEndpoint _endpoint;
     private CellMessage _envelope;
@@ -36,19 +32,10 @@ public class DelayedReply implements Reply
 
     protected synchronized void send()
     {
-        try {
-            _envelope.revertDirection();
-            _envelope.setMessageObject(_msg);
-            _endpoint.sendMessage(_envelope);
-            _envelope = null;
-            _endpoint = null;
-        } catch (NoRouteToCellException e) {
-            onNoRouteToCell(e);
-        }
-    }
-
-    protected void onNoRouteToCell(NoRouteToCellException e)
-    {
-        LOGGER.error("Failed to send reply: {}", e.getMessage());
+        _envelope.revertDirection();
+        _envelope.setMessageObject(_msg);
+        _endpoint.sendMessage(_envelope);
+        _envelope = null;
+        _endpoint = null;
     }
 }

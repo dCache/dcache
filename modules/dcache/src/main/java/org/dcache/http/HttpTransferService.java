@@ -40,10 +40,9 @@ import diskCacheV111.vehicles.HttpProtocolInfo;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.pool.movers.NettyMover;
+import org.dcache.pool.movers.NettyTransferService;
 import org.dcache.util.NetworkUtils;
 
 /**
@@ -97,7 +96,7 @@ public class HttpTransferService extends NettyTransferService<HttpProtocolInfo>
      */
     @Override
     protected void sendAddressToDoor(NettyMover<HttpProtocolInfo> mover, int port)
-            throws SocketException, CacheException, NoRouteToCellException
+            throws SocketException, CacheException
     {
         HttpProtocolInfo protocolInfo = mover.getProtocolInfo();
         String uri;

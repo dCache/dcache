@@ -7,12 +7,9 @@ import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,12 +35,10 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 
@@ -240,14 +235,10 @@ public class HsmFlushControlManager  extends CellAdapter {
                                poolName,
                                _control ? gainControlInterval : 0L);
 
-               try {
-                   if (_logEnabled) {
-                       _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to " + poolName);
-                   }
-                   sendMessage(new CellMessage(new CellPath(poolName), msg));
-               } catch (NoRouteToCellException ee) {
-                   _log.warn("sendFlushControlMessage : couldn't send _poolGroupHash to " + poolName);
+               if (_logEnabled) {
+                   _log.info("sendFlushControlMessage : sending PoolFlushGainControlMessage to " + poolName);
                }
+               sendMessage(new CellMessage(new CellPath(poolName), msg));
            }
        }
     }
@@ -396,7 +387,7 @@ public class HsmFlushControlManager  extends CellAdapter {
            return sb.toString();
         }
     }
-    private void flushStorageClass( String poolName , String storageClass , int count ) throws Exception {
+    private void flushStorageClass( String poolName , String storageClass , int count ) {
 
            PoolFlushDoFlushMessage msg =
                new PoolFlushDoFlushMessage( poolName , storageClass ) ;
@@ -417,7 +408,7 @@ public class HsmFlushControlManager  extends CellAdapter {
 
            sendMessage( new CellMessage( new CellPath("PoolManager") , msg ) ) ;
 
-       }catch(Exception ee ){
+       }catch(RuntimeException ee ){
            _log.warn("setPoolReadOnly : couldn't sent message to PoolManager"+ee);
        }
     }
@@ -431,7 +422,7 @@ public class HsmFlushControlManager  extends CellAdapter {
 
            sendMessage( new CellMessage( new CellPath("PoolManager") , msg ) ) ;
 
-       }catch(Exception ee ){
+       }catch(RuntimeException ee ){
            _log.warn("queryPoolMode : couldn't sent message to PoolManager"+ee);
        }
     }

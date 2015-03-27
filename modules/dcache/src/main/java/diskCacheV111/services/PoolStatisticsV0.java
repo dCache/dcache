@@ -1469,11 +1469,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        _log.info("Resetting Billing statistics");
        CellMessage m =
            new CellMessage( new CellPath("billing") , RESET_POOL_STATISTICS ) ;
-       try{
-           _nucleus.sendMessage(m, true, true);
-       }catch(NoRouteToCellException ee ){
-           _log.warn("Couldn't reset pool statistics : "+ee);
-       }
+       _nucleus.sendMessage(m, true, true);
    }
    //
    // structur expected from 'billing' : get pool statistics

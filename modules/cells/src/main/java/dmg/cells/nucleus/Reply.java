@@ -17,8 +17,6 @@ public interface Reply extends Serializable
      *
      * @param endpoint The CellEndpoint on which to deliver the reply.
      * @param envelope The original CellMessage to which this is a reply.
-     * @throws NoRouteToCellException when the CellEndpoint throws NoRouteToCellException
      */
-    void deliver(CellEndpoint endpoint, CellMessage envelope)
-        throws NoRouteToCellException;
+    void deliver(CellEndpoint endpoint, CellMessage envelope);
 }

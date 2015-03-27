@@ -148,12 +148,8 @@ public class       AclCell
       }
 
       msg.revertDirection() ;
-      msg.setMessageObject( answer ) ;
-      try{
-         sendMessage( msg ) ;
-      }catch( Exception ioe ){
-         _log.warn( "Can't send acl_response : "+ioe, ioe ) ;
-      }
+      msg.setMessageObject(answer) ;
+      sendMessage(msg) ;
   }
   ///////////////////////////////////////////////////////////////////////////
   //
