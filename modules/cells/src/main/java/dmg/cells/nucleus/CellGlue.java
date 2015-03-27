@@ -651,24 +651,27 @@ class CellGlue
                                String routeTarget)
             throws SerializationException
     {
-        //
-        // here we try to inform the last sender that we are
-        // not able to deliver the packet.
-        //
-        LOGGER.debug(
-                "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
-                msg.getSourcePath(), routeTarget);
-        NoRouteToCellException exception =
-                new NoRouteToCellException(
-                        msg.getUOID(),
-                        destination,
-                        "Route for >" + routeTarget +
-                        "< not found at >" + _cellDomainName + "<");
-        CellPath retAddr = msg.getSourcePath().revert();
-        CellExceptionMessage ret =
-                new CellExceptionMessage(retAddr, exception);
-        ret.setLastUOID(msg.getUOID());
-        sendMessage(nucleus, ret);
+        if (msg instanceof CellExceptionMessage) {
+            LOGGER.warn(
+                    "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
+                    destination, ((CellExceptionMessage) msg).getException().getDestinationPath(),
+                    routeTarget, _cellDomainName);
+        } else {
+            LOGGER.debug(
+                    "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
+                    msg.getSourcePath(), routeTarget);
+            NoRouteToCellException exception =
+                    new NoRouteToCellException(
+                            msg.getUOID(),
+                            destination,
+                            "Route for >" + routeTarget +
+                            "< not found at >" + _cellDomainName + "<");
+            CellPath retAddr = msg.getSourcePath().revert();
+            CellExceptionMessage ret =
+                    new CellExceptionMessage(retAddr, exception);
+            ret.setLastUOID(msg.getUOID());
+            sendMessage(nucleus, ret);
+        }
     }
 
     void addCellEventListener(CellNucleus nucleus, CellEventListener listener)
