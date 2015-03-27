@@ -15,10 +15,12 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
     private static final int _major = 4;
     private final stateid4 _stateId;
     private final InetSocketAddress _socketAddress;
+    private final byte[] _fh;
 
-    public NFS4ProtocolInfo(InetSocketAddress clientSocketAddress, stateid4 stateId) {
+    public NFS4ProtocolInfo(InetSocketAddress clientSocketAddress, stateid4 stateId, byte[] fh) {
         _stateId = stateId;
         _socketAddress = clientSocketAddress;
+        _fh = fh;
     }
 
     //
@@ -50,6 +52,10 @@ public class NFS4ProtocolInfo implements IpProtocolInfo {
 
     public stateid4 stateId() {
         return _stateId;
+    }
+
+    public byte[] getNfsFileHandle() {
+        return _fh;
     }
 
     @Override
