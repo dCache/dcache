@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +24,7 @@ import diskCacheV111.util.PnfsId;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4Defaults;
@@ -52,6 +55,7 @@ import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.util.PortRange;
+import org.dcache.utils.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
@@ -311,8 +315,24 @@ public class NFSv4MoverHandler {
         }
     }
 
-    NfsMover getOrCreateMover(stateid4 stateid) {
-        return _activeIO.get(stateid);
+    NfsMover getOrCreateMover(stateid4 stateid, byte[] fh) throws ChimeraNFSException {
+        NfsMover mover = _activeIO.get(stateid);
+        if (mover == null) {
+            /*
+             * a mover for the same file and the same client can be re-used.
+             */
+            /**
+             * FIXME: this is very fragile, as we assume that stateid
+             * structure is known and contains clientid.
+             */
+            long clientId = Bytes.getLong(stateid.other, 0);
+            for(NfsMover m: _activeIO.values()) {
+                if ((Bytes.getLong(m.getStateId().other, 0) == clientId) && Arrays.equals(fh, m.getNfsFilehandle())) {
+                    return m;
+                }
+            }
+        }
+        return mover;
     }
 
     /**
