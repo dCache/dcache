@@ -287,9 +287,9 @@ public class NFSv4MoverHandler {
                 case nfs_opnum4.OP_PUTROOTFH:
                     return new OperationPUTROOTFH(op);
                 case nfs_opnum4.OP_READ:
-                    return new EDSOperationREAD(op, _activeIO);
+                    return new EDSOperationREAD(op, NFSv4MoverHandler.this);
                 case nfs_opnum4.OP_WRITE:
-                    return new EDSOperationWRITE(op, _activeIO);
+                    return new EDSOperationWRITE(op, NFSv4MoverHandler.this);
                 case nfs_opnum4.OP_EXCHANGE_ID:
                     return new OperationEXCHANGE_ID(op, nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS);
                 case nfs_opnum4.OP_CREATE_SESSION:
@@ -309,6 +309,10 @@ public class NFSv4MoverHandler {
 
             return new OperationILLEGAL(op);
         }
+    }
+
+    NfsMover getOrCreateMover(stateid4 stateid) {
+        return _activeIO.get(stateid);
     }
 
     /**

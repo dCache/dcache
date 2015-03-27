@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Map;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
@@ -17,18 +16,17 @@ import org.dcache.nfs.v4.xdr.READ4resok;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
-import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.pool.repository.RepositoryChannel;
 
 public class EDSOperationREAD extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationREAD.class.getName());
 
-     private final Map<stateid4, NfsMover> _activeIO;
+     private final NFSv4MoverHandler _moverHandler;
 
-    public EDSOperationREAD(nfs_argop4 args,  Map<stateid4, NfsMover> activeIO) {
+    public EDSOperationREAD(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
         super(args, nfs_opnum4.OP_READ);
-        _activeIO = activeIO;
+        _moverHandler = moverHandler;
     }
 
     @Override
@@ -40,7 +38,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value;
             int count = _args.opread.count.value;
 
-            NfsMover mover = _activeIO.get(_args.opread.stateid);
+            NfsMover mover = _moverHandler.getOrCreateMover(_args.opread.stateid);
             if(mover == null) {
                 throw new BadStateidException("No mover associated with given stateid: " + _args.opread.stateid);
             }
