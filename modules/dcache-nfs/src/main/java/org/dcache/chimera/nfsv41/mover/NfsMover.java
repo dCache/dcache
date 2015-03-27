@@ -116,6 +116,10 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
         return new stateid4(legacyStateid.other, legacyStateid.seqid.value);
     }
 
+    public byte[] getNfsFilehandle() {
+        return getProtocolInfo().getNfsFileHandle();
+    }
+
     @Override
     protected String getStatus() {
         StringBuilder s = new StringBuilder();
