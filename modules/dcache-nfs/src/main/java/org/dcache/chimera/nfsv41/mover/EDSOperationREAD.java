@@ -38,7 +38,7 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value;
             int count = _args.opread.count.value;
 
-            NfsMover mover = _moverHandler.getOrCreateMover(_args.opread.stateid);
+            NfsMover mover = _moverHandler.getOrCreateMover(_args.opread.stateid, context.currentInode().toNfsHandle());
             if(mover == null) {
                 throw new BadStateidException("No mover associated with given stateid: " + _args.opread.stateid);
             }
