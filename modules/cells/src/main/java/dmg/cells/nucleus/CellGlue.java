@@ -603,10 +603,6 @@ class CellGlue
                         destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
                     }
                     return;
-                } else if (iter == MAX_ROUTE_LEVELS) {
-                    LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
-                    sendException(nucleus, transponder, destination, destCore.getCellName());
-                    return;
                 }
                 //
                 // destNuclues == null , is no problem in our case because
@@ -628,7 +624,7 @@ class CellGlue
             // let's consult the routes
             //
             CellRoute route = _routingTable.find(destCore);
-            if ((route == null) || (iter == MAX_ROUTE_LEVELS)) {
+            if (route == null) {
                 LOGGER.trace("sendMessage : no route destination for : {}", destCore);
                 sendException(nucleus, transponder, destination, destCore.toString());
                 return;
@@ -640,6 +636,9 @@ class CellGlue
             }
         }
         // end of big iteration loop
+
+        LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
+        sendException(nucleus, transponder, destination, destCore.getCellName());
     }
 
     private void sendException(CellNucleus nucleus,
