@@ -527,8 +527,6 @@ class CellGlue
         }
         CellPath destination = transponder.getDestinationPath();
         CellAddressCore destCore = destination.getCurrent();
-        String cellName = destCore.getCellName();
-        String domainName;
 
         LOGGER.trace("sendMessage : {} send to {}", transponder.getUOID(), destination);
 
@@ -537,7 +535,7 @@ class CellGlue
         //  this address, because it was needed to reach our domain,
         //  which hopefully happened.
         //
-        if ((!firstSend) && cellName.equals("*")) {
+        if ((!firstSend) && destCore.getCellName().equals("*")) {
             LOGGER.trace("sendMessage : * detected ; skipping destination");
             destination.next();
             destCore = destination.getCurrent();
@@ -548,19 +546,18 @@ class CellGlue
         // this is the big iteration loop
         //
         for (int iter = 0; iter < MAX_ROUTE_LEVELS; iter++) {
-            cellName = destCore.getCellName();
-            domainName = destCore.getCellDomainName();
-            LOGGER.trace("sendMessage : next hop at {}: {}@{}", iter, cellName, domainName);
+            LOGGER.trace("sendMessage : next hop at {}: {}@{}", iter,
+                         destCore.getCellName(), destCore.getCellDomainName());
 
             //
             //  now we try to find the destination cell in our domain
             //
-            CellNucleus destNucleus = _cellList.get(cellName);
+            CellNucleus destNucleus = _cellList.get(destCore.getCellName());
             if (destNucleus != null && _killedCells.contains(destNucleus)) {
                 destNucleus = null;
             }
-            if (domainName.equals(_cellDomainName)) {
-                if (cellName.equals("*")) {
+            if (destCore.getCellDomainName().equals(_cellDomainName)) {
+                if (destCore.getCellName().equals("*")) {
                     LOGGER.trace("sendMessagex : * detected ; skipping destination");
                     destination.next();
                     destCore = destination.getCurrent();
@@ -571,7 +568,7 @@ class CellGlue
                 // and points to our domain.
                 //
                 if (destNucleus == null) {
-                    sendException(nucleus, transponder, destination, cellName);
+                    sendException(nucleus, transponder, destination, destCore.getCellName());
                     return;
                 }
                 if (iter == 0) {
@@ -590,7 +587,7 @@ class CellGlue
                     destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
                 }
                 return;
-            } else if (domainName.equals("local") &&
+            } else if (destCore.getCellDomainName().equals("local") &&
                        (resolveLocally || (iter != 0))) {
                 //
                 // the domain name was 'local'  AND
@@ -608,14 +605,14 @@ class CellGlue
                     return;
                 } else if (iter == MAX_ROUTE_LEVELS) {
                     LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
-                    sendException(nucleus, transponder, destination, cellName);
+                    sendException(nucleus, transponder, destination, destCore.getCellName());
                     return;
                 }
                 //
                 // destNuclues == null , is no problem in our case because
                 // 'wellknowncells' also use local as keyword.
                 //
-            } else if (domainName.equals("local") &&
+            } else if (destCore.getCellDomainName().equals("local") &&
                        (!resolveRemotely) &&
                        (iter == 0)) {
                 //
@@ -623,7 +620,7 @@ class CellGlue
                 // we are assumed not to deliver remotely AND
                 // we are not yet in the routing part
                 //
-                sendException(nucleus, transponder, destination, cellName);
+                sendException(nucleus, transponder, destination, destCore.getCellName());
                 return;
             }
             //
