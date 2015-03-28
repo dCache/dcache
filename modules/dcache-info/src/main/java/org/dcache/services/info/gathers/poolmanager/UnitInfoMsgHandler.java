@@ -19,47 +19,46 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  */
 public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 
-	private static Logger _log = LoggerFactory.getLogger( UnitInfoMsgHandler.class);
-	private static final StatePath UNITS_PATH = new StatePath( "units");
+    private static Logger _log = LoggerFactory.getLogger(UnitInfoMsgHandler.class);
+    private static final StatePath UNITS_PATH = new StatePath("units");
 
-	public UnitInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
-		super(sum, msgMetaRepo);
-	}
+    public UnitInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+        super(sum, msgMetaRepo);
+    }
 
-	@Override
+    @Override
     public void process(Object msgPayload, long metricLifetime) {
 
-		if( !msgPayload.getClass().isArray()) {
-			_log.error( "unexpected received non-array payload");
-			return;
-		}
+        if (!msgPayload.getClass().isArray()) {
+            _log.error("unexpected received non-array payload");
+            return;
+        }
 
-		Object array[] = (Object []) msgPayload;
+        Object array[] = (Object []) msgPayload;
 
-		if( array.length != 3) {
-			_log.error( "Unexpected array size: "+array.length);
-			return;
-		}
+        if (array.length != 3) {
+            _log.error("Unexpected array size: "+array.length);
+            return;
+        }
 
-		/**
-		 * array[0] = name
-		 * array[1] = type
-		 * array[2] = list of unitgroups.
-		 */
+        /**
+         * array[0] = name
+         * array[1] = type
+         * array[2] = list of unitgroups.
+         */
 
-		String unitName = array[0].toString();
-		String unitType = array[1].toString();
+        String unitName = array[0].toString();
+        String unitType = array[1].toString();
 
-		StatePath thisUnitPath = UNITS_PATH.newChild( unitName);
+        StatePath thisUnitPath = UNITS_PATH.newChild(unitName);
 
-		StateUpdate update = new StateUpdate();
+        StateUpdate update = new StateUpdate();
 
-		update.appendUpdate( thisUnitPath.newChild("type"),
-					new StringStateValue( unitType, metricLifetime));
+        update.appendUpdate(thisUnitPath.newChild("type"),
+                new StringStateValue(unitType, metricLifetime));
 
-		addItems( update, thisUnitPath.newChild("unitgroups"), (Object []) array [2], metricLifetime);
+        addItems(update, thisUnitPath.newChild("unitgroups"), (Object []) array [2], metricLifetime);
 
-		applyUpdates( update);
-	}
-
+        applyUpdates(update);
+    }
 }

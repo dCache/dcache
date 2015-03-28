@@ -21,44 +21,44 @@ import org.dcache.services.info.base.StateWatcher;
  */
 abstract public class AbstractStateWatcher implements StateWatcher {
 
-	private long _counter;
-	private final Collection<StatePathPredicate> _predicates = new ArrayList<>();
+    private long _counter;
+    private final Collection<StatePathPredicate> _predicates = new ArrayList<>();
 
-	public AbstractStateWatcher() {
-		String[] paths = getPredicates();
+    public AbstractStateWatcher() {
+        String[] paths = getPredicates();
 
-		for( String path : paths) {
-                    _predicates.add(StatePathPredicate.parsePath(path));
-                }
-	}
+        for (String path : paths) {
+            _predicates.add(StatePathPredicate.parsePath(path));
+        }
+    }
 
 
-	/**
-	 * Override this method.  The method must return valid output
-	 * when called from the constructor.
-	 * @return an array of Strings, each a StatePathPredicate.
-	 */
-	abstract protected String[] getPredicates();
+    /**
+     * Override this method.  The method must return valid output
+     * when called from the constructor.
+     * @return an array of Strings, each a StatePathPredicate.
+     */
+    abstract protected String[] getPredicates();
 
-	@Override
-	public synchronized void trigger( StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
-		_counter++;
-	}
+    @Override
+    public synchronized void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+        _counter++;
+    }
 
-	@Override
-	public Collection<StatePathPredicate> getPredicate() {
-		return _predicates;
-	}
+    @Override
+    public Collection<StatePathPredicate> getPredicate() {
+        return _predicates;
+    }
 
-	/**
-	 * Since we expect a single instance per class, just return the simple class name.
-	 */
-	@Override
-	public String toString() {
-		return this.getClass().getSimpleName();
-	}
+    /**
+     * Since we expect a single instance per class, just return the simple class name.
+     */
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
 
-	public synchronized long getCount() {
-		return _counter;
-	}
+    public synchronized long getCount() {
+        return _counter;
+    }
 }

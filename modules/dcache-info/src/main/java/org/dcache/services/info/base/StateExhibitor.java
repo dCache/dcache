@@ -18,5 +18,5 @@ public interface StateExhibitor {
     /**
      * Query the state of dCache.
      */
-    public void visitState( StateVisitor visitor);
+    public void visitState(StateVisitor visitor);
 }

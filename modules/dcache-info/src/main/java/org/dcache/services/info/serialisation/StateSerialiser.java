@@ -16,5 +16,5 @@ public interface StateSerialiser {
     /** Return serialised version of dCache's current state */
     String serialise();
 
-    String serialise( StatePath start);
+    String serialise(StatePath start);
 }

@@ -58,15 +58,15 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
      * NB. This method is <i>not</i> thread-safe.
      */
     @Override
-    public String serialise( StatePath path) {
+    public String serialise(StatePath path) {
         clearState();
         _topMostElement = path;
-        setVisitScopeToSubtree( path);
+        setVisitScopeToSubtree(path);
 
-        _exhibitor.visitState( this);
+        _exhibitor.visitState(this);
 
         String output = "";
-        if( _foundSomething) {
+        if (_foundSomething) {
             String header = buildHeader(path.toString());
             _out.append(header).append("\n");
             flushPendingChunks();
@@ -85,7 +85,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         _topMostElement = null;
         setVisitScopeToEverything();
 
-        _exhibitor.visitState( this);
+        _exhibitor.visitState(this);
 
         String header = buildHeader(null);
         _out.append(header).append("\n");
@@ -93,20 +93,20 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         return _out.toString();
     }
 
-    public String buildHeader( String path) {
+    public String buildHeader(String path) {
         StringBuilder sb = new StringBuilder();
-        sb.append( "[" + ROOT_ELEMENT_LABEL);
-        if( path != null) {
+        sb.append("[" + ROOT_ELEMENT_LABEL);
+        if (path != null) {
             sb.append(".").append(path);
         }
-        sb.append( "]");
+        sb.append("]");
         return sb.toString();
     }
 
     private void flushPendingChunks() {
-        for( Chunk chunk : _pendingChunks) {
+        for (Chunk chunk : _pendingChunks) {
             String chunkOutput = chunk.getOutput();
-            _out.append( chunkOutput);
+            _out.append(chunkOutput);
         }
     }
 
@@ -116,83 +116,83 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         _foundSomething = false;
         _nextChunkHasStalk = true;
         _lastChunkStack.clear();
-        _lastChunkStack.add( new Chunk());
+        _lastChunkStack.add(new Chunk());
     }
 
-    private boolean arePathsSame( StatePath p1, StatePath p2) {
-        if( p1 == null && p2 == null) {
+    private boolean arePathsSame(StatePath p1, StatePath p2) {
+        if (p1 == null && p2 == null) {
             return true;
         }
-        return (p1 == null) ? false : p1.equals( p2);
+        return (p1 == null) ? false : p1.equals(p2);
     }
 
     @Override
-    public void visitCompositePreDescend( StatePath path,
-                                          Map<String, String> metadata) {
+    public void visitCompositePreDescend(StatePath path,
+            Map<String, String> metadata) {
 
-        if( ! isInsideScope( path)) {
+        if (!isInsideScope(path)) {
             return;
         }
 
         _foundSomething = true;
 
-        if( arePathsSame( path, _topMostElement)) {
+        if (arePathsSame(path, _topMostElement)) {
             return;
         }
 
-        addBranchChunk( path.getLastElement(), metadata);
+        addBranchChunk(path.getLastElement(), metadata);
         descend();
         _nextChunkHasStalk = true;
     }
 
-    private void addBranchChunk( String name, Map<String, String> metadata) {
+    private void addBranchChunk(String name, Map<String, String> metadata) {
         String type = null;
         String idName = null;
 
-        if( metadata != null) {
-            type = metadata.get( State.METADATA_BRANCH_CLASS_KEY);
-            idName = metadata.get( State.METADATA_BRANCH_IDNAME_KEY);
+        if (metadata != null) {
+            type = metadata.get(State.METADATA_BRANCH_CLASS_KEY);
+            idName = metadata.get(State.METADATA_BRANCH_IDNAME_KEY);
         }
 
         EndOfChunkItem item;
 
-        if( type != null && idName != null) {
-            item = new ListItem( _nextChunkHasStalk, type, idName, name);
+        if (type != null && idName != null) {
+            item = new ListItem(_nextChunkHasStalk, type, idName, name);
         } else {
-            item = new BranchItem( _nextChunkHasStalk, name);
+            item = new BranchItem(_nextChunkHasStalk, name);
         }
 
-        addSiblingChunk( item);
+        addSiblingChunk(item);
     }
 
     private Chunk getThisBranchLastChunk() {
         return _lastChunkStack.lastElement();
     }
 
-    private void setThisBranchLastChunk( Chunk chunk) {
+    private void setThisBranchLastChunk(Chunk chunk) {
         int lastItemIndex = _lastChunkStack.size() - 1;
-        _lastChunkStack.set( lastItemIndex, chunk);
+        _lastChunkStack.set(lastItemIndex, chunk);
     }
 
-    private void addSiblingChunk( EndOfChunkItem item) {
+    private void addSiblingChunk(EndOfChunkItem item) {
         Chunk siblingChunk = getThisBranchLastChunk();
 
-        Chunk thisChunk = siblingChunk.newSiblingChunk( item);
+        Chunk thisChunk = siblingChunk.newSiblingChunk(item);
 
-        _pendingChunks.add( thisChunk);
+        _pendingChunks.add(thisChunk);
 
-        setThisBranchLastChunk( thisChunk);
+        setThisBranchLastChunk(thisChunk);
     }
 
     private void descend() {
         Chunk siblingChunk = getThisBranchLastChunk();
-        _lastChunkStack.add( siblingChunk.newPhantomChildChunk());
+        _lastChunkStack.add(siblingChunk.newPhantomChildChunk());
     }
 
     @Override
-    public void visitCompositePostDescend( StatePath path,
-                                           Map<String, String> metadata) {
-        if( ! isInsideScope( path)) {
+    public void visitCompositePostDescend(StatePath path,
+            Map<String, String> metadata) {
+        if (!isInsideScope(path)) {
             return;
         }
 
@@ -207,30 +207,30 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     }
 
     @Override
-    public void visitBoolean( StatePath path, BooleanStateValue value) {
-        addMetricChunk( path, value);
+    public void visitBoolean(StatePath path, BooleanStateValue value) {
+        addMetricChunk(path, value);
     }
 
     @Override
-    public void visitFloatingPoint( StatePath path,
-                                    FloatingPointStateValue value) {
-        addMetricChunk( path, value);
+    public void visitFloatingPoint(StatePath path,
+            FloatingPointStateValue value) {
+        addMetricChunk(path, value);
     }
 
     @Override
-    public void visitInteger( StatePath path, IntegerStateValue value) {
-        addMetricChunk( path, value);
+    public void visitInteger(StatePath path, IntegerStateValue value) {
+        addMetricChunk(path, value);
     }
 
     @Override
-    public void visitString( StatePath path, StringStateValue value) {
-        addMetricChunk( path, value);
+    public void visitString(StatePath path, StringStateValue value) {
+        addMetricChunk(path, value);
     }
 
-    private void addMetricChunk( StatePath path, StateValue value) {
+    private void addMetricChunk(StatePath path, StateValue value) {
         String name = path.getLastElement();
-        EndOfChunkItem item = new MetricItem( _nextChunkHasStalk, name, value);
-        addSiblingChunk( item);
+        EndOfChunkItem item = new MetricItem(_nextChunkHasStalk, name, value);
+        addSiblingChunk(item);
         _nextChunkHasStalk = false;
     }
 
@@ -248,16 +248,16 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
         @SuppressWarnings("unchecked")
         public Chunk() {
-            this( END_ITEM_FOR_PHANTOM_CHUNK, Collections.<Stem>emptyList());
+            this(END_ITEM_FOR_PHANTOM_CHUNK, Collections.<Stem>emptyList());
         }
 
-        public Chunk( List<Stem> stems) {
-            this( END_ITEM_FOR_PHANTOM_CHUNK, stems);
+        public Chunk(List<Stem> stems) {
+            this(END_ITEM_FOR_PHANTOM_CHUNK, stems);
         }
 
-        public Chunk( EndOfChunkItem item, List<Stem> stems) {
+        public Chunk(EndOfChunkItem item, List<Stem> stems) {
             _endItem = item;
-            _stems.addAll( stems);
+            _stems.addAll(stems);
         }
 
         public boolean isPhantom() {
@@ -266,7 +266,7 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
         private Stem addNewEndStem() {
             Stem newStem = new Stem();
-            _stems.add( newStem);
+            _stems.add(newStem);
             return newStem;
         }
 
@@ -279,9 +279,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
 
             String stemsPrefix = buildStemsPrefix();
 
-            for( String endItemLine : _endItem.getOutput()) {
-                sb.append( stemsPrefix);
-                sb.append( endItemLine);
+            for (String endItemLine : _endItem.getOutput()) {
+                sb.append(stemsPrefix);
+                sb.append(endItemLine);
             }
 
             return sb.toString();
@@ -290,25 +290,25 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
         private String buildStemsPrefix() {
             StringBuilder sb = new StringBuilder();
 
-            for( Stem stem : _stems) {
+            for (Stem stem : _stems) {
                 sb.append(stem.getOutput());
             }
 
             return sb.toString();
         }
 
-        public Chunk newSiblingChunk( EndOfChunkItem item) {
-            return new Chunk( item, _stems);
+        public Chunk newSiblingChunk(EndOfChunkItem item) {
+            return new Chunk(item, _stems);
         }
 
         public Chunk newPhantomChildChunk() {
-            Chunk childChunk = new Chunk( _stems);
+            Chunk childChunk = new Chunk(_stems);
             _stemForChild = childChunk.addNewEndStem();
             return childChunk;
         }
 
         public void setEndOfList() {
-            if( _stemForChild != null) {
+            if (_stemForChild != null) {
                 _stemForChild.setInvisable();
             }
         }
@@ -340,18 +340,18 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private static abstract class EndOfChunkItem {
         private final boolean _hasStalk;
 
-        public EndOfChunkItem( boolean hasStalk) {
+        public EndOfChunkItem(boolean hasStalk) {
             _hasStalk = hasStalk;
         }
 
         public List<String> getOutput() {
             List<String> output = new ArrayList<>();
 
-            if( _hasStalk) {
+            if (_hasStalk) {
                 output.add(Stem.STEM_ITEM + "\n");
             }
 
-            output.add( " +-" + getItemLabel() + "\n");
+            output.add(" +-" + getItemLabel() + "\n");
 
             return output;
         }
@@ -363,19 +363,19 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private static class MetricItem extends EndOfChunkItem {
         private final String _label;
 
-        public MetricItem( boolean hasStalk, String name, StateValue metric) {
-            super( hasStalk);
+        public MetricItem(boolean hasStalk, String name, StateValue metric) {
+            super(hasStalk);
 
-            String value = getValueOfMetric( metric);
+            String value = getValueOfMetric(metric);
             String type = metric.getTypeName();
 
             _label = "-" + name + ": " + value + "  [" + type + "]";
         }
 
-        private String getValueOfMetric( StateValue metricValue) {
+        private String getValueOfMetric(StateValue metricValue) {
             String value;
 
-            if( metricValue instanceof StringStateValue) {
+            if (metricValue instanceof StringStateValue) {
                 value = "\"" + metricValue.toString() + "\"";
             } else {
                 value = metricValue.toString();
@@ -394,8 +394,8 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private static class BranchItem extends EndOfChunkItem {
         private final String _label;
 
-        public BranchItem( boolean hasStalk, String name) {
-            super( hasStalk);
+        public BranchItem(boolean hasStalk, String name) {
+            super(hasStalk);
             _label = "[" + name + "]";
         }
 
@@ -409,9 +409,9 @@ public class PrettyPrintTextSerialiser extends SubtreeVisitor implements StateSe
     private static class ListItem extends EndOfChunkItem {
         private final String _label;
 
-        public ListItem( boolean hasStalk, String type, String idName,
+        public ListItem(boolean hasStalk, String type, String idName,
                          String name) {
-            super( hasStalk);
+            super(hasStalk);
             _label = "[" + type + ", " + idName + "=\"" + name + "\"]";
         }
 

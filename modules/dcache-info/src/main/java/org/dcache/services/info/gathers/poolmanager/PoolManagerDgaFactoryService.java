@@ -96,8 +96,8 @@ public class PoolManagerDgaFactoryService implements DgaFactoryService
                                 CellMessageAnswerable response)
         {
             _activity.add(new ListBasedMessageDga(_exhibitor, _sender,
-                                              new StatePath(path), "PoolManager", prefix,
-                                              response));
+                    new StatePath(path), "PoolManager", prefix,
+                    response));
         }
 
         /* A DGA that queries PoolManager for a list and populate the info under some path */
@@ -110,7 +110,7 @@ public class PoolManagerDgaFactoryService implements DgaFactoryService
         private void addSingleMessageDga(String command, CellMessageAnswerable response)
         {
             _activity.add(new SingleMessageDga(_sender, "PoolManager", command,
-            		response, TimeUnit.MINUTES.toSeconds(5)));
+                    response, TimeUnit.MINUTES.toSeconds(5)));
         }
     }
 }

@@ -48,7 +48,7 @@ public class StaticDomainDga extends SkelListBasedActivity
 
         String domain = getNextItem();
 
-        if(domain != null) {
+        if (domain != null) {
             CellPath path = new CellPath("System", domain);
 
             _log.debug("sending message \"{}\" to System cell on domain {}",

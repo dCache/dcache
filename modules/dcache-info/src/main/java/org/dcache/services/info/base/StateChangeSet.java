@@ -32,9 +32,9 @@ public class StateChangeSet {
      * @param value
      *            the StateComponent
      */
-    protected void recordNewChild( String childName, StateComponent value) {
-        purgeChildEntries( childName);
-        _newChildren.put( childName, value);
+    protected void recordNewChild(String childName, StateComponent value) {
+        purgeChildEntries(childName);
+        _newChildren.put(childName, value);
     }
 
     /**
@@ -48,9 +48,9 @@ public class StateChangeSet {
      * @param value
      *            the new value of this child.
      */
-    protected void recordUpdatedChild( String childName, StateComponent value) {
-        purgeChildEntries( childName);
-        _updatedChildren.put( childName, value);
+    protected void recordUpdatedChild(String childName, StateComponent value) {
+        purgeChildEntries(childName);
+        _updatedChildren.put(childName, value);
     }
 
     /**
@@ -62,9 +62,9 @@ public class StateChangeSet {
      * @param childName
      *            the name of the child.
      */
-    protected void recordRemovedChild( String childName) {
-        purgeChildEntries( childName);
-        _removedChildren.add( childName);
+    protected void recordRemovedChild(String childName) {
+        purgeChildEntries(childName);
+        _removedChildren.add(childName);
     }
 
     /**
@@ -85,14 +85,14 @@ public class StateChangeSet {
      * @param childExpiryDate
      *            the new Date to be used.
      */
-    protected void recordNewWhenIShouldExpireDate( Date childExpiryDate) {
+    protected void recordNewWhenIShouldExpireDate(Date childExpiryDate) {
 
-        if( childExpiryDate == null) {
+        if (childExpiryDate == null) {
             return;
         }
 
-        if( _whenIShouldExpire == null ||
-            childExpiryDate.after( _whenIShouldExpire)) {
+        if (_whenIShouldExpire == null ||
+            childExpiryDate.after(_whenIShouldExpire)) {
             _whenIShouldExpire = childExpiryDate;
         }
     }
@@ -117,8 +117,8 @@ public class StateChangeSet {
      * @param childName
      *            the name of the child.
      */
-    protected void recordChildItr( String childName) {
-        _itrChildren.add( childName);
+    protected void recordChildItr(String childName) {
+        _itrChildren.add(childName);
     }
 
     /**
@@ -143,11 +143,11 @@ public class StateChangeSet {
      *            the name of the child under question.
      * @return true if this child is to be added, updated or removed.
      */
-    protected boolean hasChildChanged( String childName) {
-        return _itrChildren.contains( childName) ||
-               _newChildren.containsKey( childName) ||
-               _updatedChildren.containsKey( childName) ||
-               _removedChildren.contains( childName);
+    protected boolean hasChildChanged(String childName) {
+        return _itrChildren.contains(childName) ||
+               _newChildren.containsKey(childName) ||
+               _updatedChildren.containsKey(childName) ||
+               _removedChildren.contains(childName);
     }
 
     /**
@@ -170,8 +170,8 @@ public class StateChangeSet {
      *            the child's name
      * @return true if the child is to be remove, false otherwise.
      */
-    protected boolean childIsRemoved( String name) {
-        return _removedChildren.contains( name);
+    protected boolean childIsRemoved(String name) {
+        return _removedChildren.contains(name);
     }
 
     /**
@@ -183,8 +183,8 @@ public class StateChangeSet {
      *            the child's name
      * @return true if this child is to be removed, false otherwise.
      */
-    protected boolean childIsUpdated( String name) {
-        return _updatedChildren.containsKey( name);
+    protected boolean childIsUpdated(String name) {
+        return _updatedChildren.containsKey(name);
     }
 
     /**
@@ -193,8 +193,8 @@ public class StateChangeSet {
      *
      * @param childName
      */
-    protected void ensureChildNotRemoved( String childName) {
-        _removedChildren.remove( childName);
+    protected void ensureChildNotRemoved(String childName) {
+        _removedChildren.remove(childName);
     }
 
     /**
@@ -206,8 +206,8 @@ public class StateChangeSet {
      *            the child's name
      * @return true if this child is to be removed, false otherwise.
      */
-    protected boolean childIsNew( String name) {
-        return _newChildren.containsKey( name);
+    protected boolean childIsNew(String name) {
+        return _newChildren.containsKey(name);
     }
 
     /**
@@ -223,12 +223,12 @@ public class StateChangeSet {
      *            the name of the child.
      * @return the updated or new value for this child, or null.
      */
-    protected StateComponent getFreshChildValue( String childName) {
+    protected StateComponent getFreshChildValue(String childName) {
         StateComponent newValue;
 
-        newValue = _newChildren.get( childName);
+        newValue = _newChildren.get(childName);
 
-        return newValue != null ? newValue : _updatedChildren.get( childName);
+        return newValue != null ? newValue : _updatedChildren.get(childName);
     }
 
     /**
@@ -280,8 +280,8 @@ public class StateChangeSet {
      * @param childName
      * @return
      */
-    protected StateComponent getUpdatedChildValue( String childName) {
-        return _updatedChildren.get( childName);
+    protected StateComponent getUpdatedChildValue(String childName) {
+        return _updatedChildren.get(childName);
     }
 
     /**
@@ -293,8 +293,8 @@ public class StateChangeSet {
      * @param childName
      * @return
      */
-    protected StateComponent getNewChildValue( String childName) {
-        return _newChildren.get( childName);
+    protected StateComponent getNewChildValue(String childName) {
+        return _newChildren.get(childName);
     }
 
     /**
@@ -305,29 +305,29 @@ public class StateChangeSet {
     protected String dumpContents() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append( "  new:\n");
-        for( Map.Entry<String, StateComponent> newEntry : _newChildren.entrySet()) {
-            sb.append( "    ");
-            sb.append( newEntry.getKey());
-            sb.append( " --> ");
-            sb.append( newEntry.getValue().toString());
-            sb.append( "\n");
+        sb.append("  new:\n");
+        for (Map.Entry<String, StateComponent> newEntry : _newChildren.entrySet()) {
+            sb.append("    ");
+            sb.append(newEntry.getKey());
+            sb.append(" --> ");
+            sb.append(newEntry.getValue().toString());
+            sb.append("\n");
         }
 
-        sb.append( "  update:\n");
-        for( Map.Entry<String, StateComponent> updateEntry : _updatedChildren.entrySet()) {
-            sb.append( "    ");
-            sb.append( updateEntry.getKey());
-            sb.append( " --> ");
-            sb.append( updateEntry.getValue().toString());
-            sb.append( "\n");
+        sb.append("  update:\n");
+        for (Map.Entry<String, StateComponent> updateEntry : _updatedChildren.entrySet()) {
+            sb.append("    ");
+            sb.append(updateEntry.getKey());
+            sb.append(" --> ");
+            sb.append(updateEntry.getValue().toString());
+            sb.append("\n");
         }
 
-        sb.append( "  remove:\n");
-        for( String childName : _removedChildren) {
-            sb.append( "    ");
-            sb.append( childName);
-            sb.append( "\n");
+        sb.append("  remove:\n");
+        for (String childName : _removedChildren) {
+            sb.append("    ");
+            sb.append(childName);
+            sb.append("\n");
         }
 
         return sb.toString();
@@ -342,10 +342,9 @@ public class StateChangeSet {
      *
      * @param childName
      */
-    private void purgeChildEntries( String childName) {
-        _newChildren.remove( childName);
-        _updatedChildren.remove( childName);
-        _removedChildren.remove( childName);
+    private void purgeChildEntries(String childName) {
+        _newChildren.remove(childName);
+        _updatedChildren.remove(childName);
+        _removedChildren.remove(childName);
     }
-
 }

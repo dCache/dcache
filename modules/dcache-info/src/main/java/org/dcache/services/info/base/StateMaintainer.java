@@ -27,7 +27,7 @@ import org.dcache.util.FireAndForgetTask;
  */
 public class StateMaintainer implements StateUpdateManager, CellMessageSender {
 
-    private static final Logger _log = LoggerFactory.getLogger( StateMaintainer.class);
+    private static final Logger _log = LoggerFactory.getLogger(StateMaintainer.class);
 
     private static final boolean CANCEL_RUNNING_METRIC_EXPUNGE = false;
 
@@ -76,7 +76,7 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      *
      * @param caretaker
      */
-    void setStateCaretaker( final StateCaretaker caretaker) {
+    void setStateCaretaker(final StateCaretaker caretaker) {
         _caretaker = caretaker;
     }
 
@@ -86,28 +86,28 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
     }
 
     @Override
-    public void enqueueUpdate( final StateUpdate pendingUpdate) {
-        if( _log.isDebugEnabled()) {
+    public void enqueueUpdate(final StateUpdate pendingUpdate) {
+        if (_log.isDebugEnabled()) {
             _log.debug("enqueing job to process update " + pendingUpdate);
         }
 
         final NDC ndc = NDC.cloneNdc();
 
         _pendingRequestCount.incrementAndGet();
-        _scheduler.execute( new FireAndForgetTask( new Runnable() {
+        _scheduler.execute(new FireAndForgetTask(new Runnable() {
             @Override
             public void run() {
                 CDC.reset(_cellName, _domainName);
                 NDC.set(ndc);
                 try {
-                    if( _log.isDebugEnabled()) {
+                    if (_log.isDebugEnabled()) {
                         _log.debug("starting job to process update " + pendingUpdate);
                     }
 
-                    _caretaker.processUpdate( pendingUpdate);
+                    _caretaker.processUpdate(pendingUpdate);
                     checkScheduledExpungeActivity();
 
-                    if( _log.isDebugEnabled()) {
+                    if (_log.isDebugEnabled()) {
                         _log.debug("finished job to process update " + pendingUpdate);
                     }
                 } finally {
@@ -122,7 +122,7 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
     public void shutdown()
     {
         List<Runnable> unprocessed = _scheduler.shutdownNow();
-        if( !unprocessed.isEmpty()) {
+        if (!unprocessed.isEmpty()) {
             _log.info("Shutting down with " + unprocessed.size() +
                     " pending updates");
         } else {
@@ -142,16 +142,16 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
     synchronized void checkScheduledExpungeActivity() {
         Date earliestMetricExpiry = _caretaker.getEarliestMetricExpiryDate();
 
-        if( earliestMetricExpiry == null && _metricExpiryDate == null) {
+        if (earliestMetricExpiry == null && _metricExpiryDate == null) {
             return;
         }
 
         // If the metric expiry date has changed, we try to cancel the update.
-        if( _metricExpiryDate != null && !_metricExpiryDate.equals( earliestMetricExpiry)) {
-            if( _log.isDebugEnabled()) {
+        if (_metricExpiryDate != null && !_metricExpiryDate.equals(earliestMetricExpiry)) {
+            if (_log.isDebugEnabled()) {
                 Date now = new Date();
                 long delay = _metricExpiryDate.getTime() - now.getTime();
-                _log.debug( "Cancelling existing metric purge, due to take place in " + delay / 1000.0 + " s");
+                _log.debug("Cancelling existing metric purge, due to take place in " + delay / 1000.0 + " s");
             }
 
             /*  If the cancel fails (returns false) then the metric expunge is
@@ -159,12 +159,12 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
              *  expiry job will be scheduled automatically, so we don't need to
              *  do anything.
              */
-            if( _metricExpiryFuture.cancel( CANCEL_RUNNING_METRIC_EXPUNGE)) {
+            if (_metricExpiryFuture.cancel(CANCEL_RUNNING_METRIC_EXPUNGE)) {
                 _metricExpiryDate = null;
             }
         }
 
-        if( _metricExpiryDate == null) {
+        if (_metricExpiryDate == null) {
             scheduleMetricExpunge(earliestMetricExpiry);
         }
     }
@@ -178,32 +178,32 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      * @param whenExpunge
      *            some time in the future to schedule a task or null.
      */
-    private synchronized void scheduleMetricExpunge( final Date whenExpunge) {
+    private synchronized void scheduleMetricExpunge(final Date whenExpunge) {
         _metricExpiryDate = whenExpunge;
 
-        if( whenExpunge == null) {
+        if (whenExpunge == null) {
             _metricExpiryFuture = null;
             return;
         }
 
         long delay = whenExpunge.getTime() - System.currentTimeMillis();
 
-        if( _log.isDebugEnabled()) {
+        if (_log.isDebugEnabled()) {
             _log.debug("Scheduling next metric purge in " + delay / 1000.0 + " s");
         }
 
         try {
-            _metricExpiryFuture = _scheduler.schedule( new FireAndForgetTask( new Runnable() {
+            _metricExpiryFuture = _scheduler.schedule(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run() {
-                    _log.debug( "Starting metric purge");
+                    _log.debug("Starting metric purge");
                     _caretaker.removeExpiredMetrics();
                     scheduleMetricExpunge();
-                    _log.debug( "Metric purge completed");
+                    _log.debug("Metric purge completed");
                 }
             }), delay, TimeUnit.MILLISECONDS);
-        } catch( RejectedExecutionException e) {
-            _log.debug( "Failed to enqueue expunge task as queue is not accepting further work.");
+        } catch (RejectedExecutionException e) {
+            _log.debug("Failed to enqueue expunge task as queue is not accepting further work.");
         }
     }
 
@@ -217,6 +217,6 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      * avoid creating competing tasks.
      */
     synchronized protected void scheduleMetricExpunge() {
-        scheduleMetricExpunge( _caretaker.getEarliestMetricExpiryDate());
+        scheduleMetricExpunge(_caretaker.getEarliestMetricExpiryDate());
     }
 }

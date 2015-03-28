@@ -41,7 +41,7 @@ public interface StateUpdateManager {
      * @param pendingUpdate
      *            the StateUpdate that should be processed.
      */
-    public void enqueueUpdate( StateUpdate pendingUpdate);
+    public void enqueueUpdate(StateUpdate pendingUpdate);
 
     /**
      * Count the number of pending StateUpdate objects that are currently

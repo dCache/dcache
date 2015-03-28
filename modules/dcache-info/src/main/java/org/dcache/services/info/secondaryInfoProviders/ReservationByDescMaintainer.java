@@ -26,7 +26,7 @@ import org.dcache.services.info.stateInfo.ReservationInfoVisitor;
 public class ReservationByDescMaintainer extends AbstractStateWatcher {
 
     private static Logger _log =
-            LoggerFactory.getLogger( ReservationByDescMaintainer.class);
+            LoggerFactory.getLogger(ReservationByDescMaintainer.class);
 
     public static final String PATH_ELEMENT_BY_DESCRIPTION_BRANCH =
             "by-description";
@@ -44,7 +44,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
             "reservations";
 
     public static final StatePath RESERVATIONS_BASE_PATH =
-            StatePath.parsePath( "summary.reservations.by-VO");
+            StatePath.parsePath("summary.reservations.by-VO");
 
     private static final String PREDICATE_PATHS[] =
             { "reservations.*",
@@ -71,25 +71,25 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
         }
 
         @Override
-        public boolean equals( Object other) {
-            if( this == other) {
+        public boolean equals(Object other) {
+            if (this == other) {
                 return true;
             }
 
-            if( !(other instanceof ReservationSummaryInfo)) {
+            if (!(other instanceof ReservationSummaryInfo)) {
                 return false;
             }
 
             ReservationSummaryInfo otherSummary =
                     (ReservationSummaryInfo) other;
 
-            if( otherSummary._total != _total || otherSummary._free != _free ||
+            if (otherSummary._total != _total || otherSummary._free != _free ||
                 otherSummary._allocated != _allocated ||
                 otherSummary._used != _used) {
                 return false;
             }
 
-            return otherSummary._ids.equals( _ids);
+            return otherSummary._ids.equals(_ids);
         }
 
         /**
@@ -98,25 +98,25 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
          * @param reservationId the ID of this reservation.
          * @param info the information about this reservation.
          */
-        public void addReservationInfo( String reservationId,
-                                        ReservationInfo info) {
-            if( info.hasTotal()) {
+        public void addReservationInfo(String reservationId,
+                ReservationInfo info) {
+            if (info.hasTotal()) {
                 _total += info.getTotal();
             }
-            if( info.hasUsed()) {
+            if (info.hasUsed()) {
                 _used += info.getUsed();
             }
-            if( info.hasFree()) {
+            if (info.hasFree()) {
                 _free += info.getFree();
             }
-            if( info.hasAllocated()) {
+            if (info.hasAllocated()) {
                 _allocated += info.getAllocated();
             }
-            _ids.add( reservationId);
+            _ids.add(reservationId);
         }
 
-        public boolean hasId( String ID) {
-            return _ids.contains( ID);
+        public boolean hasId(String ID) {
+            return _ids.contains(ID);
         }
 
         public long getTotal() {
@@ -135,19 +135,19 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
             return _allocated;
         }
 
-        public boolean totalNeedsUpdating( ReservationSummaryInfo oldInfo) {
+        public boolean totalNeedsUpdating(ReservationSummaryInfo oldInfo) {
             return oldInfo == null || oldInfo.getTotal() != getTotal();
         }
 
-        public boolean usedNeedsUpdating( ReservationSummaryInfo oldInfo) {
+        public boolean usedNeedsUpdating(ReservationSummaryInfo oldInfo) {
             return oldInfo == null || oldInfo.getUsed() != getUsed();
         }
 
-        public boolean freeNeedsUpdating( ReservationSummaryInfo oldInfo) {
+        public boolean freeNeedsUpdating(ReservationSummaryInfo oldInfo) {
             return oldInfo == null || oldInfo.getFree() != getFree();
         }
 
-        public boolean allocatedNeedsUpdating( ReservationSummaryInfo oldInfo) {
+        public boolean allocatedNeedsUpdating(ReservationSummaryInfo oldInfo) {
             return oldInfo == null || oldInfo.getAllocated() != getAllocated();
         }
 
@@ -159,9 +159,9 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
          * @param basePath the base path of the IDs
          * @param newInfo the new version of this ReservationSummaryInfo
          */
-        public void purgeMissingIds( StateUpdate update, StatePath basePath,
-                                     ReservationSummaryInfo newInfo) {
-            for( String id : _ids) {
+        public void purgeMissingIds(StateUpdate update, StatePath basePath,
+                ReservationSummaryInfo newInfo) {
+            for (String id : _ids) {
                 if (!newInfo.hasId(id)) {
                     update.purgeUnder(basePath.newChild(id));
                 }
@@ -179,53 +179,52 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
          * @param oldInfo the previous ReservationSummaryInfo or null if this
          *            description is new.
          */
-        public void updateMetrics( StateUpdate update, String voName,
-                                   StatePath basePath,
-                                   ReservationSummaryInfo oldInfo) {
+        public void updateMetrics(StateUpdate update, String voName,
+                StatePath basePath,
+                ReservationSummaryInfo oldInfo) {
 
-            StatePath spacePath = basePath.newChild( PATH_ELEMENT_SPACE_BRANCH);
+            StatePath spacePath = basePath.newChild(PATH_ELEMENT_SPACE_BRANCH);
 
-            if( totalNeedsUpdating( oldInfo)) {
+            if (totalNeedsUpdating(oldInfo)) {
                 update.appendUpdate(spacePath
                         .newChild(PATH_ELEMENT_TOTAL_METRIC), new IntegerStateValue(getTotal(), true));
             }
 
-            if( freeNeedsUpdating( oldInfo)) {
+            if (freeNeedsUpdating(oldInfo)) {
                 update.appendUpdate(spacePath
                         .newChild(PATH_ELEMENT_FREE_METRIC), new IntegerStateValue(getFree(), true));
             }
 
-            if( allocatedNeedsUpdating( oldInfo)) {
+            if (allocatedNeedsUpdating(oldInfo)) {
                 update.appendUpdate(spacePath
                         .newChild(PATH_ELEMENT_ALLOCATED_METRIC), new IntegerStateValue(getAllocated(), true));
             }
 
-            if( usedNeedsUpdating( oldInfo)) {
+            if (usedNeedsUpdating(oldInfo)) {
                 update.appendUpdate(spacePath
                         .newChild(PATH_ELEMENT_USED_METRIC), new IntegerStateValue(getUsed(), true));
             }
 
             StatePath resvPath =
-                    basePath.newChild( PATH_ELEMENT_RESERVATIONS_BRANCH);
+                    basePath.newChild(PATH_ELEMENT_RESERVATIONS_BRANCH);
 
             /* Activity if there was an existing summary information */
-            if( oldInfo != null) {
-                oldInfo.purgeMissingIds( update, resvPath, this);
+            if (oldInfo != null) {
+                oldInfo.purgeMissingIds(update, resvPath, this);
 
                 /* Add those entries that are new */
-                for( String newId : _ids) {
+                for (String newId : _ids) {
                     if (!oldInfo.hasId(newId)) {
                         update.appendUpdate(resvPath
                                 .newChild(newId), new StateComposite(true));
                     }
                 }
-
             } else {
                 /* Add the VO name (we need to this only once) */
-                update.appendUpdate( basePath.newChild( PATH_ELEMENT_VO_NAME_METRIC), new StringStateValue( voName, true));
+                update.appendUpdate(basePath.newChild(PATH_ELEMENT_VO_NAME_METRIC), new StringStateValue(voName, true));
 
                 /* Add all IDs */
-                for( String id : _ids) {
+                for (String id : _ids) {
                     update.appendUpdate(resvPath
                             .newChild(id), new StateComposite(true));
                 }
@@ -239,20 +238,20 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
     }
 
     @Override
-    public void trigger( StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
         Map<String, ReservationInfo> currentResv =
-                ReservationInfoVisitor.getDetails( currentState);
+                ReservationInfoVisitor.getDetails(currentState);
         Map<String, ReservationInfo> futureResv =
-                ReservationInfoVisitor.getDetails( futureState);
+                ReservationInfoVisitor.getDetails(futureState);
 
         // build mapping from description to summary data
         Map<String, Map<String, ReservationSummaryInfo>> currentSummary =
-                buildSummaryInfo( currentResv);
+                buildSummaryInfo(currentResv);
         Map<String, Map<String, ReservationSummaryInfo>> futureSummary =
-                buildSummaryInfo( futureResv);
+                buildSummaryInfo(futureResv);
 
-        purgeMissingSummaries( update, currentSummary, futureSummary);
-        addMetrics( update, currentSummary, futureSummary);
+        purgeMissingSummaries(update, currentSummary, futureSummary);
+        addMetrics(update, currentSummary, futureSummary);
     }
 
     /**
@@ -266,11 +265,11 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      *            ReservationInfo object describing that reservation.
      * @return a Map of VO to reservation-description summaries.
      */
-    private Map<String, Map<String, ReservationSummaryInfo>> buildSummaryInfo( Map<String, ReservationInfo> reservations) {
+    private Map<String, Map<String, ReservationSummaryInfo>> buildSummaryInfo(Map<String, ReservationInfo> reservations) {
         Map<String, Map<String, ReservationSummaryInfo>> summary =
                 new HashMap<>();
 
-        for( Map.Entry<String, ReservationInfo> entry : reservations.entrySet()) {
+        for (Map.Entry<String, ReservationInfo> entry : reservations.entrySet()) {
             String reservationId = entry.getKey();
             ReservationInfo info = entry.getValue();
 
@@ -278,23 +277,23 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
              * Ignore those reservations that don't have a state or that
              * state is a final one
              */
-            if( !info.hasState() || info.getState().isFinalState()) {
-                _log.debug( "ignoring reservation " + reservationId +
-                            " as state is undefined or final");
+            if (!info.hasState() || info.getState().isFinalState()) {
+                _log.debug("ignoring reservation " + reservationId +
+                        " as state is undefined or final");
                 continue;
             }
 
             /* Skip those reservations that don't have a description */
-            if( !info.hasDescription() || info.getDescription().isEmpty()) {
-                _log.debug( "ignoring reservation " + reservationId +
-                            " as description is undefined or empty");
+            if (!info.hasDescription() || info.getDescription().isEmpty()) {
+                _log.debug("ignoring reservation " + reservationId +
+                        " as description is undefined or empty");
                 continue;
             }
 
             /* Skip all those reservations that don't have a well-defined VO */
-            if( !info.hasVo() || info.getVo().isEmpty()) {
-                _log.debug( "ignoring reservation " + reservationId +
-                            " as VO is undefined or empty");
+            if (!info.hasVo() || info.getVo().isEmpty()) {
+                _log.debug("ignoring reservation " + reservationId +
+                        " as VO is undefined or empty");
                 continue;
             }
 
@@ -304,22 +303,22 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
 
             Map<String, ReservationSummaryInfo> thisVoSummary;
 
-            thisVoSummary = summary.get( voName);
+            thisVoSummary = summary.get(voName);
 
-            if( thisVoSummary == null) {
+            if (thisVoSummary == null) {
                 thisVoSummary = new HashMap<>();
-                summary.put( voName, thisVoSummary);
+                summary.put(voName, thisVoSummary);
             }
 
-            thisSummary = thisVoSummary.get( info.getDescription());
+            thisSummary = thisVoSummary.get(info.getDescription());
 
-            if( thisSummary == null) {
+            if (thisSummary == null) {
                 thisSummary = new ReservationSummaryInfo();
-                thisVoSummary.put( info.getDescription(), thisSummary);
+                thisVoSummary.put(info.getDescription(), thisSummary);
             }
 
             // update summary with this reservation.
-            thisSummary.addReservationInfo( reservationId, info);
+            thisSummary.addReservationInfo(reservationId, info);
         }
 
         return summary;
@@ -333,27 +332,27 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      * @param currentDescriptions
      * @param futureDescriptions
      */
-    private void purgeMissingSummaries( StateUpdate update,
-                                        Map<String, Map<String, ReservationSummaryInfo>> currentVoInfo,
-                                        Map<String, Map<String, ReservationSummaryInfo>> futureVoInfo) {
+    private void purgeMissingSummaries(StateUpdate update,
+            Map<String, Map<String, ReservationSummaryInfo>> currentVoInfo,
+            Map<String, Map<String, ReservationSummaryInfo>> futureVoInfo) {
 
-        for( Map.Entry<String, Map<String, ReservationSummaryInfo>> voEntry : currentVoInfo.entrySet()) {
+        for (Map.Entry<String, Map<String, ReservationSummaryInfo>> voEntry : currentVoInfo.entrySet()) {
             String voName = voEntry.getKey();
             Set<String> currentDescriptions = voEntry.getValue().keySet();
 
-            StatePath voBasePath = buildVoPath( voName);
+            StatePath voBasePath = buildVoPath(voName);
 
             Map<String, ReservationSummaryInfo> futureDescriptions =
-                    futureVoInfo.get( voName);
+                    futureVoInfo.get(voName);
 
             // If this VO is gone completely, purge everything and move on.
-            if( futureDescriptions == null) {
-                update.purgeUnder( voBasePath);
+            if (futureDescriptions == null) {
+                update.purgeUnder(voBasePath);
                 continue;
             }
 
             // Otherwise, purge those descriptions that have gone.
-            for( String thisDescription : currentDescriptions) {
+            for (String thisDescription : currentDescriptions) {
                 if (!futureDescriptions.containsKey(thisDescription)) {
                     update.purgeUnder(buildDescriptionPath(voBasePath, thisDescription));
                 }
@@ -369,26 +368,26 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      * @param currentSummary
      * @param futureSummary
      */
-    private void addMetrics( StateUpdate update,
-                             Map<String, Map<String, ReservationSummaryInfo>> currentSummary,
-                             Map<String, Map<String, ReservationSummaryInfo>> futureSummary) {
+    private void addMetrics (StateUpdate update,
+            Map<String, Map<String, ReservationSummaryInfo>> currentSummary,
+            Map<String, Map<String, ReservationSummaryInfo>> futureSummary) {
 
-        for( Map.Entry<String, Map<String, ReservationSummaryInfo>> voEntry : futureSummary.entrySet()) {
+        for (Map.Entry<String, Map<String, ReservationSummaryInfo>> voEntry : futureSummary.entrySet()) {
             String voName = voEntry.getKey();
 
-            if( _log.isDebugEnabled()) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("Checking vo " + voName);
             }
 
             Map<String, ReservationSummaryInfo> futureDescriptions =
                     voEntry.getValue();
             Map<String, ReservationSummaryInfo> currentDescriptions =
-                    currentSummary.get( voName);
+                    currentSummary.get(voName);
 
-            StatePath voPath = buildVoPath( voName);
+            StatePath voPath = buildVoPath(voName);
 
             /* Scan through descriptions after transition is applied */
-            for( Map.Entry<String, ReservationSummaryInfo> entry : futureDescriptions.entrySet()) {
+            for (Map.Entry<String, ReservationSummaryInfo> entry : futureDescriptions.entrySet()) {
                 String description = entry.getKey();
                 ReservationSummaryInfo futureInfo = entry.getValue();
 
@@ -398,9 +397,9 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
                  */
                 ReservationSummaryInfo currentInfo =
                         currentDescriptions != null
-                                ? currentDescriptions.get( description) : null;
+                                ? currentDescriptions.get(description) : null;
 
-                if( !futureInfo.equals( currentInfo)) {
+                if (!futureInfo.equals(currentInfo)) {
                     futureInfo
                             .updateMetrics(update, voName, buildDescriptionPath(voPath, description), currentInfo);
                 }
@@ -417,12 +416,12 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      * @return a StatePath pointing to the "by-description" part of this VO's
      *         reservation summary.
      */
-    private static StatePath buildVoPath( String voName) {
-        if( voName == null) {
+    private static StatePath buildVoPath(String voName) {
+        if (voName == null) {
             throw new IllegalArgumentException("voName is null");
         }
 
-        return RESERVATIONS_BASE_PATH.newChild( voName);
+        return RESERVATIONS_BASE_PATH.newChild(voName);
     }
 
     /**
@@ -436,8 +435,8 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher {
      * @param description
      * @return
      */
-    private static StatePath buildDescriptionPath( StatePath voBasePath,
+    private static StatePath buildDescriptionPath(StatePath voBasePath,
                                                    String description) {
-        return voBasePath.newChild( PATH_ELEMENT_BY_DESCRIPTION_BRANCH).newChild( description);
+        return voBasePath.newChild(PATH_ELEMENT_BY_DESCRIPTION_BRANCH).newChild(description);
     }
 }

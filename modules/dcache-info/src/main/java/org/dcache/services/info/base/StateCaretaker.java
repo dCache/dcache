@@ -17,7 +17,7 @@ public interface StateCaretaker {
      * Process an StateUpdate object. The calling thread will block until the
      * process has completed.
      */
-    void processUpdate( StateUpdate update);
+    void processUpdate(StateUpdate update);
 
     /**
      * Discover the earliest that a mortal metric is to be removed. Calling

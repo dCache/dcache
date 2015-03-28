@@ -22,52 +22,51 @@ import org.dcache.services.info.base.StateUpdateManager;
  */
 public class LinkgroupListMsgHandler implements MessageHandler {
 
-	private static Logger _log = LoggerFactory.getLogger( LinkgroupListMsgHandler.class);
-	private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
+    private static Logger _log = LoggerFactory.getLogger(LinkgroupListMsgHandler.class);
+    private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 
-	final private StateUpdateManager _sum;
+    final private StateUpdateManager _sum;
 
-	public LinkgroupListMsgHandler( StateUpdateManager sum) {
-		_sum = sum;
-	}
+    public LinkgroupListMsgHandler(StateUpdateManager sum) {
+        _sum = sum;
+    }
 
-	@Override
-        public boolean handleMessage(Message messagePayload, long metricLifetime) {
+    @Override
+    public boolean handleMessage(Message messagePayload, long metricLifetime) {
 
-		if( !(messagePayload instanceof GetLinkGroupNamesMessage)) {
-                    return false;
-                }
+        if (!(messagePayload instanceof GetLinkGroupNamesMessage)) {
+            return false;
+        }
 
-		if( _log.isInfoEnabled()) {
-                    _log.info("received linkgroup list msg.");
-                }
+        if (_log.isInfoEnabled()) {
+            _log.info("received linkgroup list msg.");
+        }
 
-		GetLinkGroupNamesMessage msg = (GetLinkGroupNamesMessage) messagePayload;
+        GetLinkGroupNamesMessage msg = (GetLinkGroupNamesMessage) messagePayload;
 
-		Collection<String> names = msg.getLinkGroupNames();
+        Collection<String> names = msg.getLinkGroupNames();
 
-		StateUpdate update = null;
+        StateUpdate update = null;
 
-            for (String name : names) {
-                if (update == null) {
-                    update = new StateUpdate();
-                }
-
-                if (_log.isDebugEnabled()) {
-                    _log.debug("adding linkgroup: " + name + " lifetime: " + metricLifetime);
-                }
-
-                update.appendUpdate(LINKGROUPS_PATH
-                        .newChild(name), new StateComposite(metricLifetime));
+        for (String name : names) {
+            if (update == null) {
+                update = new StateUpdate();
             }
 
-		if( update != null) {
-                    _sum.enqueueUpdate(update);
-                } else {
-                    _log.info("received GetLinkGroupNamesMessage with no linkgroups listed");
-                }
+            if (_log.isDebugEnabled()) {
+                _log.debug("adding linkgroup: " + name + " lifetime: " + metricLifetime);
+            }
 
-		return true;
-	}
+            update.appendUpdate(LINKGROUPS_PATH
+                    .newChild(name), new StateComposite(metricLifetime));
+        }
 
+        if (update != null) {
+            _sum.enqueueUpdate(update);
+        } else {
+            _log.info("received GetLinkGroupNamesMessage with no linkgroups listed");
+        }
+
+        return true;
+    }
 }

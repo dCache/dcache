@@ -14,38 +14,38 @@ public class SubtreeStateGuide implements StateGuide {
 
     private final StatePath _subtreeRoot;
 
-    public SubtreeStateGuide( StatePath root) {
+    public SubtreeStateGuide(StatePath root) {
         _subtreeRoot = root;
     }
 
     @Override
-    public boolean isVisitable( StatePath path) {
+    public boolean isVisitable(StatePath path) {
 
-        if( isRootPath( path)) {
+        if (isRootPath(path)) {
             return true;
         }
 
-        if( isRootPath( _subtreeRoot)) {
+        if (isRootPath(_subtreeRoot)) {
             return true;
         }
 
-        if( path.equalsOrHasChild( _subtreeRoot)) {
+        if (path.equalsOrHasChild(_subtreeRoot)) {
             return true;
         }
 
-        if( _subtreeRoot.equalsOrHasChild( path)) {
+        if (_subtreeRoot.equalsOrHasChild(path)) {
             return true;
         }
 
         return false;
     }
 
-    private boolean isRootPath( StatePath path) {
+    private boolean isRootPath(StatePath path) {
         return path == null;
     }
 
-    public boolean isInSubtree( StatePath path) {
-        return _subtreeRoot.equalsOrHasChild( path);
+    public boolean isInSubtree(StatePath path) {
+        return _subtreeRoot.equalsOrHasChild(path);
     }
 
     @Override

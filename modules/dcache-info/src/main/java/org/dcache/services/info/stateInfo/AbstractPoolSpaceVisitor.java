@@ -18,76 +18,75 @@ import org.dcache.services.info.base.StatePath;
 public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 
 
-	private static final StatePath POOLS_PATH = new StatePath( "pools");
+    private static final StatePath POOLS_PATH = new StatePath("pools");
 
-	private static Logger _log = LoggerFactory.getLogger( AbstractPoolSpaceVisitor.class);
+    private static Logger _log = LoggerFactory.getLogger(AbstractPoolSpaceVisitor.class);
 
-	private SpaceInfo _currentPoolSpaceInfo;
-	private StatePath _currentPoolSpacePath;
+    private SpaceInfo _currentPoolSpaceInfo;
+    private StatePath _currentPoolSpacePath;
 
-	private static final String METRIC_NAME_FREE      = "free";
-	private static final String METRIC_NAME_PRECIOUS  = "precious";
-	private static final String METRIC_NAME_TOTAL     = "total";
-	private static final String METRIC_NAME_REMOVABLE = "removable";
-	private static final String METRIC_NAME_USED      = "used";
+    private static final String METRIC_NAME_FREE      = "free";
+    private static final String METRIC_NAME_PRECIOUS  = "precious";
+    private static final String METRIC_NAME_TOTAL     = "total";
+    private static final String METRIC_NAME_REMOVABLE = "removable";
+    private static final String METRIC_NAME_USED      = "used";
 
-	protected AbstractPoolSpaceVisitor() {
-		super( POOLS_PATH);
-	}
+    protected AbstractPoolSpaceVisitor() {
+        super(POOLS_PATH);
+    }
 
-	/** Called once per pool in dCache state */
-	abstract protected void newPool( String poolName, SpaceInfo space);
+    /** Called once per pool in dCache state */
+    abstract protected void newPool(String poolName, SpaceInfo space);
 
-	@Override
-	protected void newListItem( String itemName) {
-		super.newListItem( itemName);
+    @Override
+    protected void newListItem(String itemName) {
+        super.newListItem(itemName);
 
-		if( _log.isDebugEnabled()) {
-                    _log.debug("Found pool " + itemName);
-                }
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found pool " + itemName);
+        }
 
-		_currentPoolSpaceInfo = new SpaceInfo();
-		_currentPoolSpacePath = getPathToList().newChild(itemName).newChild("space");
-	}
+        _currentPoolSpaceInfo = new SpaceInfo();
+        _currentPoolSpacePath = getPathToList().newChild(itemName).newChild("space");
+    }
 
-	@Override
-	protected void exitingListItem( String itemName) {
-		super.exitingListItem( itemName);
+    @Override
+    protected void exitingListItem(String itemName) {
+        super.exitingListItem(itemName);
 
-		newPool( itemName, _currentPoolSpaceInfo);
-	}
+        newPool(itemName, _currentPoolSpaceInfo);
+    }
 
 
-	@Override
-	public void visitInteger( StatePath path, IntegerStateValue value) {
-		if( _currentPoolSpacePath == null || ! _currentPoolSpacePath.isParentOf( path)) {
-                    return;
-                }
+    @Override
+    public void visitInteger(StatePath path, IntegerStateValue value) {
+        if (_currentPoolSpacePath == null || ! _currentPoolSpacePath.isParentOf(path)) {
+            return;
+        }
 
-		String metricName = path.getLastElement();
+        String metricName = path.getLastElement();
 
-		if( _log.isDebugEnabled()) {
-                    _log.debug("Found metric " + path
-                            .getLastElement() + " = " + value.getValue());
-                }
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found metric " + path
+                    .getLastElement() + " = " + value.getValue());
+        }
 
-            switch (metricName) {
-            case METRIC_NAME_REMOVABLE:
-                _currentPoolSpaceInfo.setRemovable(value.getValue());
-                break;
-            case METRIC_NAME_FREE:
-                _currentPoolSpaceInfo.setFree(value.getValue());
-                break;
-            case METRIC_NAME_TOTAL:
-                _currentPoolSpaceInfo.setTotal(value.getValue());
-                break;
-            case METRIC_NAME_PRECIOUS:
-                _currentPoolSpaceInfo.setPrecious(value.getValue());
-                break;
-            case METRIC_NAME_USED:
-                _currentPoolSpaceInfo.setUsed(value.getValue());
-                break;
-            }
-	}
-
+        switch (metricName) {
+        case METRIC_NAME_REMOVABLE:
+            _currentPoolSpaceInfo.setRemovable(value.getValue());
+            break;
+        case METRIC_NAME_FREE:
+            _currentPoolSpaceInfo.setFree(value.getValue());
+            break;
+        case METRIC_NAME_TOTAL:
+            _currentPoolSpaceInfo.setTotal(value.getValue());
+            break;
+        case METRIC_NAME_PRECIOUS:
+            _currentPoolSpaceInfo.setPrecious(value.getValue());
+            break;
+        case METRIC_NAME_USED:
+            _currentPoolSpaceInfo.setUsed(value.getValue());
+            break;
+        }
+    }
 }

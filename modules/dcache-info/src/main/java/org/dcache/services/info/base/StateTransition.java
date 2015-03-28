@@ -20,65 +20,64 @@ import java.util.Map;
  */
 public class StateTransition {
 
-	final Map<StatePath, StateChangeSet> _allChanges = new HashMap<>();
+    final Map<StatePath, StateChangeSet> _allChanges = new HashMap<>();
 
-	/**
-	 * Obtain the StateChangeSet for this path.  If one doesn't exist, null
-	 * is returned.
-	 * @param path
-	 * @return
-	 */
-	protected StateChangeSet getStateChangeSet( StatePath path) {
-		return _allChanges.get( path);
-	}
-
-
-	/**
-	 * Obtain the StateChangeSet for this path.  If one doesn't exist, an
-	 * empty one is created and returned.
-	 * @param path  The StatePath for the composite.
-	 * @return this StatePath's change-set
-	 */
-	protected StateChangeSet getOrCreateChangeSet( StatePath path) {
-		StateChangeSet changeSet;
-
-		changeSet = _allChanges.get(path);
-
-		if( changeSet == null) {
-			changeSet = new StateChangeSet();
-			_allChanges.put(path, changeSet);
-		}
-
-		return changeSet;
-	}
+    /**
+     * Obtain the StateChangeSet for this path.  If one doesn't exist, null
+     * is returned.
+     * @param path
+     * @return
+     */
+    protected StateChangeSet getStateChangeSet(StatePath path) {
+        return _allChanges.get(path);
+    }
 
 
+    /**
+     * Obtain the StateChangeSet for this path.  If one doesn't exist, an
+     * empty one is created and returned.
+     * @param path  The StatePath for the composite.
+     * @return this StatePath's change-set
+     */
+    protected StateChangeSet getOrCreateChangeSet(StatePath path) {
+        StateChangeSet changeSet;
 
-	/**
-	 * Dump our contents to a (quite verbose) String.
-	 * @return
-	 */
-	protected String dumpContents() {
-		StringBuilder sb = new StringBuilder();
-		boolean isFirst = true;
+        changeSet = _allChanges.get(path);
 
-		for( Map.Entry<StatePath,StateChangeSet> entry :  _allChanges.entrySet()) {
-			StateChangeSet changeSet = entry.getValue();
+        if (changeSet == null) {
+            changeSet = new StateChangeSet();
+            _allChanges.put(path, changeSet);
+        }
 
-			if( isFirst) {
-                            isFirst = false;
-                        } else {
-                            sb.append("\n");
-                        }
+        return changeSet;
+    }
 
-			sb.append( "Path: ");
-			sb.append( entry.getKey() != null ? entry.getKey() : "(null)");
-			sb.append( "\n");
 
-			sb.append( changeSet.dumpContents());
-		}
 
-		return sb.toString();
-	}
+    /**
+     * Dump our contents to a (quite verbose) String.
+     * @return
+     */
+    protected String dumpContents() {
+        StringBuilder sb = new StringBuilder();
+        boolean isFirst = true;
 
+        for (Map.Entry<StatePath,StateChangeSet> entry : _allChanges.entrySet()) {
+            StateChangeSet changeSet = entry.getValue();
+
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                sb.append("\n");
+            }
+
+            sb.append("Path: ");
+            sb.append(entry.getKey() != null ? entry.getKey() : "(null)");
+            sb.append("\n");
+
+            sb.append(changeSet.dumpContents());
+        }
+
+        return sb.toString();
+    }
 }

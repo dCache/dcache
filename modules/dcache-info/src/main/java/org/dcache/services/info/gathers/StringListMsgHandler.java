@@ -15,36 +15,35 @@ import org.dcache.services.info.base.StateUpdateManager;
  */
 public class StringListMsgHandler extends CellMessageHandlerSkel {
 
-	final private StatePath _path;
+    final private StatePath _path;
 
-	/**
-	 * Create a new generic String-list message handler.
-	 * @param path a String representation of the path under which incoming elements
-	 * will be added
-	 */
-	public StringListMsgHandler( StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo, String path) {
-		super( sum, msgMetaRepo);
-		_path = new StatePath(path);
-	}
+    /**
+     * Create a new generic String-list message handler.
+     * @param path a String representation of the path under which incoming elements
+     * will be added
+     */
+    public StringListMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo, String path) {
+        super(sum, msgMetaRepo);
+        _path = new StatePath(path);
+    }
 
-	@Override
-    public void process( Object msgPayload, long metricLifetime) {
+    @Override
+    public void process(Object msgPayload, long metricLifetime) {
 
-		Object array[] = (Object []) msgPayload;
+        Object array[] = (Object []) msgPayload;
 
-		if( array.length == 0) {
-                    return;
-                }
+        if (array.length == 0) {
+            return;
+        }
 
-		StateUpdate update = new StateUpdate();
+        StateUpdate update = new StateUpdate();
 
-            for (Object element : array) {
-                String listItem = (String) element;
-                update.appendUpdate(_path
-                        .newChild(listItem), new StateComposite(metricLifetime));
-            }
+        for (Object element : array) {
+            String listItem = (String) element;
+            update.appendUpdate(_path
+                    .newChild(listItem), new StateComposite(metricLifetime));
+        }
 
-		applyUpdates( update);
-	}
-
+        applyUpdates(update);
+    }
 }

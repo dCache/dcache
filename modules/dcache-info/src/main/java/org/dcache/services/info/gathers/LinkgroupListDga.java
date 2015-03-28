@@ -15,48 +15,48 @@ import dmg.cells.nucleus.CellPath;
  */
 public class LinkgroupListDga extends SkelPeriodicActivity {
 
-	private static Logger _log = LoggerFactory.getLogger( LinkgroupListDga.class);
+    private static Logger _log = LoggerFactory.getLogger(LinkgroupListDga.class);
 
-	private static final String SRM_CELL_NAME = "SpaceManager";
+    private static final String SRM_CELL_NAME = "SpaceManager";
 
-	/** Assume that a message might be lost and allow for 50% jitter */
-	private static final double SAFETY_FACTOR = 2.5;
+    /** Assume that a message might be lost and allow for 50% jitter */
+    private static final double SAFETY_FACTOR = 2.5;
 
-	private CellPath _cp = new CellPath( SRM_CELL_NAME);
-	private final MessageHandlerChain _mhc;
+    private CellPath _cp = new CellPath(SRM_CELL_NAME);
+    private final MessageHandlerChain _mhc;
 
-	/** The period between successive requests for data, in seconds */
-	long _metricLifetime;
+    /** The period between successive requests for data, in seconds */
+    long _metricLifetime;
 
-	/**
-	 * Create new DGA for maintaining a list of LinkGroups.
-	 * @param interval how often the list of linkgroups should be updated, in seconds.
-	 */
-	public LinkgroupListDga( int interval, MessageHandlerChain mhc) {
-		super( interval);
+    /**
+     * Create new DGA for maintaining a list of LinkGroups.
+     * @param interval how often the list of linkgroups should be updated, in seconds.
+     */
+    public LinkgroupListDga(int interval, MessageHandlerChain mhc) {
+        super(interval);
 
-		_mhc = mhc;
-		_metricLifetime = Math.round( interval * SAFETY_FACTOR);
-	}
+        _mhc = mhc;
+        _metricLifetime = Math.round(interval * SAFETY_FACTOR);
+    }
 
-	/**
-	 * When triggered, send a message.
-	 */
-	@Override
-	public void trigger() {
-		super.trigger();
+    /**
+     * When triggered, send a message.
+     */
+    @Override
+    public void trigger() {
+        super.trigger();
 
-		if( _log.isInfoEnabled()) {
-                    _log.info("Sending linkgroup list request message");
-                }
+        if (_log.isInfoEnabled()) {
+            _log.info("Sending linkgroup list request message");
+        }
 
-		_mhc.sendMessage( _metricLifetime, _cp, new GetLinkGroupNamesMessage());
-	}
+        _mhc.sendMessage(_metricLifetime, _cp, new GetLinkGroupNamesMessage());
+    }
 
 
-	@Override
+    @Override
     public String toString()
-	{
-		return this.getClass().getSimpleName();
-	}
+    {
+        return this.getClass().getSimpleName();
+    }
 }

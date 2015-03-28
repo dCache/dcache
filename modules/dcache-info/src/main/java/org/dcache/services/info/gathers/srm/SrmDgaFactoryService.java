@@ -30,7 +30,7 @@ public class SrmDgaFactoryService implements DgaFactoryService
 
         // We don't use LinkgroupListDga as it provides the wrong information, and isn't needed as
         // LinkgroupDetailsDga (mistakenly) provides all information about all linkgroups.
-        //addActivity( new LinkgroupListDga( 60));
+        //addActivity(new LinkgroupListDga(60));
         activity.add(new LinkgroupDetailsDga(sender, 300)); // every five minutes, as this may be a heavy-weight operation.
         activity.add(new SrmSpaceDetailsDga(sender, 300)); // every five minutes, as this may be a heavy-weight operation.
 

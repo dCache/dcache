@@ -19,27 +19,27 @@ public abstract class SubtreeVisitor implements StateVisitor {
         setVisitScopeToEverything();
     }
 
-    public SubtreeVisitor( StatePath subtreeRoot) {
-        setVisitScopeToSubtree( subtreeRoot);
+    public SubtreeVisitor(StatePath subtreeRoot) {
+        setVisitScopeToSubtree(subtreeRoot);
     }
 
     protected void setVisitScopeToEverything() {
         _guide = new VisitEverythingStateGuide();
     }
 
-    protected void setVisitScopeToSubtree( StatePath subtreeRoot) {
-        _guide = new SubtreeStateGuide( subtreeRoot);
+    protected void setVisitScopeToSubtree(StatePath subtreeRoot) {
+        _guide = new SubtreeStateGuide(subtreeRoot);
     }
 
     @Override
-    public boolean isVisitable( StatePath path) {
-        return _guide.isVisitable( path);
+    public boolean isVisitable(StatePath path) {
+        return _guide.isVisitable(path);
     }
 
-    protected boolean isInsideScope( StatePath path) {
-        if( _guide instanceof SubtreeStateGuide) {
+    protected boolean isInsideScope(StatePath path) {
+        if (_guide instanceof SubtreeStateGuide) {
             SubtreeStateGuide ssg = (SubtreeStateGuide) _guide;
-            return ssg.isInSubtree( path);
+            return ssg.isInSubtree(path);
         } else {
             return true;
         }

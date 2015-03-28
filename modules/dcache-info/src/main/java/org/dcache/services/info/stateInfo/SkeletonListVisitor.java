@@ -21,13 +21,13 @@ import org.dcache.services.info.base.guides.SubtreeStateGuide;
  * called for each such list.  Subclasses may overload that method.
  *
  * The method getKey() will return the last item, as recorded by the subclass calling
- * super.newListItem( key), typically done within an overloaded method newListitem.
+ * super.newListItem(key), typically done within an overloaded method newListitem.
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class SkeletonListVisitor implements StateVisitor {
 
-    private static Logger _log = LoggerFactory.getLogger( SkeletonListVisitor.class);
+    private static Logger _log = LoggerFactory.getLogger(SkeletonListVisitor.class);
 
     final private StatePath _pathToList;
 
@@ -39,18 +39,18 @@ public class SkeletonListVisitor implements StateVisitor {
      * Instantiate the list over the items underneath pathToList.
      * @param pathToList the StatePath representing the parent object for this list.
      */
-    protected SkeletonListVisitor( StatePath pathToList) {
-        if( _log.isDebugEnabled()) {
+    protected SkeletonListVisitor(StatePath pathToList) {
+        if (_log.isDebugEnabled()) {
             _log.debug("Searching on path " + pathToList);
         }
 
         _pathToList = pathToList;
-        _guide = new SubtreeStateGuide( pathToList);
+        _guide = new SubtreeStateGuide(pathToList);
     }
 
     @Override
-    public boolean isVisitable( StatePath path) {
-        return _guide.isVisitable( path);
+    public boolean isVisitable(StatePath path) {
+        return _guide.isVisitable(path);
     }
 
     /**
@@ -71,23 +71,23 @@ public class SkeletonListVisitor implements StateVisitor {
 
     @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
-        if( _pathToList.isParentOf( path)) {
-            if( _log.isDebugEnabled()) {
+        if (_pathToList.isParentOf(path)) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("Entering " + path);
             }
 
-            newListItem( path.getLastElement());
+            newListItem(path.getLastElement());
         }
     }
 
     @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
-        if( _pathToList.isParentOf( path)) {
-            if( _log.isDebugEnabled()) {
+        if (_pathToList.isParentOf(path)) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("Leaving " + path);
             }
 
-            exitingListItem( path.getLastElement());
+            exitingListItem(path.getLastElement());
         }
     }
 
@@ -96,8 +96,8 @@ public class SkeletonListVisitor implements StateVisitor {
      * @param listItemName the name of the list item to record.
      * @see the getKey() method.
      */
-    protected void newListItem( String listItemName) {
-        if( _log.isDebugEnabled()) {
+    protected void newListItem(String listItemName) {
+        if (_log.isDebugEnabled()) {
             _log.debug("Assigning _thisKey to " + listItemName);
         }
 
@@ -108,8 +108,8 @@ public class SkeletonListVisitor implements StateVisitor {
      * Method called whenever the visitor is leaving a list item.
      * @param listItemName the name of the list item that is being left.
      */
-    protected void exitingListItem( String listItemName) {
-        if( _log.isDebugEnabled()) {
+    protected void exitingListItem(String listItemName) {
+        if (_log.isDebugEnabled()) {
             _log.debug("Resetting _thisKey to null on leaving " + listItemName);
         }
 

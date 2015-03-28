@@ -41,28 +41,28 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     }
 
     @Override
-    public String serialise( StatePath start) {
+    public String serialise(StatePath start) {
         _result = new StringBuilder();
         _startPath = start;
-        if( start != null) {
+        if (start != null) {
             setVisitScopeToSubtree(start);
         } else {
             setVisitScopeToEverything();
         }
 
-        if( start != null) {
-            _result.append( start.toString());
+        if (start != null) {
+            _result.append(start.toString());
             _result.append(">\n");
         }
 
-        _exhibitor.visitState( this);
+        _exhibitor.visitState(this);
 
         return _result.toString();
     }
 
     @Override
     public String serialise() {
-        return serialise( null);
+        return serialise(null);
     }
 
 
@@ -73,31 +73,31 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
 
     @Override
     public void visitBoolean(StatePath path, BooleanStateValue value) {
-        outputMetric( path, value.toString(), value.getTypeName());
+        outputMetric(path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
     public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
-        outputMetric( path, value.toString(), value.getTypeName());
+        outputMetric(path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
     public void visitInteger(StatePath path, IntegerStateValue value) {
-        outputMetric( path, value.toString(), value.getTypeName());
+        outputMetric(path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
     public void visitString(StatePath path, StringStateValue value) {
-        outputMetric( path, "\""+value+"\"", value.getTypeName());
+        outputMetric(path, "\""+value+"\"", value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
-        if( !isInsideScope( path)) {
+        if (!isInsideScope(path)) {
             return;
         }
 
@@ -105,21 +105,21 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     }
     @Override
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
-        if( !isInsideScope( path)) {
+        if (!isInsideScope(path)) {
             return;
         }
 
         // If we just traversed a path without it containing any elements, treat it as a list.
-        if( path != null && path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
+        if (path != null && path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
             String type = LIST_TYPE;
 
-            if( metadata != null) {
-                String className = metadata.get( State.METADATA_BRANCH_CLASS_KEY);
-                if( className != null) {
+            if (metadata != null) {
+                String className = metadata.get(State.METADATA_BRANCH_CLASS_KEY);
+                if (className != null) {
                     type = className;
                 }
             }
-            outputMetric( path, "", type);
+            outputMetric(path, "", type);
         }
     }
 
@@ -129,20 +129,20 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
      * @param metricValue the String representing this metric's current value.
      * @param metricType the type of metric.
      */
-    private void outputMetric( StatePath path, String metricValue, String metricType) {
+    private void outputMetric(StatePath path, String metricValue, String metricType) {
 
-        if( _startPath != null) {
+        if (_startPath != null) {
             _result.append("  ");
         }
 
-        if( path != null) {
+        if (path != null) {
             _result.append(path.toString(_startPath));
         }
 
-        _result.append( ":  ");
-        _result.append( metricValue);
-        _result.append( " [");
-        _result.append( metricType);
-        _result.append( "]\n");
+        _result.append(":  ");
+        _result.append(metricValue);
+        _result.append(" [");
+        _result.append(metricType);
+        _result.append("]\n");
     }
 }

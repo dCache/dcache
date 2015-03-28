@@ -28,35 +28,34 @@ import org.dcache.services.info.base.StatePath;
  */
 public class SimpleIntegerMapVisitor extends SimpleSkeletonMapVisitor {
 
-	/**
-	 * Build a mapping between list items and some StringStateValue value for dCache's current state.
-	 * @param pathToList the StatePath of the list's parent StateComposite.
-	 * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
-	 * @return the mapping between list items and the metric values.
-	 */
-	public static final Map<String,Long> buildMap( StateExhibitor exhibitor, StatePath pathToList, StatePath pathToMetric) {
-		SimpleIntegerMapVisitor visitor = new SimpleIntegerMapVisitor( pathToList, pathToMetric);
-		exhibitor.visitState( visitor);
-		return visitor.getMap();
-	}
+    /**
+     * Build a mapping between list items and some StringStateValue value for dCache's current state.
+     * @param pathToList the StatePath of the list's parent StateComposite.
+     * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
+     * @return the mapping between list items and the metric values.
+     */
+    public static final Map<String,Long> buildMap(StateExhibitor exhibitor, StatePath pathToList, StatePath pathToMetric) {
+        SimpleIntegerMapVisitor visitor = new SimpleIntegerMapVisitor(pathToList, pathToMetric);
+        exhibitor.visitState(visitor);
+        return visitor.getMap();
+    }
 
-	private final Map <String,Long> _map;
+    private final Map <String,Long> _map;
 
-	public SimpleIntegerMapVisitor( StatePath pathToList, StatePath pathToMetric) {
-		super( pathToList, pathToMetric);
+    public SimpleIntegerMapVisitor(StatePath pathToList, StatePath pathToMetric) {
+        super(pathToList, pathToMetric);
 
-		_map = new HashMap<>();
-	}
+        _map = new HashMap<>();
+    }
 
-	@Override
-	public void visitInteger(StatePath path, IntegerStateValue value) {
-		if( path.equals( getPathToMetric())) {
-                    _map.put(getKey(), value.getValue());
-                }
-	}
+    @Override
+    public void visitInteger(StatePath path, IntegerStateValue value) {
+        if (path.equals(getPathToMetric())) {
+            _map.put(getKey(), value.getValue());
+        }
+    }
 
-	Map<String,Long> getMap() {
-		return _map;
-	}
-
+    Map<String,Long> getMap() {
+        return _map;
+    }
 }

@@ -25,140 +25,139 @@ import org.dcache.services.info.serialisation.StateSerialiser;
  */
 public class XmlConduit extends AbstractThreadedConduit {
 
-	private static Logger _log = LoggerFactory.getLogger( XmlConduit.class);
+    private static Logger _log = LoggerFactory.getLogger(XmlConduit.class);
 
-	/** TCP port that the server listens on */
-	private int _port;
+    /** TCP port that the server listens on */
+    private int _port;
 
-        /** TCP backlog */
-        private int _backlog;
+    /** TCP backlog */
+    private int _backlog;
 
-        /** IP address to bind to */
-        private String _bindAddress;
+    /** IP address to bind to */
+    private String _bindAddress;
 
-	/** Server Socket reference */
-	private ServerSocket _svr_skt;
+    /** Server Socket reference */
+    private ServerSocket _svr_skt;
 
-	/** Our serialiser for the current dCache state */
-	private StateSerialiser _serialiser;
+    /** Our serialiser for the current dCache state */
+    private StateSerialiser _serialiser;
 
-        @Required
-        public void setSerialiser(StateSerialiser serialiser)
-        {
-            _serialiser = serialiser;
+    @Required
+    public void setSerialiser(StateSerialiser serialiser)
+    {
+        _serialiser = serialiser;
+    }
+
+    @Required
+    public void setPort(int port)
+    {
+        _port = port;
+    }
+
+    public int getPort()
+    {
+        return _port;
+    }
+
+    @Required
+    public void setBacklog(int backlog)
+    {
+        _backlog = backlog;
+    }
+
+    public int getBacklog()
+    {
+        return _backlog;
+    }
+
+    @Required
+    public void setBindAddress(String address)
+    {
+        _bindAddress = address;
+    }
+
+    public String getBindAddress()
+    {
+        return _bindAddress;
+    }
+
+    @Override
+    public void enable() {
+        try {
+            _svr_skt = new ServerSocket(_port, _backlog, InetAddresses.forString(_bindAddress));
+        } catch (IOException e) {
+            Thread.currentThread().interrupt();
+            return;
+        } catch (SecurityException e) {
+            _log.error("security issue creating port " + _port, e);
+            return;
+        }
+        super.enable(); // start the thread.
+    }
+
+
+    @Override
+    void triggerBlockingActivityToReturn() {
+        if (_svr_skt == null) {
+            return;
         }
 
-        @Required
-        public void setPort(int port)
-        {
-            _port = port;
+        try {
+            _svr_skt.close();
+        } catch (IOException e) {
+            _log.error("Problem closing server socket", e);
+        } finally {
+            _svr_skt = null;
+        }
+    }
+
+
+    /**
+     * Wait for an incoming connection to the listening socket.  When
+     * one is received, send it the XML serialisation of our current state.
+     */
+    @Override
+    void blockingActivity() {
+        Socket skt = null;
+
+        try {
+            skt = _svr_skt.accept();
+        } catch (SocketException e) {
+            if (_svr_skt != null && (this._should_run || !_svr_skt.isClosed())) {
+                _log.error("accept() failed", e);
+            }
+        } catch (IOException e) {
+            Thread.currentThread().interrupt();
+            return;
+        } catch (SecurityException e) {
+            _log.error ("accept() failed for security reasons", e);
+            return;
+        } catch (Exception e) {
+            _log.error("accept() failed for an unknown reason", e);
+            return;
         }
 
-        public int getPort()
-        {
-            return _port;
-        }
+        if (skt != null) {
+            if (_log.isInfoEnabled()) {
+                _log.info("Incoming connection from " + skt
+                        .toString());
+            }
 
-        @Required
-        public void setBacklog(int backlog)
-        {
-            _backlog = backlog;
-        }
-
-        public int getBacklog()
-        {
-            return _backlog;
-        }
-
-        @Required
-        public void setBindAddress(String address)
-        {
-            _bindAddress = address;
-        }
-
-        public String getBindAddress()
-        {
-            return _bindAddress;
-        }
-
-	@Override
-	public void enable() {
-		try {
-			_svr_skt = new ServerSocket(_port, _backlog, InetAddresses.forString(_bindAddress));
-		} catch( IOException e) {
-			Thread.currentThread().interrupt();
-			return;
-		} catch(SecurityException e) {
-			_log.error( "security issue creating port "+_port, e);
-			return;
-		}
-		super.enable(); // start the thread.
-	}
-
-
-	@Override
-	void triggerBlockingActivityToReturn() {
-		if( _svr_skt == null) {
-                    return;
+            try {
+                _callCount++;
+                String data = _serialiser.serialise();
+                skt.getOutputStream().write(data.getBytes());
+            } catch (IOException e) {
+                _log.error("failed to write XML data", e);
+            } catch (Exception e) {
+                _log.error("unknown failure writing XML data", e);
+            } finally {
+                try {
+                    skt.close();
+                } catch (IOException e) {
+                    Thread.currentThread().interrupt();
                 }
-
-		try {
-			_svr_skt.close();
-		} catch( IOException e) {
-			_log.error("Problem closing server socket", e);
-		} finally {
-			_svr_skt = null;
-		}
-	}
-
-
-	/**
-	 * Wait for an incoming connection to the listening socket.  When
-	 * one is received, send it the XML serialisation of our current state.
-	 */
-	@Override
-	void blockingActivity() {
-		Socket skt=null;
-
-		try {
-			skt = _svr_skt.accept();
-		} catch( SocketException e) {
-			if( _svr_skt != null && (this._should_run || !_svr_skt.isClosed())) {
-                            _log.error("accept() failed", e);
-                        }
-		} catch( IOException e) {
-			Thread.currentThread().interrupt();
-			return;
-		} catch( SecurityException e) {
-			_log.error( "accept() failed for security reasons", e);
-			return;
-		} catch( Exception e) {
-			_log.error( "accept() failed for an unknown reason", e);
-			return;
-		}
-
-		if( skt != null) {
-
-			if( _log.isInfoEnabled()) {
-                            _log.info("Incoming connection from " + skt
-                                    .toString());
-                        }
-
-			try {
-				_callCount++;
-				String data = _serialiser.serialise();
-				skt.getOutputStream().write(data.getBytes());
-			} catch( IOException e) {
-				_log.error( "failed to write XML data", e);
-			} catch( Exception e) {
-				_log.error( "unknown failure writing XML data", e);
-			} finally {
-				try {
-					skt.close();
-				} catch( IOException e) {
-					Thread.currentThread().interrupt();
-				}
-			}
-		}
-	}
+            }
+        }
+    }
 }

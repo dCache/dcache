@@ -47,7 +47,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     public static final String METADATA_BRANCH_CLASS_KEY = "branch";
     public static final String METADATA_BRANCH_IDNAME_KEY = "id";
 
-    private static final Logger _log = LoggerFactory.getLogger( State.class);
+    private static final Logger _log = LoggerFactory.getLogger(State.class);
 
     /**
      * Class member variables...
@@ -74,7 +74,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         metadata.addDefault();
 
         // Build our top-level immortal StateComposite.
-        _state = new StateComposite( metadata);
+        _state = new StateComposite(metadata);
     }
 
     /**
@@ -84,7 +84,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param sum
      *            the StateUpdateManager
      */
-    public void setStateUpdateManager( StateUpdateManager sum) {
+    public void setStateUpdateManager(StateUpdateManager sum) {
         _updateManager = sum;
     }
 
@@ -97,8 +97,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     public Date getEarliestMetricExpiryDate() {
         Date earliestExpiryDate = _state.getEarliestChildExpiryDate();
 
-        if( _log.isDebugEnabled()) {
-            if(earliestExpiryDate == null) {
+        if (_log.isDebugEnabled()) {
+            if (earliestExpiryDate == null) {
                 _log.debug("reporting that earliest expiry time is never");
             } else {
                 long duration = (earliestExpiryDate.getTime() -
@@ -127,20 +127,20 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * </ol>
      */
     @Override
-    public void processUpdate( StateUpdate update) {
-        if( _log.isDebugEnabled()) {
+    public void processUpdate(StateUpdate update) {
+        if (_log.isDebugEnabled()) {
             _log.debug("beginning to process update: \n" + update.debugInfo());
         }
 
         // It's just possible that we might be called with null; ignore these
         // spurious calls.
-        if( update == null) {
-            _log.warn( "processUpdate called with null StateUpdate");
+        if (update == null) {
+            _log.warn("processUpdate called with null StateUpdate");
             return;
         }
 
-        if(update.countPurges() == 0 && update.count() == 0) {
-            _log.warn( "StateUpdate with zero updates encountered");
+        if (update.countPurges() == 0 && update.count() == 0) {
+            _log.warn("StateUpdate with zero updates encountered");
             return;
         }
 
@@ -153,18 +153,18 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
              * Update our new StateTransition based on the StateUpdate.
              */
             try {
-                update.updateTransition( _state, transition);
+                update.updateTransition(_state, transition);
             } catch (BadStatePathException e) {
-                _log.error( "Error updating state:", e);
+                _log.error("Error updating state:", e);
             }
 
-            _log.debug( "checking StateWatchers");
+            _log.debug("checking StateWatchers");
 
-            StateUpdate resultingUpdate = checkWatchers( transition);
+            StateUpdate resultingUpdate = checkWatchers(transition);
 
             // TODO: don't enqueue the update but merge with existing StateTransition and
             // look for additional StateWatchers.
-            if( resultingUpdate != null) {
+            if (resultingUpdate != null) {
                 _updateManager.enqueueUpdate(resultingUpdate);
             }
 
@@ -172,7 +172,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             _stateReadLock.unlock();
         }
 
-        applyTransition( transition);
+        applyTransition(transition);
     }
 
     /**
@@ -183,8 +183,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param transition
      *            the StateTransition to apply.
      */
-    private void applyTransition( StateTransition transition) {
-        if( _log.isDebugEnabled()) {
+    private void applyTransition(StateTransition transition) {
+        if (_log.isDebugEnabled()) {
             _log.debug("now applying following transition to state:\n\n" + transition
                     .dumpContents());
         }
@@ -192,7 +192,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         try {
             _stateWriteLock.lock();
 
-            _state.applyTransition( null, transition);
+            _state.applyTransition(null, transition);
 
         } finally {
             _stateWriteLock.unlock();
@@ -217,55 +217,55 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *         new metrics to update.
      */
     @Override
-    public StateUpdate checkWatchers( StateTransition transition) {
+    public StateUpdate checkWatchers(StateTransition transition) {
 
         StateUpdate update = new StateUpdate();
         StateExhibitor currentState = this;
         StateExhibitor futureState = null;
 
-        for( StateWatcherInfo thisWatcherInfo : _watchers) {
+        for (StateWatcherInfo thisWatcherInfo : _watchers) {
 
             StateWatcher thisWatcher = thisWatcherInfo.getWatcher();
 
-            if( !thisWatcherInfo.isEnabled()) {
-                if( _log.isDebugEnabled()) {
+            if (!thisWatcherInfo.isEnabled()) {
+                if (_log.isDebugEnabled()) {
                     _log.debug("skipping disabled watcher " + thisWatcher);
                 }
                 continue;
             }
 
-            if( _log.isDebugEnabled()) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("checking watcher " + thisWatcher);
             }
 
             boolean hasBeenTriggered = false;
 
-            for( StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
+            for (StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
 
-                if( _log.isDebugEnabled()) {
+                if (_log.isDebugEnabled()) {
                     _log.debug("checking watcher " + thisWatcher + " predicate " + thisPredicate);
                 }
 
-                hasBeenTriggered = _state.predicateHasBeenTriggered( null,
+                hasBeenTriggered = _state.predicateHasBeenTriggered(null,
                         thisPredicate,
                         transition);
 
-                if( hasBeenTriggered) {
+                if (hasBeenTriggered) {
                     break; // we only need one predicate to match, so quit
                 }
                 // early.
             }
 
-            if( hasBeenTriggered) {
-                if( _log.isInfoEnabled()) {
+            if (hasBeenTriggered) {
+                if (_log.isInfoEnabled()) {
                     _log.info("triggering watcher " + thisWatcher);
                 }
                 thisWatcherInfo.incrementCounter();
-                if( futureState == null) {
+                if (futureState == null) {
                     futureState = new PostTransitionStateExhibitor(currentState, transition);
                 }
 
-                thisWatcher.trigger( update, currentState, futureState);
+                thisWatcher.trigger(update, currentState, futureState);
             }
         }
 
@@ -297,7 +297,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         String[] watchers = new String[_watchers.size()];
 
         int i = 0;
-        for( StateWatcherInfo thisWatcherInfo : _watchers) {
+        for (StateWatcherInfo thisWatcherInfo : _watchers) {
             watchers[i++] = thisWatcherInfo.toString();
         }
 
@@ -312,10 +312,10 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @return the number of matching entries.
      */
     @Override
-    public int enableStateWatcher( String name) {
+    public int enableStateWatcher(String name) {
         int count = 0;
 
-        for( StateWatcherInfo thisWatcherInfo : _watchers) {
+        for (StateWatcherInfo thisWatcherInfo : _watchers) {
             if (name.equals(thisWatcherInfo.getWatcher().toString())) {
                 thisWatcherInfo.enable();
                 count++;
@@ -333,10 +333,10 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @return the number of matching entries.
      */
     @Override
-    public int disableStateWatcher( String name) {
+    public int disableStateWatcher(String name) {
         int count = 0;
 
-        for( StateWatcherInfo thisWatcherInfo : _watchers) {
+        for (StateWatcherInfo thisWatcherInfo : _watchers) {
             if (name.equals(thisWatcherInfo.getWatcher().toString())) {
                 thisWatcherInfo.disable();
                 count++;
@@ -366,23 +366,23 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         // A quick check before obtaining the lock
         Date expDate = getEarliestMetricExpiryDate();
 
-        if( expDate == null || expDate.after( new Date())) {
+        if (expDate == null || expDate.after(new Date())) {
             return;
         }
 
-        _log.info( "Building StateTransition for expired StateComponents");
+        _log.info("Building StateTransition for expired StateComponents");
         StateTransition transition = new StateTransition();
 
         try {
             _stateReadLock.lock();
 
-            _state.buildRemovalTransition( null, transition, false);
+            _state.buildRemovalTransition(null, transition, false);
 
-            StateUpdate resultingUpdate = checkWatchers( transition);
+            StateUpdate resultingUpdate = checkWatchers(transition);
 
             // TODO: don't enqueue the update but merge with existing StateTransition and
             // look for additional StateWatchers.
-            if( resultingUpdate != null) {
+            if (resultingUpdate != null) {
                 _updateManager.enqueueUpdate(resultingUpdate);
             }
 
@@ -390,7 +390,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             _stateReadLock.unlock();
         }
 
-        applyTransition( transition);
+        applyTransition(transition);
     }
 
     /**
@@ -407,8 +407,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *            the algorithm that wishes to visit our current state
      */
     @Override
-    public void visitState( StateVisitor visitor) {
-        if( _log.isDebugEnabled()) {
+    public void visitState(StateVisitor visitor) {
+        if (_log.isDebugEnabled()) {
             _log.debug("visitor " + visitor.getClass()
                     .getSimpleName() + " wishing to visit current state");
         }
@@ -416,7 +416,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         try {
             long beforeLock = System.currentTimeMillis();
 
-            if( _log.isDebugEnabled()) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("visitor " + visitor.getClass()
                         .getSimpleName() + " acquiring read lock");
             }
@@ -425,18 +425,18 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
             long afterLock = System.currentTimeMillis();
 
-            if( _log.isDebugEnabled()) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("visitor " + visitor.getClass()
                         .getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
             }
 
-            if( visitor.isVisitable( null)) {
+            if (visitor.isVisitable(null)) {
                 _state.acceptVisitor(null, visitor);
             }
 
             long afterVisit = System.currentTimeMillis();
 
-            if( _log.isDebugEnabled()) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("visitor " + visitor.getClass()
                         .getSimpleName() + " completed visit (took " + (afterVisit - afterLock) / 1000.0 + " ms), releasing read lock.");
             }
@@ -445,7 +445,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             _stateReadLock.unlock();
         }
 
-        if( _log.isDebugEnabled()) {
+        if (_log.isDebugEnabled()) {
             _log.debug("visitor " + visitor.getClass()
                     .getSimpleName() + " finished.");
         }
@@ -461,7 +461,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         boolean _isEnabled = true;
         long _counter;
 
-        StateWatcherInfo( StateWatcher watcher) {
+        StateWatcherInfo(StateWatcher watcher) {
             _watcher = watcher;
         }
 
@@ -489,11 +489,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
         public String toString() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append( _watcher.toString()).append( " ");
-            sb.append( "(");
-            sb.append( _isEnabled ? "enabled" : "disabled");
+            sb.append(_watcher.toString()).append(" ");
+            sb.append("(");
+            sb.append(_isEnabled ? "enabled" : "disabled");
             sb.append(", triggered: ").append(_counter);
-            sb.append( ")");
+            sb.append(")");
 
             return sb.toString();
         }
@@ -504,11 +504,11 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *
      * @param pw
      */
-    public void getInfo( PrintWriter pw) {
-        pw.print( listStateWatcher().length);
-        pw.println( " state watchers.");
+    public void getInfo(PrintWriter pw) {
+        pw.print(listStateWatcher().length);
+        pw.println(" state watchers.");
 
-        pw.print( _updateManager.countPendingUpdates());
-        pw.println( " pending updates to state.");
+        pw.print(_updateManager.countPendingUpdates());
+        pw.println(" pending updates to state.");
     }
 }

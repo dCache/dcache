@@ -29,6 +29,6 @@ public class RoutingManagerDgaFactoryService implements DgaFactoryService
                                        MessageMetadataRepository<UOID> msgMetaRepo)
     {
         return ImmutableSet.of((Schedulable)new RoutingMgrDga(exhibitor,
-        		sender, new RoutingMgrMsgHandler(sum, msgMetaRepo)));
+                sender, new RoutingMgrMsgHandler(sum, msgMetaRepo)));
     }
 }

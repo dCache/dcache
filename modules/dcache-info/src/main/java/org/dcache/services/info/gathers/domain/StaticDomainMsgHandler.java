@@ -36,13 +36,13 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
     @Override
     public void process(Object payload, long lifetime)
     {
-        if(payload == null) {
-            _log.error( "received null payload");
+        if (payload == null) {
+            _log.error("received null payload");
             return;
         }
 
-        if(!(payload instanceof String)) {
-            _log.error( "received message of type {}",
+        if (!(payload instanceof String)) {
+            _log.error("received message of type {}",
                     payload.getClass().getCanonicalName());
             return;
         }
@@ -69,16 +69,16 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
 
         update.purgeUnder(parent);
 
-        for(String rawLine : declaration.split("\n")) {
+        for (String rawLine : declaration.split("\n")) {
             String line = rawLine.trim();
 
-            if(line.isEmpty()) {
+            if (line.isEmpty()) {
                 continue;
             }
 
             try {
                 processLine(update, lifetime, parent, line);
-            } catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 _log.error(e.getMessage());
             }
         }

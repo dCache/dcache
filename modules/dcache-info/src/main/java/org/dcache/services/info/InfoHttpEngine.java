@@ -58,107 +58,106 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
 {
-	private static final Logger LOG = LoggerFactory.getLogger(HttpResponseEngine.class);
-	private static final String INFO_CELL_NAME = "info";
+    private static final Logger LOG = LoggerFactory.getLogger(HttpResponseEngine.class);
+    private static final String INFO_CELL_NAME = "info";
 
-        private static final List<String> ENTIRE_TREE = new ArrayList<>();
+    private static final List<String> ENTIRE_TREE = new ArrayList<>();
 
-        private final SerialisationHandler xmlSerialiser =
-                new SerialisationHandler(XmlSerialiser.NAME, "text/xml");
+    private final SerialisationHandler xmlSerialiser =
+            new SerialisationHandler(XmlSerialiser.NAME, "text/xml");
 
-        private final SerialisationHandler jsonSerialiser =
-                new SerialisationHandler(JsonSerialiser.NAME, "text/json");
+    private final SerialisationHandler jsonSerialiser =
+            new SerialisationHandler(JsonSerialiser.NAME, "text/json");
 
-        private final SerialisationHandler prettyPrintSerialiser =
-                new SerialisationHandler(PrettyPrintTextSerialiser.NAME, "text/x-ascii-art");
+    private final SerialisationHandler prettyPrintSerialiser =
+            new SerialisationHandler(PrettyPrintTextSerialiser.NAME, "text/x-ascii-art");
 
-        private final Map<String,SerialisationHandler> mimetypeToSerialiser =
-                ImmutableMap.<String,SerialisationHandler>builder().
-                put("application/xml", xmlSerialiser).
-                put("text/xml", xmlSerialiser).
-                put("application/json", jsonSerialiser).
-                put("text/x-ascii-art", prettyPrintSerialiser).
-                build();
+    private final Map<String,SerialisationHandler> mimetypeToSerialiser =
+            ImmutableMap.<String,SerialisationHandler>builder().
+            put("application/xml", xmlSerialiser).
+            put("text/xml", xmlSerialiser).
+            put("application/json", jsonSerialiser).
+            put("text/x-ascii-art", prettyPrintSerialiser).
+            build();
 
-        private final Map<String,SerialisationHandler> queryParameterToSerialiser =
-                ImmutableMap.<String,SerialisationHandler>builder().
-                put("xml", xmlSerialiser).
-                put("json", jsonSerialiser).
-                put("pretty", prettyPrintSerialiser).
-                build();
+    private final Map<String,SerialisationHandler> queryParameterToSerialiser =
+            ImmutableMap.<String,SerialisationHandler>builder().
+            put("xml", xmlSerialiser).
+            put("json", jsonSerialiser).
+            put("pretty", prettyPrintSerialiser).
+            build();
 
-        private CellStub _info;
+    private CellStub _info;
 
-        /**
-         * httpd-side class for each info-side serialiser.
-         */
-        private class SerialisationHandler
+    /**
+     * httpd-side class for each info-side serialiser.
+     */
+    private class SerialisationHandler
+    {
+        private final String _name;
+        private final String _mimeType;
+
+        LoadingCache<List<String>, String> resultCache = CacheBuilder.newBuilder()
+                .maximumSize(10)
+                .expireAfterWrite(1, TimeUnit.SECONDS)
+                .build(new CacheLoader<List<String>, String>() {
+                    @Override
+                    public String load(List<String> path) throws InterruptedException, CacheException {
+                        InfoGetSerialisedDataMessage message =
+                                (path == ENTIRE_TREE) ? new InfoGetSerialisedDataMessage(_name)
+                                : new InfoGetSerialisedDataMessage(path, _name);
+                        message = _info.sendAndWait(message);
+                        return message.getSerialisedData();
+                    }
+                });
+
+        public SerialisationHandler(String name, String mimeType)
         {
-            private final String _name;
-            private final String _mimeType;
-
-            LoadingCache<List<String>, String> resultCache = CacheBuilder.newBuilder()
-                   .maximumSize(10)
-                   .expireAfterWrite(1, TimeUnit.SECONDS)
-                   .build(new CacheLoader<List<String>, String>() {
-                        @Override
-                        public String load(List<String> path) throws InterruptedException, CacheException {
-                            InfoGetSerialisedDataMessage message =
-                                    (path == ENTIRE_TREE) ? new InfoGetSerialisedDataMessage(_name)
-                                    : new InfoGetSerialisedDataMessage(path, _name);
-                            message = _info.sendAndWait(message);
-                            return message.getSerialisedData();
-                        }
-                    });
-
-            public SerialisationHandler(String name, String mimeType)
-            {
-                _name = name;
-                _mimeType = mimeType;
-            }
-
-            public void handleRequest(HttpRequest request) throws HttpException
-            {
-                String[] urlItems = request.getRequestTokens();
-                OutputStream out = request.getOutputStream();
-
-                List<String> path = urlItems.length == 1 ? ENTIRE_TREE :
-                        Arrays.asList(urlItems).subList(1, urlItems.length);
-
-                try {
-                    byte[] raw = resultCache.get(path).getBytes(Charsets.UTF_8);
-                    request.printHttpHeader(raw.length);
-                    request.setContentType(this._mimeType);
-                    out.write(raw);
-                } catch (ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof TimeoutCacheException) {
-                        throw new HttpException(503, "The info cell took too " +
-                                "long to reply, suspect trouble (" +
-                                cause.getMessage() + ")");
-                    }
-                    if (cause instanceof CacheException) {
-                       throw new HttpException(500, "Error when requesting " +
-                               "info from info cell. (" + cause.getMessage() + ")");
-                    }
-                    if (cause instanceof InterruptedException) {
-                        throw new HttpException(503, "Received interrupt " +
-                                "whilst processing data. Please try again later.");
-                    }
-                    propagate(cause);
-                } catch (IOException e) {
-                    LOG.error("IOException caught whilst writing output : {}", e.getMessage());
-                }
-            }
+            _name = name;
+            _mimeType = mimeType;
         }
 
+        public void handleRequest(HttpRequest request) throws HttpException
+        {
+            String[] urlItems = request.getRequestTokens();
+            OutputStream out = request.getOutputStream();
+
+            List<String> path = urlItems.length == 1 ? ENTIRE_TREE :
+                    Arrays.asList(urlItems).subList(1, urlItems.length);
+
+            try {
+                byte[] raw = resultCache.get(path).getBytes(Charsets.UTF_8);
+                request.printHttpHeader(raw.length);
+                request.setContentType(this._mimeType);
+                out.write(raw);
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof TimeoutCacheException) {
+                    throw new HttpException(503, "The info cell took too " +
+                            "long to reply, suspect trouble (" +
+                            cause.getMessage() + ")");
+                }
+                if (cause instanceof CacheException) {
+                    throw new HttpException(500, "Error when requesting " +
+                            "info from info cell. (" + cause.getMessage() + ")");
+                }
+                if (cause instanceof InterruptedException) {
+                    throw new HttpException(503, "Received interrupt " +
+                            "whilst processing data. Please try again later.");
+                }
+                propagate(cause);
+            } catch (IOException e) {
+                LOG.error("IOException caught whilst writing output : {}", e.getMessage());
+            }
+        }
+    }
 
 
-	/**
-	 * The constructor simply creates a new nucleus for us to use when sending messages.
-	 */
-	public InfoHttpEngine(String[] args) {
-	}
+    /**
+     * The constructor simply creates a new nucleus for us to use when sending messages.
+     */
+    public InfoHttpEngine(String[] args) {
+    }
 
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
@@ -167,107 +166,107 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
     }
 
     /**
-	 * Handle a request for data.  This either returns the cached contents (if
-	 * still valid), or queries the info cell for information.
-	 */
-	@Override
-        public void queryUrl(HttpRequest request) throws HttpException
-        {
-            if( LOG.isInfoEnabled()) {
-                LOG.info( "Received request for: {}",
-                        Arrays.toString(request.getRequestTokens()));
-            }
-
-            SerialisationHandler handler = find(asList(
-                    serialiserFromUri(request),
-                    serialiserFromHttpHeaders(request),
-                    xmlSerialiser), notNull());
-
-            handler.handleRequest(request);
-	}
-
-        private SerialisationHandler serialiserFromUri(HttpRequest request) throws HttpException
-        {
-            SerialisationHandler serialiser = null;
-
-            String argument = request.getParameter("format");
-            if (argument != null) {
-                serialiser = queryParameterToSerialiser.get(argument);
-                if (serialiser == null) {
-                    throw new HttpException(415, "specified format does not exist");
-                }
-            }
-
-            return serialiser;
+     * Handle a request for data.  This either returns the cached contents (if
+     * still valid), or queries the info cell for information.
+     */
+    @Override
+    public void queryUrl(HttpRequest request) throws HttpException
+    {
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Received request for: {}",
+                    Arrays.toString(request.getRequestTokens()));
         }
 
-        private SerialisationHandler serialiserFromHttpHeaders(HttpRequest request)
-        {
-            String accept = request.getRequestAttributes().get("Accept");
-            if (accept == null) {
-                return null;
+        SerialisationHandler handler = find(asList(
+                serialiserFromUri(request),
+                serialiserFromHttpHeaders(request),
+                xmlSerialiser), notNull());
+
+        handler.handleRequest(request);
+    }
+
+    private SerialisationHandler serialiserFromUri(HttpRequest request) throws HttpException
+    {
+        SerialisationHandler serialiser = null;
+
+        String argument = request.getParameter("format");
+        if (argument != null) {
+            serialiser = queryParameterToSerialiser.get(argument);
+            if (serialiser == null) {
+                throw new HttpException(415, "specified format does not exist");
             }
+        }
 
-            SerialisationHandler bestHandler = null;
+        return serialiser;
+    }
 
-            /*
-             * Choose the best mime-type that the client will accept, taking
-             * into account which formats we support, the client's preferences
-             * (q values) and choosing the most specific (i.e. longest) mime-type.
-             * Here is an example value (should be one line)
-             *
-             *     application/xml;q=0.5,application/json;q=0.8,
-             *     application/x-proprietary-format
-             *
-             * For details, see
-             *
-             *     http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
-             */
-            double bestQ = 0;
-            String bestEntry = "";
-            for (String entry : Splitter.on(',').trimResults().split(accept)) {
-                List<String> items = Splitter.on(';').trimResults().splitToList(entry);
-                String mimeType = items.get(0);
-                List<String> args = items.subList(1, items.size());
+    private SerialisationHandler serialiserFromHttpHeaders(HttpRequest request)
+    {
+        String accept = request.getRequestAttributes().get("Accept");
+        if (accept == null) {
+            return null;
+        }
 
-                StringBuilder sb = new StringBuilder().append(mimeType);
-                double q = 1;
-                for (String arg : args) {
-                    if (arg.startsWith("q=")) {
-                        try {
-                            q = Double.parseDouble(arg.substring(2));
-                        } catch (NumberFormatException e) {
-                            LOG.debug("malformed q value: {}", arg);
-                            q = 0;
-                        }
-                    } else {
-                        sb.append(';').append(arg);
+        SerialisationHandler bestHandler = null;
+
+        /*
+         * Choose the best mime-type that the client will accept, taking
+         * into account which formats we support, the client's preferences
+         * (q values) and choosing the most specific (i.e. longest) mime-type.
+         * Here is an example value (should be one line)
+         *
+         *     application/xml;q=0.5,application/json;q=0.8,
+         *     application/x-proprietary-format
+         *
+         * For details, see
+         *
+         *     http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+         */
+        double bestQ = 0;
+        String bestEntry = "";
+        for (String entry : Splitter.on(',').trimResults().split(accept)) {
+            List<String> items = Splitter.on(';').trimResults().splitToList(entry);
+            String mimeType = items.get(0);
+            List<String> args = items.subList(1, items.size());
+
+            StringBuilder sb = new StringBuilder().append(mimeType);
+            double q = 1;
+            for (String arg : args) {
+                if (arg.startsWith("q=")) {
+                    try {
+                        q = Double.parseDouble(arg.substring(2));
+                    } catch (NumberFormatException e) {
+                        LOG.debug("malformed q value: {}", arg);
+                        q = 0;
                     }
-                }
-                String entryWithoutQ = sb.toString();
-
-                // REVISIT: no wildcard support for mimetypes; e.g. text/* or */*
-                SerialisationHandler handler = mimetypeToSerialiser.get(mimeType);
-
-                if (q >= bestQ && entryWithoutQ.length() > bestEntry.length() && handler != null) {
-                    bestHandler = handler;
-                    bestQ = q;
-                    bestEntry = entryWithoutQ;
+                } else {
+                    sb.append(';').append(arg);
                 }
             }
+            String entryWithoutQ = sb.toString();
 
-            return bestHandler;
+            // REVISIT: no wildcard support for mimetypes; e.g. text/* or */*
+            SerialisationHandler handler = mimetypeToSerialiser.get(mimeType);
+
+            if (q >= bestQ && entryWithoutQ.length() > bestEntry.length() && handler != null) {
+                bestHandler = handler;
+                bestQ = q;
+                bestEntry = entryWithoutQ;
+            }
         }
 
-        @Override
-        public void startup()
-        {
-            // This class has no background activity.
-        }
+        return bestHandler;
+    }
 
-        @Override
-        public void shutdown()
-        {
-            // No background activity to shutdown.
-        }
+    @Override
+    public void startup()
+    {
+        // This class has no background activity.
+    }
+
+    @Override
+    public void shutdown()
+    {
+        // No background activity to shutdown.
+    }
 }

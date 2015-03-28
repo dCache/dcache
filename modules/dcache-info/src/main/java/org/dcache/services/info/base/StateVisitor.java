@@ -26,17 +26,17 @@ public interface StateVisitor extends StateGuide {
 
     /* All subclasses of StateValue must be represented here. */
 
-    void visitString( StatePath path, StringStateValue value);
+    void visitString(StatePath path, StringStateValue value);
 
-    void visitInteger( StatePath path, IntegerStateValue value);
+    void visitInteger(StatePath path, IntegerStateValue value);
 
-    void visitBoolean( StatePath path, BooleanStateValue value);
+    void visitBoolean(StatePath path, BooleanStateValue value);
 
-    void visitFloatingPoint( StatePath path, FloatingPointStateValue value);
+    void visitFloatingPoint(StatePath path, FloatingPointStateValue value);
 
     /* StateComposites call pre- and post- traversal */
 
-    void visitCompositePreDescend( StatePath path, Map<String, String> metadata);
+    void visitCompositePreDescend(StatePath path, Map<String, String> metadata);
 
-    void visitCompositePostDescend( StatePath path, Map<String, String> metadata);
+    void visitCompositePostDescend(StatePath path, Map<String, String> metadata);
 }

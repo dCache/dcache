@@ -5,5 +5,5 @@ package org.dcache.services.info.base;
  * a "visitor" (a class that implements StateVisitor) will be exposed.
  */
 public interface StateGuide {
-    boolean isVisitable( StatePath path);
+    boolean isVisitable(StatePath path);
 }

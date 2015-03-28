@@ -24,7 +24,7 @@ public class LinkInfo {
 
         private String _pathElement;
 
-        UNIT_TYPE( String pathElement) {
+        UNIT_TYPE(String pathElement) {
             _pathElement = pathElement;
         }
 
@@ -42,7 +42,7 @@ public class LinkInfo {
 
         private String _pathElement;
 
-        OPERATION( String pathElement) {
+        OPERATION(String pathElement) {
             _pathElement = pathElement;
         }
 
@@ -59,36 +59,36 @@ public class LinkInfo {
 
     private final Map<OPERATION, Long> _operationPref = new ConcurrentHashMap<>();
 
-    public LinkInfo( String id) {
+    public LinkInfo(String id) {
         _id = id;
     }
 
-    protected void addPool( String poolName) {
+    protected void addPool(String poolName) {
         synchronized (_pools) {
-            _pools.add( poolName);
+            _pools.add(poolName);
         }
     }
 
-    protected void addPoolgroup( String poolgroup) {
+    protected void addPoolgroup(String poolgroup) {
         synchronized (_poolgroups) {
-            _poolgroups.add( poolgroup);
+            _poolgroups.add(poolgroup);
         }
     }
 
-    protected void addUnitgroup( String unitgroupName) {
+    protected void addUnitgroup(String unitgroupName) {
         synchronized (_unitgroups) {
-            _unitgroups.add( unitgroupName);
+            _unitgroups.add(unitgroupName);
         }
     }
 
-    protected void addUnit( UNIT_TYPE type, String unitName) {
+    protected void addUnit(UNIT_TYPE type, String unitName) {
         synchronized (_units) {
             _units.put(type, unitName);
         }
     }
 
-    protected void setOperationPref( OPERATION operation, long pref) {
-        _operationPref.put( operation, pref);
+    protected void setOperationPref(OPERATION operation, long pref) {
+        _operationPref.put(operation, pref);
     }
 
     public String getId() {
@@ -113,27 +113,27 @@ public class LinkInfo {
         }
     }
 
-    public Set<String> getUnits( UNIT_TYPE unitType) {
+    public Set<String> getUnits(UNIT_TYPE unitType) {
         synchronized (_units) {
             return ImmutableSet.copyOf(_units.get(unitType));
         }
     }
 
-    public long getOperationPref( OPERATION operation) {
-        Long preference = _operationPref.get( operation);
+    public long getOperationPref(OPERATION operation) {
+        Long preference = _operationPref.get(operation);
 
         // If not defined, assume not accessible for this operation.
-        if( preference == null) {
+        if (preference == null) {
             return 0;
         }
 
         return preference;
     }
 
-    public boolean isAccessableFor( OPERATION operation) {
-        long pref = getOperationPref( operation);
+    public boolean isAccessableFor(OPERATION operation) {
+        long pref = getOperationPref(operation);
 
-        if( operation == OPERATION.P2P) {
+        if (operation == OPERATION.P2P) {
             return pref > 0 ||
                     (pref == -1 && getOperationPref(OPERATION.READ) > 0);
         }
@@ -148,30 +148,30 @@ public class LinkInfo {
     }
 
     @Override
-    public boolean equals( Object otherObject) {
-        if( !(otherObject instanceof LinkInfo)) {
+    public boolean equals(Object otherObject) {
+        if (!(otherObject instanceof LinkInfo)) {
             return false;
         }
 
-        if( this == otherObject) {
+        if (this == otherObject) {
             return true;
         }
 
         LinkInfo otherLink = (LinkInfo) otherObject;
 
-        if( !_pools.equals( otherLink._pools)) {
+        if (!_pools.equals(otherLink._pools)) {
             return false;
         }
 
-        if( !_poolgroups.equals( otherLink._poolgroups)) {
+        if (!_poolgroups.equals(otherLink._poolgroups)) {
             return false;
         }
 
-        if( !_units.equals( otherLink._units)) {
+        if (!_units.equals(otherLink._units)) {
             return false;
         }
 
-        if( !_operationPref.equals( otherLink._operationPref)) {
+        if (!_operationPref.equals(otherLink._operationPref)) {
             return false;
         }
 
@@ -186,30 +186,30 @@ public class LinkInfo {
 
         sb.append("=== LinkInfo for link \"").append(_id).append("\" ===\n");
 
-        if( _pools.size() > 0) {
-            sb.append( "  Pools:\n");
-            for( String poolName : _pools) {
+        if (_pools.size() > 0) {
+            sb.append("  Pools:\n");
+            for (String poolName : _pools) {
                 sb.append("    ").append(poolName).append("\n");
             }
         }
 
-        if( _poolgroups.size() > 0) {
-            sb.append( "  Poolgroups:\n");
-            for( String poolgroupName : _poolgroups) {
+        if (_poolgroups.size() > 0) {
+            sb.append("  Poolgroups:\n");
+            for (String poolgroupName : _poolgroups) {
                 sb.append("    ").append(poolgroupName).append("\n");
             }
         }
 
         boolean haveOperation = false;
-        for( OPERATION operation : OPERATION.values()) {
-            if( _operationPref.containsKey( operation)) {
+        for (OPERATION operation : OPERATION.values()) {
+            if (_operationPref.containsKey(operation)) {
                 haveOperation = true;
                 break;
             }
         }
-        if( haveOperation) {
-            sb.append( "  Preferences:\n");
-            for( OPERATION operation : OPERATION.values()) {
+        if (haveOperation) {
+            sb.append("  Preferences:\n");
+            for (OPERATION operation : OPERATION.values()) {
                 if (_operationPref.containsKey(operation)) {
                     sb.append("    ").append(operation).append(": ")
                             .append(_operationPref.get(operation)).append("\n");
@@ -218,21 +218,21 @@ public class LinkInfo {
         }
 
         boolean haveUnits = false;
-        for( UNIT_TYPE type : UNIT_TYPE.values()) {
-            if( _units.containsKey(type)) {
+        for (UNIT_TYPE type : UNIT_TYPE.values()) {
+            if (_units.containsKey(type)) {
                 haveUnits = true;
                 break;
             }
         }
-        if( haveUnits) {
-            sb.append( "  Units:\n");
-            for( UNIT_TYPE type : UNIT_TYPE.values()) {
-                Collection<String> units = _units.get( type);
+        if (haveUnits) {
+            sb.append("  Units:\n");
+            for (UNIT_TYPE type : UNIT_TYPE.values()) {
+                Collection<String> units = _units.get(type);
 
-                if( !units.isEmpty()) {
+                if (!units.isEmpty()) {
                     sb.append("    ").append(type).append(":\n");
 
-                    for( String unitName : units) {
+                    for (String unitName : units) {
                         sb.append("        ").append(unitName).append("\n");
                     }
                 }

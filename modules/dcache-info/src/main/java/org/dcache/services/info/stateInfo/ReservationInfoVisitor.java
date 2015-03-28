@@ -23,7 +23,7 @@ import org.dcache.services.info.base.StringStateValue;
 public class ReservationInfoVisitor extends SkeletonListVisitor {
 
     private static Logger _log =
-            LoggerFactory.getLogger( ReservationInfoVisitor.class);
+            LoggerFactory.getLogger(ReservationInfoVisitor.class);
 
     public static final String PATH_ELEMENT_SPACE = "space";
     public static final String PATH_ELEMENT_LIFETIME = "lifetime";
@@ -39,14 +39,14 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
     public static final String PATH_ELEMENT_GROUP = "group";
 
     public static final StatePath RESERVATIONS_PATH =
-            StatePath.parsePath( "reservations");
+            StatePath.parsePath("reservations");
 
     /**
      * Match Strings like "/vo", "/vo/group" or "vo" allowing the extraction
      * of "vo" in all cases as group 1 of the resulting pattern.
      */
     public static final Pattern VO_EXTRACTOR_PATTERN =
-            Pattern.compile( "^/?([^/]*).*");
+            Pattern.compile("^/?([^/]*).*");
 
     /**
      * Obtain information about the current reservations in dCache
@@ -55,11 +55,11 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      *         ReservationInfo object.
      */
     public static Map<String, ReservationInfo> getDetails(
-                                                           StateExhibitor exhibitor) {
-        _log.debug( "Gathering reservation information.");
+            StateExhibitor exhibitor) {
+        _log.debug("Gathering reservation information.");
 
         ReservationInfoVisitor visitor = new ReservationInfoVisitor();
-        exhibitor.visitState( visitor);
+        exhibitor.visitState(visitor);
 
         return visitor.getReservations();
     }
@@ -76,7 +76,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
     private StatePath _thisResvAuthPath;
 
     public ReservationInfoVisitor() {
-        super( RESERVATIONS_PATH);
+        super(RESERVATIONS_PATH);
     }
 
     /**
@@ -86,46 +86,46 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      *         ReservationInfo object.
      */
     public Map<String, ReservationInfo> getReservations() {
-        return Collections.unmodifiableMap( _reservations);
+        return Collections.unmodifiableMap(_reservations);
     }
 
     @Override
-    protected void newListItem( String listItemName) {
-        super.newListItem( listItemName);
+    protected void newListItem(String listItemName) {
+        super.newListItem(listItemName);
 
-        _thisResv = new ReservationInfo( listItemName);
+        _thisResv = new ReservationInfo(listItemName);
 
-        _reservations.put( listItemName, _thisResv);
+        _reservations.put(listItemName, _thisResv);
 
         /**
          * Build up the various StatePaths where we expect data to appear for
          * this reservation.
          */
-        _thisResvPath = RESERVATIONS_PATH.newChild( listItemName);
-        _thisResvSpacePath = _thisResvPath.newChild( PATH_ELEMENT_SPACE);
-        _thisResvAuthPath = _thisResvPath.newChild( PATH_ELEMENT_AUTHORISATION);
+        _thisResvPath = RESERVATIONS_PATH.newChild(listItemName);
+        _thisResvSpacePath = _thisResvPath.newChild(PATH_ELEMENT_SPACE);
+        _thisResvAuthPath = _thisResvPath.newChild(PATH_ELEMENT_AUTHORISATION);
     }
 
     /**
      * Called when an integer metric is encountered.
      */
     @Override
-    public void visitInteger( StatePath path, IntegerStateValue value) {
-        if( !isInListItem()) {
+    public void visitInteger(StatePath path, IntegerStateValue value) {
+        if (!isInListItem()) {
             return;
         }
 
         String metricName = path.getLastElement();
 
-        if( _thisResvPath.isParentOf( path)) {
-            if( metricName.equals( PATH_ELEMENT_LIFETIME)) {
+        if (_thisResvPath.isParentOf(path)) {
+            if (metricName.equals(PATH_ELEMENT_LIFETIME)) {
                 _thisResv.setLifetime(value.getValue());
             }
 
             return;
         }
 
-        if( _thisResvSpacePath.isParentOf( path)) {
+        if (_thisResvSpacePath.isParentOf(path)) {
             switch (metricName) {
             case PATH_ELEMENT_TOTAL:
                 _thisResv.setTotal(value.getValue());
@@ -147,23 +147,23 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
     }
 
     @Override
-    public void visitString( StatePath path, StringStateValue value) {
-        if( !isInListItem()) {
+    public void visitString(StatePath path, StringStateValue value) {
+        if (!isInListItem()) {
             return;
         }
 
-        if( !_thisResvPath.isParentOf( path) &&
-            !_thisResvSpacePath.isParentOf( path) &&
-            !_thisResvAuthPath.isParentOf( path)) {
+        if (!_thisResvPath.isParentOf(path) &&
+            !_thisResvSpacePath.isParentOf(path) &&
+            !_thisResvAuthPath.isParentOf(path)) {
             return;
         }
 
         String metricName = path.getLastElement();
 
-        if( metricName.equals( PATH_ELEMENT_AL)) {
+        if (metricName.equals(PATH_ELEMENT_AL)) {
             ReservationInfo.AccessLatency al =
-                    ReservationInfo.AccessLatency.parseMetricValue( value.toString());
-            if( al != null) {
+                    ReservationInfo.AccessLatency.parseMetricValue(value.toString());
+            if (al != null) {
                 _thisResv.setAccessLatency(al);
             } else {
                 _log.error("Unknown access-latency value " + value.toString());
@@ -171,10 +171,10 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
             return;
         }
 
-        if( metricName.equals( PATH_ELEMENT_RP)) {
+        if (metricName.equals(PATH_ELEMENT_RP)) {
             ReservationInfo.RetentionPolicy rp =
-                    ReservationInfo.RetentionPolicy.parseMetricValue( value.toString());
-            if( rp != null) {
+                    ReservationInfo.RetentionPolicy.parseMetricValue(value.toString());
+            if (rp != null) {
                 _thisResv.setRetentionPolicy(rp);
             } else {
                 _log.error("Unknown retention-policy value " +
@@ -183,10 +183,10 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
             return;
         }
 
-        if( metricName.equals( PATH_ELEMENT_STATE)) {
+        if (metricName.equals(PATH_ELEMENT_STATE)) {
             ReservationInfo.State state =
-                    ReservationInfo.State.parseMetricValue( value.toString());
-            if( state != null) {
+                    ReservationInfo.State.parseMetricValue(value.toString());
+            if (state != null) {
                 _thisResv.setState(state);
             } else {
                 _log.error("Unknown state value " + value.toString());
@@ -194,21 +194,20 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
             return;
         }
 
-        if( metricName.equals( PATH_ELEMENT_DESCRIPTION)) {
-            _thisResv.setDescription( value.toString());
+        if (metricName.equals(PATH_ELEMENT_DESCRIPTION)) {
+            _thisResv.setDescription(value.toString());
             return;
         }
 
-        if( metricName.equals( PATH_ELEMENT_GROUP)) {
-            Matcher matcher = VO_EXTRACTOR_PATTERN.matcher( value.toString());
-            if( matcher.matches()) {
-                String voName = matcher.group( 1);
-                _thisResv.setVo( voName);
+        if (metricName.equals(PATH_ELEMENT_GROUP)) {
+            Matcher matcher = VO_EXTRACTOR_PATTERN.matcher(value.toString());
+            if (matcher.matches()) {
+                String voName = matcher.group(1);
+                _thisResv.setVo(voName);
             } else {
-                _log.error( "authorisation.group doesn't match expected pattern " +
+                _log.error("authorisation.group doesn't match expected pattern " +
                             value.toString());
             }
         }
     }
-
 }

@@ -13,58 +13,57 @@ import org.dcache.services.info.gathers.SkelListBasedActivity;
 
 public class CellInfoDga extends SkelListBasedActivity {
 
-	private static final Logger _log = LoggerFactory.getLogger( CellInfoDga.class);
+    private static final Logger _log = LoggerFactory.getLogger(CellInfoDga.class);
 
-	private final MessageSender _sender;
+    private final MessageSender _sender;
 
-	/**
-	 *  Use our own list timings.  Enforce a minimum delay of two minutes between successive
-	 *  getcellinfos requests to the *same* domain, and a delay of at least 100 ms between
-	 *  successive requests of information from any domain.
-	 */
-	private static int MIN_LIST_REFRESH_PERIOD = 120000;
-	private static int SUCC_MSG_DELAY = 100;
+    /**
+     *  Use our own list timings.  Enforce a minimum delay of two minutes between successive
+     *  getcellinfos requests to the *same* domain, and a delay of at least 100 ms between
+     *  successive requests of information from any domain.
+     */
+    private static int MIN_LIST_REFRESH_PERIOD = 120000;
+    private static int SUCC_MSG_DELAY = 100;
 
-	private final CellMessageAnswerable _handler;
+    private final CellMessageAnswerable _handler;
 
-	public CellInfoDga( StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
+    public CellInfoDga(StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
 
-		super( exhibitor, new StatePath( "domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
+        super(exhibitor, new StatePath("domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
 
-		_handler = handler;
-		_sender = sender;
-	}
+        _handler = handler;
+        _sender = sender;
+    }
 
-	/**
-	 * Method called periodically when we should send out a message.
-	 */
-	@Override
-	public void trigger() {
-		super.trigger();
+    /**
+     * Method called periodically when we should send out a message.
+     */
+    @Override
+    public void trigger() {
+        super.trigger();
 
-		String domainName = getNextItem();
+        String domainName = getNextItem();
 
-		// This can happen, indicating that there's nothing to do.
-		if( domainName == null) {
-                    return;
-                }
+        // This can happen, indicating that there's nothing to do.
+        if (domainName == null) {
+            return;
+        }
 
 
-		CellPath systemCellPath = new CellPath( "System", domainName);
+        CellPath systemCellPath = new CellPath("System", domainName);
 
-		if( _log.isInfoEnabled()) {
-                    _log.info("sending message getcellinfos to System cell on domain " + domainName);
-                }
+        if (_log.isInfoEnabled()) {
+            _log.info("sending message getcellinfos to System cell on domain " + domainName);
+        }
 
-		_sender.sendMessage( getMetricLifetime(), _handler, systemCellPath, "getcellinfos");
-	}
+        _sender.sendMessage(getMetricLifetime(), _handler, systemCellPath, "getcellinfos");
+    }
 
-	/**
-	 * We only expect to have a single instance of this class.
-	 */
-	@Override
+    /**
+     * We only expect to have a single instance of this class.
+     */
+    @Override
     public String toString() {
-		return this.getClass().getSimpleName();
-	}
-
+        return this.getClass().getSimpleName();
+    }
 }

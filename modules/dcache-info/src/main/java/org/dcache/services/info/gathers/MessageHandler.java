@@ -14,12 +14,12 @@ import diskCacheV111.vehicles.Message;
  */
 public interface MessageHandler {
 
-	/**
-	 * Attempt to update dCache state, based on the incoming message.
-	 *
-	 * @param msg the incoming message payload
-	 * @param delay the expected time, in seconds, until this data is refreshed.
-	 * @return true if the message was successfully handled, false otherwise.
-	 */
-	boolean handleMessage( Message messagePayload, long delay);
+    /**
+     * Attempt to update dCache state, based on the incoming message.
+     *
+     * @param msg the incoming message payload
+     * @param delay the expected time, in seconds, until this data is refreshed.
+     * @return true if the message was successfully handled, false otherwise.
+     */
+    boolean handleMessage(Message messagePayload, long delay);
 }

@@ -27,71 +27,71 @@ import dmg.cells.nucleus.CellPath;
  */
 public class SingleMessageDga extends SkelPeriodicActivity {
 
-	private CellPath _cp;
-	private String _requestString;
-	private Message _requestMessage;
-	private CellMessageAnswerable _handler;
-	private final MessageSender _sender;
+    private CellPath _cp;
+    private String _requestString;
+    private Message _requestMessage;
+    private CellMessageAnswerable _handler;
+    private final MessageSender _sender;
 
-	/**
-	 * Create a new Single-Message DataGatheringActivity.
-	 * @param cellName The path to the dCache cell,
-	 * @param request the message string,
-	 * @param interval how often (in seconds) this should be sent.
-	 */
-	public SingleMessageDga( MessageSender sender, String cellName, String request, CellMessageAnswerable handler, long interval)
-	{
-		super( interval);
+    /**
+     * Create a new Single-Message DataGatheringActivity.
+     * @param cellName The path to the dCache cell,
+     * @param request the message string,
+     * @param interval how often (in seconds) this should be sent.
+     */
+    public SingleMessageDga(MessageSender sender, String cellName, String request, CellMessageAnswerable handler, long interval)
+    {
+        super(interval);
 
-		_cp = new CellPath( cellName);
-		_requestMessage = null;
-		_requestString = request;
-		_handler = handler;
-		_sender = sender;
-	}
+        _cp = new CellPath(cellName);
+        _requestMessage = null;
+        _requestString = request;
+        _handler = handler;
+        _sender = sender;
+    }
 
-	/**
-	 * Create a new Single-Message DataGatheringActivity.
-	 * @param cellName The path to the dCache cell,
-	 * @param request the Message to send
-	 * @param interval how often (in seconds) this message should be sent.
-	 */
-	public SingleMessageDga( MessageHandlerChain mhc, String cellName, Message request, long interval)
-	{
-		super( interval);
+    /**
+     * Create a new Single-Message DataGatheringActivity.
+     * @param cellName The path to the dCache cell,
+     * @param request the Message to send
+     * @param interval how often (in seconds) this message should be sent.
+     */
+    public SingleMessageDga(MessageHandlerChain mhc, String cellName, Message request, long interval)
+    {
+        super(interval);
 
-		_cp = new CellPath( cellName);
-		_requestMessage = request;
-		_requestString = null;
-		// reply messages are handled by a MessageHandler chain.
-		_sender = mhc;
-	}
+        _cp = new CellPath(cellName);
+        _requestMessage = request;
+        _requestString = null;
+        // reply messages are handled by a MessageHandler chain.
+        _sender = mhc;
+    }
 
 
-	/**
-	 * Send messages to query current list of pools.
-	 */
-	@Override
+    /**
+     * Send messages to query current list of pools.
+     */
+    @Override
     public void trigger() {
-		super.trigger();
+        super.trigger();
 
-		if( _requestMessage != null) {
-			CellMessage msg = new CellMessage( _cp, _requestMessage);
-			_sender.sendMessage( 0, null, msg);
-		} else {
-                    _sender.sendMessage(super
-                            .metricLifetime(), _handler, _cp, _requestString);
-                }
-	}
+        if (_requestMessage != null) {
+            CellMessage msg = new CellMessage(_cp, _requestMessage);
+            _sender.sendMessage(0, null, msg);
+        } else {
+            _sender.sendMessage(super
+                    .metricLifetime(), _handler, _cp, _requestString);
+        }
+    }
 
 
-	@Override
+    @Override
     public String toString()
-	{
-		String msgName;
+    {
+        String msgName;
 
-		msgName = _requestMessage != null ? _requestMessage.getClass().getName() : "'" + _requestString + "'";
+        msgName = _requestMessage != null ? _requestMessage.getClass().getName() : "'" + _requestString + "'";
 
-		return this.getClass().getSimpleName() + "[" + _cp.getCellName() + ", " + msgName + "]";
-	}
+        return this.getClass().getSimpleName() + "[" + _cp.getCellName() + ", " + msgName + "]";
+    }
 }

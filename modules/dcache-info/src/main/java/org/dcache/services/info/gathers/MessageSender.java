@@ -27,7 +27,7 @@ public interface MessageSender {
      * @param message
      *            the vehicle to send
      */
-    void sendMessage( long ttl, CellPath path, Message message);
+    void sendMessage(long ttl, CellPath path, Message message);
 
     /**
      * Send some arbitrary CellMessage (which includes the payload and the
@@ -46,8 +46,8 @@ public interface MessageSender {
      * @param envelope
      *            the complete message envelope to send
      */
-    void sendMessage( long ttl, CellMessageAnswerable handler,
-                      CellMessage envelope);
+    void sendMessage(long ttl, CellMessageAnswerable handler,
+            CellMessage envelope);
 
     /**
      * Send a message that has a String payload to the Cell identified by the
@@ -68,6 +68,6 @@ public interface MessageSender {
      * @param requestString
      *            the String sent to the cell's shell
      */
-    void sendMessage( long ttl, CellMessageAnswerable handler, CellPath path,
-                      String requestString);
+    void sendMessage(long ttl, CellMessageAnswerable handler, CellPath path,
+            String requestString);
 }
