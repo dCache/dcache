@@ -17,8 +17,6 @@ import org.dcache.services.info.base.StateUpdateManager;
  */
 public interface DgaFactoryService
 {
-    Set<Schedulable> createDgas(StateExhibitor exhibitor,
-                                MessageSender sender,
-                                StateUpdateManager sum,
-                                MessageMetadataRepository<UOID> msgMetaRepo);
+    Set<Schedulable> createDgas(StateExhibitor exhibitor, MessageSender sender,
+            StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo);
 }

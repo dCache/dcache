@@ -13,8 +13,8 @@ package org.dcache.services.info.base;
  * does not undertake activity that is likely to block activity of the Thread
  * for an unpredictable or a long time.
  */
-public interface StateExhibitor {
-
+public interface StateExhibitor
+{
     /**
      * Query the state of dCache.
      */

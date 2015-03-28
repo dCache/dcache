@@ -4,17 +4,21 @@ package org.dcache.services.info.stateInfo;
  * Objects of this Class contain information about an SRM reservation as
  * obtained from dCache state.
  */
-public class ReservationInfo {
-    public enum AccessLatency {
+public class ReservationInfo
+{
+    public enum AccessLatency
+    {
         ONLINE("ONLINE"), NEARLINE("NEARLINE"), OFFLINE("OFFLINE");
 
         final private String _metricValue;
 
-        AccessLatency(String metricValue) {
+        AccessLatency(String metricValue)
+        {
             _metricValue = metricValue;
         }
 
-        public String getMetricValue() {
+        public String getMetricValue()
+        {
             return _metricValue;
         }
 
@@ -25,7 +29,8 @@ public class ReservationInfo {
          * @param metricValue
          * @return the corresponding AccessLatency, if valid, null otherwise.
          */
-        static public AccessLatency parseMetricValue(String metricValue) {
+        static public AccessLatency parseMetricValue(String metricValue)
+        {
             for (AccessLatency al : AccessLatency.values()) {
                 if (al.getMetricValue().equals(metricValue)) {
                     return al;
@@ -35,16 +40,19 @@ public class ReservationInfo {
         }
     }
 
-    public enum RetentionPolicy {
+    public enum RetentionPolicy
+    {
         REPLICA("REPLICA"), OUTPUT("OUTPUT"), CUSTODIAL("CUSTODIAL");
 
         final private String _metricValue;
 
-        RetentionPolicy(String metricValue) {
+        RetentionPolicy(String metricValue)
+        {
             _metricValue = metricValue;
         }
 
-        public String getMetricValue() {
+        public String getMetricValue()
+        {
             return _metricValue;
         }
 
@@ -82,7 +90,8 @@ public class ReservationInfo {
             return _metricValue;
         }
 
-        public boolean isFinalState() {
+        public boolean isFinalState()
+        {
             return _isFinalState;
         }
 
@@ -92,7 +101,8 @@ public class ReservationInfo {
          * @param metricValue
          * @return the corresponding State, if valid, null otherwise.
          */
-        static public State parseMetricValue(String metricValue) {
+        static public State parseMetricValue(String metricValue)
+        {
             for (State state : State.values()) {
                 if (state.getMetricValue().equals(metricValue)) {
                     return state;
@@ -124,28 +134,32 @@ public class ReservationInfo {
 
     private String _vo;
 
-    public ReservationInfo(String id) {
+    public ReservationInfo(String id)
+    {
         _id = id;
     }
 
-    public void setRetentionPolicy(RetentionPolicy rp) {
+    public void setRetentionPolicy(RetentionPolicy rp)
+    {
         if (hasRetentionPolicy()) {
-            throw new IllegalStateException(
-                    "attempt to set RetentionPolicy twice");
+            throw new IllegalStateException("attempt to set RetentionPolicy twice");
         }
 
         _rp = rp;
     }
 
-    public RetentionPolicy getRetentionPolicy() {
+    public RetentionPolicy getRetentionPolicy()
+    {
         return _rp;
     }
 
-    public boolean hasRetentionPolicy() {
+    public boolean hasRetentionPolicy()
+    {
         return _rp != null;
     }
 
-    public void setAccessLatency(AccessLatency al) {
+    public void setAccessLatency(AccessLatency al)
+    {
         if (hasAccessLatency()) {
             throw new IllegalStateException("attempt to set AccessLatency twice");
         }
@@ -153,23 +167,28 @@ public class ReservationInfo {
         _al = al;
     }
 
-    public AccessLatency getAccessLatency() {
+    public AccessLatency getAccessLatency()
+    {
         return _al;
     }
 
-    public boolean hasAccessLatency() {
+    public boolean hasAccessLatency()
+    {
         return _al != null;
     }
 
-    public String getId() {
+    public String getId()
+    {
         return _id;
     }
 
-    public long getLifetime() {
+    public long getLifetime()
+    {
         return _lifetime;
     }
 
-    public void setLifetime(long lifetime) {
+    public void setLifetime(long lifetime)
+    {
         if (_haveLifetime) {
             throw new IllegalStateException("attempt to set lifetime twice");
         }
@@ -178,11 +197,13 @@ public class ReservationInfo {
         _haveLifetime = true;
     }
 
-    public boolean hasLifetime() {
+    public boolean hasLifetime()
+    {
         return _haveLifetime;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(String description)
+    {
         if (hasDescription()) {
             throw new IllegalStateException("attempt to set description of reservation " +
                     _id + " twice.");
@@ -191,15 +212,18 @@ public class ReservationInfo {
         _description = description;
     }
 
-    public String getDescription() {
+    public String getDescription()
+    {
         return _description;
     }
 
-    public boolean hasDescription() {
+    public boolean hasDescription()
+    {
         return _description != null;
     }
 
-    public void setVo(String vo) {
+    public void setVo(String vo)
+    {
         if (hasVo()) {
             throw new IllegalStateException("attempt to set VO name of reservation " +
                     _id + " twice.");
@@ -208,15 +232,18 @@ public class ReservationInfo {
         _vo = vo;
     }
 
-    public String getVo() {
+    public String getVo()
+    {
         return _vo;
     }
 
-    public boolean hasVo() {
+    public boolean hasVo()
+    {
         return _vo != null;
     }
 
-    public void setState(State state) {
+    public void setState(State state)
+    {
         if (hasState()) {
             throw new IllegalStateException("attempt to set state of reservation " +
                     _id + " twice.");
@@ -225,23 +252,28 @@ public class ReservationInfo {
         _state = state;
     }
 
-    public State getState() {
+    public State getState()
+    {
         return _state;
     }
 
-    public boolean hasState() {
+    public boolean hasState()
+    {
         return _state != null;
     }
 
-    public long getTotal() {
+    public long getTotal()
+    {
         return _total;
     }
 
-    public boolean hasTotal() {
+    public boolean hasTotal()
+    {
         return _haveTotal;
     }
 
-    public void setTotal(long value) {
+    public void setTotal(long value)
+    {
         if (hasTotal()) {
             throw new IllegalStateException("attempt to set total size of reservation " +
                     _id + " twice.");
@@ -251,15 +283,18 @@ public class ReservationInfo {
         _haveTotal = true;
     }
 
-    public long getFree() {
+    public long getFree()
+    {
         return _free;
     }
 
-    public boolean hasFree() {
+    public boolean hasFree()
+    {
         return _haveFree;
     }
 
-    public void setFree(long value) {
+    public void setFree(long value)
+    {
         if (hasFree()) {
             throw new IllegalStateException("attempt to set free size of reservation " +
                     _id + " twice.");
@@ -269,15 +304,18 @@ public class ReservationInfo {
         _haveFree = true;
     }
 
-    public long getAllocated() {
+    public long getAllocated()
+    {
         return _allocated;
     }
 
-    public boolean hasAllocated() {
+    public boolean hasAllocated()
+    {
         return _haveAllocated;
     }
 
-    public void setAllocated(long value) {
+    public void setAllocated(long value)
+    {
         if (hasAllocated()) {
             throw new IllegalStateException("attempt to set allocated size of reservation " +
                     _id + " twice.");
@@ -287,15 +325,18 @@ public class ReservationInfo {
         _haveAllocated = true;
     }
 
-    public long getUsed() {
+    public long getUsed()
+    {
         return _used;
     }
 
-    public boolean hasUsed() {
+    public boolean hasUsed()
+    {
         return _haveUsed;
     }
 
-    public void setUsed(long value) {
+    public void setUsed(long value)
+    {
         if (hasUsed()) {
             throw new IllegalStateException("attempt to set used size of reservation " +
                     _id + " twice.");

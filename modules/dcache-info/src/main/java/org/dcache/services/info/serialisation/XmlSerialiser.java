@@ -24,8 +24,8 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
-
+public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser
+{
     public static final String NAME = "xml";
 
     /** The types used within the XML structure */
@@ -51,21 +51,23 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
         _exhibitor = exhibitor;
     }
 
-    private static class Attribute {
+    private static class Attribute
+    {
         final String name, value;
-        Attribute(String iName, String iValue) {
+        Attribute(String iName, String iValue)
+        {
             name = iName;
             value = iValue;
         }
     }
-
 
     /**
      *  Serialise the current dCache state into XML;
      *  @return a String containing dCache current state as XML data.
      */
     @Override
-    public String serialise() {
+    public String serialise()
+    {
         return serialise(null);
     }
 
@@ -77,7 +79,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      *  @return a String containing dCache current state as XML data.
      */
     @Override
-    public String serialise(StatePath start) {
+    public String serialise(StatePath start)
+    {
         _out = new StringBuilder();
         _isTopBranch = true;
         _haveLastBranch = false;
@@ -110,41 +113,49 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
 
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return NAME;
     }
 
     /* Deal with branch movement */
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String,String> metadata) {
+    public void visitCompositePreDescend(StatePath path, Map<String,String> metadata)
+    {
         enteringBranch(path, metadata);
     }
+
     @Override
-    public void visitCompositePostDescend(StatePath path, Map<String,String> metadata) {
+    public void visitCompositePostDescend(StatePath path, Map<String,String> metadata)
+    {
         exitingBranch(path, metadata);
     }
 
     /* Deal with metric values */
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
         emitLastBeginElement(false);
         addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), value.toString()));
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue value) {
+    public void visitString(StatePath path, StringStateValue value)
+    {
         emitLastBeginElement(false);
         addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), xmlTextMarkup(value.toString())));
     }
 
     @Override
-    public void visitBoolean(StatePath path, BooleanStateValue value) {
+    public void visitBoolean(StatePath path, BooleanStateValue value)
+    {
         emitLastBeginElement(false);
         addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), value.toString()));
     }
 
     @Override
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
+    {
         emitLastBeginElement(false);
         addElement(buildMetricElement(path.getLastElement(), value.getTypeName(), value.toString()));
     }
@@ -168,7 +179,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      *  @param path The path of the new branch
      *  @param metadata The keyword-value pairs for this branch.
      */
-    private void enteringBranch(StatePath path, Map<String,String> metadata) {
+    private void enteringBranch(StatePath path, Map<String,String> metadata)
+    {
         emitLastBeginElement(false);
 
         /* Build info and store it */
@@ -198,8 +210,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * @param path
      * @param metadata
      */
-    private void exitingBranch(StatePath path, Map<String,String> metadata) {
-
+    private void exitingBranch(StatePath path, Map<String,String> metadata)
+    {
         if (_haveLastBranch && ((path == null && _lastBranchPath == null) || (path != null && path.equals(_lastBranchPath))) ) {
             emitLastBeginElement(true);
             return;
@@ -220,8 +232,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * emit XML for the previous branch.  If the previous element was not a branch then
      * this method does nothing.
      */
-    private void emitLastBeginElement(boolean isEmpty) {
-
+    private void emitLastBeginElement(boolean isEmpty)
+    {
         if (!_haveLastBranch) {
             return;
         }
@@ -253,7 +265,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * Add an element to the output stream with correct indentation.
      * @param element the text (element, PI, ...) to add.
      */
-    private void addElement(String element) {
+    private void addElement(String element)
+    {
         _out.append(_indentationPrefix);
         _out.append(element);
         _out.append(_newline);
@@ -265,7 +278,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * @param type the type of the metric
      * @param value the value
      */
-    private String buildMetricElement(String name, String type, String value) {
+    private String buildMetricElement(String name, String type, String value)
+    {
         StringBuilder sb = new StringBuilder();
         Attribute attr[] = new Attribute[2];
         attr[0] = new Attribute("name", name);
@@ -285,7 +299,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * @param isEmpty whether the element contains no data.
      * @return a String representing the start of this element
      */
-    private String beginElement(String name, Attribute[] attr, boolean isEmpty) {
+    private String beginElement(String name, Attribute[] attr, boolean isEmpty)
+    {
         StringBuilder sb = new StringBuilder();
 
         sb.append("<").append(name);
@@ -315,7 +330,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * @param name the name of the element to open
      * @return a String.
      */
-    private String endElement(String name) {
+    private String endElement(String name)
+    {
         return "</"+name+">";
     }
 
@@ -326,14 +342,16 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * @param value the string value to mark-up
      * @return value that is safe to include in as an XML text-node.
      */
-    private String xmlTextMarkup(String value) {
+    private String xmlTextMarkup(String value)
+    {
         return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\"", "&quot;").replaceAll("\'", "&apos;");
     }
 
     /**
      * Update our stored prefix for indentation.
      */
-    private void updateIndentPrefix() {
+    private void updateIndentPrefix()
+    {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < _indentationLevel; i++) {
@@ -349,7 +367,8 @@ public class XmlSerialiser extends SubtreeVisitor implements StateSerialiser {
      * @param path the StatePath under consideration
      * @return the label for this branch.
      */
-    private String getBranchLabel(StatePath path) {
+    private String getBranchLabel(StatePath path)
+    {
         return path != null ? path.getLastElement() : "dCache";
     }
 }

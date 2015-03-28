@@ -27,20 +27,22 @@ import org.dcache.util.NetworkUtils;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
-
+public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(LoginBrokerLsMsgHandler.class);
 
     private static final StatePath PATH_TO_DOORS = new StatePath("doors");
 
 
-    public LoginBrokerLsMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public LoginBrokerLsMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         if (!msgPayload.getClass().isArray()) {
             _log.error("unexpected received non-array payload");
             return;
@@ -76,8 +78,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
      * @param info the information about the door.
      * @param lifetime the duration, in seconds, for this information
      */
-    private void addDoorInfo(StateUpdate update, StatePath pathToDoor, LoginBrokerInfo info, long lifetime) {
-
+    private void addDoorInfo(StateUpdate update, StatePath pathToDoor,
+            LoginBrokerInfo info, long lifetime)
+    {
         StatePath pathToProtocol = pathToDoor.newChild("protocol");
 
         conditionalAddString(update, pathToProtocol, "engine",  info.getProtocolEngine(), lifetime);
@@ -112,7 +115,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
      * @param value the metric's value, or null if the metric should not be added.
      * @param storeTime how long, in seconds the metric should be preserved.
      */
-    private void conditionalAddString(StateUpdate update, StatePath parentPath, String name, String value, long storeTime) {
+    private void conditionalAddString(StateUpdate update, StatePath parentPath,
+            String name, String value, long storeTime)
+    {
         if (value != null) {
             update.appendUpdate(parentPath.newChild(name),
                     new StringStateValue(value, storeTime));
@@ -140,8 +145,9 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
      * @param order the order in which the interfaces should be considered: 1 is the lowest number.
      * @param lifetime how long the created metrics should last.
      */
-    private void addInterfaceInfo(StateUpdate update, StatePath parentPath, InetAddress address, long lifetime) {
-
+    private void addInterfaceInfo(StateUpdate update, StatePath parentPath,
+            InetAddress address, long lifetime)
+    {
         StatePath pathToInterfaceBranch = parentPath.newChild(address.getHostAddress());
 
         update.appendUpdate(pathToInterfaceBranch.newChild("FQDN"), new StringStateValue(address.getHostName(), lifetime));

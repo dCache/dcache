@@ -21,19 +21,20 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class CellInfoMsgHandler extends CellMessageHandlerSkel {
-
+public class CellInfoMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(CellInfoMsgHandler.class);
 
     private static final StatePath DOMAINS_PATH = new StatePath("domains");
 
-    public CellInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public CellInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         // Should never be null
         if (msgPayload == null) {
             _log.error("received null payload from getcellinfos");
@@ -82,8 +83,9 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
      * @param thisCell the CellInfo for the specific cell
      * @param lifetime how long the metrics should last.
      */
-    private void addCellInfo(StateUpdate update, StatePath thisCellPath, CellInfo thisCell, long lifetime) {
-
+    private void addCellInfo(StateUpdate update, StatePath thisCellPath,
+            CellInfo thisCell, long lifetime)
+    {
         update.appendUpdate(thisCellPath.newChild("class"),
                 new StringStateValue(thisCell.getCellClass(), lifetime));
 
@@ -108,8 +110,9 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
      * @param version the CellVersion information
      * @param lifetime how long the metric should live for.
      */
-    private void addVersionInfo(StateUpdate update, StatePath parentPath, CellVersion version, long lifetime) {
-
+    private void addVersionInfo(StateUpdate update, StatePath parentPath,
+            CellVersion version, long lifetime)
+    {
         StatePath versionPath = parentPath.newChild("version");
 
         update.appendUpdate(versionPath.newChild("revision"),

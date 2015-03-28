@@ -18,8 +18,8 @@ import java.util.Map;
  * @see StateUpdate
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StateTransition {
-
+public class StateTransition
+{
     final Map<StatePath, StateChangeSet> _allChanges = new HashMap<>();
 
     /**
@@ -28,7 +28,8 @@ public class StateTransition {
      * @param path
      * @return
      */
-    protected StateChangeSet getStateChangeSet(StatePath path) {
+    protected StateChangeSet getStateChangeSet(StatePath path)
+    {
         return _allChanges.get(path);
     }
 
@@ -39,7 +40,8 @@ public class StateTransition {
      * @param path  The StatePath for the composite.
      * @return this StatePath's change-set
      */
-    protected StateChangeSet getOrCreateChangeSet(StatePath path) {
+    protected StateChangeSet getOrCreateChangeSet(StatePath path)
+    {
         StateChangeSet changeSet;
 
         changeSet = _allChanges.get(path);
@@ -58,7 +60,8 @@ public class StateTransition {
      * Dump our contents to a (quite verbose) String.
      * @return
      */
-    protected String dumpContents() {
+    protected String dumpContents()
+    {
         StringBuilder sb = new StringBuilder();
         boolean isFirst = true;
 

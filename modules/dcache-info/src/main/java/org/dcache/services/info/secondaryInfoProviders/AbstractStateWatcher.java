@@ -19,12 +19,13 @@ import org.dcache.services.info.base.StateWatcher;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class AbstractStateWatcher implements StateWatcher {
-
+abstract public class AbstractStateWatcher implements StateWatcher
+{
     private long _counter;
     private final Collection<StatePathPredicate> _predicates = new ArrayList<>();
 
-    public AbstractStateWatcher() {
+    public AbstractStateWatcher()
+    {
         String[] paths = getPredicates();
 
         for (String path : paths) {
@@ -41,12 +42,15 @@ abstract public class AbstractStateWatcher implements StateWatcher {
     abstract protected String[] getPredicates();
 
     @Override
-    public synchronized void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+    public synchronized void trigger(StateUpdate update, StateExhibitor currentState,
+            StateExhibitor futureState)
+    {
         _counter++;
     }
 
     @Override
-    public Collection<StatePathPredicate> getPredicate() {
+    public Collection<StatePathPredicate> getPredicate()
+    {
         return _predicates;
     }
 
@@ -54,11 +58,13 @@ abstract public class AbstractStateWatcher implements StateWatcher {
      * Since we expect a single instance per class, just return the simple class name.
      */
     @Override
-    public String toString() {
+    public String toString()
+    {
         return this.getClass().getSimpleName();
     }
 
-    public synchronized long getCount() {
+    public synchronized long getCount()
+    {
         return _counter;
     }
 }

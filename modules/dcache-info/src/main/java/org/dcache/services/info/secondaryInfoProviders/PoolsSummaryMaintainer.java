@@ -9,7 +9,8 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.stateInfo.PoolSummaryVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
-public class PoolsSummaryMaintainer extends AbstractStateWatcher {
+public class PoolsSummaryMaintainer extends AbstractStateWatcher
+{
     private static Logger _log = LoggerFactory.getLogger(PoolsSummaryMaintainer.class);
     private static final String PREDICATE_PATHS[] = { "pools.*.space.*"};
     private static final StatePath SUMMARY_POOLS_SPACE_PATH = StatePath.parsePath("summary.pools.space");
@@ -18,7 +19,8 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
      * Provide a list of the paths we're interested in.
      */
     @Override
-    protected String[] getPredicates() {
+    protected String[] getPredicates()
+    {
         return PREDICATE_PATHS;
     }
 
@@ -26,7 +28,9 @@ public class PoolsSummaryMaintainer extends AbstractStateWatcher {
      * Something's changed, recalculate the summary information.
      */
     @Override
-    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+    public void trigger(StateUpdate update, StateExhibitor currentState,
+            StateExhibitor futureState)
+    {
         super.trigger(update, currentState, futureState);
 
         if (_log.isInfoEnabled()) {

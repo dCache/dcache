@@ -16,7 +16,8 @@ import org.dcache.services.info.stateInfo.LinkInfo.UNIT_TYPE;
  * Scan through the known list of links and build up an associated collection
  * of LinkInfo objects.
  */
-public class LinkInfoVisitor extends SkeletonListVisitor {
+public class LinkInfoVisitor extends SkeletonListVisitor
+{
     private static Logger _log = LoggerFactory.getLogger(LinkInfoVisitor.class);
 
     private static final StatePath LINK_PATH = StatePath.parsePath("links");
@@ -85,7 +86,8 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
      *
      * @return a Mapping between a link's ID and the corresponding LinkInfo.
      */
-    public static Map<String, LinkInfo> getDetails(StateExhibitor exhibitor) {
+    public static Map<String, LinkInfo> getDetails(StateExhibitor exhibitor)
+    {
         _log.debug("Gathering link information.");
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
@@ -95,8 +97,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
     }
 
     /** The mapping between link names and corresponding LinkInfo object */
-    private final Map<String, LinkInfo> _links =
-            new HashMap<>();
+    private final Map<String, LinkInfo> _links = new HashMap<>();
 
     private LinkInfo _thisLink;
     private StatePath _thisLinkPoolsPath;
@@ -107,12 +108,14 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
     private StatePath _thisLinkOperationPrefPath;
     private StatePath _thisLinkPath;
 
-    public LinkInfoVisitor() {
+    public LinkInfoVisitor()
+    {
         super(LINK_PATH);
     }
 
     @Override
-    protected void newListItem(String listItemName) {
+    protected void newListItem(String listItemName)
+    {
         super.newListItem(listItemName);
 
         _thisLink = new LinkInfo(listItemName);
@@ -137,7 +140,8 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
 
     @Override
     public void visitCompositePreDescend(StatePath path,
-            Map<String, String> metadata) {
+            Map<String, String> metadata)
+    {
         super.visitCompositePreDescend(path, metadata);
 
         /** Only process items within subtree starting link.<link id> */
@@ -187,8 +191,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
                 _log.debug("Adding pool " + listItem);
             }
 
-            _thisLink.addUnit(UNIT_TYPE_NAMES.get(parentLastElement),
-                    listItem);
+            _thisLink.addUnit(UNIT_TYPE_NAMES.get(parentLastElement), listItem);
             return;
         }
 
@@ -231,7 +234,8 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
      * Called when an integer metric is encountered.
      */
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
         if (!isInListItem()) {
             return;
         }
@@ -254,11 +258,13 @@ public class LinkInfoVisitor extends SkeletonListVisitor {
      *
      * @return
      */
-    public Map<String, LinkInfo> getInfo() {
+    public Map<String, LinkInfo> getInfo()
+    {
         return _links;
     }
 
-    public String debugInfo() {
+    public String debugInfo()
+    {
         StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, LinkInfo> entry : _links.entrySet()) {

@@ -5,8 +5,8 @@ package org.dcache.services.info.gathers;
  * store some simple metadata against an outgoing message. This provides the
  * facility to extract metadata when processing the reply message.
  */
-public interface MessageMetadataRepository<ID> {
-
+public interface MessageMetadataRepository<ID>
+{
     /**
      * Recored a TTL against an outgoing message.
      *

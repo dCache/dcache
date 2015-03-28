@@ -12,8 +12,8 @@ import diskCacheV111.vehicles.Message;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public interface MessageHandler {
-
+public interface MessageHandler
+{
     /**
      * Attempt to update dCache state, based on the incoming message.
      *

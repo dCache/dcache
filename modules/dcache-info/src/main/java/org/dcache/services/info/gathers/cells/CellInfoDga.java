@@ -11,8 +11,8 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.gathers.MessageSender;
 import org.dcache.services.info.gathers.SkelListBasedActivity;
 
-public class CellInfoDga extends SkelListBasedActivity {
-
+public class CellInfoDga extends SkelListBasedActivity
+{
     private static final Logger _log = LoggerFactory.getLogger(CellInfoDga.class);
 
     private final MessageSender _sender;
@@ -27,8 +27,9 @@ public class CellInfoDga extends SkelListBasedActivity {
 
     private final CellMessageAnswerable _handler;
 
-    public CellInfoDga(StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
-
+    public CellInfoDga(StateExhibitor exhibitor, MessageSender sender,
+            CellMessageAnswerable handler)
+    {
         super(exhibitor, new StatePath("domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
 
         _handler = handler;
@@ -39,7 +40,8 @@ public class CellInfoDga extends SkelListBasedActivity {
      * Method called periodically when we should send out a message.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         super.trigger();
 
         String domainName = getNextItem();
@@ -63,7 +65,8 @@ public class CellInfoDga extends SkelListBasedActivity {
      * We only expect to have a single instance of this class.
      */
     @Override
-    public String toString() {
+    public String toString()
+    {
         return this.getClass().getSimpleName();
     }
 }

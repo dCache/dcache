@@ -13,19 +13,21 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 
-public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
-
+public class PoolInfoMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(PoolInfoMsgHandler.class);
 
     private static final StatePath POOLS_PATH = new StatePath("pools");
 
-    public PoolInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public PoolInfoMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         StateUpdate update = new StateUpdate();
 
         if (!msgPayload.getClass().isArray()) {

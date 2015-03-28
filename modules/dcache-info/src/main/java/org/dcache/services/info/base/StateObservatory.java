@@ -16,8 +16,8 @@ import java.util.List;
  * that maintain derived metrics) may wish to update metric values as a
  * result of a StateTransition.
  */
-public interface StateObservatory {
-
+public interface StateObservatory
+{
     /**
      * Set the StateWatcher objects that are aware of changes to dCache state.
      */

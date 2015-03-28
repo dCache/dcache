@@ -24,17 +24,13 @@ import org.dcache.services.info.gathers.SingleMessageDga;
  */
 public class LoginBrokerDgaFactoryService implements DgaFactoryService
 {
-
     @Override
-    public Set<Schedulable> createDgas(StateExhibitor exhibitor,
-                                       MessageSender sender,
-                                       StateUpdateManager sum,
-                                       MessageMetadataRepository<UOID> msgMetaRepo)
+    public Set<Schedulable> createDgas(StateExhibitor exhibitor, MessageSender sender,
+            StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
     {
-    	CellMessageAnswerable lbHandler = new LoginBrokerLsMsgHandler(sum, msgMetaRepo);
+        CellMessageAnswerable lbHandler = new LoginBrokerLsMsgHandler(sum, msgMetaRepo);
 
-    	return ImmutableSet.of(
-    			(Schedulable)new SingleMessageDga(sender, "LoginBroker",
-                                "ls -binary", lbHandler, TimeUnit.MINUTES.toSeconds(1)));
+        return ImmutableSet.of((Schedulable)new SingleMessageDga(sender, "LoginBroker",
+                "ls -binary", lbHandler, TimeUnit.MINUTES.toSeconds(1)));
     }
 }

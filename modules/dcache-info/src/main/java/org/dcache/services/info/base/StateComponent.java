@@ -17,8 +17,8 @@ import java.util.Date;
  * This class implements the Composite pattern and includes support for the visitor pattern.
  * @author Paul Millar <paul.millar@desy.de>
  */
-interface StateComponent {
-
+interface StateComponent
+{
     /**
      * Needed for the Visitor pattern: this method performs actions on the StateVisitor
      * object via the methods defined in the interface.

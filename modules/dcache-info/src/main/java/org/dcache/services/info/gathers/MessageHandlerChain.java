@@ -38,7 +38,6 @@ import dmg.cells.nucleus.CellMessageSender;
 public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
         MessageSender, CellMessageAnswerable, CellMessageSender
 {
-
     /** The period between successive flushes of ancient metadata, in milliseconds */
     private static final long METADATA_FLUSH_THRESHOLD = 3600000; // 1 hour
     private static final long METADATA_FLUSH_PERIOD = 600000; // 10 minutes
@@ -86,8 +85,9 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      * @param requestString the String, requesting information
      */
     @Override
-    public void sendMessage(long ttl, CellMessageAnswerable handler, CellPath path, String requestString) {
-
+    public void sendMessage(long ttl, CellMessageAnswerable handler,
+            CellPath path, String requestString)
+    {
         if (handler == null) {
             _log.error("ignoring attempt to send string-based message without call-back");
             return;
@@ -105,7 +105,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      * @param message the Message payload
      */
     @Override
-    public void sendMessage(long ttl, CellPath path, Message message) {
+    public void sendMessage(long ttl, CellPath path, Message message)
+    {
         CellMessage envelope = new CellMessage(path, message);
         sendMessage(ttl, null, envelope);
     }
@@ -119,11 +120,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      * @throws SerializationException if the payload isn't serialisable.
      */
     @Override
-    public void sendMessage(long ttl, CellMessageAnswerable handler, CellMessage envelope) throws SerializationException {
+    public void sendMessage(long ttl, CellMessageAnswerable handler,
+            CellMessage envelope) throws SerializationException
+    {
         putMetricTTL(envelope.getUOID(), ttl);
         _endpoint.sendMessage(envelope, handler != null ? handler : this, MoreExecutors.sameThreadExecutor(), STANDARD_TIMEOUT);
     }
-
 
     public void setHandlers(List<MessageHandler> handlers)
     {
@@ -134,7 +136,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     }
 
 
-    /**
+    /*
      *  SUPPORT FOR MessageMetadataRepository INTERFACE
      */
 
@@ -144,10 +146,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      * to the message processing plug-in.  The time is so we can (every so often) delete stale entries
      * due to message-loss.
      */
-    private static class MessageMetadata {
+    private static class MessageMetadata
+    {
         Date _timeSent;
         final long _ttl;
-        MessageMetadata(long ttl) {
+        MessageMetadata(long ttl)
+        {
             _timeSent = new Date();
             _ttl = ttl;
         }
@@ -157,7 +161,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     private Date _nextFlushOldMetadata;
 
     @Override
-    public boolean containsMetricTTL(UOID messageId) {
+    public boolean containsMetricTTL(UOID messageId)
+    {
         return _msgMetadata.containsKey(messageId);
     }
 
@@ -190,7 +195,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
 
 
     @Override
-    public void putMetricTTL(UOID messageId, long ttl) {
+    public void putMetricTTL(UOID messageId, long ttl)
+    {
         if (messageId == null) {
             throw new NullPointerException("Attempting to record ttl against null messageId");
         }
@@ -208,8 +214,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      * This is only done "every so often" and adds some safety against
      * lost packets resulting in accumulated memory usage.
      */
-    private void flushOldMetadata() {
-
+    private void flushOldMetadata()
+    {
         Date now = new Date();
 
         if (_nextFlushOldMetadata != null && now.before(_nextFlushOldMetadata)) {
@@ -235,7 +241,8 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
      */
 
     @Override
-    public void answerArrived(CellMessage request, CellMessage answer) {
+    public void answerArrived(CellMessage request, CellMessage answer)
+    {
         Object messagePayload = answer.getMessageObject();
 
         if (!(messagePayload instanceof Message)) {
@@ -259,13 +266,15 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     }
 
     @Override
-    public void answerTimedOut(CellMessage request) {
+    public void answerTimedOut(CellMessage request)
+    {
         remove(request.getLastUOID());
         _log.info("Message timed out");
     }
 
     @Override
-    public void exceptionArrived(CellMessage request, Exception exception) {
+    public void exceptionArrived(CellMessage request, Exception exception)
+    {
         remove(request.getLastUOID());
         if (exception instanceof NoRouteToCellException) {
             // This can happen after a cell dies and info hasn't caught up

@@ -15,8 +15,8 @@ import org.dcache.services.info.base.StatePath;
  * children of a StateComposite.  The parent StateComposite is described by the StatePath.
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class ListVisitor extends SkeletonListVisitor {
-
+public class ListVisitor extends SkeletonListVisitor
+{
     private static Logger _log = LoggerFactory.getLogger(ListVisitor.class);
 
     /**
@@ -24,7 +24,8 @@ public class ListVisitor extends SkeletonListVisitor {
      * @param path the StatePath that is the parent to the required items.
      * @return the Set of all items that have the path as their parent.
      */
-    static public Set<String> getDetails(StateExhibitor exhibitor, StatePath path) {
+    static public Set<String> getDetails(StateExhibitor exhibitor, StatePath path)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("Gathering current status for path " + path);
         }
@@ -36,18 +37,21 @@ public class ListVisitor extends SkeletonListVisitor {
 
     private final Set<String> _listItems;
 
-    public ListVisitor(StatePath parent) {
+    public ListVisitor(StatePath parent)
+    {
         super(parent);
         _listItems = new HashSet<>();
     }
 
     @Override
-    protected void newListItem(String name) {
+    protected void newListItem(String name)
+    {
         super.newListItem(name);
         _listItems.add(name);
     }
 
-    public Set<String> getItems() {
+    public Set<String> getItems()
+    {
         return _listItems;
     }
 }

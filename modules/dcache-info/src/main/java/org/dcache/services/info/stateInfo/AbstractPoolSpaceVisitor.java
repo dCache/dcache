@@ -15,9 +15,8 @@ import org.dcache.services.info.base.StatePath;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
-
-
+public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor
+{
     private static final StatePath POOLS_PATH = new StatePath("pools");
 
     private static Logger _log = LoggerFactory.getLogger(AbstractPoolSpaceVisitor.class);
@@ -31,7 +30,8 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
     private static final String METRIC_NAME_REMOVABLE = "removable";
     private static final String METRIC_NAME_USED      = "used";
 
-    protected AbstractPoolSpaceVisitor() {
+    protected AbstractPoolSpaceVisitor()
+    {
         super(POOLS_PATH);
     }
 
@@ -39,7 +39,8 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
     abstract protected void newPool(String poolName, SpaceInfo space);
 
     @Override
-    protected void newListItem(String itemName) {
+    protected void newListItem(String itemName)
+    {
         super.newListItem(itemName);
 
         if (_log.isDebugEnabled()) {
@@ -51,7 +52,8 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
     }
 
     @Override
-    protected void exitingListItem(String itemName) {
+    protected void exitingListItem(String itemName)
+    {
         super.exitingListItem(itemName);
 
         newPool(itemName, _currentPoolSpaceInfo);
@@ -59,7 +61,8 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor {
 
 
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
         if (_currentPoolSpacePath == null || ! _currentPoolSpacePath.isParentOf(path)) {
             return;
         }

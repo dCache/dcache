@@ -10,8 +10,8 @@ import java.util.Collection;
  * These object's class must implement this interface.  They must
  * also be registered with the State object to have any effect.
  */
-public interface StateWatcher {
-
+public interface StateWatcher
+{
     /**
      * Provide access to a Set of StatePathPredicates.  These describe
      * which subset of the total dCache state this watcher is
@@ -32,5 +32,6 @@ public interface StateWatcher {
      * If this is so, the new metric values are to be added to the provided
      * StateUpdate object.
      */
-    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState);
+    public void trigger(StateUpdate update, StateExhibitor currentState,
+            StateExhibitor futureState);
 }

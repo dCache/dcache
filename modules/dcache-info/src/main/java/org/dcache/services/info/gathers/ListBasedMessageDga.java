@@ -16,8 +16,8 @@ import org.dcache.services.info.base.StatePath;
  * <p>
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class ListBasedMessageDga extends SkelListBasedActivity {
-
+public class ListBasedMessageDga extends SkelListBasedActivity
+{
     private final CellPath _cellPath;
     private final String _messagePrefix;
     private final CellMessageAnswerable _handler;
@@ -36,8 +36,10 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
      * @param message the message to send.
      * @param handler the cell handler for the return msg payload.
      */
-    public ListBasedMessageDga(StateExhibitor exhibitor, MessageSender sender, StatePath parent, String cellName, String message, CellMessageAnswerable handler) {
-
+    public ListBasedMessageDga(StateExhibitor exhibitor, MessageSender sender,
+            StatePath parent, String cellName, String message,
+            CellMessageAnswerable handler)
+    {
         super(exhibitor, parent);
 
         _cellName = cellName;
@@ -53,8 +55,8 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
      * Triggered every-so-often, under control of SkelListBasedActivity.
      */
     @Override
-    public void trigger() {
-
+    public void trigger()
+    {
         super.trigger();
 
         String item = getNextItem();
@@ -73,7 +75,8 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         StringBuilder sb = new StringBuilder();
 
         sb.append(this.getClass().getSimpleName());

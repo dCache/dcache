@@ -14,13 +14,16 @@ import java.util.Map;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StatePersistentMetadata {
-
+public class StatePersistentMetadata
+{
     private final Map<String,StatePersistentMetadata> _children = new HashMap<>();
     private final Map<String,String> _payload = new HashMap<>();
     private StatePersistentMetadata _wildcard;
 
-    protected StatePersistentMetadata() {} // Reduce visibility of our constructor
+    protected StatePersistentMetadata()
+    {
+        // Reduce visibility of our constructor
+    }
 
 
     /**
@@ -30,11 +33,9 @@ public class StatePersistentMetadata {
      * @param reference the label for this child object
      * @return a child StatePersistentMetadataContainer object
      */
-    private StatePersistentMetadata getOrCreateChild(String reference) {
-
-        /**
-        *  Deal with the wildcard special case.
-        */
+    private StatePersistentMetadata getOrCreateChild(String reference)
+    {
+        // Deal with the wildcard special case.
         if (reference.equals("*")) {
             if (_wildcard == null) {
                 _wildcard = new StatePersistentMetadata();
@@ -62,7 +63,8 @@ public class StatePersistentMetadata {
      * @param name the child object in the State hierarchy
      * @return child persistent metadata object, if one is available, or null.
      */
-    protected StatePersistentMetadata getChild(String name) {
+    protected StatePersistentMetadata getChild(String name)
+    {
         StatePersistentMetadata child = _children.get(name);
 
         if (child == null) {
@@ -78,8 +80,8 @@ public class StatePersistentMetadata {
      * @param path the path to the node that should be updated.
      * @param update the set of updates to administer.
      */
-    void add(StatePath path, Map<String,String> update) {
-
+    void add(StatePath path, Map<String,String> update)
+    {
         /** Catch bad input */
         if (update == null) {
             return;
@@ -101,7 +103,8 @@ public class StatePersistentMetadata {
      * Return this node's payload: a Map of metadata information.
      * @return
      */
-    Map<String,String> getMetadata() {
+    Map<String,String> getMetadata()
+    {
         return _payload;
     }
 
@@ -109,7 +112,8 @@ public class StatePersistentMetadata {
     /**
      *  Add a default (hard-coded) set of persistent metadata.
      */
-    protected void addDefault() {
+    protected void addDefault()
+    {
         this.add(StatePath.parsePath("domains.*"), branchMetadata("domain", "name"));
         this.add(StatePath.parsePath("domains.*.cells.*"), branchMetadata("cell", "name"));
         this.add(StatePath.parsePath("domains.*.routing.local.*"), branchMetadata("cellref", "name"));
@@ -188,7 +192,8 @@ public class StatePersistentMetadata {
      * @param branchIdName how to refer to the general class of individual item's unique id.
      * @return a new Map entry, ready to be passed to StatePersistentMetadata.add().
      */
-    private Map<String,String> branchMetadata(String branchClass, String branchIdName) {
+    private Map<String,String> branchMetadata(String branchClass, String branchIdName)
+    {
         Map<String,String> metadataUpdate = new HashMap<>();
 
         metadataUpdate.put(State.METADATA_BRANCH_CLASS_KEY, branchClass);

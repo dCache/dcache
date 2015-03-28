@@ -156,7 +156,8 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
     /**
      * The constructor simply creates a new nucleus for us to use when sending messages.
      */
-    public InfoHttpEngine(String[] args) {
+    public InfoHttpEngine(String[] args)
+    {
     }
 
     @Override

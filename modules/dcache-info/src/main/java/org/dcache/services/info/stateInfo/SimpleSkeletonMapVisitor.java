@@ -19,8 +19,8 @@ import org.dcache.services.info.base.StatePath;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SimpleSkeletonMapVisitor extends SkeletonListVisitor {
-
+public class SimpleSkeletonMapVisitor extends SkeletonListVisitor
+{
     final private StatePath _relativePathToMetric;
 
     private StatePath _pathToMetric;
@@ -49,19 +49,22 @@ public class SimpleSkeletonMapVisitor extends SkeletonListVisitor {
      * Classes that extend this Class should implement a <code>getMap()</code> method.  This should
      * return a mapping between the key and the value and have the correct type.
      */
-    protected SimpleSkeletonMapVisitor(StatePath pathToList, StatePath pathToMetric) {
+    protected SimpleSkeletonMapVisitor(StatePath pathToList, StatePath pathToMetric)
+    {
         super(pathToList);
         _relativePathToMetric = pathToMetric;
     }
 
     @Override
-    protected void newListItem(String listItemName) {
+    protected void newListItem(String listItemName)
+    {
         super.newListItem(listItemName);
 
         _pathToMetric = getPathToList().newChild(listItemName).newChild(_relativePathToMetric);
     }
 
-    protected StatePath getPathToMetric() {
+    protected StatePath getPathToMetric()
+    {
         return _pathToMetric;
     }
 }

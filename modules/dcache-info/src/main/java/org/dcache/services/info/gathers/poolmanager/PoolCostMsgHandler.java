@@ -29,17 +29,19 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolCostMsgHandler extends CellMessageHandlerSkel {
-
+public class PoolCostMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(PoolCostMsgHandler.class);
 
-    public PoolCostMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public PoolCostMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long msgDeliveryPeriod) {
-
+    public void process(Object msgPayload, long msgDeliveryPeriod)
+    {
         long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
 
         if (!(msgPayload instanceof CostModulePoolInfoTable)) {
@@ -64,7 +66,9 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
      * @param metricLifetime the duration metrics should remain
      * @return a StateUpdate that updates the state
      */
-    private StateUpdate buildUpdate(Collection<PoolCostInfo> poolInfos, long metricLifetime) {
+    private StateUpdate buildUpdate(Collection<PoolCostInfo> poolInfos,
+            long metricLifetime)
+    {
         StatePath poolsPath = new StatePath("pools");
 
         StateUpdate update = new StateUpdate();
@@ -77,10 +81,9 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
             StatePath pathToQueues = pathToThisPool.newChild("queues");
 
 
-            /**
+            /*
              *  Add all the standard queues
              */
-
             addQueueInfo(update, pathToQueues, "store", thisPoolInfo.getStoreQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "restore", thisPoolInfo.getRestoreQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "mover", thisPoolInfo.getMoverQueue(), metricLifetime);
@@ -88,21 +91,18 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
             addQueueInfo(update, pathToQueues, "p2p-clientqueue", thisPoolInfo.getP2pClientQueue(), metricLifetime);
 
 
-            /**
+            /*
              *  Add the "extra" named queues
              */
-
             addNamedQueues(update, pathToQueues, thisPoolInfo, metricLifetime);
 
 
-            /**
+            /*
              *  Add information about our default queue's name, if we have one.
              */
-
             String defaultQueue = thisPoolInfo.getDefaultQueueName();
             if (defaultQueue != null) {
-                update.appendUpdate(pathToQueues
-                        .newChild("default-queue"),
+                update.appendUpdate(pathToQueues.newChild("default-queue"),
                         new StringStateValue(defaultQueue, metricLifetime));
             }
 
@@ -146,7 +146,8 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
      * @param queueName the name of the queue.
      */
     private void addQueueInfo(StateUpdate stateUpdate, StatePath pathToQueues,
-            String queueName, PoolQueueInfo info, long lifetime) {
+            String queueName, PoolQueueInfo info, long lifetime)
+    {
         StatePath queuePath = pathToQueues.newChild(queueName);
 
         stateUpdate.appendUpdate(queuePath.newChild("active"),
@@ -187,7 +188,8 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
      * @param info the space information to include.
      */
     private void addSpaceInfo(StateUpdate stateUpdate, StatePath pathToSpace,
-            PoolSpaceInfo info, long lifetime) {
+            PoolSpaceInfo info, long lifetime)
+    {
         SpaceInfo si = new SpaceInfo(info);
 
         si.addMetrics(stateUpdate, pathToSpace, lifetime);
@@ -228,8 +230,10 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
      * @param pathToQueues the StatePath pointing to [queues] above
      * @param thisPoolInfo the information about this pool.
      */
-    private void addNamedQueues(StateUpdate update, StatePath pathToQueues, PoolCostInfo thisPoolInfo, long lifetime)	{
-            Map<String, NamedPoolQueueInfo> namedQueuesInfo = thisPoolInfo.getExtendedMoverHash();
+    private void addNamedQueues(StateUpdate update, StatePath pathToQueues,
+            PoolCostInfo thisPoolInfo, long lifetime)
+    {
+        Map<String, NamedPoolQueueInfo> namedQueuesInfo = thisPoolInfo.getExtendedMoverHash();
 
         if (namedQueuesInfo == null) {
             return;
@@ -237,10 +241,9 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
         StatePath pathToNamedQueues = pathToQueues.newChild("named-queues");
 
-        for (NamedPoolQueueInfo thisNamedQueueInfo : namedQueuesInfo
-                .values()) {
-            addQueueInfo(update, pathToNamedQueues, thisNamedQueueInfo
-                    .getName(), thisNamedQueueInfo, lifetime);
+        for (NamedPoolQueueInfo thisNamedQueueInfo : namedQueuesInfo.values()) {
+            addQueueInfo(update, pathToNamedQueues, thisNamedQueueInfo.getName(),
+                    thisNamedQueueInfo, lifetime);
         }
     }
 }

@@ -13,8 +13,8 @@ import dmg.cells.nucleus.CellPath;
  * can be processed correctly. This is likely achieved using a
  * {@link MessageMetadataRepository}
  */
-public interface MessageSender {
-
+public interface MessageSender
+{
     /**
      * Send an instance of Message to the Cell identified by the provided
      * CellPath. The time-to-live (in seconds) for any resulting metrics is

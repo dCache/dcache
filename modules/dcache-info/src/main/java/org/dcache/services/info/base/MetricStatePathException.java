@@ -7,17 +7,16 @@ package org.dcache.services.info.base;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class MetricStatePathException extends BadStatePathException {
-
+public class MetricStatePathException extends BadStatePathException
+{
     static final String DEFAULT_PREFIX = "path element is a metric instead of a branch: ";
 
     private static final long serialVersionUID = 1;
 
-
-    public MetricStatePathException(String path) {
+    public MetricStatePathException(String path)
+    {
         super(DEFAULT_PREFIX + path);
     }
-
 
     /**
      * Create a new MetricStatePathException when the child (childName) is a metric-node
@@ -25,7 +24,8 @@ public class MetricStatePathException extends BadStatePathException {
      * @param pathToComposite the StatePath to this StateComposite
      * @param childName the name of the child that should have been a StateComposite.
      */
-    public MetricStatePathException(StatePath pathToComposite, String childName) {
+    public MetricStatePathException(StatePath pathToComposite, String childName)
+    {
         super(DEFAULT_PREFIX + pathToComposite.newChild(childName).toString());
     }
 }

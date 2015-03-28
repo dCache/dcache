@@ -12,8 +12,8 @@ import java.util.Set;
  * visitor (a class implementing StateVisitor) to visit what the state will be
  * after a StateTransition has been applied.
  */
-public class PostTransitionStateExhibitor implements StateExhibitor {
-
+public class PostTransitionStateExhibitor implements StateExhibitor
+{
     private static final Logger _log =
             LoggerFactory.getLogger(PostTransitionStateExhibitor.class);
 
@@ -22,16 +22,19 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
      * some other StateVisitor. The results are relayed to this other visitor
      * after being adjusted to take into account the StateTransition.
      */
-    private class PreTransitionVisitor implements StateVisitor {
+    private class PreTransitionVisitor implements StateVisitor
+    {
         private final StateVisitor _postTransitionVisitor;
         private final Set<StatePath> _bannedSubtrees = new HashSet<>();
 
-        public PreTransitionVisitor(StateVisitor postTransitionVisitor) {
+        public PreTransitionVisitor(StateVisitor postTransitionVisitor)
+        {
             _postTransitionVisitor = postTransitionVisitor;
         }
 
         @Override
-        public void visitBoolean(StatePath path, BooleanStateValue value) {
+        public void visitBoolean(StatePath path, BooleanStateValue value)
+        {
             if (isMetricUpdatedOrDeleted(path)) {
                 visitUpdatedOrDeletedMetric(path, value);
             } else {
@@ -40,8 +43,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
         }
 
         @Override
-        public void visitFloatingPoint(StatePath path,
-                FloatingPointStateValue value) {
+        public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
+        {
             if (isMetricUpdatedOrDeleted(path)) {
                 visitUpdatedOrDeletedMetric(path, value);
             } else {
@@ -50,7 +53,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
         }
 
         @Override
-        public void visitInteger(StatePath path, IntegerStateValue value) {
+        public void visitInteger(StatePath path, IntegerStateValue value)
+        {
             if (isMetricUpdatedOrDeleted(path)) {
                 visitUpdatedOrDeletedMetric(path, value);
             } else {
@@ -59,7 +63,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
         }
 
         @Override
-        public void visitString(StatePath path, StringStateValue value) {
+        public void visitString(StatePath path, StringStateValue value)
+        {
             if (isMetricUpdatedOrDeleted(path)) {
                 visitUpdatedOrDeletedMetric(path, value);
             } else {
@@ -67,7 +72,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             }
         }
 
-        private boolean isMetricUpdatedOrDeleted(StatePath metricPath) {
+        private boolean isMetricUpdatedOrDeleted(StatePath metricPath)
+        {
             StatePath parentPath = metricPath.parentPath();
             String metricName = metricPath.getLastElement();
 
@@ -78,8 +84,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             return isRemoved || isUpdated || hasBannedParent(metricPath);
         }
 
-        private void visitUpdatedOrDeletedMetric(StatePath path,
-                StateValue value) {
+        private void visitUpdatedOrDeletedMetric(StatePath path, StateValue value)
+        {
             _log.debug("path={}  value={}", path, value);
 
             StatePath parentPath = path.parentPath();
@@ -96,8 +102,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             }
         }
 
-        private void visitUpdatedMetricValue(StatePath path,
-                StateComponent component) {
+        private void visitUpdatedMetricValue(StatePath path, StateComponent component)
+        {
             _log.debug("path={}  component={}", path, component);
             if (component instanceof StateComposite) {
                 // This is when a metric has become a branch.
@@ -109,7 +115,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
 
         @Override
         public void visitCompositePreDescend(StatePath path,
-                Map<String, String> metadata) {
+                Map<String, String> metadata)
+        {
             if (path == null) {
                 _postTransitionVisitor
                         .visitCompositePreDescend(null, metadata);
@@ -135,10 +142,9 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             }
         }
 
-        private void visitUpdatedStateComponentPreDescend(
-                                                          StatePath path,
-                                                          StateComponent updatedComponent,
-                                                          Map<String, String> metadata) {
+        private void visitUpdatedStateComponentPreDescend(StatePath path,
+                StateComponent updatedComponent, Map<String, String> metadata)
+        {
             if (updatedComponent instanceof StateComposite) {
                 _postTransitionVisitor.visitCompositePreDescend(path, metadata);
             } else {
@@ -148,11 +154,13 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             }
         }
 
-        private void banChildrenOf(StatePath parentPath) {
+        private void banChildrenOf(StatePath parentPath)
+        {
             _bannedSubtrees.add(parentPath);
         }
 
-        private boolean hasBannedParent(StatePath path) {
+        private boolean hasBannedParent(StatePath path)
+        {
             for (StatePath bannedParent : _bannedSubtrees) {
                 if (bannedParent.isParentOf(path)) {
                     return true;
@@ -164,7 +172,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
 
         @Override
         public void visitCompositePostDescend(StatePath path,
-                Map<String, String> metadata) {
+                Map<String, String> metadata)
+        {
             if (!shouldPostVisitComposite(path)) {
                 return;
             }
@@ -173,7 +182,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             _postTransitionVisitor.visitCompositePostDescend(path, metadata);
         }
 
-        private boolean shouldPostVisitComposite(StatePath path) {
+        private boolean shouldPostVisitComposite(StatePath path)
+        {
             if (path == null) {
                 return true;
             }
@@ -202,7 +212,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             return true;
         }
 
-        private void visitNewChildren(StatePath compositePath) {
+        private void visitNewChildren(StatePath compositePath)
+        {
             StateChangeSet thisBranchScs =
                     _transition.getStateChangeSet(compositePath);
 
@@ -226,7 +237,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
             }
         }
 
-        private void visitNewChild(StatePath path, StateComponent component) {
+        private void visitNewChild(StatePath path, StateComponent component)
+        {
             _log.debug("Visiting new child: {}", path);
 
             if (component instanceof StateComposite) {
@@ -237,7 +249,8 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
         }
 
         @Override
-        public boolean isVisitable(StatePath path) {
+        public boolean isVisitable(StatePath path)
+        {
             if (hasBannedParent(path)) {
                 return false;
             }
@@ -250,13 +263,15 @@ public class PostTransitionStateExhibitor implements StateExhibitor {
     private final StateExhibitor _currentStateExhibitor;
 
     public PostTransitionStateExhibitor(StateExhibitor exhibitor,
-            StateTransition transition) {
+            StateTransition transition)
+    {
         _currentStateExhibitor = exhibitor;
         _transition = transition;
     }
 
     @Override
-    public void visitState(StateVisitor visitor) {
+    public void visitState(StateVisitor visitor)
+    {
         StateVisitor preTransitionVisitor = new PreTransitionVisitor(visitor);
         _currentStateExhibitor.visitState(preTransitionVisitor);
     }

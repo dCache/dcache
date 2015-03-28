@@ -31,8 +31,8 @@ import org.dcache.services.info.stateInfo.ListVisitor;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class SkelListBasedActivity implements Schedulable {
-
+abstract public class SkelListBasedActivity implements Schedulable
+{
     private static final Logger _log = LoggerFactory.getLogger(SkelListBasedActivity.class);
 
 
@@ -70,7 +70,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
      * dCache's state.
      * @param parentPath all list items must satisfy parentPath.isParentOf(item)
      */
-    protected SkelListBasedActivity (StateExhibitor exhibitor, StatePath parentPath) {
+    protected SkelListBasedActivity (StateExhibitor exhibitor, StatePath parentPath)
+    {
         _parentPath = parentPath;
         _exhibitor = exhibitor;
 
@@ -90,7 +91,9 @@ abstract public class SkelListBasedActivity implements Schedulable {
      * @param minimumListRefreshPeriod An enforced minimum time, in milliseconds, between the same item being called.
      * @param successiveMsgDelay The minimum time between triggering() successive items, in milliseconds.
      */
-    protected SkelListBasedActivity (StateExhibitor exhibitor, StatePath parentPath, int minimumListRefreshPeriod, int successiveMsgDelay) {
+    protected SkelListBasedActivity (StateExhibitor exhibitor, StatePath parentPath,
+            int minimumListRefreshPeriod, int successiveMsgDelay)
+    {
         _parentPath = parentPath;
         _exhibitor = exhibitor;
         updateStack();  // Bring in initial work.
@@ -105,8 +108,10 @@ abstract public class SkelListBasedActivity implements Schedulable {
      * Set when we are next to trigger an event to be a random fraction of
      * the minimum refresh period.  This is most useful when starting up.
      */
-    private void randomiseDelay() {
-        _whenListRefresh = new Date(System.currentTimeMillis() + (long) (Math.random() * _minimumListRefreshPeriod));
+    private void randomiseDelay()
+    {
+        _whenListRefresh = new Date(System.currentTimeMillis() +
+                (long) (Math.random() * _minimumListRefreshPeriod));
     }
 
 
@@ -115,7 +120,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
      *  @returns the desired time we should next be triggered.
      */
     @Override
-    public Date shouldNextBeTriggered() {
+    public Date shouldNextBeTriggered()
+    {
         return _outstandingWork.empty() ? _whenListRefresh : _nextSendMsg;
     }
 
@@ -126,7 +132,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
      * continues to work.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         Date now = new Date();
 
         _nextSendMsg = new Date(System.currentTimeMillis() + _successiveMsgDelay);
@@ -157,7 +164,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
     /**
      *  Query dCache's current state and add the new Set to to our _outstandingWork Stack.
      */
-    private void updateStack() {
+    private void updateStack()
+    {
         Set<String> items = ListVisitor.getDetails(_exhibitor, _parentPath);
 
         for (String item : items) {
@@ -174,7 +182,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
     /**
      * @return the next item off the list if there is one, or null otherwise.
      */
-    public String getNextItem() {
+    public String getNextItem()
+    {
         if (_outstandingWork.empty()) {
             return null;
         }
@@ -186,7 +195,8 @@ abstract public class SkelListBasedActivity implements Schedulable {
     /**
      * @return an appropriate lifetime for a metric, in seconds.
      */
-    public long getMetricLifetime() {
+    public long getMetricLifetime()
+    {
         return _metricLifetime;
     }
 }

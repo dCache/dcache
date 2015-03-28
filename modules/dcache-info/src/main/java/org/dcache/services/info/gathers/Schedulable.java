@@ -9,8 +9,8 @@ import java.util.Date;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public interface Schedulable {
-
+public interface Schedulable
+{
     /**
      *   This method should effect some data-gathering activity; that is,
      *   do something that should result in information being added or

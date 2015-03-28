@@ -6,8 +6,8 @@ package org.dcache.services.info.conduits;
  *
  * @author Paul Millar
  */
-public interface Conduit {
-
+public interface Conduit
+{
     /**
      *  A method that informs a conduit that it should start providing access to
      *  its state.

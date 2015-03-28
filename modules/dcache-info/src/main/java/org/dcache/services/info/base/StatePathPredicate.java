@@ -20,8 +20,8 @@ import java.util.Iterator;
  * in the StatePath.
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StatePathPredicate extends StatePath {
-
+public class StatePathPredicate extends StatePath
+{
     private static final String WILDCARD_ELEMENT = "*";
 
 
@@ -30,8 +30,8 @@ public class StatePathPredicate extends StatePath {
      * @param path the path, as an ordered list of path elements, each element separated by a dot.
      * @return the corresponding StatePath.
      */
-    static public StatePathPredicate parsePath(String path) {
-
+    static public StatePathPredicate parsePath(String path)
+    {
         if (path == null) {
             return null;
         }
@@ -47,8 +47,8 @@ public class StatePathPredicate extends StatePath {
      * @param pathElement
      * @return true if pathElement matches predicateElement
      */
-    static private boolean elementsMatch(String predicateElement, String pathElement) {
-
+    static private boolean elementsMatch(String predicateElement, String pathElement)
+    {
         if (pathElement == null || predicateElement == null) {
             return false;
         }
@@ -64,17 +64,18 @@ public class StatePathPredicate extends StatePath {
         return false;
     }
 
-
-
-    public StatePathPredicate(StatePath path) {
+    public StatePathPredicate(StatePath path)
+    {
         super(path);
     }
 
-    public StatePathPredicate(String path) {
+    public StatePathPredicate(String path)
+    {
         super(path);
     }
 
-    private StatePathPredicate(String[] elements) {
+    private StatePathPredicate(String[] elements)
+    {
         super(elements);
     }
 
@@ -87,8 +88,8 @@ public class StatePathPredicate extends StatePath {
      * @param path the particular path within dCache's state.
      * @return true if this path matches this predicate, false otherwise.
      */
-    public boolean matches(StatePath path) {
-
+    public boolean matches(StatePath path)
+    {
         if (path == null) {
             return false;
         }
@@ -123,7 +124,8 @@ public class StatePathPredicate extends StatePath {
      * @return the path for the child element, or null if there is no child.
      */
     @Override
-    public StatePathPredicate childPath() {
+    public StatePathPredicate childPath()
+    {
         StatePath childPath = super.childPath();
         return childPath == null ? null : new StatePathPredicate(childPath);
     }
@@ -134,7 +136,8 @@ public class StatePathPredicate extends StatePath {
      * @param name the name of the child element
      * @return true if child element matches top-most element, false otherwise
      */
-    public boolean topElementMatches(String name) {
+    public boolean topElementMatches(String name)
+    {
         return StatePathPredicate.elementsMatch(_elements.get(0), name);
     }
 }

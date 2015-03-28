@@ -13,8 +13,8 @@ import org.dcache.services.info.base.StateUpdateManager;
  * point in the state.
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StringListMsgHandler extends CellMessageHandlerSkel {
-
+public class StringListMsgHandler extends CellMessageHandlerSkel
+{
     final private StatePath _path;
 
     /**
@@ -22,14 +22,16 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
      * @param path a String representation of the path under which incoming elements
      * will be added
      */
-    public StringListMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo, String path) {
+    public StringListMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo, String path)
+    {
         super(sum, msgMetaRepo);
         _path = new StatePath(path);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         Object array[] = (Object []) msgPayload;
 
         if (array.length == 0) {

@@ -20,17 +20,14 @@ import org.dcache.services.info.gathers.SingleMessageDga;
  */
 public class TopoDgaFactoryService implements DgaFactoryService
 {
-
     @Override
-    public Set<Schedulable> createDgas(StateExhibitor exhibitor,
-                                       MessageSender sender,
-                                       StateUpdateManager sum,
-                                       MessageMetadataRepository<UOID> msgMetaRepo)
+    public Set<Schedulable> createDgas(StateExhibitor exhibitor, MessageSender sender,
+            StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
     {
         Set<Schedulable> activity = new HashSet<>();
 
         activity.add(new SingleMessageDga(sender, "topo", "gettopomap",
-        		     new TopoMapHandler(sum, msgMetaRepo), 120));
+                new TopoMapHandler(sum, msgMetaRepo), 120));
 
         return activity;
     }

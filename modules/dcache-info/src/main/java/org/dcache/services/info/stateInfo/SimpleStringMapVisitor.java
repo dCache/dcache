@@ -24,15 +24,17 @@ import org.dcache.services.info.base.StringStateValue;
  *   "item3" --> "foo3"
  * </pre>
  */
-public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
-
+public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor
+{
     /**
      * Build a mapping between list items and some StringStateValue value for dCache's current state.
      * @param pathToList the StatePath of the list's parent StateComposite.
      * @param pathToMetric the StatePath, relative to the list item, of the StringStateValue
      * @return the mapping between list items and the metric values.
      */
-    public static final Map<String,String> buildMap(StateExhibitor exhibitor, StatePath pathToList, StatePath pathToMetric) {
+    public static final Map<String,String> buildMap(StateExhibitor exhibitor,
+            StatePath pathToList, StatePath pathToMetric)
+    {
         SimpleStringMapVisitor visitor = new SimpleStringMapVisitor(pathToList, pathToMetric);
         exhibitor.visitState(visitor);
         return visitor.getMap();
@@ -40,20 +42,22 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 
     private final Map <String,String> _map;
 
-    public SimpleStringMapVisitor(StatePath pathToList, StatePath pathToMetric) {
+    public SimpleStringMapVisitor(StatePath pathToList, StatePath pathToMetric)
+    {
         super(pathToList, pathToMetric);
-
         _map = new HashMap<>();
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue value) {
+    public void visitString(StatePath path, StringStateValue value)
+    {
         if (path.equals(getPathToMetric())) {
             _map.put(getKey(), value.toString());
         }
     }
 
-    Map<String,String> getMap() {
+    Map<String,String> getMap()
+    {
         return _map;
     }
 }

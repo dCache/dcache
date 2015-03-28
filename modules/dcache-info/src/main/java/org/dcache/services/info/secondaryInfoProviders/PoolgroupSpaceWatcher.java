@@ -24,8 +24,8 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
-
+public class PoolgroupSpaceWatcher extends AbstractStateWatcher
+{
     private static Logger _log = LoggerFactory.getLogger(PoolgroupSpaceWatcher.class);
     private static final String PREDICATE_PATHS[] = { "pools.*.space.*",
             "poolgroups.*",
@@ -40,7 +40,9 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 
 
     @Override
-    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+    public void trigger(StateUpdate update, StateExhibitor currentState,
+            StateExhibitor futureState)
+    {
         super.trigger(update, currentState, futureState);
 
         Set<String> recalcPoolgroup = new HashSet<>();
@@ -94,7 +96,9 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
      * @param pools the Set of pools this poolgroup has within its membership.
      * @param poolsSpaceInfo the mapping between pools and their SpaceInfo.
      */
-    private void buildNewMetrics(StateUpdate update, StatePath path, Set<String> pools, Map<String, SpaceInfo> poolsSpaceInfo) {
+    private void buildNewMetrics(StateUpdate update, StatePath path, Set<String> pools,
+            Map<String, SpaceInfo> poolsSpaceInfo)
+    {
         SpaceInfo pgSpaceInfo = new SpaceInfo();
 
         // Create an Ephemeral StateComposite for our data.
@@ -125,7 +129,9 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
      * @param recalcPoolgroup
      * @param transition
      */
-    private void updateTodoBasedOnMembership(Set<String> recalcPoolgroup, Map <String,Set<String>> currentPoolgroupMembership, Map <String,Set<String>> futurePoolgroupMembership)
+    private void updateTodoBasedOnMembership(Set<String> recalcPoolgroup,
+            Map <String,Set<String>> currentPoolgroupMembership,
+            Map <String,Set<String>> futurePoolgroupMembership)
     {
         // Scan (future) poolgroup membership..
         for (Map.Entry<String, Set<String>> pgEntry : futurePoolgroupMembership.entrySet()) {

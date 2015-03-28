@@ -23,8 +23,8 @@ import org.dcache.services.info.serialisation.StateSerialiser;
  * implementation of Schema was sent.<br><br>
  * Note that client needs only to know the specializing class of the Schema.
  */
-public class XmlConduit extends AbstractThreadedConduit {
-
+public class XmlConduit extends AbstractThreadedConduit
+{
     private static Logger _log = LoggerFactory.getLogger(XmlConduit.class);
 
     /** TCP port that the server listens on */
@@ -82,7 +82,8 @@ public class XmlConduit extends AbstractThreadedConduit {
     }
 
     @Override
-    public void enable() {
+    public void enable()
+    {
         try {
             _svr_skt = new ServerSocket(_port, _backlog, InetAddresses.forString(_bindAddress));
         } catch (IOException e) {
@@ -97,7 +98,8 @@ public class XmlConduit extends AbstractThreadedConduit {
 
 
     @Override
-    void triggerBlockingActivityToReturn() {
+    void triggerBlockingActivityToReturn()
+    {
         if (_svr_skt == null) {
             return;
         }
@@ -117,7 +119,8 @@ public class XmlConduit extends AbstractThreadedConduit {
      * one is received, send it the XML serialisation of our current state.
      */
     @Override
-    void blockingActivity() {
+    void blockingActivity()
+    {
         Socket skt = null;
 
         try {

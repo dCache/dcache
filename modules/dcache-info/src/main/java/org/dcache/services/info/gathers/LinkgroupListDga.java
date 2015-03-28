@@ -13,8 +13,8 @@ import dmg.cells.nucleus.CellPath;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LinkgroupListDga extends SkelPeriodicActivity {
-
+public class LinkgroupListDga extends SkelPeriodicActivity
+{
     private static Logger _log = LoggerFactory.getLogger(LinkgroupListDga.class);
 
     private static final String SRM_CELL_NAME = "SpaceManager";
@@ -32,7 +32,8 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
      * Create new DGA for maintaining a list of LinkGroups.
      * @param interval how often the list of linkgroups should be updated, in seconds.
      */
-    public LinkgroupListDga(int interval, MessageHandlerChain mhc) {
+    public LinkgroupListDga(int interval, MessageHandlerChain mhc)
+    {
         super(interval);
 
         _mhc = mhc;
@@ -43,7 +44,8 @@ public class LinkgroupListDga extends SkelPeriodicActivity {
      * When triggered, send a message.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         super.trigger();
 
         if (_log.isInfoEnabled()) {

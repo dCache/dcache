@@ -20,8 +20,8 @@ import org.dcache.services.info.base.StringStateValue;
  * result of visiting dCache state is a Map between the reservation ID and a
  * corresponding ReservationInfo object describing the SRM reservation.
  */
-public class ReservationInfoVisitor extends SkeletonListVisitor {
-
+public class ReservationInfoVisitor extends SkeletonListVisitor
+{
     private static Logger _log =
             LoggerFactory.getLogger(ReservationInfoVisitor.class);
 
@@ -54,8 +54,8 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      * @return a Mapping between a reservation's ID and a corresponding
      *         ReservationInfo object.
      */
-    public static Map<String, ReservationInfo> getDetails(
-            StateExhibitor exhibitor) {
+    public static Map<String, ReservationInfo> getDetails(StateExhibitor exhibitor)
+    {
         _log.debug("Gathering reservation information.");
 
         ReservationInfoVisitor visitor = new ReservationInfoVisitor();
@@ -64,8 +64,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
         return visitor.getReservations();
     }
 
-    private final Map<String, ReservationInfo> _reservations =
-            new HashMap<>();
+    private final Map<String, ReservationInfo> _reservations = new HashMap<>();
 
     /*
      * Per-item state
@@ -75,7 +74,8 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
     private StatePath _thisResvSpacePath;
     private StatePath _thisResvAuthPath;
 
-    public ReservationInfoVisitor() {
+    public ReservationInfoVisitor()
+    {
         super(RESERVATIONS_PATH);
     }
 
@@ -85,12 +85,14 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      * @return a Map between a reservation's ID and a corresponding
      *         ReservationInfo object.
      */
-    public Map<String, ReservationInfo> getReservations() {
+    public Map<String, ReservationInfo> getReservations()
+    {
         return Collections.unmodifiableMap(_reservations);
     }
 
     @Override
-    protected void newListItem(String listItemName) {
+    protected void newListItem(String listItemName)
+    {
         super.newListItem(listItemName);
 
         _thisResv = new ReservationInfo(listItemName);
@@ -110,7 +112,8 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
      * Called when an integer metric is encountered.
      */
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
         if (!isInListItem()) {
             return;
         }
@@ -147,7 +150,8 @@ public class ReservationInfoVisitor extends SkeletonListVisitor {
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue value) {
+    public void visitString(StatePath path, StringStateValue value)
+    {
         if (!isInListItem()) {
             return;
         }

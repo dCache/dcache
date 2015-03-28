@@ -20,8 +20,8 @@ import org.dcache.services.info.gathers.SkelPeriodicActivity;
  * operation (due to serialiastion), we try not to do it too often.
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LinkgroupDetailsDga extends SkelPeriodicActivity {
-
+public class LinkgroupDetailsDga extends SkelPeriodicActivity
+{
     private static Logger _log = LoggerFactory.getLogger(LinkgroupDetailsDga.class);
 
     private static final String SRM_CELL_NAME = "SpaceManager";
@@ -39,7 +39,8 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
      * Create new DGA for maintaining a list of LinkGroups.
      * @param interval how often the list of linkgroups should be updated, in seconds.
      */
-    public LinkgroupDetailsDga(MessageSender sender, int interval) {
+    public LinkgroupDetailsDga(MessageSender sender, int interval)
+    {
         super(interval);
         _sender = sender;
         _metricLifetime = Math.round(interval * SAFETY_FACTOR);
@@ -49,7 +50,8 @@ public class LinkgroupDetailsDga extends SkelPeriodicActivity {
      * When triggered, send a message.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         super.trigger();
 
         if (_log.isInfoEnabled()) {

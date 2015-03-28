@@ -12,19 +12,21 @@ import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 
-public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
-
+public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(PoolGroupInfoMsgHandler.class);
 
     private static final StatePath POOLGROUPS_PATH = new StatePath("poolgroups");
 
-    public PoolGroupInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public PoolGroupInfoMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         _log.info("processing new poolgroup information");
 
         if (!msgPayload.getClass().isArray()) {

@@ -13,20 +13,20 @@ import org.slf4j.LoggerFactory;
  *
  * @author Paul Millar
  */
-abstract class AbstractThreadedConduit implements Runnable, Conduit {
-
+abstract class AbstractThreadedConduit implements Runnable, Conduit
+{
     private static Logger _log = LoggerFactory.getLogger(AbstractThreadedConduit.class);
 
     private Thread _thd;
     protected int _callCount;
     volatile boolean _should_run=true;
 
-
     /**
      *  Start conduit activity.
      */
     @Override
-    public void enable() {
+    public void enable()
+    {
         _callCount = 0;
         _should_run = true;
 
@@ -46,7 +46,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
      *  Stop all conduit activity.
      */
     @Override
-    public void disable() {
+    public void disable()
+    {
         if (_thd == null) {
             return;
         }
@@ -73,10 +74,10 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 
 
     @Override
-    public boolean isEnabled() {
+    public boolean isEnabled()
+    {
         return _thd != null;
     }
-
 
     /**
      *  Typically, activity() will include some element that blocks.
@@ -85,21 +86,19 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
      */
     abstract void triggerBlockingActivityToReturn();
 
-
     /**
      *  A method provides some activity; typically, this method
      *  will block, pending network activity.
      */
     abstract void blockingActivity();
 
-
-
     /**
      *  This class's private thread.  Simply loop over the
      *  (subclass-specific) blocking activity.
      */
     @Override
-    public void run() {
+    public void run()
+    {
         while (_should_run) {
             blockingActivity();
         }
@@ -115,7 +114,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
      * name here.
      */
     @Override
-    public String toString() {
+    public String toString()
+    {
         return this.getClass().getSimpleName();
     }
 
@@ -123,7 +123,8 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
      * Return some metadata about this conduit.
      */
     @Override
-    public String getInfo() {
+    public String getInfo()
+    {
         StringBuilder sb = new StringBuilder();
 
         sb.append("[");

@@ -20,20 +20,21 @@ import org.dcache.services.info.base.StateUpdateManager;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LinkgroupListMsgHandler implements MessageHandler {
-
+public class LinkgroupListMsgHandler implements MessageHandler
+{
     private static Logger _log = LoggerFactory.getLogger(LinkgroupListMsgHandler.class);
     private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 
     final private StateUpdateManager _sum;
 
-    public LinkgroupListMsgHandler(StateUpdateManager sum) {
+    public LinkgroupListMsgHandler(StateUpdateManager sum)
+    {
         _sum = sum;
     }
 
     @Override
-    public boolean handleMessage(Message messagePayload, long metricLifetime) {
-
+    public boolean handleMessage(Message messagePayload, long metricLifetime)
+    {
         if (!(messagePayload instanceof GetLinkGroupNamesMessage)) {
             return false;
         }

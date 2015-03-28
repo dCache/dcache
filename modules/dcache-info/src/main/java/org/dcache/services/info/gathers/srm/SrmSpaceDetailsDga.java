@@ -19,7 +19,8 @@ import org.dcache.services.info.gathers.SkelPeriodicActivity;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
+public class SrmSpaceDetailsDga extends SkelPeriodicActivity
+{
     private static Logger _log = LoggerFactory.getLogger(SrmSpaceDetailsDga.class);
 
     private static final String SRM_CELL_NAME = "SpaceManager";
@@ -37,7 +38,8 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
      * Create new DGA for maintaining a list of all SRM Spaces.
      * @param interval how often the list of spaces should be updated, in seconds.
      */
-    public SrmSpaceDetailsDga(MessageSender sender, int interval) {
+    public SrmSpaceDetailsDga(MessageSender sender, int interval)
+    {
         super(interval);
 
         _sender = sender;
@@ -48,7 +50,8 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
      * When triggered, send a message.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         super.trigger();
 
         if (_log.isInfoEnabled()) {
@@ -57,7 +60,6 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity {
 
         _sender.sendMessage(_metricLifetime, _cp, new GetSpaceTokensMessage());
     }
-
 
     @Override
     public String toString()

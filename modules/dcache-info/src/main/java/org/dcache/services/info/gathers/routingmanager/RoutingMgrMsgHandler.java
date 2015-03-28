@@ -71,22 +71,23 @@ import org.dcache.services.info.gathers.cells.CellInfoMsgHandler;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
-
+public class RoutingMgrMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(CellInfoMsgHandler.class);
 
     private static final StatePath DOMAINS_PATH = new StatePath("domains");
 
-
-    public RoutingMgrMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public RoutingMgrMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
 
     @SuppressWarnings("unchecked")
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         _log.debug("received msg.");
 
         if (!msgPayload.getClass().isArray()) {
@@ -137,8 +138,8 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
      * knows about.
      */
     private void buildWellKnownCells(Map<String,String> wellKnownCells, String domainName,
-            Set<String> localExports, Map<String,Set<String>> domainHash) {
-
+            Set<String> localExports, Map<String,Set<String>> domainHash)
+    {
         for (Map.Entry<String, Set<String>> entry : domainHash.entrySet()) {
             String thisDomainName = entry.getKey();
 
@@ -165,8 +166,8 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
      * @param metricLifetime how long, in seconds, these metrics should last.
      */
     private void addWellKnownCells(StateUpdate update, StatePath routingPath,
-            Map<String,String> wellKnownCells, long metricLifetime) {
-
+            Map<String,String> wellKnownCells, long metricLifetime)
+    {
         StatePath namedCellsPath = routingPath.newChild("named-cells");
 
         for (Map.Entry<String, String> entry : wellKnownCells.entrySet()) {
@@ -191,8 +192,8 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
      * @param metricLifetime how long, in seconds, the metrics should last.
      */
     private void addLocalCells(StateUpdate update, StatePath routingPath, Set<String> localCells,
-            long metricLifetime) {
-
+            long metricLifetime)
+    {
         StatePath localCellsPath = routingPath.newChild("local");
 
         for (String cellName : localCells) {
@@ -214,8 +215,8 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel {
      * @param metricLifetime how long, in seconds, the metrics should last.
      */
     private void addRemoteCells(StateUpdate update, StatePath routingPath,
-            Map<String,Set<String>> domainHash, long metricLifetime) {
-
+            Map<String,Set<String>> domainHash, long metricLifetime)
+    {
         StatePath remoteCellsPath = routingPath.newChild("remote");
 
         for (Map.Entry< String, Set<String>> entry : domainHash.entrySet()) {

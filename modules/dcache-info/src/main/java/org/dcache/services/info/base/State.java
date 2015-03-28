@@ -39,8 +39,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class State implements StateCaretaker, StateExhibitor, StateObservatory {
-
+public class State implements StateCaretaker, StateExhibitor, StateObservatory
+{
     /**
      * Constants used for persistent metadata
      */
@@ -68,7 +68,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
     // metrics
     private StateUpdateManager _updateManager;
 
-    public State() {
+    public State()
+    {
         // Build our persistent State metadata tree, with default contents
         StatePersistentMetadata metadata = new StatePersistentMetadata();
         metadata.addDefault();
@@ -84,7 +85,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param sum
      *            the StateUpdateManager
      */
-    public void setStateUpdateManager(StateUpdateManager sum) {
+    public void setStateUpdateManager(StateUpdateManager sum)
+    {
         _updateManager = sum;
     }
 
@@ -94,7 +96,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @return the Date when a metric or branch will next need to be expired.
      */
     @Override
-    public Date getEarliestMetricExpiryDate() {
+    public Date getEarliestMetricExpiryDate()
+    {
         Date earliestExpiryDate = _state.getEarliestChildExpiryDate();
 
         if (_log.isDebugEnabled()) {
@@ -127,7 +130,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * </ol>
      */
     @Override
-    public void processUpdate(StateUpdate update) {
+    public void processUpdate(StateUpdate update)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("beginning to process update: \n" + update.debugInfo());
         }
@@ -183,7 +187,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @param transition
      *            the StateTransition to apply.
      */
-    private void applyTransition(StateTransition transition) {
+    private void applyTransition(StateTransition transition)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("now applying following transition to state:\n\n" + transition
                     .dumpContents());
@@ -217,14 +222,13 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *         new metrics to update.
      */
     @Override
-    public StateUpdate checkWatchers(StateTransition transition) {
-
+    public StateUpdate checkWatchers(StateTransition transition)
+    {
         StateUpdate update = new StateUpdate();
         StateExhibitor currentState = this;
         StateExhibitor futureState = null;
 
         for (StateWatcherInfo thisWatcherInfo : _watchers) {
-
             StateWatcher thisWatcher = thisWatcherInfo.getWatcher();
 
             if (!thisWatcherInfo.isEnabled()) {
@@ -241,7 +245,6 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
             boolean hasBeenTriggered = false;
 
             for (StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
-
                 if (_log.isDebugEnabled()) {
                     _log.debug("checking watcher " + thisWatcher + " predicate " + thisPredicate);
                 }
@@ -274,7 +277,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
 
 
     @Override
-    public void setStateWatchers(List<StateWatcher> watchers) {
+    public void setStateWatchers(List<StateWatcher> watchers)
+    {
         List<StateWatcherInfo> newList = new ArrayList<>(watchers.size());
 
         for (StateWatcher watcher : watchers) {
@@ -293,7 +297,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @return the list of watchers.
      */
     @Override
-    public String[] listStateWatcher() {
+    public String[] listStateWatcher()
+    {
         String[] watchers = new String[_watchers.size()];
 
         int i = 0;
@@ -312,7 +317,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @return the number of matching entries.
      */
     @Override
-    public int enableStateWatcher(String name) {
+    public int enableStateWatcher(String name)
+    {
         int count = 0;
 
         for (StateWatcherInfo thisWatcherInfo : _watchers) {
@@ -333,7 +339,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * @return the number of matching entries.
      */
     @Override
-    public int disableStateWatcher(String name) {
+    public int disableStateWatcher(String name)
+    {
         int count = 0;
 
         for (StateWatcherInfo thisWatcherInfo : _watchers) {
@@ -361,8 +368,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * <ol>
      */
     @Override
-    public synchronized void removeExpiredMetrics() {
-
+    public synchronized void removeExpiredMetrics()
+    {
         // A quick check before obtaining the lock
         Date expDate = getEarliestMetricExpiryDate();
 
@@ -407,7 +414,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *            the algorithm that wishes to visit our current state
      */
     @Override
-    public void visitState(StateVisitor visitor) {
+    public void visitState(StateVisitor visitor)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("visitor " + visitor.getClass()
                     .getSimpleName() + " wishing to visit current state");
@@ -456,37 +464,45 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      * StateWatchers, whether they are enabled and how many times they've
      * been triggered.
      */
-    static private class StateWatcherInfo {
+    static private class StateWatcherInfo
+    {
         StateWatcher _watcher;
         boolean _isEnabled = true;
         long _counter;
 
-        StateWatcherInfo(StateWatcher watcher) {
+        StateWatcherInfo(StateWatcher watcher)
+        {
             _watcher = watcher;
         }
 
-        boolean isEnabled() {
+        boolean isEnabled()
+        {
             return _isEnabled;
         }
 
-        void enable() {
+        void enable()
+        {
             _isEnabled = true;
         }
 
-        void disable() {
+        void disable()
+        {
             _isEnabled = false;
         }
 
-        void incrementCounter() {
+        void incrementCounter()
+        {
             _counter++;
         }
 
-        StateWatcher getWatcher() {
+        StateWatcher getWatcher()
+        {
             return _watcher;
         }
 
         @Override
-        public String toString() {
+        public String toString()
+        {
             StringBuilder sb = new StringBuilder();
 
             sb.append(_watcher.toString()).append(" ");
@@ -504,7 +520,8 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory {
      *
      * @param pw
      */
-    public void getInfo(PrintWriter pw) {
+    public void getInfo(PrintWriter pw)
+    {
         pw.print(listStateWatcher().length);
         pw.println(" state watchers.");
 

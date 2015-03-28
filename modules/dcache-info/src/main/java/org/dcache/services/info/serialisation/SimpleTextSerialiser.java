@@ -24,8 +24,8 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SimpleTextSerialiser extends SubtreeVisitor implements StateSerialiser {
-
+public class SimpleTextSerialiser extends SubtreeVisitor implements StateSerialiser
+{
     public static final String NAME = "simple";
 
     private static final String LIST_TYPE = "List item";
@@ -41,7 +41,8 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     }
 
     @Override
-    public String serialise(StatePath start) {
+    public String serialise(StatePath start)
+    {
         _result = new StringBuilder();
         _startPath = start;
         if (start != null) {
@@ -61,50 +62,59 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
     }
 
     @Override
-    public String serialise() {
+    public String serialise()
+    {
         return serialise(null);
     }
 
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return NAME;
     }
 
     @Override
-    public void visitBoolean(StatePath path, BooleanStateValue value) {
+    public void visitBoolean(StatePath path, BooleanStateValue value)
+    {
         outputMetric(path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
+    {
         outputMetric(path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
         outputMetric(path, value.toString(), value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue value) {
+    public void visitString(StatePath path, StringStateValue value)
+    {
         outputMetric(path, "\""+value+"\"", value.getTypeName());
         _lastStateComponentPath = path;
     }
 
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
+    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata)
+    {
         if (!isInsideScope(path)) {
             return;
         }
 
         _lastStateComponentPath = path;
     }
+
     @Override
-    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
+    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata)
+    {
         if (!isInsideScope(path)) {
             return;
         }
@@ -129,8 +139,8 @@ public class SimpleTextSerialiser extends SubtreeVisitor implements StateSeriali
      * @param metricValue the String representing this metric's current value.
      * @param metricType the type of metric.
      */
-    private void outputMetric(StatePath path, String metricValue, String metricType) {
-
+    private void outputMetric(StatePath path, String metricValue, String metricType)
+    {
         if (_startPath != null) {
             _result.append("  ");
         }

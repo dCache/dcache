@@ -27,8 +27,8 @@ import org.dcache.services.info.base.StringStateValue;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
-
+abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
+{
     private static final Logger _log = LoggerFactory.getLogger(CellMessageHandlerSkel.class);
 
     private final static String SIMPLE_DATE_FORMAT = "MMM d, HH:mm:ss z";
@@ -43,8 +43,9 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
      * @param theTime the Date describing the time to record.
      * @param lifetime how long, in seconds, the metric should last.
      */
-    protected static void addTimeMetrics(StateUpdate update, StatePath parentPath, Date theTime, long lifetime) {
-
+    protected static void addTimeMetrics(StateUpdate update, StatePath parentPath,
+            Date theTime, long lifetime)
+    {
         // Supply time as seconds since 1970
         update.appendUpdate(parentPath.newChild("unix"),
                 new IntegerStateValue(theTime.getTime() / 1000, lifetime));
@@ -68,7 +69,9 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 
     private String _domain;
 
-    public CellMessageHandlerSkel(StateUpdateManager sum, MessageMetadataRepository<UOID> msgHandlerChain) {
+    public CellMessageHandlerSkel(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgHandlerChain)
+    {
         _sum = sum;
         _msgMetadataRepo = msgHandlerChain;
     }
@@ -91,7 +94,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
      * @param metricLifetime how long the metric should last, in seconds.
      */
     protected void addItems(StateUpdate update, StatePath parentPath,
-            Object[] items, long metricLifetime) {
+            Object[] items, long metricLifetime)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("appending list-items under " + parentPath);
         }
@@ -114,7 +118,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
      * fact somewhere.
      * @param update the StateUpdate to apply to the state tree.
      */
-    protected void applyUpdates(StateUpdate update) {
+    protected void applyUpdates(StateUpdate update)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("adding update to state's to-do stack with " + update
                     .count() + " updates for " + this.getClass()
@@ -133,7 +138,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
      * Incoming message: look it up and call the (abstract) process() method.
      */
     @Override
-    public void answerArrived(CellMessage request, CellMessage answer) {
+    public void answerArrived(CellMessage request, CellMessage answer)
+    {
         Object payload = answer.getMessageObject();
 
         if (payload == null) {
@@ -175,7 +181,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
      * Exception arrived, record it and carry on.
      */
     @Override
-    public void exceptionArrived(CellMessage request, Exception exception) {
+    public void exceptionArrived(CellMessage request, Exception exception)
+    {
         if (exception instanceof NoRouteToCellException) {
             _log.info("Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
@@ -189,7 +196,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
      * Timeouts we just ignore.
      */
     @Override
-    public void answerTimedOut(CellMessage request) {
+    public void answerTimedOut(CellMessage request)
+    {
         _log.info("Message timed out");
         _msgMetadataRepo.remove(request.getLastUOID());
     }

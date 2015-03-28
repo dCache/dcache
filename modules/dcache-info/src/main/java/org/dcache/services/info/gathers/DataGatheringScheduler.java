@@ -28,8 +28,8 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class DataGatheringScheduler implements Runnable {
-
+public class DataGatheringScheduler implements Runnable
+{
     private static final long FIVE_MINUTES = 5*60*1000;
 
     private boolean _timeToQuit;
@@ -41,9 +41,8 @@ public class DataGatheringScheduler implements Runnable {
      * Class holding a periodically repeated DataGatheringActivity
      * @author Paul Millar <paul.millar@desy.de>
      */
-    private static class RegisteredActivity {
-
-
+    private static class RegisteredActivity
+    {
         /** Min. delay (in ms). We prevent Schedulables from triggering more frequently than this */
         private static final long MINIMUM_DGA_DELAY = 50;
 
@@ -62,7 +61,8 @@ public class DataGatheringScheduler implements Runnable {
          * @param dga the DataGatheringActivity to be triggered periodically
          * @param period the period between successive triggering in milliseconds.
          */
-        RegisteredActivity(Schedulable dga) {
+        RegisteredActivity(Schedulable dga)
+        {
             _dga = dga;
             updateNextTrigger();
         }
@@ -73,7 +73,8 @@ public class DataGatheringScheduler implements Runnable {
          * time
          * @param period
          */
-        private void updateNextTrigger() {
+        private void updateNextTrigger()
+        {
             Date nextTrigger = _dga.shouldNextBeTriggered();
 
             if (nextTrigger == null) {
@@ -93,7 +94,8 @@ public class DataGatheringScheduler implements Runnable {
         /**
          * Update this PeriodicActivity so it's trigger time is <i>now</i>.
          */
-        public void shouldTriggerNow() {
+        public void shouldTriggerNow()
+        {
             _nextTriggered = new Date();
         }
 
@@ -103,8 +105,8 @@ public class DataGatheringScheduler implements Runnable {
          * and the timer to be reset.
          * @return true if the DataGatheringActivity was triggered.
          */
-        boolean checkAndTrigger(Date now) {
-
+        boolean checkAndTrigger(Date now)
+        {
             if (!_enabled) {
                 return false;
             }
@@ -126,7 +128,8 @@ public class DataGatheringScheduler implements Runnable {
          * @return duration, in milliseconds, until event or zero if it
          * should have been triggered already.
          */
-        long getDelay() {
+        long getDelay()
+        {
             long delay = _nextTriggered.getTime() - System.currentTimeMillis();
             return delay > 0 ? delay : 0;
         }
@@ -135,15 +138,18 @@ public class DataGatheringScheduler implements Runnable {
          * Return the time this will be next triggered.
          * @return
          */
-        long getNextTriggered() {
+        long getNextTriggered()
+        {
             return _nextTriggered.getTime();
         }
 
-        boolean isEnabled() {
+        boolean isEnabled()
+        {
             return _enabled;
         }
 
-        void disable() {
+        void disable()
+        {
             _enabled = false;
         }
 
@@ -151,7 +157,8 @@ public class DataGatheringScheduler implements Runnable {
         /**
          * Enable a periodic activity.
          */
-        void enable()  {
+        void enable()
+        {
             if (!_enabled) {
                 _enabled = true;
                 updateNextTrigger();
@@ -163,7 +170,8 @@ public class DataGatheringScheduler implements Runnable {
          * @return the underlying DGA's name
          */
         @Override
-        public String toString() {
+        public String toString()
+        {
             return _dga.toString();
         }
 
@@ -171,7 +179,8 @@ public class DataGatheringScheduler implements Runnable {
          * Render current status into a human-understandable form.
          * @return single-line String describing current status.
          */
-        public String getStatus() {
+        public String getStatus()
+        {
             StringBuilder sb = new StringBuilder();
             sb.append(this.toString());
             sb.append(" [");
@@ -238,7 +247,8 @@ public class DataGatheringScheduler implements Runnable {
      * Main loop for this thread triggering DataGatheringActivity.
      */
     @Override
-    public void run() {
+    public void run()
+    {
         long delay;
         Date now = new Date();
 
@@ -273,7 +283,8 @@ public class DataGatheringScheduler implements Runnable {
      * @param name the name of the activity to fine
      * @return the corresponding PeriodicActivity object, or null if not found.
      */
-    private RegisteredActivity findActivity(String name) {
+    private RegisteredActivity findActivity(String name)
+    {
         RegisteredActivity foundPA = null;
 
         for (RegisteredActivity pa : _activity) {
@@ -292,7 +303,8 @@ public class DataGatheringScheduler implements Runnable {
      * @param name - name of the DGA.
      * @return null if successful or an error message if there was a problem.
      */
-    public String enableActivity(String name) {
+    public String enableActivity(String name)
+    {
         RegisteredActivity pa;
         boolean haveEnabled = false;
 
@@ -314,7 +326,8 @@ public class DataGatheringScheduler implements Runnable {
      * @param name - name of the DGA.
      * @return null if successful or an error message if there was a problem.
      */
-    public String disableActivity(String name) {
+    public String disableActivity(String name)
+    {
         RegisteredActivity pa;
         boolean haveDisabled = false;
 
@@ -337,7 +350,8 @@ public class DataGatheringScheduler implements Runnable {
      * @param name the PeriodicActivity to trigger
      * @return null if successful, an error message if there was a problem.
      */
-    public String triggerActivity(String name) {
+    public String triggerActivity(String name)
+    {
         RegisteredActivity pa;
 
         synchronized (_activity) {
@@ -357,7 +371,8 @@ public class DataGatheringScheduler implements Runnable {
      * Request that this thread sends no more requests
      * for data.
      */
-    public void shutdown() {
+    public void shutdown()
+    {
         _logSched.debug("Requesting DGA Scheduler to shutdown.");
         synchronized (_activity) {
             _timeToQuit = true;
@@ -376,7 +391,8 @@ public class DataGatheringScheduler implements Runnable {
      * @return delay, in milliseconds, until next trigger or zero if there
      * is no recorded delay.
      */
-    private long getWaitTimeout() {
+    private long getWaitTimeout()
+    {
         long earliestTrig=0;
 
         synchronized (_activity) {
@@ -410,7 +426,8 @@ public class DataGatheringScheduler implements Runnable {
      * Return a human-readable list of known activity.
      * @return
      */
-    public List<String> listActivity() {
+    public List<String> listActivity()
+    {
         List<String> activityList = new ArrayList<>();
 
         synchronized (_activity) {

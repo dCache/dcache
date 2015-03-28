@@ -26,18 +26,20 @@ import java.util.List;
  *
  * @see StateTransition
  */
-public class StateUpdate {
-
+public class StateUpdate
+{
     private static final Logger _log = LoggerFactory.getLogger(StateUpdate.class);
 
     /**
      * A single update to a dCache metric.
      */
-    private static class StateUpdateInstance {
+    private static class StateUpdateInstance
+    {
         final StatePath _path;
         final StateComponent _newValue;
 
-        StateUpdateInstance(StatePath path, StateComponent newValue) {
+        StateUpdateInstance(StatePath path, StateComponent newValue)
+        {
             _path = path;
             _newValue = newValue;
         }
@@ -59,7 +61,8 @@ public class StateUpdate {
      * @param path the StatePath of the item in question.
      * @param value the StateComponent that is being queried.
      */
-    public boolean hasUpdate(StatePath path, StateComponent value) {
+    public boolean hasUpdate(StatePath path, StateComponent value)
+    {
         if (path == null || value == null) {
             return false;
         }
@@ -87,7 +90,8 @@ public class StateUpdate {
      * @param path the StatePath of the top-most element in the purge subtree
      * @return true if the StateUpdate intends to purge exactly the stated subtree, false otherwise.
      */
-    public boolean hasPurge(StatePath path) {
+    public boolean hasPurge(StatePath path)
+    {
         return _purge.contains(path);
     }
 
@@ -95,7 +99,8 @@ public class StateUpdate {
      * Count the number of metrics that are to be updated.
      * @return the number of metric updates contained within this StateUpdate.
      */
-    public int count() {
+    public int count()
+    {
         return _updates.size();
     }
 
@@ -104,7 +109,8 @@ public class StateUpdate {
      * purge operation.
      * @return
      */
-    public int countPurges() {
+    public int countPurges()
+    {
         return _purge.size();
     }
 
@@ -114,7 +120,8 @@ public class StateUpdate {
      * @param path: the StatePath of the new StateValue.
      * @param value: the new
      */
-    public void appendUpdate(StatePath path, StateComponent value) {
+    public void appendUpdate(StatePath path, StateComponent value)
+    {
         _updates.add(new StateUpdateInstance(path, value));
     }
 
@@ -126,10 +133,10 @@ public class StateUpdate {
      * @param isImmortal true for immortal StateComposites; false for ephemeral
      */
     public void appendUpdateCollection(StatePath path, Collection<String> items,
-            boolean isImmortal) {
+            boolean isImmortal)
+    {
         for (String item : items) {
-            appendUpdate(path
-                    .newChild(item), new StateComposite(isImmortal));
+            appendUpdate(path.newChild(item), new StateComposite(isImmortal));
         }
     }
 
@@ -140,10 +147,10 @@ public class StateUpdate {
      * @param lifetime the lifetime, in seconds, for the StateComposites.
      */
     public void appendUpdateCollection(StatePath path, List<String> items,
-            long lifetime) {
+            long lifetime)
+    {
         for (String item : items) {
-            appendUpdate(path
-                    .newChild(item), new StateComposite(lifetime));
+            appendUpdate(path.newChild(item), new StateComposite(lifetime));
         }
     }
 
@@ -154,7 +161,8 @@ public class StateUpdate {
      * updating elements.
      * @param path
      */
-    public void purgeUnder(StatePath path) {
+    public void purgeUnder(StatePath path)
+    {
         _purge.add(path);
     }
 
@@ -165,7 +173,9 @@ public class StateUpdate {
      * @param transition the StateTransition to update.
      * @throws BadStatePathException
      */
-    protected void updateTransition(StateComposite top, StateTransition transition) throws BadStatePathException {
+    protected void updateTransition(StateComposite top, StateTransition transition)
+            throws BadStatePathException
+    {
         BadStatePathException caughtThis = null;
 
         _log.debug("preparing transition with " + _purge.size() + " purge and " + _updates.size() + " update");
@@ -198,7 +208,8 @@ public class StateUpdate {
      * A handy routine for extracting information.
      * @return a human-readable string describing the StateUpdate object
      */
-    public String debugInfo() {
+    public String debugInfo()
+    {
         StringBuilder sb = new StringBuilder();
         sb.append("=== StateUpdate ===\n");
 

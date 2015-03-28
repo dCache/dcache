@@ -20,19 +20,20 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class TopoMapHandler extends CellMessageHandlerSkel {
-
+public class TopoMapHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(TopoMapHandler.class);
 
     private static final StatePath DOMAINS_PATH = new StatePath("domains");
 
-    public TopoMapHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public TopoMapHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         // The TopoCell may return null whilst starting up.
         if (msgPayload == null) {
             return;
@@ -72,14 +73,14 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
      * @param update the StateUpdate to append new metric requests,
      * @param domain the information to add.
      */
-    private void addDomain(StateUpdate update, CellDomainNode domain, long lifetime) {
-
+    private void addDomain(StateUpdate update, CellDomainNode domain, long lifetime)
+    {
         StatePath thisDomainPath = DOMAINS_PATH.newChild(domain.getName());
 
         update.appendUpdate(thisDomainPath.newChild("address"),
                 new StringStateValue(domain.getAddress(), lifetime));
 
-        /**
+        /*
          * We could also record tunnel information here...
          *
          *    CellTunnelInfo tunnels[] = domain.getLinks();

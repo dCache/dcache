@@ -22,8 +22,8 @@ import java.util.Map;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public interface StateVisitor extends StateGuide {
-
+public interface StateVisitor extends StateGuide
+{
     /* All subclasses of StateValue must be represented here. */
 
     void visitString(StatePath path, StringStateValue value);

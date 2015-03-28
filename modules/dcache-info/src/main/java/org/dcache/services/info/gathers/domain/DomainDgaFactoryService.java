@@ -18,7 +18,6 @@ import org.dcache.services.info.gathers.Schedulable;
  */
 public class DomainDgaFactoryService implements DgaFactoryService
 {
-
     @Override
     public Set<Schedulable> createDgas(StateExhibitor exhibitor,
             MessageSender sender, StateUpdateManager sum,
@@ -27,5 +26,4 @@ public class DomainDgaFactoryService implements DgaFactoryService
         return ImmutableSet.of((Schedulable)new StaticDomainDga(exhibitor,
                 sender, new StaticDomainMsgHandler(sum, msgMetaRepo)));
     }
-
 }

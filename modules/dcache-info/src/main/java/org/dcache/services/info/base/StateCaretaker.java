@@ -11,8 +11,8 @@ import java.util.Date;
  * It is expected that the Thread calling these methods will block until the
  * work is completed.
  */
-public interface StateCaretaker {
-
+public interface StateCaretaker
+{
     /**
      * Process an StateUpdate object. The calling thread will block until the
      * process has completed.

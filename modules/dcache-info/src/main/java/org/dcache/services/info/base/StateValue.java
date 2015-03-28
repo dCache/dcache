@@ -12,8 +12,8 @@ import java.util.Date;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-abstract public class StateValue implements StateComponent {
-
+abstract public class StateValue implements StateComponent
+{
     private static final boolean DUMMY_ISEPHEMERAL_VALUE = false;
 
     /** The granularity of expiryTime, in milliseconds */
@@ -27,7 +27,8 @@ abstract public class StateValue implements StateComponent {
      *  Create a StateValue that is either Immortal or Ephemeral
      *  @param isImmortal true if the StateValue is immortal
      */
-    protected StateValue(boolean isImmortal) {
+    protected StateValue(boolean isImmortal)
+    {
         _expiryTime = null;
         _isEphemeral = !isImmortal;
     }
@@ -38,8 +39,8 @@ abstract public class StateValue implements StateComponent {
      * information.
      * @param duration the length of time, in seconds, this information will be held.
      */
-    protected StateValue(long duration) {
-
+    protected StateValue(long duration)
+    {
         if (duration < 0) {
             duration = 0;
         }
@@ -56,7 +57,6 @@ abstract public class StateValue implements StateComponent {
             tim = Math.round((double)tim / _granularity) * _granularity;
         }
 
-
         _expiryTime = new Date(tim);
         _isEphemeral = DUMMY_ISEPHEMERAL_VALUE;
     }
@@ -67,7 +67,8 @@ abstract public class StateValue implements StateComponent {
      * @return when this StateValue will expire
      */
     @Override
-    public Date getExpiryDate() {
+    public Date getExpiryDate()
+    {
         return _expiryTime != null ? new Date(_expiryTime.getTime()) : null;
     }
 
@@ -78,7 +79,8 @@ abstract public class StateValue implements StateComponent {
      * false otherwise.
      */
     @Override
-    public boolean hasExpired() {
+    public boolean hasExpired()
+    {
         if (_expiryTime == null) {
             return false;
         }
@@ -106,30 +108,40 @@ abstract public class StateValue implements StateComponent {
      * care of all effects from processing the transition.
      */
     @Override
-    public void acceptVisitor(StateTransition transition, StatePath path, StateVisitor visitor) {
+    public void acceptVisitor(StateTransition transition, StatePath path,
+            StateVisitor visitor)
+    {
         acceptVisitor(path, visitor);
     }
 
 
     @Override
-    public void applyTransition(StatePath ourPath, StateTransition transition) {
+    public void applyTransition(StatePath ourPath, StateTransition transition)
+    {
         // Simply do nothing. All activity takes place in StateComposite.
     }
 
 
     @Override
-    public void buildTransition(StatePath ourPath, StatePath childPath, StateComponent newChild, StateTransition transition) throws MetricStatePathException {
+    public void buildTransition(StatePath ourPath, StatePath childPath,
+            StateComponent newChild, StateTransition transition)
+            throws MetricStatePathException
+    {
         // If we're here, the user has specified a path with a metric in it.
         throw new MetricStatePathException(ourPath.toString());
     }
 
     @Override
-    public void buildRemovalTransition(StatePath ourPath, StateTransition transition, boolean forced) {
+    public void buildRemovalTransition(StatePath ourPath,
+            StateTransition transition, boolean forced)
+    {
         // Simply do nothing, all activity takes place in StateComposites
     }
 
     @Override
-    public boolean predicateHasBeenTriggered(StatePath ourPath, StatePathPredicate predicate, StateTransition transition) {
+    public boolean predicateHasBeenTriggered(StatePath ourPath,
+            StatePathPredicate predicate, StateTransition transition)
+    {
         /*
          * If we've iterated down to a metric then we <i>know</i>
          * that nothing's changed:  any change that might satisfy this predicate would happen
@@ -139,27 +151,33 @@ abstract public class StateValue implements StateComponent {
     }
 
     @Override
-    public void buildPurgeTransition(StateTransition transition, StatePath ourPath, StatePath remainingPath) {
+    public void buildPurgeTransition(StateTransition transition,
+            StatePath ourPath, StatePath remainingPath)
+    {
         // Simply do nothing, all activity takes place in parent StateComposite
     }
 
     @Override
-    public boolean isMortal() {
+    public boolean isMortal()
+    {
         return _expiryTime != null;
     }
 
     @Override
-    public boolean isEphemeral() {
+    public boolean isEphemeral()
+    {
         return _expiryTime == null && _isEphemeral;
     }
 
     @Override
-    public boolean isImmortal() {
+    public boolean isImmortal()
+    {
         return _expiryTime == null && !_isEphemeral;
     }
 
     @Override
-    public Date getEarliestChildExpiryDate() {
+    public Date getEarliestChildExpiryDate()
+    {
         return null; // we never have children.
     }
 }

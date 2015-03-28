@@ -21,19 +21,21 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
-
+public class LinkInfoMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(LinkInfoMsgHandler.class);
 
     private static final int EXPECTED_ARRAY_SIZE=13;
 
-    public LinkInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public LinkInfoMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         StateUpdate update = null;
 
         Iterable<?> linkInfoArray = (ArrayList<?>) msgPayload;

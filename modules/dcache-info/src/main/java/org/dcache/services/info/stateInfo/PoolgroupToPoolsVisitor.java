@@ -22,8 +22,8 @@ import org.dcache.services.info.base.guides.SubtreeStateGuide;
  * Scan through a dCache state tree, building a list of poolgroup-to-pools associations.
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolgroupToPoolsVisitor implements StateVisitor {
-
+public class PoolgroupToPoolsVisitor implements StateVisitor
+{
     private static Logger _log = LoggerFactory.getLogger(PoolgroupToPoolsVisitor.class);
 
     private static final StatePath POOLGROUPS_PATH = new StatePath("poolgroups");
@@ -32,7 +32,8 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
      * Obtain a Map between a poolgroup and the pools that are currently members of this poolgroup.
      * @return
      */
-    public static Map <String,Set<String>> getDetails(StateExhibitor exhibitor) {
+    public static Map <String,Set<String>> getDetails(StateExhibitor exhibitor)
+    {
         if (_log.isInfoEnabled()) {
             _log.info("Gathering current status");
         }
@@ -48,12 +49,14 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
     StateGuide _guide = new SubtreeStateGuide(POOLGROUPS_PATH);
 
     @Override
-    public boolean isVisitable(StatePath path) {
+    public boolean isVisitable(StatePath path)
+    {
         return _guide.isVisitable(path);
     }
 
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String,String> metadata) {
+    public void visitCompositePreDescend(StatePath path, Map<String,String> metadata)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("Examining " + path);
         }
@@ -81,24 +84,27 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
     }
 
     @Override
-    public void visitCompositePostDescend(StatePath path, Map<String,String> metadata) {
+    public void visitCompositePostDescend(StatePath path, Map<String,String> metadata)
+    {
     }
 
     @Override
-    public void visitString(StatePath path, StringStateValue value) {
+    public void visitString(StatePath path, StringStateValue value)
+    {
     }
 
     @Override
-    public void visitBoolean(StatePath path, BooleanStateValue value) {
+    public void visitBoolean(StatePath path, BooleanStateValue value)
+    {
     }
 
     @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
     }
 
     @Override
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
+    {
     }
 }
-
-

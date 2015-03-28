@@ -19,8 +19,8 @@ package org.dcache.services.info.base;
  *
  * @see StateCaretaker
  */
-public interface StateUpdateManager {
-
+public interface StateUpdateManager
+{
     /**
      * Instruct the StateUpdateManager to shutdown and wait for this to
      * happen. The StateUpdateManager should process any outstanding work

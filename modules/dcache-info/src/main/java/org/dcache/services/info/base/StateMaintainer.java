@@ -25,8 +25,8 @@ import org.dcache.util.FireAndForgetTask;
  * StateUpdate objects independently of whichever Thread created them. It is
  * also responsible for purging those metrics that have expired.
  */
-public class StateMaintainer implements StateUpdateManager, CellMessageSender {
-
+public class StateMaintainer implements StateUpdateManager, CellMessageSender
+{
     private static final Logger _log = LoggerFactory.getLogger(StateMaintainer.class);
 
     private static final boolean CANCEL_RUNNING_METRIC_EXPUNGE = false;
@@ -76,17 +76,20 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      *
      * @param caretaker
      */
-    void setStateCaretaker(final StateCaretaker caretaker) {
+    void setStateCaretaker(final StateCaretaker caretaker)
+    {
         _caretaker = caretaker;
     }
 
     @Override
-    public int countPendingUpdates() {
+    public int countPendingUpdates()
+    {
         return _pendingRequestCount.get();
     }
 
     @Override
-    public void enqueueUpdate(final StateUpdate pendingUpdate) {
+    public void enqueueUpdate(final StateUpdate pendingUpdate)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("enqueing job to process update " + pendingUpdate);
         }
@@ -139,7 +142,8 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      * {@link StateCaretaker#getEarliestMetricExpiryDate()} could possible
      * have changed.
      */
-    synchronized void checkScheduledExpungeActivity() {
+    synchronized void checkScheduledExpungeActivity()
+    {
         Date earliestMetricExpiry = _caretaker.getEarliestMetricExpiryDate();
 
         if (earliestMetricExpiry == null && _metricExpiryDate == null) {
@@ -178,7 +182,8 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      * @param whenExpunge
      *            some time in the future to schedule a task or null.
      */
-    private synchronized void scheduleMetricExpunge(final Date whenExpunge) {
+    private synchronized void scheduleMetricExpunge(final Date whenExpunge)
+    {
         _metricExpiryDate = whenExpunge;
 
         if (whenExpunge == null) {
@@ -216,7 +221,8 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender {
      * {@link StateCaretaker#getEarliestMetricExpiryDate()} has changed to
      * avoid creating competing tasks.
      */
-    synchronized protected void scheduleMetricExpunge() {
+    synchronized protected void scheduleMetricExpunge()
+    {
         scheduleMetricExpunge(_caretaker.getEarliestMetricExpiryDate());
     }
 }

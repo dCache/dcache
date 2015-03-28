@@ -22,8 +22,8 @@ import org.dcache.services.info.gathers.SkelListBasedActivity;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class RoutingMgrDga extends SkelListBasedActivity {
-
+public class RoutingMgrDga extends SkelListBasedActivity
+{
     private static final Logger _log = LoggerFactory.getLogger(RoutingMgrDga.class);
 
     private final MessageSender _sender;
@@ -38,8 +38,9 @@ public class RoutingMgrDga extends SkelListBasedActivity {
 
     private final CellMessageAnswerable _handler;
 
-    public RoutingMgrDga(StateExhibitor exhibitor, MessageSender sender, CellMessageAnswerable handler) {
-
+    public RoutingMgrDga(StateExhibitor exhibitor, MessageSender sender,
+            CellMessageAnswerable handler)
+    {
         super(exhibitor, new StatePath("domains"), MIN_LIST_REFRESH_PERIOD, SUCC_MSG_DELAY);
 
         _sender = sender;
@@ -50,7 +51,8 @@ public class RoutingMgrDga extends SkelListBasedActivity {
      * Method called periodically when we should send out a message.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         super.trigger();
 
         String domainName = getNextItem();
@@ -79,7 +81,8 @@ public class RoutingMgrDga extends SkelListBasedActivity {
      * We only expect to have a single instance of this class.
      */
     @Override
-    public String toString() {
+    public String toString()
+    {
         return this.getClass().getSimpleName();
     }
 }

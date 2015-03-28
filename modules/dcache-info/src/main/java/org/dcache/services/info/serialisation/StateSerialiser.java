@@ -8,8 +8,8 @@ import org.dcache.services.info.base.StatePath;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public interface StateSerialiser {
-
+public interface StateSerialiser
+{
     /** Return a simple name for this serialiser */
     String getName();
 

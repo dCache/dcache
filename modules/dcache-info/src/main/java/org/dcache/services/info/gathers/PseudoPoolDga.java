@@ -29,8 +29,8 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PseudoPoolDga implements Schedulable {
-
+public class PseudoPoolDga implements Schedulable
+{
     /** Max number standard deviation to allow in delay */
     static final private int NUM_SD = 4;
     /** The safety margin we should ensure for metrics, in seconds */
@@ -84,8 +84,9 @@ public class PseudoPoolDga implements Schedulable {
      * @param how often (on average) update metrics should be sent, in milliseconds
      * @param the total capacity of this pool, in GiB
      */
-    public PseudoPoolDga(StateUpdateManager sum, String poolName, int updatePeriod, long capacity) {
-
+    public PseudoPoolDga(StateUpdateManager sum, String poolName, int updatePeriod,
+            long capacity)
+    {
         _poolName = poolName;
         _sum = sum;
 
@@ -107,7 +108,8 @@ public class PseudoPoolDga implements Schedulable {
 
     // Roughly periodic: Normal with mean: _duration, SD: _spread
     @Override
-    public Date shouldNextBeTriggered() {
+    public Date shouldNextBeTriggered()
+    {
         long thisDelay = _delay + (long) (_rnd.nextGaussian() * _spread);
 
         if (thisDelay > _maxDelay) {
@@ -122,7 +124,8 @@ public class PseudoPoolDga implements Schedulable {
      *  When we've been triggered.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         updateSpace();
 
         StateUpdate update = new StateUpdate();
@@ -139,8 +142,8 @@ public class PseudoPoolDga implements Schedulable {
      * Update our space information.  We try to provide a half-way reasonable model of how
      * a pool behaves.
      */
-    private void updateSpace() {
-
+    private void updateSpace()
+    {
         // People add precious data with fixed likelihood that is mostly the same size.
         if (_rnd.nextFloat() < PRECIOUS_ADD_LIKELIHOOD) {
             _spaceInfo.updatePrecious((long) (_spaceInfo

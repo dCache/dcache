@@ -19,12 +19,9 @@ import org.dcache.services.info.gathers.Schedulable;
  */
 public class SrmDgaFactoryService implements DgaFactoryService
 {
-
     @Override
-    public Set<Schedulable> createDgas(StateExhibitor exhibitor,
-                                       MessageSender sender,
-                                       StateUpdateManager sum,
-                                       MessageMetadataRepository<UOID> msgMetaRepo)
+    public Set<Schedulable> createDgas(StateExhibitor exhibitor, MessageSender sender,
+            StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
     {
         Set<Schedulable> activity = new HashSet<>();
 

@@ -17,18 +17,20 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
-
+public class UnitInfoMsgHandler extends CellMessageHandlerSkel
+{
     private static Logger _log = LoggerFactory.getLogger(UnitInfoMsgHandler.class);
     private static final StatePath UNITS_PATH = new StatePath("units");
 
-    public UnitInfoMsgHandler(StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo) {
+    public UnitInfoMsgHandler(StateUpdateManager sum,
+            MessageMetadataRepository<UOID> msgMetaRepo)
+    {
         super(sum, msgMetaRepo);
     }
 
     @Override
-    public void process(Object msgPayload, long metricLifetime) {
-
+    public void process(Object msgPayload, long metricLifetime)
+    {
         if (!msgPayload.getClass().isArray()) {
             _log.error("unexpected received non-array payload");
             return;
@@ -41,7 +43,7 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
             return;
         }
 
-        /**
+        /*
          * array[0] = name
          * array[1] = type
          * array[2] = list of unitgroups.

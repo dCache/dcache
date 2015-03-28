@@ -18,8 +18,8 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
-public class SrmSpaceDetailsMsgHandler implements MessageHandler {
-
+public class SrmSpaceDetailsMsgHandler implements MessageHandler
+{
     private static Logger _log = LoggerFactory.getLogger(SrmSpaceDetailsMsgHandler.class);
     private static final StatePath SPACES_PATH = StatePath.parsePath("reservations");
     private static final StatePath LINKGROUPS = new StatePath("linkgroups");
@@ -27,13 +27,14 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 
     final private StateUpdateManager _sum;
 
-    public SrmSpaceDetailsMsgHandler(StateUpdateManager sum) {
+    public SrmSpaceDetailsMsgHandler(StateUpdateManager sum)
+    {
         _sum = sum;
     }
 
     @Override
-    public boolean handleMessage(Message messagePayload, long metricLifetime) {
-
+    public boolean handleMessage(Message messagePayload, long metricLifetime)
+    {
         if (!(messagePayload instanceof GetSpaceTokensMessage)) {
             return false;
         }
@@ -101,7 +102,9 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
      * @param role the String representation of the role.
      * @param metricLifetime how long, in seconds, these metrics should exist for.
      */
-    private void addVoInfo(StateUpdate update, StatePath parentPath, String group, String role, long metricLifetime) {
+    private void addVoInfo(StateUpdate update, StatePath parentPath, String group,
+            String role, long metricLifetime)
+    {
         if (role != null) {
             update.appendUpdate(parentPath
                     .newChild("role"), new StringStateValue(role, metricLifetime));
@@ -132,8 +135,9 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
      * @param spaceId the space ID
      * @param metricLifetime how long, in seconds, a metric should last.
      */
-    private void addLinkgroup(StateUpdate update, StatePath parentPath, String lgid, String spaceId, long metricLifetime) {
-
+    private void addLinkgroup(StateUpdate update, StatePath parentPath, String lgid,
+            String spaceId, long metricLifetime)
+    {
         // Add the reference to the linkgroup within the space.
         update.appendUpdate(parentPath.newChild("linkgroupref"), new StringStateValue(lgid, metricLifetime));
 

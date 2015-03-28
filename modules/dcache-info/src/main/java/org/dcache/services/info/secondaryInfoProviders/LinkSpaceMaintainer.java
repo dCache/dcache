@@ -17,8 +17,8 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class LinkSpaceMaintainer extends AbstractStateWatcher {
-
+public class LinkSpaceMaintainer extends AbstractStateWatcher
+{
     private static final String PREDICATE_PATHS[] = { "links.*",
             "links.*.pools.*",
             "pools.*.space.*"};
@@ -27,12 +27,15 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
     private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath("pools");
 
     @Override
-    protected String[] getPredicates() {
+    protected String[] getPredicates()
+    {
         return PREDICATE_PATHS;
     }
 
     @Override
-    public void trigger(StateUpdate update, StateExhibitor currentState, StateExhibitor futureState) {
+    public void trigger(StateUpdate update, StateExhibitor currentState,
+            StateExhibitor futureState)
+    {
         super.trigger(update, currentState, futureState);
 
         Map<String,Set<String>> futureLinksToPools = SetMapVisitor.getDetails(futureState, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
@@ -60,8 +63,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
      * @param linksToUpdate the Set of links to recalculate: link names will be added here.
      * @param futureLinksToPools the mapping between a link's name and the Set of pools that are associated with that link after the transition.
      */
-    private void addLinksWhereLinkHasChanged(StateExhibitor currentState, Set<String> linksToUpdate, Map<String,Set<String>> futureLinksToPools) {
-
+    private void addLinksWhereLinkHasChanged(StateExhibitor currentState,
+            Set<String> linksToUpdate, Map<String,Set<String>> futureLinksToPools)
+    {
         Map<String,Set<String>> currentLinksToPools = SetMapVisitor.getDetails(currentState, LINKS_PATH, POOL_MEMBERSHIP_REL_PATH);
 
         if (currentLinksToPools.equals(futureLinksToPools)) {
@@ -97,8 +101,10 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
      * @param futureLinksToPools the future mapping between a link's name and the set of pools associated with that link
      * @param futurePoolSize the future mapping between a pool's name and its size information.
      */
-    private void addLinksWherePoolsHaveChanged(StateExhibitor currentState, Set<String> linksToUpdate, Map<String, Set<String>> futureLinksToPools, Map<String,SpaceInfo> futurePoolSize) {
-
+    private void addLinksWherePoolsHaveChanged(StateExhibitor currentState,
+            Set<String> linksToUpdate, Map<String, Set<String>> futureLinksToPools,
+            Map<String,SpaceInfo> futurePoolSize)
+    {
         // Get the current pool space information
         Map<String,SpaceInfo> currentPoolSize = PoolSpaceVisitor.getDetails(currentState);
 
@@ -139,7 +145,9 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
      * @param futureLinksToPools the Set of poolNames for the pools associated with this link
      * @param futurePoolSize the future mapping between a pool's name and its pool size information.
      */
-    private void addUpdateInfo(StateUpdate update, String linkName, Set<String> futureLinkPools, Map<String,SpaceInfo> futurePoolSize) {
+    private void addUpdateInfo(StateUpdate update, String linkName,
+            Set<String> futureLinkPools, Map<String,SpaceInfo> futurePoolSize)
+    {
         SpaceInfo linkSpaceInfo = new SpaceInfo();
         StatePath linkSpacePath = LINKS_PATH.newChild(linkName).newChild("space");
 

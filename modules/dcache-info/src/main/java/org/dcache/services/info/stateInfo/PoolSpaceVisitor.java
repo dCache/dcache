@@ -14,15 +14,16 @@ import org.dcache.services.info.base.StateExhibitor;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
-
+public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor
+{
     private static final Logger _log = LoggerFactory.getLogger(PoolSpaceVisitor.class);
 
     /**
      * Obtain a Map between pools and their space information for current dCache state.
      * @return
      */
-    public static Map <String,SpaceInfo> getDetails(StateExhibitor exhibitor) {
+    public static Map <String,SpaceInfo> getDetails(StateExhibitor exhibitor)
+    {
         if (_log.isInfoEnabled()) {
             _log.info("Gathering current status");
         }
@@ -35,7 +36,8 @@ public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
     private final Map <String,SpaceInfo> _poolgroups = new HashMap<>();
 
     @Override
-    protected void newPool(String poolName, SpaceInfo space) {
+    protected void newPool(String poolName, SpaceInfo space)
+    {
         _poolgroups.put(poolName, space);
     }
 }

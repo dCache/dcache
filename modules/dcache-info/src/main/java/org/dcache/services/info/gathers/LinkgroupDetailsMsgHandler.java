@@ -19,8 +19,8 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
 
-public class LinkgroupDetailsMsgHandler implements MessageHandler {
-
+public class LinkgroupDetailsMsgHandler implements MessageHandler
+{
     private static Logger _log = LoggerFactory.getLogger(LinkgroupDetailsMsgHandler.class);
     private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
     private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_ALL = StatePath.parsePath("summary.linkgroup.blanket-auth.all");
@@ -30,13 +30,14 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
     final private StateUpdateManager _sum;
 
-    public LinkgroupDetailsMsgHandler(StateUpdateManager sum) {
+    public LinkgroupDetailsMsgHandler(StateUpdateManager sum)
+    {
         _sum = sum;
     }
 
     @Override
-    public boolean handleMessage(Message messagePayload, long metricLifetime) {
-
+    public boolean handleMessage(Message messagePayload, long metricLifetime)
+    {
         if (!(messagePayload instanceof GetLinkGroupsMessage)) {
             return false;
         }
@@ -106,7 +107,9 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
      * @param vosPath the branch that metrics will be added underneath.
      * @param vo the VOInfo of this VO.
      */
-    private void addVoInfo(StateUpdate update, StatePath voPath, VOInfo vo, long metricLifetime, String lgid) {
+    private void addVoInfo(StateUpdate update, StatePath voPath, VOInfo vo,
+            long metricLifetime, String lgid)
+    {
         String group = vo.getVoGroup();
         String role = vo.getVoRole();
 

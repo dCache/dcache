@@ -25,8 +25,8 @@ import org.dcache.services.info.base.guides.SubtreeStateGuide;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SkeletonListVisitor implements StateVisitor {
-
+public class SkeletonListVisitor implements StateVisitor
+{
     private static Logger _log = LoggerFactory.getLogger(SkeletonListVisitor.class);
 
     final private StatePath _pathToList;
@@ -39,7 +39,8 @@ public class SkeletonListVisitor implements StateVisitor {
      * Instantiate the list over the items underneath pathToList.
      * @param pathToList the StatePath representing the parent object for this list.
      */
-    protected SkeletonListVisitor(StatePath pathToList) {
+    protected SkeletonListVisitor(StatePath pathToList)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("Searching on path " + pathToList);
         }
@@ -49,7 +50,8 @@ public class SkeletonListVisitor implements StateVisitor {
     }
 
     @Override
-    public boolean isVisitable(StatePath path) {
+    public boolean isVisitable(StatePath path)
+    {
         return _guide.isVisitable(path);
     }
 
@@ -57,20 +59,28 @@ public class SkeletonListVisitor implements StateVisitor {
      * The super-Class should override one of the following four methods
      */
     @Override
-    public void visitBoolean(StatePath path, BooleanStateValue value) {
-    }
-    @Override
-    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {
-    }
-    @Override
-    public void visitInteger(StatePath path, IntegerStateValue value) {
-    }
-    @Override
-    public void visitString(StatePath path, StringStateValue value) {
+    public void visitBoolean(StatePath path, BooleanStateValue value)
+    {
     }
 
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
+    public void visitFloatingPoint(StatePath path, FloatingPointStateValue value)
+    {
+    }
+
+    @Override
+    public void visitInteger(StatePath path, IntegerStateValue value)
+    {
+    }
+
+    @Override
+    public void visitString(StatePath path, StringStateValue value)
+    {
+    }
+
+    @Override
+    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata)
+    {
         if (_pathToList.isParentOf(path)) {
             if (_log.isDebugEnabled()) {
                 _log.debug("Entering " + path);
@@ -81,7 +91,8 @@ public class SkeletonListVisitor implements StateVisitor {
     }
 
     @Override
-    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
+    public void visitCompositePostDescend(StatePath path, Map<String, String> metadata)
+    {
         if (_pathToList.isParentOf(path)) {
             if (_log.isDebugEnabled()) {
                 _log.debug("Leaving " + path);
@@ -96,7 +107,8 @@ public class SkeletonListVisitor implements StateVisitor {
      * @param listItemName the name of the list item to record.
      * @see the getKey() method.
      */
-    protected void newListItem(String listItemName) {
+    protected void newListItem(String listItemName)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("Assigning _thisKey to " + listItemName);
         }
@@ -108,7 +120,8 @@ public class SkeletonListVisitor implements StateVisitor {
      * Method called whenever the visitor is leaving a list item.
      * @param listItemName the name of the list item that is being left.
      */
-    protected void exitingListItem(String listItemName) {
+    protected void exitingListItem(String listItemName)
+    {
         if (_log.isDebugEnabled()) {
             _log.debug("Resetting _thisKey to null on leaving " + listItemName);
         }
@@ -119,14 +132,16 @@ public class SkeletonListVisitor implements StateVisitor {
     /**
      * Obtain the StatePath to the parent object for all list items.
      */
-    protected StatePath getPathToList() {
+    protected StatePath getPathToList()
+    {
         return _pathToList;
     }
 
     /**
      * @return the name of the last item in the list, or null if not currently within a list item.
      */
-    protected String getKey() {
+    protected String getKey()
+    {
         return _thisKey;
     }
 
@@ -135,7 +150,8 @@ public class SkeletonListVisitor implements StateVisitor {
      * then getKey() will return the valid key.
      * @return true if visitor is within a list item, false otherwise.
      */
-    protected boolean isInListItem() {
+    protected boolean isInListItem()
+    {
         return _thisKey != null;
     }
 }

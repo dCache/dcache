@@ -10,17 +10,18 @@ import org.dcache.services.info.base.StatePath;
  * root) and all StateComponents that have the subtree root as an ancestor
  * (i.e., visiting the subtree).
  */
-public class SubtreeStateGuide implements StateGuide {
-
+public class SubtreeStateGuide implements StateGuide
+{
     private final StatePath _subtreeRoot;
 
-    public SubtreeStateGuide(StatePath root) {
+    public SubtreeStateGuide(StatePath root)
+    {
         _subtreeRoot = root;
     }
 
     @Override
-    public boolean isVisitable(StatePath path) {
-
+    public boolean isVisitable(StatePath path)
+    {
         if (isRootPath(path)) {
             return true;
         }
@@ -40,16 +41,19 @@ public class SubtreeStateGuide implements StateGuide {
         return false;
     }
 
-    private boolean isRootPath(StatePath path) {
+    private boolean isRootPath(StatePath path)
+    {
         return path == null;
     }
 
-    public boolean isInSubtree(StatePath path) {
+    public boolean isInSubtree(StatePath path)
+    {
         return _subtreeRoot.equalsOrHasChild(path);
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return "{SubtreeStateGuide: " + _subtreeRoot + "}";
     }
 }

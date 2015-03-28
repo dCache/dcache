@@ -25,8 +25,8 @@ import dmg.cells.nucleus.CellPath;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SingleMessageDga extends SkelPeriodicActivity {
-
+public class SingleMessageDga extends SkelPeriodicActivity
+{
     private CellPath _cp;
     private String _requestString;
     private Message _requestMessage;
@@ -72,7 +72,8 @@ public class SingleMessageDga extends SkelPeriodicActivity {
      * Send messages to query current list of pools.
      */
     @Override
-    public void trigger() {
+    public void trigger()
+    {
         super.trigger();
 
         if (_requestMessage != null) {

@@ -27,10 +27,8 @@ public class PoolManagerDgaFactoryService implements DgaFactoryService
 {
 
     @Override
-    public Set<Schedulable> createDgas(StateExhibitor exhibitor,
-                                       MessageSender sender,
-                                       StateUpdateManager sum,
-                                       MessageMetadataRepository<UOID> msgMetaRepo)
+    public Set<Schedulable> createDgas(StateExhibitor exhibitor, MessageSender sender,
+            StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
     {
         return new DgaFactory(exhibitor, sender, sum, msgMetaRepo).get();
     }
@@ -52,10 +50,8 @@ public class PoolManagerDgaFactoryService implements DgaFactoryService
         private final MessageMetadataRepository<UOID> _msgMetaRepo;
         private final Set<Schedulable> _activity = new HashSet<>();
 
-        DgaFactory(StateExhibitor exhibitor,
-                   MessageSender sender,
-                   StateUpdateManager sum,
-                   MessageMetadataRepository<UOID> msgMetaRepo)
+        DgaFactory(StateExhibitor exhibitor, MessageSender sender, StateUpdateManager sum,
+                MessageMetadataRepository<UOID> msgMetaRepo)
         {
             _exhibitor = exhibitor;
             _sender = sender;

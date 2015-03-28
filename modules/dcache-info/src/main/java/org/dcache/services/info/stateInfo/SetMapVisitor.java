@@ -30,8 +30,8 @@ import org.dcache.services.info.base.StatePath;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SetMapVisitor extends SkeletonListVisitor {
-
+public class SetMapVisitor extends SkeletonListVisitor
+{
     /**
      * Obtain a Map between list items and their corresponding Set of the children of some
      * fixed relative path for dCache's current state.  For example, if dCache currently
@@ -83,13 +83,15 @@ public class SetMapVisitor extends SkeletonListVisitor {
      * @param relativePathToSecondList path, relative to the primary list item, of
      * the common parent of the secondary list.
      */
-    public SetMapVisitor(StatePath pathToPrimaryList, StatePath relativePathToSecondList) {
+    public SetMapVisitor(StatePath pathToPrimaryList, StatePath relativePathToSecondList)
+    {
         super(pathToPrimaryList);
         _relativePathToList = relativePathToSecondList;
     }
 
     @Override
-    protected void newListItem(String listItemName) {
+    protected void newListItem(String listItemName)
+    {
         super.newListItem(listItemName);
 
         _pathToSet = getPathToList().newChild(listItemName).newChild(_relativePathToList);
@@ -100,7 +102,8 @@ public class SetMapVisitor extends SkeletonListVisitor {
 
 
     @Override
-    protected void exitingListItem(String listItemName) {
+    protected void exitingListItem(String listItemName)
+    {
         super.exitingListItem(listItemName);
 
         _pathToSet = null;
@@ -109,7 +112,8 @@ public class SetMapVisitor extends SkeletonListVisitor {
 
 
     @Override
-    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata) {
+    public void visitCompositePreDescend(StatePath path, Map<String, String> metadata)
+    {
         super.visitCompositePreDescend(path, metadata);
 
         if (isInListItem()) {
@@ -123,7 +127,8 @@ public class SetMapVisitor extends SkeletonListVisitor {
      * Obtain the results of running the visitor over dCache's state.
      * @return a map between the primary and secondary lists.
      */
-    public Map<String,Set<String>> getMap() {
+    public Map<String,Set<String>> getMap()
+    {
         return _map;
     }
 }

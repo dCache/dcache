@@ -13,8 +13,8 @@ import java.util.Set;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StateChangeSet {
-
+public class StateChangeSet
+{
     final Map<String, StateComponent> _newChildren = new HashMap<>();
     final Map<String, StateComponent> _updatedChildren = new HashMap<>();
     final Set<String> _removedChildren = new HashSet<>();
@@ -32,7 +32,8 @@ public class StateChangeSet {
      * @param value
      *            the StateComponent
      */
-    protected void recordNewChild(String childName, StateComponent value) {
+    protected void recordNewChild(String childName, StateComponent value)
+    {
         purgeChildEntries(childName);
         _newChildren.put(childName, value);
     }
@@ -48,7 +49,8 @@ public class StateChangeSet {
      * @param value
      *            the new value of this child.
      */
-    protected void recordUpdatedChild(String childName, StateComponent value) {
+    protected void recordUpdatedChild(String childName, StateComponent value)
+    {
         purgeChildEntries(childName);
         _updatedChildren.put(childName, value);
     }
@@ -62,7 +64,8 @@ public class StateChangeSet {
      * @param childName
      *            the name of the child.
      */
-    protected void recordRemovedChild(String childName) {
+    protected void recordRemovedChild(String childName)
+    {
         purgeChildEntries(childName);
         _removedChildren.add(childName);
     }
@@ -73,7 +76,8 @@ public class StateChangeSet {
      *
      * @param path
      */
-    protected void recordChildIsImmortal() {
+    protected void recordChildIsImmortal()
+    {
         _hasImmortalChildren = true;
     }
 
@@ -85,8 +89,8 @@ public class StateChangeSet {
      * @param childExpiryDate
      *            the new Date to be used.
      */
-    protected void recordNewWhenIShouldExpireDate(Date childExpiryDate) {
-
+    protected void recordNewWhenIShouldExpireDate(Date childExpiryDate)
+    {
         if (childExpiryDate == null) {
             return;
         }
@@ -104,7 +108,8 @@ public class StateChangeSet {
      *            the StatePath of the StateComposite
      * @return the new Data, if one exists, or null.
      */
-    protected Date getWhenIShouldExpireDate() {
+    protected Date getWhenIShouldExpireDate()
+    {
         return _whenIShouldExpire;
     }
 
@@ -117,7 +122,8 @@ public class StateChangeSet {
      * @param childName
      *            the name of the child.
      */
-    protected void recordChildItr(String childName) {
+    protected void recordChildItr(String childName)
+    {
         _itrChildren.add(childName);
     }
 
@@ -130,7 +136,8 @@ public class StateChangeSet {
      * @return a Set of child names, or null if this StateComposite was not
      *         updated.
      */
-    protected Set<String> getItrChildren() {
+    protected Set<String> getItrChildren()
+    {
         return _itrChildren;
     }
 
@@ -143,7 +150,8 @@ public class StateChangeSet {
      *            the name of the child under question.
      * @return true if this child is to be added, updated or removed.
      */
-    protected boolean hasChildChanged(String childName) {
+    protected boolean hasChildChanged(String childName)
+    {
         return _itrChildren.contains(childName) ||
                _newChildren.containsKey(childName) ||
                _updatedChildren.containsKey(childName) ||
@@ -157,7 +165,8 @@ public class StateChangeSet {
      * @param path
      * @return
      */
-    protected boolean haveImmortalChild() {
+    protected boolean haveImmortalChild()
+    {
         return _hasImmortalChildren;
     }
 
@@ -170,7 +179,8 @@ public class StateChangeSet {
      *            the child's name
      * @return true if the child is to be remove, false otherwise.
      */
-    protected boolean childIsRemoved(String name) {
+    protected boolean childIsRemoved(String name)
+    {
         return _removedChildren.contains(name);
     }
 
@@ -183,7 +193,8 @@ public class StateChangeSet {
      *            the child's name
      * @return true if this child is to be removed, false otherwise.
      */
-    protected boolean childIsUpdated(String name) {
+    protected boolean childIsUpdated(String name)
+    {
         return _updatedChildren.containsKey(name);
     }
 
@@ -193,7 +204,8 @@ public class StateChangeSet {
      *
      * @param childName
      */
-    protected void ensureChildNotRemoved(String childName) {
+    protected void ensureChildNotRemoved(String childName)
+    {
         _removedChildren.remove(childName);
     }
 
@@ -206,7 +218,8 @@ public class StateChangeSet {
      *            the child's name
      * @return true if this child is to be removed, false otherwise.
      */
-    protected boolean childIsNew(String name) {
+    protected boolean childIsNew(String name)
+    {
         return _newChildren.containsKey(name);
     }
 
@@ -223,7 +236,8 @@ public class StateChangeSet {
      *            the name of the child.
      * @return the updated or new value for this child, or null.
      */
-    protected StateComponent getFreshChildValue(String childName) {
+    protected StateComponent getFreshChildValue(String childName)
+    {
         StateComponent newValue;
 
         newValue = _newChildren.get(childName);
@@ -239,7 +253,8 @@ public class StateChangeSet {
      *            the path of the StateComposite
      * @return a collection of new children.
      */
-    protected Set<String> getNewChildren() {
+    protected Set<String> getNewChildren()
+    {
         return _newChildren.keySet();
     }
 
@@ -250,7 +265,8 @@ public class StateChangeSet {
      *            the StatePath of the StateComposite
      * @return a collection of children's names.
      */
-    protected Set<String> getRemovedChildren() {
+    protected Set<String> getRemovedChildren()
+    {
         return _removedChildren;
     }
 
@@ -261,7 +277,8 @@ public class StateChangeSet {
      *            the StatePath of the StateComposite
      * @return a collection of children's names.
      */
-    protected Collection<String> getUpdatedChildren() {
+    protected Collection<String> getUpdatedChildren()
+    {
         return _updatedChildren.keySet();
     }
 
@@ -280,7 +297,8 @@ public class StateChangeSet {
      * @param childName
      * @return
      */
-    protected StateComponent getUpdatedChildValue(String childName) {
+    protected StateComponent getUpdatedChildValue(String childName)
+    {
         return _updatedChildren.get(childName);
     }
 
@@ -293,7 +311,8 @@ public class StateChangeSet {
      * @param childName
      * @return
      */
-    protected StateComponent getNewChildValue(String childName) {
+    protected StateComponent getNewChildValue(String childName)
+    {
         return _newChildren.get(childName);
     }
 
@@ -302,7 +321,8 @@ public class StateChangeSet {
      *
      * @return
      */
-    protected String dumpContents() {
+    protected String dumpContents()
+    {
         StringBuilder sb = new StringBuilder();
 
         sb.append("  new:\n");
@@ -342,7 +362,8 @@ public class StateChangeSet {
      *
      * @param childName
      */
-    private void purgeChildEntries(String childName) {
+    private void purgeChildEntries(String childName)
+    {
         _newChildren.remove(childName);
         _updatedChildren.remove(childName);
         _removedChildren.remove(childName);

@@ -21,12 +21,9 @@ import org.dcache.services.info.gathers.Schedulable;
  */
 public class RoutingManagerDgaFactoryService implements DgaFactoryService
 {
-
     @Override
-    public Set<Schedulable> createDgas(StateExhibitor exhibitor,
-                                       MessageSender sender,
-                                       StateUpdateManager sum,
-                                       MessageMetadataRepository<UOID> msgMetaRepo)
+    public Set<Schedulable> createDgas(StateExhibitor exhibitor, MessageSender sender,
+            StateUpdateManager sum, MessageMetadataRepository<UOID> msgMetaRepo)
     {
         return ImmutableSet.of((Schedulable)new RoutingMgrDga(exhibitor,
                 sender, new RoutingMgrMsgHandler(sum, msgMetaRepo)));

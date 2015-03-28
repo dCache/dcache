@@ -11,8 +11,8 @@ import org.dcache.services.info.base.StateUpdate;
  *
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class SpaceInfo {
-
+public class SpaceInfo
+{
     public static final String PATH_ELEMENT_TOTAL = "total";
     public static final String PATH_ELEMENT_FREE = "free";
     public static final String PATH_ELEMENT_PRECIOUS = "precious";
@@ -25,7 +25,9 @@ public class SpaceInfo {
     private long _removable;
     private long _used;
 
-    public SpaceInfo(long totalSpace, long freeSpace, long preciousSpace, long removableSpace) {
+    public SpaceInfo(long totalSpace, long freeSpace, long preciousSpace,
+            long removableSpace)
+    {
         _total = totalSpace;
         _free = freeSpace;
         _precious = preciousSpace;
@@ -39,16 +41,18 @@ public class SpaceInfo {
      * Create a new SpaceInfo that duplicates information in otherInfo
      * @param otherInfo the SpaceInfo to duplicate
      */
-    public SpaceInfo(SpaceInfo otherInfo) {
-        this(otherInfo.getTotal(), otherInfo.getFree(),
-                otherInfo.getPrecious(), otherInfo.getRemovable());
+    public SpaceInfo(SpaceInfo otherInfo)
+    {
+        this(otherInfo.getTotal(), otherInfo.getFree(), otherInfo.getPrecious(),
+                otherInfo.getRemovable());
     }
 
     /**
      * Create a zero-sized Space.
      */
-    public SpaceInfo() {
-            _total = _free = _precious = _removable = _used = 0;
+    public SpaceInfo()
+    {
+        _total = _free = _precious = _removable = _used = 0;
     }
 
 
@@ -56,12 +60,14 @@ public class SpaceInfo {
      * Create an initially-empty space information.
      * @param capacity the size of the space.
      */
-    public SpaceInfo(long capacity) {
+    public SpaceInfo(long capacity)
+    {
         _free = _total = capacity;
         _used = _precious = _removable = 0;
     }
 
-    public SpaceInfo(PoolCostInfo.PoolSpaceInfo spaceInfo) {
+    public SpaceInfo(PoolCostInfo.PoolSpaceInfo spaceInfo)
+    {
         _total = spaceInfo.getTotalSpace();
         _free = spaceInfo.getFreeSpace();
         _precious = spaceInfo.getPreciousSpace();
@@ -71,7 +77,8 @@ public class SpaceInfo {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
         if (!(o instanceof SpaceInfo)) {
             return false;
         }
@@ -80,7 +87,8 @@ public class SpaceInfo {
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         return (int)_total+(int)_free+(int)_precious+(int)_removable;
     }
 
@@ -88,7 +96,8 @@ public class SpaceInfo {
      * Increase space values by the values specified in otherSpace
      * @param otherSpace the SpaceInfo to add
      */
-    public void add(SpaceInfo otherSpace) {
+    public void add(SpaceInfo otherSpace)
+    {
         if (otherSpace == null) {
             return;
         }
@@ -100,23 +109,28 @@ public class SpaceInfo {
         _used += otherSpace._used;
     }
 
-    public void setTotal(long totalSpace) {
+    public void setTotal(long totalSpace)
+    {
         _total = totalSpace;
     }
 
-    public void setFree(long freeSpace) {
+    public void setFree(long freeSpace)
+    {
         _free = freeSpace;
     }
 
-    public void setPrecious(long preciousSpace) {
+    public void setPrecious(long preciousSpace)
+    {
         _precious = preciousSpace;
     }
 
-    public void setRemovable(long removableSpace) {
+    public void setRemovable(long removableSpace)
+    {
         _removable = removableSpace;
     }
 
-    public void setUsed(long usedSpace) {
+    public void setUsed(long usedSpace)
+    {
         _used = usedSpace;
     }
 
@@ -124,7 +138,8 @@ public class SpaceInfo {
      * Add additional space unconditionally to the recorded total space.
      * @param extraTotalSpace amount to add
      */
-    public void addToTotal(long extraTotalSpace) {
+    public void addToTotal(long extraTotalSpace)
+    {
         _total += extraTotalSpace;
     }
 
@@ -132,7 +147,8 @@ public class SpaceInfo {
      * Add additional space unconditionally to the recorded free space.
      * @param extraFreeSpace amount to add
      */
-    public void addToFree(long extraFreeSpace) {
+    public void addToFree(long extraFreeSpace)
+    {
         _free += extraFreeSpace;
     }
 
@@ -140,7 +156,8 @@ public class SpaceInfo {
      * Add additional space unconditionally to the recorded removable space.
      * @param extraRemovableSpace amount to add
      */
-    public void addToRemovable(long extraRemovableSpace) {
+    public void addToRemovable(long extraRemovableSpace)
+    {
         _removable += extraRemovableSpace;
     }
 
@@ -148,7 +165,8 @@ public class SpaceInfo {
      * Add additional space unconditionally to the recorded precious space
      * @param extraPreciousSpace amount to add
      */
-    public void addToPrecious(long extraPreciousSpace) {
+    public void addToPrecious(long extraPreciousSpace)
+    {
         _precious += extraPreciousSpace;
     }
 
@@ -156,7 +174,8 @@ public class SpaceInfo {
      * Add additional space unconditionally to the recorded used space
      * @param extraUsedSpace amount to add
      */
-    public void addToUsed(long extraUsedSpace) {
+    public void addToUsed(long extraUsedSpace)
+    {
         _used += extraUsedSpace;
     }
 
@@ -166,7 +185,8 @@ public class SpaceInfo {
      * The free space is also adjusted.
      * @param change the change to precious space: positive number increases space usage.
      */
-    public void updatePrecious(long change) {
+    public void updatePrecious(long change)
+    {
         if (change > _free) {
             change = _free;
         }
@@ -185,7 +205,8 @@ public class SpaceInfo {
      * be impossible, it is capped.  The free space is also adjusted
      * @param change the change to removable space: positive number increases space usage.
      */
-    public void updateRemovable(long change) {
+    public void updateRemovable(long change)
+    {
         if (change > _free) {
             change = _free;
         }
@@ -204,28 +225,34 @@ public class SpaceInfo {
      * be negative (due to inconsistent information), it is
      * capped at 0.
      */
-    public void recalcFree() {
+    public void recalcFree()
+    {
         _used = _precious + _removable;
         _free = _used < _total ? _total - _used : 0;
     }
 
-    public long getTotal() {
+    public long getTotal()
+    {
         return _total;
     }
 
-    public long getFree() {
+    public long getFree()
+    {
         return _free;
     }
 
-    public long getPrecious() {
+    public long getPrecious()
+    {
         return _precious;
     }
 
-    public long getRemovable() {
+    public long getRemovable()
+    {
         return _removable;
     }
 
-    public long getUsed() {
+    public long getUsed()
+    {
         return _used;
     }
 
@@ -237,7 +264,8 @@ public class SpaceInfo {
      * @param path the point in dCache state that the metrics will be children of.
      * @param duration how long this metric should survive, in seconds.
      */
-    public void addMetrics(StateUpdate update, StatePath path, long duration) {
+    public void addMetrics(StateUpdate update, StatePath path, long duration)
+    {
         update.appendUpdate(path.newChild(PATH_ELEMENT_TOTAL), new IntegerStateValue(_total, duration));
         update.appendUpdate(path.newChild(PATH_ELEMENT_FREE), new IntegerStateValue(_free, duration));
         update.appendUpdate(path.newChild(PATH_ELEMENT_PRECIOUS), new IntegerStateValue(_precious, duration));
@@ -253,7 +281,8 @@ public class SpaceInfo {
      * @param path the StatePath under which the StateValues will be added.
      * @param isImmortal if true, the metric will be immortal, otherwise ephemeral.
      */
-    public void addMetrics(StateUpdate update, StatePath path, boolean isImmortal) {
+    public void addMetrics(StateUpdate update, StatePath path, boolean isImmortal)
+    {
         update.appendUpdate(path.newChild(PATH_ELEMENT_TOTAL), new IntegerStateValue(_total, isImmortal));
         update.appendUpdate(path.newChild(PATH_ELEMENT_FREE), new IntegerStateValue(_free, isImmortal));
         update.appendUpdate(path.newChild(PATH_ELEMENT_PRECIOUS), new IntegerStateValue(_precious, isImmortal));
@@ -266,7 +295,9 @@ public class SpaceInfo {
      * A string describing this SpaceInfo object.
      */
     @Override
-    public String toString() {
-        return "[SpaceInfo: total="+_total + ", precious="+_precious + ", removable="+_removable + ", used="+_used + ", free="+_free +"]";
+    public String toString()
+    {
+        return "[SpaceInfo: total="+_total + ", precious="+_precious +
+                ", removable="+_removable + ", used="+_used + ", free="+_free +"]";
     }
 }
