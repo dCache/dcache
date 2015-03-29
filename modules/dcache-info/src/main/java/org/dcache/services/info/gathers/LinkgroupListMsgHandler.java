@@ -22,7 +22,7 @@ import org.dcache.services.info.base.StateUpdateManager;
  */
 public class LinkgroupListMsgHandler implements MessageHandler
 {
-    private static Logger _log = LoggerFactory.getLogger(LinkgroupListMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LinkgroupListMsgHandler.class);
     private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
 
     final private StateUpdateManager _sum;
@@ -39,9 +39,7 @@ public class LinkgroupListMsgHandler implements MessageHandler
             return false;
         }
 
-        if (_log.isInfoEnabled()) {
-            _log.info("received linkgroup list msg.");
-        }
+        LOGGER.trace("received linkgroup list msg.");
 
         GetLinkGroupNamesMessage msg = (GetLinkGroupNamesMessage) messagePayload;
 
@@ -54,10 +52,7 @@ public class LinkgroupListMsgHandler implements MessageHandler
                 update = new StateUpdate();
             }
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("adding linkgroup: " + name + " lifetime: " + metricLifetime);
-            }
-
+            LOGGER.trace("adding linkgroup: {} lifetime: {}", name, metricLifetime);
             update.appendUpdate(LINKGROUPS_PATH
                     .newChild(name), new StateComposite(metricLifetime));
         }
@@ -65,7 +60,7 @@ public class LinkgroupListMsgHandler implements MessageHandler
         if (update != null) {
             _sum.enqueueUpdate(update);
         } else {
-            _log.info("received GetLinkGroupNamesMessage with no linkgroups listed");
+            LOGGER.trace("received GetLinkGroupNamesMessage with no linkgroups listed");
         }
 
         return true;

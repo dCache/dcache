@@ -18,7 +18,7 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  */
 public class UGroupInfoMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(UGroupInfoMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UGroupInfoMsgHandler.class);
 
     private static final StatePath UNITGROUP_PATH = new StatePath("unitgroups");
 
@@ -32,14 +32,14 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel
     public void process(Object msgPayload, long metricLifetime)
     {
         if (!msgPayload.getClass().isArray()) {
-            _log.error("unexpected received non-array payload");
+            LOGGER.error("unexpected received non-array payload");
             return;
         }
 
         Object array[] = (Object []) msgPayload;
 
         if (array.length != 3) {
-            _log.error("unexpected array size: "+array.length);
+            LOGGER.error("unexpected array size: {}", array.length);
             return;
         }
 

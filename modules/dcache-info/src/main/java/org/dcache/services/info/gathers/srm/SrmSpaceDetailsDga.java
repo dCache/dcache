@@ -21,8 +21,7 @@ import org.dcache.services.info.gathers.SkelPeriodicActivity;
  */
 public class SrmSpaceDetailsDga extends SkelPeriodicActivity
 {
-    private static Logger _log = LoggerFactory.getLogger(SrmSpaceDetailsDga.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(SrmSpaceDetailsDga.class);
     private static final String SRM_CELL_NAME = "SpaceManager";
 
     /** Assume that a message might be lost and allow for 50% jitter */
@@ -54,9 +53,7 @@ public class SrmSpaceDetailsDga extends SkelPeriodicActivity
     {
         super.trigger();
 
-        if (_log.isInfoEnabled()) {
-            _log.info("Sending space token details request message");
-        }
+        LOGGER.trace("Sending space token details request message");
 
         _sender.sendMessage(_metricLifetime, _cp, new GetSpaceTokensMessage());
     }

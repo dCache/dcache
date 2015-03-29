@@ -25,7 +25,7 @@ import org.dcache.services.info.stateInfo.ReservationInfoVisitor;
  */
 public class ReservationByDescMaintainer extends AbstractStateWatcher
 {
-    private static Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(ReservationByDescMaintainer.class);
 
     public static final String PATH_ELEMENT_BY_DESCRIPTION_BRANCH =
@@ -292,22 +292,22 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher
              * state is a final one
              */
             if (!info.hasState() || info.getState().isFinalState()) {
-                _log.debug("ignoring reservation " + reservationId +
-                        " as state is undefined or final");
+                LOGGER.trace("ignoring reservation {} as state is undefined or final",
+                        reservationId);
                 continue;
             }
 
             /* Skip those reservations that don't have a description */
             if (!info.hasDescription() || info.getDescription().isEmpty()) {
-                _log.debug("ignoring reservation " + reservationId +
-                        " as description is undefined or empty");
+                LOGGER.trace("ignoring reservation {} as description is undefined or empty",
+                        reservationId);
                 continue;
             }
 
             /* Skip all those reservations that don't have a well-defined VO */
             if (!info.hasVo() || info.getVo().isEmpty()) {
-                _log.debug("ignoring reservation " + reservationId +
-                        " as VO is undefined or empty");
+                LOGGER.trace("ignoring reservation {} as VO is undefined or empty",
+                        reservationId);
                 continue;
             }
 
@@ -388,10 +388,7 @@ public class ReservationByDescMaintainer extends AbstractStateWatcher
     {
         for (Map.Entry<String, Map<String, ReservationSummaryInfo>> voEntry : futureSummary.entrySet()) {
             String voName = voEntry.getKey();
-
-            if (_log.isDebugEnabled()) {
-                _log.debug("Checking vo " + voName);
-            }
+            LOGGER.trace("Checking vo {}", voName);
 
             Map<String, ReservationSummaryInfo> futureDescriptions =
                     voEntry.getValue();

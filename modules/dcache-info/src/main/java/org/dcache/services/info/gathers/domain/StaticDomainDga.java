@@ -18,7 +18,7 @@ import org.dcache.services.info.gathers.SkelListBasedActivity;
  */
 public class StaticDomainDga extends SkelListBasedActivity
 {
-    private static final Logger _log = LoggerFactory.getLogger(StaticDomainDga.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StaticDomainDga.class);
     private static final StatePath DOMAINS_PATH = StatePath.parsePath("domains");
     private static final String COMMAND = "show context info.static";
 
@@ -51,7 +51,7 @@ public class StaticDomainDga extends SkelListBasedActivity
         if (domain != null) {
             CellPath path = new CellPath("System", domain);
 
-            _log.debug("sending message \"{}\" to System cell on domain {}",
+            LOGGER.trace("sending message \"{}\" to System cell on domain {}",
                     COMMAND, domain);
 
             _sender.sendMessage(getMetricLifetime(), _handler, path,

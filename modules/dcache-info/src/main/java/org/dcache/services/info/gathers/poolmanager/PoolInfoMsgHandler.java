@@ -15,7 +15,7 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
 
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(PoolInfoMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolInfoMsgHandler.class);
 
     private static final StatePath POOLS_PATH = new StatePath("pools");
 
@@ -31,14 +31,14 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel
         StateUpdate update = new StateUpdate();
 
         if (!msgPayload.getClass().isArray()) {
-            _log.error("received a message that isn't an array");
+            LOGGER.error("received a message that isn't an array");
             return;
         }
 
         Object[] array = (Object []) msgPayload;
 
         if (array.length != 6) {
-            _log.error("unexpected array size: "+array.length);
+            LOGGER.error("unexpected array size: {}", array.length);
             return;
         }
 

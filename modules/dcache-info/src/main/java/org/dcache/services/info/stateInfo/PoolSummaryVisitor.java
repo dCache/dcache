@@ -10,7 +10,7 @@ import org.dcache.services.info.base.StateExhibitor;
  */
 public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor
 {
-    private static final Logger _log = LoggerFactory.getLogger(PoolSummaryVisitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolSummaryVisitor.class);
 
     /**
      * Obtain some summary statistics about all available pools.
@@ -18,10 +18,7 @@ public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor
      */
     static public SpaceInfo getDetails(StateExhibitor exhibitor)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Gathering summary information.");
-        }
-
+        LOGGER.trace("Gathering summary information.");
         PoolSummaryVisitor visitor = new PoolSummaryVisitor();
         exhibitor.visitState(visitor);
         return visitor._summaryInfo;

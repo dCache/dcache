@@ -27,7 +27,7 @@ import org.dcache.util.FireAndForgetTask;
  */
 public class StateMaintainer implements StateUpdateManager, CellMessageSender
 {
-    private static final Logger _log = LoggerFactory.getLogger(StateMaintainer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StateMaintainer.class);
 
     private static final boolean CANCEL_RUNNING_METRIC_EXPUNGE = false;
 
@@ -90,9 +90,7 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
     @Override
     public void enqueueUpdate(final StateUpdate pendingUpdate)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("enqueing job to process update " + pendingUpdate);
-        }
+        LOGGER.trace("enqueing job to process update {}", pendingUpdate);
 
         final NDC ndc = NDC.cloneNdc();
 
@@ -103,16 +101,10 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
                 CDC.reset(_cellName, _domainName);
                 NDC.set(ndc);
                 try {
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("starting job to process update " + pendingUpdate);
-                    }
-
+                    LOGGER.trace("starting job to process update {}", pendingUpdate);
                     _caretaker.processUpdate(pendingUpdate);
                     checkScheduledExpungeActivity();
-
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("finished job to process update " + pendingUpdate);
-                    }
+                    LOGGER.trace("finished job to process update {}", pendingUpdate);
                 } finally {
                     _pendingRequestCount.decrementAndGet();
                     CDC.clear();
@@ -126,10 +118,9 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
     {
         List<Runnable> unprocessed = _scheduler.shutdownNow();
         if (!unprocessed.isEmpty()) {
-            _log.info("Shutting down with " + unprocessed.size() +
-                    " pending updates");
+            LOGGER.info("Shutting down with {} pending updates", unprocessed.size());
         } else {
-            _log.debug("Shutting down without any pending updates");
+            LOGGER.trace("Shutting down without any pending updates");
         }
     }
 
@@ -152,11 +143,8 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
 
         // If the metric expiry date has changed, we try to cancel the update.
         if (_metricExpiryDate != null && !_metricExpiryDate.equals(earliestMetricExpiry)) {
-            if (_log.isDebugEnabled()) {
-                Date now = new Date();
-                long delay = _metricExpiryDate.getTime() - now.getTime();
-                _log.debug("Cancelling existing metric purge, due to take place in " + delay / 1000.0 + " s");
-            }
+            LOGGER.trace("Cancelling existing metric purge, due to take place in {} s",
+                    (_metricExpiryDate.getTime() - System.currentTimeMillis())/1000.0);
 
             /*  If the cancel fails (returns false) then the metric expunge is
              *  currently being processed.  When this completes, a new metric
@@ -193,22 +181,20 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
 
         long delay = whenExpunge.getTime() - System.currentTimeMillis();
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Scheduling next metric purge in " + delay / 1000.0 + " s");
-        }
+        LOGGER.trace("Scheduling next metric purge in {} s", delay/1000.0);
 
         try {
             _metricExpiryFuture = _scheduler.schedule(new FireAndForgetTask(new Runnable() {
                 @Override
                 public void run() {
-                    _log.debug("Starting metric purge");
+                    LOGGER.trace("Starting metric purge");
                     _caretaker.removeExpiredMetrics();
                     scheduleMetricExpunge();
-                    _log.debug("Metric purge completed");
+                    LOGGER.trace("Metric purge completed");
                 }
             }), delay, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException e) {
-            _log.debug("Failed to enqueue expunge task as queue is not accepting further work.");
+            LOGGER.trace("Failed to enqueue expunge task as queue is not accepting further work.");
         }
     }
 

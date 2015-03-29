@@ -25,7 +25,7 @@ import org.dcache.services.info.serialisation.StateSerialiser;
  */
 public class XmlConduit extends AbstractThreadedConduit
 {
-    private static Logger _log = LoggerFactory.getLogger(XmlConduit.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(XmlConduit.class);
 
     /** TCP port that the server listens on */
     private int _port;
@@ -90,7 +90,7 @@ public class XmlConduit extends AbstractThreadedConduit
             Thread.currentThread().interrupt();
             return;
         } catch (SecurityException e) {
-            _log.error("security issue creating port " + _port, e);
+            LOGGER.error("security issue creating port {}", _port, e);
             return;
         }
         super.enable(); // start the thread.
@@ -107,7 +107,7 @@ public class XmlConduit extends AbstractThreadedConduit
         try {
             _svr_skt.close();
         } catch (IOException e) {
-            _log.error("Problem closing server socket", e);
+            LOGGER.error("Problem closing server socket", e);
         } finally {
             _svr_skt = null;
         }
@@ -127,33 +127,27 @@ public class XmlConduit extends AbstractThreadedConduit
             skt = _svr_skt.accept();
         } catch (SocketException e) {
             if (_svr_skt != null && (this._should_run || !_svr_skt.isClosed())) {
-                _log.error("accept() failed", e);
+                LOGGER.error("accept() failed", e);
             }
         } catch (IOException e) {
             Thread.currentThread().interrupt();
             return;
         } catch (SecurityException e) {
-            _log.error ("accept() failed for security reasons", e);
-            return;
-        } catch (Exception e) {
-            _log.error("accept() failed for an unknown reason", e);
+            LOGGER.error ("accept() failed for security reasons", e);
             return;
         }
 
         if (skt != null) {
-            if (_log.isInfoEnabled()) {
-                _log.info("Incoming connection from " + skt
-                        .toString());
-            }
+            LOGGER.trace("Incoming connection from {}", skt);
 
             try {
                 _callCount++;
                 String data = _serialiser.serialise();
                 skt.getOutputStream().write(data.getBytes());
             } catch (IOException e) {
-                _log.error("failed to write XML data", e);
+                LOGGER.error("failed to write XML data", e);
             } catch (Exception e) {
-                _log.error("unknown failure writing XML data", e);
+                LOGGER.error("unknown failure writing XML data", e);
             } finally {
                 try {
                     skt.close();

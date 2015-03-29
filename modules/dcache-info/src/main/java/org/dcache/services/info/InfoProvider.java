@@ -31,7 +31,7 @@ import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 public class InfoProvider  implements CellCommandListener, CellInfoProvider,
         CellMessageReceiver
 {
-    private static Logger _log = LoggerFactory.getLogger(InfoProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InfoProvider.class);
 
     private static final String ADMIN_INTERFACE_OK = "Done.";
     private static final String ADMIN_INTERFACE_NONE = "(none)";
@@ -194,12 +194,12 @@ public class InfoProvider  implements CellCommandListener, CellInfoProvider,
 
     public synchronized InfoGetSerialisedDataMessage messageArrived(InfoGetSerialisedDataMessage message)
     {
-        _log.trace("Received InfoGetSerialisedDataMessage.");
+        LOGGER.trace("Received InfoGetSerialisedDataMessage.");
 
         StateSerialiser serialiser = _availableSerialisers.get(message.getSerialiser());
 
         if (serialiser == null) {
-            _log.error("Couldn't find serialiser {}", message.getSerialiser());
+            LOGGER.error("Couldn't find serialiser {}", message.getSerialiser());
             throw new IllegalArgumentException("no such serialiser");
         }
 

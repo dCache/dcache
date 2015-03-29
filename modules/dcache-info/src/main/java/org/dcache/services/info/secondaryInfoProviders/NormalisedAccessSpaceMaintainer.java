@@ -54,7 +54,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  */
 public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
 {
-    private static Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(NormalisedAccessSpaceMaintainer.class);
 
     /**
@@ -335,12 +335,12 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                         _representativePaintInfo.getUnits(type);
 
                 if (unitsMap == null) {
-                    _log.error("A considered unit-type query to getUnits() gave null reply.  This is unexpected.");
+                    LOGGER.error("A considered unit-type query to getUnits() gave null reply.  This is unexpected.");
                     continue;
                 }
 
                 if (!UNIT_TYPE_STORAGE_NAME.containsKey(type)) {
-                    _log.error("Unmapped unit type " + type);
+                    LOGGER.error("Unmapped unit type {}", type);
                     continue;
                 }
 
@@ -352,7 +352,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                     Collection<String> units = entry.getValue();
 
                     if (!OPERATION_STORAGE_NAME.containsKey(operation)) {
-                        _log.error("Unmapped operation " + operation);
+                        LOGGER.error("Unmapped operation {}", operation);
                         continue;
                     }
 
@@ -414,7 +414,7 @@ public class NormalisedAccessSpaceMaintainer extends AbstractStateWatcher
                  * PaintInfo for for this pool.
                  */
                 if (poolPaintInfo == null) {
-                    _log.debug("Inconsistency in information: pool " +
+                    LOGGER.debug("Inconsistency in information: pool " +
                                linkPool + " accessible via link " +
                                linkInfo.getId() +
                                " but not present as a pool");

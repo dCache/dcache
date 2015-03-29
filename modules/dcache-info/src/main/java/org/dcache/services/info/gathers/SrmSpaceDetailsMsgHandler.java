@@ -20,7 +20,7 @@ import org.dcache.services.info.base.StringStateValue;
 
 public class SrmSpaceDetailsMsgHandler implements MessageHandler
 {
-    private static Logger _log = LoggerFactory.getLogger(SrmSpaceDetailsMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SrmSpaceDetailsMsgHandler.class);
     private static final StatePath SPACES_PATH = StatePath.parsePath("reservations");
     private static final StatePath LINKGROUPS = new StatePath("linkgroups");
     private static final String SRM_ROLE_WILDCARD = "*";
@@ -39,16 +39,14 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler
             return false;
         }
 
-        if (_log.isInfoEnabled()) {
-            _log.info("received spacetokens details msg.");
-        }
+        LOGGER.trace("received spacetokens details msg.");
 
         GetSpaceTokensMessage msg = (GetSpaceTokensMessage) messagePayload;
 
         Collection<Space> spaces = msg.getSpaceTokenSet();
 
         if (spaces.isEmpty()) {
-            _log.info("received GetSpaceTokensMessage with no spaces listed");
+            LOGGER.debug("received GetSpaceTokensMessage with no spaces listed");
             return true;
         }
 

@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class StaticDomainMsgHandler extends CellMessageHandlerSkel
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(StaticDomainMsgHandler.class);
 
     private static final StatePath DOMAINS = StatePath.parsePath("domains");
@@ -37,12 +37,12 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
     public void process(Object payload, long lifetime)
     {
         if (payload == null) {
-            _log.error("received null payload");
+            LOGGER.error("received null payload");
             return;
         }
 
         if (!(payload instanceof String)) {
-            _log.error("received message of type {}",
+            LOGGER.error("received message of type {}",
                     payload.getClass().getCanonicalName());
             return;
         }
@@ -79,7 +79,7 @@ public class StaticDomainMsgHandler extends CellMessageHandlerSkel
             try {
                 processLine(update, lifetime, parent, line);
             } catch (IllegalArgumentException e) {
-                _log.error(e.getMessage());
+                LOGGER.error(e.getMessage());
             }
         }
 

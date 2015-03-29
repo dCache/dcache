@@ -21,7 +21,7 @@ import org.dcache.services.info.base.StringStateValue;
 
 public class LinkgroupDetailsMsgHandler implements MessageHandler
 {
-    private static Logger _log = LoggerFactory.getLogger(LinkgroupDetailsMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LinkgroupDetailsMsgHandler.class);
     private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
     private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_ALL = StatePath.parsePath("summary.linkgroup.blanket-auth.all");
     private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_BY_VO = StatePath.parsePath("summary.linkgroup.blanket-auth.by-VO");
@@ -42,16 +42,14 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler
             return false;
         }
 
-        if (_log.isInfoEnabled()) {
-            _log.info("received linkgroup details msg.");
-        }
+        LOGGER.trace("received linkgroup details msg.");
 
         GetLinkGroupsMessage msg = (GetLinkGroupsMessage) messagePayload;
 
         Collection<LinkGroup> linkGroups = msg.getLinkGroups();
 
         if (linkGroups.isEmpty()) {
-            _log.info("received GetLinkGroupNamesMessage with no linkgroups listed");
+            LOGGER.trace("received GetLinkGroupNamesMessage with no linkgroups listed");
             return true;
         }
 

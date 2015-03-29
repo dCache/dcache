@@ -29,7 +29,7 @@ import org.dcache.util.NetworkUtils;
  */
 public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(LoginBrokerLsMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoginBrokerLsMsgHandler.class);
 
     private static final StatePath PATH_TO_DOORS = new StatePath("doors");
 
@@ -44,7 +44,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
     public void process(Object msgPayload, long metricLifetime)
     {
         if (!msgPayload.getClass().isArray()) {
-            _log.error("unexpected received non-array payload");
+            LOGGER.error("unexpected received non-array payload");
             return;
         }
 
@@ -58,7 +58,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
 
         for (Object element : array) {
             if (!(element instanceof LoginBrokerInfo)) {
-                _log.warn("Skipping array element that is not LoginBrokerInfo");
+                LOGGER.warn("Skipping array element that is not LoginBrokerInfo");
                 continue;
             }
 

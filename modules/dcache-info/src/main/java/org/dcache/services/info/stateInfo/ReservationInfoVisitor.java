@@ -22,7 +22,7 @@ import org.dcache.services.info.base.StringStateValue;
  */
 public class ReservationInfoVisitor extends SkeletonListVisitor
 {
-    private static Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(ReservationInfoVisitor.class);
 
     public static final String PATH_ELEMENT_SPACE = "space";
@@ -56,7 +56,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor
      */
     public static Map<String, ReservationInfo> getDetails(StateExhibitor exhibitor)
     {
-        _log.debug("Gathering reservation information.");
+        LOGGER.trace("Gathering reservation information.");
 
         ReservationInfoVisitor visitor = new ReservationInfoVisitor();
         exhibitor.visitState(visitor);
@@ -143,7 +143,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor
                 _thisResv.setUsed(value.getValue());
                 break;
             default:
-                _log.warn("Seen unexpected reservation metric at path " + path);
+                LOGGER.warn("Seen unexpected reservation metric at path {}", path);
                 break;
             }
         }
@@ -170,7 +170,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor
             if (al != null) {
                 _thisResv.setAccessLatency(al);
             } else {
-                _log.error("Unknown access-latency value " + value.toString());
+                LOGGER.error("Unknown access-latency value {}", value);
             }
             return;
         }
@@ -181,8 +181,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor
             if (rp != null) {
                 _thisResv.setRetentionPolicy(rp);
             } else {
-                _log.error("Unknown retention-policy value " +
-                        value.toString());
+                LOGGER.error("Unknown retention-policy value {}", value);
             }
             return;
         }
@@ -193,7 +192,7 @@ public class ReservationInfoVisitor extends SkeletonListVisitor
             if (state != null) {
                 _thisResv.setState(state);
             } else {
-                _log.error("Unknown state value " + value.toString());
+                LOGGER.error("Unknown state value {}", value);
             }
             return;
         }
@@ -209,8 +208,8 @@ public class ReservationInfoVisitor extends SkeletonListVisitor
                 String voName = matcher.group(1);
                 _thisResv.setVo(voName);
             } else {
-                _log.error("authorisation.group doesn't match expected pattern " +
-                            value.toString());
+                LOGGER.error("authorisation.group doesn't match expected pattern {}",
+                            value);
             }
         }
     }

@@ -15,8 +15,7 @@ import dmg.cells.nucleus.CellPath;
  */
 public class LinkgroupListDga extends SkelPeriodicActivity
 {
-    private static Logger _log = LoggerFactory.getLogger(LinkgroupListDga.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(LinkgroupListDga.class);
     private static final String SRM_CELL_NAME = "SpaceManager";
 
     /** Assume that a message might be lost and allow for 50% jitter */
@@ -47,11 +46,7 @@ public class LinkgroupListDga extends SkelPeriodicActivity
     public void trigger()
     {
         super.trigger();
-
-        if (_log.isInfoEnabled()) {
-            _log.info("Sending linkgroup list request message");
-        }
-
+        LOGGER.trace("Sending linkgroup list request message");
         _mhc.sendMessage(_metricLifetime, _cp, new GetLinkGroupNamesMessage());
     }
 

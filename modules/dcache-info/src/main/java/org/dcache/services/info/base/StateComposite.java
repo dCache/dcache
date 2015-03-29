@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * A StateComposite is an aggregation of zero or more StateComponents.  StateComposites
  * form the branch nodes within the dCache state tree.
@@ -32,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class StateComposite implements StateComponent
 {
-    private static final Logger _log = LoggerFactory.getLogger(StateComposite.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StateComposite.class);
 
     /** Minimum lifetime for on-the-fly created StateComposites, in seconds */
     static final long DEFAULT_LIFETIME = 10;
@@ -255,10 +257,7 @@ public class StateComposite implements StateComponent
     @Override
     public void acceptVisitor(StatePath path, StateVisitor visitor)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("acceptVisitor(" + (path != null ? path : "(null)") + ")");
-        }
-
+        LOGGER.trace("acceptVisitor({})", path);
         Map<String,String> branchMetadata = getMetadataInfo();
 
         visitor.visitCompositePreDescend(path, branchMetadata);
@@ -283,11 +282,8 @@ public class StateComposite implements StateComponent
     @Override
     public void acceptVisitor(StateTransition transition, StatePath ourPath, StateVisitor visitor)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("acceptVisitor(" + (transition != null ? "not null" : "(null)") + ", " + (ourPath != null ? ourPath : "(null)") + ")");
-        }
-
-        assert(transition != null);
+        checkNotNull(transition);
+        LOGGER.trace("acceptVisitor; transition={}, path={})", transition, ourPath);
 
         Map<String,String> branchMetadata = getMetadataInfo();
 
@@ -360,14 +356,14 @@ public class StateComposite implements StateComponent
         StateChangeSet changeSet = transition.getStateChangeSet(ourPath);
 
         if (changeSet == null) {
-            _log.warn("cannot find StateChangeSet for path " + ourPath + ". Something must have gone wrong.");
+            LOGGER.warn("cannot find StateChangeSet for path {}", ourPath);
             return;
         }
 
         Date newExpDate = changeSet.getWhenIShouldExpireDate();
         updateWhenIShouldExpireDate(newExpDate);
         if (newExpDate == null) {
-            _log.debug("getWhenIShouldExpireDate() returned null: no Mortal children?");
+            LOGGER.trace("getWhenIShouldExpireDate() returned null: no Mortal children?");
         }
 
         if (changeSet.haveImmortalChild()) {
@@ -376,9 +372,7 @@ public class StateComposite implements StateComponent
 
         // First, remove those children we should remove.
         for (String childName : changeSet.getRemovedChildren()) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("removing child " + childName);
-            }
+            LOGGER.trace("removing child {}", childName);
             _children.remove(childName);
         }
 
@@ -387,15 +381,11 @@ public class StateComposite implements StateComponent
             StateComponent updatedChildValue = changeSet.getUpdatedChildValue(childName);
 
             if (updatedChildValue == null) {
-                _log.error("Attempting to update " + childName + " in " + ourPath + ", but value is null; wilfully ignoring this.");
+                LOGGER.error("Attempting to update {} in {}, but value is null; wilfully ignoring this.", childName, ourPath);
                 continue;
             }
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("updating child " + childName + ", updated value " + updatedChildValue
-                        .toString());
-            }
-
+            LOGGER.trace("updating child {}, updated value {}", childName, updatedChildValue);
             addComponent(childName, updatedChildValue);
         }
 
@@ -403,12 +393,7 @@ public class StateComposite implements StateComponent
         // Finally, add all new children.
         for (String childName : changeSet.getNewChildren()) {
             StateComponent newChildValue = changeSet.getNewChildValue(childName);
-
-            if (_log.isDebugEnabled()) {
-                _log.debug("adding new child " + childName + ", new value " + newChildValue
-                        .toString());
-            }
-
+            LOGGER.trace("adding new child {}, new value {}", childName, newChildValue);
             addComponent(childName, newChildValue);
         }
 
@@ -418,7 +403,8 @@ public class StateComposite implements StateComponent
 
             if (child == null) {
                 if (!changeSet.getRemovedChildren().contains(childName)) {
-                    _log.error("Whilst in " + ourPath + ", avoided attempting to applyTransition() on missing child " + childName);
+                    LOGGER.error("Whilst in {}, avoided attempting to applyTransition()" +
+                            " on missing child {}", ourPath, childName);
                 }
                 continue;
             }
@@ -514,11 +500,7 @@ public class StateComposite implements StateComponent
         }
 
         _children.put(childName, newChild);
-
-        if (_log.isDebugEnabled()) {
-            _log.debug("Child " + childName + " now " + _children.get(childName)
-                    .toString());
-        }
+        LOGGER.trace("Child {} now {}", childName, newChild);
     }
 
 
@@ -616,12 +598,7 @@ public class StateComposite implements StateComponent
     public boolean predicateHasBeenTriggered(StatePath ourPath,
             StatePathPredicate predicate, StateTransition transition)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("entering (" + (ourPath != null ? ourPath
-                    .toString() : "(null)") + ", " + (predicate != null ? predicate
-                    .toString() : "(null)") + ")");
-        }
-
+        LOGGER.trace("predicateHasBeenTriggered path={}, predicate={}", ourPath, predicate);
         StateChangeSet changeSet = transition.getStateChangeSet(ourPath);
 
         if (changeSet == null) {
@@ -742,11 +719,8 @@ public class StateComposite implements StateComponent
     public void buildRemovalTransition(StatePath ourPath,
             StateTransition transition, boolean forced)
     {
+        LOGGER.trace("entering buildRemovalTransition: path={}", ourPath);
         Date now = new Date();
-
-        if (_log.isDebugEnabled()) {
-            _log.debug("entering buildRemovalTransition(" + ourPath + ", ..)");
-        }
 
         // Check each child in turn:
         for (Map.Entry<String, StateComponent>entry : _children.entrySet()) {
@@ -758,10 +732,7 @@ public class StateComposite implements StateComponent
 
             // If *this* child has expired, we should mark it as To Be Removed.
             if (childValue.hasExpired()) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("registering " + childName + " (in path " + ourPath + ") for removal.");
-                }
-
+                LOGGER.trace("registering {} (in path {}) for removal.", childName, ourPath);
                 shouldRemoveThisChild = shouldItr = true;
             }
 
@@ -795,10 +766,7 @@ public class StateComposite implements StateComponent
     public void buildPurgeTransition(StateTransition transition, StatePath ourPath,
             StatePath remainingPath)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("entering buildPurgeTransition(" + ourPath + ", " + remainingPath + "..)");
-        }
-
+        LOGGER.trace("buildPurgeTransition: path={}, remaining={}", ourPath, remainingPath);
         StateChangeSet scs = transition.getOrCreateChangeSet(ourPath);
 
         if (remainingPath == null) {

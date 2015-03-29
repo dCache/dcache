@@ -27,7 +27,7 @@ import org.dcache.services.info.base.guides.SubtreeStateGuide;
  */
 public class SkeletonListVisitor implements StateVisitor
 {
-    private static Logger _log = LoggerFactory.getLogger(SkeletonListVisitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SkeletonListVisitor.class);
 
     final private StatePath _pathToList;
 
@@ -41,10 +41,7 @@ public class SkeletonListVisitor implements StateVisitor
      */
     protected SkeletonListVisitor(StatePath pathToList)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Searching on path " + pathToList);
-        }
-
+        LOGGER.trace("Searching on path {}", pathToList);
         _pathToList = pathToList;
         _guide = new SubtreeStateGuide(pathToList);
     }
@@ -82,10 +79,7 @@ public class SkeletonListVisitor implements StateVisitor
     public void visitCompositePreDescend(StatePath path, Map<String, String> metadata)
     {
         if (_pathToList.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Entering " + path);
-            }
-
+            LOGGER.trace("Entering {}", path);
             newListItem(path.getLastElement());
         }
     }
@@ -94,10 +88,7 @@ public class SkeletonListVisitor implements StateVisitor
     public void visitCompositePostDescend(StatePath path, Map<String, String> metadata)
     {
         if (_pathToList.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Leaving " + path);
-            }
-
+            LOGGER.trace("Leaving {}", path);
             exitingListItem(path.getLastElement());
         }
     }
@@ -109,10 +100,7 @@ public class SkeletonListVisitor implements StateVisitor
      */
     protected void newListItem(String listItemName)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Assigning _thisKey to " + listItemName);
-        }
-
+        LOGGER.trace("Assigning _thisKey to {}", listItemName);
         _thisKey = listItemName;
     }
 
@@ -122,10 +110,7 @@ public class SkeletonListVisitor implements StateVisitor
      */
     protected void exitingListItem(String listItemName)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Resetting _thisKey to null on leaving " + listItemName);
-        }
-
+        LOGGER.trace("Resetting _thisKey to null on leaving {}", listItemName);
         _thisKey = null;
     }
 

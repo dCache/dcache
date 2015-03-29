@@ -24,7 +24,7 @@ import org.dcache.services.info.base.guides.SubtreeStateGuide;
  */
 public class PoolgroupToPoolsVisitor implements StateVisitor
 {
-    private static Logger _log = LoggerFactory.getLogger(PoolgroupToPoolsVisitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolgroupToPoolsVisitor.class);
 
     private static final StatePath POOLGROUPS_PATH = new StatePath("poolgroups");
 
@@ -34,10 +34,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor
      */
     public static Map <String,Set<String>> getDetails(StateExhibitor exhibitor)
     {
-        if (_log.isInfoEnabled()) {
-            _log.info("Gathering current status");
-        }
-
+        LOGGER.trace("Gathering current status");
         PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
         exhibitor.visitState(visitor);
         return visitor._poolgroups;
@@ -57,15 +54,11 @@ public class PoolgroupToPoolsVisitor implements StateVisitor
     @Override
     public void visitCompositePreDescend(StatePath path, Map<String,String> metadata)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Examining " + path);
-        }
+        LOGGER.trace("Examining {}", path);
 
         // If something like poolgroups.<some poolgroup>
         if (POOLGROUPS_PATH.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found poolgroup " + path.getLastElement());
-            }
+            LOGGER.trace("Found poolgroup {}", path.getLastElement());
 
             _currentPoolgroupPools = new HashSet<>();
             _poolgroups.put(path.getLastElement(), _currentPoolgroupPools);
@@ -75,10 +68,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor
 
         // If something like poolgroups.<some poolgroup>.pools.<some pool>
         if (_poolMembershipPath != null && _poolMembershipPath.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found pool " + path.getLastElement());
-            }
-
+            LOGGER.trace("Found pool {}", path.getLastElement());
             _currentPoolgroupPools.add(path.getLastElement());
         }
     }

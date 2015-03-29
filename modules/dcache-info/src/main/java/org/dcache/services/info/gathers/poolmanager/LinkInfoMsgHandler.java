@@ -23,9 +23,8 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  */
 public class LinkInfoMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(LinkInfoMsgHandler.class);
-
-    private static final int EXPECTED_ARRAY_SIZE=13;
+    private static final Logger LOGGER = LoggerFactory.getLogger(LinkInfoMsgHandler.class);
+    private static final int EXPECTED_ARRAY_SIZE = 13;
 
     public LinkInfoMsgHandler(StateUpdateManager sum,
             MessageMetadataRepository<UOID> msgMetaRepo)
@@ -44,12 +43,12 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel
 
         for (Object o : linkInfoArray) {
             if (!o.getClass().isArray()) {
-                _log.error("Link information not an array.");
+                LOGGER.error("Link information not an array.");
                 continue;
             }
             Object[] array = (Object[]) o;
             if (array.length != EXPECTED_ARRAY_SIZE) {
-                _log.error("Unexpected array size: "+array.length);
+                LOGGER.error("Unexpected array size: {}", array.length);
                 continue;
             }
 

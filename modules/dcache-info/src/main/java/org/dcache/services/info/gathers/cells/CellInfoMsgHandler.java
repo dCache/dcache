@@ -23,7 +23,7 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  */
 public class CellInfoMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(CellInfoMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CellInfoMsgHandler.class);
 
     private static final StatePath DOMAINS_PATH = new StatePath("domains");
 
@@ -37,24 +37,24 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel
     {
         // Should never be null
         if (msgPayload == null) {
-            _log.error("received null payload from getcellinfos");
+            LOGGER.error("received null payload from getcellinfos");
             return;
         }
 
         if (!msgPayload.getClass().isArray()) {
-            _log.error("received a message that isn't an array");
+            LOGGER.error("received a message that isn't an array");
             return;
         }
 
         Class<?> arrayClass = msgPayload.getClass().getComponentType();
 
         if (arrayClass == null) {
-            _log.error("unable to figure out what array type is.");
+            LOGGER.error("unable to figure out what array type is.");
             return;
         }
 
         if (!arrayClass.equals(CellInfo.class)) {
-            _log.error("received array is not an array of CellInfo");
+            LOGGER.error("received array is not an array of CellInfo");
             return;
         }
 

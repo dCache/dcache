@@ -31,11 +31,11 @@ import static com.google.common.base.Preconditions.checkState;
 public class DataGatheringScheduler implements Runnable
 {
     private static final long FIVE_MINUTES = 5*60*1000;
+    private static final Logger LOGGER_SCHED = LoggerFactory.getLogger(DataGatheringScheduler.class);
+    private static final Logger LOGGER_RA = LoggerFactory.getLogger(RegisteredActivity.class);
 
     private boolean _timeToQuit;
     private final List<RegisteredActivity> _activity = new ArrayList<>();
-    private static Logger _logSched = LoggerFactory.getLogger(DataGatheringScheduler.class);
-    private static Logger _logRa = LoggerFactory.getLogger(RegisteredActivity.class);
 
     /**
      * Class holding a periodically repeated DataGatheringActivity
@@ -78,12 +78,13 @@ public class DataGatheringScheduler implements Runnable
             Date nextTrigger = _dga.shouldNextBeTriggered();
 
             if (nextTrigger == null) {
-                _logRa.error("registered dga returned null Date");
+                LOGGER_RA.error("registered dga returned null Date");
                 nextTrigger = new Date(System.currentTimeMillis() + FIVE_MINUTES);
             } else {
                 // Safety!  Check we wont trigger too quickly
                 if (nextTrigger.getTime() - System.currentTimeMillis() <  MINIMUM_DGA_DELAY) {
-                    _logRa.warn("DGA "+_dga.toString()+" triggering too quickly ("+(nextTrigger.getTime() - System.currentTimeMillis())+"ms): engaging safety.");
+                    LOGGER_RA.warn("DGA {} triggering too quickly ({}ms): engaging safety.",
+                            _dga, nextTrigger.getTime() - System.currentTimeMillis());
                     nextTrigger = new Date (System.currentTimeMillis() + MINIMUM_DGA_DELAY);
                 }
             }
@@ -252,7 +253,7 @@ public class DataGatheringScheduler implements Runnable
         long delay;
         Date now = new Date();
 
-        _logSched.debug("DGA Scheduler thread starting.");
+        LOGGER_SCHED.debug("DGA Scheduler thread starting.");
 
         synchronized (_activity) {
             do {
@@ -272,7 +273,7 @@ public class DataGatheringScheduler implements Runnable
             } while (!_timeToQuit);
         }
 
-        _logSched.debug("DGA Scheduler thread shutting down.");
+        LOGGER_SCHED.debug("DGA Scheduler thread shutting down.");
     }
 
     /**
@@ -373,7 +374,7 @@ public class DataGatheringScheduler implements Runnable
      */
     public void shutdown()
     {
-        _logSched.debug("Requesting DGA Scheduler to shutdown.");
+        LOGGER_SCHED.debug("Requesting DGA Scheduler to shutdown.");
         synchronized (_activity) {
             _timeToQuit = true;
             _activity.notify();

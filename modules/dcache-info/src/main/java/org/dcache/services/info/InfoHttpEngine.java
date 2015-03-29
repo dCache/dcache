@@ -58,7 +58,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
 {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpResponseEngine.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpResponseEngine.class);
     private static final String INFO_CELL_NAME = "info";
 
     private static final List<String> ENTIRE_TREE = new ArrayList<>();
@@ -147,7 +147,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
                 }
                 propagate(cause);
             } catch (IOException e) {
-                LOG.error("IOException caught whilst writing output : {}", e.getMessage());
+                LOGGER.error("Failed to send response: {}", e.getMessage());
             }
         }
     }
@@ -173,10 +173,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
     @Override
     public void queryUrl(HttpRequest request) throws HttpException
     {
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Received request for: {}",
-                    Arrays.toString(request.getRequestTokens()));
-        }
+        LOGGER.info("Received request: {}", request);
 
         SerialisationHandler handler = find(asList(
                 serialiserFromUri(request),
@@ -237,7 +234,7 @@ public class InfoHttpEngine implements HttpResponseEngine, CellMessageSender
                     try {
                         q = Double.parseDouble(arg.substring(2));
                     } catch (NumberFormatException e) {
-                        LOG.debug("malformed q value: {}", arg);
+                        LOGGER.debug("malformed q value ('{}') in Accept: {}", q, e.toString());
                         q = 0;
                     }
                 } else {

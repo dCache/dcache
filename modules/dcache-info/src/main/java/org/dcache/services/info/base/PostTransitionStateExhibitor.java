@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class PostTransitionStateExhibitor implements StateExhibitor
 {
-    private static final Logger _log =
+    private static final Logger LOGGER =
             LoggerFactory.getLogger(PostTransitionStateExhibitor.class);
 
     /**
@@ -86,7 +86,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor
 
         private void visitUpdatedOrDeletedMetric(StatePath path, StateValue value)
         {
-            _log.debug("path={}  value={}", path, value);
+            LOGGER.trace("path={}  value={}", path, value);
 
             StatePath parentPath = path.parentPath();
             String name = path.getLastElement();
@@ -104,7 +104,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor
 
         private void visitUpdatedMetricValue(StatePath path, StateComponent component)
         {
-            _log.debug("path={}  component={}", path, component);
+            LOGGER.trace("path={}  component={}", path, component);
             if (component instanceof StateComposite) {
                 // This is when a metric has become a branch.
                 component.acceptVisitor(path, this);
@@ -118,8 +118,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor
                 Map<String, String> metadata)
         {
             if (path == null) {
-                _postTransitionVisitor
-                        .visitCompositePreDescend(null, metadata);
+                _postTransitionVisitor.visitCompositePreDescend(null, metadata);
                 return;
             }
 
@@ -239,7 +238,7 @@ public class PostTransitionStateExhibitor implements StateExhibitor
 
         private void visitNewChild(StatePath path, StateComponent component)
         {
-            _log.debug("Visiting new child: {}", path);
+            LOGGER.trace("Visiting new child: {}", path);
 
             if (component instanceof StateComposite) {
                 component.acceptVisitor(path, this);

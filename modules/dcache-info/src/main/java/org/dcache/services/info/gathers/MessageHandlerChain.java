@@ -23,6 +23,8 @@ import dmg.cells.nucleus.UOID;
 
 import dmg.cells.nucleus.CellMessageSender;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 /**
  * A MessageHandlerChain allows multiple MessageHandler subclass instances to attempt to
@@ -45,7 +47,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     /** Our default timeout for sending messages, in milliseconds */
     private static final long STANDARD_TIMEOUT = 1000;
 
-    private static final Logger _log = LoggerFactory.getLogger(MessageHandlerChain.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MessageHandlerChain.class);
     private final List<MessageHandler> _messageHandler = new LinkedList<>();
     private CellEndpoint _endpoint;
 
@@ -89,7 +91,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
             CellPath path, String requestString)
     {
         if (handler == null) {
-            _log.error("ignoring attempt to send string-based message without call-back");
+            LOGGER.error("ignoring attempt to send string-based message without call-back");
             return;
         }
 
@@ -171,7 +173,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     {
         flushOldMetadata();
 
-        _log.debug("Querying for metric ttl stored against message-ID {}",
+        LOGGER.trace("Querying for metric ttl stored against message-ID {}",
                 messageId);
 
         MessageMetadata metadata = _msgMetadata.get(messageId);
@@ -197,14 +199,9 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     @Override
     public void putMetricTTL(UOID messageId, long ttl)
     {
-        if (messageId == null) {
-            throw new NullPointerException("Attempting to record ttl against null messageId");
-        }
+        checkNotNull(messageId, "Attempting to record ttl against null messageId");
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Adding metric ttl " + ttl + " against message-ID " + messageId);
-        }
-
+        LOGGER.trace("Adding metric ttl {} against message-ID {}", ttl, messageId);
         _msgMetadata.put(messageId, new MessageMetadata(ttl));
     }
 
@@ -246,12 +243,12 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
         Object messagePayload = answer.getMessageObject();
 
         if (!(messagePayload instanceof Message)) {
-            _log.debug("Received msg where payload is not instanceof Message");
+            LOGGER.warn("Received msg where payload is not instanceof Message");
             return;
         }
 
         if (!containsMetricTTL(request.getLastUOID())) {
-            _log.error("Attempt to add metrics without recorded metric TTL for msg " + request);
+            LOGGER.warn("Attempt to add metrics without recorded metric TTL for msg {}", request);
             return;
         }
 
@@ -269,7 +266,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
     public void answerTimedOut(CellMessage request)
     {
         remove(request.getLastUOID());
-        _log.info("Message timed out");
+        LOGGER.info("Message timed out");
     }
 
     @Override
@@ -278,14 +275,14 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
         remove(request.getLastUOID());
         if (exception instanceof NoRouteToCellException) {
             // This can happen after a cell dies and info hasn't caught up
-            _log.debug("Sending message to {} failed: {}",
+            LOGGER.debug("Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
                     exception.getMessage());
         } else if (exception instanceof IllegalArgumentException) {
             // Can happen for a short while when a poolgroup is deleted
-            _log.debug("Command failed: {}", exception.getMessage());
+            LOGGER.debug("Command failed: {}", exception.getMessage());
         } else {
-            _log.error("Received remote exception: ", exception);
+            LOGGER.error("Received remote exception: ", exception);
         }
     }
 }

@@ -13,7 +13,7 @@ import org.dcache.services.info.gathers.SkelListBasedActivity;
 
 public class CellInfoDga extends SkelListBasedActivity
 {
-    private static final Logger _log = LoggerFactory.getLogger(CellInfoDga.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CellInfoDga.class);
 
     private final MessageSender _sender;
 
@@ -54,9 +54,7 @@ public class CellInfoDga extends SkelListBasedActivity
 
         CellPath systemCellPath = new CellPath("System", domainName);
 
-        if (_log.isInfoEnabled()) {
-            _log.info("sending message getcellinfos to System cell on domain " + domainName);
-        }
+        LOGGER.info("sending message getcellinfos to System cell on domain {}", domainName);
 
         _sender.sendMessage(getMetricLifetime(), _handler, systemCellPath, "getcellinfos");
     }

@@ -47,7 +47,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     public static final String METADATA_BRANCH_CLASS_KEY = "branch";
     public static final String METADATA_BRANCH_IDNAME_KEY = "id";
 
-    private static final Logger _log = LoggerFactory.getLogger(State.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(State.class);
 
     /**
      * Class member variables...
@@ -100,14 +100,12 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     {
         Date earliestExpiryDate = _state.getEarliestChildExpiryDate();
 
-        if (_log.isDebugEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
             if (earliestExpiryDate == null) {
-                _log.debug("reporting that earliest expiry time is never");
+                LOGGER.trace("reporting that earliest expiry time is never");
             } else {
-                long duration = (earliestExpiryDate.getTime() -
-                        System.currentTimeMillis())/1000;
-                _log.debug("reporting that earliest expiry time is " + duration
-                        + "s in the future");
+                LOGGER.trace("reporting that earliest expiry time is {}s in the future",
+                        (earliestExpiryDate.getTime() - System.currentTimeMillis())/1000);
             }
         }
 
@@ -132,19 +130,19 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     @Override
     public void processUpdate(StateUpdate update)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("beginning to process update: \n" + update.debugInfo());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("beginning to process update: \n{}", update.debugInfo());
         }
 
         // It's just possible that we might be called with null; ignore these
         // spurious calls.
         if (update == null) {
-            _log.warn("processUpdate called with null StateUpdate");
+            LOGGER.warn("processUpdate called with null StateUpdate");
             return;
         }
 
         if (update.countPurges() == 0 && update.count() == 0) {
-            _log.warn("StateUpdate with zero updates encountered");
+            LOGGER.warn("StateUpdate with zero updates encountered");
             return;
         }
 
@@ -159,10 +157,10 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
             try {
                 update.updateTransition(_state, transition);
             } catch (BadStatePathException e) {
-                _log.error("Error updating state:", e);
+                LOGGER.error("Error updating state:", e);
             }
 
-            _log.debug("checking StateWatchers");
+            LOGGER.trace("checking StateWatchers");
 
             StateUpdate resultingUpdate = checkWatchers(transition);
 
@@ -189,9 +187,9 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
      */
     private void applyTransition(StateTransition transition)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("now applying following transition to state:\n\n" + transition
-                    .dumpContents());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("now applying following transition to state:\n\n{}",
+                    transition.dumpContents());
         }
 
         try {
@@ -232,22 +230,16 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
             StateWatcher thisWatcher = thisWatcherInfo.getWatcher();
 
             if (!thisWatcherInfo.isEnabled()) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("skipping disabled watcher " + thisWatcher);
-                }
+                LOGGER.trace("skipping disabled watcher {}", thisWatcher);
                 continue;
             }
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("checking watcher " + thisWatcher);
-            }
+            LOGGER.trace("checking watcher {}", thisWatcher);
 
             boolean hasBeenTriggered = false;
 
             for (StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
-                if (_log.isDebugEnabled()) {
-                    _log.debug("checking watcher " + thisWatcher + " predicate " + thisPredicate);
-                }
+                LOGGER.trace("checking watcher {} predicate {}", thisWatcher, thisPredicate);
 
                 hasBeenTriggered = _state.predicateHasBeenTriggered(null,
                         thisPredicate,
@@ -260,9 +252,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
             }
 
             if (hasBeenTriggered) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("triggering watcher " + thisWatcher);
-                }
+                LOGGER.info("triggering watcher {}", thisWatcher);
                 thisWatcherInfo.incrementCounter();
                 if (futureState == null) {
                     futureState = new PostTransitionStateExhibitor(currentState, transition);
@@ -377,7 +367,7 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
             return;
         }
 
-        _log.info("Building StateTransition for expired StateComponents");
+        LOGGER.trace("Building StateTransition for expired StateComponents");
         StateTransition transition = new StateTransition();
 
         try {
@@ -416,27 +406,18 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
     @Override
     public void visitState(StateVisitor visitor)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("visitor " + visitor.getClass()
-                    .getSimpleName() + " wishing to visit current state");
-        }
+        LOGGER.trace("visitor {} wishing to visit current state", visitor);
 
         try {
             long beforeLock = System.currentTimeMillis();
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("visitor " + visitor.getClass()
-                        .getSimpleName() + " acquiring read lock");
-            }
-
+            LOGGER.trace("visitor {} acquiring read lock", visitor);
             _stateReadLock.lock();
 
             long afterLock = System.currentTimeMillis();
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("visitor " + visitor.getClass()
-                        .getSimpleName() + " acquired read lock (took " + (afterLock - beforeLock) / 1000.0 + " ms), starting visit.");
-            }
+            LOGGER.trace("visitor {} acquired read lock (took {} ms), starting visit.",
+                    visitor, (afterLock - beforeLock) / 1000.0);
 
             if (visitor.isVisitable(null)) {
                 _state.acceptVisitor(null, visitor);
@@ -444,19 +425,13 @@ public class State implements StateCaretaker, StateExhibitor, StateObservatory
 
             long afterVisit = System.currentTimeMillis();
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("visitor " + visitor.getClass()
-                        .getSimpleName() + " completed visit (took " + (afterVisit - afterLock) / 1000.0 + " ms), releasing read lock.");
-            }
-
+            LOGGER.trace("visitor {} completed visit (took {} ms), releasing read lock.",
+                    visitor, (afterVisit - afterLock) / 1000.0);
         } finally {
             _stateReadLock.unlock();
         }
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("visitor " + visitor.getClass()
-                    .getSimpleName() + " finished.");
-        }
+        LOGGER.trace("visitor {} finished.", visitor);
     }
 
     /**

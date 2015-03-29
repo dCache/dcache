@@ -17,9 +17,8 @@ import org.dcache.services.info.base.StatePath;
  */
 public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPoolSpaceVisitor.class);
     private static final StatePath POOLS_PATH = new StatePath("pools");
-
-    private static Logger _log = LoggerFactory.getLogger(AbstractPoolSpaceVisitor.class);
 
     private SpaceInfo _currentPoolSpaceInfo;
     private StatePath _currentPoolSpacePath;
@@ -41,11 +40,8 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor
     @Override
     protected void newListItem(String itemName)
     {
+        LOGGER.trace("Found pool {}", itemName);
         super.newListItem(itemName);
-
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found pool " + itemName);
-        }
 
         _currentPoolSpaceInfo = new SpaceInfo();
         _currentPoolSpacePath = getPathToList().newChild(itemName).newChild("space");
@@ -69,10 +65,7 @@ public abstract class AbstractPoolSpaceVisitor extends SkeletonListVisitor
 
         String metricName = path.getLastElement();
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found metric " + path
-                    .getLastElement() + " = " + value.getValue());
-        }
+        LOGGER.trace("Found metric {} = {}", metricName, value.getValue());
 
         switch (metricName) {
         case METRIC_NAME_REMOVABLE:

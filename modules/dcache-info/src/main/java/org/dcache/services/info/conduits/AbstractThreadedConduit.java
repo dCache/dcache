@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 abstract class AbstractThreadedConduit implements Runnable, Conduit
 {
-    private static Logger _log = LoggerFactory.getLogger(AbstractThreadedConduit.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractThreadedConduit.class);
 
     private Thread _thd;
     protected int _callCount;
@@ -31,14 +31,11 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit
         _should_run = true;
 
         if (_thd == null) {
-            _thd = new Thread (this, this.getClass().getSimpleName() + " conduit");
+            _thd = new Thread(this, getClass().getSimpleName() + " conduit");
             _thd.start();
-            if (_log.isInfoEnabled()) {
-                _log.info("Thread \"" + _thd
-                        .getName() + "\" started");
-            }
+            LOGGER.info("Thread {} started", _thd.getName());
         } else {
-            _log.error("Request to start when thread is already running.");
+            LOGGER.error("Request to start when thread is already running.");
         }
     }
 
@@ -54,14 +51,11 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit
 
         _should_run = false;
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Signalling thread \"" + _thd
-                    .getName() + "\" to stop");
-        }
+        LOGGER.trace("Signalling thread {} to stop", _thd.getName());
 
         triggerBlockingActivityToReturn();
 
-        _log.debug("Waiting for thread to finish...");
+        LOGGER.trace("Waiting for thread to finish...");
 
         try {
             _thd.join();
@@ -103,9 +97,7 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit
             blockingActivity();
         }
 
-        if (_log.isInfoEnabled()) {
-            _log.info("Thread " + _thd.getName() + " stopped");
-        }
+        LOGGER.info("Thread {} stopped", _thd.getName());
     }
 
 

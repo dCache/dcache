@@ -17,7 +17,7 @@ import org.dcache.services.info.base.StatePath;
  */
 public class ListVisitor extends SkeletonListVisitor
 {
-    private static Logger _log = LoggerFactory.getLogger(ListVisitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ListVisitor.class);
 
     /**
      * Obtain the set of items below a certain path within the dCache state.
@@ -26,10 +26,7 @@ public class ListVisitor extends SkeletonListVisitor
      */
     static public Set<String> getDetails(StateExhibitor exhibitor, StatePath path)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Gathering current status for path " + path);
-        }
-
+        LOGGER.trace("Gathering current status for path {}", path);
         ListVisitor visitor = new ListVisitor(path);
         exhibitor.visitState(visitor);
         return visitor.getItems();

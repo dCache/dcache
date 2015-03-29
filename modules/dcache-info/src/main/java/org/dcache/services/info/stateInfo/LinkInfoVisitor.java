@@ -18,7 +18,7 @@ import org.dcache.services.info.stateInfo.LinkInfo.UNIT_TYPE;
  */
 public class LinkInfoVisitor extends SkeletonListVisitor
 {
-    private static Logger _log = LoggerFactory.getLogger(LinkInfoVisitor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LinkInfoVisitor.class);
 
     private static final StatePath LINK_PATH = StatePath.parsePath("links");
 
@@ -88,7 +88,7 @@ public class LinkInfoVisitor extends SkeletonListVisitor
      */
     public static Map<String, LinkInfo> getDetails(StateExhibitor exhibitor)
     {
-        _log.debug("Gathering link information.");
+        LOGGER.trace("Gathering link information.");
 
         LinkInfoVisitor visitor = new LinkInfoVisitor();
         exhibitor.visitState(visitor);
@@ -186,48 +186,33 @@ public class LinkInfoVisitor extends SkeletonListVisitor
         /** If we're looking at link.<link id>.units.<UNIT_TYPE>.<listItem> */
         if (_thisLinkUnitsPath.isParentOf(parentPath) &&
             UNIT_TYPE_NAMES.containsKey(parentLastElement)) {
-
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding pool " + listItem);
-            }
-
+            LOGGER.trace("Adding pool {}", listItem);
             _thisLink.addUnit(UNIT_TYPE_NAMES.get(parentLastElement), listItem);
             return;
         }
 
         /** If we're looking at link.<link id>.pools.<listItem> */
         if (_thisLinkPoolsPath.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding pool " + listItem);
-            }
-
+            LOGGER.trace("Adding pool {}", listItem);
             _thisLink.addPool(listItem);
             return;
         }
 
         /** If we're looking at link.<link id>.poolgroups.<listItem> */
         if (_thisLinkPoolgroupPath.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding poolgroup " + listItem);
-            }
-
+            LOGGER.trace("Adding poolgroup {}", listItem);
             _thisLink.addPoolgroup(listItem);
-
             return;
         }
 
         /** If we're looking at link.<link id>.unitgroups.<listItem> */
         if (_thisLinkUnitgroupsPath.isParentOf(path)) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Adding unitgroup " + listItem);
-            }
-
+            LOGGER.trace("Adding unitgroup {}", listItem);
             _thisLink.addUnitgroup(listItem);
-
             return;
         }
 
-        _log.warn("Unexpected element at " + path);
+        LOGGER.warn("Unexpected element at {}", path);
     }
 
     /**

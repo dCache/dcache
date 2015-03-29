@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class StateUpdate
 {
-    private static final Logger _log = LoggerFactory.getLogger(StateUpdate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StateUpdate.class);
 
     /**
      * A single update to a dCache metric.
@@ -178,17 +178,15 @@ public class StateUpdate
     {
         BadStatePathException caughtThis = null;
 
-        _log.debug("preparing transition with " + _purge.size() + " purge and " + _updates.size() + " update");
+        LOGGER.trace("preparing transition with {} purge and {} update",
+                _purge.size(), _updates.size());
 
         for (StatePath path : _purge) {
             top.buildPurgeTransition(transition, null, path);
         }
 
         for (StateUpdateInstance update : _updates) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("preparing transition to alter " + update
-                        ._path.toString());
-            }
+            LOGGER.trace("preparing transition to alter {}", update._path);
 
             try {
                 top.buildTransition(null, update._path, update._newValue, transition);

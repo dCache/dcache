@@ -31,7 +31,7 @@ import org.dcache.services.info.stateInfo.SpaceInfo;
  */
 public class PoolCostMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(PoolCostMsgHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PoolCostMsgHandler.class);
 
     public PoolCostMsgHandler(StateUpdateManager sum,
             MessageMetadataRepository<UOID> msgMetaRepo)
@@ -45,7 +45,7 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
         long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
 
         if (!(msgPayload instanceof CostModulePoolInfoTable)) {
-            _log.error("received non-CostModulePoolInfoTable object in message\n");
+            LOGGER.error("received non-CostModulePoolInfoTable object in message");
             return;
         }
 

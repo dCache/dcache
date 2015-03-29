@@ -22,7 +22,7 @@ import org.dcache.services.info.gathers.MessageMetadataRepository;
  */
 public class TopoMapHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(TopoMapHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TopoMapHandler.class);
 
     private static final StatePath DOMAINS_PATH = new StatePath("domains");
 
@@ -40,19 +40,19 @@ public class TopoMapHandler extends CellMessageHandlerSkel
         }
 
         if (!msgPayload.getClass().isArray()) {
-            _log.error("received a message that isn't an array");
+            LOGGER.error("received a message that isn't an array");
             return;
         }
 
         Class<?> arrayClass = msgPayload.getClass().getComponentType();
 
         if (arrayClass == null) {
-            _log.error("unable to figure out what array type is.");
+            LOGGER.error("unable to figure out what array type is.");
             return;
         }
 
         if (!arrayClass.equals(CellDomainNode.class)) {
-            _log.error("received array is not instance of CellDomainNode[]");
+            LOGGER.error("received array is not instance of CellDomainNode[]");
             return;
         }
 

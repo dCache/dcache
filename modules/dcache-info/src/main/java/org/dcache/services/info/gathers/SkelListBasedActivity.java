@@ -33,7 +33,7 @@ import org.dcache.services.info.stateInfo.ListVisitor;
  */
 abstract public class SkelListBasedActivity implements Schedulable
 {
-    private static final Logger _log = LoggerFactory.getLogger(SkelListBasedActivity.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SkelListBasedActivity.class);
 
 
     /** Minimum time between fetching a fresh list (or querying the same list-item), in milliseconds */
@@ -172,10 +172,8 @@ abstract public class SkelListBasedActivity implements Schedulable
             _outstandingWork.add(item);
         }
 
-        if (_log.isDebugEnabled()) {
-                _log.debug("fresh to-do list obtained for " + this.getClass().getSimpleName());
-                _log.debug("list now contains " + _outstandingWork.size() + " items");
-        }
+        LOGGER.trace("fresh to-do list obtained for {}", getClass().getSimpleName());
+        LOGGER.trace("list now contains {} items", _outstandingWork.size());
     }
 
 

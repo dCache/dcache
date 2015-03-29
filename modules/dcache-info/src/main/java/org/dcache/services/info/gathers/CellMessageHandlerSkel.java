@@ -29,7 +29,7 @@ import org.dcache.services.info.base.StringStateValue;
  */
 abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
 {
-    private static final Logger _log = LoggerFactory.getLogger(CellMessageHandlerSkel.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CellMessageHandlerSkel.class);
 
     private final static String SIMPLE_DATE_FORMAT = "MMM d, HH:mm:ss z";
     private final static String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm'Z'";
@@ -96,16 +96,12 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
     protected void addItems(StateUpdate update, StatePath parentPath,
             Object[] items, long metricLifetime)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("appending list-items under " + parentPath);
-        }
+        LOGGER.trace("appending list-items under {}", parentPath);
 
         for (Object item : items) {
             String listItem = (String) item;
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("    adding item " + listItem);
-            }
+            LOGGER.trace("    adding item {}", listItem);
 
             update.appendUpdate(parentPath
                     .newChild(listItem), new StateComposite(metricLifetime));
@@ -120,12 +116,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
      */
     protected void applyUpdates(StateUpdate update)
     {
-        if (_log.isDebugEnabled()) {
-            _log.debug("adding update to state's to-do stack with " + update
-                    .count() + " updates for " + this.getClass()
-                    .getSimpleName());
-        }
-
+        LOGGER.trace("adding update to state's to-do stack with {} updates for {}",
+                update.count(), getClass().getSimpleName());
         _sum.enqueueUpdate(update);
     }
 
@@ -143,14 +135,12 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
         Object payload = answer.getMessageObject();
 
         if (payload == null) {
-            _log.warn ("ignoring incoming message for " + this.getClass().getSimpleName() + " will null payload");
+            LOGGER.warn("ignoring incoming message for {} will null payload",
+                    getClass().getSimpleName());
             return;
         }
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("incoming CellMessage received from " + answer
-                    .getSourcePath());
-        }
+        LOGGER.trace("incoming CellMessage received from {}", answer.getSourcePath());
 
         long ttl = _msgMetadataRepo.getMetricTTL(request.getLastUOID());
         _msgMetadataRepo.remove(request.getLastUOID());
@@ -160,7 +150,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
          */
         if (payload instanceof Exception) {
             Exception e = (Exception) payload;
-            _log.info("received exception: " + e.getMessage());
+            LOGGER.info("received exception: {}", e.getMessage());
             return;
         }
 
@@ -184,11 +174,11 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
     public void exceptionArrived(CellMessage request, Exception exception)
     {
         if (exception instanceof NoRouteToCellException) {
-            _log.info("Sending message to {} failed: {}",
+            LOGGER.info("Sending message to {} failed: {}",
                     ((NoRouteToCellException)exception).getDestinationPath(),
                     exception.getMessage());
         } else {
-            _log.error("Received remote exception: {}", exception);
+            LOGGER.error("Received remote exception: {}", exception);
         }
     }
 
@@ -198,7 +188,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable
     @Override
     public void answerTimedOut(CellMessage request)
     {
-        _log.info("Message timed out");
+        LOGGER.info("Message timed out");
         _msgMetadataRepo.remove(request.getLastUOID());
     }
 }

@@ -24,7 +24,7 @@ import org.dcache.services.info.gathers.SkelListBasedActivity;
  */
 public class RoutingMgrDga extends SkelListBasedActivity
 {
-    private static final Logger _log = LoggerFactory.getLogger(RoutingMgrDga.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RoutingMgrDga.class);
 
     private final MessageSender _sender;
 
@@ -70,10 +70,7 @@ public class RoutingMgrDga extends SkelListBasedActivity
 
         CellPath routingMgrCellPath = new CellPath("RoutingMgr", domainName);
 
-        if (_log.isInfoEnabled()) {
-            _log.info("sending message \"ls -x\" to RoutingMgr cell on domain " + domainName);
-        }
-
+        LOGGER.info("sending message to RoutingMgr cell on domain {}", domainName);
         _sender.sendMessage(getMetricLifetime(), _handler, routingMgrCellPath, "ls -x");
     }
 

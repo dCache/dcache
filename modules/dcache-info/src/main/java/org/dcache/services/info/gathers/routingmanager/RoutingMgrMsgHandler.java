@@ -73,8 +73,7 @@ import org.dcache.services.info.gathers.cells.CellInfoMsgHandler;
  */
 public class RoutingMgrMsgHandler extends CellMessageHandlerSkel
 {
-    private static Logger _log = LoggerFactory.getLogger(CellInfoMsgHandler.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(CellInfoMsgHandler.class);
     private static final StatePath DOMAINS_PATH = new StatePath("domains");
 
     public RoutingMgrMsgHandler(StateUpdateManager sum,
@@ -88,10 +87,10 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel
     @Override
     public void process(Object msgPayload, long metricLifetime)
     {
-        _log.debug("received msg.");
+        LOGGER.trace("received msg.");
 
         if (!msgPayload.getClass().isArray()) {
-            _log.error("received a reply message that isn't an array; type is " + msgPayload.getClass().getName());
+            LOGGER.error("received a reply message that isn't an array; type is {}", msgPayload.getClass().getName());
             return;
         }
 
@@ -108,7 +107,7 @@ public class RoutingMgrMsgHandler extends CellMessageHandlerSkel
 
         if (wellKnownCells.isEmpty() && localExports.isEmpty() &&
                 domainHash.isEmpty()) {
-            _log.debug("Message from domain {} with no well-known cells", domainName);
+            LOGGER.debug("Message from domain {} with no well-known cells", domainName);
             return;
         }
 
