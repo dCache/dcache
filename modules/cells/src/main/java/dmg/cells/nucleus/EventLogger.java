@@ -80,8 +80,7 @@ public class EventLogger
              */
             CellPath source = envelope.getSourcePath();
             if (source.hops() == 0) {
-                source = new CellPath();
-                source.add(nucleus.getThisAddress());
+                source = new CellPath(nucleus.getThisAddress());
             }
             NetLoggerBuilder log = new NetLoggerBuilder(SEND_BEGIN);
             log.add("uoid", envelope.getUOID());

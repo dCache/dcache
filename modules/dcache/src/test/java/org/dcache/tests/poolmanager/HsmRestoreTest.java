@@ -235,7 +235,7 @@ public class HsmRestoreTest {
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
-            CellMessage envelope = new CellMessage(new CellPath(""), null);
+            CellMessage envelope = new CellMessage(new CellPath("PoolManager"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
@@ -258,7 +258,7 @@ public class HsmRestoreTest {
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
-        cellMessage.getSourcePath().add("door", "local");
+        cellMessage.getSourcePath().add(new CellAddressCore("door", "local")) ;
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
@@ -335,7 +335,7 @@ public class HsmRestoreTest {
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
-            CellMessage envelope = new CellMessage(new CellPath(""), null);
+            CellMessage envelope = new CellMessage(new CellPath("PoolManager"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
@@ -355,7 +355,7 @@ public class HsmRestoreTest {
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
-        cellMessage.getSourcePath().add("door", "local");
+        cellMessage.getSourcePath().add(new CellAddressCore("door", "local")) ;
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
@@ -434,7 +434,7 @@ public class HsmRestoreTest {
             poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0);
             poolCostInfo.addExtendedMoverQueueSizes(IoQueueManager.DEFAULT_QUEUE, 0, 10, 0, 0, 0);
 
-            CellMessage envelope = new CellMessage(new CellPath(""), null);
+            CellMessage envelope = new CellMessage(new CellPath("PoolManager"), null);
             envelope.addSourceAddress(new CellAddressCore(pool));
             PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
 
@@ -457,7 +457,7 @@ public class HsmRestoreTest {
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, null);
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
-        cellMessage.getSourcePath().add("door", "local");
+        cellMessage.getSourcePath().add(new CellAddressCore("door", "local")) ;
 
         _rc.messageArrived(cellMessage, selectReadPool);
 
@@ -476,7 +476,7 @@ public class HsmRestoreTest {
         // resubmit request
         PoolMgrSelectReadPoolMsg selectReadPool2 = new PoolMgrSelectReadPoolMsg(attributes, _protocolInfo, selectReadPool.getContext());
         CellMessage cellMessage2 = new CellMessage( new CellPath("PoolManager"), selectReadPool2);
-        cellMessage2.getSourcePath().add("door", "local");
+        cellMessage2.getSourcePath().add(new CellAddressCore("door", "local")) ;
         _rc.messageArrived(cellMessage2, selectReadPool2);
 
         // second pool replies with an error

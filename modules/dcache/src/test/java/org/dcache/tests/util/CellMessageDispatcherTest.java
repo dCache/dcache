@@ -154,7 +154,7 @@ public class CellMessageDispatcherTest
     {
         try {
             return
-                dispatcher.call(new CellMessage(new CellPath(""), msg));
+                dispatcher.call(new CellMessage(new CellPath("test"), msg));
         } finally {
             assertEquals(listener1.delivered, result1);
             assertEquals(listener2.delivered, result2);

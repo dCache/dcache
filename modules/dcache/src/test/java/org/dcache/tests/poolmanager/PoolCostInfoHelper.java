@@ -24,7 +24,7 @@ public class PoolCostInfoHelper {
 
         poolCost.setSpaceUsage(total, free, precious, removable);
 
-        CellMessage envelope = new CellMessage(new CellPath(""), null);
+        CellMessage envelope = new CellMessage(new CellPath("PoolManager"), null);
         envelope.addSourceAddress(new CellAddressCore(pool));
         PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool,
                 serialId, poolMode, poolCost);

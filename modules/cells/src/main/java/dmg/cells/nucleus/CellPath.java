@@ -4,9 +4,12 @@ import com.google.common.collect.Lists;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.StringTokenizer;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toList;
+
 /**
   *
   *  The CellPath is an abstraction of the path a CellMessage is
@@ -42,26 +45,19 @@ public final class CellPath  implements Cloneable , Serializable
         _list = list;
     }
 
-    protected CellPath(CellPath addr)
-    {
-        this(addr._position, Lists.newArrayList(addr._list));
-    }
-
     protected CellPath()
     {
-        this(-1, new ArrayList<CellAddressCore>());
+        this(-1, new ArrayList<>());
     }
 
     public CellPath(String path)
     {
-        this();
-        add(path);
+        this(0, streamOfPath(path).collect(toList()));
     }
 
     public CellPath(CellAddressCore address)
     {
-        this();
-        add(address);
+        this(0, Lists.newArrayList(address));
     }
 
     public CellPath(String cellName, String domainName)
@@ -69,53 +65,41 @@ public final class CellPath  implements Cloneable , Serializable
         this(new CellAddressCore(cellName, domainName));
     }
 
-    public int hops()
+    public synchronized int hops()
     {
         return _list.size();
     }
 
-   public synchronized void add(CellAddressCore core)
-   {
-      _list.add(core) ;
-      if( _position < 0 ) {
-          _position = 0;
-      }
-   }
+    public synchronized void add(CellAddressCore core)
+    {
+        _list.add(core) ;
+        if (_position < 0) {
+            _position = 0;
+        }
+    }
 
-   public synchronized void add( CellPath addr ){
-         _list.addAll( addr._list ) ;
-       if( _position < 0 ) {
-           _position = 0;
-       }
-   }
+    public synchronized void add(CellPath addr)
+    {
+        _list.addAll(addr._list) ;
+        if (_position < 0) {
+            _position = 0;
+        }
+    }
 
-   public void add( String cell , String domain ){
-       add(new CellAddressCore(cell, domain)) ;
-   }
-   /**
+    /**
      *  Adds a cell path &lt;path&gt; to the end of the current path.
      *
      *  @param path The added cell travel path.
      */
-   public synchronized void add( String path ){
-        StringTokenizer st = new StringTokenizer( path ,":" ) ;
-       while (st.hasMoreTokens()) {
-           add(new CellAddressCore(st.nextToken()));
-       }
+   public synchronized void add(String path)
+   {
+       streamOfPath(path).forEachOrdered(this::add);
    }
-   /**
-     *  Creates a CellAddress with a single cell as initial destination.
-     *  The cell is represented by its name and the name of its domain.
-     *
-     *  @param cellName The name of the initial destination cell.
-     *  @param domainName The name of the initial destination cells domain.
-     */
+
    @Override
-   public synchronized Object clone(){
-       CellPath addr = new CellPath() ;
-       addr._list.addAll(_list);
-       addr._position = _position ;
-       return addr ;
+   public synchronized Object clone()
+   {
+       return new CellPath(_position, Lists.newArrayList(_list));
    }
 
     /**
@@ -262,5 +246,9 @@ public final class CellPath  implements Cloneable , Serializable
        return (_list.hashCode() * 17) ^ _position;
    }
 
-
+    private static Stream<CellAddressCore> streamOfPath(String path)
+    {
+        checkArgument(!path.isEmpty());
+        return Stream.of(path.split(":")).map(CellAddressCore::new);
+    }
 }
