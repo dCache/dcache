@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1295,7 +1296,7 @@ public class PnfsManagerV3
                           pnfsMessage.getAccessMask());
 
                 /*
-                 * race condition check:
+                 * raice condition check:
                  *
                  * in some cases ( srm overwrite ) one failed transfer may remove a file
                  * which belongs to an other transfer.
@@ -1320,7 +1321,7 @@ public class PnfsManagerV3
                 }
 
                 _log.info("delete PNFS entry for "+ path );
-                pnfsMessage.setRemainingLinks(_nameSpaceProvider.deleteEntry(subject, path));
+                _nameSpaceProvider.deleteEntry(subject, path);
             } else {
                 if (!isOfType(pnfsId, allowed)) {
                     if (allowed.contains(FileType.DIR)) {
@@ -1333,7 +1334,7 @@ public class PnfsManagerV3
                 checkMask(pnfsMessage);
 
                 _log.info("delete PNFS entry for "+ pnfsId );
-                pnfsMessage.setRemainingLinks(_nameSpaceProvider.deleteEntry(subject, pnfsId));
+                _nameSpaceProvider.deleteEntry(subject, pnfsId);
             }
 
             pnfsMessage.setSucceeded();
@@ -1349,8 +1350,7 @@ public class PnfsManagerV3
         }
 
         if( pnfsMessage.getReturnCode() == 0 &&
-            _pnfsDeleteNotificationRelay != null &&
-                pnfsMessage.getRemainingLinks() == 0) {
+            _pnfsDeleteNotificationRelay != null ) {
             PnfsDeleteEntryNotificationMessage deleteNotification =
                 new PnfsDeleteEntryNotificationMessage(pnfsId,path);
             try{

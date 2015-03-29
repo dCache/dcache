@@ -91,17 +91,17 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public int deleteEntry(Subject subject, PnfsId id) throws CacheException
+    public void deleteEntry(Subject subject, PnfsId id) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        return pnfs.deletePnfsEntry(id);
+        pnfs.deletePnfsEntry(id);
     }
 
     @Override
-    public int deleteEntry(Subject subject, String path) throws CacheException
+    public void deleteEntry(Subject subject, String path) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        return pnfs.deletePnfsEntry(null, path);
+        pnfs.deletePnfsEntry(path);
     }
 
     @Override

@@ -101,18 +101,16 @@ public interface NameSpaceProvider
      * @param subject Subject of user who invoked this method.
      * @param pnfsId
      * @throws CacheException
-     * @return remaining number of links for the underlying inode
      */
-    int deleteEntry(Subject subject, PnfsId pnfsId) throws CacheException;
+    void deleteEntry(Subject subject, PnfsId pnfsId) throws CacheException;
 
     /**
      * remove file or directory
      * @param subject Subject of user who invoked this method.
      * @param path
      * @throws CacheException
-     * @return remaining number of links for the underlying inode
      */
-    int deleteEntry(Subject subject, String path) throws CacheException;
+    void deleteEntry(Subject subject, String path) throws CacheException;
 
     void renameEntry(Subject subject, PnfsId pnfsId, String newName,
                      boolean overwrite) throws CacheException;

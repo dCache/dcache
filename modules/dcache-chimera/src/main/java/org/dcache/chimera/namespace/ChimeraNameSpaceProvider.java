@@ -312,7 +312,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public int deleteEntry(Subject subject, PnfsId pnfsId)
+    public void deleteEntry(Subject subject, PnfsId pnfsId)
         throws CacheException
     {
         try {
@@ -341,7 +341,6 @@ public class ChimeraNameSpaceProvider
             }
 
             _fs.remove(inode);
-            return inode.stat().getNlink();
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + pnfsId);
         }catch(DirNotEmptyHimeraFsException e) {
@@ -353,7 +352,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public int deleteEntry(Subject subject, String path)
+    public void deleteEntry(Subject subject, String path)
         throws CacheException
     {
         try {
@@ -387,7 +386,6 @@ public class ChimeraNameSpaceProvider
             }
 
             _fs.remove(path);
-            return pathToInode(subject, path).stat().getNlink();
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         }catch(DirNotEmptyHimeraFsException e) {
