@@ -537,7 +537,10 @@ class CellGlue
         //
         if ((!firstSend) && destCore.getCellName().equals("*")) {
             LOGGER.trace("sendMessage : * detected ; skipping destination");
-            destination.next();
+            if (!destination.next()) {
+                sendException(nucleus, transponder, destination, "*");
+                return;
+            }
             destCore = destination.getCurrent();
         }
 
@@ -559,7 +562,10 @@ class CellGlue
             if (destCore.getCellDomainName().equals(_cellDomainName)) {
                 if (destCore.getCellName().equals("*")) {
                     LOGGER.trace("sendMessagex : * detected ; skipping destination");
-                    destination.next();
+                    if (!destination.next()) {
+                        sendException(nucleus, transponder, destination, "*");
+                        return;
+                    }
                     destCore = destination.getCurrent();
                     continue;
                 }
