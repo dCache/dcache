@@ -278,7 +278,6 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         MountServer ms = new MountServer(_exportFile, _vfs);
         _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
-        _rpcService.register(new OncRpcProgram(mount_prot.MOUNT_PROGRAM, mount_prot.MOUNT_V3), ms);
 
         for (String version : _versions) {
             switch (version) {
