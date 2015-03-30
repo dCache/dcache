@@ -1,5 +1,6 @@
 package diskCacheV111.admin ;
 
+import com.google.common.base.CharMatcher;
 import jline.console.completer.Completer;
 
 import java.util.ArrayList;
@@ -24,17 +25,8 @@ public class HelpCompleter implements Completer
 
     protected String scan(String line)
     {
-        StringBuilder completion = new StringBuilder();
-        loop:
-        for (String s: line.split(" ")) {
-            if (s.startsWith("#")) {
-                break;
-            }
-            if (!s.contains("[") && !s.contains("<") && !s.contains("|") && !s.startsWith("-")) {
-                completion.append(s).append(" ");
-            }
-        }
-        return completion.toString();
+        int i = CharMatcher.anyOf("#[]<>|-").indexIn(line);
+        return (i == -1) ? line : line.substring(0, i);
     }
 
     @Override
