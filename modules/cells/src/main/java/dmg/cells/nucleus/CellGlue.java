@@ -53,6 +53,7 @@ class CellGlue
     private ThreadGroup _killerThreadGroup;
     private final Executor _killerExecutor;
     private final ThreadPoolExecutor _emergencyKillerExecutor;
+    private final CellAddressCore _domainAddress;
 
     CellGlue(String cellDomainName)
     {
@@ -68,6 +69,7 @@ class CellGlue
                     System.currentTimeMillis();
         }
         _cellDomainName = cellDomainNameLocal;
+        _domainAddress = new CellAddressCore("*", _cellDomainName);
         _classLoader = new ClassLoaderProvider();
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
@@ -531,26 +533,18 @@ class CellGlue
         LOGGER.trace("sendMessage : {} send to {}", transponder.getUOID(), destination);
 
         //
-        //  if the cellname is an *, ( stream mode only ) we can skip
-        //  this address, because it was needed to reach our domain,
-        //  which hopefully happened.
-        //
-        if ((!firstSend) && destCore.getCellName().equals("*")) {
-            LOGGER.trace("sendMessage : * detected ; skipping destination");
-            if (!destination.next()) {
-                sendException(nucleus, transponder, destination, "*");
-                return;
-            }
-            destCore = destination.getCurrent();
-        }
-
-
-        //
         // this is the big iteration loop
         //
         for (int iter = 0; iter < MAX_ROUTE_LEVELS; iter++) {
-            LOGGER.trace("sendMessage : next hop at {}: {}@{}", iter,
-                         destCore.getCellName(), destCore.getCellDomainName());
+            while (destCore.equals(_domainAddress)) {
+                if (!destination.next()) {
+                    sendException(nucleus, transponder, destination, "*");
+                    return;
+                }
+                destCore = destination.getCurrent();
+            }
+
+            LOGGER.trace("sendMessage : next hop at {}: {}", iter, destCore);
 
             //
             //  now we try to find the destination cell in our domain
@@ -560,15 +554,6 @@ class CellGlue
                 destNucleus = null;
             }
             if (destCore.getCellDomainName().equals(_cellDomainName)) {
-                if (destCore.getCellName().equals("*")) {
-                    LOGGER.trace("sendMessagex : * detected ; skipping destination");
-                    if (!destination.next()) {
-                        sendException(nucleus, transponder, destination, "*");
-                        return;
-                    }
-                    destCore = destination.getCurrent();
-                    continue;
-                }
                 //
                 // the domain name was specified ( other then 'local' )
                 // and points to our domain.
@@ -588,8 +573,7 @@ class CellGlue
                     // routing
                     //
                     //             destNucleus.addToEventQueue(  new RoutedMessageEvent( transponder ) ) ;
-                    transponder.addSourceAddress(
-                            new CellAddressCore("*", _cellDomainName));
+                    transponder.addSourceAddress(_domainAddress);
                     destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
                 }
                 return;
@@ -604,8 +588,7 @@ class CellGlue
                     if (iter == 0) {
                         destNucleus.addToEventQueue(new MessageEvent(transponder));
                     } else {
-                        transponder.addSourceAddress(
-                                new CellAddressCore("*", _cellDomainName));
+                        transponder.addSourceAddress(_domainAddress);
                         destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
                     }
                     return;
