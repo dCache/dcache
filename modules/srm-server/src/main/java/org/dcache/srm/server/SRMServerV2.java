@@ -754,7 +754,7 @@ public class SRMServerV2 implements ISRM  {
                     log.add("status.code", status.getStatusCode());
                     log.add("status.explanation", status.getExplanation());
                 }
-
+                log.add("client-info", Axis.getRequestHeader("ClientInfo"));
                 log.add("user-agent", Axis.getUserAgent());
                 log.toLogger(ACCESS_LOGGER);
             }

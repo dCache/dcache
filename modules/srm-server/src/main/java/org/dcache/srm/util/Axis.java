@@ -104,6 +104,14 @@ public class Axis
         return new InetSocketAddress(InetAddresses.forString(r.getRemoteAddr()), r.getRemotePort());
     }
 
+    public static String getRequestHeader(String name)
+    {
+        MessageContext msgContext = MessageContext.getCurrentContext();
+        HttpServletRequest request = (HttpServletRequest)
+                msgContext.getProperty(MC_HTTP_SERVLETREQUEST);
+        return request.getHeader(name);
+    }
+
     public static String getUserAgent()
     {
         MessageContext msgContext = MessageContext.getCurrentContext();
