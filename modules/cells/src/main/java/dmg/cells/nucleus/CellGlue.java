@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 import dmg.util.CollectionFactory;
 import dmg.util.TimebasedCounter;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
  * @author Patrick Fuhrmann
  * @version 0.1, 15 Feb 1998
@@ -497,44 +499,23 @@ class CellGlue
 
     private static final int MAX_ROUTE_LEVELS = 16;
 
-    void sendMessage(CellNucleus nucleus, CellMessage msg)
+    void sendMessage(CellMessage msg, boolean resolveLocally, boolean resolveRemotely)
             throws SerializationException
     {
-        sendMessage(nucleus, msg, true, true);
-    }
+        checkArgument(msg.isStreamMode());
 
-    void sendMessage(CellNucleus nucleus,
-                     CellMessage msg,
-                     boolean resolveLocally,
-                     boolean resolveRemotely)
-            throws SerializationException
-    {
-        boolean firstSend = !msg.isStreamMode();
-
-        CellMessage transponder = msg;
-        if (firstSend) {
-            //
-            // this is the original send command
-            // - so we have to set the UOID ( sender needs it )
-            // - we have to convert the message to stream.
-            // - and we have to set our address to find the way back
-            //
-            transponder = msg.encode();
-            transponder.addSourceAddress(nucleus.getThisAddress());
-        }
-
-        if (transponder.getSourcePath().hops() > 30) {
-            LOGGER.error("Hop count exceeds 30, dumping: {}", transponder);
+        if (msg.getSourcePath().hops() > 30) {
+            LOGGER.error("Hop count exceeds 30, dumping: {}", msg);
             return;
         }
-        CellPath destination = transponder.getDestinationPath();
+        CellPath destination = msg.getDestinationPath();
 
-        LOGGER.trace("sendMessage : {} send to {}", transponder.getUOID(), destination);
+        LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
 
         CellAddressCore destCore = destination.getCurrent();
         while (destCore.equals(_domainAddress)) {
             if (!destination.next()) {
-                sendException(nucleus, transponder, destination, "*");
+                sendException(msg, destination, "*");
                 return;
             }
             destCore = destination.getCurrent();
@@ -551,10 +532,10 @@ class CellGlue
             //
             CellNucleus destNucleus = _cellList.get(destCore.getCellName());
             if (destNucleus != null && !_killedCells.contains(destNucleus)) {
-                destNucleus.addToEventQueue(new MessageEvent(transponder));
+                destNucleus.addToEventQueue(new MessageEvent(msg));
                 return;
             }
-            sendException(nucleus, transponder, destination, destCore.getCellName());
+            sendException(msg, destination, destCore.getCellName());
             return;
         }
         if (destCore.getCellDomainName().equals("local")) {
@@ -564,14 +545,14 @@ class CellGlue
             if (resolveLocally) {
                 CellNucleus destNucleus = _cellList.get(destCore.getCellName());
                 if (destNucleus != null && !_killedCells.contains(destNucleus)) {
-                    destNucleus.addToEventQueue(new MessageEvent(transponder));
+                    destNucleus.addToEventQueue(new MessageEvent(msg));
                     return;
                 }
                 // not found locally
             }
             if (!resolveRemotely) {
                 // not allowed to use routing table to resolve the destination
-                sendException(nucleus, transponder, destination, destCore.getCellName());
+                sendException(msg, destination, destCore.getCellName());
                 return;
             }
         }
@@ -584,7 +565,7 @@ class CellGlue
             CellRoute route = _routingTable.find(destCore);
             if (route == null) {
                 LOGGER.trace("sendMessage : no route destination for : {}", destCore);
-                sendException(nucleus, transponder, destination, destCore.toString());
+                sendException(msg, destination, destCore.toString());
                 return;
             }
 
@@ -596,7 +577,7 @@ class CellGlue
 
             while (destCore.equals(_domainAddress)) {
                 if (!destination.next()) {
-                    sendException(nucleus, transponder, destination, "*");
+                    sendException(msg, destination, "*");
                     return;
                 }
                 destCore = destination.getCurrent();
@@ -610,18 +591,18 @@ class CellGlue
             if (destCore.getCellDomainName().equals(_cellDomainName)) {
                 CellNucleus destNucleus = _cellList.get(destCore.getCellName());
                 if (destNucleus != null && !_killedCells.contains(destNucleus)) {
-                    transponder.addSourceAddress(_domainAddress);
-                    destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
+                    msg.addSourceAddress(_domainAddress);
+                    destNucleus.addToEventQueue(new RoutedMessageEvent(msg));
                     return;
                 }
-                sendException(nucleus, transponder, destination, destCore.getCellName());
+                sendException(msg, destination, destCore.getCellName());
                 return;
             }
             if (destCore.getCellDomainName().equals("local")) {
                 CellNucleus destNucleus = _cellList.get(destCore.getCellName());
                 if (destNucleus != null && !_killedCells.contains(destNucleus)) {
-                    transponder.addSourceAddress(_domainAddress);
-                    destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
+                    msg.addSourceAddress(_domainAddress);
+                    destNucleus.addToEventQueue(new RoutedMessageEvent(msg));
                     return;
                 }
                 //
@@ -633,11 +614,10 @@ class CellGlue
         // end of big iteration loop
 
         LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
-        sendException(nucleus, transponder, destination, destCore.getCellName());
+        sendException(msg, destination, destCore.getCellName());
     }
 
-    private void sendException(CellNucleus nucleus,
-                               CellMessage msg,
+    private void sendException(CellMessage msg,
                                CellPath destination,
                                String routeTarget)
             throws SerializationException
@@ -658,10 +638,10 @@ class CellGlue
                             "Route for >" + routeTarget +
                             "< not found at >" + _cellDomainName + "<");
             CellPath retAddr = msg.getSourcePath().revert();
-            CellExceptionMessage ret =
-                    new CellExceptionMessage(retAddr, exception);
+            CellExceptionMessage ret = new CellExceptionMessage(retAddr, exception);
             ret.setLastUOID(msg.getUOID());
-            sendMessage(nucleus, ret);
+            ret.addSourceAddress(_domainAddress);
+            sendMessage(ret.encode(), true, true);
         }
     }
 

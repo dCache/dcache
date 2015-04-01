@@ -355,12 +355,20 @@ public class CellNucleus implements ThreadFactory
         throws SerializationException
     {
         if (!msg.isStreamMode()) {
+            // Have to do this first to log the right UOID
             msg.touch();
         }
 
         EventLogger.sendBegin(this, msg, "async");
         try {
-            __cellGlue.sendMessage(this, msg, locally, remotely);
+            CellMessage encoded;
+            if (msg.isStreamMode()) {
+                encoded = msg;
+            } else {
+                encoded = msg.encode();
+                encoded.addSourceAddress(getThisAddress());
+            }
+            __cellGlue.sendMessage(encoded, locally, remotely);
         } finally {
             EventLogger.sendEnd(msg);
         }
@@ -533,6 +541,7 @@ public class CellNucleus implements ThreadFactory
                             long timeout)
         throws SerializationException
     {
+        // Have to do this first to log the right UOID
         if (!msg.isStreamMode()) {
             msg.touch();
         }
@@ -547,7 +556,14 @@ public class CellNucleus implements ThreadFactory
             _waitHash.put(uoid, lock);
         }
         try {
-            __cellGlue.sendMessage(this, msg, local, remote);
+            CellMessage encoded;
+            if (msg.isStreamMode()) {
+                encoded = msg;
+            } else {
+                encoded = msg.encode();
+                encoded.addSourceAddress(getThisAddress());
+            }
+            __cellGlue.sendMessage(encoded, local, remote);
         } catch (SerializationException e) {
             synchronized (_waitHash) {
                 _waitHash.remove(uoid);
