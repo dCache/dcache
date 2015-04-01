@@ -11,8 +11,6 @@ import java.util.Vector;
 
 import dmg.cells.network.GNLCell;
 import dmg.cells.network.LocationManagerConnector;
-import dmg.cells.network.RetryTunnel;
-import dmg.cells.network.RetryTunnel2;
 import dmg.cells.network.TopoCell;
 import dmg.cells.nucleus.SystemCell;
 import dmg.cells.services.login.LoginManager;
@@ -226,7 +224,7 @@ public class Domain {
 
          }
          if( argHash.get("-routed") != null ){
-             _log.info( "Starting Routing Manager" ) ;
+             _log.info("Starting Routing Manager") ;
              new RoutingManager( "RoutingMgr" , "up0" ) ;
          }
 
@@ -253,9 +251,9 @@ public class Domain {
              _log.info( "Starting Silent Sequence" ) ;
              List<String> v = new ArrayList<>();
              v.add( "set printout CellGlue none" ) ;
-             v.add( "set printout default none" ) ;
+             v.add("set printout default none") ;
              String [] commands = new String[v.size()] ;
-             new BatchCell( "silent" , v.toArray( commands )  ) ;
+             new BatchCell( "silent" , v.toArray(commands)  ) ;
 
          }
 
@@ -302,21 +300,6 @@ public class Domain {
 
              _log.info( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
              new LoginManager( "down" , sb.toString() ) ;
-
-         }
-         if( ( ( tmp = argHash.get( "-connect" )) != null ) &&
-             ( tmp.length > 2 ) ){
-
-
-             _log.info( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
-             new RetryTunnel( "up0" , tmp[1]+" "+tmp[2] ) ;
-
-         }
-         if( ( ( tmp = argHash.get( "-connect2" )) != null ) &&
-             ( tmp.length > 2 ) ){
-
-             _log.info( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
-             new RetryTunnel2( "up0" , tmp[1]+" "+tmp[2] ) ;
 
          }
          if( ( ( tmp = argHash.get( "-connectDomain" )) != null ) &&
