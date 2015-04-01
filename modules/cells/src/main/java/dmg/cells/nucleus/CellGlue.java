@@ -528,14 +528,72 @@ class CellGlue
             return;
         }
         CellPath destination = transponder.getDestinationPath();
-        CellAddressCore destCore = destination.getCurrent();
 
         LOGGER.trace("sendMessage : {} send to {}", transponder.getUOID(), destination);
+
+        CellAddressCore destCore = destination.getCurrent();
+        while (destCore.equals(_domainAddress)) {
+            if (!destination.next()) {
+                sendException(nucleus, transponder, destination, "*");
+                return;
+            }
+            destCore = destination.getCurrent();
+        }
+
+        LOGGER.trace("sendMessage : next hop at 0: {}", destCore);
+
+        //
+        //  now we try to find the destination cell in our domain
+        //
+        if (destCore.getCellDomainName().equals(_cellDomainName)) {
+            //
+            // our domain is the destination
+            //
+            CellNucleus destNucleus = _cellList.get(destCore.getCellName());
+            if (destNucleus != null && !_killedCells.contains(destNucleus)) {
+                destNucleus.addToEventQueue(new MessageEvent(transponder));
+                return;
+            }
+            sendException(nucleus, transponder, destination, destCore.getCellName());
+            return;
+        }
+        if (destCore.getCellDomainName().equals("local")) {
+            //
+            // 'local' really means an unspecified domain and needs to be resolved
+            //
+            if (resolveLocally) {
+                CellNucleus destNucleus = _cellList.get(destCore.getCellName());
+                if (destNucleus != null && !_killedCells.contains(destNucleus)) {
+                    destNucleus.addToEventQueue(new MessageEvent(transponder));
+                    return;
+                }
+                // not found locally
+            }
+            if (!resolveRemotely) {
+                // not allowed to use routing table to resolve the destination
+                sendException(nucleus, transponder, destination, destCore.getCellName());
+                return;
+            }
+        }
+
 
         //
         // this is the big iteration loop
         //
-        for (int iter = 0; iter < MAX_ROUTE_LEVELS; iter++) {
+        for (int iter = 1; iter < MAX_ROUTE_LEVELS; iter++) {
+            CellRoute route = _routingTable.find(destCore);
+            if (route == null) {
+                LOGGER.trace("sendMessage : no route destination for : {}", destCore);
+                sendException(nucleus, transponder, destination, destCore.toString());
+                return;
+            }
+
+            LOGGER.trace("sendMessage : using route : {}", route);
+            destCore = route.getTarget();
+            if (route.getRouteType() == CellRoute.ALIAS) {
+                destination.replaceCurrent(destCore);
+            }
+
             while (destCore.equals(_domainAddress)) {
                 if (!destination.next()) {
                     sendException(nucleus, transponder, destination, "*");
@@ -549,79 +607,27 @@ class CellGlue
             //
             //  now we try to find the destination cell in our domain
             //
-            CellNucleus destNucleus = _cellList.get(destCore.getCellName());
-            if (destNucleus != null && _killedCells.contains(destNucleus)) {
-                destNucleus = null;
-            }
             if (destCore.getCellDomainName().equals(_cellDomainName)) {
-                //
-                // the domain name was specified ( other then 'local' )
-                // and points to our domain.
-                //
-                if (destNucleus == null) {
-                    sendException(nucleus, transponder, destination, destCore.getCellName());
-                    return;
-                }
-                if (iter == 0) {
-                    //
-                    // here we really found the destination cell ( no router )
-                    //
-                    destNucleus.addToEventQueue(new MessageEvent(transponder));
-                } else {
-                    //
-                    // this is a router, so we have to prepare the message for
-                    // routing
-                    //
-                    //             destNucleus.addToEventQueue(  new RoutedMessageEvent( transponder ) ) ;
+                CellNucleus destNucleus = _cellList.get(destCore.getCellName());
+                if (destNucleus != null && !_killedCells.contains(destNucleus)) {
                     transponder.addSourceAddress(_domainAddress);
                     destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
-                }
-                return;
-            } else if (destCore.getCellDomainName().equals("local") &&
-                       (resolveLocally || (iter != 0))) {
-                //
-                // the domain name was 'local'  AND
-                // (  we are assumed to deliver locally ||
-                //    we are already in the routing part   )
-                //
-                if (destNucleus != null) {
-                    if (iter == 0) {
-                        destNucleus.addToEventQueue(new MessageEvent(transponder));
-                    } else {
-                        transponder.addSourceAddress(_domainAddress);
-                        destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
-                    }
                     return;
                 }
-                //
-                // destNuclues == null , is no problem in our case because
-                // 'wellknowncells' also use local as keyword.
-                //
-            } else if (destCore.getCellDomainName().equals("local") &&
-                       (!resolveRemotely) &&
-                       (iter == 0)) {
-                //
-                // the domain is specified AND
-                // we are assumed not to deliver remotely AND
-                // we are not yet in the routing part
-                //
                 sendException(nucleus, transponder, destination, destCore.getCellName());
                 return;
             }
-            //
-            // so, the destination cell wasn't found locally.
-            // let's consult the routes
-            //
-            CellRoute route = _routingTable.find(destCore);
-            if (route == null) {
-                LOGGER.trace("sendMessage : no route destination for : {}", destCore);
-                sendException(nucleus, transponder, destination, destCore.toString());
-                return;
-            }
-            LOGGER.trace("sendMessage : using route : {}", route);
-            destCore = route.getTarget();
-            if (route.getRouteType() == CellRoute.ALIAS) {
-                destination.replaceCurrent(destCore);
+            if (destCore.getCellDomainName().equals("local")) {
+                CellNucleus destNucleus = _cellList.get(destCore.getCellName());
+                if (destNucleus != null && !_killedCells.contains(destNucleus)) {
+                    transponder.addSourceAddress(_domainAddress);
+                    destNucleus.addToEventQueue(new RoutedMessageEvent(transponder));
+                    return;
+                }
+                //
+                // Not a local cell, but if we continue routing it may be get resolved as a well
+                // known cell.
+                //
             }
         }
         // end of big iteration loop
