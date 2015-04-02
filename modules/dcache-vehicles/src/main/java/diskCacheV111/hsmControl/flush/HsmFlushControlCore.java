@@ -1,5 +1,5 @@
 //   $Id: HsmFlushControlCore.java,v 1.3 2006-07-27 22:00:17 patrick Exp $
-package diskCacheV111.hsmControl.flush ;
+package diskCacheV111.hsmControl.flush;
 
 import java.util.List;
 import java.util.Set;

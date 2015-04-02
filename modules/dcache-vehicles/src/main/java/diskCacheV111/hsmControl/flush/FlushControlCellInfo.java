@@ -1,6 +1,6 @@
 // $Id: FlushControlCellInfo.java,v 1.2 2006-04-03 05:51:55 patrick Exp $
 
-package diskCacheV111.hsmControl.flush ;
+package diskCacheV111.hsmControl.flush;
 
 import java.io.Serializable;
 import java.util.ArrayList;

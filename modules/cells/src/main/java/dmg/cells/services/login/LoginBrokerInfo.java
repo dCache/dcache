@@ -95,6 +95,12 @@ public class LoginBrokerInfo implements Serializable
         return Collections.unmodifiableList(_addresses);
     }
 
+    @Deprecated
+    public String[] getHosts()
+    {
+        return _hosts;
+    }
+
     public int getPort()
     {
         return _port;
