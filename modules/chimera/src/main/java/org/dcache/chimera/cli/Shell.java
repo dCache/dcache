@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -41,6 +42,7 @@ import dmg.util.command.Option;
 import org.dcache.acl.ACE;
 import org.dcache.acl.ACLException;
 import org.dcache.acl.enums.RsType;
+import org.dcache.acl.parser.ACEParser;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
@@ -59,7 +61,7 @@ import org.dcache.util.cli.ShellApplication;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.padStart;
 import static com.google.common.io.ByteStreams.toByteArray;
-import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 public class Shell extends ShellApplication
 {
@@ -749,14 +751,12 @@ public class Shell extends ShellApplication
         File path;
 
         @Argument(index = 1, valueSpec = "SUBJECT:+|-MASK[:FLAGS]")
-        ACE[] acl;
-
-
+        String[] acl;
 
         @Override
         public Serializable call() throws ChimeraFsException
         {
-            fs.setACL(lookup(path), asList(acl));
+            fs.setACL(lookup(path), Stream.of(acl).map(ACEParser::parse).collect(toList()));
             return null;
         }
     }

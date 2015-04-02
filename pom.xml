@@ -1276,6 +1276,7 @@
         <module>modules/srm-common</module>
         <module>modules/srm-server</module>
         <module>modules/srm-client</module>
+        <module>modules/acl-vehicles</module>
         <module>modules/acl</module>
         <module>modules/chimera</module>
         <module>modules/missingfiles-semsg</module>

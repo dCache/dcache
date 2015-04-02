@@ -7,7 +7,6 @@ import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
-import org.dcache.acl.parser.ACEParser;
 
 /**
  * An access control list (ACL) is an array of access control entries (ACE).
@@ -241,9 +240,5 @@ public class ACE implements Serializable
         }
 
         return sb.toString();
-    }
-
-    public static ACE valueOf(String s) throws IllegalArgumentException {
-        return ACEParser.parse(s);
     }
 }
