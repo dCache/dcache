@@ -502,11 +502,12 @@ class CellGlue
     void sendMessage(CellMessage msg, boolean resolveLocally, boolean resolveRemotely)
             throws SerializationException
     {
-        checkArgument(msg.isStreamMode());
-
         if (msg.getSourcePath().hops() > 30) {
             LOGGER.error("Hop count exceeds 30, dumping: {}", msg);
             return;
+        }
+        if (!msg.isStreamMode()) {
+            msg = msg.encode();
         }
         CellPath destination = msg.getDestinationPath();
         CellAddressCore address = destination.getCurrent();
@@ -584,8 +585,15 @@ class CellGlue
         if (destNucleus != null && !_killedCells.contains(destNucleus)) {
             /* Is the message addressed to the cell or is the cell merely a router.
              */
-            if (address.equals(msg.getDestinationPath().getCurrent())) {
-                destNucleus.addToEventQueue(new MessageEvent(msg));
+            CellPath destinationPath = msg.getDestinationPath();
+            if (address.equals(destinationPath.getCurrent())) {
+                try {
+                    destNucleus.addToEventQueue(new MessageEvent(msg.decode()));
+                } catch (SerializationException e) {
+                    LOGGER.error("Received malformed message from %s with UOID %s and session [%s]: %s",
+                                 msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
+                    sendException(msg, destinationPath, address.getCellName());
+                }
             } else {
                 msg.addSourceAddress(_domainAddress);
                 destNucleus.addToEventQueue(new RoutedMessageEvent(msg));
@@ -619,7 +627,7 @@ class CellGlue
             CellExceptionMessage ret = new CellExceptionMessage(retAddr, exception);
             ret.setLastUOID(msg.getUOID());
             ret.addSourceAddress(_domainAddress);
-            sendMessage(ret.encode(), true, true);
+            sendMessage(ret, true, true);
         }
     }
 

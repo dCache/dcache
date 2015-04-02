@@ -1,6 +1,5 @@
 package dmg.cells.nucleus;
 
-import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -44,7 +43,6 @@ import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholds;
 import dmg.util.logback.RootFilterThresholds;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
@@ -357,18 +355,12 @@ public class CellNucleus implements ThreadFactory
         if (!msg.isStreamMode()) {
             // Have to do this first to log the right UOID
             msg.touch();
+            msg.addSourceAddress(getThisAddress());
         }
 
         EventLogger.sendBegin(this, msg, "async");
         try {
-            CellMessage encoded;
-            if (msg.isStreamMode()) {
-                encoded = msg;
-            } else {
-                encoded = msg.encode();
-                encoded.addSourceAddress(getThisAddress());
-            }
-            __cellGlue.sendMessage(encoded, locally, remotely);
+            __cellGlue.sendMessage(msg, locally, remotely);
         } finally {
             EventLogger.sendEnd(msg);
         }
@@ -544,6 +536,7 @@ public class CellNucleus implements ThreadFactory
         // Have to do this first to log the right UOID
         if (!msg.isStreamMode()) {
             msg.touch();
+            msg.addSourceAddress(getThisAddress());
         }
 
         msg.setTtl(timeout);
@@ -556,14 +549,7 @@ public class CellNucleus implements ThreadFactory
             _waitHash.put(uoid, lock);
         }
         try {
-            CellMessage encoded;
-            if (msg.isStreamMode()) {
-                encoded = msg;
-            } else {
-                encoded = msg.encode();
-                encoded.addSourceAddress(getThisAddress());
-            }
-            __cellGlue.sendMessage(encoded, local, remote);
+            __cellGlue.sendMessage(msg, local, remote);
         } catch (SerializationException e) {
             synchronized (_waitHash) {
                 _waitHash.remove(uoid);
@@ -1071,26 +1057,14 @@ public class CellNucleus implements ThreadFactory
         {
             _eventQueueSize.decrementAndGet();
             try (CDC ignored = _lock.getCdc().restore()) {
-                CellMessageAnswerable callback =
-                        _lock.getCallback();
-
-                CellMessage answer;
-                Object obj;
-                try {
-                    answer = _message.decode();
-                    obj = answer.getMessageObject();
-                } catch (SerializationException e) {
-                    LOGGER.warn(e.getMessage());
-                    obj = e;
-                    answer = null;
-                }
-
+                CellMessageAnswerable callback = _lock.getCallback();
                 CellMessage request = _lock.getMessage();
                 try {
+                    Object obj = _message.getMessageObject();
                     if (obj instanceof Exception) {
                         callback.exceptionArrived(request, (Exception) obj);
                     } else {
-                        callback.answerArrived(request, answer);
+                        callback.answerArrived(request, _message);
                     }
                     EventLogger.sendEnd(request);
                 } catch (RejectedExecutionException e) {
@@ -1123,31 +1097,14 @@ public class CellNucleus implements ThreadFactory
             _eventQueueSize.decrementAndGet();
 
             if (_event instanceof RoutedMessageEvent) {
-                LOGGER.trace("messageThread : RoutedMessageEvent arrived");
                 _cell.messageArrived((RoutedMessageEvent) _event);
             } else if (_event instanceof MessageEvent) {
-                MessageEvent msgEvent = (MessageEvent) _event;
-                LOGGER.trace("messageThread : MessageEvent arrived");
-                CellMessage msg;
+                MessageEvent event = (MessageEvent) _event;
+                CDC.setMessageContext(event.getMessage());
                 try {
-                    msg = msgEvent.getMessage().decode();
-                } catch (SerializationException e) {
-                    CellMessage envelope = msgEvent.getMessage();
-                    LOGGER.error(String
-                            .format("Discarding a malformed message from %s with UOID %s and session [%s]: %s",
-                                    envelope.getSourcePath(),
-                                    envelope.getUOID(),
-                                    envelope.getSession(),
-                                    e.getMessage()), e);
-                    return;
-                }
-
-                CDC.setMessageContext(msg);
-                try {
-                    LOGGER.trace("messageThread : delivering message: {}", msg);
-                    _cell.messageArrived(new MessageEvent(msg));
-                    LOGGER.trace("messageThread : delivering message done: {}", msg);
+                    _cell.messageArrived(event);
                 } catch (RuntimeException e) {
+                    CellMessage msg = event.getMessage();
                     if (!msg.isReply()) {
                         msg.revertDirection();
                         msg.setMessageObject(e);
