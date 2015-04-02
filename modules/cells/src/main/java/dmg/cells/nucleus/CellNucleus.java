@@ -828,25 +828,6 @@ public class CellNucleus implements ThreadFactory
     }
 
     void addToEventQueue(MessageEvent ce) {
-        //
-        //
-        if (ce instanceof RoutedMessageEvent) {
-            if (_cell instanceof CellTunnel) {
-                //
-                // nothing to do (no transformation needed)
-                //
-            } else {
-                //
-                // originally this case has not been forseen,
-                // but it appeared rather useful. It allows alias
-                // cells which serves several different cells names.
-                // mainly useful for debuggin purposes (see alias
-                // package.
-                //
-                ce = new MessageEvent(ce.getMessage());
-            }
-        }
-
         try {
             //
             // we have to cover 2 cases :
