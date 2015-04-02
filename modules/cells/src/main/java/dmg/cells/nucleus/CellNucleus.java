@@ -827,51 +827,43 @@ public class CellNucleus implements ThreadFactory
         return _eventQueueSize.get();
     }
 
-    void addToEventQueue(MessageEvent ce) {
-        try {
-            //
-            // we have to cover 2 cases :
-            //   - absolutely asynchronous request
-            //   - asynchronous, but we have a callback to call
-            //
-            final CellMessage msg = ce.getMessage();
-            if (msg != null) {
-                LOGGER.trace("addToEventQueue : message arrived : {}", msg);
-                CellLock lock;
+    void addToEventQueue(MessageEvent ce)
+    {
+        CellMessage msg = ce.getMessage();
+        LOGGER.trace("addToEventQueue : message arrived : {}", msg);
 
+        CellLock lock;
+        synchronized (_waitHash) {
+            lock = _waitHash.remove(msg.getLastUOID());
+        }
+
+        if (lock != null) {
+            //
+            // we were waiting for you (sync or async)
+            //
+            LOGGER.trace("addToEventQueue : lock found for : {}", msg);
+            try {
+                _eventQueueSize.incrementAndGet();
+                lock.getExecutor().execute(new CallbackTask(lock, msg));
+            } catch (RejectedExecutionException e) {
+                _eventQueueSize.decrementAndGet();
+                /* Put it back; the timeout handler will eventually take care of it.
+                 */
                 synchronized (_waitHash) {
-                    lock = _waitHash.remove(msg.getLastUOID());
+                    _waitHash.put(msg.getLastUOID(), lock);
                 }
-
-                if (lock != null) {
-                    //
-                    // we were waiting for you (sync or async)
-                    //
-                    LOGGER.trace("addToEventQueue : lock found for : {}", msg);
-                    try {
-                        _eventQueueSize.incrementAndGet();
-                        lock.getExecutor().execute(new CallbackTask(lock, msg));
-                    } catch (RejectedExecutionException e) {
-                        _eventQueueSize.decrementAndGet();
-                        /* Put it back; the timeout handler
-                         * will eventually take care of it.
-                         */
-                        synchronized (_waitHash) {
-                            _waitHash.put(msg.getLastUOID(), lock);
-                        }
-                        throw e;
-                    }
-                    return;
-                }
-            }     // end of : msg != null
-
-            EventLogger.queueBegin(ce);
-            _eventQueueSize.incrementAndGet();
-            _messageExecutor.execute(new DeliverMessageTask(ce));
-        } catch (RejectedExecutionException e) {
-            EventLogger.queueEnd(ce);
-            _eventQueueSize.decrementAndGet();
-            LOGGER.error("Message queue overflow. Dropping {}", ce);
+                LOGGER.error("Message queue overflow. Dropping {}", ce);
+            }
+        } else {
+            try {
+                EventLogger.queueBegin(ce);
+                _eventQueueSize.incrementAndGet();
+                _messageExecutor.execute(new DeliverMessageTask(ce));
+            } catch (RejectedExecutionException e) {
+                EventLogger.queueEnd(ce);
+                _eventQueueSize.decrementAndGet();
+                LOGGER.error("Message queue overflow. Dropping {}", ce);
+            }
         }
     }
 
