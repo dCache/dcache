@@ -10,6 +10,7 @@ import java.util.List;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnitAccess;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
@@ -37,6 +38,7 @@ public class PoolMonitorTest
     private PoolMonitorV5 _poolMonitor;
     private CostModuleV1 _costModule ;
     private PoolSelectionUnit _selectionUnit;
+    private PoolSelectionUnitAccess _access;
     private PartitionManager _partitionManager = new PartitionManager();
 
     private final ProtocolInfo _protocolInfo = new DCapProtocolInfo("DCap", 3, 0,
@@ -44,9 +46,9 @@ public class PoolMonitorTest
     private final StorageInfo _storageInfo = new OSMStorageInfo("h1", "rawd");
     @Before
     public void setUp() throws Exception {
-
-
-        _selectionUnit = new PoolSelectionUnitV2();
+        PoolSelectionUnitV2 psu = new PoolSelectionUnitV2();
+        _access = psu;
+        _selectionUnit = psu;
         _costModule = new CostModuleV1();
         _poolMonitor = new PoolMonitorV5();
         _poolMonitor.setPoolSelectionUnit(_selectionUnit);
@@ -65,7 +67,7 @@ public class PoolMonitorTest
         /*
          * pre-configure pool selection unit
          */
-        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, _access, pools);
 
 
         long serialId = System.currentTimeMillis();

@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnitAccess;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.RequestContainerV5;
 import diskCacheV111.pools.PoolCostInfo;
@@ -32,11 +33,9 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
-
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.classic.IoQueueManager;
 import org.dcache.poolmanager.PartitionManager;
@@ -59,12 +58,12 @@ public class HsmRestoreTest {
     private PoolMonitorV5 _poolMonitor;
     private CostModuleV1 _costModule ;
     private PoolSelectionUnit _selectionUnit;
+    private PoolSelectionUnitAccess _access;
     private PartitionManager _partitionManager;
     private PnfsHandler      _pnfsHandler;
     private RequestContainerV5 _rc;
 
     private List<CellMessage> __messages ;
-
 
     private ProtocolInfo _protocolInfo;
     private StorageInfo _storageInfo;
@@ -80,7 +79,9 @@ public class HsmRestoreTest {
         _storageInfo = new OSMStorageInfo("h1", "rawd");
 
         _partitionManager = new PartitionManager();
-        _selectionUnit = new PoolSelectionUnitV2();
+        PoolSelectionUnitV2 psu = new PoolSelectionUnitV2();
+        _access = psu;
+        _selectionUnit = psu;
         _costModule = new CostModuleV1();
 
         _pnfsHandler = new PnfsHandler(new CellPath("PnfsManager"));
@@ -119,7 +120,7 @@ public class HsmRestoreTest {
         List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         pools.add("pool2");
-        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, _access, pools);
 
         /*
          * prepare reply for GetStorageInfo
@@ -196,7 +197,7 @@ public class HsmRestoreTest {
         List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         pools.add("pool2");
-        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, _access, pools);
 
         /*
          * prepare reply for GetStorageInfo
@@ -296,7 +297,7 @@ public class HsmRestoreTest {
          */
         List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
-        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit,_access, pools);
 
         /*
          * prepare reply for GetStorageInfo
@@ -395,7 +396,7 @@ public class HsmRestoreTest {
         List<String> pools = new ArrayList<>(3);
         pools.add("pool1");
         pools.add("pool2");
-        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, _access, pools);
 
         /*
          * prepare reply for GetStorageInfo

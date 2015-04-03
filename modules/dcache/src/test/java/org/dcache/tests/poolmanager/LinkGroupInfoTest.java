@@ -7,12 +7,11 @@ import java.util.Map;
 
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolSelectionUnit;
+import diskCacheV111.poolManager.PoolSelectionUnitCommands;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
-import org.dcache.poolmanager.PoolLinkGroupInfo;
-
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
-
+import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
 
@@ -21,18 +20,20 @@ import static org.junit.Assert.assertNotNull;
 
 public class LinkGroupInfoTest {
 
-
     private PoolSelectionUnit _selectionUnit;
     private CostModuleV1 _costModule ;
     private CommandInterpreter _ci;
 
     @Before
     public void setUp() throws Exception {
+        PoolSelectionUnitV2 psu = new PoolSelectionUnitV2();
+        _selectionUnit = psu;
+        PoolSelectionUnitCommands commands = new PoolSelectionUnitCommands();
+        commands.setPsuAccess(psu);
 
-
-        _selectionUnit = new PoolSelectionUnitV2();
         _costModule = new CostModuleV1();
-        _ci = new CommandInterpreter(_selectionUnit);
+
+        _ci = new CommandInterpreter(commands);
 
         _ci.command( new Args("psu create pool p0" )  );
         _ci.command( new Args("psu create pool p1" )  );
