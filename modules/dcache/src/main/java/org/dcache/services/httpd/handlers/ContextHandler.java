@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
 import dmg.cells.nucleus.DomainContextAware;
-import dmg.util.CollectionFactory;
 import dmg.util.HttpRequest;
 
 import org.dcache.services.httpd.exceptions.OnErrorException;
@@ -82,7 +82,7 @@ public class ContextHandler extends AbstractHandler implements DomainContextAwar
         sb.append("<center>\n");
         sb.append("<table border=1 cellspacing=0 cellpadding=4 width=\"%90\">\n");
         sb.append("<tr><th>Context Name</th><th>Class</th><th>Content</th></tr>\n");
-        final SortedMap<String, Object> map = CollectionFactory.newTreeMap();
+        final SortedMap<String, Object> map = new TreeMap<>();
         map.putAll(context);
         for (final Map.Entry<String, Object> e : map.entrySet()) {
             final String key = e.getKey();

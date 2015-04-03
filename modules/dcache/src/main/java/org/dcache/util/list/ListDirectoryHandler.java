@@ -13,6 +13,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
@@ -20,7 +22,6 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.util.CollectionFactory;
 
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.CacheExceptionFactory;
@@ -50,7 +51,7 @@ public class ListDirectoryHandler
 
     private final PnfsHandler _pnfs;
     private final Map<UUID,Stream> _replies =
-        CollectionFactory.newConcurrentHashMap();
+            new ConcurrentHashMap<>();
 
     public ListDirectoryHandler(PnfsHandler pnfs)
     {
@@ -180,7 +181,7 @@ public class ListDirectoryHandler
         implements DirectoryStream, Iterator<DirectoryEntry>
     {
         private final BlockingQueue<PnfsListDirectoryMessage> _queue =
-            CollectionFactory.newLinkedBlockingQueue();
+                new LinkedBlockingQueue<>();
         private final UUID _uuid;
         private final String _path;
         private boolean _isFinal;

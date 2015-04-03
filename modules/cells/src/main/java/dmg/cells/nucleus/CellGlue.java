@@ -15,7 +15,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,7 +25,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import dmg.util.CollectionFactory;
 import dmg.util.TimebasedCounter;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -42,9 +43,9 @@ class CellGlue
     private final Set<CellNucleus> _killedCells = Collections.newSetFromMap(
             Maps.<CellNucleus, Boolean>newConcurrentMap());
     private final Map<String, List<CellEventListener>> _cellEventListener =
-            CollectionFactory.newConcurrentHashMap();
+            new ConcurrentHashMap<>();
     private final Map<String, Object> _cellContext =
-            CollectionFactory.newConcurrentHashMap();
+            new ConcurrentHashMap<>();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
     private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64Url().omitPadding();
     private CellNucleus _systemNucleus;
@@ -635,7 +636,7 @@ class CellGlue
     {
         List<CellEventListener> v;
         if ((v = _cellEventListener.get(nucleus.getCellName())) == null) {
-            v = CollectionFactory.newCopyOnWriteArrayList();
+            v = new CopyOnWriteArrayList<>();
             _cellEventListener.put(nucleus.getCellName(), v);
         }
         v.add(listener);

@@ -3,12 +3,12 @@ package diskCacheV111.admin ;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.util.CollectionFactory;
 
 import org.dcache.util.Args;
 
@@ -27,7 +27,8 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
 
     private int     _requestCount;
     private final Map<String, Integer> _userStatistics =
-        CollectionFactory.newHashMap();
+            new HashMap<>();
+
     /**
       * we are assumed to provide the folling contructor signature.
       */
@@ -112,7 +113,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        }
 
        BufferedReader br = new BufferedReader( new FileReader( userData ) ) ;
-       Map<String, String> result = CollectionFactory.newHashMap();
+        Map<String, String> result = new HashMap<>();
        //
        // load the hash from file
        //
@@ -146,7 +147,7 @@ public class UserMetaDataProviderExample implements UserMetaDataProvider {
        // (as a matter of fact, it would be ok to simply
        //  return 'result'.
        //
-       Map<String, String> answer = CollectionFactory.newHashMap();
+        Map<String, String> answer = new HashMap<>();
         for (Object attribute : attributes) {
             String key = (String) attribute;
             String value = result.get(key);

@@ -32,15 +32,16 @@ import java.util.Properties;
 import java.util.SortedSet;
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import dmg.cells.network.PingMessage;
 import dmg.util.BufferedLineWriter;
 import dmg.util.ClassDataProvider;
 import dmg.util.ClassLoaderFactory;
-import dmg.util.CollectionFactory;
 import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
@@ -87,8 +88,8 @@ public class CellShell extends CommandInterpreter
    private String       _errorMsg;
    private String       _doOnExit;
    private final Map<String, Object> _environment =
-       CollectionFactory.newConcurrentHashMap();
-   private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
+           new ConcurrentHashMap<>();
+    private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
    private CommandInterpreter _externalInterpreter;
    private String             _classProvider;
    private List<String>       _argumentVector      = new Vector<>() ;
@@ -1399,7 +1400,7 @@ public class CellShell extends CommandInterpreter
       StringBuilder sb = new StringBuilder();
       if( args.argc() == 0 ){
           int maxLength = 0 ;
-          SortedSet<String> set = CollectionFactory.newTreeSet();
+          SortedSet<String> set = new TreeSet<>();
 
           for (String name: dict.keySet()) {
             maxLength = Math.max( maxLength , name.length() ) ;

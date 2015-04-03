@@ -2,13 +2,12 @@ package org.dcache.namespace;
 
 import javax.security.auth.Subject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-
-import dmg.util.CollectionFactory;
 
 import org.dcache.acl.enums.AccessType;
 import org.dcache.vehicles.FileAttributes;
@@ -27,7 +26,7 @@ import static org.dcache.acl.enums.AccessType.*;
 public class ChainedPermissionHandler implements PermissionHandler
 {
     private final List<PermissionHandler> _chain =
-        CollectionFactory.newArrayList();
+            new ArrayList<>();
 
     public ChainedPermissionHandler()
     {

@@ -3,11 +3,11 @@ package diskCacheV111.admin ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import dmg.cells.nucleus.CellAdapter;
-import dmg.util.CollectionFactory;
 
 import org.dcache.auth.KAuthFile;
 import org.dcache.auth.UserAuthBase;
@@ -31,7 +31,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
 
     private int     _requestCount;
     private final Map<String, Integer> _userStatistics =
-        CollectionFactory.newHashMap();
+            new HashMap<>();
 
     //generalized kpwd file path used by all flavors
     private String _kpwdFilePath;
@@ -123,7 +123,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     {
         KAuthFile authf;
         UserAuthBase pwdRecord;
-        Map<String, String> answer = CollectionFactory.newHashMap();
+        Map<String, String> answer = new HashMap<>();
         int uid, gid;
         String home;
 

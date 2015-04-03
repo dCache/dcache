@@ -15,10 +15,10 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import dmg.util.CollectionFactory;
 import dmg.util.HttpRequest;
 import java.util.Base64;
 
@@ -38,7 +38,7 @@ public class StandardHttpRequest implements HttpRequest {
     private final PrintWriter pw;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
-    private final Map<String, String> map = CollectionFactory.newHashMap();
+    private final Map<String, String> map = new HashMap<>();
     private final int tokenOffset;
     private final String[] tokens;
     private final boolean isDirectory;
