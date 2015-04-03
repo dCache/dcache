@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import dmg.cells.network.GNLCell;
 import dmg.cells.network.LocationManagerConnector;
 import dmg.cells.network.TopoCell;
 import dmg.cells.nucleus.SystemCell;
@@ -30,12 +29,6 @@ import dmg.cells.services.login.UserMgrCell;
   *                -acm  &lt;userDatabase&gt;
   *                    A dmg.cells.services.login.UserMgrCell is created
   *                    using the database &lt;userDatabase&gt;
-  *                -tunnel(2)  &lt;tunnelPort&gt;
-  *                    A RetryTunnel Listener Cell is created
-  *                    listening to port &lt;tunnelPort&gt;
-  *                -connect(2)  &lt;host> &lt;port&gt;
-  *                    A RetryTunnel is created
-  *                    connecting to the specified destintion.
   *                -batch  &lt;filename&gt;
   *                    The specified file is executed using
   *                    dmg.cells.serives.BatchCell.
@@ -280,28 +273,6 @@ public class Domain {
              new LoginManager( "tlm" , sb.toString() ) ;
 
          }
-         if( ( ( tmp = argHash.get( "-tunnel2" )) != null ) &&
-             ( tmp.length > 1 ) ){
-
-             StringBuilder sb = new StringBuilder() ;
-             //
-             // the port number class and protocol
-             //
-             sb.append( tmp[1] ).
-                append( " dmg.cells.network.RetryTunnel2" ).
-                append( " -prot=raw " ) ;
-             //
-             // and possible options
-             //
-             for( int i = 3 ; i < tmp.length ; i++ ){
-
-                 sb.append( " -" ).append( tmp[i] ) ;
-             }
-
-             _log.info( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
-             new LoginManager( "down" , sb.toString() ) ;
-
-         }
          if( ( ( tmp = argHash.get( "-connectDomain" )) != null ) &&
              ( tmp.length > 1 ) ){
 
@@ -313,13 +284,6 @@ public class Domain {
 
              _log.info( "Starting UserMgrCell on "+tmp[1] ) ;
              new UserMgrCell( "acm" , tmp[1] ) ;
-
-         }
-         if( ( ( tmp = argHash.get( "-tunnel" )) != null ) &&
-             ( tmp.length > 1 ) ){
-
-             _log.info( "Starting RetryTunnel on "+tmp[1] ) ;
-             new GNLCell( "down" , "dmg.cells.network.RetryTunnel "+tmp[1] ) ;
 
          }
          if( ( ( tmp = argHash.get( "-accept" )) != null ) &&
