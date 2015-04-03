@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
-import dmg.security.digest.Crypt;
-
 public class UnixPassword {
 
    private Hashtable<String, String> _hash;

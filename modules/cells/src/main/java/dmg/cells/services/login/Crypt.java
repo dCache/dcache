@@ -1,4 +1,4 @@
-package dmg.security.digest ;
+package dmg.cells.services.login;
 public class Crypt {
 
    private static final long [] [] SPtrans = {

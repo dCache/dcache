@@ -25,7 +25,7 @@ import java.util.StringTokenizer;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.security.digest.Crypt;
+import dmg.cells.services.login.Crypt;
 import dmg.util.AgingHash;
 import dmg.util.UserPasswords;
 
