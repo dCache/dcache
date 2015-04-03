@@ -18,7 +18,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellShell;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.ControlBufferedReader;
-import dmg.protocols.ssh.SshInputStreamReader;
 import dmg.util.CommandExitException;
 import dmg.util.Gate;
 import dmg.util.StreamEngine;
@@ -262,28 +261,6 @@ public class      StreamLoginCell
    public static final String hh_set_sync    = "on|off" ;
    public static final String hh_set_timeout = "<seconds>" ;
    public static final String hh_set_echochar = "on|off|<echoChar>" ;
-   public String ac_set_echochar_$_1( Args args ){
-      String s = args.argv(0) ;
-      if( ! ( _reader instanceof SshInputStreamReader ) ) {
-          return "Change of echo not supported by this terminal\n";
-      }
-
-      SshInputStreamReader r = (SshInputStreamReader)_reader ;
-       switch (s) {
-       case "off":
-           r.setEcho(false);
-           r.setEchoChar((char) 0);
-           break;
-       case "on":
-           r.setEcho(true);
-           break;
-       default:
-           r.setEcho(false);
-           r.setEchoChar(s.charAt(0));
-           break;
-       }
-      return "Done\n" ;
-   }
 
    public String ac_show_timeout( Args args ){
       return "Sync timeout = "+_syncTimeout+" seconds \n" ;

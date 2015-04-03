@@ -31,7 +31,7 @@ The options are :
 <table border=0>
 <tr><th>-prot=</th>
     <td>the protocol the client is assumed to
-        talk. Currently <em>telnet, ssh and raw</em> are supported.
+        talk. Currently <em>telnet and raw</em> are supported.
     </td>
 </tr>
 <tr><th>-auth=</th>
@@ -54,10 +54,6 @@ valid for all supported protocol types.
 <tr><td>telnet</td>
     <td>TelnetServerAuthentication</td>
     <td>dmg.cells.services.login.TelnetSAuth_A</td>
-</tr>
-<tr><td>ssh</td>
-    <td>SshServerAuthentication</td>
-    <td>dmg.cells.services.login.SshSAuth_A</td>
 </tr>
 </table>
 </blockquote>
@@ -93,51 +89,6 @@ The module supports several authentication modes.
 </ul>
 If more than one of the above options are specified, the
 result is unpredictable.
-</blockquote>
-<p><strong>dmg.cells.services.login.SshSAuth_A</strong>
-<blockquote>
-The SshSAuth_A authentication module is responsible for 
-authenticating clients talking the ssh (version I) protocol.
-The module requires a set of context variables to be available
-to work properly.
-<table border=1>
-<tr><th>Context</th>
-    <th>Class</th>
-    <th>Purpose</th>
-</tr>
-<tr><td>Ssh:hostIdentity (*)</td>
-    <td>SshRsaKey(private)</td>
-    <td>The hosts public key ( 1024 bit rsa private key )</td>
-</tr>
-<tr><td>Ssh:serverIdentity (*)</td>
-    <td>SshRsaKey(private)</td>
-    <td>The servers public key ( 768 bit rsa private key )</td>
-</tr>
-<tr><td>Ssh:userPasswords (*)</td>
-    <td>Hashtable</td>
-    <td>Contains user password pairs (plain text)</td>
-</tr>
-<tr><td>Ssh:userPasswords (*)</td>
-    <td>String</td>
-    <td>Contains the name of an 'acm'</td>
-</tr>
-<tr><td>Ssh:knownUsers</td>
-    <td>SshRsaKey(public)</td>
-    <td>known users keys ( rsa public keys)</td>
-</tr>
-<tr><td>Ssh:knownHost</td>
-    <td>SshRsaKey(public)</td>
-    <td>known hosts keys ( rsa public keys)</td>
-</tr>
-</table>
-<p>
-The marked (*) variables are mandetory. Only one of 
-<em>Ssh:userPasswords</em> is required. 
-<p>
-<strong>
-Generally an SshKeyManager Cell is responsible for setting 
-these context variables. See <em>dmg.cells.services.SshKeyManager</em>.
-</strong>
 </blockquote>
 <hr>
 <h1>The Login Cell</h1>

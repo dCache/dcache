@@ -18,8 +18,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.services.login.SshCAuth_Key;
-import dmg.protocols.ssh.SshStreamEngine;
 import dmg.util.DummyStreamEngine;
 import dmg.util.StreamEngine;
 
@@ -127,6 +125,9 @@ public class LocationManagerConnector
             _log.info("Using clear text channel");
             return new DummyStreamEngine(socket);
         } else {
+            /* Currently unused, but somewhere around here we would need to hook SSL support in
+             * if we wanted to do that.
+             */
             Args x = new Args(security);
             String prot = x.getOpt("prot");
             if (prot == null) {
@@ -138,20 +139,8 @@ public class LocationManagerConnector
                 prot = x.argv(0);
             }
 
-            if (!prot.equalsIgnoreCase("ssh") &&
-                !prot.equalsIgnoreCase("ssh1")) {
-                socket.close();
-                throw new
-                    IOException("Security mode not supported : " + security);
-            }
-
-            _log.info("Using encrypted channel");
-            try {
-                SshCAuth_Key key = new SshCAuth_Key(getNucleus(), getArgs());
-                return new SshStreamEngine(socket, key);
-            } catch (Exception e) {
-                throw new IOException("Failure creating SSH stream engine: " + e.getMessage());
-            }
+            socket.close();
+            throw new IOException("Security mode not supported : " + security);
         }
     }
 

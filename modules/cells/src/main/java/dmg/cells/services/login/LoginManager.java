@@ -4,7 +4,6 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,15 +18,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,7 +48,6 @@ import dmg.util.UserValidatable;
 
 import org.dcache.auth.Subjects;
 import org.dcache.util.Args;
-import org.dcache.util.NetworkUtils;
 import org.dcache.util.Version;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -102,11 +94,10 @@ public class LoginManager
     /**
      * <pre>
      *   usage   &lt;listenPort&gt; &lt;loginCellFactoryClass&gt;
-     *           [-prot=ssh|telnet|raw]
+     *           [-prot=telnet|raw]
      *                    default : telnet
      *           [-auth=&lt;authenticationClass&gt;]
-     *                    default : ssh    : dmg.cells.services.login.SshSAuth_A
-     *                              telnet : dmg.cells.services.login.TelnetSAuth_A
+     *                    default : telnet : dmg.cells.services.login.TelnetSAuth_A
      *                              raw    : none
      *
      *         all residual arguments and all options are sent to
@@ -131,7 +122,7 @@ public class LoginManager
                 throw new
                         IllegalArgumentException(
                         "USAGE : ... <listenPort> <loginCell>" +
-                                " [-prot=ssh|telnet|raw] [-auth=<authCell>]" +
+                                " [-prot=telnet|raw] [-auth=<authCell>]" +
                                 " [-maxLogin=<n>|-1]" +
                                 " [-keepAlive=<seconds>]" +
                                 " [-acceptErrorWait=<msecs>]" +
@@ -251,9 +242,6 @@ public class LoginManager
         Class<?> authClass = null;
         if (authClassName == null) {
             switch (protocol) {
-            case "ssh":
-                authClass = SshSAuth_A.class;
-                break;
             case "raw":
                 authClass = null;
                 break;
@@ -277,10 +265,8 @@ public class LoginManager
         if (protocol == null) {
             protocol = "telnet";
         }
-        if (!(protocol.equals("ssh") ||
-                protocol.equals("telnet") ||
-                protocol.equals("raw"))) {
-            throw new IllegalArgumentException("Protocol must be telnet or ssh or raw");
+        if (!(protocol.equals("telnet") || protocol.equals("raw"))) {
+            throw new IllegalArgumentException("Protocol must be telnet or raw");
         }
         return protocol;
     }

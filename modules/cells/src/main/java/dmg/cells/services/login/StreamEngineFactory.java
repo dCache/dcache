@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.net.Socket;
 
 import dmg.cells.nucleus.CellNucleus;
-import dmg.protocols.ssh.SshServerAuthentication;
-import dmg.protocols.ssh.SshStreamEngine;
 import dmg.protocols.telnet.TelnetServerAuthentication;
 import dmg.protocols.telnet.TelnetStreamEngine;
 import dmg.util.DummyStreamEngine;
@@ -30,13 +28,6 @@ public abstract class StreamEngineFactory {
         StreamEngine engine = null;
 
         switch (protocol) {
-        case "ssh": {
-            SshServerAuthentication auth = new SshSAuth_A(
-                    nucleusForAuth, argsForAuth);
-            _log.info("Using authentication Module : " + SshSAuth_A.class);
-            engine = new SshStreamEngine(socket, auth);
-            break;
-        }
         case "raw":
             _log.info("No authentication used");
             engine = new DummyStreamEngine(socket);
@@ -63,12 +54,6 @@ public abstract class StreamEngineFactory {
         StreamEngine engine = null;
 
         switch (protocol) {
-        case "ssh": {
-            SshServerAuthentication auth = null;
-            _log.info("No authentication used");
-            engine = new SshStreamEngine(socket, auth);
-            break;
-        }
         case "raw":
             _log.info("No authentication used");
             engine = new DummyStreamEngine(socket);

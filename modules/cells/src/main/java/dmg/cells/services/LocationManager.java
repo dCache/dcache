@@ -1016,11 +1016,6 @@ public class LocationManager extends CellAdapter {
 
             protocol = "-prot=raw" ;
 
-         }else if( securityContext.equalsIgnoreCase("ssh") ||
-                   securityContext.equalsIgnoreCase("ssh1")    ){
-
-            protocol = "-prot=ssh -auth=dmg.cells.services.login.SshSAuth_A" ;
-
          }else{
             protocol = securityContext ;
          }
