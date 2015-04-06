@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.remoting.RemoteConnectFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.jdo.JDOException;
@@ -63,6 +64,8 @@ public class UnpinProcessor implements Runnable
         } catch (JDOException | DataAccessException e) {
             _logger.error("Database failure while unpinning: {}",
                           e.getMessage());
+        } catch (RemoteConnectFailureException e) {
+            _logger.error("Remote connection failure while unpinning: {)", e.getMessage());
         } catch (RuntimeException e) {
             _logger.error("Unexpected failure while unpinning", e);
         } finally {
