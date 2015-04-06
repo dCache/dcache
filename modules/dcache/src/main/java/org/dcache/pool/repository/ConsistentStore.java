@@ -307,7 +307,7 @@ public class ConsistentStore
                             throw new CacheException(message);
                         }
 
-                        RetentionPolicy retentionPolicy = attributesInNameSpace.getRetentionPolicy();
+                        RetentionPolicy retentionPolicy = attributesOnPool.getRetentionPolicy();
                         attributesToUpdate.setRetentionPolicy(retentionPolicy);
                         attributesInNameSpace.setRetentionPolicy(retentionPolicy);
 
