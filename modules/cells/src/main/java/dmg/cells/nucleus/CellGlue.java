@@ -22,7 +22,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.util.CollectionFactory;
 import dmg.util.TimebasedCounter;
@@ -45,7 +44,7 @@ class CellGlue {
     private final Map<String, Object> _cellContext =
        CollectionFactory.newConcurrentHashMap();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
-    private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64().omitPadding();
+    private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64Url().omitPadding();
     private CellNucleus          _systemNucleus;
     private ClassLoaderProvider  _classLoader;
     private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
