@@ -711,7 +711,7 @@ public class PnfsManagerV3
         + "        dumthreadqueus prints the context of\n"
         + "        thread[s] queue[s] into the error log file";
 
-    public static final String hh_dumpthreadqueues = "[<threadId>]\n";
+    public static final String hh_dumpthreadqueues = "[<threadId>]";
 
     public String ac_dumpthreadqueues_$_0_1(Args args)
     {

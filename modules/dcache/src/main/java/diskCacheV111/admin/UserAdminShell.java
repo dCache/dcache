@@ -1,6 +1,8 @@
 package diskCacheV111.admin;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
@@ -56,7 +58,6 @@ import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
 import dmg.util.command.HelpFormat;
-import dmg.util.command.Option;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -74,6 +75,7 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.util.concurrent.Futures.*;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
@@ -466,9 +468,6 @@ public class UserAdminShell
                           "an argument, a summary of all matching commands is shown.")
     class ShellHelpCommand implements Callable<String>
     {
-        @Option(name = "format", usage = "Output format.")
-        HelpFormat format = Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
-
         @Argument(valueSpec = "COMMAND", required = false,
                 usage = "Partial or full command for which to show help.")
         String[] command = {};
@@ -476,8 +475,13 @@ public class UserAdminShell
         @Override
         public String call()
         {
-            return getHelp(format, command);
+            return getHelp(getPreferredHelpFormat(), command);
         }
+    }
+
+    private HelpFormat getPreferredHelpFormat()
+    {
+        return Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
     }
 
     @Command(name = "\\h", hint = "display help for cell commands",
@@ -488,9 +492,6 @@ public class UserAdminShell
                           "an argument, a summary of all matching commands is shown.")
     class HelpCommand implements Callable<Serializable>
     {
-        @Option(name = "format", usage = "Output format.")
-        HelpFormat format = Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
-
         @Argument(valueSpec = "COMMAND", required = false,
                 usage = "Partial or full command for which to show help.")
         String[] command = {};
@@ -501,11 +502,17 @@ public class UserAdminShell
             if (_currentPosition == null) {
                 return "You are not connected to any cell. Use \\? to display shell commands.";
             } else {
-                return sendObject(_currentPosition.remote,
-                                  new AuthorizedString(_user,
-                                                       "help -format=" + format + " " + String.join(" ", command)));
+                String cmd = "help -format=" + getPreferredHelpFormat() + " " + String.join(" ", command);
+                Serializable reply = sendObject(_currentPosition.remote, new AuthorizedString(_user, cmd));
+                return filterHelp(Objects.toString(reply, ""));
             }
         }
+
+        private String filterHelp(String help)
+        {
+            return Joiner.on('\n').join(filter(Splitter.on('\n').split(help), input -> !input.startsWith("help ")));
+        }
+
     }
 
     @Command(name = "\\sn", hint = "send pnfsmanager command", allowAnyOption = true,

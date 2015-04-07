@@ -66,8 +66,7 @@ public class AclAdmin
       *
       */
 
-     public final static String hh_getfacl = "<pnfsId>|<globalPath>" +
-            "# gets ACL of an object";
+     public final static String hh_getfacl = "<pnfsId>|<globalPath> # get ACL";
 
      public final static String fh_getfacl =
             "getfacl <pnfsId>|<globalPath> \n" +
@@ -114,8 +113,7 @@ public class AclAdmin
     *
     */
     public final static String hh_setfacl =
-        "<pnfsId|globalPath>  <subject>:<+|-><access_msk>[:<flags>] [ ... ] \n" +
-        "# sets a new ACL to an object <pnfsId|globalPath>";
+        "<pnfsId|globalPath>  <subject>:<+|-><access_msk>[:<flags>] [ ... ] # set a new ACL";
 
     public final static String fh_setfacl =
             "setfacl <ID> <ACE> [<ACE> ...] \n" +
