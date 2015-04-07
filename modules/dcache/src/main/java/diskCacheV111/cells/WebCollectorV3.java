@@ -130,14 +130,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private       long        _diff        = -1;
         private       long        _start;
         private       CellInfo    _info;
-        private final CellMessage _message;
         private       long        _lastMessage;
         private       boolean     _present;
 
         private CellQueryInfo(CellAddressCore destination)
         {
             _destination = destination;
-            _message = new CellMessage(new CellPath(destination), "xgetcellinfo");
         }
 
         private String      getName()
@@ -158,7 +156,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private CellMessage getCellMessage()
         {
             _start = System.currentTimeMillis();
-            return _message;
+            return new CellMessage(new CellPath(_destination), "xgetcellinfo");
         }
 
         private void infoArrived(CellInfo info)
