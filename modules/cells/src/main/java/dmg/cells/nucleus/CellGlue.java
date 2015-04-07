@@ -612,7 +612,7 @@ class CellGlue
         if (msg instanceof CellExceptionMessage) {
             LOGGER.warn(
                     "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
-                    destination, ((CellExceptionMessage) msg).getException().getDestinationPath(),
+                    destination, ((CellExceptionMessage) msg.decode()).getException().getDestinationPath(),
                     routeTarget, _cellDomainName);
         } else {
             LOGGER.debug(
