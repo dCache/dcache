@@ -25,7 +25,7 @@ public class RemotePoolMonitorFactoryBean implements FactoryBean<PoolMonitor>
     public PoolMonitor getObject() throws Exception
     {
         return (PoolMonitor) Proxy.newProxyInstance(PoolMonitor.class.getClassLoader(),
-                new Class[] { PoolMonitor.class, RemovableRefreshable.class }, handler);
+                new Class[] { PoolMonitor.class, Refreshable.class }, handler);
     }
 
     @Override

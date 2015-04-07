@@ -17,18 +17,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.Collection;
-import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.VOInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Command;
-import dmg.util.command.Option;
+import dmg.util.command.DelayedCommand;
 
 import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.PoolMonitor;
-import org.dcache.poolmanager.RemovableRefreshable;
 import org.dcache.poolmanager.Utils;
 
 public class LinkGroupLoader
@@ -37,10 +38,7 @@ public class LinkGroupLoader
     private static final Logger LOGGER = LoggerFactory.getLogger(LinkGroupLoader.class);
     private static final long EAGER_LINKGROUP_UPDATE_PERIOD = 1000;
 
-    private final Object updateLinkGroupsSyncObject = new Object();
-
     private long updateLinkGroupsPeriod;
-    private long currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
 
     private File authorizationFileName;
     private long latestUpdateTime = System.currentTimeMillis();
@@ -50,7 +48,7 @@ public class LinkGroupLoader
     private PoolMonitor poolMonitor;
     private SpaceManagerDatabase db;
 
-    private Thread updateLinkGroups;
+    private ScheduledExecutorService executor;
 
     @Required
     public void setUpdateLinkGroupsPeriod(long updateLinkGroupsPeriod)
@@ -83,34 +81,38 @@ public class LinkGroupLoader
 
     public void start()
     {
-        (updateLinkGroups = new Thread(this,"UpdateLinkGroups")).start();
+        executor = Executors.newSingleThreadScheduledExecutor();
+        executor.schedule(this, 100, TimeUnit.MILLISECONDS);
     }
 
     public void stop()
     {
-        if (updateLinkGroups != null) {
-            updateLinkGroups.interrupt();
+        if (executor != null) {
+            executor.shutdownNow();
         }
     }
 
     @Override
     public void getInfo(PrintWriter printWriter) {
-        printWriter.append("updateLinkGroupsPeriod=").println(updateLinkGroupsPeriod);
-        printWriter.append("authorizationFileName=").println(authorizationFileName);
+        printWriter.append("updateLinkGroupsPeriod = ").println(updateLinkGroupsPeriod);
+        printWriter.append("authorizationFileName = ").println(authorizationFileName);
     }
 
     @Override
-    public void run(){
+    public void run() {
+        long period = EAGER_LINKGROUP_UPDATE_PERIOD;
         try {
-            while (true) {
-                updateLinkGroups();
-                synchronized (updateLinkGroupsSyncObject) {
-                    updateLinkGroupsSyncObject.notifyAll();
-                    updateLinkGroupsSyncObject.wait(currentUpdateLinkGroupsPeriod);
-                }
+            if (updateLinkGroups() > 0) {
+                period = updateLinkGroupsPeriod;
             }
-        } catch (InterruptedException ie) {
+        } catch (RemoteAccessException | DataAccessException | TransactionException e) {
+            LOGGER.error("Link group update failed: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.error("Link group update failed: " + e.toString(), e);
+        } catch (InterruptedException e) {
             LOGGER.trace("update LinkGroup thread has been interrupted");
+        } finally {
+            executor.schedule(this, period, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -134,30 +136,19 @@ public class LinkGroupLoader
         }
     }
 
-    private void updateLinkGroups() throws InterruptedException
+    private int updateLinkGroups() throws InterruptedException, RemoteAccessException, DataAccessException, TransactionException
     {
-        try {
-            currentUpdateLinkGroupsPeriod = EAGER_LINKGROUP_UPDATE_PERIOD;
-            long currentTime = System.currentTimeMillis();
-            Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(),
-                                                                                poolMonitor.getCostModule()).values();
-            if (linkGroupInfos.isEmpty()) {
-                latestUpdateTime = currentTime;
-                return;
-            }
-
-            currentUpdateLinkGroupsPeriod = updateLinkGroupsPeriod;
-
+        long currentTime = System.currentTimeMillis();
+        Collection<PoolLinkGroupInfo> linkGroupInfos =
+                Utils.linkGroupInfos(poolMonitor.getPoolSelectionUnit(), poolMonitor.getCostModule()).values();
+        if (!linkGroupInfos.isEmpty()) {
             loadLinkGroupAuthorizationFile();
             for (PoolLinkGroupInfo info : linkGroupInfos) {
                 saveLinkGroup(currentTime, info);
             }
-            latestUpdateTime = currentTime;
-        } catch (RemoteAccessException | DataAccessException | TransactionException e) {
-            LOGGER.error("Link group update failed: {}", e.getMessage());
-        } catch (RuntimeException e) {
-            LOGGER.error("Link group update failed: " + e.toString(), e);
         }
+        latestUpdateTime = currentTime;
+        return linkGroupInfos.size();
     }
 
     private void saveLinkGroup(long currentTime, PoolLinkGroupInfo info) throws InterruptedException
@@ -201,44 +192,26 @@ public class LinkGroupLoader
         }
     }
 
-    @Command(name = "update link groups", hint = "trigger link group update",
+    @Command(name = "update link groups", hint = "update link group information",
              description = "Link groups are periodically imported from pool manager and stored in " +
-                     "the space manager database. This command triggers an immediate " +
-                     "asynchronous update of the link group information.")
-    public class UpdateLinkGroupsCommand implements Callable<String>
+                     "the space manager database. This command performs an immediate " +
+                     "update of the link group information.")
+    public class UpdateLinkGroupsCommand extends DelayedCommand<String>
     {
-        @Option(name = "blocking",
-                usage = "Wait for update to complete.")
-        boolean blocking;
+        public UpdateLinkGroupsCommand()
+        {
+            super(executor);
+        }
 
         @Override
-        public String call()
+        protected String execute()
+                throws InterruptedException, RemoteAccessException, DataAccessException, TransactionException
         {
-            String response = "Update started";
-            String extra = "";
-
-            if (blocking && poolMonitor instanceof RemovableRefreshable) {
-                extra = ", cached pool information was removed";
-                ((RemovableRefreshable) poolMonitor).remove();
-            } else if (poolMonitor instanceof Refreshable) {
-                extra = ", refreshing cached pool information";
+            if (poolMonitor instanceof Refreshable) {
                 ((Refreshable) poolMonitor).refresh();
             }
-
-            synchronized (updateLinkGroupsSyncObject) {
-                updateLinkGroupsSyncObject.notify();
-
-                if (blocking) {
-                    response = "Update completed";
-                    try {
-                        updateLinkGroupsSyncObject.wait();
-                    } catch (InterruptedException e) {
-                        response = "Interrupted while updating";
-                    }
-                }
-            }
-
-            return response + extra + ".";
+            int updated = updateLinkGroups();
+            return updated + (updated == 1 ? " link group " : " link groups ") + "updated.";
         }
     }
 }

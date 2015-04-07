@@ -1,6 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -27,7 +26,7 @@ import static java.util.concurrent.TimeUnit.*;
 /**
  * InvocationHandler to access a cached PoolMonitor that is periodically imported from pool manager.
  */
-public class RemotePoolMonitorInvocationHandler implements InvocationHandler, RemovableRefreshable
+public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Refreshable
 {
     /* Fake key to register the pool monitor in a cache. */
     private static final String KEY = "key";
@@ -80,13 +79,14 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
     @Override
     public void refresh()
     {
-        _poolMonitor.refresh(KEY);
-    }
-
-    @Override
-    public void remove()
-    {
-        _poolMonitor.invalidate(KEY);
+        try {
+            _poolMonitor.put(KEY, _poolManagerStub.sendAndWait(new PoolManagerGetPoolMonitor()).getPoolMonitor());
+            _lastRefreshTime = System.currentTimeMillis();
+        } catch (CacheException e) {
+            _poolMonitor.refresh(KEY);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
@@ -115,8 +115,7 @@ public class RemotePoolMonitorInvocationHandler implements InvocationHandler, Re
     public Object invoke(Object proxy, Method method, Object[] args)
             throws Throwable
     {
-
-        if (method.getDeclaringClass().isAssignableFrom(RemovableRefreshable.class)) {
+        if (method.getDeclaringClass().isAssignableFrom(Refreshable.class)) {
             return method.invoke(this, args);
         }
         return method.invoke(getPoolMonitor(), args);
