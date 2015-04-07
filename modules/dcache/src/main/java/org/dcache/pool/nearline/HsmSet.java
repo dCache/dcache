@@ -335,7 +335,7 @@ public class HsmSet
             String instance = args.argv(0);
             info = _hsm.get(instance);
             if (info == null) {
-                throw new IllegalArgumentException("No such nearline storage: " + instance);
+                throw new IllegalArgumentException("No such nearline storage: " + instance + ". You may need to run 'hsm create'.");
             }
         }
         info.scanOptions(args);
@@ -348,7 +348,7 @@ public class HsmSet
         String instance = args.argv(0);
         HsmInfo info = _isReadingSetup ? _newConfig.get(instance) : _hsm.get(instance);
         if (info == null) {
-            throw new IllegalArgumentException("No such nearline storage: " + instance);
+            throw new IllegalArgumentException("No such nearline storage: " + instance + ". You may need to run 'hsm create'.");
         }
         info.scanOptionsUnset(args);
         return "";
