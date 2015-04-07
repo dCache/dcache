@@ -21,7 +21,6 @@
 
     <bean id="PoolCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
-        <property name="destination" value=""/>
         <property name="timeout" value="${httpd.service.pool.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.pool.timeout.unit}"/>
     </bean>
@@ -49,14 +48,12 @@
 
     <bean id="ActiveTransfersCollectorCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
-        <property name="destination" value=""/>
         <property name="timeout" value="${httpd.service.activetransfers-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.activetransfers-collector.timeout.unit}"/>
     </bean>
 
     <bean id="CellStatusCollectorCellStub" class="org.dcache.cells.CellStub">
         <property name="cellEndpoint" ref="ServiceCellEndpoint"/>
-        <property name="destination" value=""/>
         <property name="timeout" value="${httpd.service.cellstatus-collector.timeout}"/>
         <property name="timeoutUnit" value="${httpd.service.cellstatus-collector.timeout.unit}"/>
     </bean>
