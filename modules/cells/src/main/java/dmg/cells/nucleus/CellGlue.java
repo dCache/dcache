@@ -44,7 +44,7 @@ class CellGlue
     private final Map<String, Object> _cellContext =
             CollectionFactory.newConcurrentHashMap();
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
-    private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64().omitPadding();
+    private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64Url().omitPadding();
     private CellNucleus _systemNucleus;
     private ClassLoaderProvider _classLoader;
     private CellRoutingTable _routingTable = new CellRoutingTable();
