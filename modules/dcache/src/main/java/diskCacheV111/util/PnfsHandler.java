@@ -1,7 +1,6 @@
-// $Id: PnfsHandler.java,v 1.35 2007-10-14 01:51:47 behrmann Exp $
-
 package diskCacheV111.util ;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +41,8 @@ import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class PnfsHandler
     implements CellMessageSender
@@ -166,12 +167,12 @@ public class PnfsHandler
 
    public void addCacheLocation(PnfsId id, String pool) throws CacheException
    {
-       pnfsRequest( new PnfsAddCacheLocationMessage(id, pool));
+       request(new PnfsAddCacheLocationMessage(id, pool));
    }
 
    public List<String> getCacheLocations( PnfsId pnfsId )throws CacheException {
       PnfsGetCacheLocationsMessage pnfsMessage = new PnfsGetCacheLocationsMessage(pnfsId) ;
-      pnfsMessage = pnfsRequest(pnfsMessage) ;
+      pnfsMessage = request(pnfsMessage) ;
       List<String> assumedLocations = pnfsMessage.getCacheLocations() ;
 
       if (assumedLocations == null) {
@@ -184,7 +185,7 @@ public class PnfsHandler
    public List<String> getCacheLocationsByPath( String fileName )throws CacheException {
       PnfsGetCacheLocationsMessage pnfsMessage = new PnfsGetCacheLocationsMessage() ;
       pnfsMessage.setPnfsPath( fileName ) ;
-      pnfsMessage = pnfsRequest(pnfsMessage) ;
+      pnfsMessage = request(pnfsMessage) ;
       List<String> assumedLocations = pnfsMessage.getCacheLocations() ;
 
       if (assumedLocations == null) {
@@ -200,35 +201,41 @@ public class PnfsHandler
      * as a CacheException. Timeouts and failure to send the message
      * to the PnfsManager are reported as a timeout CacheException.
      */
-   public <T extends PnfsMessage> T pnfsRequest( T msg )
-           throws CacheException {
-
-       if (_cellStub == null) {
-           throw new IllegalStateException("Missing endpoint");
-       }
-
+    public <T extends PnfsMessage> T request(T msg)
+            throws CacheException
+    {
         try {
-            msg.setReplyRequired(true);
-            if (_subject != null) {
-                msg.setSubject(_subject);
-            }
-            return _cellStub.sendAndWait(msg);
+            return CellStub.getMessage(requestAsync(msg));
         } catch (InterruptedException e) {
             throw  new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Sending message to " + _cellStub.getDestinationPath() + " interrupted");
+                                      "Sending message to " + _cellStub.getDestinationPath() + " interrupted");
         }
-   }
+    }
+
+    /**
+     * Sends a message to the pnfs manager and returns a promise of a future reply.
+     */
+    public <T extends PnfsMessage> ListenableFuture<T> requestAsync(T msg)
+    {
+        checkState(_cellStub != null, "Missing endpoint");
+
+        msg.setReplyRequired(true);
+        if (_subject != null) {
+            msg.setSubject(_subject);
+        }
+        return _cellStub.send(msg);
+    }
 
     public PnfsCreateEntryMessage createPnfsDirectory(String path)
         throws CacheException
     {
-        return pnfsRequest(new PnfsCreateDirectoryMessage(path));
+        return request(new PnfsCreateDirectoryMessage(path));
     }
 
     public PnfsCreateEntryMessage createPnfsDirectory(String path, int uid, int gid, int mode)
         throws CacheException
     {
-        return pnfsRequest(new PnfsCreateDirectoryMessage(path, uid, gid, mode));
+        return request(new PnfsCreateDirectoryMessage(path, uid, gid, mode));
     }
 
     /**
@@ -273,14 +280,14 @@ public class PnfsHandler
    public PnfsCreateEntryMessage createPnfsEntry( String path )
           throws CacheException                {
 
-       return pnfsRequest(new PnfsCreateEntryMessage( path )) ;
+       return request(new PnfsCreateEntryMessage(path)) ;
 
    }
 
     public PnfsCreateEntryMessage createSymLink(String path, String dest, int uid, int gid)
             throws CacheException {
 
-        return pnfsRequest(new PnfsCreateSymLinkMessage(path, dest, uid, gid));
+        return request(new PnfsCreateSymLinkMessage(path, dest, uid, gid));
 
     }
 
@@ -293,26 +300,26 @@ public class PnfsHandler
     public void renameEntry(PnfsId pnfsId, String newName, boolean overwrite)
         throws CacheException
     {
-        pnfsRequest(new PnfsRenameMessage(pnfsId, newName, overwrite));
+        request(new PnfsRenameMessage(pnfsId, newName, overwrite));
     }
 
     public void renameEntry(String path, String newName, boolean overwrite)
         throws CacheException
     {
-        pnfsRequest(new PnfsRenameMessage(path, newName, overwrite));
+        request(new PnfsRenameMessage(path, newName, overwrite));
     }
 
    public PnfsCreateEntryMessage createPnfsEntry( String path , int uid , int gid , int mode )
           throws CacheException                {
 
-       return pnfsRequest( new PnfsCreateEntryMessage( path , uid , gid , mode ) ) ;
+       return request(new PnfsCreateEntryMessage(path, uid, gid, mode)) ;
 
    }
 
     public PnfsId getParentOf(PnfsId pnfsId)
         throws CacheException
     {
-            return pnfsRequest(new PnfsGetParentMessage(pnfsId)).getParent();
+            return request(new PnfsGetParentMessage(pnfsId)).getParent();
     }
 
     public PnfsId deletePnfsEntry(String path) throws CacheException
@@ -323,7 +330,7 @@ public class PnfsHandler
     public PnfsId deletePnfsEntry(String path, Set<FileType> allowed)
         throws CacheException
     {
-        return pnfsRequest(new PnfsDeleteEntryMessage(null, path, allowed)).getPnfsId();
+        return request(new PnfsDeleteEntryMessage(null, path, allowed)).getPnfsId();
     }
 
     public void deletePnfsEntry(PnfsId pnfsid)  throws CacheException
@@ -341,7 +348,7 @@ public class PnfsHandler
                                 Set<FileType> allowed)
         throws CacheException
     {
-        pnfsRequest(new PnfsDeleteEntryMessage(pnfsid, path, allowed));
+        request(new PnfsDeleteEntryMessage(pnfsid, path, allowed));
     }
 
    /**
@@ -354,7 +361,7 @@ public class PnfsHandler
 
    /**
     * Setter for property __pnfsTimeout.
-    * @param __pnfsTimeout New value of property __pnfsTimeout.
+    * @param pnfsTimeout New value of property __pnfsTimeout.
     */
    public void setPnfsTimeout(long pnfsTimeout) {
        _cellStub.setTimeout(pnfsTimeout);
@@ -366,9 +373,9 @@ public class PnfsHandler
    {
        PnfsFlagMessage flagMessage =
                 new PnfsFlagMessage( pnfsId ,flag , PnfsFlagMessage.FlagOperation.GET ) ;
-       flagMessage.setReplyRequired( true );
+       flagMessage.setReplyRequired(true);
 
-       return pnfsRequest(flagMessage).getValue();
+       return request(flagMessage).getValue();
    }
 
    public void putPnfsFlag(PnfsId pnfsId, String flag, String value)
@@ -385,7 +392,7 @@ public class PnfsHandler
 	   PoolFileFlushedMessage fileFlushedMessage = new PoolFileFlushedMessage(_poolName, pnfsId, fileAttributes);
 
 	   // throws exception if something goes wrong
-	   pnfsRequest(fileFlushedMessage);
+	   request(fileFlushedMessage);
 
    }
 
@@ -397,7 +404,7 @@ public class PnfsHandler
 	 * @throws CacheException
 	 */
 	public FsPath getPathByPnfsId(PnfsId pnfsID) throws CacheException {
-		return new FsPath(pnfsRequest(new PnfsMapPathMessage(pnfsID)).getPnfsPath());
+		return new FsPath(request(new PnfsMapPathMessage(pnfsID)).getPnfsPath());
 	}
 
 	/**
@@ -408,7 +415,7 @@ public class PnfsHandler
 	 * @throws CacheException
 	 */
 	public PnfsId getPnfsIdByPath(String path) throws CacheException {
-		return pnfsRequest(new PnfsMapPathMessage(path)).getPnfsId();
+		return request(new PnfsMapPathMessage(path)).getPnfsId();
 	}
 
     /**
@@ -424,7 +431,7 @@ public class PnfsHandler
             throws CacheException {
         PnfsMapPathMessage message = new PnfsMapPathMessage(path);
         message.setShouldResolve(resolve);
-        return pnfsRequest(message).getPnfsId();
+        return request(message).getPnfsId();
     }
 
 
@@ -440,7 +447,7 @@ public class PnfsHandler
     }
 
     /**
-     * Get file attributes. The PnfsManager is free to return less attributes
+     * Get file attributes. The PnfsManager is free to return fewer attributes
      * than requested. If <code>attr</code> is an empty array, file existence
      * if checked.
      *
@@ -449,11 +456,11 @@ public class PnfsHandler
      * @return requested attributes
      */
     public FileAttributes getFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr) throws CacheException {
-        return pnfsRequest(new PnfsGetFileAttributes(pnfsid, attr)).getFileAttributes();
+        return request(new PnfsGetFileAttributes(pnfsid, attr)).getFileAttributes();
     }
 
     /**
-     * Get file attributes. The PnfsManager is free to return less attributes
+     * Get file attributes. The PnfsManager is free to return fewer attributes
      * than requested. If <code>attr</code> is an empty array, file existence
      * if checked.
      *
@@ -463,17 +470,18 @@ public class PnfsHandler
      * @param updateAtime update file's last access time
      * @return requested attributes
      */
-    public FileAttributes getFileAttributes(PnfsId pnfsid, Set<FileAttribute> attr, Set<AccessMask> mask, boolean updateAtime)
+    public FileAttributes getFileAttributes(
+            PnfsId pnfsid, Set<FileAttribute> attr, Set<AccessMask> mask, boolean updateAtime)
         throws CacheException
     {
         PnfsGetFileAttributes msg = new PnfsGetFileAttributes(pnfsid, attr);
         msg.setAccessMask(mask);
         msg.setUpdateAtime(updateAtime);
-        return pnfsRequest(msg).getFileAttributes();
+        return request(msg).getFileAttributes();
     }
 
     /**
-     * Get file attributes. The PnfsManager is free to return less attributes
+     * Get file attributes. The PnfsManager is free to return fewer attributes
      * than requested. If <code>attr</code> is an empty array, file existence
      * if checked.
      *
@@ -484,7 +492,7 @@ public class PnfsHandler
     public FileAttributes getFileAttributes(String path, Set<FileAttribute> attr)
         throws CacheException
     {
-        return pnfsRequest(new PnfsGetFileAttributes(path, attr)).getFileAttributes();
+        return request(new PnfsGetFileAttributes(path, attr)).getFileAttributes();
     }
 
     public FileAttributes getFileAttributes(FsPath path, Set<FileAttribute> attr)
@@ -512,7 +520,7 @@ public class PnfsHandler
         PnfsGetFileAttributes msg = new PnfsGetFileAttributes(path, attr);
         msg.setAccessMask(mask);
         msg.setUpdateAtime(updateAtime);
-        return pnfsRequest(msg).getFileAttributes();
+        return request(msg).getFileAttributes();
     }
 
     /**
@@ -532,7 +540,7 @@ public class PnfsHandler
     public FileAttributes setFileAttributes(PnfsId pnfsid, FileAttributes attr,
             Set<FileAttribute> acquire) throws CacheException
     {
-        return pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr, acquire)).getFileAttributes();
+        return request(new PnfsSetFileAttributes(pnfsid, attr, acquire)).getFileAttributes();
     }
 
     /**
@@ -544,7 +552,7 @@ public class PnfsHandler
      */
     public void setFileAttributes(PnfsId pnfsid, FileAttributes attr) throws CacheException
     {
-        pnfsRequest(new PnfsSetFileAttributes(pnfsid, attr));
+        request(new PnfsSetFileAttributes(pnfsid, attr));
     }
 
     /**
@@ -564,7 +572,7 @@ public class PnfsHandler
     public FileAttributes setFileAttributes(FsPath path, FileAttributes attr,
             Set<FileAttribute> acquire) throws CacheException
     {
-        return pnfsRequest(new PnfsSetFileAttributes(path.toString(), attr, acquire)).getFileAttributes();
+        return request(new PnfsSetFileAttributes(path.toString(), attr, acquire)).getFileAttributes();
     }
 
     /**
@@ -576,7 +584,7 @@ public class PnfsHandler
      */
     public void setFileAttributes(FsPath path, FileAttributes attr) throws CacheException
     {
-        pnfsRequest(new PnfsSetFileAttributes(path.toString(), attr, EnumSet.noneOf(FileAttribute.class)));
+        request(new PnfsSetFileAttributes(path.toString(), attr, EnumSet.noneOf(FileAttribute.class)));
     }
 
     public void setChecksum(PnfsId pnfsId, Checksum checksum)
@@ -586,6 +594,6 @@ public class PnfsHandler
             new PnfsSetChecksumMessage(pnfsId,
                                        checksum.getType().getType(),
                                        checksum.getValue());
-        pnfsRequest(message);
+        request(message);
     }
 }

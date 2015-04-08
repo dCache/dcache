@@ -65,7 +65,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
         PnfsCreateEntryMessage returnMsg =
-                pnfs.pnfsRequest(new PnfsCreateEntryMessage(path, uid, gid, mode, requestedAttributes));
+                pnfs.request(new PnfsCreateEntryMessage(path, uid, gid, mode, requestedAttributes));
         return returnMsg.getFileAttributes();
     }
 
@@ -172,7 +172,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
             boolean removeIfLast) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        pnfs.pnfsRequest(new PnfsClearCacheLocationMessage(id, pool, removeIfLast));
+        pnfs.request(new PnfsClearCacheLocationMessage(id, pool, removeIfLast));
     }
 
     @Override
@@ -215,7 +215,7 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
                                                             uid, gid, mode, size,
                                                             al, rp, spaceToken,
                                                             options);
-        return _pnfs.pnfsRequest(msg).getUploadPath();
+        return _pnfs.request(msg).getUploadPath();
     }
 
     @Override
@@ -227,12 +227,12 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
                                                     pnfsPath,
                                                     options,
                                                     EnumSet.noneOf(FileAttribute.class));
-        return _pnfs.pnfsRequest(msg).getPnfsId();
+        return _pnfs.request(msg).getPnfsId();
     }
 
     @Override
     public void cancelUpload(Subject subject, FsPath uploadPath, FsPath path) throws CacheException
     {
-        _pnfs.pnfsRequest(new PnfsCancelUpload(subject, uploadPath, path));
+        _pnfs.request(new PnfsCancelUpload(subject, uploadPath, path));
     }
 }
