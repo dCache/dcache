@@ -1,21 +1,21 @@
 package dmg.cells.nucleus;
 
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.SetMultimap;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.dcache.util.Args;
 
 public class CellRoutingTable implements Serializable
 {
     private static final long serialVersionUID = -1456280129622980563L;
 
-    private final ConcurrentMap<String, CellRoute> _wellknown = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CellRoute> _domain = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, CellRoute> _exact = new ConcurrentHashMap<>();
+    private final SetMultimap<String, CellRoute> _wellknown = LinkedHashMultimap.create();
+    private final SetMultimap<String, CellRoute> _domain = LinkedHashMultimap.create();
+    private final SetMultimap<String, CellRoute> _exact = LinkedHashMultimap.create();
     private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
     private final AtomicReference<CellRoute> _default = new AtomicReference<>();
 
@@ -27,30 +27,36 @@ public class CellRoutingTable implements Serializable
         case CellRoute.EXACT:
         case CellRoute.ALIAS:
             dest = route.getCellName() + "@" + route.getDomainName();
-            if (_exact.putIfAbsent(dest, route) != null) {
-                throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
+            synchronized (_exact) {
+                if (!_exact.put(dest, route)) {
+                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                }
             }
             break;
         case CellRoute.WELLKNOWN:
             dest = route.getCellName();
-            if (_wellknown.putIfAbsent(dest, route) != null) {
-                throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
+            synchronized (_wellknown) {
+                if (!_wellknown.put(dest, route)) {
+                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                }
             }
             break;
         case CellRoute.DOMAIN:
             dest = route.getDomainName();
-            if (_domain.putIfAbsent(dest, route) != null) {
-                throw new IllegalArgumentException("Duplicated route Entry for : " + dest);
+            synchronized (_domain) {
+                if (!_domain.put(dest, route)) {
+                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                }
             }
             break;
         case CellRoute.DEFAULT:
             if (!_default.compareAndSet(null, route)) {
-                throw new IllegalArgumentException("Duplicated route Entry for default.");
+                throw new IllegalArgumentException("Duplicated route entry for default.");
             }
             break;
         case CellRoute.DUMPSTER:
             if (!_dumpster.compareAndSet(null, route)) {
-                throw new IllegalArgumentException("Duplicated route Entry for dumpster");
+                throw new IllegalArgumentException("Duplicated route entry for dumpster");
             }
             break;
         }
@@ -64,30 +70,36 @@ public class CellRoutingTable implements Serializable
         case CellRoute.EXACT:
         case CellRoute.ALIAS:
             dest = route.getCellName() + "@" + route.getDomainName();
-            if (!_exact.remove(dest, route)) {
-                throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
+            synchronized (_exact) {
+                if (!_exact.remove(dest, route)) {
+                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                }
             }
             break;
         case CellRoute.WELLKNOWN:
             dest = route.getCellName();
-            if (!_wellknown.remove(dest, route)) {
-                throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
+            synchronized (_wellknown) {
+                if (!_wellknown.remove(dest, route)) {
+                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                }
             }
             break;
         case CellRoute.DOMAIN:
             dest = route.getDomainName();
-            if (!_domain.remove(dest, route)) {
-                throw new IllegalArgumentException("Route Entry Not Found for : " + dest);
+            synchronized (_domain) {
+                if (!_domain.remove(dest, route)) {
+                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                }
             }
             break;
         case CellRoute.DEFAULT:
             if (!_default.compareAndSet(route, null)) {
-                throw new IllegalArgumentException("Route Entry Not Found for default");
+                throw new IllegalArgumentException("Route entry not found for default");
             }
             break;
         case CellRoute.DUMPSTER:
             if (!_dumpster.compareAndSet(route, null)) {
-                throw new IllegalArgumentException("Route Entry Not Found dumpster");
+                throw new IllegalArgumentException("Route entry not found dumpster");
             }
             break;
         }
@@ -97,42 +109,53 @@ public class CellRoutingTable implements Serializable
     {
         String cellName = addr.getCellName();
         String domainName = addr.getCellDomainName();
-        CellRoute route;
+        Optional<CellRoute> route;
+        synchronized (_exact) {
+            route = _exact.get(cellName + "@" + domainName).stream().findFirst();
+        }
+        if (route.isPresent()) {
+            return route.get();
+        }
         if (domainName.equals("local")) {
             //
             // this is not really local but wellknown
             // we checked for local before we called this.
             //
-            route = _wellknown.get(cellName);
-            if (route != null) {
-                return route;
+            synchronized (_wellknown) {
+                route = _wellknown.get(cellName).stream().findFirst();
+            }
+            if (route.isPresent()) {
+                return route.get();
             }
         } else {
-            route = _exact.get(cellName + "@" + domainName);
-            if (route != null) {
-                return route;
+            synchronized (_domain) {
+                route = _domain.get(domainName).stream().findFirst();
             }
-            route = _domain.get(domainName);
-            if (route != null) {
-                return route;
+            if (route.isPresent()) {
+                return route.get();
             }
         }
-        route = _exact.get(cellName + "@" + domainName);
-        return route == null ? _default.get() : route;
+        return _default.get();
     }
 
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
         sb.append(CellRoute.headerToString()).append("\n");
-        for (CellRoute route : _exact.values()) {
-            sb.append(route).append("\n");
+        synchronized (_exact) {
+            for (CellRoute route : _exact.values()) {
+                sb.append(route).append("\n");
+            }
         }
-        for (CellRoute route : _wellknown.values()) {
-            sb.append(route).append("\n");
+        synchronized (_wellknown) {
+            for (CellRoute route : _wellknown.values()) {
+                sb.append(route).append("\n");
+            }
         }
-        for (CellRoute route : _domain.values()) {
-            sb.append(route).append("\n");
+        synchronized (_domain) {
+            for (CellRoute route : _domain.values()) {
+                sb.append(route).append("\n");
+            }
         }
         CellRoute defaultRoute = _default.get();
         if (defaultRoute != null) {
@@ -148,9 +171,15 @@ public class CellRoutingTable implements Serializable
     public CellRoute[] getRoutingList()
     {
         List<CellRoute> routes = new ArrayList<>();
-        routes.addAll(_exact.values());
-        routes.addAll(_wellknown.values());
-        routes.addAll(_domain.values());
+        synchronized (_exact) {
+            routes.addAll(_exact.values());
+        }
+        synchronized (_wellknown) {
+            routes.addAll(_wellknown.values());
+        }
+        synchronized (_domain) {
+            routes.addAll(_domain.values());
+        }
         CellRoute defaultRoute = _default.get();
         if (defaultRoute != null) {
             routes.add(defaultRoute);

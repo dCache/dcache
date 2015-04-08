@@ -108,9 +108,7 @@ public class RoutingManager
             return;
         }
         try {
-            _nucleus.routeAdd(new CellRoute(cell,
-                                             "*@"+domain,
-                                             CellRoute.WELLKNOWN));
+            _nucleus.routeAdd(new CellRoute(cell, "*@"+domain, CellRoute.WELLKNOWN));
         } catch (IllegalArgumentException e) {
             _log.warn("Couldn't add wellknown route: {}", e.getMessage());
         }
@@ -122,9 +120,7 @@ public class RoutingManager
             return;
         }
         try {
-            _nucleus.routeDelete(new CellRoute(cell,
-                                                "*@"+domain,
-                                                CellRoute.WELLKNOWN));
+            _nucleus.routeDelete(new CellRoute(cell, "*@"+domain, CellRoute.WELLKNOWN));
         } catch (IllegalArgumentException e) {
             _log.warn("Couldn't delete wellknown route: {}", e.getMessage());
         }
@@ -290,9 +286,7 @@ public class RoutingManager
                 //
                 try {
                     CellRoute defRoute =
-                        new CellRoute("",
-                                       "*@"+cr.getDomainName(),
-                                       CellRoute.DEFAULT);
+                        new CellRoute("", "*@"+cr.getDomainName(), CellRoute.DEFAULT);
                     _nucleus.routeAdd(defRoute);
                 } catch (IllegalArgumentException e) {
                     _log.warn("Couldn't add default route: {}", e.getMessage());
@@ -325,9 +319,7 @@ public class RoutingManager
         if (cr.getRouteType() == CellRoute.DOMAIN) {
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
                 CellRoute defRoute =
-                    new CellRoute("",
-                                   "*@"+cr.getDomainName(),
-                                   CellRoute.DEFAULT);
+                    new CellRoute("", "*@"+cr.getDomainName(), CellRoute.DEFAULT);
                 _nucleus.routeDelete(defRoute);
             } else {
                 removeRoutingInfo(cr.getDomainName());
