@@ -19,7 +19,6 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
-import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
@@ -48,8 +47,6 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
    private String       _state           = "Not Initialized" ;
    private String       _mode            = "None" ;
    private CellRoute       _route;
-   private boolean         _ready;
-   private final Object          _readyLock    = new Object() ;
    private CellDomainInfo  _remoteDomainInfo;
    private final Version version = Version.of(this);
 
@@ -226,13 +223,6 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
        }catch( Exception ioe ){
           _log.info( "Exception while sending message : "+ioe ) ;
        }
-     }else if( me instanceof LastMessageEvent ){
-        _log.info( "Got last message ; releasing lock " ) ;
-        synchronized( _readyLock ){
-            _ready = true ;
-            _readyLock.notifyAll();
-        }
-     }else{
      }
 
    }
@@ -245,12 +235,6 @@ public class SimpleTunnel implements Cell, Runnable, CellTunnel {
          _nucleus.routeDelete(_route);
      }
      _route = null ;
-     synchronized( _readyLock ){
-        if( ! _ready ){
-           _log.info( "PrepareRemoval : waiting for last message to be processed" ) ;
-           try{ _readyLock.wait()  ; }catch(InterruptedException ie){}
-        }
-     }
      _log.info( "PrepareRemoval : closing streams" ) ;
      try{
            _input.close();

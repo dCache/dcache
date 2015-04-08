@@ -77,7 +77,6 @@ public class   CellAdapter extends CommandInterpreter
     private final static ThreadLocal<CellMessage> CURRENT_MESSAGE = new ThreadLocal<>();
 
     private final CellNucleus _nucleus;
-    private final Gate        _readyGate = new Gate(false);
     private final Gate        _startGate = new Gate(false);
     private final Args        _args;
     private boolean     _useInterpreter = true;
@@ -709,7 +708,6 @@ public class   CellAdapter extends CommandInterpreter
     {
         _log.info("CellAdapter : prepareRemoval : waiting for gate to open");
         _startGate.check();
-        _readyGate.check();
         cleanUp();
         dumpPinboard();
         _log.info("CellAdapter : prepareRemoval : done");
@@ -778,10 +776,7 @@ public class   CellAdapter extends CommandInterpreter
      */
     @Override
     public void   messageArrived(MessageEvent me) {
-        if (me instanceof LastMessageEvent) {
-            _log.info("messageArrived : LastMessageEvent (opening gate)");
-            _readyGate.open();
-        } else if (!_startGate.isOpen()) {
+        if (!_startGate.isOpen()) {
             CellMessage msg = me.getMessage();
             if (!msg.isReply()) {
                 try {
