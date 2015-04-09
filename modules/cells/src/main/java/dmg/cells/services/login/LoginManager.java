@@ -282,7 +282,10 @@ public class LoginManager
     {
         boolean binary = args.hasOption("binary");
         if (binary) {
-            String[] list = _children.keySet().toArray(new String[_children.size()]);
+            /* Important: Do not try to allocate a sized array as _children may be
+             * updated in between creating the array and copying the keys.
+             */
+            String[] list = _children.keySet().toArray(new String[0]);
             return new LoginManagerChildrenInfo(getCellName(), getCellDomainName(), list);
         } else {
             StringBuilder sb = new StringBuilder();
