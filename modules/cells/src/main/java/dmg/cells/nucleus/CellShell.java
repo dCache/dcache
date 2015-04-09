@@ -1,5 +1,6 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -771,33 +772,65 @@ public class CellShell extends CommandInterpreter
       return "Ready\n" ;
 
    }
-   ////////////////////////////////////////////////////////////
-   //
-   //   ping
-   //
-   public static final String hh_ping = "<destinationCell>  [<packetSize>] [-count=numOfPackets]" ;
-   public String ac_ping_$_1_2( Args args )
-   {
-      String countString = args.getOpt("count") ;
-      int count = 1 ;
-      int size  = 0 ;
-      if( countString != null ){
-         try{
-            count = Integer.parseInt(countString) ;
-         }catch(NumberFormatException ee){ /* ignore bad values */ }
-      }
-      if( args.argc() > 1 ){
-         try{
-           size = Integer.parseInt(args.argv(1)) ;
-         }catch(NumberFormatException ee){ /* ignore bad values */ }
-      }
-      CellPath path = new CellPath( args.argv(0) ) ;
-      for( int i = 0 ; i < count ; i ++ ) {
-          _nucleus.sendMessage(new CellMessage(path, new PingMessage(size)), true, true);
-      }
-//      return "Msg UOID ="+msg.getUOID().toString()+"\n" ;
-      return "Done\n" ;
-   }
+
+    @Command(name = "ping")
+    class Pingcommand extends DelayedReply implements Callable<Pingcommand>
+    {
+        @Argument(index = 0, metaVar = "destinationCell")
+        CellPath destination;
+
+        @Argument(index = 1, metaVar = "packetSize", required = false)
+        int size;
+
+        @Argument(index = 2, metaVar = "numOfPackets", required = false)
+        int packets = 1;
+
+        @Option(name = "timeout", metaVar = "millis")
+        int timeout = 1000;
+
+        private int count;
+
+        private final Stopwatch sw = Stopwatch.createUnstarted();
+
+        @Override
+        public Pingcommand call() throws Exception
+        {
+            sw.start();
+            ping();
+            return this;
+        }
+
+        private void ping()
+        {
+            if (count < packets) {
+                count++;
+                _nucleus.sendMessage(new CellMessage(destination, new PingMessage(size)), true, true,
+                                     new CellMessageAnswerable()
+                                     {
+                                         @Override
+                                         public void answerArrived(CellMessage request, CellMessage answer)
+                                         {
+                                             ping();
+                                         }
+
+                                         @Override
+                                         public void exceptionArrived(CellMessage request, Exception exception)
+                                         {
+                                             reply(exception);
+                                         }
+
+                                         @Override
+                                         public void answerTimedOut(CellMessage request)
+                                         {
+                                             reply("Timeout");
+                                         }
+                                     }, MoreExecutors.directExecutor(), timeout);
+            } else {
+                reply(packets + " pings  in " + sw);
+            }
+        }
+    }
+
    ////////////////////////////////////////////////////////////
    //
    //   create
