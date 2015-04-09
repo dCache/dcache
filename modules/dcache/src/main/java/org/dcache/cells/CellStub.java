@@ -430,7 +430,7 @@ public class CellStub
         if (_retryOnNoRouteToCell) {
             _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, MoreExecutors.sameThreadExecutor(), timeout);
         } else {
-            _endpoint.sendMessage(envelope, future, MoreExecutors.sameThreadExecutor(), getTimeoutInMillis());
+            _endpoint.sendMessage(envelope, future, MoreExecutors.sameThreadExecutor(), timeout);
         }
         return future;
     }
