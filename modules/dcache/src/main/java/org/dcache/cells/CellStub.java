@@ -1,9 +1,14 @@
 package org.dcache.cells;
 
+import com.google.common.base.Function;
 import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.RateLimiter;
+
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
@@ -539,6 +544,60 @@ public class CellStub
             throw CacheExceptionFactory.exceptionOf(reply);
         }
         return reply;
+    }
+
+    /**
+     * Returns a new {@code ListenableFuture} whose result is asynchronously
+     * derived from the message result of the given {@code Future}. More precisely,
+     * the returned {@code Future} takes its result from a {@code Future} produced
+     * by applying the given {@code Function} to the result of the original
+     * {@code Future}.
+     *
+     * If the original {@code Future} returns a message indicating an error, the
+     * returned {@code Future} will fail with the corresponding CacheException. This
+     * distinguishes this method from {@link Futures#transform}.
+     */
+    public static <T extends Message, V> ListenableFuture<V> transform(
+            ListenableFuture<T> future, Function<T, V> f)
+    {
+        return Futures.transform(future,
+                                 new AsyncFunction<T, V>() {
+                                     @Override
+                                     public ListenableFuture<V> apply(T msg) throws Exception
+                                     {
+                                         if (msg.getReturnCode() != 0) {
+                                             throw CacheExceptionFactory.exceptionOf(msg);
+                                         }
+                                         return Futures.immediateFuture(f.apply(msg));
+                                     }
+                                 });
+    }
+
+    /**
+     * Returns a new {@code ListenableFuture} whose result is asynchronously
+     * derived from the message result of the given {@code Future}. More precisely,
+     * the returned {@code Future} takes its result from a {@code Future} produced
+     * by applying the given {@code AsyncFunction} to the result of the original
+     * {@code Future}.
+     *
+     * If the original {@code Future} returns a message indicating an error, the
+     * returned {@code Future} will fail with the corresponding CacheException. This
+     * distinguishes this method from {@link Futures#transform}.
+     */
+    public static <T extends Message, V> ListenableFuture<V> transform(
+            ListenableFuture<T> future, AsyncFunction<T, V> f)
+    {
+        return Futures.transform(future,
+                                 new AsyncFunction<T, V>() {
+                                     @Override
+                                     public ListenableFuture<V> apply(T msg) throws Exception
+                                     {
+                                         if (msg.getReturnCode() != 0) {
+                                             throw CacheExceptionFactory.exceptionOf(msg);
+                                         }
+                                         return f.apply(msg);
+                                     }
+                                 });
     }
 
     /**

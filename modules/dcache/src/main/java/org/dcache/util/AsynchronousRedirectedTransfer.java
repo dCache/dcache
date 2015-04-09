@@ -1,6 +1,15 @@
 package org.dcache.util;
 
+import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import javax.security.auth.Subject;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
@@ -10,15 +19,16 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  * A transfer where the mover can send a redirect message to the door
  * asynchronously.
  *
- * The transfer startup phase is blocking and identical to a regular Transfer,
- * however notification of redirect and transfer completion is done
- * asynchronously. Subclasses are to implement onQueued, onRedirect, onFinish and
- * onFailure. The class deals with out of order notifications and guarantees
- * that:
+ * The transfer startup phase is identical to a regular Transfer, however notification of
+ * redirect and transfer completion is done asynchronously through callbacks. Subclasses
+ * are to implement onQueued, onRedirect, onFinish and onFailure. The class deals with out
+ * of order notifications and guarantees that:
  *
  *  - a mover ID is known before onQueued is called
  *  - onQueued is always called before onRedirect
@@ -30,94 +40,58 @@ import dmg.cells.nucleus.CellPath;
  */
 public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
 {
-    private T _redirectObject;
-    private boolean _isRedirected;
-    private boolean _isFinished;
-    private boolean _isDone;
+    private final Executor executor;
+    private final Monitor monitor = new Monitor();
 
-    public AsynchronousRedirectedTransfer(PnfsHandler pnfs, Subject namespaceSubject, Subject subject, FsPath path) {
+    public AsynchronousRedirectedTransfer(Executor executor, PnfsHandler pnfs, Subject namespaceSubject, Subject subject, FsPath path) {
         super(pnfs, namespaceSubject, subject, path);
+        this.executor = executor;
     }
 
-    public AsynchronousRedirectedTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
+    public AsynchronousRedirectedTransfer(Executor executor, PnfsHandler pnfs, Subject subject, FsPath path)
+    {
         super(pnfs, subject, path);
+        this.executor = executor;
     }
 
     @Override
-    public void startMover(String queue, long timeout) throws CacheException, InterruptedException
+    public ListenableFuture<Void> selectPoolAndStartMoverAsync(String queue, TransferRetryPolicy policy)
     {
-        super.startMover(queue, timeout);
-        doQueued();
-    }
-
-    protected synchronized void doQueued()
-    {
-        if (_isDone) {
-            doKill();
-        } else {
-            onQueued();
-            doRedirect();
-        }
-    }
-
-    protected synchronized void doRedirect()
-    {
-        if (!_isDone && getMoverId() != null && _isRedirected) {
-            onRedirect(_redirectObject);
-            doFinish();
-        }
-    }
-
-    protected synchronized void doFinish()
-    {
-        if (!_isDone && getMoverId() != null  && _isRedirected && _isFinished) {
-            onFinish();
-            _isDone = true;
-        }
-    }
-
-    protected synchronized void doAbort(Exception exception)
-    {
-        if (!_isDone) {
-            doKill();
-            onFailure(exception);
-            _isDone = true;
-        }
-    }
-
-    protected synchronized void doKill()
-    {
-        if (hasMover()) {
-            Integer moverId = getMoverId();
-            String pool = getPool();
-            CellAddressCore poolAddress = getPoolAddress();
-            PoolMoverKillMessage message =
-                    new PoolMoverKillMessage(pool, moverId);
-            message.setReplyRequired(false);
-            _pool.notify(new CellPath(poolAddress), message);
-        }
+        return monitor.setQueueFuture(super.selectPoolAndStartMoverAsync(queue, policy));
     }
 
     /**
      * Signals that the transfer is redirected.
      */
-    public synchronized void redirect(T object)
+    public void redirect(T object)
     {
-        _redirectObject = object;
-        _isRedirected = true;
-        doRedirect();
+        executor.execute(() -> monitor.redirect(object));
+    }
+
+    /**
+     * Aborts the transfer unless already completed.
+     *
+     * This cancels pool selection and kills the mover. The onFailure callback is called. This method
+     * blocks until the callback completes.
+     */
+    public void abort(Throwable t)
+    {
+        try {
+            FutureTask<Object> task = new FutureTask<>(() -> monitor.doAbort(t), null);
+            executor.execute(task);
+            task.get();
+        } catch (ExecutionException e) {
+            Throwables.propagate(e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
-    public synchronized void finished(CacheException error)
+    public void finished(CacheException error)
     {
         super.finished(error);
-        if (error != null) {
-            doAbort(error);
-        } else {
-            _isFinished = true;
-            doFinish();
-        }
+        executor.execute(() -> monitor.finished(error));
     }
 
     protected abstract void onQueued();
@@ -126,6 +100,113 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
 
     protected abstract void onFinish();
 
-    protected abstract void onFailure(Exception exception);
+    protected abstract void onFailure(Throwable t);
 
+    /**
+     * To avoid locking the monitor of the Transfer object during callbacks,
+     * we have an explicit monitor guarding our state machine and ensuring
+     * that callbacks are executed sequentially.
+     */
+    private class Monitor
+    {
+        private T redirectObject;
+        private boolean isQueued;
+        private boolean isRedirected;
+        private boolean isFinished;
+        private boolean isDone;
+        private ListenableFuture<Void> queueFuture;
+
+        private synchronized ListenableFuture<Void> setQueueFuture(ListenableFuture<Void> future)
+        {
+            checkState(queueFuture == null);
+            queueFuture = future;
+            Futures.addCallback(future, new FutureCallback<Void>()
+            {
+                @Override
+                public void onSuccess(Void result)
+                {
+                    executor.execute(monitor::doQueued);
+                }
+
+                @Override
+                public void onFailure(Throwable t)
+                {
+                    executor.execute(() -> monitor.doAbort(t));
+                }
+            });
+            return future;
+        }
+
+        private synchronized void doQueued()
+        {
+            isQueued = true;
+            if (isDone) {
+                doKill();
+            } else {
+                onQueued();
+                doRedirect();
+            }
+        }
+
+        private synchronized void doRedirect()
+        {
+            if (!isDone && isQueued && isRedirected) {
+                onRedirect(redirectObject);
+                doFinish();
+            }
+        }
+
+        private synchronized void doFinish()
+        {
+            if (!isDone && getMoverId() != null  && isRedirected && isFinished) {
+                onFinish();
+                isDone = true;
+            }
+        }
+
+        private synchronized void doAbort(Throwable t)
+        {
+            if (!isDone) {
+                doKill();
+                onFailure(t);
+                isDone = true;
+            }
+        }
+
+        private synchronized void doKill()
+        {
+            if (queueFuture != null) {
+                queueFuture.cancel(true);
+            }
+            if (hasMover()) {
+                int moverId = getMoverId();
+                String pool = getPool();
+                CellAddressCore poolAddress = getPoolAddress();
+                PoolMoverKillMessage message = new PoolMoverKillMessage(pool, moverId);
+                message.setReplyRequired(false);
+                _pool.notify(new CellPath(poolAddress), message);
+            }
+        }
+
+        /**
+         * Signals that the transfer is redirected.
+         */
+        public synchronized void redirect(T object)
+        {
+            checkState(!isRedirected);
+            redirectObject = object;
+            isRedirected = true;
+            doRedirect();
+        }
+
+        public synchronized void finished(CacheException error)
+        {
+            if (error != null) {
+                doAbort(error);
+            } else {
+                isFinished = true;
+                doFinish();
+            }
+        }
+    }
 }

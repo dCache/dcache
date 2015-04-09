@@ -3,6 +3,13 @@ package org.dcache.util;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.FutureFallback;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListenableScheduledFuture;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -14,6 +21,9 @@ import java.net.InetSocketAddress;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.poolManager.RequestContainerV5;
@@ -53,15 +63,17 @@ import org.dcache.commons.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.util.concurrent.Futures.*;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
 /**
- * Facade for transfer related operations. Encapulates information
+ * Facade for transfer related operations. Encapsulates information
  * about and typical operations of a transfer.
  */
 public class Transfer implements Comparable<Transfer>
@@ -69,7 +81,7 @@ public class Transfer implements Comparable<Transfer>
     protected static final Logger _log = LoggerFactory.getLogger(Transfer.class);
 
     private static final TimebasedCounter _sessionCounter =
-        new TimebasedCounter();
+            new TimebasedCounter();
 
     private static final BaseEncoding SESSION_ENCODING = BaseEncoding.base64().omitPadding();
 
@@ -109,15 +121,21 @@ public class Transfer implements Comparable<Transfer>
     private Set<FileAttribute> _additionalAttributes =
             EnumSet.noneOf(FileAttribute.class);
 
+    private static final ThreadFactory RETRY_THREAD_FACTORY =
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("transfer-retry-timer-%d").build();
+    private static final ListeningScheduledExecutorService RETRY_EXECUTOR =
+            MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1, RETRY_THREAD_FACTORY));
+
     /**
      * Constructs a new Transfer object.
      *
-     * @param pnfs PnfsHandler used for pnfs communication
+     * @param pnfs             PnfsHandler used for pnfs communication
      * @param namespaceSubject The subject performing the namespace operations
-     * @param ioSubject The subject performing the transfer
-     * @param path The path of the file to transfer
+     * @param ioSubject        The subject performing the transfer
+     * @param path             The path of the file to transfer
      */
-    public Transfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, FsPath path) {
+    public Transfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, FsPath path)
+    {
         _pnfs = new PnfsHandler(pnfs, namespaceSubject);
         _subject = ioSubject;
         _path = path;
@@ -130,9 +148,9 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Constructs a new Transfer object.
      *
-     * @param pnfs PnfsHandler used for pnfs communication
+     * @param pnfs    PnfsHandler used for pnfs communication
      * @param subject The subject performing the transfer and namespace operations
-     * @param path The path of the file to transfer
+     * @param path    The path of the file to transfer
      */
     public Transfer(PnfsHandler pnfs, Subject subject, FsPath path)
     {
@@ -189,16 +207,16 @@ public class Transfer implements Comparable<Transfer>
      * Returns the ID of this transfer. The transfer ID
      * uniquely identifies this transfer object within this VM
      * instance.
-     *
+     * <p>
      * The transfer ID is used as the message ID for both the pool
      * selection message sent to PoolManager and the io file message
      * to the pool. The DoorTransferFinishedMessage from the pool will
      * have the same ID.
-     *
+     * <p>
      * IoDoorEntry instances provided for monitoring will contain the
      * transfer ID and the active transfer page of the httpd service
      * reports the transfer ID in the sequence column.
-     *
+     * <p>
      * The transfer ID is not to be confused with session string
      * identifier used for logging. The former identifies a single
      * transfer while the latter identifies a user session and could
@@ -235,13 +253,13 @@ public class Transfer implements Comparable<Transfer>
 
 
     public synchronized void
-        setCheckStagePermission(CheckStagePermission checkStagePermission)
+    setCheckStagePermission(CheckStagePermission checkStagePermission)
     {
         _checkStagePermission = checkStagePermission;
     }
 
     /**
-     * Sets the current status of a pool. May be null.
+     * Sets the current status of a transfer. May be null.
      */
     public synchronized void setStatus(String status)
     {
@@ -249,6 +267,16 @@ public class Transfer implements Comparable<Transfer>
             _log.debug("Status: {}", status);
         }
         _status = status;
+    }
+
+    /**
+     * Sets the current status of a pool and clear the status once the given future
+     * completes.
+     */
+    public void setStatusUntil(String status, ListenableFuture<?> future)
+    {
+        setStatus(status);
+        future.addListener(() -> setStatus(null), MoreExecutors.directExecutor());
     }
 
     /**
@@ -398,22 +426,21 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Initialises the session value in the cells diagnostic context
      * (CDC). The session value is attached to the thread.
-     *
+     * <p>
      * The session key is pushed to the NDC for purposes of logging.
-     *
+     * <p>
      * The format of the session value is chosen to be compatible with
      * the transaction ID format as found in the
      * InfoMessage.getTransaction method.
      *
-     * @param isCellNameSiteUnique True if the cell name is unique throughout this
-     *                             dCache site, that is, it is well known or derived
-     *                             from a well known name.
+     * @param isCellNameSiteUnique       True if the cell name is unique throughout this
+     *                                   dCache site, that is, it is well known or derived
+     *                                   from a well known name.
      * @param isCellNameTemporallyUnique True if the cell name is temporally unique,
      *                                   that is, two invocations of initSession will
      *                                   never have the same cell name.
-     *
      * @throws IllegalStateException when the thread is not already
-     *         associated with a cell through the CDC.
+     *                               associated with a cell through the CDC.
      */
     public static void initSession(boolean isCellNameSiteUnique, boolean isCellNameTemporallyUnique)
     {
@@ -546,11 +573,11 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param millis The timeout in milliseconds
      * @return true when the mover has finished
-     * @throws CacheException if the mover failed
+     * @throws CacheException       if the mover failed
      * @throws InterruptedException if the thread is interrupted
      */
     public synchronized boolean waitForMover(long millis)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException
     {
         long deadline = System.currentTimeMillis() + millis;
         while (!_hasMoverFinished && System.currentTimeMillis() < deadline) {
@@ -582,17 +609,17 @@ public class Transfer implements Comparable<Transfer>
      * Creates a new name space entry for the file to transfer. This
      * will fill in the PnfsId and StorageInfo of the file and mark
      * the transfer as an upload.
-     *
+     * <p>
      * Will fail if the subject of the transfer doesn't have
      * permission to create the file.
-     *
+     * <p>
      * If the parent directories don't exist, then they will be
      * created.
      *
      * @throws CacheException if creating the entry failed
      */
     public void createNameSpaceEntryWithParents()
-        throws CacheException
+            throws CacheException
     {
         try {
             createNameSpaceEntry();
@@ -606,14 +633,14 @@ public class Transfer implements Comparable<Transfer>
      * Creates a new name space entry for the file to transfer. This
      * will fill in the PnfsId and StorageInfo of the file and mark
      * the transfer as an upload.
-     *
+     * <p>
      * Will fail if the subject of the transfer doesn't have
      * permission to create the file.
      *
      * @throws CacheException if creating the entry failed
      */
     public void createNameSpaceEntry()
-        throws CacheException
+            throws CacheException
     {
         setStatus("PnfsManager: Creating name space entry");
         try {
@@ -643,58 +670,78 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Reads the name space entry of the file to transfer. This will fill in the PnfsId
      * and FileAttributes of the file.
+     * <p>
+     * Changes the I/O mode from write to read if the file is not new.
      *
+     * @throws PermissionDeniedCacheException if permission to read/write the file is denied
+     * @throws NotFileCacheException          if the file is not a regular file
+     * @throws FileIsNewCacheException        when attempting to download an incomplete file
+     * @throws CacheException                 if reading the entry failed
+     * @throws InterruptedException           if the thread is interrupted
+     * @oaram allowWrite whether the file may be opened for writing
+     */
+    public final void readNameSpaceEntry(boolean allowWrite)
+            throws CacheException, InterruptedException
+    {
+        getCancellable(readNameSpaceEntryAsync(allowWrite));
+    }
+
+    /**
+     * Reads the name space entry of the file to transfer. This will fill in the PnfsId
+     * and FileAttributes of the file.
+     * <p>
      * Changes the I/O mode from write to read if the file is not new.
      *
      * @oaram allowWrite whether the file may be opened for writing
-     * @throws PermissionDeniedCacheException if permission to read/write the file is denied
-     * @throws NotFileCacheException if the file is not a regular file
-     * @throws FileIsNewCacheException when attempting to download an incomplete file
-     * @throws CacheException if reading the entry failed
      */
-    public void readNameSpaceEntry(boolean allowWrite)
-        throws CacheException
+    public ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite)
     {
-        setStatus("PnfsManager: Fetching storage info");
-        try {
-            Set<FileAttribute> request = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
-            request.addAll(_additionalAttributes);
-            request.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
-            Set<AccessMask> mask;
-            if (allowWrite) {
-                mask = EnumSet.of(AccessMask.READ_DATA, AccessMask.WRITE_DATA);
-            } else {
-                mask = EnumSet.of(AccessMask.READ_DATA);
-            }
-            PnfsId pnfsId = getPnfsId();
-            FileAttributes attributes;
-            if (pnfsId != null) {
-                attributes = _pnfs.getFileAttributes(pnfsId, request, mask, true);
-            } else {
-                attributes = _pnfs.getFileAttributes(_path.toString(), request, mask, true);
-            }
-
-            /* We can only transfer regular files.
-             */
-            FileType type = attributes.getFileType();
-            if (type == FileType.DIR || type == FileType.SPECIAL) {
-                throw new NotFileCacheException("Not a regular file");
-            }
-
-            /* I/O mode must match completeness of the file.
-             */
-            if (!attributes.getStorageInfo().isCreatedOnly()) {
-                setWrite(false);
-            } else if (allowWrite) {
-                setWrite(true);
-            } else {
-                throw new FileIsNewCacheException();
-            }
-
-            setFileAttributes(attributes);
-        } finally {
-            setStatus(null);
+        Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
+        attr.addAll(_additionalAttributes);
+        attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
+        Set<AccessMask> mask;
+        if (allowWrite) {
+            mask = EnumSet.of(AccessMask.READ_DATA, AccessMask.WRITE_DATA);
+        } else {
+            mask = EnumSet.of(AccessMask.READ_DATA);
         }
+        PnfsId pnfsId = getPnfsId();
+        PnfsGetFileAttributes request;
+        if (pnfsId != null) {
+            request = new PnfsGetFileAttributes(pnfsId, attr);
+        } else {
+            request = new PnfsGetFileAttributes(_path.toString(), attr);
+        }
+        request.setAccessMask(mask);
+        request.setUpdateAtime(true);
+        ListenableFuture<PnfsGetFileAttributes> reply = _pnfs.requestAsync(request);
+
+        setStatusUntil("PnfsManager: Fetching storage info", reply);
+
+        return CellStub.transform(reply,
+                                  (PnfsGetFileAttributes msg) ->
+                                  {
+                                      FileAttributes attributes = msg.getFileAttributes();
+                                     /* We can only transfer regular files.
+                                      */
+                                      FileType type = attributes.getFileType();
+                                      if (type == FileType.DIR || type == FileType.SPECIAL) {
+                                          throw new NotFileCacheException("Not a regular file");
+                                      }
+
+                                     /* I/O mode must match completeness of the file.
+                                      */
+                                      if (!attributes.getStorageInfo().isCreatedOnly()) {
+                                          setWrite(false);
+                                      } else if (allowWrite) {
+                                          setWrite(true);
+                                      } else {
+                                          throw new FileIsNewCacheException();
+                                      }
+
+                                      setFileAttributes(attributes);
+                                      return immediateFuture(null);
+                                  });
     }
 
     /**
@@ -721,6 +768,7 @@ public class Transfer implements Comparable<Transfer>
 
     /**
      * Returns the length of the file to be transferred.
+     *
      * @throw IllegalStateException if the length isn't known
      */
     public synchronized long getLength()
@@ -743,6 +791,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Sets checksum of the file to be uploaded. Can be called multiple times
      * with different checksums types. Only valid for uploads.
+     *
      * @param checksum of the file
      * @throws CacheException if reading the entry failed
      */
@@ -755,7 +804,7 @@ public class Transfer implements Comparable<Transfer>
         try {
             setStatus("PnfsManager: Setting checksum");
             _pnfs.setChecksum(getPnfsId(), checksum);
-            synchronized(this) {
+            synchronized (this) {
                 _fileAttributes.getChecksums().add(checksum);
             }
         } finally {
@@ -765,7 +814,7 @@ public class Transfer implements Comparable<Transfer>
 
     /**
      * Sets the size of the preallocation to make.
-     *
+     * <p>
      * Only affects uploads. If the upload is larger than the
      * preallocation, then the upload may fail.
      */
@@ -777,8 +826,7 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Returns the read pool selection context.
      */
-    protected synchronized
-        PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
+    protected synchronized PoolMgrSelectReadPoolMsg.Context getReadPoolSelectionContext()
     {
         return _readPoolSelectionContext;
     }
@@ -788,8 +836,7 @@ public class Transfer implements Comparable<Transfer>
      * contains state that is maintained accross repeated pool
      * selections.
      */
-    protected synchronized
-        void setReadPoolSelectionContext(PoolMgrSelectReadPoolMsg.Context context)
+    protected synchronized void setReadPoolSelectionContext(PoolMgrSelectReadPoolMsg.Context context)
     {
         _readPoolSelectionContext = context;
     }
@@ -797,8 +844,8 @@ public class Transfer implements Comparable<Transfer>
     /**
      * Selects a pool suitable for the transfer.
      */
-    public void selectPool()
-        throws CacheException, InterruptedException
+    public final void selectPool()
+            throws CacheException, InterruptedException
     {
         selectPool(_poolManager.getTimeoutInMillis());
     }
@@ -807,60 +854,74 @@ public class Transfer implements Comparable<Transfer>
      * Selects a pool suitable for the transfer.
      */
     private void selectPool(long timeout)
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException
+    {
+        getCancellable(selectPoolAsync(timeout));
+    }
+
+    /**
+     * Selects a pool suitable for the transfer.
+     */
+    private ListenableFuture<Void> selectPoolAsync(long timeout)
     {
         FileAttributes fileAttributes = getFileAttributes();
 
-        setStatus("PoolManager: Selecting pool");
-        try {
-            ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
-            if (isWrite()) {
-                long allocated = _allocated;
-                if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
-                    allocated = fileAttributes.getSize();
-                }
-                PoolMgrSelectWritePoolMsg request =
+        ProtocolInfo protocolInfo = getProtocolInfoForPoolManager();
+        if (isWrite()) {
+            long allocated = _allocated;
+            if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
+                allocated = fileAttributes.getSize();
+            }
+            PoolMgrSelectWritePoolMsg request =
                     new PoolMgrSelectWritePoolMsg(fileAttributes,
                                                   protocolInfo,
                                                   allocated);
-                request.setId(_id);
-                request.setSubject(_subject);
-                request.setBillingPath(getBillingPath());
-                request.setTransferPath(getTransferPath());
+            request.setId(_id);
+            request.setSubject(_subject);
+            request.setBillingPath(getBillingPath());
+            request.setTransferPath(getTransferPath());
 
-                PoolMgrSelectWritePoolMsg reply =
-                    _poolManager.sendAndWait(request, timeout);
-                setPool(reply.getPoolName());
-                setPoolAddress(reply.getPoolAddress());
-                setFileAttributes(reply.getFileAttributes());
-            } else {
-                EnumSet<RequestContainerV5.RequestState> allowedStates =
-                    _checkStagePermission.canPerformStaging(_subject, fileAttributes)
-                    ? RequestContainerV5.allStates
-                    : RequestContainerV5.allStatesExceptStage;
+            ListenableFuture<PoolMgrSelectWritePoolMsg> reply = _poolManager.send(request, timeout);
+            setStatusUntil("PoolManager: Selecting pool", reply);
 
-                PoolMgrSelectReadPoolMsg request =
+            return CellStub.transform(reply,
+                                      (PoolMgrSelectWritePoolMsg msg) -> {
+                                          setPool(msg.getPoolName());
+                                          setPoolAddress(msg.getPoolAddress());
+                                          setFileAttributes(msg.getFileAttributes());
+                                          return immediateFuture(null);
+                                      });
+        } else {
+            EnumSet<RequestContainerV5.RequestState> allowedStates;
+            try {
+                allowedStates = _checkStagePermission.canPerformStaging(_subject, fileAttributes)
+                                ? RequestContainerV5.allStates
+                                : RequestContainerV5.allStatesExceptStage;
+            } catch (IOException e) {
+                return immediateFailedFuture(
+                        new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage()));
+            }
+
+            PoolMgrSelectReadPoolMsg request =
                     new PoolMgrSelectReadPoolMsg(fileAttributes,
                                                  protocolInfo,
                                                  getReadPoolSelectionContext(),
                                                  allowedStates);
-                request.setId(_id);
-                request.setSubject(_subject);
-                request.setBillingPath(getBillingPath());
-                request.setTransferPath(getTransferPath());
+            request.setId(_id);
+            request.setSubject(_subject);
+            request.setBillingPath(getBillingPath());
+            request.setTransferPath(getTransferPath());
 
-                PoolMgrSelectReadPoolMsg reply =
-                    _poolManager.sendAndWait(request, timeout);
-                setPool(reply.getPoolName());
-                setPoolAddress(reply.getPoolAddress());
-                setFileAttributes(reply.getFileAttributes());
-                setReadPoolSelectionContext(reply.getContext());
-            }
-        } catch (IOException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
-        } finally {
-            setStatus(null);
+            ListenableFuture<PoolMgrSelectReadPoolMsg> reply = _poolManager.send(request, timeout);
+            setStatusUntil("PoolManager: Selecting pool", reply);
+            return CellStub.transform(reply,
+                                      (PoolMgrSelectReadPoolMsg msg) -> {
+                                          setPool(msg.getPoolName());
+                                          setPoolAddress(msg.getPoolAddress());
+                                          setFileAttributes(msg.getFileAttributes());
+                                          setReadPoolSelectionContext(msg.getContext());
+                                          return immediateFuture(null);
+                                      });
         }
     }
 
@@ -869,7 +930,7 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param queue The mover queue of the transfer; may be null
      */
-    public void startMover(String queue)
+    public final void startMover(String queue)
             throws CacheException, InterruptedException
     {
         startMover(queue, _pool.getTimeoutInMillis());
@@ -880,51 +941,63 @@ public class Transfer implements Comparable<Transfer>
      *
      * @param queue The mover queue of the transfer; may be null
      */
-    public void startMover(String queue, long timeout)
-        throws CacheException, InterruptedException
+    public final void startMover(String queue, long timeout)
+            throws CacheException, InterruptedException
+    {
+        getCancellable(startMoverAsync(queue, timeout));
+    }
+
+    /**
+     * Creates a mover for the transfer.
+     *
+     * @param queue The mover queue of the transfer; may be null
+     */
+    public ListenableFuture<Void> startMoverAsync(String queue, long timeout)
     {
         FileAttributes fileAttributes = getFileAttributes();
         String pool = getPool();
 
-        if (fileAttributes == null|| pool == null) {
+        if (fileAttributes == null || pool == null) {
             throw new IllegalStateException("Need PNFS ID, file attributes and pool before a mover can be started");
         }
 
-        setStatus("Pool " + pool + ": Creating mover");
-        try {
-            ProtocolInfo protocolInfo = getProtocolInfoForPool();
-            PoolIoFileMessage message;
-            if (isWrite()) {
-                long allocated = _allocated;
-                if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
-                    allocated = fileAttributes.getSize();
-                }
-                message =
-                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes, allocated);
-            } else {
-                message =
-                    new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes);
+        ProtocolInfo protocolInfo = getProtocolInfoForPool();
+        PoolIoFileMessage message;
+        if (isWrite()) {
+            long allocated = _allocated;
+            if (allocated == 0 && fileAttributes.isDefined(SIZE)) {
+                allocated = fileAttributes.getSize();
             }
-            message.setBillingPath(getBillingPath());
-            message.setTransferPath(getTransferPath());
-            message.setIoQueueName(queue);
-            message.setInitiator(getTransaction());
-            message.setId(_id);
-            message.setSubject(_subject);
-
-            /* As always, PoolIoFileMessage has to be sent via the
-             * PoolManager (which could be the SpaceManager).
-             */
-            CellPath poolPath = _poolManager.getDestinationPath().clone();
-            poolPath.add(getPoolAddress());
-
-            setMoverId(_pool.sendAndWait(poolPath, message, timeout).getMoverId());
-        } finally {
-            setStatus(null);
+            message =
+                    new PoolAcceptFileMessage(pool, protocolInfo, fileAttributes, allocated);
+        } else {
+            message =
+                    new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes);
         }
+        message.setBillingPath(getBillingPath());
+        message.setTransferPath(getTransferPath());
+        message.setIoQueueName(queue);
+        message.setInitiator(getTransaction());
+        message.setId(_id);
+        message.setSubject(_subject);
+
+        /* As always, PoolIoFileMessage has to be sent via the
+         * PoolManager (which could be the SpaceManager).
+         */
+        CellPath poolPath =
+                (CellPath) _poolManager.getDestinationPath().clone();
+        poolPath.add(getPoolAddress());
+
+        ListenableFuture<PoolIoFileMessage> reply = _pool.send(poolPath, message, timeout);
+        setStatusUntil("Pool " + pool + ": Creating mover", reply);
+        return CellStub.transform(reply, (PoolIoFileMessage msg) -> {
+            setMoverId(msg.getMoverId());
+            return immediateFuture(null);
+        });
     }
 
-    public void killMover(long timeout, TimeUnit unit)
+
+    public final void killMover(long timeout, TimeUnit unit)
     {
         killMover(unit.toMillis(timeout));
     }
@@ -951,7 +1024,7 @@ public class Transfer implements Comparable<Transfer>
             /* Kill the mover.
              */
             PoolMoverKillMessage message =
-                new PoolMoverKillMessage(pool, moverId);
+                    new PoolMoverKillMessage(pool, moverId);
             message.setReplyRequired(false);
             _pool.notify(new CellPath(poolAddress), message);
 
@@ -977,7 +1050,7 @@ public class Transfer implements Comparable<Transfer>
     }
 
     public IoJobInfo queryMoverInfo()
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException
     {
         if (!hasMover()) {
             throw new IllegalStateException("Transfer has no mover");
@@ -1015,7 +1088,7 @@ public class Transfer implements Comparable<Transfer>
      * Sends billing information to the billing cell. Any invocation
      * beyond the first is ignored.
      *
-     * @param code The error code of the transfer; zero indicates success
+     * @param code  The error code of the transfer; zero indicates success
      * @param error The error string of the transfer; may be empty
      */
     public synchronized void notifyBilling(int code, String error)
@@ -1025,7 +1098,7 @@ public class Transfer implements Comparable<Transfer>
         }
 
         DoorRequestInfoMessage msg =
-            new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
+                new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
         msg.setSubject(_subject);
         msg.setBillingPath(getBillingPath());
         msg.setTransferPath(getTransferPath());
@@ -1060,83 +1133,109 @@ public class Transfer implements Comparable<Transfer>
      * @throws CacheException
      * @throws InterruptedException
      */
-    public void
-        selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
-        throws CacheException, InterruptedException
+    public void selectPoolAndStartMover(String queue, TransferRetryPolicy policy)
+            throws CacheException, InterruptedException
     {
-        long deadLine =
-                addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
-        long retryCount = policy.getRetryCount();
-        long retryPeriod = policy.getRetryPeriod();
+        getCancellable(selectPoolAndStartMoverAsync(queue, policy));
+    }
 
-        while (true) {
-            boolean gotPool = false;
-            long start = System.currentTimeMillis();
-            CacheException lastFailure;
-            try {
-                selectPool(getTimeoutFor(_poolManager, deadLine));
-                gotPool = true;
-                startMover(queue, getTimeoutFor(_pool, deadLine));
-                return;
-            } catch (TimeoutCacheException e) {
-                _log.warn(e.getMessage());
-                if (gotPool && isWrite()) {
-                    /* We cannot know whether the mover was actually
-                     * started or not. Retrying is therefore not an
-                     * option.
-                     */
-                    throw e;
-                }
-                lastFailure = e;
-            } catch (CacheException e) {
-                switch (e.getRc()) {
-                case CacheException.OUT_OF_DATE:
-                case CacheException.POOL_DISABLED:
-                case CacheException.FILE_NOT_IN_REPOSITORY:
-                    _log.info("Retrying pool selection: {}", e.getMessage());
-                    if (!isWrite()) {
-                        readNameSpaceEntry(false);
+    public ListenableFuture<Void> selectPoolAndStartMoverAsync(String queue, TransferRetryPolicy policy)
+    {
+        long deadLine = addWithInfinity(System.currentTimeMillis(), policy.getTotalTimeOut());
+
+        AsyncFunction<Void, Void> selectPool =
+                ignored -> selectPoolAsync(getTimeoutFor(_poolManager, deadLine));
+        AsyncFunction<Void, Void> startMover =
+                ignored -> startMoverAsync(queue, getTimeoutFor(_pool, deadLine));
+        AsyncFunction<Void, Void> readNameSpaceEntry =
+                ignored -> readNameSpaceEntryAsync(false);
+
+        FutureFallback<Void> retry =
+                new FutureFallback<Void>()
+                {
+                    private int count;
+
+                    private long start = System.currentTimeMillis();
+
+                    @Override
+                    public ListenableFuture<Void> create(Throwable t) throws Exception
+                    {
+                        count++;
+
+                        if (t instanceof TimeoutCacheException) {
+                            if (getPool() != null && isWrite()) {
+                                return immediateFailedFuture(t);
+                            }
+                        } else if (t instanceof CacheException) {
+                            switch (((CacheException) t).getRc()) {
+                            case CacheException.OUT_OF_DATE:
+                            case CacheException.POOL_DISABLED:
+                            case CacheException.FILE_NOT_IN_REPOSITORY:
+                                _log.info("Retrying pool selection: {}", t.getMessage());
+                                return retryWhen(immediateFuture(null));
+                            case CacheException.FILE_IN_CACHE:
+                            case CacheException.INVALID_ARGS:
+                                return immediateFailedFuture(t);
+                            case CacheException.NO_POOL_CONFIGURED:
+                                _log.error(t.getMessage());
+                                return immediateFailedFuture(t);
+                            case CacheException.NO_POOL_ONLINE:
+                                _log.warn(t.getMessage());
+                                break;
+                            default:
+                                _log.error(t.getMessage());
+                                break;
+                            }
+                        } else {
+                            return immediateFailedFuture(t);
+                        }
+
+                        if (count >= policy.getRetryCount()) {
+                            return immediateFailedFuture(t);
+                        }
+
+                        /* We rate limit the retry loop: two consecutive
+                         * iterations are separated by at least retryPeriod.
+                         */
+                        long now = System.currentTimeMillis();
+                        long timeToSleep = Math.max(0, policy.getRetryPeriod() - (now - start));
+
+                        if (subWithInfinity(deadLine, now) <= timeToSleep) {
+                            return immediateFailedFuture(t);
+                        }
+
+                        ListenableScheduledFuture<Void> doneSleeping =
+                                RETRY_EXECUTOR.schedule(() -> null, timeToSleep, TimeUnit.MILLISECONDS);
+
+                        setStatusUntil("Sleeping (" + t.getMessage() + ")", doneSleeping);
+                        return retryWhen(doneSleeping);
                     }
-                    continue;
-                case CacheException.FILE_IN_CACHE:
-                case CacheException.INVALID_ARGS:
-                    throw e;
-                case CacheException.NO_POOL_CONFIGURED:
-                    _log.error(e.getMessage());
-                    throw e;
-                case CacheException.NO_POOL_ONLINE:
-                    _log.warn(e.getMessage());
-                    break;
-                default:
-                    _log.error(e.getMessage());
-                    break;
-                }
-                lastFailure = e;
-            }
 
-            --retryCount;
+                    public ListenableFuture<Void> retryWhen(ListenableFuture<Void> future)
+                    {
+                        if (!isWrite()) {
+                            future = transform(future, readNameSpaceEntry);
+                        }
+                        start = System.currentTimeMillis();
+                        return withFallback(transform(transform(future, selectPool), startMover), this);
+                    }
+                };
 
-            /* We rate limit the retry loop: two consecutive
-             * iterations are separated by at least retryPeriod.
-             */
-            long now = System.currentTimeMillis();
-            long timeToSleep =
-                Math.max(0, retryPeriod - (now - start));
+        return withFallback(transform(
+                selectPoolAsync(getTimeoutFor(_poolManager, deadLine)), startMover), retry);
+    }
 
-            if (retryCount == 0 || subWithInfinity(deadLine, now) <= timeToSleep) {
-                throw lastFailure;
-            }
-
-            setStatus("Sleeping (" + lastFailure.getMessage() + ")");
-            try {
-                Thread.sleep(timeToSleep);
-            } finally {
-                setStatus(null);
-            }
-
-            if (!isWrite()) {
-                readNameSpaceEntry(false);
-            }
+    /**
+     * Returns the result of {@link Future#get()} as if by {@link CellStub#get}, but
+     * cancels {@code future} if the calling thread is interrupted.
+     */
+    protected static <T> T getCancellable(ListenableFuture<T> future) throws CacheException, InterruptedException
+    {
+        try {
+            return CellStub.get(future);
+        } catch (InterruptedException e) {
+            future.cancel(true);
+            throw e;
         }
     }
 }

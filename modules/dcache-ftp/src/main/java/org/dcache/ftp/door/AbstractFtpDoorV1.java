@@ -75,6 +75,8 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -856,7 +858,8 @@ public abstract class AbstractFtpDoorV1
                            ProtocolFamily protocolFamily,
                            int version)
         {
-            super(AbstractFtpDoorV1.this._pnfs,
+            super(AbstractFtpDoorV1.this._executor,
+                  AbstractFtpDoorV1.this._pnfs,
                   AbstractFtpDoorV1.this._subject, path);
 
             setDomainName(_cellAddress.getCellDomainName());
@@ -1033,25 +1036,14 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        @Override
-        public synchronized void startMover(String queue, long timeout)
-            throws CacheException, InterruptedException
-        {
-            super.startMover(queue, timeout);
-            setStatus("Mover " + getPool() + "/" + getMoverId());
-            if (_version == 1) {
-                redirect(null);
-            }
-        }
-
         public void abort(int replyCode, String msg)
         {
-            doAbort(new FTPCommandException(replyCode, msg));
+            abort(new FTPCommandException(replyCode, msg));
         }
 
         public void abort(int replyCode, String msg, Exception exception)
         {
-            doAbort(new FTPCommandException(replyCode, msg, exception));
+            abort(new FTPCommandException(replyCode, msg, exception));
         }
 
         @Override
@@ -1127,7 +1119,7 @@ public abstract class AbstractFtpDoorV1
                     TIMER.schedule(_perfMarkerTask, period, period);
                 }
             } catch (FTPCommandException e) {
-                abort(e.getCode(), e.getReply());
+                abort(e);
             } catch (RuntimeException e) {
                 _log.error("Possible bug detected.", e);
                 abort(451, "Transient internal error", e);
@@ -1168,7 +1160,7 @@ public abstract class AbstractFtpDoorV1
                 setTransfer(null);
                 reply(_commandLine, "226 Transfer complete.");
             } catch (FTPCommandException e) {
-                abort(e.getCode(), e.getReply());
+                abort(e);
             } catch (InterruptedException e) {
                 abort(451, "FTP proxy was interrupted", e);
             } catch (RuntimeException e) {
@@ -1192,7 +1184,7 @@ public abstract class AbstractFtpDoorV1
          * logged with an exception.
          */
         @Override
-        protected synchronized void onFailure(Exception exception)
+        protected synchronized void onFailure(Throwable t)
         {
             if (_perfMarkerTask != null) {
                 _perfMarkerTask.stop();
@@ -1221,12 +1213,12 @@ public abstract class AbstractFtpDoorV1
              */
             int replyCode;
             String replyMsg;
-            if (exception instanceof FTPCommandException) {
-                replyCode = ((FTPCommandException) exception).getCode();
-                replyMsg = ((FTPCommandException) exception).getReply();
+            if (t instanceof FTPCommandException) {
+                replyCode = ((FTPCommandException) t).getCode();
+                replyMsg = ((FTPCommandException) t).getReply();
             } else {
                 replyCode = 451;
-                replyMsg = exception.getMessage();
+                replyMsg = t.getMessage();
             }
 
             String msg = String.valueOf(replyCode) + " " + replyMsg;
@@ -1236,8 +1228,8 @@ public abstract class AbstractFtpDoorV1
                 _tLog = null;
             }
             LOGGER.error("Transfer error: {}", msg);
-            if (!(exception instanceof FTPCommandException)) {
-                LOGGER.debug(exception.toString(), exception);
+            if (!(t instanceof FTPCommandException)) {
+                LOGGER.debug(t.toString(), t);
             }
             setTransfer(null);
             reply(_commandLine, msg);
@@ -3210,6 +3202,9 @@ public abstract class AbstractFtpDoorV1
             LOGGER.info("retrieve user={}", getUser());
             LOGGER.info("retrieve addr={}", _remoteSocketAddress);
 
+            if (version == 1) {
+                transfer.redirect(null);
+            }
             transfer.readNameSpaceEntry(false);
             transfer.createTransactionLog();
             transfer.checkAndDeriveOffsetAndSize();
@@ -3220,7 +3215,7 @@ public abstract class AbstractFtpDoorV1
              * transfer a few times.
              */
             transfer.createAdapter();
-            transfer.selectPoolAndStartMover(_ioQueueName, _readRetryPolicy);
+            transfer.selectPoolAndStartMoverAsync(_ioQueueName, _readRetryPolicy);
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
@@ -3252,7 +3247,7 @@ public abstract class AbstractFtpDoorV1
                 break;
             }
         } catch (FTPCommandException e) {
-            transfer.abort(e.getCode(), e.getReply());
+            transfer.abort(e);
         } catch (InterruptedException e) {
             transfer.abort(451, "Operation cancelled");
         } catch (IOException e) {
@@ -3337,6 +3332,9 @@ public abstract class AbstractFtpDoorV1
         try {
             LOGGER.info("store receiving with mode {}", xferMode);
 
+            if (version == 1) {
+                transfer.redirect(null);
+            }
             transfer.createNameSpaceEntry();
             transfer.createTransactionLog();
             if (_checkSum != null) {
@@ -3344,9 +3342,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             transfer.createAdapter();
-            transfer.selectPoolAndStartMover(_ioQueueName, _writeRetryPolicy);
-        } catch (InterruptedException e) {
-            transfer.abort(451, "Operation cancelled");
+            transfer.selectPoolAndStartMoverAsync(_ioQueueName, _writeRetryPolicy);
         } catch (IOException e) {
             transfer.abort(451, "Operation failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {
