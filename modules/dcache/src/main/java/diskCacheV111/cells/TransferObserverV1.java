@@ -796,9 +796,9 @@ public class TransferObserverV1
             args.add(io._ioDoorInfo.getOwner());
             args.add(io._ioDoorInfo.getProcess());
             args.add(Objects.toString(io._ioDoorEntry.getPnfsId(), ""));
-            args.add(io._ioDoorEntry.getPool());
+            args.add(Objects.toString(io._ioDoorEntry.getPool(), ""));
             args.add(io._ioDoorEntry.getReplyHost());
-            args.add(io._ioDoorEntry.getStatus());
+            args.add(Objects.toString(io._ioDoorEntry.getStatus(), ""));
             args.add(String.valueOf(now - io._ioDoorEntry.getWaitingSince()));
 
             IoJobInfo mover = io._ioJobInfo;
