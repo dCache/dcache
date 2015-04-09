@@ -2,6 +2,7 @@ package dmg.cells.nucleus;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,7 @@ import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholds;
 import dmg.util.logback.RootFilterThresholds;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
@@ -92,8 +94,6 @@ public class CellNucleus implements ThreadFactory
      * Task for calling the Cell nucleus message timeout mechanism.
      */
     private TimerTask _timeoutTask;
-
-    private boolean _isPrivateMessageExecutor = true;
 
     private Pinboard _pinboard;
     private FilterThresholds _loggingThresholds;
@@ -347,20 +347,8 @@ public class CellNucleus implements ThreadFactory
         checkNotNull(executor);
         int state = _state.get();
         checkState(state != REMOVING && state != DEAD);
-
-        if (_isPrivateMessageExecutor) {
-            _messageExecutor.shutdown();
-        }
+        _messageExecutor.shutdown();
         _messageExecutor = executor;
-        _isPrivateMessageExecutor = false;
-    }
-
-
-    private synchronized void shutdownPrivateExecutors()
-    {
-        if (_isPrivateMessageExecutor) {
-            _messageExecutor.shutdown();
-        }
     }
 
     public void  sendMessage(CellMessage msg,
@@ -844,50 +832,41 @@ public class CellNucleus implements ThreadFactory
             }
         }
 
-        try {
-            //
-            // we have to cover 2 cases :
-            //   - absolutely asynchronous request
-            //   - asynchronous, but we have a callback to call
-            //
-            final CellMessage msg = ce.getMessage();
-            if (msg != null) {
-                LOGGER.trace("addToEventQueue : message arrived : {}", msg);
-                CellLock lock;
+        CellMessage msg = ce.getMessage();
+        LOGGER.trace("addToEventQueue : message arrived : {}", msg);
 
+        CellLock lock;
+        synchronized (_waitHash) {
+            lock = _waitHash.remove(msg.getLastUOID());
+        }
+
+        if (lock != null) {
+            //
+            // we were waiting for you (sync or async)
+            //
+            LOGGER.trace("addToEventQueue : lock found for : {}", msg);
+            try {
+                _eventQueueSize.incrementAndGet();
+                lock.getExecutor().execute(new CallbackTask(lock, msg));
+            } catch (RejectedExecutionException e) {
+                _eventQueueSize.decrementAndGet();
+                /* Put it back; the timeout handler will eventually take care of it.
+                 */
                 synchronized (_waitHash) {
-                    lock = _waitHash.remove(msg.getLastUOID());
+                    _waitHash.put(msg.getLastUOID(), lock);
                 }
-
-                if (lock != null) {
-                    //
-                    // we were waiting for you (sync or async)
-                    //
-                    LOGGER.trace("addToEventQueue : lock found for : {}", msg);
-                    try {
-                        _eventQueueSize.incrementAndGet();
-                        lock.getExecutor().execute(new CallbackTask(lock, msg));
-                    } catch (RejectedExecutionException e) {
-                        _eventQueueSize.decrementAndGet();
-                        /* Put it back; the timeout handler
-                         * will eventually take care of it.
-                         */
-                        synchronized (_waitHash) {
-                            _waitHash.put(msg.getLastUOID(), lock);
-                        }
-                        throw e;
-                    }
-                    return;
-                }
-            }     // end of : msg != null
-
-            EventLogger.queueBegin(ce);
-            _eventQueueSize.incrementAndGet();
-            _messageExecutor.execute(new DeliverMessageTask(ce));
-        } catch (RejectedExecutionException e) {
-            EventLogger.queueEnd(ce);
-            _eventQueueSize.decrementAndGet();
-            LOGGER.error("Message queue overflow. Dropping {}", ce);
+                LOGGER.error("Message queue overflow. Dropping {}", ce);
+            }
+        } else {
+            try {
+                EventLogger.queueBegin(ce);
+                _eventQueueSize.incrementAndGet();
+                _messageExecutor.execute(new DeliverMessageTask(ce));
+            } catch (RejectedExecutionException e) {
+                EventLogger.queueEnd(ce);
+                _eventQueueSize.decrementAndGet();
+                LOGGER.error("Message queue overflow. Dropping {}", ce);
+            }
         }
     }
 
@@ -904,11 +883,29 @@ public class CellNucleus implements ThreadFactory
 
     void shutdown(KillEvent event)
     {
-        LOGGER.trace("Received {}", event);
-
         try (CDC ignored = CDC.reset(CellNucleus.this)) {
+            LOGGER.trace("Received {}", event);
+
             checkState(_state.compareAndSet(INITIAL, REMOVING) || _state.compareAndSet(ACTIVE, REMOVING));
-            addToEventQueue(LAST_MESSAGE_EVENT);
+
+            /* Shut down message executor.
+             */
+            ExecutorService executor;
+            synchronized (this) {
+                executor = _messageExecutor;
+            }
+            if (!MoreExecutors.shutdownAndAwaitTermination(executor, 2, TimeUnit.SECONDS)) {
+                LOGGER.warn("Failed to flush message queue during shutdown.");
+            }
+
+            /* Stop executing deferred tasks.
+             */
+            if (_timeoutTask != null) {
+                _timeoutTask.cancel();
+            }
+
+            /* Shut down cell.
+             */
             try {
                 _cell.prepareRemoval(event);
             } catch (Throwable e) {
@@ -916,10 +913,9 @@ public class CellNucleus implements ThreadFactory
                 t.getUncaughtExceptionHandler().uncaughtException(t, e);
             }
 
-            shutdownPrivateExecutors();
-
+            /* Shut down remaining threads.
+             */
             LOGGER.debug("Waiting for all threads in {} to finish", _threads);
-
             try {
                 Collection<Thread> threads = getNonDaemonThreads(_threads);
 
@@ -936,10 +932,8 @@ public class CellNucleus implements ThreadFactory
                 LOGGER.warn("Interrupted while waiting for threads");
             }
 
-            if (_timeoutTask != null) {
-                _timeoutTask.cancel();
-            }
-
+            /* Declare the cell as dead.
+             */
             __cellGlue.destroy(CellNucleus.this);
             _state.set(DEAD);
         }
@@ -1046,8 +1040,6 @@ public class CellNucleus implements ThreadFactory
     List<CellTunnelInfo> getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
     //
 
-    private static final MessageEvent LAST_MESSAGE_EVENT = new LastMessageEvent();
-
     private abstract class AbstractNucleusTask implements Runnable
     {
         protected abstract void innerRun();
@@ -1133,10 +1125,7 @@ public class CellNucleus implements ThreadFactory
             EventLogger.queueEnd(_event);
             _eventQueueSize.decrementAndGet();
 
-            if (_event instanceof LastMessageEvent) {
-                LOGGER.trace("messageThread : LastMessageEvent arrived");
-                _cell.messageArrived((MessageEvent) _event);
-            } else if (_event instanceof RoutedMessageEvent) {
+            if (_event instanceof RoutedMessageEvent) {
                 LOGGER.trace("messageThread : RoutedMessageEvent arrived");
                 _cell.messageArrived((RoutedMessageEvent) _event);
             } else if (_event instanceof MessageEvent) {

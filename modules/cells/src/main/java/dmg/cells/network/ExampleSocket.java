@@ -13,7 +13,6 @@ import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
-import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 
 import org.dcache.util.Version;
@@ -95,10 +94,6 @@ public class ExampleSocket implements Cell, Runnable {
    }
    @Override
    public void   messageArrived( MessageEvent me ){
-     if( me instanceof LastMessageEvent ) {
-         return;
-     }
-
      CellMessage msg = me.getMessage() ;
      _log.info( " CellMessage From   : "+msg.getSourcePath() ) ;
      _log.info( " CellMessage To     : "+msg.getDestinationPath() ) ;

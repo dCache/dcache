@@ -12,10 +12,8 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.KillEvent;
-import dmg.cells.nucleus.LastMessageEvent;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.RoutedMessageEvent;
-import dmg.util.Gate;
 
 import org.dcache.util.Version;
 
@@ -32,7 +30,6 @@ public class ReflectionTunnel implements Cell,
        LoggerFactory.getLogger(ReflectionTunnel.class);
 
    private CellNucleus  _nucleus;
-   private Gate         _finalGate          = new Gate(false) ;
    private final Version version = Version.of(this);
 
    public ReflectionTunnel( String cellName , String socket )
@@ -70,19 +67,13 @@ public class ReflectionTunnel implements Cell,
            _log.info( "Problem sending :" + eee ) ;
         }
 
-     }else if( me instanceof LastMessageEvent ){
-        _log.info( "messageArrived : opening final gate" ) ;
-        _finalGate.open() ;
      }else{
         _log.info( "messageArrived : dumping junk message "+me ) ;
      }
 
    }
    @Override
-   public synchronized void   prepareRemoval( KillEvent ce ){
-
-     _finalGate.check() ;
-     _log.info( "prepareRemoval : final gate passed -> closing" ) ;
+   public void   prepareRemoval( KillEvent ce ){
    }
    @Override
    public void   exceptionArrived( ExceptionEvent ce ){
