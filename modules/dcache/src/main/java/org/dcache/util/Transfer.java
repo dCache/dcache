@@ -1022,6 +1022,11 @@ public class Transfer implements Comparable<Transfer>
         _isBillingNotified = true;
     }
 
+    private static long getTimeoutFor(CellStub stub, long deadline)
+    {
+        return Math.min(subWithInfinity(deadline, System.currentTimeMillis()), stub.getTimeoutInMillis());
+    }
+
     /**
      * Select a pool and start a mover. Failed attempts are handled
      * according to the {@link TransferRetryPolicy}. Note, that there
@@ -1046,11 +1051,9 @@ public class Transfer implements Comparable<Transfer>
             long start = System.currentTimeMillis();
             CacheException lastFailure;
             try {
-                selectPool(subWithInfinity(deadLine, System.currentTimeMillis()));
+                selectPool(getTimeoutFor(_poolManager, deadLine));
                 gotPool = true;
-                startMover(queue,
-                        Math.min(subWithInfinity(deadLine, System.currentTimeMillis()),
-                                policy.getMoverStartTimeout()));
+                startMover(queue, getTimeoutFor(_pool, deadLine));
                 return;
             } catch (TimeoutCacheException e) {
                 _log.warn(e.getMessage());

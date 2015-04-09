@@ -189,9 +189,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private ProxyIoFactory _proxyIoFactory;
 
-    private final static TransferRetryPolicy RETRY_POLICY =
-        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
-                                NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
+    private static final TransferRetryPolicy RETRY_POLICY =
+        new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD, NFS_REPLY_TIMEOUT);
 
     /**
      * Data striping pattern for a file.

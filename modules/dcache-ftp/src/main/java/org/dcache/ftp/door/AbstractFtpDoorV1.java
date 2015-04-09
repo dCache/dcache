@@ -1356,11 +1356,9 @@ public abstract class AbstractFtpDoorV1
         _origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteSocketAddress.getAddress());
 
         _readRetryPolicy =
-            new TransferRetryPolicy(_maxRetries, _retryWait * 1000,
-                                    Long.MAX_VALUE, _poolTimeoutUnit.toMillis(_poolTimeout));
+            new TransferRetryPolicy(_maxRetries, _retryWait * 1000, Long.MAX_VALUE);
         _writeRetryPolicy =
-            new TransferRetryPolicy(MAX_RETRIES_WRITE, 0,
-                                    Long.MAX_VALUE, _poolTimeoutUnit.toMillis(_poolTimeout));
+            new TransferRetryPolicy(MAX_RETRIES_WRITE, 0, Long.MAX_VALUE);
 
         _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
 
