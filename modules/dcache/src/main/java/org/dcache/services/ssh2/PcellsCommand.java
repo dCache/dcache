@@ -275,9 +275,9 @@ public class PcellsCommand implements Command, Runnable
             args.add(io.door().getOwner());
             args.add(io.door().getProcess());
             args.add(Objects.toString(io.session().getPnfsId(), ""));
-            args.add(io.session().getPool());
+            args.add(Objects.toString(io.session().getPool(), ""));
             args.add(io.session().getReplyHost());
-            args.add(io.session().getStatus());
+            args.add(Objects.toString(io.session().getStatus(), ""));
             args.add(String.valueOf(now - io.session().getWaitingSince()));
 
             IoJobInfo mover = io.mover();

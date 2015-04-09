@@ -497,9 +497,9 @@ public class TransferObserverV1
             args.add(transfer.door().getOwner());
             args.add(transfer.door().getProcess());
             args.add(Objects.toString(transfer.session().getPnfsId(), ""));
-            args.add(transfer.session().getPool());
+            args.add(Objects.toString(transfer.session().getPool(), ""));
             args.add(transfer.session().getReplyHost());
-            args.add(transfer.session().getStatus());
+            args.add(Objects.toString(transfer.session().getStatus(), ""));
             args.add(String.valueOf(now - transfer.session().getWaitingSince()));
 
             IoJobInfo mover = transfer.mover();
