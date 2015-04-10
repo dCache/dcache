@@ -59,6 +59,8 @@ import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
+import org.dcache.xrootd.protocol.messages.AsyncResponse;
+import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
 import org.dcache.xrootd.protocol.messages.DirListRequest;
 import org.dcache.xrootd.protocol.messages.DirListResponse;
 import org.dcache.xrootd.protocol.messages.MkDirRequest;
@@ -181,13 +183,13 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             logDebugOnOpen(req);
         }
 
-        try {
-            ////////////////////////////////////////////////////////////////
-            // interact with core dCache to open the requested file
-            UUID uuid = UUID.randomUUID();
-            String opaque =
-                OpaqueStringParser.buildOpaqueString(UUID_PREFIX, uuid.toString());
+        UUID uuid = UUID.randomUUID();
+        String opaque = OpaqueStringParser.buildOpaqueString(UUID_PREFIX, uuid.toString());
 
+        /* Interact with core dCache to open the requested file.
+         */
+        respond(ctx, new AwaitAsyncResponse<>(req, Integer.MAX_VALUE));
+        try {
             XrootdTransfer transfer;
             if (neededPerm == FilePerm.WRITE) {
                 boolean createDir = (options & kXR_mkpath) == kXR_mkpath;
@@ -210,30 +212,31 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
             /* xrootd developers say that IPv6 addresses must always be URI quoted.
              * The spec doesn't require this, but clients depend on it.
              */
-            return new RedirectResponse<>(req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, "");
+            return new AsyncResponse<>(new RedirectResponse<>(
+                    req, InetAddresses.toUriString(address.getAddress()), address.getPort(), opaque, ""));
         } catch (FileNotFoundCacheException e) {
-            throw new XrootdException(kXR_NotFound, "No such file");
+            return new AsyncResponse<>(withError(req, kXR_NotFound, "No such file"));
         } catch (FileExistsCacheException e) {
-            throw new XrootdException(kXR_Unsupported, "File already exists");
+            return new AsyncResponse<>(withError(req, kXR_Unsupported, "File already exists"));
         } catch (TimeoutCacheException e) {
-            throw new XrootdException(kXR_ServerError, "Internal timeout");
+            return new AsyncResponse<>(withError(req, kXR_ServerError, "Internal timeout"));
         } catch (PermissionDeniedCacheException e) {
-            throw new XrootdException(kXR_NotAuthorized, e.getMessage());
+            return new AsyncResponse<>(withError(req, kXR_NotAuthorized, e.getMessage()));
         } catch (FileIsNewCacheException e) {
-            throw new XrootdException(kXR_FileLocked, "File is locked by upload");
+            return new AsyncResponse<>(withError(req, kXR_FileLocked, "File is locked by upload"));
         } catch (NotFileCacheException e) {
-            throw new XrootdException(kXR_NotFile, "Not a file");
+            return new AsyncResponse<>(withError(req, kXR_NotFile, "Not a file"));
         } catch (CacheException e) {
-            throw new XrootdException(kXR_ServerError,
-                                      String.format("Failed to open file (%s [%d])",
-                                                    e.getMessage(), e.getRc()));
+            return new AsyncResponse<>(
+                    withError(req, kXR_ServerError,
+                              String.format("Failed to open file (%s [%d])", e.getMessage(), e.getRc())));
         } catch (InterruptedException e) {
             /* Interrupt may be caused by cell shutdown or client
              * disconnect.  If the client disconnected, then the error
              * message will never reach the client, so saying that the
              * server shut down is okay.
              */
-            throw new XrootdException(kXR_ServerError, "Server shutdown");
+            return new AsyncResponse<>(withError(req, kXR_ServerError, "Server shutdown"));
         }
     }
 
