@@ -269,7 +269,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             try {
                 transferURL = new org.apache.axis.types.URI(turlstring);
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
-                logger.error(e.toString());
+                logger.error("Generated broken TURL \"{}\": {}", turlstring, e);
                 throw new SRMInvalidRequestException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);

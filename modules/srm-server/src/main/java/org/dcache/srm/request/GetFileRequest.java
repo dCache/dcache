@@ -309,7 +309,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             try {
             fileStatus.setTransferURL(new org.apache.axis.types.URI(turlstring));
             } catch (org.apache.axis.types.URI.MalformedURIException e) {
-                logger.error(e.toString());
+                logger.error("Generated broken TURL \"{}\": {}", turlstring, e);
                 throw new SRMInvalidRequestException("wrong turl format");
             }
 
