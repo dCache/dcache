@@ -107,6 +107,7 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
                     LOGGER.trace("finished job to process update {}", pendingUpdate);
                 } finally {
                     _pendingRequestCount.decrementAndGet();
+                    pendingUpdate.updateComplete();
                     CDC.clear();
                 }
             }
@@ -191,11 +192,17 @@ public class StateMaintainer implements StateUpdateManager, CellMessageSender
                     _caretaker.removeExpiredMetrics();
                     scheduleMetricExpunge();
                     LOGGER.trace("Metric purge completed");
+                    expungeCompleted();
                 }
             }), delay, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException e) {
             LOGGER.trace("Failed to enqueue expunge task as queue is not accepting further work.");
         }
+    }
+
+    public void expungeCompleted()
+    {
+        // Allow discovery of when an expung is completed.
     }
 
     /**

@@ -226,4 +226,9 @@ public class StateUpdate
 
         return sb.toString();
     }
+
+    public void updateComplete()
+    {
+        // This is a no-op method called after an update has been processed.
+    }
 }
