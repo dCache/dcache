@@ -298,7 +298,37 @@ public abstract class NetworkUtils {
     public static InetAddress withCanonicalAddress(InetAddress address)
     {
         try {
-            return InetAddress.getByAddress(address.getCanonicalHostName(), address.getAddress());
+            String name = address.getCanonicalHostName();
+
+            // Java uses an extension to IPv6 addressing
+            // [draft-ietf-ipngwg-scoping-arch-04.txt] where a '%' is appended
+            // to the String representation of an IPv6 link-local and
+            // site-local address to disambiguate addresses that are potentially
+            // not globally unique.
+            //
+            // For dCache, this makes no sense: the zone identifiers are local
+            // to the door (e.g., "eth0", "eth1", etc).  There is no guarantee
+            // the client machine will share the same mapping; e.g., the link-
+            // local address #1 accessible via eth0 on the door may be accessible
+            // via eth1 on the client machine.
+            //
+            // Therefore we strip off any zone identifiers, if no canonical name
+            // is provided.  This makes a tacit assumption that any site-local
+            // or link-local address is unique to clients that can connect over
+            // those addresses.
+            //
+            // Note that, due to a bug in Guava[1], we can't detect when the
+            // canonical is an IP address; however, as '%' is not a character
+            // for a DNS entry, we can apply the work-around for all IPv6
+            // addresses.
+            //
+            // [1] https://code.google.com/p/guava-libraries/issues/detail?id=1557
+            //
+            if (address instanceof Inet6Address) {
+                name = stripScope(name);
+            }
+
+            return InetAddress.getByAddress(name, address.getAddress());
         } catch (UnknownHostException e) {
             return address;
         }
