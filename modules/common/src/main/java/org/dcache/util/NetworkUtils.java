@@ -244,4 +244,18 @@ public abstract class NetworkUtils {
         }
         throw new IllegalArgumentException("Unknown protocol family: " + address);
     }
+
+    /*
+     * Workaround for bug in Guava, which should not
+     * return the scoping portion of the address.  There
+     * is a patch for this, but it has not yet been
+     * applied to InetAddresses in our current library version.
+     */
+    public static String stripScope(String hostName) {
+        int i = hostName.indexOf("%");
+        if (i > 0) {
+            return hostName.substring(0, i);
+        }
+        return hostName;
+    }
 }
