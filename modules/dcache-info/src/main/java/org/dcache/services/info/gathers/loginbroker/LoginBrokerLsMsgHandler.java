@@ -1,5 +1,6 @@
 package org.dcache.services.info.gathers.loginbroker;
 
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +20,9 @@ import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.util.NetworkUtils;
+
+import static com.google.common.net.InetAddresses.isInetAddress;
+import static com.google.common.net.InetAddresses.toUriString;
 
 
 /**
@@ -150,7 +154,11 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
     {
         StatePath pathToInterfaceBranch = parentPath.newChild(address.getHostAddress());
 
-        update.appendUpdate(pathToInterfaceBranch.newChild("FQDN"), new StringStateValue(address.getHostName(), lifetime));
+        String hostName = address.getHostName();
+        update.appendUpdate(pathToInterfaceBranch.newChild("FQDN"), new StringStateValue(hostName, lifetime));
+
+        String urlName = (isInetAddress(hostName)) ? toUriString(address) : hostName;
+        update.appendUpdate(pathToInterfaceBranch.newChild("url-name"), new StringStateValue(urlName, lifetime));
 
         update.appendUpdate(pathToInterfaceBranch.newChild("address"), new StringStateValue(address.getHostAddress(), lifetime));
         update.appendUpdate(pathToInterfaceBranch.newChild("address-type"),

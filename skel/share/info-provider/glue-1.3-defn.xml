@@ -1148,7 +1148,8 @@
            interface with 'global' scope -->
       <attr name="GlueSEAccessProtocolEndpoint">
         <lookup path="../../d:protocol/d:metric[@name='family']"/>://<lookup
-            path="d:metric[@name='FQDN']"/>:<lookup
+            path="d:metric[@name='url-name']"><lookup
+            path="d:metric[@name='FQDN']"/></lookup>:<lookup
             path="../../d:metric[@name='port']"/>
       </attr>
 
