@@ -20,6 +20,9 @@ import org.dcache.services.info.gathers.CellMessageHandlerSkel;
 import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.util.NetworkUtils;
 
+import static com.google.common.net.InetAddresses.isInetAddress;
+import static com.google.common.net.InetAddresses.toUriString;
+
 
 /**
  * Parse the reply messages from sending the LoginBroker CellMessages with "ls -binary".
@@ -145,8 +148,11 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 		StatePath pathToInterfaceBranch = parentPath.newChild(address.getHostAddress());
 
-		update.appendUpdate( pathToInterfaceBranch.newChild( "FQDN"), new StringStateValue( address.getHostName(), lifetime));
+		String hostName = address.getHostAddress();
+		update.appendUpdate( pathToInterfaceBranch.newChild("FQDN"), new StringStateValue(hostName, lifetime));
 
+		String urlName = isInetAddress(hostName) ? toUriString(address) : hostName;
+		update.appendUpdate( pathToInterfaceBranch.newChild("url-name"), new StringStateValue(urlName, lifetime));
 		update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
 		update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
 							new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
