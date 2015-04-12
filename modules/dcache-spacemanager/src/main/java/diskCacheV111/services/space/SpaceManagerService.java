@@ -686,23 +686,15 @@ public final class SpaceManagerService
         private void transferStarted(PnfsId pnfsId,boolean success)
                 throws DataAccessException
         {
-                try {
-                        LOGGER.trace("transferStarted({},{})", pnfsId, success);
-                        if (!success) {
-                                File f = db.selectFileForUpdate(pnfsId);
-                                if (f.getState() == FileState.TRANSFERRING) {
-                                    db.removeFile(f.getId());
-
-                                    /* TODO: If we also created the reservation, we should
-                                     * release it at this point, but at the moment we cannot
-                                     * know who created it. It will eventually expire
-                                     * automatically.
-                                     */
-                                }
-                        }
-                } catch (EmptyResultDataAccessException e) {
-                    LOGGER.trace("transferStarted failed: {}", e.getMessage());
-                }
+            LOGGER.trace("transferStarted({},{})", pnfsId, success);
+            if (!success) {
+                db.remove(db.files().wherePnfsIdIs(pnfsId).whereStateIsIn(FileState.TRANSFERRING));
+                /* TODO: If we also created the reservation, we should
+                 * release it at this point, but at the moment we cannot
+                 * know who created it. It will eventually expire
+                 * automatically.
+                 */
+            }
         }
 
         private void transferFinished(DoorTransferFinishedMessage finished)
@@ -783,7 +775,7 @@ public final class SpaceManagerService
         {
                 for (String pnfsId : fileRemoved.getFiles()) {
                         try {
-                                fileRemoved(pnfsId);
+                            fileRemoved(new PnfsId(pnfsId));
                         }
                         catch (IllegalArgumentException e) {
                                 LOGGER.error("badly formed PNFS-ID: {}", pnfsId);
@@ -798,11 +790,10 @@ public final class SpaceManagerService
         }
 
         @Transactional
-        private void fileRemoved(String pnfsId)
+    private void fileRemoved(PnfsId pnfsId)
         {
             LOGGER.trace("fileRemoved({})", pnfsId);
-            File f = db.selectFileForUpdate(new PnfsId(pnfsId));
-            db.removeFile(f.getId());
+        db.remove(db.files().wherePnfsIdIs(pnfsId));
         }
 
         private Space reserveSpace(Subject subject,
@@ -1016,14 +1007,7 @@ public final class SpaceManagerService
 
         private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws DataAccessException
         {
-            try {
-                File f = db.selectFileForUpdate(msg.getPnfsId());
-                if (f.getState() != FileState.STORED) {
-                    LOGGER.trace("Deleting file reservation {}", f);
-                    db.removeFile(f.getId());
-                }
-            } catch (EmptyResultDataAccessException ignored) {
-            }
+            db.remove(db.files().wherePnfsIdIs(msg.getPnfsId()).whereStateIsIn(FileState.FLUSHED, FileState.TRANSFERRING));
         }
 
         private void getSpaceMetaData(GetSpaceMetaData gsmd) throws IllegalArgumentException {
