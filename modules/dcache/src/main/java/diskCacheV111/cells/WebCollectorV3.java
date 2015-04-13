@@ -906,19 +906,19 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             page = new HTMLBuilder(_nucleus.getDomainContext());
             page.addHeader("/styles/cellInfo.css", "Services");
             printCellInfoTable(page);
-            page.addFooter(getClass().getName() + " [$Revision: 1.30 $]");
+            page.addFooter(getClass().getName());
             page.writeToContext("cellInfoTable.html");
             // disk usage page
             page = new HTMLBuilder(_nucleus.getDomainContext());
             page.addHeader("/styles/usageInfo.css", "Disk Space Usage");
             printPoolInfoTable(page);
-            page.addFooter(getClass().getName() + " [$Revision: 1.30 $]");
+            page.addFooter(getClass().getName());
             page.writeToContext("poolUsageTable.html");
             // pool queue page
             page = new HTMLBuilder(_nucleus.getDomainContext());
             page.addHeader("/styles/queueInfo.css", "Pool Request Queues");
             printPoolActionTable2(page);
-            page.addFooter(getClass().getName() + " [$Revision: 1.30 $]");
+            page.addFooter(getClass().getName());
             page.writeToContext("poolQueueTable.html");
     }
 

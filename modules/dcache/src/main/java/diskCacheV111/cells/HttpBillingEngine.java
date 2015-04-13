@@ -149,7 +149,7 @@ public class HttpBillingEngine
         } catch (InterruptedException | CacheException e) {
             html.print("<blockquote><pre>" + e + "</pre></blockquote>");
         } finally {
-            html.addFooter(getClass().getName() + " [$Revision: 1.12 $]");
+            html.addFooter(getClass().getName());
         }
     }
 
@@ -175,7 +175,7 @@ public class HttpBillingEngine
         } catch (InterruptedException | CacheException e) {
             throw new HttpException(500, "Problem : " + e.getMessage());
         } finally {
-            html.addFooter(getClass().getName() + " [$Revision: 1.12 $]");
+            html.addFooter(getClass().getName());
         }
     }
 

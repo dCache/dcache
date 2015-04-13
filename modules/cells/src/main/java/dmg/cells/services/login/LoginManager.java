@@ -448,7 +448,7 @@ public class LoginManager
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("  -- Login Manager $Revision: 1.46 $");
+        pw.println("  -- Login Manager");
         pw.println("  Listen Port    : " + _listenThread.getListenPort());
         pw.println("  Protocol engine: " + _loginCellFactory.getName());
         pw.println("  Protocol       : " + _protocol);

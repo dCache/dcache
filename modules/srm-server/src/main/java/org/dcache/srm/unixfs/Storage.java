@@ -57,6 +57,7 @@ import org.dcache.srm.util.Permissions;
 import org.dcache.srm.util.ShellCommandExecuter;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.TMetaDataSpace;
+import org.dcache.util.Version;
 
 import static com.google.common.util.concurrent.Futures.immediateCheckedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
@@ -991,7 +992,9 @@ public class Storage
     }
 
     @Override
-    public String getStorageBackendVersion() { return "$Revision: 1.35 $"; }
+    public String getStorageBackendVersion() {
+        return Version.of(Storage.class).getVersion();
+    }
 
     @Override
     public CheckedFuture<String, ? extends SRMException> unPinFileBySrmRequestId(

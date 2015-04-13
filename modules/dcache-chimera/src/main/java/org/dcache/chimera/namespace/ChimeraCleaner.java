@@ -842,11 +842,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     }
 
-    @Override
-    public void getInfo( PrintWriter pw ){
-        pw.println("ChimeraCleaner $Revision: 1.23 $");
-    }
-
     //for HSM. delete files from trash-table
     private static final String sqlRemoveHSMFiles =
         "DELETE FROM t_locationinfo_trash WHERE ilocation=? AND itype=0";

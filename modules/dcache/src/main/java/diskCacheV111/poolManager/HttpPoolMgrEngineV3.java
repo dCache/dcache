@@ -760,7 +760,7 @@ public class HttpPoolMgrEngineV3 implements
             }
         }
         html.endTable();
-        html.addFooter(getClass().getName() + " [$Revision: 1.26 $]");
+        html.addFooter(getClass().getName());
     }
 
     private void printRestoreInfo(OutputStream out, String sorting, String grep)
@@ -795,7 +795,7 @@ public class HttpPoolMgrEngineV3 implements
             showProblem(html, e.getMessage());
         }
 
-        html.addFooter(getClass().getName() + " [$Revision: 1.26 $]");
+        html.addFooter(getClass().getName());
     }
 
     private boolean grepOk(String grep, Object o)

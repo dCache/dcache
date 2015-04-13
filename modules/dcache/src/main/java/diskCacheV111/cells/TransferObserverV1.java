@@ -473,7 +473,7 @@ public class TransferObserverV1
             }
         }
         page.endTable();
-        page.addFooter(getClass().getName() + " [$Revision: 1.18 $]");
+        page.addFooter(getClass().getName());
         return page.toString();
     }
 
@@ -659,7 +659,7 @@ public class TransferObserverV1
             createHtmlTableRow(page, transfer);
         }
         page.endTable();
-        page.addFooter(getClass().getName() + " [$Revision: 1.18 $]");
+        page.addFooter(getClass().getName());
         return page.toString();
     }
 
@@ -690,7 +690,7 @@ public class TransferObserverV1
             }
         }
         page.endTable();
-        page.addFooter(getClass().getName() + " [$Revision: 1.18 $]");
+        page.addFooter(getClass().getName());
 
         return page.toString();
     }
