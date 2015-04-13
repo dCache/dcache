@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Consumer;
 
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
@@ -91,12 +92,12 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Locations that could not be deleted are pushed to this sink.
      */
-    private Sink<URI> _failureSink;
+    private Consumer<URI> _failureSink;
 
     /**
      * Locations that were deleted are pushed to this sink.
      */
-    private Sink<URI> _successSink;
+    private Consumer<URI> _successSink;
 
     /**
      * Maximum number of files to include in a single request.
@@ -171,7 +172,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Sets the sink to which success to delete a file is reported.
      */
-    synchronized public void setSuccessSink(Sink<URI> sink)
+    synchronized public void setSuccessSink(Consumer<URI> sink)
     {
         _successSink = sink;
     }
@@ -179,7 +180,7 @@ public class RequestTracker implements CellMessageReceiver
     /**
      * Sets the sink to which failure to delete a file is reported.
      */
-    synchronized public void setFailureSink(Sink<URI> sink)
+    synchronized public void setFailureSink(Consumer<URI> sink)
     {
         _failureSink = sink;
     }
@@ -234,12 +235,8 @@ public class RequestTracker implements CellMessageReceiver
             locations = subset;
         }
 
-        /* It may happen that our information about the pools is
-         * outdated and that the pool is no longer
-         * available. Therefore we may have to try several pools.
-         */
-        PoolInformation pool;
-        while ((pool = _pools.getPoolWithHSM(hsm)) != null) {
+        PoolInformation pool = _pools.getPoolWithHSM(hsm);
+        if (pool != null) {
             String name = pool.getName();
             PoolRemoveFilesFromHSMMessage message =
                 new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
@@ -249,20 +246,17 @@ public class RequestTracker implements CellMessageReceiver
             Timeout timeout = new Timeout(hsm, name);
             _timer.schedule(timeout, _timeout);
             _poolRequests.put(hsm, timeout);
-            break;
-        }
-
-        /* If there is no available pool, then we report failure on
-         * all files.
-         */
-        if (pool == null) {
+        } else {
+            /* If there is no available pool, then we report failure on
+             * all files.
+             */
             _log.warn("No pools attached to " + hsm + " are available");
 
             Iterator<URI> i = _locationsToDelete.get(hsm).iterator();
             while (i.hasNext()) {
                 URI location = i.next();
                 assert location.getAuthority().equals(hsm);
-                _failureSink.push(location);
+                _failureSink.accept(location);
                 i.remove();
             }
         }
@@ -322,14 +316,14 @@ public class RequestTracker implements CellMessageReceiver
         for (URI location : success) {
             assert location.getAuthority().equals(hsm);
             if (locations.remove(location)) {
-                _successSink.push(location);
+                _successSink.accept(location);
             }
         }
 
         for (URI location : failures) {
             assert location.getAuthority().equals(hsm);
             if (locations.remove(location)) {
-                _failureSink.push(location);
+                _failureSink.accept(location);
             }
         }
 
