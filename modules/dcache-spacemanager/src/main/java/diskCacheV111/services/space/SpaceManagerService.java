@@ -79,7 +79,6 @@ import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
-import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -362,7 +361,6 @@ public final class SpaceManagerService
     private boolean isNotificationMessage(Message message)
     {
         return message instanceof PoolFileFlushedMessage
-               || message instanceof PoolRemoveFilesMessage
                || message instanceof PnfsDeleteEntryNotificationMessage;
     }
 
@@ -384,9 +382,7 @@ public final class SpaceManagerService
     private boolean isImportantMessage(Message message)
     {
         return message.isReply() ||
-               message instanceof PoolRemoveFilesMessage ||
                message instanceof PoolFileFlushedMessage ||
-               message instanceof PnfsDeleteEntryNotificationMessage ||
                message instanceof DoorTransferFinishedMessage;
     }
 
@@ -486,12 +482,7 @@ public final class SpaceManagerService
             int attempts = 0;
             while (!isSuccessful) {
                 try {
-                    if (message instanceof PoolRemoveFilesMessage) {
-                        // fileRemoved does its own transaction management
-                        fileRemoved((PoolRemoveFilesMessage) message);
-                    } else {
-                        processMessageTransactionally(message);
-                    }
+                    processMessageTransactionally(message);
                     isSuccessful = true;
                 } catch (DeadlockLoserDataAccessException e) {
                     LOGGER.debug("Transaction lost deadlock race and will be retried: {}", e.getMessage());
@@ -683,8 +674,7 @@ public final class SpaceManagerService
             throws DataAccessException
     {
         if (finished.getReturnCode() == CacheException.FILE_NOT_FOUND) {
-            /* File is gone from name space, but we may never receive a notification
-             * from cleaner if the file location didn't get registered first.
+            /* File is gone from name space so may as well get rid of it right away.
              */
             fileRemoved(finished.getPnfsId());
         } else {
@@ -755,22 +745,6 @@ public final class SpaceManagerService
                 f.setSizeInBytes(size);
                 f.setState(FileState.STORED);
                 db.updateFile(f);
-            }
-        }
-    }
-
-    private void fileRemoved(PoolRemoveFilesMessage fileRemoved)
-    {
-        for (String pnfsId : fileRemoved.getFiles()) {
-            try {
-                fileRemoved(new PnfsId(pnfsId));
-            } catch (IllegalArgumentException e) {
-                LOGGER.error("badly formed PNFS-ID: {}", pnfsId);
-            } catch (DataAccessException sqle) {
-                LOGGER.trace("failed to remove file from space reservation: {}",
-                             sqle.getMessage());
-                LOGGER.trace("fileRemoved({}): file not in a " +
-                             "reservation, do nothing", pnfsId);
             }
         }
     }
@@ -1010,7 +984,7 @@ public final class SpaceManagerService
 
     private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws DataAccessException
     {
-        db.remove(db.files().wherePnfsIdIs(msg.getPnfsId()).whereStateIsIn(FileState.FLUSHED, FileState.TRANSFERRING));
+        fileRemoved(msg.getPnfsId());
     }
 
     private void getSpaceMetaData(GetSpaceMetaData gsmd) throws IllegalArgumentException

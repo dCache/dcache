@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="behrmann" id="1" dbms="postgresql">
+        <comment>Update trash trigger to add an itype 2 marker to trash.</comment>
+        <createProcedure>
+            DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
+
+            --
+            --  store location of deleted  inodes in trash table
+            --
+            -- stores a old values into the trash table except last access time,
+            -- which replaced with a time, when the trigger was running
+            --
+
+            CREATE OR REPLACE FUNCTION f_locationinfo2trash() RETURNS TRIGGER AS $t_inodes_trash$
+            BEGIN
+
+                IF (TG_OP = 'DELETE') THEN
+
+                    INSERT INTO t_locationinfo_trash
+                        SELECT
+                            ipnfsid ,
+                            itype,
+                            ilocation ,
+                            ipriority,
+                            ictime ,
+                            iatime ,
+                            istate
+                        FROM t_locationinfo
+                        WHERE ipnfsid = OLD.ipnfsid
+                      UNION
+                        SELECT OLD.ipnfsid, 2, '', 0, now(), now(), 1;
+
+                END IF;
+
+                RETURN OLD;
+            END;
+
+            $t_inodes_trash$ LANGUAGE plpgsql;
+
+
+            --
+            -- trigger to store removed inodes
+            --
+
+            CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes
+                FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
+        </createProcedure>
+
+
+        <rollback>
+            <createProcedure>
+                DROP TRIGGER IF EXISTS tgr_locationinfo_trash ON t_inodes;
+
+                --
+                --  store location of deleted  inodes in trash table
+                --
+                -- stores a old values into the trash table except last access time,
+                -- which replaced with a time, when the trigger was running
+                --
+
+                CREATE OR REPLACE FUNCTION f_locationinfo2trash() RETURNS TRIGGER AS $t_inodes_trash$
+                    BEGIN
+
+                    IF (TG_OP = 'DELETE') THEN
+
+                        INSERT INTO t_locationinfo_trash SELECT
+                            ipnfsid ,
+                            itype,
+                            ilocation ,
+                            ipriority,
+                            ictime ,
+                            iatime ,
+                            istate FROM t_locationinfo WHERE ipnfsid = OLD.ipnfsid;
+
+                    END IF;
+
+                    RETURN OLD;
+                END;
+
+                $t_inodes_trash$ LANGUAGE plpgsql;
+
+
+                --
+                -- trigger to store removed inodes
+                --
+
+                CREATE TRIGGER tgr_locationinfo_trash BEFORE DELETE ON t_inodes
+                    FOR EACH ROW EXECUTE PROCEDURE f_locationinfo2trash();
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+    <changeSet author="behrmann" id="2" dbms="hsqldb">
+        <comment>Update trash trigger to add an itype 0 marker to trash.</comment>
+        <!-- A BEFORE DELETE trigger on t_inodes would have been easier, but hsqldb
+             does not allow data manipulation statements in BEFORE triggers. -->
+        <createProcedure>
+            CREATE TRIGGER tgr_locationinfo_trash2 AFTER DELETE ON t_inodes
+                REFERENCING OLD ROW old
+                FOR EACH ROW
+                INSERT INTO t_locationinfo_trash
+                    VALUES (old.ipnfsid, 2, '', 0, now(), now(), 1)
+        </createProcedure>
+        <rollback>
+            <createProcedure>
+                DROP TRIGGER tgr_locationinfo_trash2;
+            </createProcedure>
+        </rollback>
+    </changeSet>
+
+    <changeSet author="behrmann" id="3">
+        <createIndex tableName="t_locationinfo_trash" indexName="i_locationinfo_trash_itype_ilocation">
+            <column name="itype"></column>
+            <column name="ilocation"></column>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

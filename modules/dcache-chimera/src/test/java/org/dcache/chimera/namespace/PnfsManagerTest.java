@@ -115,7 +115,6 @@ public class PnfsManagerTest
         _pnfsManager.setListThreads(1);
         _pnfsManager.setThreadGroups(1);
         _pnfsManager.setCacheModificationRelay(null);
-        _pnfsManager.setPnfsDeleteNotificationRelay(null);
         _pnfsManager.setLogSlowThreshold(0);
         _pnfsManager.setNameSpaceProvider(chimera);
         _pnfsManager.setCacheLocationProvider(chimera);

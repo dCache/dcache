@@ -21,7 +21,6 @@ onerror continue
 define env replicaManagerOn.exe endExe
   set env -c broadcastSetupReplicaManager1 "register diskCacheV111.vehicles.PoolStatusChangedMessage       ${broadcast.service.replica}"
   set env -c broadcastSetupReplicaManager2 "register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage ${broadcast.service.replica}"
-  set env -c broadcastSetupReplicaManager3 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${broadcast.service.replica}"
 endExe
 eval ${broadcast.enable.replica} true ==
 exec env replicaManagerOn.exe -ifok
@@ -36,7 +35,6 @@ onerror shutdown
 onerror continue
 define env spaceManager.exe endExe
   set env -c broadcastToSpaceManager1 "register diskCacheV111.vehicles.PoolFileFlushedMessage         ${broadcast.service.spacemanager}"
-  set env -c broadcastToSpaceManager2 "register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${broadcast.service.spacemanager}"
 endExe
 eval ${broadcast.enable.space-reservation} true ==
 exec env spaceManager.exe -ifok

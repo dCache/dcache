@@ -32,8 +32,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 
@@ -127,7 +130,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     @Option(
         name="reportRemove",
-        description="The cell to report removes to",
+        description="The cells to report removes to",
         required=true
     )
     protected String _reportTo;
@@ -175,6 +178,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     )
     protected String _broadcastAddress;
 
+    private CellPath[] _deleteNotificationTargets;
+
     private final ConcurrentHashMap<String, Long> _poolsBlackList =
         new ConcurrentHashMap<>();
 
@@ -186,6 +191,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private JdbcTemplate _db;
     private BroadcastRegistrationTask _broadcastRegistration;
     private CellStub _broadcasterStub;
+    private CellStub _notificationStub;
     private CellStub _poolStub;
 
     public ChimeraCleaner(String cellName, String args)
@@ -201,16 +207,14 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     {
         useInterpreter(true);
 
+        _notificationStub = new CellStub(this);
+        _deleteNotificationTargets =
+                Stream.of(_reportTo.split(",")).map(CellPath::new).toArray(CellPath[]::new);
+
         _executor = Executors.newScheduledThreadPool(_threadPoolSize);
 
         dbInit(getArgs().getOpt("chimera.db.url"),
                 getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
-
-        if (!_reportTo.isEmpty()) {
-            _broadcasterStub = new CellStub();
-            _broadcasterStub.setCellEndpoint(this);
-            _broadcasterStub.setDestination(_reportTo);
-        }
 
         if (_hsmCleanerEnabled) {
             _requests = new RequestTracker();
@@ -251,9 +255,11 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         _poolStub = new CellStub(this, null, _replyTimeout, _replyTimeoutUnit);
 
+        _broadcasterStub = new CellStub(this, new CellPath(_broadcastAddress));
+
         _broadcastRegistration = new BroadcastRegistrationTask();
         _broadcastRegistration.setTarget(new CellPath(getCellName(), getCellDomainName()));
-        _broadcastRegistration.setBroadcastStub(new CellStub(this, new CellPath(_broadcastAddress)));
+        _broadcastRegistration.setBroadcastStub(_broadcasterStub);
         _broadcastRegistration.setEventClass(POOLUP_MESSAGE);
         _broadcastRegistration.setExpires(BROADCAST_REGISTRATION_EXPIRATION);
         _executor.scheduleAtFixedRate(
@@ -362,6 +368,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             if (_hsmCleanerEnabled){
                 runDeleteHSM();
             }
+
+            // Notify other components that we are done deleting
+            runNotification();
         } catch (DataAccessException e) {
             _log.error("Database failure: " + e.getMessage());
         } catch (InterruptedException e) {
@@ -396,7 +405,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         + "WHERE ipnfsid=? AND itype=1 ORDER BY iatime";
 
     private static final String sqlGetFileListForPool = "SELECT ipnfsid FROM t_locationinfo_trash "
-            + "WHERE ilocation=? ORDER BY iatime";
+            + "WHERE ilocation=? AND itype=1 ORDER BY iatime";
 
     private static final String sqlRemoveFiles = "DELETE FROM t_locationinfo_trash "
             + "WHERE ilocation=? AND ipnfsid=? AND itype=1";
@@ -411,12 +420,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
      */
     void removeFiles(final String poolname, final List<String> filelist)
     {
-        /*
-         * FIXME: we send remove to the broadcaster even if we failed to
-         * remove a record from the DB.
-         */
-        informBroadcaster(filelist);
-
         _db.batchUpdate(sqlRemoveFiles,
                         new BatchPreparedStatementSetter() {
                             @Override
@@ -517,6 +520,34 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
     }
 
+    private void runNotification()
+            throws InterruptedException
+    {
+        final String QUERY =
+                "SELECT ipnfsid FROM t_locationinfo_trash t1 " +
+                "WHERE itype=2 AND NOT EXISTS (SELECT 1 FROM t_locationinfo_trash t2 WHERE t2.ipnfsid=t1.ipnfsid AND t2.itype <> 2)";
+        for (String id : _db.queryForList(QUERY, String.class)) {
+            try {
+                sendDeleteNotifications(id);
+            } catch (CacheException e) {
+                _log.warn(e.getMessage());
+            }
+        }
+    }
+
+    private void sendDeleteNotifications(String id) throws InterruptedException, CacheException
+    {
+        PnfsId pnfsId = new PnfsId(id);
+        for (CellPath address : _deleteNotificationTargets) {
+            try {
+                _notificationStub.sendAndWait(address, new PnfsDeleteEntryNotificationMessage(pnfsId));
+            } catch (CacheException e) {
+                throw new CacheException("Failed to notify " + address + " about deletion of " + id + ": " + e.getMessage(), e);
+            }
+        }
+        _db.update("DELETE FROM t_locationinfo_trash WHERE ipnfsid=? AND itype=2", id);
+    }
+
     /**
      * cleanPoolComplete
      * delete all files from the pool 'poolName' found in the trash-table for this pool
@@ -528,14 +559,15 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         _log.trace("CleanPoolComplete(): poolname={}", poolName);
 
         _db.query(sqlGetFileListForPool,
-                  new Object[] { poolName },
-                  new RowCallbackHandler() {
+                  new Object[]{poolName},
+                  new RowCallbackHandler()
+                  {
                       List<String> files =
-                          new ArrayList<>(_processAtOnce);
+                              new ArrayList<>(_processAtOnce);
 
                       @Override
                       public void processRow(ResultSet rs)
-                          throws SQLException
+                              throws SQLException
                       {
                           try {
                               files.add(rs.getString("ipnfsid"));
@@ -549,29 +581,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                       }
                   });
     }
-
-    /**
-     * send list of removed files to broadcaster
-     *
-     * @param fileList list of files to be removed
-     */
-    private void informBroadcaster(List<String> fileList){
-
-        if (fileList.isEmpty() || _broadcasterStub == null) {
-            return;
-        }
-
-        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage("", fileList);
-
-        /*
-         * no rely required
-         */
-        msg.setReplyRequired(false);
-
-        _broadcasterStub.notify(msg) ;
-        _log.debug("have broadcasted 'remove files' message to " +
-                   _broadcasterStub.getDestinationPath());
-     }
 
     //Select locations of all files stored on tape. In case itype=0  'ilocation' is an URI representing the location
     //of a file on HSM, for example:

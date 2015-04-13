@@ -11,7 +11,11 @@ check -strong cleaner.service.pool.timeout.unit
 check -strong cleaner.service.pool.hsm-timeout
 check -strong cleaner.service.pool.hsm-timeout.unit
 check -strong cleaner.service.broadcast
+check -strong cleaner.service.spacemanager
+check -strong cleaner.service.replica
 check -strong cleaner.enable.hsm
+check -strong cleaner.enable.space-reservation
+check -strong cleaner.enable.replica
 check -strong cleaner.limits.period
 check -strong cleaner.limits.period.unit
 check -strong cleaner.limits.batch-size

@@ -47,7 +47,6 @@ import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
@@ -173,7 +172,6 @@ public class PnfsManagerV3
             Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("proc-%d").build());
 
     private CellPath _cacheModificationRelay;
-    private CellPath _pnfsDeleteNotificationRelay;
 
     private PermissionHandler _permissionHandler;
     private NameSpaceProvider _nameSpaceProvider;
@@ -245,15 +243,6 @@ public class PnfsManagerV3
             Strings.isNullOrEmpty(path) ? null : new CellPath(path);
         _log.info("CacheModificationRelay = {}",
                   (_cacheModificationRelay == null) ? "NONE" : _cacheModificationRelay.toString());
-    }
-
-    @Required
-    public void setPnfsDeleteNotificationRelay(String path)
-    {
-        _pnfsDeleteNotificationRelay =
-            Strings.isNullOrEmpty(path) ? null : new CellPath(path);
-        _log.info("pnfsDeleteRelay = {}",
-                  (_pnfsDeleteNotificationRelay == null) ? "NONE" : _pnfsDeleteNotificationRelay.toString());
     }
 
     @Required
@@ -1342,14 +1331,6 @@ public class PnfsManagerV3
         } catch (RuntimeException e) {
             _log.error("Failed to delete entry", e);
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
-        }
-
-        if( pnfsMessage.getReturnCode() == 0 &&
-            _pnfsDeleteNotificationRelay != null ) {
-            PnfsDeleteEntryNotificationMessage deleteNotification =
-                new PnfsDeleteEntryNotificationMessage(pnfsId,path);
-            sendMessage( new CellMessage( _pnfsDeleteNotificationRelay,
-                                          deleteNotification ) ) ;
         }
     }
 

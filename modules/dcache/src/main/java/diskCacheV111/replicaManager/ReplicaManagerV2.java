@@ -31,6 +31,7 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.util.Pgpass;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
@@ -2902,7 +2903,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       } // synchronized (_dbLock)
     }
     if ( poolStatus.equals(ReplicaDb1.DOWN) ) {
-      taskTearDownByPoolName( poolName );
+      taskTearDownByPoolName(poolName);
     }
   }
 
@@ -2911,53 +2912,28 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
   // - wipe out all pnfsID entries from replicas table
 
   @Override
-  protected void processPoolRemoveFiles( PoolRemoveFilesMessage msg )
+  protected void processDeleteEntryNotification(PnfsDeleteEntryNotificationMessage msg)
   {
-    // Ignore poolName: currently this is the same as the cell name where message sent to
-    //   that is "replicaManager"
-    String poolName     = msg.getPoolName();
-    String filesList[]  = msg.getFiles();
-    String stringPnfsId;
+      // non strict check for number of pnfs cleared in DB:
+      // - DB maybe waked up between locks, clearPools can get error
+      // still wakeup db check
+      int fileCount = 0;
 
-    if( filesList == null ) {
-      _log.debug("PoolRemoveFilesMessage - no file list defined");
-      return;
-    }
+      PnfsId pnfsId = msg.getPnfsId();
 
-    // non strict check for number of pnfs cleared in DB:
-    // - DB maybe waked up between locks, clearPools can get error
-    // still wakeup db check
-    int fileCount = 0;
-
-    for( int j=0; j<filesList.length; j++ ){
-      if(filesList[j] == null ) {
-        _log.debug("ReplicaManager: pnfsid["+j+"]='null' in PoolRemoveFilesMessage");
-      }else{
-        stringPnfsId = filesList[j];
-
-        PnfsId pnfsId;
-        try {
-          pnfsId = new PnfsId( stringPnfsId );
-        }catch(IllegalArgumentException ex) {
-          _log.debug("Can not construct pnfsId for '"+stringPnfsId+"'");
-          continue;
-        }
-
-        synchronized (_dbLock) {
-          if( ! _useDB ) {
+      synchronized (_dbLock) {
+          if (!_useDB) {
             _log.info("DB not ready yet, skip DB update" );
             return;
           }
           _dbrmv2.clearPools(pnfsId);
           fileCount++;
-        }
-        _log.debug("ReplicaManager: PoolRemoveFiles(): pnfsId["+j+"]=" + stringPnfsId +" cleared in DB");
       }
-    }
+      _log.debug("ReplicaManager: PoolRemoveFiles(): {} cleared in DB", pnfsId);
 
-    if( fileCount > 0 ) {
-        _dbUpdated.wakeup();
-    }
+      if (fileCount > 0) {
+          _dbUpdated.wakeup();
+      }
   }
 
 

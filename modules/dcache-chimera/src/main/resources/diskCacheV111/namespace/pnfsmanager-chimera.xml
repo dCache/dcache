@@ -26,7 +26,6 @@
       <property name="listThreads" value="${pnfsmanager.limits.list-threads}"/>
       <property name="cacheLocationThreads" value="${cachelocation-threads}"/>
       <property name="cacheModificationRelay" value="${pnfsmanager.notification.cache}"/>
-      <property name="pnfsDeleteNotificationRelay" value="${pnfsmanager.notification.delete}"/>
       <property name="logSlowThreshold" value="${pnfsmanager.limits.log-slow-threshold}"/>
       <property name="folding" value="${pnfsmanager.enable.folding}"/>
       <property name="directoryListLimit" value="${pnfsmanager.limits.list-chunk-size}"/>

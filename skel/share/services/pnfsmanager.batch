@@ -18,7 +18,6 @@ check -strong pnfsmanager.limits.queue-length
 check -strong pnfsmanager.cell.name
 check -strong pnfsmanager.cell.export
 check -strong pnfsmanager.notification.cache
-check -strong pnfsmanager.notification.delete
 check -strong pnfsmanager.db.dialect
 check -strong pnfsmanager.db.user
 check -strong pnfsmanager.db.url

@@ -38,6 +38,7 @@ import diskCacheV111.vehicles.CostModulePoolInfoTable;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.Pool2PoolTransferMsg;
@@ -1320,8 +1321,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return ;
      }
 
-     if ( obj instanceof PoolRemoveFilesMessage ) {
-       processPoolRemoveFiles( (PoolRemoveFilesMessage) obj );
+     if (obj instanceof PnfsDeleteEntryNotificationMessage) {
+       processDeleteEntryNotification((PnfsDeleteEntryNotificationMessage) obj);
        return ;
      }
 
@@ -1352,29 +1353,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    // Placeholder - This method can be overriden
-   protected void processPoolRemoveFiles( PoolRemoveFilesMessage msg )
+   protected void processDeleteEntryNotification(PnfsDeleteEntryNotificationMessage msg)
    {
      _log.debug( "DCacheCoreController: default processPoolRemoveFilesMessage() called" ) ;
-     String poolName     = msg.getPoolName();
-     String filesList[]  = msg.getFiles();
-     String stringPnfsId;
-
-     if( poolName == null ) {
-       _log.debug( "PoolRemoveFilesMessage - no pool defined");
-       return;
-     }
-     if( filesList == null ) {
-       _log.debug("PoolRemoveFilesMessage - no file list defined");
-       return;
-     }
-     for( int j=0; j<filesList.length; j++ ){
-       if(filesList[j] == null ) {
-         _log.debug("DCCC: default PoolRemoveFiles(): file["+j+"]='null' removed from pool "+poolName);
-       }else{
-         stringPnfsId = filesList[j];
-         _log.debug("DCCC: default PoolRemoveFiles(): file["+j+"]=" + stringPnfsId +" removed from pool "+poolName);
-       }
-     }
    }
 
    private void processPnfsAddCacheLocationMessage(PnfsAddCacheLocationMessage msg)
