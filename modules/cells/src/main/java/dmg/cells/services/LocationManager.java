@@ -120,13 +120,13 @@ public class LocationManager extends CellAdapter {
              }else{
                  sb.append("nl");
              }
-             if( _default != null ) {
-                 sb.append(" d:").append(_default);
-             }
              Iterator<String> i = connections() ;
              while( i.hasNext() ) {
                  sb.append(" c:").append(i.next());
              }
+              if( _default != null ) {
+                  sb.append(" d:").append(_default);
+              }
              return sb.toString() ;
           }
 

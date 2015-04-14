@@ -7,8 +7,8 @@ define context lmd.defaults endDefine
   listen ${dcache.broker.domain} -port=${dcache.broker.messaging.port}
 
   define *
-  defaultroute * ${dcache.broker.domain}
   connect * ${dcache.broker.domain}
+  defaultroute * ${dcache.broker.domain}
 endDefine
 
 create dmg.cells.services.LocationManager lmd \
