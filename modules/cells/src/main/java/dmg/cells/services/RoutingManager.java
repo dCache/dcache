@@ -232,7 +232,9 @@ public class RoutingManager
             }
         } else if (obj instanceof GetAllDomainsRequest) {
             if (_defaultInstalled) {
-                _nucleus.sendMessage(new CellMessage(new CellPath(_nucleus.getCellName()), obj), false, true);
+                msg.getDestinationPath().insert(new CellPath(_nucleus.getCellName()));
+                msg.nextDestination();
+                _nucleus.sendMessage(msg, false, true);
             } else {
                 Map<String,Collection<String>> domains = new HashMap<>();
                 domains.put(_nucleus.getCellDomainName(), new ArrayList<>(_localExports));
