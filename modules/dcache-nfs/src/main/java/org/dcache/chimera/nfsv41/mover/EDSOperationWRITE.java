@@ -4,12 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.BadStateidException;
-import org.dcache.nfs.status.BadXdrException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
@@ -20,7 +18,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.v4.xdr.stable_how4;
-import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.pool.movers.IoMode;
 import org.dcache.pool.repository.OutOfDiskException;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -30,11 +27,11 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationWRITE.class.getName());
 
-    private final Map<stateid4, NfsMover> _activeIO;
+    private final NFSv4MoverHandler _moverHandler;
 
-    public EDSOperationWRITE(nfs_argop4 args, Map<stateid4, NfsMover> activeIO) {
+    public EDSOperationWRITE(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
         super(args, nfs_opnum4.OP_WRITE);
-        _activeIO = activeIO;
+        _moverHandler = moverHandler;
     }
 
     @Override
@@ -44,7 +41,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
         try {
 
-            NfsMover mover = _activeIO.get( _args.opwrite.stateid);
+            NfsMover mover = _moverHandler.getOrCreateMover(_args.opwrite.stateid, context.currentInode().toNfsHandle());
             if (mover == null) {
                 throw new BadStateidException("No mover associated with given stateid: " + _args.opwrite.stateid);
             }
