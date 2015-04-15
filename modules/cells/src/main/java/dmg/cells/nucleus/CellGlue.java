@@ -27,8 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 import dmg.util.TimebasedCounter;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 /**
  * @author Patrick Fuhrmann
  * @version 0.1, 15 Feb 1998
@@ -503,10 +501,6 @@ class CellGlue
     void sendMessage(CellMessage msg, boolean resolveLocally, boolean resolveRemotely)
             throws SerializationException
     {
-        if (msg.getSourcePath().hops() > 30) {
-            LOGGER.error("Hop count exceeds 30, dumping: {}", msg);
-            return;
-        }
         if (!msg.isStreamMode()) {
             msg = msg.encode();
         }
@@ -595,6 +589,9 @@ class CellGlue
                                  msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
                     sendException(msg, destinationPath, address.getCellName());
                 }
+            } else if (msg.getSourcePath().hops() > 30) {
+                LOGGER.error("Hop count exceeds 30: {}", msg);
+                sendException(msg, destinationPath, address.toString());
             } else {
                 msg.addSourceAddress(_domainAddress);
                 destNucleus.addToEventQueue(new RoutedMessageEvent(msg));

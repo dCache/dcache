@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -188,9 +189,16 @@ public final class CellPath  implements Cloneable , Serializable
       return  "[...("+_position+")...:"+
               core.toString()+
               "...("+(size-_position-1)+")...]" ;
-
-
    }
+
+    /**
+     * Returns the cell path as a colon separated list of addresses. This is the same format
+     * accepted by the string constructor of CellPath.
+     */
+    public String toAddressString()
+    {
+        return _list.stream().map(CellAddressCore::toString).collect(joining(":"));
+    }
 
    @Override
    public String toString(){ return toFullString() ; }
@@ -250,5 +258,10 @@ public final class CellPath  implements Cloneable , Serializable
     {
         checkArgument(!path.isEmpty());
         return Stream.of(path.split(":")).map(CellAddressCore::new);
+    }
+
+    public boolean contains(CellAddressCore address)
+    {
+        return _list.contains(address);
     }
 }
