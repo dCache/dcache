@@ -20,7 +20,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellAddressCore;
@@ -138,31 +142,33 @@ public class RoutingManager
 
     private void addRoute(CellPath dest, String domain)
     {
-        CellAddressCore address = dest.getDestinationAddress();
-
-        if (isWellKnown(address)) {
-            try {
+        try {
+            CellAddressCore address = dest.getDestinationAddress();
+            if (isWellKnown(address)) {
                 _nucleus.routeAdd(new CellRoute(address.getCellName(), "*@" + domain, CellRoute.WELLKNOWN));
-            } catch (IllegalArgumentException e) {
-                _log.warn("Couldn't add wellknown route: {}", e.getMessage());
+            } else if (address.getCellName().equals("*")) {
+                _nucleus.routeAdd(new CellRoute(address.getCellDomainName(), "*@" + domain, CellRoute.DOMAIN));
+            } else {
+                _log.debug("Ignoring downstream route advertisement from {}: {}", domain, address);
             }
-        } else if (address.getCellName().equals("*")) {
-            // TODO: domain route
+        } catch (IllegalArgumentException e) {
+            _log.warn("Failed to add route: {}", e.getMessage());
         }
     }
 
     private void removeRoute(CellPath dest, String domain)
     {
-        CellAddressCore address = dest.getDestinationAddress();
-
-        if (isWellKnown(address)) {
-            try {
+        try {
+            CellAddressCore address = dest.getDestinationAddress();
+            if (isWellKnown(address)) {
                 _nucleus.routeDelete(new CellRoute(address.getCellName(), "*@" + domain, CellRoute.WELLKNOWN));
-            } catch (IllegalArgumentException e) {
-                _log.warn("Couldn't delete wellknown route: {}", e.getMessage());
+            } else if (address.getCellName().equals("*")) {
+                _nucleus.routeDelete(new CellRoute(address.getCellDomainName(), "*@" + domain, CellRoute.DOMAIN));
+            } else {
+                _log.error("Unexpected attempt to remove route: {}", address);
             }
-        } else if (address.getCellName().equals("*")) {
-            // TODO: domain route
+        } catch (IllegalArgumentException e) {
+            _log.warn("Failed to delete route: {}", e.getMessage());
         }
     }
 
@@ -185,10 +191,15 @@ public class RoutingManager
         all.addAll(_localExports);
 
         //
-        // and now all the others
+        // now all the downstream well known cells
         //
         _domainHash.forEach(
                 (domain, paths) -> paths.forEach(path -> all.add("*@" + domain + ":" + path.toAddressString())));
+
+        //
+        // and finally the downstream domains
+        //
+        _domainHash.forEach((domain, paths) -> all.add("*@" + domain));
 
         String destinationManager = _nucleus.getCellName();
         _log.info("Resending to {}: {}", destinationManager, all);
@@ -284,8 +295,15 @@ public class RoutingManager
                 msg.nextDestination();
                 _nucleus.sendMessage(msg, false, true);
             } else {
-                Map<String,Collection<String>> domains = getWellKnownCellsByDomain(ArrayList::new);
-                domains.put(getCellDomainName(), new ArrayList<>(_localExports));
+                Map<String, Collection<String>> domains;
+                synchronized (this) {
+                    domains = getWellKnownCellsByDomain(ArrayList::new);
+                    domains.put(getCellDomainName(), new ArrayList<>(_localExports));
+                    /* Add the domains without wellknown cells too. */
+                    _domainHash.keySet().stream()
+                            .filter(domain -> !domains.containsKey(domain))
+                            .forEach(domain -> domains.put(domain, new ArrayList<>()));
+                }
                 msg.revertDirection();
                 msg.setMessageObject(new GetAllDomainsReply(domains));
                 sendMessage(msg);
@@ -395,7 +413,6 @@ public class RoutingManager
      * @return a representation of the RoutingManager's little brain.
      */
     public static final String hh_ls = "[-x]";
-    @Deprecated
     public synchronized Object ac_ls_$_0( Args args) {
 
     	Object info;
@@ -418,19 +435,58 @@ public class RoutingManager
     	return info;
     }
 
-    private <T extends Collection<String>> Map<String,T> getWellKnownCellsByDomain(Supplier<T> collectionFactory)
-    {
-        return _domainHash.entrySet().stream()
-                .collect(toMap(Map.Entry::getKey,
-                               e -> e.getValue().stream()
-                                       .map(CellPath::getDestinationAddress)
-                                       .filter(RoutingManager::isWellKnown)
-                                       .map(CellAddressCore::getCellName)
-                                       .collect(toCollection(collectionFactory))));
-    }
-
     private static boolean isWellKnown(CellAddressCore address)
     {
         return address.getCellDomainName().equals("local");
+    }
+
+    private static CellAddressCore getAddressOfWellknown(String domain, CellPath path)
+    {
+        String cell = path.getDestinationAddress().getCellName();
+        List<CellAddressCore> addresses = path.getAddresses();
+        if (addresses.size() > 1) {
+            domain = addresses.get(addresses.size() - 2).getCellDomainName();
+        }
+        return new CellAddressCore(cell, domain);
+    }
+
+    private static Stream<CellAddressCore> getAddressesOfWellknown(String domain, Set<CellPath> paths)
+    {
+        return paths.stream()
+                .filter(path -> isWellKnown(path.getDestinationAddress()))
+                .map(path -> getAddressOfWellknown(domain, path));
+    }
+
+    private synchronized <T extends Collection<String>> Map<String,T> getWellKnownCellsByDomain(Supplier<T> collectionFactory)
+    {
+        return _domainHash.entrySet().stream()
+                .flatMap(e -> getAddressesOfWellknown(e.getKey(), e.getValue()))
+                .collect(
+                        toMultimap(CellAddressCore::getCellDomainName, CellAddressCore::getCellName, collectionFactory));
+    }
+
+    /**
+     * Returns a {@code Collector} that accumulates the input elements into a
+     * new multimap composed from a map mapping keys to collections of values.
+     *
+     * @param keyMapper a mapping function to produce keys
+     * @param valueMapper a mapping function to produce values
+     * @param collectionFactory collectionFactory a function which returns new, empty {@code Collection}s into
+     *                    which values will be inserted
+     * @param <T> the type of the input elements
+     * @param <K> the output type of the key mapping function
+     * @param <V> the output type of the value mapping function
+     * @param <C> the type of the value collections of the generated multimap
+     * @return
+     */
+    private static <T, K, V, C extends Collection<V>> Collector<T, ?, Map<K, C>> toMultimap(
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper,
+            Supplier<C> collectionFactory)
+    {
+        return Collectors.toMap(
+                keyMapper,
+                v -> Stream.of(valueMapper.apply(v)).collect(toCollection(collectionFactory)),
+                (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toCollection(collectionFactory)));
     }
 }

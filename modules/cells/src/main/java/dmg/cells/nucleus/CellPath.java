@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -198,6 +199,11 @@ public final class CellPath  implements Cloneable , Serializable
     public String toAddressString()
     {
         return _list.stream().map(CellAddressCore::toString).collect(joining(":"));
+    }
+
+    public List<CellAddressCore> getAddresses()
+    {
+        return Collections.unmodifiableList(_list);
     }
 
    @Override
