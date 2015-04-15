@@ -1,10 +1,9 @@
 package dmg.cells.nucleus;
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
-
-import dmg.util.Formats;
+import java.util.Objects;
 
 import org.dcache.util.Args;
 
@@ -35,10 +34,6 @@ public class CellRoute implements Serializable
     public static final int DEFAULT = 4;
     public static final int DUMPSTER = 5;
     public static final int ALIAS = 6;
-
-    private static final int DEST_LENGTH = 15;
-    private static final int DOMAIN_LENGTH = 15;
-    private static final int GATE_LENGTH = 25;
 
     private static final String[] TYPE_NAMES =
             {"Auto", "Exact", "Wellknown", "Domain",
@@ -242,7 +237,7 @@ public class CellRoute implements Serializable
 
     public int hashCode()
     {
-        return _type ^ Objects.hashCode(_destCell, _destDomain, _gateway);
+        return _type ^ Objects.hash(_destCell, _destDomain, _gateway);
     }
 
     public boolean equals(Object o)
@@ -260,20 +255,14 @@ public class CellRoute implements Serializable
                route._type == _type;
     }
 
-    public static String headerToString()
-    {
-        return Formats.field("Dest Cell", DEST_LENGTH, Formats.CENTER) +
-                Formats.field("Dest Domain", DOMAIN_LENGTH, Formats.CENTER) +
-                Formats.field("Gateway", GATE_LENGTH, Formats.CENTER) +
-                Formats.field("Type", 10, Formats.CENTER);
-    }
-
     public String toString()
     {
-        return Formats.field(_destCell, DEST_LENGTH, Formats.CENTER) +
-                Formats.field(_destDomain, DOMAIN_LENGTH, Formats.CENTER) +
-                Formats.field(_gateway, GATE_LENGTH, Formats.CENTER) +
-                Formats.field(TYPE_NAMES[_type], 10, Formats.LEFT);
+        return MoreObjects.toStringHelper(this)
+                .add("cell", getCellName())
+                .add("domain", getDomainName())
+                .add("gateway", getTargetName())
+                .add("type", getRouteTypeName())
+                .toString();
     }
 }
 

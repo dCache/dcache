@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+import org.dcache.util.ColumnWriter;
 
 public class CellRoutingTable implements Serializable
 {
@@ -140,32 +143,37 @@ public class CellRoutingTable implements Serializable
 
     public String toString()
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append(CellRoute.headerToString()).append("\n");
+        ColumnWriter writer = new ColumnWriter()
+                .header("CELL").left("cell").space()
+                .header("DOMAIN").left("domain").space()
+                .header("GATEWAY").left("gateway").space()
+                .header("TYPE").left("type");
+
+        Consumer<CellRoute> append =
+                route -> writer.row()
+                        .value("cell", route.getCellName())
+                        .value("domain", route.getDomainName())
+                        .value("gateway", route.getTargetName())
+                        .value("type", route.getRouteTypeName());
+
         synchronized (_exact) {
-            for (CellRoute route : _exact.values()) {
-                sb.append(route).append("\n");
-            }
+            _exact.values().forEach(append);
         }
         synchronized (_wellknown) {
-            for (CellRoute route : _wellknown.values()) {
-                sb.append(route).append("\n");
-            }
+            _wellknown.values().forEach(append);
         }
         synchronized (_domain) {
-            for (CellRoute route : _domain.values()) {
-                sb.append(route).append("\n");
-            }
+            _domain.values().forEach(append);
         }
         CellRoute defaultRoute = _default.get();
         if (defaultRoute != null) {
-            sb.append(defaultRoute).append("\n");
+            append.accept(defaultRoute);
         }
         CellRoute dumpsterRoute = _dumpster.get();
         if (dumpsterRoute != null) {
-            sb.append(dumpsterRoute).append("\n");
+            append.accept(dumpsterRoute);
         }
-        return sb.toString();
+        return writer.toString();
     }
 
     public CellRoute[] getRoutingList()
