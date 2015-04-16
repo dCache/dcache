@@ -257,7 +257,11 @@ public class LegacyAdminShellCommand implements Command, Runnable
             String h = _env.getEnv().get(Environment.ENV_LINES);
             if (h != null) {
                 try {
-                    return Integer.parseInt(h);
+                    /* The SSH client may report 0 if forced to allocate a pseudo TTY
+                     * even when it got no local TTY.
+                     */
+                    int i = Integer.parseInt(h);
+                    return i == 0 ? Integer.MAX_VALUE : i;
                 } catch(NumberFormatException ignored) {
                 }
             }
@@ -269,7 +273,11 @@ public class LegacyAdminShellCommand implements Command, Runnable
             String w = _env.getEnv().get(Environment.ENV_COLUMNS);
             if (w != null) {
                 try {
-                    return Integer.parseInt(w);
+                    /* The SSH client may report 0 if forced to allocate a pseudo TTY
+                     * even when it got no local TTY.
+                     */
+                    int i = Integer.parseInt(w);
+                    return i == 0 ? Integer.MAX_VALUE : i;
                 } catch(NumberFormatException ignored) {
                 }
             }
