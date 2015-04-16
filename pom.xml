@@ -60,7 +60,7 @@
         <source.version>1.8</source.version>
         <target.version>1.8</target.version>
 
-        <version.slf4j>1.7.10</version.slf4j>
+        <version.slf4j>1.7.12</version.slf4j>
         <version.milton>2.6.3.3-dcache-1</version.milton>
         <version.spring>4.1.6.RELEASE</version.spring>
         <!-- Remember to sync aspectj version in dcache.properties -->
@@ -164,16 +164,12 @@
                 <artifactId>logback-classic</artifactId>
                 <!-- Remember to update modules/logback-test-config/pom.xml
                      when upgrading logback. -->
-                <!-- There is an issue with 1.1.2:
-                     http://jira.qos.ch/browse/LOGBACK-961;
-                     which affects dcache alarm send (it hangs
-                     after sending) -->
-                <version>1.0.12</version>
+                <version>1.1.3</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
-                <version>1.0.12</version>
+                <version>1.1.3</version>
             </dependency>
             <dependency>
                 <groupId>jline</groupId>

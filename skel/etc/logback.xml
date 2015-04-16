@@ -106,15 +106,11 @@
     </encoder>
   </appender>
 
-  <appender name="socket" class="ch.qos.logback.classic.net.SocketAppender">
+  <appender name="remote" class="ch.qos.logback.classic.net.SocketAppender">
       <filter class="org.dcache.alarms.logback.AlarmsInternalFilter"/>
       <remoteHost>${dcache.log.server.host}</remoteHost>
       <port>${dcache.log.server.port}</port>
       <reconnectionDelay>10000</reconnectionDelay>
-  </appender>
-
-  <appender name="remote" class="ch.qos.logback.classic.AsyncAppender">
-    <appender-ref ref="socket" />
   </appender>
 
   <root>

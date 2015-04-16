@@ -40,13 +40,7 @@
       <dependency>
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-classic</artifactId>
-          <!-- There are two issues with 1.1.1:
-               http://jira.qos.ch/browse/LOGBACK-959
-               http://jira.qos.ch/browse/LOGBACK-961;
-               while we have put a workaround for the first
-               in place, the second still affects
-               dcache alarm send (it hangs after sending) -->
-          <version>1.0.12</version>
+          <version>1.1.3</version>
       </dependency>
   </dependencies>
 
