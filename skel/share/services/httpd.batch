@@ -66,6 +66,13 @@ define env checkSecurityProperties end
      check -strong httpd.net.https-port
      check -strong httpd.authz.admin-gid
      check -strong httpd.authn.ciphers
+     check -strong httpd.authn.hostcert.cert
+     check -strong httpd.authn.hostcert.key
+     check -strong httpd.authn.hostcert.refresh
+     check -strong httpd.authn.hostcert.refresh.unit
+     check -strong httpd.authn.capath
+     check -strong httpd.authn.capath.refresh
+     check -strong httpd.authn.capath.refresh.unit
 end
 
 define env checkAlarmProperties end

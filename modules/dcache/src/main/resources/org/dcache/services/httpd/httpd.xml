@@ -76,32 +76,28 @@
             <ref bean="ssl-connector"/>
         </util:list>
 
-        <bean id="ssl-connector" class="org.eclipse.jetty.server.ServerConnector">
-            <description>HTTPS connector</description>
-            <constructor-arg ref="jetty"/>
-            <constructor-arg>
-                <bean class="org.eclipse.jetty.util.ssl.SslContextFactory">
-                    <property name="keyStorePath" value="${httpd.authn.keystore}"/>
-                    <property name="keyStoreType" value="PKCS12"/>
-                    <property name="keyStorePassword" value="${httpd.authn.keystore.password}"/>
-                    <property name="trustStorePath" value="${httpd.authn.truststore}"/>
-                    <property name="trustStorePassword" value="${httpd.authn.truststore.password}"/>
-                    <property name="wantClientAuth" value="true"/>
-                    <property name="needClientAuth" value="false"/>
-                    <property name="excludeCipherSuites">
-                        <bean id="banned-ciphers" class="org.dcache.util.Crypto"
-                              factory-method="getBannedCipherSuitesFromConfigurationValue">
-                            <constructor-arg value="${httpd.authn.ciphers}"/>
-                        </bean>
-                    </property>
-                </bean>
-            </constructor-arg>
+        <bean id="ssl-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
+            <property name="server" ref="jetty"/>
 
             <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
             <property name="port" value="${httpd.net.https-port}"/>
-            <property name="idleTimeout"
-                      value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                                 ${httpd.limits.idle-time}, '${httpd.limits.idle-time.unit}')}" />
+
+            <property name="idleTimeout" value="${httpd.limits.idle-time}"/>
+            <property name="idleTimeoutUnit" value="${httpd.limits.idle-time.unit}"/>
+
+            <property name="needClientAuth" value="true"/>
+            <property name="wantClientAuth" value="false"/>
+
+            <property name="cipherFlags" value="${httpd.authn.ciphers}"/>
+
+            <property name="caPath" value="${httpd.authn.capath}"/>
+            <property name="caPathTimeout" value="${httpd.authn.hostcert.refresh}"/>
+            <property name="caPathTimeoutUnit" value="${httpd.authn.hostcert.refresh.unit}"/>
+
+            <property name="serverCertificatePath" value="${httpd.authn.hostcert.cert}"/>
+            <property name="serverKeyPath" value="${httpd.authn.hostcert.key}"/>
+            <property name="serverCertificateTimeout" value="${httpd.authn.capath.refresh}"/>
+            <property name="serverCertificateTimeoutUnit" value="${httpd.authn.capath.refresh.unit}"/>
         </bean>
     </beans>
 </beans>
