@@ -9,7 +9,7 @@ _dcache()
 
   case ${COMP_CWORD} in
     1)
-        COMPREPLY=( $( compgen -W 'alarm billing check-config condrestart database dump import kpwd ports pool restart services start status stop version' -- "$cur" ) )
+        COMPREPLY=( $( compgen -W 'alarm billing check-config condrestart database dump kpwd ports pool restart services start status stop version' -- "$cur" ) )
         return 0
         ;;
     2)
@@ -24,10 +24,6 @@ _dcache()
               ;;
           dump)
             COMPREPLY=( $( compgen -W 'heap threads' -- "$cur" ) )
-              return 0
-              ;;
-          import)
-            COMPREPLY=( $( compgen -W 'hostcert cacerts' -- "$cur" ) )
               return 0
               ;;
           pool)

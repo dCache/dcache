@@ -173,43 +173,6 @@ to manually replace the content of the meta directory of the pool with
 the reconstructed database. It is recommended to keep a copy of the
 old database.
 
-.SH IMPORT COMMANDS
-
-Java libraries traditionally rely on key managers and trust managers
-to access key and certificate material. dCache components that rely on
-SSL currently do not provide key managers and trust managers for
-accessing certificates in /etc/grid-security/ directly. Therefore
-those certificates need to be converted to a different format before
-they can be used with components using SSL. The host certificate needs
-to be converted to PKCS12 format and the CA certificates into a Java
-keystore file.
-
-Note that this conversion is \fBonly\fR needed for SSL, such as WebDAV
-over HTTPS. For GSI the certifcates in /etc/grid-security/ are
-accessed directly.
-
-.TP
-.B import hostcert [--hostcert=FILE] [--hostkey=FILE] [--out=FILE] [--password=PASSWORD]
-
-Combines the host private key and certificate, both stored in PKCS7
-(".pem") format, as a single PKCS12 (".p12") file. The command
-defaults to reading the host certificate and key from
-/etc/grid-security/, storing the output in
-/opt/d-cache/etc/hostcert.p12 or whatever is the value of
-\fBkeyStore\fR in etc/dcache.conf. The password defaults to
-\fBdcache\fR or whatever is the value of \fBkeyStorePassword\fR in
-etc/dcache.conf.
-
-.TP
-.B import cacerts [--cacerts=DIR] [--out=FILE] [--password=PASSWORD]
-Imports CA certificates from PKCS7 format to the Java Keystore format.
-The command defaults to reading the CA certificates from
-/etc/grid-security/certificates/ and storing the output in
-/opt/d-cache/etc/certificates.jks or whatever is the value of
-\fBtrustStore\fR in etc/dcache.conf. The password defaults to
-\fBdcache\fR or whatever is the value of \fBtrustStorePassword\fR in
-etc/dcache.conf.
-
 .SH DATABASE MANAGEMENT COMMANDS
 
 Several services in dCache rely on relational databases. The commands

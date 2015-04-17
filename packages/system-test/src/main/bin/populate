@@ -86,14 +86,6 @@ if [ ! -f var/db/chimera.initialized ]; then
     touch var/db/chimera.initialized
 fi
 
-if [ ! -f etc/hostcert.p12 ]; then
-    bin/dcache import hostcert
-fi
-
-if [ ! -f etc/certificates.jks ]; then
-    bin/dcache import cacerts
-fi
-
 if [ ! -f etc/linkgroup.conf ]; then
     cat > etc/linkgroup.conf <<EOF
 LinkGroup sm-group

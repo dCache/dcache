@@ -45,9 +45,6 @@ usage()
     echo "   database doc <cell>@<domain> <out-dir>"
     echo "   dump heap [--force] <domain> <file>"
     echo "   dump threads [<domain>...]"
-    echo "   import hostcert [--hostcert=<file>] [--hostkey=<file>]"
-    echo "                   [--out=<file>] [--password=<password>]"
-    echo "   import cacerts [--cacerts=<dir>] [--out=<file>] [--password=<password>]"
     echo "   kpwd <command> [-debug] [<command argument>]..."
     echo "   ports"
     echo "   pool convert <name> <target-type>"
@@ -701,68 +698,6 @@ case "$1" in
                         LOG_FILE="$(getProperty dcache.log.file "$domain")"
                         printp "Stack traces for $domain have been written to $LOG_FILE."
                     fi
-                done
-                ;;
-
-            *)
-                usage
-                ;;
-        esac
-        ;;
-
-    import)
-        shift
-        if [ $# -eq 0 ]; then
-            usage
-        fi
-
-        . ${lib}/utils.sh
-        checkForNonMigratedDcache
-        checkForPkcs8HostKey
-
-        command=$1
-        shift
-
-        case "$command" in
-            hostcert)
-                require openssl
-
-                opt_password="$(getProperty dcache.authn.keystore.password)"
-                opt_out="$(getProperty dcache.authn.keystore)"
-                opt_hostcert="$(getProperty dcache.authn.hostcert.cert)"
-                opt_hostkey="$(getProperty dcache.authn.hostcert.key)"
-
-                parseOptions "out password hostcert hostkey" "$@" || shift $?
-
-                if [ -f "$opt_out" ]; then
-                    rm -f "$opt_out"
-                fi
-                PASSWORD="${opt_password}" openssl pkcs12 -export -in "$opt_hostcert" -inkey "$opt_hostkey" -out "$opt_out" -passout env:PASSWORD && chmod 400 "$opt_out" || exit
-                printp "The host certifcate has been stored in $opt_out. If
-                        dCache runs as a non-root user, you must change
-                        the owner of $opt_out."
-                ;;
-
-            cacerts)
-                require openssl
-                findJavaTool keytool ||
-                fail 1 "Could not find the keytool command, part of the Java
-                        JRE. Please ensure that either keytool is in the path
-                        or update JAVA_HOME."
-
-                opt_password="$(getProperty dcache.authn.truststore.password)"
-                opt_out="$(getProperty dcache.authn.truststore)"
-                opt_cacerts="$(getProperty dcache.authn.capath)"
-
-                parseOptions "out password cacerts" "$@" || shift $?
-
-                rm -f "${opt_out}" || exit
-
-                for cert in $opt_cacerts/*.0; do
-                    base="${cert%.0}"
-                    readconf "${file}.info" cert_ || cert_alias=$(basename "${base}")
-                    printf "$cert_alias "
-                    openssl x509 -in "${cert}" | ${keytool} -importcert -noprompt -alias "${cert_alias}" -storepass "${opt_password}" -keystore "${opt_out}" > /dev/null || exit
                 done
                 ;;
 
