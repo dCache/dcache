@@ -714,13 +714,13 @@
         <property name="cipherFlags" value="${srm.authn.ciphers}"/>
 
         <property name="caPath" value="${srm.authn.capath}"/>
-        <property name="caPathTimeout" value="${srm.authn.hostcert.refresh}"/>
-        <property name="caPathTimeoutUnit" value="${srm.authn.hostcert.refresh.unit}"/>
+        <property name="caPathTimeout" value="${srm.authn.capath.refresh}"/>
+        <property name="caPathTimeoutUnit" value="${srm.authn.capath.refresh.unit}"/>
 
         <property name="serverCertificatePath" value="${srm.authn.hostcert.cert}"/>
         <property name="serverKeyPath" value="${srm.authn.hostcert.key}"/>
-        <property name="serverCertificateTimeout" value="${srm.authn.capath.refresh}"/>
-        <property name="serverCertificateTimeoutUnit" value="${srm.authn.capath.refresh.unit}"/>
+        <property name="serverCertificateTimeout" value="${srm.authn.hostcert.refresh}"/>
+        <property name="serverCertificateTimeoutUnit" value="${srm.authn.hostcert.refresh.unit}"/>
     </bean>
 
     <bean id="server" class="org.eclipse.jetty.server.Server"
