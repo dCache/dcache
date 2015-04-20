@@ -86,8 +86,13 @@ public class ConsoleReaderCommand implements Command, Runnable {
 
     @Override
     public void destroy() {
-        if (_pipeThread != null) {
-            _pipeThread.interrupt();
+        Thread thread = _pipeThread;
+        if (thread != null) {
+            thread.interrupt();
+        }
+        thread = _adminShellThread;
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 
@@ -344,7 +349,6 @@ public class ConsoleReaderCommand implements Command, Runnable {
                     _pipedOut.close();
                 } catch (IOException ignored) {
                 }
-                _adminShellThread.interrupt();
             }
         }
     }
