@@ -1,5 +1,7 @@
 package dmg.cells.nucleus ;
 
+import com.google.common.base.Throwables;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,7 +49,7 @@ public class CellMessage implements Cloneable , Serializable {
 
   public CellMessage( CellPath addr , Serializable msg ){
 
-     _destination  = (CellPath) addr.clone();
+     _destination  = addr.clone();
      _message      = msg ;
      _source       = new CellPath() ;
      _creationTime = System.currentTimeMillis() ;
@@ -136,31 +138,32 @@ public boolean equals( Object obj ){
         _messageStream = null;
     }
 
-    protected CellMessage cloneWithoutFields()
+    /**
+     * The method does not copy the message object - only the encoded message
+     * stream (if any).
+     */
+    @Override
+    public CellMessage clone()
     {
-        return new CellMessage();
-    }
-
-    protected CellMessage cloneWithoutPayload()
-    {
-        CellMessage copy = cloneWithoutFields();
-        copy._destination = (CellPath) _destination.clone();
-        copy._source = (CellPath) _source.clone();
-        copy._creationTime = _creationTime;
-        copy._receivedAt = _receivedAt;
-        copy._umid = _umid;    // UOID is immutable
-        copy._lastUmid = _lastUmid;
-        copy._isPersistent = _isPersistent;
-        copy._session = _session;
-        copy._ttl = _ttl;
-        return copy;
+        try {
+            CellMessage copy = (CellMessage) super.clone();
+            copy._destination = _destination.clone();
+            if (_source != null) {
+                copy._source = _source.clone();
+            }
+            copy._messageStream = _messageStream;
+            return copy;
+        } catch (CloneNotSupportedException e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     public CellMessage encode() throws SerializationException
     {
         checkState(_mode == ORIGINAL_MODE);
-        CellMessage encoded = cloneWithoutPayload();
+        CellMessage encoded = clone();
         encoded._mode = STREAM_MODE;
+        encoded._message = null;
         encoded._messageStream = encode(_message);
         return encoded;
     }
@@ -168,8 +171,9 @@ public boolean equals( Object obj ){
     public CellMessage decode() throws SerializationException
     {
         checkState(_mode == STREAM_MODE);
-        CellMessage decoded = cloneWithoutPayload();
+        CellMessage decoded = clone();
         decoded._mode = ORIGINAL_MODE;
+        decoded._messageStream = null;
         decoded._message = decode(_messageStream);
         return decoded;
     }

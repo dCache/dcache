@@ -110,7 +110,7 @@ public class MulticastCell extends CellAdapter {
    @Override
    public synchronized void messageArrived( CellMessage message ){
        Object   obj  = message.getMessageObject() ;
-       CellPath path = (CellPath)(message.getSourcePath().clone()) ;
+       CellPath path = message.getSourcePath().clone();
 
        if( obj instanceof NoRouteToCellException ){
           synchronized( _ioLock ){

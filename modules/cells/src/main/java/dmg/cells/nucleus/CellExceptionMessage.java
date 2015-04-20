@@ -13,18 +13,8 @@ public class CellExceptionMessage extends CellMessage
         super(addr, msg);
     }
 
-    private CellExceptionMessage()
-    {
-    }
-
     public NoRouteToCellException getException()
     {
         return (NoRouteToCellException) getMessageObject();
-    }
-
-    @Override
-    protected CellMessage cloneWithoutFields()
-    {
-        return new CellExceptionMessage();
     }
 }

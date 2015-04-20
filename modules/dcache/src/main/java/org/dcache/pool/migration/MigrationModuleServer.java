@@ -123,8 +123,7 @@ public class MigrationModuleServer
             throw new LockedCacheException("Target file is busy");
         }
 
-        Request request =
-            new Request((CellPath)envelope.getSourcePath().clone(), message);
+        Request request = new Request(envelope.getSourcePath().clone(), message);
         _requests.put(request.getUUID(), request);
         request.start();
 

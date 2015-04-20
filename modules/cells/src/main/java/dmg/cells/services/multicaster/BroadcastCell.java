@@ -458,7 +458,7 @@ public class BroadcastCell extends CellAdapter {
         List<Entry> list = new ArrayList<>() ;
         CellPath  dest = message.getDestinationPath() ;
         for (Map.Entry<CellAddressCore, Entry> mapentry: map.entrySet()) {
-            CellPath origin = (CellPath) dest.clone();
+            CellPath origin = dest.clone();
             Entry entry = mapentry.getValue();
             if (!entry.isValid()) {
                 list.add(entry);

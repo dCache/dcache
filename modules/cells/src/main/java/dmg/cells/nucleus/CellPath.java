@@ -98,7 +98,7 @@ public final class CellPath  implements Cloneable , Serializable
    }
 
    @Override
-   public synchronized Object clone()
+   public synchronized CellPath clone()
    {
        return new CellPath(_position, Lists.newArrayList(_list));
    }

@@ -892,8 +892,7 @@ public class Transfer implements Comparable<Transfer>
             /* As always, PoolIoFileMessage has to be sent via the
              * PoolManager (which could be the SpaceManager).
              */
-            CellPath poolPath =
-                (CellPath) _poolManager.getDestinationPath().clone();
+            CellPath poolPath = _poolManager.getDestinationPath().clone();
             poolPath.add(getPoolAddress());
 
             setMoverId(_pool.sendAndWait(poolPath, message, timeout).getMoverId());

@@ -24,10 +24,10 @@ public class BroadcastEventCommandMessage extends BroadcastCommandMessage {
     }
     public BroadcastEventCommandMessage(String eventClass , CellPath target ) {
         _eventClass = eventClass ;
-        _target = target != null ? (CellPath)target.clone() : null ;
+        _target = target != null ? target.clone() : null ;
     }
     public CellPath getTarget(){
-        return _target == null ? null : (CellPath)_target.clone() ;
+        return _target == null ? null : _target.clone();
     }
     public String getEventClass(){ return _eventClass ; }
     public String toString(){
