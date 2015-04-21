@@ -707,6 +707,10 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             super(nearlineStorage);
             infoMsg = new StorageInfoMessage(getCellAddress().toString(), pnfsId, false);
             descriptor = repository.openEntry(pnfsId, NO_FLAGS);
+            String path = descriptor.getFileAttributes().getStorageInfo().getKey("path");
+            if (path != null) {
+                infoMsg.setBillingPath(path);
+            }
             LOGGER.debug("Flush request created for {}.", pnfsId);
         }
 

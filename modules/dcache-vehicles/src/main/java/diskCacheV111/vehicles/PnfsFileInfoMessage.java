@@ -1,7 +1,5 @@
 package diskCacheV111.vehicles;
 
-import java.util.Objects;
-
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
@@ -61,18 +59,18 @@ public abstract class PnfsFileInfoMessage extends InfoMessage
         return _storageInfo;
     }
 
-    public String getPath()
+    public String getBillingPath()
     {
         return _path;
     }
 
-    public void setPath(String path)
+    public void setBillingPath(String path)
     {
         _path = path;
     }
 
-    public void setPath(FsPath path)
+    public void setBillingPath(FsPath path)
     {
-        _path = Objects.toString(path, "Unknown");
+        setBillingPath(path.toString());
     }
 }

@@ -22,6 +22,7 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     private final EnumSet<RequestContainerV5.RequestState> _allowedStates;
 
     private boolean _skipCostUpdate;
+    private String _transferPath;
 
     public PoolMgrSelectPoolMsg(FileAttributes fileAttributes,
                                 ProtocolInfo protocolInfo)
@@ -54,12 +55,21 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     public void setIoQueueName( String ioQueueName ){ _ioQueueName = ioQueueName ; }
     public String getIoQueueName(){ return _ioQueueName ; }
 
-    public FsPath getPnfsPath() {
+    public FsPath getBillingPath() {
         return _pnfsPath != null ? new FsPath(_pnfsPath) : null;
     }
 
-    public void setPnfsPath(FsPath pnfsPath) {
-        this._pnfsPath = pnfsPath.toString();
+    public void setBillingPath(FsPath pnfsPath) {
+        _pnfsPath = pnfsPath.toString();
+    }
+
+    public FsPath getTransferPath()
+    {
+        return _transferPath != null ? new FsPath(_transferPath) : getBillingPath();
+    }
+
+    public void setTransferPath(FsPath path) {
+        _transferPath = path.toString();
     }
 
     public void setLinkGroup(String linkGroup) {
