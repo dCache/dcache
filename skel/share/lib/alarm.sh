@@ -17,7 +17,7 @@ send_alarm() # $@ = [-d=DOMAIN] [-s=SERVICE] [-t=TYPE] message
     host=$(getProperty dcache.log.server.host)
     port=$(getProperty dcache.log.server.port)
 
-    CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.alarms.shell.SendAlarm -r=${host} -p=${port} "$@"
+    CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.alarms.shell.SendAlarmCLI -r=${host} -p=${port} "$@"
 }
 
 ##
