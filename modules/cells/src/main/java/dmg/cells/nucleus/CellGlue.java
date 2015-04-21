@@ -497,6 +497,8 @@ class CellGlue
         CellPath destination = msg.getDestinationPath();
         CellAddressCore address = destination.getCurrent();
 
+        boolean hasDestinationChanged = false;
+
         LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
 
         for (int iter = 0; iter < MAX_ROUTE_LEVELS; iter++) {
@@ -508,6 +510,7 @@ class CellGlue
                     return;
                 }
                 address = destination.getCurrent();
+                hasDestinationChanged = true;
             }
 
             LOGGER.trace("sendMessage : next hop at {}: {}", iter, address);
@@ -536,6 +539,16 @@ class CellGlue
                 }
             }
 
+            /* Unless we updated the destination path, there is no reason to send the message back from
+             * where we got it. Note that we cannot detect non-trivial loops, i.e. loops involving three
+             * or more domains: Such loops may have legitimate alias-routes rewriting the destination
+             * and sending the message to where it has been before may be perfectly reasonable.
+             */
+            if (!hasDestinationChanged && msg.getSourcePath().getDestinationAddress().equals(address)) {
+                sendException(msg, destination, address.toString());
+                return;
+            }
+
             /* The delivery restrictions do not apply to routes.
              */
             resolveLocally = true;
@@ -556,6 +569,7 @@ class CellGlue
              */
             if (route.getRouteType() == CellRoute.ALIAS) {
                 destination.replaceCurrent(address);
+                hasDestinationChanged = true;
             }
         }
         // end of big iteration loop
