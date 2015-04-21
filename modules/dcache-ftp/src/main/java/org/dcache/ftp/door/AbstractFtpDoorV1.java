@@ -4267,7 +4267,7 @@ public abstract class AbstractFtpDoorV1
         DoorRequestInfoMessage infoRemove =
             new DoorRequestInfoMessage(_cellAddress.toString(), "remove");
         infoRemove.setSubject(_subject);
-        infoRemove.setPath(path);
+        infoRemove.setBillingPath(path);
         infoRemove.setPnfsId(pnfsId);
         infoRemove.setClient(_clientDataAddress.getAddress().getHostAddress());
 

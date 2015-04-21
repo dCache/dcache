@@ -192,7 +192,7 @@ public class RemoveFileCompanion
             new DoorRequestInfoMessage(info.getCellName() + "@" +
                                        info.getDomainName(), "remove");
         msg.setSubject(_subject);
-        msg.setPath(_path);
+        msg.setBillingPath(_path);
         msg.setPnfsId(pnfsid);
         msg.setClient(Subjects.getOrigin(_subject).getAddress().getHostAddress());
 

@@ -159,7 +159,8 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setTransferAttributes(mover.getBytesTransferred(),
                                    mover.getTransferTime(),
                                    mover.getProtocolInfo());
-        info.setPath(mover.getPath());
+        info.setBillingPath(mover.getBillingPath());
+        info.setTransferPath(mover.getTransferPath());
 
         _billing.notify(info);
     }

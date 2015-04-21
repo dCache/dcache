@@ -49,7 +49,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
     {
         acceptInfoMessage(message);
         template.add("pnfsid", message.getPnfsId());
-        template.add("path", message.getPath());
+        template.add("path", message.getBillingPath());
         template.add("filesize", message.getFileSize());
         template.add("storage", message.getStorageInfo());
     }
@@ -63,6 +63,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("gid", message.getGid());
         template.add("owner", message.getOwner());
         template.add("client", message.getClient());
+        template.add("transferPath", message.getTransferPath());
     }
 
     @Override
@@ -75,6 +76,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         template.add("protocol", message.getProtocolInfo());
         template.add("initiator", message.getInitiator());
         template.add("p2p", message.isP2P());
+        template.add("transferPath", message.getTransferPath());
     }
 
     @Override
@@ -83,6 +85,7 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
         acceptFileInfoMessage(message);
         template.add("protocol", message.getProtocolInfo());
         template.add("cached", message.getFileCached());
+        template.add("transferPath", message.getTransferPath());
     }
 
     @Override
@@ -102,5 +105,6 @@ public class StringTemplateInfoMessageVisitor implements InfoMessageVisitor
     public void visit(WarningPnfsFileInfoMessage message)
     {
         acceptFileInfoMessage(message);
+        template.add("transferPath", message.getTransferPath());
     }
 }

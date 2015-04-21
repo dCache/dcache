@@ -876,7 +876,7 @@ public class DcacheResourceFactory
             new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
         Subject subject = getSubject();
         infoRemove.setSubject(subject);
-        infoRemove.setPath(path);
+        infoRemove.setBillingPath(path);
         infoRemove.setPnfsId(attributes.getPnfsId());
         infoRemove.setFileSize(attributes.getSizeIfPresent().or(0L));
         infoRemove.setClient(Subjects.getOrigin(subject).getAddress().getHostAddress());
