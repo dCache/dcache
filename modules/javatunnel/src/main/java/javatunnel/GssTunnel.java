@@ -148,7 +148,7 @@ class GssTunnel extends TunnelConverter {
             _context.requestMutualAuth(true);
 
             if( _useChannelBinding ) {
-                 ChannelBinding cb = new ChannelBinding(socket.getInetAddress(), InetAddress.getLocalHost(), null);
+                 ChannelBinding cb = new ChannelBinding(socket.getInetAddress(), socket.getLocalAddress(), null);
             	_context.setChannelBinding(cb);
             }
 
@@ -186,8 +186,8 @@ class GssTunnel extends TunnelConverter {
             Socket  socket = (Socket)addon;
 
             if(_useChannelBinding) {
-            	ChannelBinding cb = new ChannelBinding(socket.getInetAddress(),   InetAddress.getLocalHost(), null);
-            	_context.setChannelBinding(cb);
+                ChannelBinding cb = new ChannelBinding(socket.getInetAddress(),   socket.getLocalAddress(), null);
+                _context.setChannelBinding(cb);
             }
 
             while(  !_context.isEstablished() ) {
