@@ -67,7 +67,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     protected final IoMode _ioMode;
     protected final TransferService<Mover<P>> _transferService;
     protected final PostTransferService _postTransferService;
-    protected final FsPath _path;
+    protected final FsPath _billingPath;
+    protected final FsPath _transferPath;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
 
@@ -83,7 +84,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
         _ioMode = (message instanceof PoolAcceptFileMessage) ? IoMode.WRITE : IoMode.READ;
         _subject = message.getSubject();
         _id = message.getId();
-        _path = message.getPnfsPath();
+        _billingPath = message.getBillingPath();
+        _transferPath = message.getTransferPath();
         _pathToDoor = pathToDoor;
         _handle = handle;
         _transferService = (TransferService<Mover<P>>) transferService;
@@ -166,9 +168,15 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     }
 
     @Override
-    public FsPath getPath()
+    public FsPath getBillingPath()
     {
-        return _path;
+        return _billingPath;
+    }
+
+    @Override
+    public FsPath getTransferPath()
+    {
+        return _transferPath;
     }
 
     @Override

@@ -761,7 +761,8 @@ public class RequestContainerV5
         private   StorageInfo  _storageInfo;
         private   ProtocolInfo _protocolInfo;
         private   String       _linkGroup;
-        private   FsPath _path;
+        private   FsPath _billingPath;
+        private   FsPath _transferPath;
 
         private   boolean _enforceP2P;
         private   int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
@@ -812,7 +813,8 @@ public class RequestContainerV5
            _protocolInfo = request.getProtocolInfo();
            _fileAttributes = request.getFileAttributes();
            _storageInfo = _fileAttributes.getStorageInfo();
-           _path = request.getPnfsPath();
+           _billingPath = request.getBillingPath();
+           _transferPath = request.getTransferPath();
 
            _retryCounter = request.getContext().getRetryCounter();
            _stageCandidateHost = request.getContext().getPreviousStageHost();
@@ -1198,8 +1200,8 @@ public class RequestContainerV5
                 _state = RequestState.ST_DONE;
                 _forceContinue = true;
                 _status = "Failed";
-                sendInfoMessage(_pnfsId , _path, _fileAttributes,
-                                _currentRc , "Failed "+_currentRm);
+                sendInfoMessage(
+                        _currentRc , "Failed "+_currentRm);
             } else {
                 if (state == RequestState.ST_STAGE && !canStage()) {
                     _state = RequestState.ST_DONE;
@@ -1208,8 +1210,8 @@ public class RequestContainerV5
                     _log.debug("Subject is not authorized to stage");
                     _currentRc = CacheException.FILE_NOT_ONLINE;
                     _currentRm = "File not online. Staging not allowed.";
-                    sendInfoMessage(_pnfsId , _path, _fileAttributes,
-                                    _currentRc , "Permission denied." + _currentRm);
+                    sendInfoMessage(
+                            _currentRc , "Permission denied." + _currentRm);
                 } else if (!_allowedStates.contains(state)) {
                     _state = RequestState.ST_DONE;
                     _forceContinue = true;
@@ -1217,7 +1219,7 @@ public class RequestContainerV5
                     _log.debug("No permission to perform {}", state);
                     _currentRc = CacheException.PERMISSION_DENIED;
                     _currentRm = "Permission denied.";
-                    sendInfoMessage(_pnfsId, _path, _fileAttributes, _currentRc,
+                    sendInfoMessage(_currentRc,
                                     "Permission denied for " + state);
                 } else {
                     _state = state;
@@ -1380,8 +1382,8 @@ public class RequestContainerV5
                        nextStep(RequestState.ST_DONE , CONTINUE ) ;
                        _log.info("AskIfAvailable found the object");
                        if (_sendHitInfo ) {
-                           sendHitMsg(_pnfsId, _path, (_bestPool != null) ? _bestPool.getName() : "<UNKNOWN>",
-                                      _fileAttributes, _protocolInfo, true);   //VP
+                           sendHitMsg((_bestPool != null) ? _bestPool.getName() : "<UNKNOWN>",
+                                      true);   //VP
                        }
 
                     }else if( rc == RT_NOT_FOUND ){
@@ -1398,8 +1400,8 @@ public class RequestContainerV5
                           suspendIfEnabled("Suspended (pool unavailable)");
                        }
                        if (_sendHitInfo && _poolCandidate == null) {
-                           sendHitMsg(  _pnfsId, _path, (_bestPool!=null)?_bestPool.getName():"<UNKNOWN>",
-                                        _fileAttributes, _protocolInfo, false );   //VP
+                           sendHitMsg((_bestPool!=null)?_bestPool.getName():"<UNKNOWN>",
+                                      false );   //VP
                        }
                        //
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1458,9 +1460,9 @@ public class RequestContainerV5
                        setError(0, "");
 
                        if (_sendHitInfo ) {
-                           sendHitMsg(_pnfsId, _path,
+                           sendHitMsg(
                                    (_p2pSourcePool != null) ? _p2pSourcePool.getName() : "<UNKNOWN>",
-                                   _fileAttributes, _protocolInfo, true);   //VP
+                                   true);   //VP
                        }
 
                     }else if( rc == RT_NOT_PERMITTED ){
@@ -1717,8 +1719,8 @@ public class RequestContainerV5
            setError(5,"Resource temporarily unavailable : "+detail);
            nextStep(RequestState.ST_DONE , CONTINUE ) ;
            _status = "Failed" ;
-           sendInfoMessage( _pnfsId , _path, _fileAttributes,
-                            _currentRc , "Failed "+_currentRm );
+           sendInfoMessage(
+                   _currentRc , "Failed "+_currentRm );
         }
 
         private void fail()
@@ -1736,7 +1738,7 @@ public class RequestContainerV5
             _log.debug(" stateEngine: SUSPENDED/WAIT ");
             _status = status + " " + _formatter.get().format(new Date());
             nextStep(RequestState.ST_SUSPENDED, WAIT);
-            sendInfoMessage(_pnfsId, _path, _fileAttributes,
+            sendInfoMessage(
                     _currentRc, "Suspended (" + _currentRm + ")");
         }
 
@@ -2053,39 +2055,36 @@ public class RequestContainerV5
                           (System.currentTimeMillis() - _started));
             }
         }
-    }
 
-    private void sendInfoMessage( PnfsId pnfsId , FsPath path,
-                                  FileAttributes fileAttributes,
-                                  int rc , String infoMessage ){
-      try{
-        WarningPnfsFileInfoMessage info =
-            new WarningPnfsFileInfoMessage(
-                                    "PoolManager","PoolManager",pnfsId ,
-                                    rc , infoMessage )  ;
-        info.setStorageInfo(fileAttributes.getStorageInfo());
-        info.setFileSize(fileAttributes.getSize());
-        info.setPath(path);
-        _billing.notify(info);
-      } catch (NoRouteToCellException e) {
-          _log.warn("Couldn't send WarningInfoMessage: {}", e.toString());
-      }
-    }
+        private void sendInfoMessage(int rc, String infoMessage)
+        {
+            try {
+                WarningPnfsFileInfoMessage info =
+                        new WarningPnfsFileInfoMessage("PoolManager","PoolManager", _pnfsId, rc, infoMessage);
+                info.setStorageInfo(_fileAttributes.getStorageInfo());
+                info.setFileSize(_fileAttributes.getSize());
+                info.setBillingPath(_billingPath);
+                info.setTransferPath(_transferPath);
+                _billing.notify(info);
+            } catch (NoRouteToCellException e) {
+                _log.warn("Couldn't send WarningInfoMessage: {}", e.toString());
+            }
+        }
 
-    private void sendHitMsg(PnfsId pnfsId, FsPath path, String poolName,
-                            FileAttributes fileAttributes, ProtocolInfo protocolInfo, boolean cached)
-    {
-        try {
-            PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, pnfsId);
-            msg.setPath(path);
-            msg.setFileCached(cached);
-            msg.setStorageInfo(fileAttributes.getStorageInfo());
-            msg.setFileSize(fileAttributes.getSize());
-            msg.setProtocolInfo(protocolInfo);
-            _billing.notify(msg);
-        } catch (NoRouteToCellException e) {
-            _log.warn("Couldn't report hit info for {}: {}",
-                      pnfsId, e.toString());
+        private void sendHitMsg(String poolName, boolean cached)
+        {
+            try {
+                PoolHitInfoMessage msg = new PoolHitInfoMessage(poolName, _pnfsId);
+                msg.setBillingPath(_billingPath);
+                msg.setTransferPath(_transferPath);
+                msg.setFileCached(cached);
+                msg.setStorageInfo(_fileAttributes.getStorageInfo());
+                msg.setFileSize(_fileAttributes.getSize());
+                msg.setProtocolInfo(_protocolInfo);
+                _billing.notify(msg);
+            } catch (NoRouteToCellException e) {
+                _log.warn("Couldn't report hit info for {}: {}", _pnfsId, e.toString());
+            }
         }
     }
 

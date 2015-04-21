@@ -5,6 +5,8 @@ import org.stringtemplate.v4.ST;
 
 import javax.security.auth.Subject;
 
+import diskCacheV111.util.FsPath;
+
 import org.dcache.auth.Subjects;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
@@ -13,6 +15,7 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     private String _client = "unknown";
 
     private static final long serialVersionUID = 2469895982145157834L;
+    private String _transferPath;
 
     public DoorRequestInfoMessage(String cellName) {
         super("request", "door", cellName, null);
@@ -79,5 +82,20 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
         template.add("gid", getGid());
         template.add("owner", getOwner());
         template.add("client", getClient());
+    }
+
+    public String getTransferPath()
+    {
+        return _transferPath != null ? _transferPath : getBillingPath();
+    }
+
+    public void setTransferPath(String path)
+    {
+        _transferPath = path;
+    }
+
+    public void setTransferPath(FsPath path)
+    {
+        setTransferPath(path.toString());
     }
 }

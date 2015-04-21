@@ -36,8 +36,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     private final int _xrootdFileHandle;
 
-    private String _path;
-
     private final UUID _uuid;
 
     private final InetSocketAddress _doorAddress;
@@ -105,16 +103,6 @@ public class XrootdProtocolInfo implements IpProtocolInfo {
 
     public InetSocketAddress getDoorAddress() {
         return _doorAddress;
-    }
-
-    public void setPath(String path)
-    {
-        _path = path;
-    }
-
-    public String getPath()
-    {
-        return _path;
     }
 
     @Override

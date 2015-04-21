@@ -61,6 +61,8 @@ import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static org.dcache.namespace.FileAttribute.STORAGEINFO;
+
 public class TransferManagerHandler extends AbstractMessageCallback<Message>
 {
     private static final Logger log =
@@ -137,7 +139,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 + manager.getCellDomainName());
         info.setTransactionDuration(-creationTime);
         info.setSubject(subject);
-        info.setPath(pnfsPath);
+        info.setBillingPath(pnfsPath);
+        info.setTransferPath(pnfsPath);
         info.setTimeQueued(-System.currentTimeMillis());
         this.requestor = requestor;
         try {
@@ -324,6 +327,10 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         pnfsIdString = pnfsId.toString();
         info.setPnfsId(pnfsId);
         info.setStorageInfo(create.getFileAttributes().getStorageInfo());
+        if (create.getFileAttributes().isDefined(STORAGEINFO) && create.getFileAttributes().getStorageInfo().getKey("path") != null) {
+            info.setBillingPath(create.getFileAttributes().getStorageInfo().getKey("path"));
+        }
+
         selectPool();
     }
 
@@ -369,7 +376,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         PoolMgrSelectPoolMsg request = store
                 ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info)
                 : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
-        request.setPnfsPath(new FsPath(pnfsPath));
+        request.setBillingPath(new FsPath(pnfsPath));
         request.setSubject(transferRequest.getSubject());
         log.debug("PoolMgrSelectPoolMsg: " + request);
         setState(WAITING_FOR_POOL_INFO_STATE);
@@ -405,7 +412,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 pool,
                 protocol_info,
                 fileAttributes);
-        poolMessage.setPnfsPath(new FsPath(pnfsPath));
+        poolMessage.setBillingPath(new FsPath(info.getBillingPath()));
+        poolMessage.setTransferPath(new FsPath(info.getTransferPath()));
         poolMessage.setSubject(transferRequest.getSubject());
         if (manager.getIoQueueName() != null) {
             poolMessage.setIoQueueName(manager.getIoQueueName());
