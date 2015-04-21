@@ -97,7 +97,7 @@ public final class DoorRequestData extends PnfsConnectInfo {
         mappedUID = info.getUid();
         mappedGID = info.getGid();
         client = info.getClient();
-        path = info.getPath();
+        path = info.getBillingPath();
     }
 
     public String getOwner() {
