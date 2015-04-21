@@ -5,6 +5,7 @@ import com.google.common.collect.SetMultimap;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -105,6 +106,27 @@ public class CellRoutingTable implements Serializable
                 throw new IllegalArgumentException("Route entry not found dumpster");
             }
             break;
+        }
+    }
+
+    public void delete(CellAddressCore target)
+    {
+        String addr = target.toString();
+        delete(_exact, addr);
+        delete(_wellknown, addr);
+        delete(_domain, addr);
+    }
+
+    private void delete(SetMultimap<String,CellRoute> routes, String addr)
+    {
+        synchronized (routes) {
+            Iterator<CellRoute> iterator = routes.values().iterator();
+            while (iterator.hasNext()) {
+                CellRoute route = iterator.next();
+                if (route.getTargetName().equals(addr)) {
+                    iterator.remove();
+                }
+            }
         }
     }
 

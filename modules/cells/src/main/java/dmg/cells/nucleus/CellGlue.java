@@ -170,7 +170,7 @@ class CellGlue
 
     }
 
-    synchronized void export(CellNucleus cell)
+    void export(CellNucleus cell)
     {
         sendToAll(new CellEvent(cell.getCellName(), CellEvent.CELL_EXPORTED_EVENT));
     }
@@ -454,16 +454,11 @@ class CellGlue
 
     synchronized void destroy(CellNucleus nucleus)
     {
+        _cellEventListener.remove(nucleus.getCellName());
         _cellList.remove(nucleus.getCellName());
         _killedCells.remove(nucleus);
         LOGGER.trace("destroy : sendToAll : killed {}", nucleus.getCellName());
         notifyAll();
-//
-//        CELL_DIED_EVENT moved to _kill. Otherwise
-//        we have bouncing message because the WELL_KNOWN_ROUTE
-//        is still there but the entry in the ps list is not.
-//
-//       sendToAll( new CellEvent( name , CellEvent.CELL_DIED_EVENT ) ) ;
     }
 
     private void _kill(CellNucleus source, final CellNucleus destination, long to)
@@ -475,17 +470,12 @@ class CellGlue
         }
 
         CellPath sourceAddr = new CellPath(source.getCellName(), getCellDomainName());
-        final KillEvent killEvent = new KillEvent(sourceAddr, to);
+        KillEvent killEvent = new KillEvent(sourceAddr, to);
         sendToAll(new CellEvent(cellToKill, CellEvent.CELL_DIED_EVENT));
 
-        Runnable command = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                destination.shutdown(killEvent);
-            }
-        };
+        _routingTable.delete(destination.getThisAddress());
+
+        Runnable command = () -> destination.shutdown(killEvent);
         try {
             _killerExecutor.execute(command);
         } catch (OutOfMemoryError e) {
@@ -631,12 +621,7 @@ class CellGlue
 
     void addCellEventListener(CellNucleus nucleus, CellEventListener listener)
     {
-        List<CellEventListener> v;
-        if ((v = _cellEventListener.get(nucleus.getCellName())) == null) {
-            v = new CopyOnWriteArrayList<>();
-            _cellEventListener.put(nucleus.getCellName(), v);
-        }
-        v.add(listener);
+        _cellEventListener.computeIfAbsent(nucleus.getCellName(), k -> new CopyOnWriteArrayList<>()).add(listener);
     }
 
     @Override

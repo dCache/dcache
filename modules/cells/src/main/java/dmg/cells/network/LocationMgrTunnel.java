@@ -291,7 +291,7 @@ public class LocationMgrTunnel
             /* Add new route.
              */
             CellRoute route = new CellRoute(domain,
-                    tunnel.getCellName(),
+                    nucleus.getThisAddress().toString(),
                     CellRoute.DOMAIN);
             try {
                 nucleus.routeAdd(route);
@@ -315,13 +315,7 @@ public class LocationMgrTunnel
          */
         public synchronized void remove(LocationMgrTunnel tunnel)
         {
-            CellNucleus nucleus = tunnel.getNucleus();
-            String domain = tunnel.getRemoteDomainName();
-            if (_tunnels.get(domain) == tunnel) {
-                _tunnels.remove(domain);
-                nucleus.routeDelete(new CellRoute(domain,
-                        tunnel.getCellName(),
-                        CellRoute.DOMAIN));
+            if (_tunnels.remove(tunnel.getRemoteDomainName(), tunnel)) {
                 notifyAll();
             }
         }
