@@ -59,15 +59,12 @@ documents or software obtained from this server.
  */
 package org.dcache.alarms.admin;
 
-import org.slf4j.MDC;
-
 import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -84,9 +81,8 @@ import org.dcache.alarms.AlarmDefinitionsMap;
 import org.dcache.alarms.AlarmPriority;
 import org.dcache.alarms.AlarmPriorityMap;
 import org.dcache.alarms.jdom.JDomAlarmDefinition;
-import org.dcache.alarms.shell.AlarmArguments;
 import org.dcache.alarms.shell.ListPredefinedTypes;
-import org.dcache.alarms.shell.SendAlarm;
+import org.dcache.alarms.shell.SendAlarmCLI;
 
 /**
  * Provides commands for adding, setting, removing, listing, loading and saving
@@ -514,12 +510,12 @@ public final class AlarmCommandHandler implements CellCommandListener {
         @Option(name = "d",
                 usage = "Optional name of domain of origin of the alarm "
                                 + "(defaults to '<na>').")
-        String domain;
+        String domain = MDC.get(CDC.MDC_DOMAIN);
 
         @Option(name = "s",
                 usage = "Optional name of service of origin of the alarm "
                                 + "(defaults to 'user-command').")
-        String service;
+        String service = MDC.get(CDC.MDC_CELL);
 
         @Argument(required = true,
                   usage = "The actual alarm message (in single or double quotes).")
@@ -527,28 +523,8 @@ public final class AlarmCommandHandler implements CellCommandListener {
 
         @Override
         public String call() throws Exception {
-            List<String> arglist = new ArrayList<>();
-
-            if (Strings.emptyToNull(type) != null) {
-                arglist.add("-" + AlarmArguments.TYPE_OPT + "=\"" + type + "\"");
-            }
-
-            if (Strings.emptyToNull(domain) == null) {
-                domain = MDC.get(CDC.MDC_DOMAIN);
-            }
-            arglist.add("-" + AlarmArguments.SRC_DOMAIN_OPT + "=\"" + domain + "\"");
-
-            if (Strings.emptyToNull(service) == null) {
-                service = MDC.get(CDC.MDC_CELL);
-            }
-            arglist.add("-" + AlarmArguments.SRC_SERVICE_OPT + "=\"" + service + "\"");
-
-            arglist.add("-" + AlarmArguments.DST_HOST_OPT + "=\"" + serverHost + "\"");
-            arglist.add("-" + AlarmArguments.DST_PORT_OPT + "=\"" + serverPort + "\"");
-
-            arglist.add(message);
-
-            return SendAlarm.processRequest(arglist.toArray(new String[0]), LOGGER);
+            SendAlarmCLI.sendEvent(serverHost, serverPort, SendAlarmCLI.createEvent(domain, service, type, message));
+            return "sending alarm to " + serverHost + ":" + serverPort;
         }
     }
 

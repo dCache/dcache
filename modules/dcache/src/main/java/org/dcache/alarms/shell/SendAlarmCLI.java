@@ -22,6 +22,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEventVO;
+import com.google.common.base.Strings;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -48,19 +49,11 @@ public class SendAlarmCLI
         int remotePort = args.getIntOption("p");
         String type = args.getOption("t", "");
 
-        LoggingEvent event = getAlarmEvent(msg, cell, domain, type);
-
-
-        try (Socket socket = new Socket(remoteHost, remotePort);
-             ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()))) {
-            out.writeObject(LoggingEventVO.build(event));
-            out.flush();
-        }
-
+        sendEvent(remoteHost, remotePort, createEvent(domain, cell, type, msg));
         System.out.println("Sent alarm to " + remoteHost + ":" + remotePort + ".");
     }
 
-    private static LoggingEvent getAlarmEvent(String msg, String cell, String domain, String type)
+    public static LoggingEvent createEvent(String domain, String cell, String type, String msg)
     {
         LoggerContext context = new LoggerContext();
         Logger logger = context.getLogger(SendAlarmCLI.class);
@@ -68,6 +61,15 @@ public class SendAlarmCLI
         event.setMarker(AlarmMarkerFactory.getMarker(getPredefinedAlarm(type)));
         event.setMDCPropertyMap(getMdc(cell, domain));
         return event;
+    }
+
+    public static void sendEvent(String remoteHost, int remotePort, LoggingEvent event) throws IOException
+    {
+        try (Socket socket = new Socket(remoteHost, remotePort);
+             ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()))) {
+            out.writeObject(LoggingEventVO.build(event));
+            out.flush();
+        }
     }
 
     private static Map<String, String> getMdc(String cell, String domain)
@@ -80,17 +82,16 @@ public class SendAlarmCLI
 
     private static PredefinedAlarm getPredefinedAlarm(String s)
     {
-        if (!s.isEmpty()) {
-            try {
-                return PredefinedAlarm.valueOf(s.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "If specified, the alarm type must be one "
-                        + "of the following:\n"
-                        + ListPredefinedTypes.getSortedList());
-            }
-        } else {
+        if (Strings.isNullOrEmpty(s)) {
             return null;
+        }
+        try {
+            return PredefinedAlarm.valueOf(s.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "If specified, the alarm type must be one "
+                    + "of the following:\n"
+                    + ListPredefinedTypes.getSortedList());
         }
     }
 }
