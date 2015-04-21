@@ -330,7 +330,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty</artifactId>
-                <version>3.9.2.Final</version>
+                <version>3.9.4.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.grizzly</groupId>
@@ -340,7 +340,7 @@
             <dependency>
                 <groupId>com.sleepycat</groupId>
                 <artifactId>je</artifactId>
-                <version>6.0.11</version>
+                <version>6.1.5</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.mq</groupId>
