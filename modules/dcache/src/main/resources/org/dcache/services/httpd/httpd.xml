@@ -85,8 +85,8 @@
             <property name="idleTimeout" value="${httpd.limits.idle-time}"/>
             <property name="idleTimeoutUnit" value="${httpd.limits.idle-time.unit}"/>
 
-            <property name="needClientAuth" value="true"/>
-            <property name="wantClientAuth" value="false"/>
+            <property name="needClientAuth" value="false"/>
+            <property name="wantClientAuth" value="true"/>
 
             <property name="cipherFlags" value="${httpd.authn.ciphers}"/>
 
