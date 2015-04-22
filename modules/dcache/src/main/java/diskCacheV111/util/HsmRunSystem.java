@@ -62,16 +62,33 @@ public class HsmRunSystem extends RunSystem
     private String extractPossibleEnstoreIds(String error) {
         StringBuilder ids = new StringBuilder();
 
-        int index = error.indexOf(PNFSID_TAG);
-        if (index >= 0) {
-            index += PNFSID_TAG.length();
-            ids.append(error.substring(index, error.indexOf("&", index)));
+        /*
+         *  FIXME  this method should not really be in this class,
+         *  but in an enstore-specific script utility.
+         *  The check for the end tag is a provisional work-around.
+         *
+         *  NOTE:  I am not sure whether the mere presence of the ampersand
+         *  here denotes an enstore error string or not, so I've left
+         *  each check as self-contained for the moment.
+         */
+        int start = error.indexOf(PNFSID_TAG);
+        if (start >= 0) {
+            start += PNFSID_TAG.length();
+            int end = error.indexOf("&", start);
+            if (end >= 0) {
+                ids.append(PNFSID_TAG)
+                   .append(error.substring(start, end));
+            }
         }
 
-        index = error.indexOf(BFID_TAG);
-        if (index >= 0) {
-            index += BFID_TAG.length();
-            ids.append(error.substring(index, error.indexOf("&", index)));
+        start = error.indexOf(BFID_TAG);
+        if (start >= 0) {
+            start += BFID_TAG.length();
+            int end = error.indexOf("&", start);
+            if (end > 0) {
+                ids.append(BFID_TAG)
+                   .append(error.substring(start, end));
+            }
         }
 
         /*
