@@ -7,14 +7,30 @@ package org.dcache.acl.enums;
  */
 public enum AceType {
     /**
-     * Explicitly grants the access
+     * Explicitly grants the access defined in the access mask to the
+     * file or directory.
      */
     ACCESS_ALLOWED_ACE_TYPE(0x00000000, 'A'),
 
     /**
-     * Explicitly denies the access
+     * Explicitly denies the access defined in the access mask to the
+     * file or directory.
      */
-    ACCESS_DENIED_ACE_TYPE(0x00000001, 'D');
+    ACCESS_DENIED_ACE_TYPE(0x00000001, 'D'),
+
+    /**
+     * Log (in a system dependent way) any access attempt to a file or
+     * directory that uses any of the access methods specified in access
+     * mask.
+     */
+    ACCESS_AUDIT_ACE_TYPE(0x00000002, 'U'),
+
+    /**
+     * Generate an alarm (in a system-dependent way) when any access
+     * attempt is made to a file or directory for the access methods
+     * specified in access mask.
+     */
+    ACCESS_ALARM_ACE_TYPE(0x00000003, 'L');
 
     private final int _value;
 
@@ -45,18 +61,18 @@ public enum AceType {
         return Character.toUpperCase(_abbreviation) == Character.toUpperCase(abbreviation);
     }
 
+    @Override
     public String toString() {
         return String.valueOf(_abbreviation);
     }
 
     public static AceType fromAbbreviation(char abbreviation) throws IllegalArgumentException {
-        if ( ACCESS_ALLOWED_ACE_TYPE.equalsIgnoreCase(abbreviation) ) {
-            return ACCESS_ALLOWED_ACE_TYPE;
-        } else if ( ACCESS_DENIED_ACE_TYPE.equalsIgnoreCase(abbreviation) ) {
-            return ACCESS_DENIED_ACE_TYPE;
-        } else {
-            throw new IllegalArgumentException("Invalid ACE type abbreviation: " + abbreviation);
+        for (AceType type : values()) {
+            if (type.equalsIgnoreCase(abbreviation)) {
+                return type;
+            }
         }
+        throw new IllegalArgumentException("Invalid ACE type abbreviation: " + abbreviation);
     }
 
     public static AceType fromAbbreviation(String abbreviation) throws IllegalArgumentException {
@@ -70,8 +86,8 @@ public enum AceType {
     }
 
     public static AceType valueOf(int value) throws IllegalArgumentException {
-        for (AceType type : AceType.values()) {
-            if (type._value == value) {
+        for (AceType type : values()) {
+            if (type.getValue() == value) {
                 return type;
             }
         }
