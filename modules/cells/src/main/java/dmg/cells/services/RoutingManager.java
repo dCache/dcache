@@ -74,6 +74,11 @@ public class RoutingManager
     private final Map<String, Set<CellPath>> _domainHash = new HashMap<>();
 
     /**
+     * Topics for which the local domain has routes installed.
+     */
+    private final Set<String> _topics = new HashSet<>();
+
+    /**
      * Whether a default route has been installed in our domain. We don't
      * announce our routes until a default route has been installed.
      */
@@ -103,6 +108,17 @@ public class RoutingManager
      */
     private final CellAddressCore _domainAddress = new CellAddressCore("*", getCellDomainName());
 
+    /**
+     * Downstream topic announcements.
+     */
+    private final Map<String, Collection<String>> _downstreamTopics = new HashMap<>();
+
+    /**
+     * Queued topic routing information updates from downstream domains. Used to collapse
+     * repeated updates from the same domain to allow us to better cope with high churn.
+     */
+    private final ConcurrentMap<String, Collection<String>> _topicUpdates = Maps.newConcurrentMap();
+
     public RoutingManager(String name, String arguments)
     {
         super(name,"System", arguments);
@@ -122,12 +138,18 @@ public class RoutingManager
     @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println(" Our routing knowledge :");
+        pw.println("Our routing knowledge:");
         pw.append(" Local : ").println(_localExports);
 
         for (Map.Entry<String,Set<CellPath>> e : _domainHash.entrySet()) {
             pw.append(" ").append(e.getKey()).append(" : ")
                     .println(e.getValue().stream().map(CellPath::toAddressString).collect(joining(",", "[", "]")));
+        }
+        pw.println();
+        pw.println("Topic subscriptions:");
+        pw.append(" Local : " ).println(_topics);
+        for (Map.Entry<String,Collection<String>> e : _downstreamTopics.entrySet()) {
+            pw.append(" ").append(e.getKey()).append(" : ").println(e.getValue());
         }
     }
 
@@ -264,13 +286,75 @@ public class RoutingManager
         updateUpstream();
     }
 
+    private synchronized void updateTopicsUpstream()
+    {
+        if (!isDefaultInstalled()) {
+            return;
+        }
+        String[] topics = _topics.toArray(new String[_topics.size()]);
+        CellMessage msg = new CellMessage(new CellPath(_nucleus.getCellName()),
+                                          new TopicRouteUpdate(topics));
+        _nucleus.sendMessage(msg, false, true);
+    }
+
+    private synchronized void topicRouteAdded(CellRoute cr)
+    {
+        if (_topics.add(cr.getCellName())) {
+            updateTopicsUpstream();
+        }
+    }
+
+    private synchronized void topicRouteRemoved(CellRoute cr)
+    {
+        if (_topics.remove(cr.getCellName())) {
+            updateTopicsUpstream();
+        }
+    }
+
+    private synchronized void updateDownstreamTopics(String domain, Collection<String> newTopics)
+    {
+        Collection<String> oldTopics = _downstreamTopics.get(domain);
+        if (oldTopics == null) {
+            for (String topic : newTopics) {
+                try {
+                    _nucleus.routeAdd(new CellRoute(topic, "*@" + domain, CellRoute.TOPIC));
+                } catch (IllegalArgumentException ignored) {
+                    // Route exists already
+                }
+            }
+        } else {
+            oldTopics = new HashSet<>(oldTopics);
+            for (String topic : newTopics) {
+                if (!oldTopics.remove(topic)) {
+                    try {
+                        _nucleus.routeAdd(new CellRoute(topic, "*@" + domain, CellRoute.TOPIC));
+                    } catch (IllegalArgumentException ignored) {
+                        // Route exists already
+                    }
+                }
+            }
+            for (String topic : oldTopics) {
+                try {
+                    _nucleus.routeDelete(new CellRoute(topic, "*@" + domain, CellRoute.TOPIC));
+                } catch (IllegalArgumentException ignored) {
+                    // Route didn't exist
+                }
+            }
+        }
+        if (newTopics.isEmpty()) {
+            _downstreamTopics.remove(domain);
+        } else {
+            _downstreamTopics.put(domain, newTopics);
+        }
+    }
+
     @Override
     public void messageArrived(CellMessage msg)
     {
         Serializable obj = msg.getMessageObject();
-        if (obj instanceof String[]){
-            String[] info = (String[])obj;
-            if (info.length < 1){
+        if (obj instanceof String[]) {
+            String[] info = (String[]) obj;
+            if (info.length < 1) {
                 _log.warn("Protocol error 1 in routing info");
                 return;
             }
@@ -278,9 +362,11 @@ public class RoutingManager
             _log.info("Routing info arrived for domain {}", domain);
 
             if (_updates.put(domain, info) == null) {
-                _executor.execute(new Runnable() {
+                _executor.execute(new Runnable()
+                {
                     @Override
-                    public void run() {
+                    public void run()
+                    {
                         try {
                             updateRoutingInfo(_updates.remove(domain));
                         } catch (Throwable e) {
@@ -289,6 +375,11 @@ public class RoutingManager
                         }
                     }
                 });
+            }
+        } else if (obj instanceof TopicRouteUpdate) {
+            String domain = msg.getSourceAddress().getCellDomainName();
+            if (_topicUpdates.put(domain, ((TopicRouteUpdate) obj).getTopics()) == null) {
+                _executor.execute(() -> updateDownstreamTopics(domain, _topicUpdates.remove(domain)));
             }
         } else if (obj instanceof GetAllDomainsRequest) {
             if (_defaultInstalled && !msg.getSourcePath().contains(_domainAddress)) {
@@ -347,14 +438,15 @@ public class RoutingManager
         CellRoute       cr   = (CellRoute)ce.getSource();
         CellAddressCore gate = new CellAddressCore(cr.getTargetName());
         _log.info("Got 'route added' event: {}", cr);
-        if (cr.getRouteType() == CellRoute.DOMAIN){
+        switch (cr.getRouteType()) {
+        case CellRoute.DOMAIN:
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
                 //
                 // the upstream route (we only support one)
                 //
                 try {
                     CellRoute defRoute =
-                        new CellRoute("", "*@"+cr.getDomainName(), CellRoute.DEFAULT);
+                            new CellRoute("", "*@" + cr.getDomainName(), CellRoute.DEFAULT);
                     _nucleus.routeAdd(defRoute);
                 } catch (IllegalArgumentException e) {
                     _log.warn("Couldn't add default route: {}", e.getMessage());
@@ -371,11 +463,18 @@ public class RoutingManager
                 // the actual domainRouted is added. Therefore
                 // we have to 'updateUpstream' for each route.
                 updateUpstream();
+                updateTopicsUpstream();
             }
-        } else if (cr.getRouteType() == CellRoute.DEFAULT) {
+            break;
+        case CellRoute.TOPIC:
+            topicRouteAdded(cr);
+            break;
+        case CellRoute.DEFAULT:
             _log.info("Default route was added");
             setDefaultInstalled(true);
             updateUpstream();
+            updateTopicsUpstream();
+            break;
         }
     }
 
@@ -384,16 +483,22 @@ public class RoutingManager
     {
         CellRoute cr = (CellRoute)ce.getSource();
         CellAddressCore gate = new CellAddressCore(cr.getTargetName());
-        if (cr.getRouteType() == CellRoute.DOMAIN) {
+        switch (cr.getRouteType()) {
+        case CellRoute.DOMAIN:
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
                 CellRoute defRoute =
-                    new CellRoute("", "*@"+cr.getDomainName(), CellRoute.DEFAULT);
+                        new CellRoute("", "*@" + cr.getDomainName(), CellRoute.DEFAULT);
                 _nucleus.routeDelete(defRoute);
             } else {
                 removeRoutingInfo(cr.getDomainName());
             }
-        } else if (cr.getRouteType() == CellRoute.DEFAULT) {
+            break;
+        case CellRoute.TOPIC:
+            topicRouteRemoved(cr);
+            break;
+        case CellRoute.DEFAULT:
             setDefaultInstalled(false);
+            break;
         }
     }
 

@@ -51,7 +51,7 @@ define context broadcastSetup endDefine
    ${broadcastToSpaceManager1}
    ${broadcastToSpaceManager2}
 
-   register diskCacheV111.vehicles.PoolManagerPoolUpMessage       ${broadcast.service.poolmanager}
+   register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolUpTopic
 endDefine
 
 #

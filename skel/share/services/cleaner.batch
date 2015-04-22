@@ -4,13 +4,13 @@ onerror shutdown
 
 check -strong cleaner.cell.name
 check -strong cleaner.cell.export
+check -strong cleaner.cell.subscribe
 check -strong cleaner.service.pool.retry-period
 check -strong cleaner.service.pool.retry-period.unit
 check -strong cleaner.service.pool.timeout
 check -strong cleaner.service.pool.timeout.unit
 check -strong cleaner.service.pool.hsm-timeout
 check -strong cleaner.service.pool.hsm-timeout.unit
-check -strong cleaner.service.broadcast
 check -strong cleaner.service.spacemanager
 check -strong cleaner.service.replica
 check -strong cleaner.enable.hsm
@@ -28,6 +28,7 @@ check cleaner.db.password
 
 create org.dcache.chimera.namespace.ChimeraCleaner ${cleaner.cell.name} \
         "-export=${cleaner.cell.export} \
+         -subscribe=${cleaner.cell.subscribe} \
          -refresh=${cleaner.limits.period} \
          -refreshUnit=${cleaner.limits.period.unit} \
          -recover=${cleaner.service.pool.retry-period} \
@@ -44,5 +45,4 @@ create org.dcache.chimera.namespace.ChimeraCleaner ${cleaner.cell.name} \
          -hsmCleanerTimeout=${cleaner.service.pool.hsm-timeout} \
          -hsmCleanerTimeoutUnit=${cleaner.service.pool.hsm-timeout.unit} \
          -threads=${cleaner.limits.threads} \
-         -broadcast=${cleaner.service.broadcast} \
   "

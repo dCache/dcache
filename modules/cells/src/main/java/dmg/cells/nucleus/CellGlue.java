@@ -175,6 +175,11 @@ class CellGlue
         sendToAll(new CellEvent(cell.getCellName(), CellEvent.CELL_EXPORTED_EVENT));
     }
 
+    void subscribe(CellNucleus cell, String topic)
+    {
+        routeAdd(new CellRoute(topic, cell.getThisAddress().toString(), CellRoute.TOPIC));
+    }
+
     private Class<?> _loadClass(String className) throws ClassNotFoundException
     {
         return _classLoader.loadClass(className);
@@ -495,13 +500,25 @@ class CellGlue
             msg = msg.encode();
         }
         CellPath destination = msg.getDestinationPath();
-        CellAddressCore address = destination.getCurrent();
+        LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
+        sendMessage(msg, destination.getCurrent(), resolveLocally, resolveRemotely, MAX_ROUTE_LEVELS);
+    }
 
+    private void sendMessage(CellMessage msg, CellAddressCore address, boolean resolveLocally, boolean resolveRemotely, int steps)
+    {
+        CellPath destination = msg.getDestinationPath();
+
+        /* We track whether we advanced the current position in the destination path. If not, we refuse
+         * to send the message back to the domain we got it from.
+         */
         boolean hasDestinationChanged = false;
 
-        LOGGER.trace("sendMessage : {} send to {}", msg.getUOID(), destination);
+        /* We track whether the message has been delivered with any topic routes. If so, failure to find
+         * any other routes will not generate an error.
+         */
+        boolean hasTopicRoutes = false;
 
-        for (int iter = 0; iter < MAX_ROUTE_LEVELS; iter++) {
+        while (steps > 0) {
             /* Skip our own domain in the address as we are already here.
              */
             while (address.equals(_domainAddress)) {
@@ -513,7 +530,7 @@ class CellGlue
                 hasDestinationChanged = true;
             }
 
-            LOGGER.trace("sendMessage : next hop at {}: {}", iter, address);
+            LOGGER.trace("sendMessage : next hop at {}: {}", steps, address);
 
             /* If explicitly addressed to a cell in our domain we have to deliver
              * it now.
@@ -533,9 +550,21 @@ class CellGlue
                     return;
                 }
                 if (!resolveRemotely) {
-                    // not allowed to use routing table to resolve the destination
                     sendException(msg, destination, address.toString());
                     return;
+                }
+
+                /* Topic routes are special because they cause messages to be
+                 * duplicated.
+                 */
+                for (CellRoute route : _routingTable.findTopicRoutes(address)) {
+                    CellMessage m = msg.clone();
+                    CellAddressCore target = route.getTarget();
+                    if (!target.getCellName().equals("*")) {
+                        m.getDestinationPath().replaceCurrent(target);
+                    }
+                    sendMessage(m, target, true, true, steps - 1);
+                    hasTopicRoutes = true;
                 }
             }
 
@@ -545,7 +574,9 @@ class CellGlue
              * and sending the message to where it has been before may be perfectly reasonable.
              */
             if (!hasDestinationChanged && msg.getSourcePath().getDestinationAddress().equals(address)) {
-                sendException(msg, destination, address.toString());
+                if (!hasTopicRoutes) {
+                    sendException(msg, destination, address.toString());
+                }
                 return;
             }
 
@@ -559,7 +590,9 @@ class CellGlue
             CellRoute route = _routingTable.find(address);
             if (route == null) {
                 LOGGER.trace("sendMessage : no route destination for : {}", address);
-                sendException(msg, destination, address.toString());
+                if (!hasTopicRoutes) {
+                    sendException(msg, destination, address.toString());
+                }
                 return;
             }
             LOGGER.trace("sendMessage : using route : {}", route);
@@ -571,6 +604,7 @@ class CellGlue
                 destination.replaceCurrent(address);
                 hasDestinationChanged = true;
             }
+            steps--;
         }
         // end of big iteration loop
 

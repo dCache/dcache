@@ -1,6 +1,7 @@
 package dmg.cells.nucleus;
 
 import com.google.common.base.Ascii;
+import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,6 +167,9 @@ public class CellAdapter
 
         if (_args.getBooleanOption("export")) {
             export();
+        }
+        for (String topic : Splitter.on(",").omitEmptyStrings().split(_args.getOption("subscribe", ""))) {
+            subscribe(topic);
         }
         if (!_args.getBooleanOption("replyObject", true)) {
             setCommandExceptionEnabled(false);
@@ -337,6 +341,13 @@ public class CellAdapter
      * @see RoutingManager
      */
     public void   export() { _nucleus.export(); }
+
+    /**
+     * Subscribes this cell to a specific publish-subscribe topic. Messages posted to
+     * the topic will be delievered to the cell like any other message.
+     */
+    public void subscribe(String topic) { _nucleus.subscribe(topic); }
+
     /**
      * Defines a pinboard for this CellAdapter.
      *

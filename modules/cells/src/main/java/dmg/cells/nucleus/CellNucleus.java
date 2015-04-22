@@ -595,6 +595,9 @@ public class CellNucleus implements ThreadFactory
 
     }
     public void export() { __cellGlue.export(this);  }
+
+    public void subscribe(String topic) { __cellGlue.subscribe(this, topic); }
+
     /**
      *
      * The kill method schedules the specified cell for deletion.

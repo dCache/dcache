@@ -34,10 +34,11 @@ public class CellRoute implements Serializable
     public static final int DEFAULT = 4;
     public static final int DUMPSTER = 5;
     public static final int ALIAS = 6;
+    public static final int TOPIC = 7;
 
     private static final String[] TYPE_NAMES =
             {"Auto", "Exact", "Wellknown", "Domain",
-                    "Default", "Dumpster", "Alias"};
+                    "Default", "Dumpster", "Alias", "Topic"};
 
     private static int getTypeOf(Args args)
     {
@@ -68,6 +69,9 @@ public class CellRoute implements Serializable
             break;
         case "alias":
             type = ALIAS;
+            break;
+        case "topic":
+            type = TOPIC;
             break;
         }
 
@@ -147,6 +151,13 @@ public class CellRoute implements Serializable
         case WELLKNOWN:
             checkArgument(cell != null, "No destination cell spec.");
             checkArgument(domain == null, "WELLKNOWN doesn't accept domain");
+            _destCell = cell;
+            _destDomain = "*";
+            _type = type;
+            break;
+        case TOPIC:
+            checkArgument(cell != null, "No destination cell spec.");
+            checkArgument(domain == null, "TOPIC doesn't accept domain");
             _destCell = cell;
             _destDomain = "*";
             _type = type;

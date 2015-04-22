@@ -1,9 +1,3 @@
-/*
- * BroadcastCell.java
- *
- * Created on January 31, 2005, 8:32 AM
- */
-
 package dmg.cells.services.multicaster;
 
 import org.slf4j.Logger;
@@ -26,10 +20,6 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.Args;
 
-/**
- *
- * @author  patrick
- */
 public class BroadcastCell extends CellAdapter {
 
    private final static Logger _log =
@@ -134,12 +124,9 @@ public class BroadcastCell extends CellAdapter {
             new HashMap<>() ;
     private Map<CellAddressCore, Map<String, Entry>> _destinationMap =
             new HashMap<>();
-    private boolean _debug;
-    private String  _debugMode;
     private long    _received;
     private long    _forwarded;
     private long    _sent;
-    private Debugging _debugging    = new Debugging() ;
 
 
     /** Creates a new instance of BroadcastCell */
@@ -148,11 +135,6 @@ public class BroadcastCell extends CellAdapter {
         _args    = getArgs() ;
         _nucleus = getNucleus() ;
 
-        _debugMode = _args.getOpt("debug") ;
-        if( _debugMode != null ){
-            _debug = true ;
-            addCommandListener(_debugging);
-        }
         export() ;
         start() ;
     }
@@ -341,53 +323,6 @@ public class BroadcastCell extends CellAdapter {
         return "" ;
     }
 
-    private void handleBroadcastCommandMessage( CellMessage msg , BroadcastCommandMessage command ){
-        if( ! ( command instanceof BroadcastEventCommandMessage ) ) {
-            return;
-        }
-        BroadcastEventCommandMessage event = (BroadcastEventCommandMessage)command ;
-        try{
-            String eventClass = event.getEventClass() ;
-            CellPath target   = event.getTarget() ;
-            if( target == null ){
-                target = msg.getSourcePath().revert();
-            }
-            if( event instanceof BroadcastRegisterMessage ){
-                BroadcastRegisterMessage reg = (BroadcastRegisterMessage)event ;
-                _log.info("Message register : "+reg);
-                synchronized( this ){
-                    Entry entry = get( target , eventClass ) ;
-                    if( entry == null ) {
-                        entry = register(target, eventClass);
-                    }
-
-                    if( reg.isCancelOnFailure() ) {
-                        entry.setCancelOnFailure(true);
-                    }
-                    long  expires = reg.getExpires() ;
-                    if( expires > 0 ) {
-                        entry.setExpires(expires + System.currentTimeMillis());
-                    }
-                }
-            }else if( event instanceof BroadcastUnregisterMessage ){
-                BroadcastUnregisterMessage unreg = (BroadcastUnregisterMessage)event ;
-                _log.info("Message unregister : "+unreg);
-
-                unregister( target , eventClass ) ;
-
-            }else{
-                throw new
-                IllegalArgumentException("Not a valid Broadcast command " +event.getClass());
-            }
-        } catch (NoSuchElementException e) {
-            event.setReturnValues(1, e);
-        } catch (RuntimeException e) {
-            _log.warn("Problem with {"+command+"}" + e, e);
-            event.setReturnValues(1, e);
-        }
-        msg.revertDirection() ;
-        sendMessage(msg);
-    }
     @Override
     public void getInfo(  PrintWriter pw ){
         pw.println( "        CellName : "+getCellName());
@@ -404,18 +339,11 @@ public class BroadcastCell extends CellAdapter {
     public void messageArrived( CellMessage message ){
         _log.info("messageArrived : "+message);
         _received ++ ;
-        if( _debug ){
-            _debugging.messageArrived( message ) ;
-            return ;
-        }
 
         Object obj = message.getMessageObject() ;
-        if( obj instanceof BroadcastCommandMessage ){
-            handleBroadcastCommandMessage( message , (BroadcastCommandMessage)obj ) ;
-            return ;
-        }else if( obj instanceof NoRouteToCellException ){
+        if( obj instanceof NoRouteToCellException ){
             NoRouteToCellException nrtc = (NoRouteToCellException)obj ;
-            handleNoRouteException( nrtc ) ;
+            handleNoRouteException(nrtc) ;
             return ;
         }
         //
@@ -525,75 +453,4 @@ public class BroadcastCell extends CellAdapter {
             }
         }
     }
-
-    /*
-     *
-     **     DEBUG PART
-     */
-    private class Debugging {
-        private void messageArrived( CellMessage message ){
-            Object obj = message.getMessageObject() ;
-            if( _debugMode.equals("source") ){
-                _log.info("MessageObject : "+obj ) ;
-            }else if( _debugMode.equals("destination" ) ){
-                if( obj instanceof BroadcastCommandMessage ){
-                    _log.info("Broadcast Message answer : "+obj ) ;
-                    return ;
-                }
-                _log.info("Replying MessageObject : "+obj ) ;
-                message.revertDirection() ;
-                sendMessage(message);
-            }
-        }
-    }
-        public static final String hh_d_reg   = "<eventClass> [<destination>] [-cancelonfailure] [-expires=<time>]" ;
-        public static final String hh_d_unreg = "<eventClass> [<destination>]" ;
-        public static final String hh_d_send  = "<javaClass> [-destination=<cellName>] [-wait]";
-
-        public String ac_d_reg_$_1_2( Args args ) {
-
-            OptionClass options = new OptionClass(args) ;
-
-            CellPath path = options.destination == null ? null : new CellPath(options.destination);
-            BroadcastRegisterMessage cmd = new BroadcastRegisterMessage(options.eventClass,path);
-            cmd.setCancelOnFailure(options.failures);
-            cmd.setExpires(options.expires);
-
-            CellMessage msg = new CellMessage( new CellPath("broadcast"), cmd ) ;
-
-            sendMessage(msg);
-
-            return "" ;
-        }
-        public String ac_d_unreg_$_1_2( Args args )  {
-
-            OptionClass options = new OptionClass(args) ;
-
-            CellPath path = options.destination == null ? null : new CellPath(options.destination);
-            BroadcastUnregisterMessage cmd = new BroadcastUnregisterMessage(options.eventClass,path);
-
-            CellMessage msg = new CellMessage( new CellPath("broadcast"), cmd ) ;
-
-            sendMessage(msg);
-
-            return "" ;
-        }
-        public String ac_d_send_$_0_1( Args args ) throws ClassNotFoundException, IllegalAccessException, InstantiationException
-        {
-
-             Serializable obj = args.argc() == 0 ?
-                          new ArrayList()  :
-                          Class.forName( args.argv(0) ).asSubclass(Serializable.class).newInstance();
-
-             String dest = args.getOpt("destination") ;
-
-             CellMessage msg = new CellMessage(
-                               new CellPath(dest==null?"broadcast":dest),
-                               obj   );
-              sendMessage(msg);
-              return "" ;
-
-        }
-
-
 }

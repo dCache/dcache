@@ -48,7 +48,6 @@ import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;
 import org.dcache.util.Args;
-import org.dcache.util.BroadcastRegistrationTask;
 import org.dcache.util.CacheExceptionFactory;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -64,16 +63,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ChimeraCleaner extends AbstractCell implements Runnable
 {
-    private static final Class<?> POOLUP_MESSAGE =
-        PoolManagerPoolUpMessage.class;
-
     private static final Logger _log =
         LoggerFactory.getLogger(ChimeraCleaner.class);
-
-    private static final long BROADCAST_REGISTRATION_PERIOD =
-            TimeUnit.MINUTES.toMillis(5);
-    private static final long BROADCAST_REGISTRATION_EXPIRATION =
-            TimeUnit.MINUTES.toMillis(6);
 
     @Option(
         name="refresh",
@@ -167,13 +158,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     )
     protected int _threadPoolSize;
 
-    @Option(
-            name="broadcast",
-            description="Cell address of broadcast service",
-            required=true
-    )
-    protected String _broadcastAddress;
-
     private CellPath[] _deleteNotificationTargets;
 
     private final ConcurrentHashMap<String, Long> _poolsBlackList =
@@ -185,8 +169,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private PoolInformationBase _pools = new PoolInformationBase();
     private AlarmEnabledDataSource _dataSource;
     private JdbcTemplate _db;
-    private BroadcastRegistrationTask _broadcastRegistration;
-    private CellStub _broadcasterStub;
     private CellStub _notificationStub;
     private CellStub _poolStub;
 
@@ -215,7 +197,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         _executor = Executors.newScheduledThreadPool(_threadPoolSize);
 
         dbInit(getArgs().getOpt("chimera.db.url"),
-                getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
+               getArgs().getOpt("chimera.db.user"), getArgs().getOpt("chimera.db.password"));
 
         if (_hsmCleanerEnabled) {
             _requests = new RequestTracker();
@@ -233,16 +215,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         addCommandListener(_pools);
 
         _poolStub = new CellStub(this, null, _replyTimeout, _replyTimeoutUnit);
-
-        _broadcasterStub = new CellStub(this, new CellPath(_broadcastAddress));
-
-        _broadcastRegistration = new BroadcastRegistrationTask();
-        _broadcastRegistration.setTarget(new CellPath(getCellName(), getCellDomainName()));
-        _broadcastRegistration.setBroadcastStub(_broadcasterStub);
-        _broadcastRegistration.setEventClass(POOLUP_MESSAGE);
-        _broadcastRegistration.setExpires(BROADCAST_REGISTRATION_EXPIRATION);
-        _executor.scheduleAtFixedRate(
-                _broadcastRegistration, 0, BROADCAST_REGISTRATION_PERIOD, TimeUnit.MILLISECONDS);
 
         _cleanerTask =
             _executor.scheduleWithFixedDelay(this,
@@ -282,9 +254,6 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         }
         if (_executor != null) {
             _executor.shutdownNow();
-        }
-        if (_broadcastRegistration != null) {
-            _broadcastRegistration.unregister();
         }
         if (_dataSource != null) {
             try {

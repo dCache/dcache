@@ -5,13 +5,20 @@ import com.google.common.collect.SetMultimap;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.dcache.util.ColumnWriter;
+
+import static java.util.stream.Collectors.toList;
 
 public class CellRoutingTable implements Serializable
 {
@@ -20,6 +27,7 @@ public class CellRoutingTable implements Serializable
     private final SetMultimap<String, CellRoute> _wellknown = LinkedHashMultimap.create();
     private final SetMultimap<String, CellRoute> _domain = LinkedHashMultimap.create();
     private final SetMultimap<String, CellRoute> _exact = LinkedHashMultimap.create();
+    private final Map<String, Set<CellRoute>> _topic = new HashMap<>();
     private final AtomicReference<CellRoute> _dumpster = new AtomicReference<>();
     private final AtomicReference<CellRoute> _default = new AtomicReference<>();
 
@@ -41,6 +49,14 @@ public class CellRoutingTable implements Serializable
             dest = route.getCellName();
             synchronized (_wellknown) {
                 if (!_wellknown.put(dest, route)) {
+                    throw new IllegalArgumentException("Duplicated route entry for : " + dest);
+                }
+            }
+            break;
+        case CellRoute.TOPIC:
+            dest = route.getCellName();
+            synchronized (_topic) {
+                if (!_topic.computeIfAbsent(dest, key -> new CopyOnWriteArraySet()).add(route)) {
                     throw new IllegalArgumentException("Duplicated route entry for : " + dest);
                 }
             }
@@ -88,6 +104,18 @@ public class CellRoutingTable implements Serializable
                 }
             }
             break;
+        case CellRoute.TOPIC:
+            dest = route.getCellName();
+            synchronized (_topic) {
+                Set<CellRoute> routes = _topic.get(dest);
+                if (!routes.remove(route)) {
+                    throw new IllegalArgumentException("Route entry not found for : " + dest);
+                }
+                if (routes.isEmpty()) {
+                    _topic.remove(dest);
+                }
+            }
+            break;
         case CellRoute.DOMAIN:
             dest = route.getDomainName();
             synchronized (_domain) {
@@ -115,6 +143,23 @@ public class CellRoutingTable implements Serializable
         delete(_exact, addr);
         delete(_wellknown, addr);
         delete(_domain, addr);
+
+        synchronized (_topic) {
+            /* We cannot use the regular delete method because a CopyOnWriteArraySet iterator
+             * doesn't allow manipulating operations. We trade expensive deletion for not having
+             * to copy the set of topic routes in findTopicRoutes.
+             */
+            Iterator<Set<CellRoute>> iterator = _topic.values().iterator();
+            while (iterator.hasNext()) {
+                Set<CellRoute> routes = iterator.next();
+                List<CellRoute> toRemove =
+                        routes.stream().filter(route -> route.getTargetName().equals(addr)).collect(toList());
+                routes.removeAll(toRemove);
+                if (routes.isEmpty()) {
+                    iterator.remove();
+                }
+            }
+        }
     }
 
     private void delete(SetMultimap<String,CellRoute> routes, String addr)
@@ -163,6 +208,18 @@ public class CellRoutingTable implements Serializable
         return _default.get();
     }
 
+    public Set<CellRoute> findTopicRoutes(CellAddressCore addr)
+    {
+        String cellName = addr.getCellName();
+        String domainName = addr.getCellDomainName();
+        if (!domainName.equals("local")) {
+            return Collections.emptySet();
+        }
+        synchronized (_topic) {
+            return _topic.getOrDefault(cellName, Collections.emptySet());
+        }
+    }
+
     public String toString()
     {
         ColumnWriter writer = new ColumnWriter()
@@ -178,6 +235,9 @@ public class CellRoutingTable implements Serializable
                         .value("gateway", route.getTargetName())
                         .value("type", route.getRouteTypeName());
 
+        synchronized (_topic) {
+            _topic.values().forEach(routes -> routes.forEach(append));
+        }
         synchronized (_exact) {
             _exact.values().forEach(append);
         }
@@ -201,6 +261,9 @@ public class CellRoutingTable implements Serializable
     public CellRoute[] getRoutingList()
     {
         List<CellRoute> routes = new ArrayList<>();
+        synchronized (_topic) {
+            _topic.values().forEach(routes::addAll);
+        }
         synchronized (_exact) {
             routes.addAll(_exact.values());
         }

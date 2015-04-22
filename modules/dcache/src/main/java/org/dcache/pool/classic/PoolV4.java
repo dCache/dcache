@@ -150,7 +150,7 @@ public class PoolV4
 
     private Account _account;
 
-    private String _poolupDestination = "PoolManager";
+    private String _poolupDestination;
 
     private int _version = 4;
     private CellStub _billingStub;
