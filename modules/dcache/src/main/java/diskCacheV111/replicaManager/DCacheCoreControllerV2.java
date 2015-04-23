@@ -1323,6 +1323,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      if (obj instanceof PnfsDeleteEntryNotificationMessage) {
        processDeleteEntryNotification((PnfsDeleteEntryNotificationMessage) obj);
+       msg.revertDirection();
+       sendMessage(msg);
        return ;
      }
 

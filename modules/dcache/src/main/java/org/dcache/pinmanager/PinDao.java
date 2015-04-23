@@ -17,7 +17,7 @@ public interface PinDao
     Pin getPin(PnfsId pnfsId, String requestId);
     Pin getPin(long id, String sticky, Pin.State state);
 
-    void deletePins(String[] pnfsIds);
+    void deletePin(PnfsId pnfsId);
     void deletePin(Pin pin);
 
     Collection<Pin> getPins();

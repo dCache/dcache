@@ -139,12 +139,10 @@ public class JdoDao implements PinDao
     }
 
     @Override @Transactional
-    public void deletePins(String[] pnfsIds)
+    public void deletePin(PnfsId pnfsId)
     {
         PersistenceManager pm = _pmf.getPersistenceManager();
-        for (String pnfsId: pnfsIds) {
-            pm.newQuery(Pin.class, "_pnfsId == :pnfsId").deletePersistentAll(pnfsId);
-        }
+        pm.newQuery(Pin.class, "_pnfsId == :pnfsId").deletePersistentAll(pnfsId.toString());
     }
 
     @Override @Transactional

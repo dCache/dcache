@@ -10,9 +10,10 @@ import javax.jdo.JDOException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.vehicles.PoolRemoveFilesMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 
 import dmg.cells.nucleus.CellMessageReceiver;
+
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.FireAndForgetTask;
@@ -99,9 +100,10 @@ public class PinManager
                 MILLISECONDS);
     }
 
-    public void messageArrived(PoolRemoveFilesMessage message)
+    public PnfsDeleteEntryNotificationMessage messageArrived(PnfsDeleteEntryNotificationMessage message)
     {
-        _dao.deletePins(message.getFiles());
+        _dao.deletePin(message.getPnfsId());
+        return message;
     }
 
     private class ExpirationTask implements Runnable

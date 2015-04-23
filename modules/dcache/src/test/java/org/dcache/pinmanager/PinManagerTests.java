@@ -378,15 +378,12 @@ class TestDao implements PinDao
     }
 
     @Override
-    public void deletePins(String[] pnfsIds)
+    public void deletePin(PnfsId pnfsId)
     {
-        for (String s: pnfsIds) {
-            PnfsId pnfsId = new PnfsId(s);
-            Iterator<TestPin> i = _pins.values().iterator();
-            while (i.hasNext()) {
-                if (pnfsId.equals(i.next().getPnfsId())) {
-                    i.remove();
-                }
+        Iterator<TestPin> i = _pins.values().iterator();
+        while (i.hasNext()) {
+            if (pnfsId.equals(i.next().getPnfsId())) {
+                i.remove();
             }
         }
     }

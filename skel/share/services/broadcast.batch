@@ -8,8 +8,6 @@ check -strong broadcast.enable.replica
 check -strong broadcast.enable.space-reservation
 check -strong broadcast.service.replica
 check -strong broadcast.service.spacemanager
-check -strong broadcast.service.billing
-check -strong broadcast.service.pinmanager
 check -strong broadcast.service.poolmanager
 
 #
@@ -53,8 +51,6 @@ define context broadcastSetup endDefine
    ${broadcastToSpaceManager1}
    ${broadcastToSpaceManager2}
 
-   register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${broadcast.service.billing}
-   register diskCacheV111.vehicles.PoolRemoveFilesMessage         ${broadcast.service.pinmanager}
    register diskCacheV111.vehicles.PoolManagerPoolUpMessage       ${broadcast.service.poolmanager}
 endDefine
 
