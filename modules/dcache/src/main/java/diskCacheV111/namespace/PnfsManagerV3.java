@@ -56,6 +56,7 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
+import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
@@ -1637,9 +1638,7 @@ public class PnfsManagerV3
         PnfsId pnfsId = message.getPnfsId();
         String path = message.getPnfsPath();
 
-        if ((_cacheModificationRelay != null) &&
-            ((message instanceof PnfsAddCacheLocationMessage) ||
-             (message instanceof PnfsClearCacheLocationMessage))) {
+        if (_cacheModificationRelay != null && message instanceof PnfsModifyCacheLocationMessage) {
             forwardModifyCacheLocationMessage(message);
         }
 

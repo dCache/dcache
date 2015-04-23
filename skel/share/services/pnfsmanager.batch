@@ -9,7 +9,8 @@ check -strong pnfsmanager.enable.folding
 check -strong pnfsmanager.enable.acl
 check -strong pnfsmanager.default-retention-policy
 check -strong pnfsmanager.default-access-latency
-check -strong pnfsmanager.destination.flush-notification
+check pnfsmanager.destination.flush-notification
+check pnfsmanager.destination.cache-notification
 check -strong pnfsmanager.limits.threads-per-group
 check -strong pnfsmanager.limits.thread-groups
 check -strong pnfsmanager.limits.list-threads
@@ -18,7 +19,6 @@ check -strong pnfsmanager.limits.log-slow-threshold
 check -strong pnfsmanager.limits.queue-length
 check -strong pnfsmanager.cell.name
 check -strong pnfsmanager.cell.export
-check -strong pnfsmanager.notification.cache
 check -strong pnfsmanager.db.dialect
 check -strong pnfsmanager.db.user
 check -strong pnfsmanager.db.url
