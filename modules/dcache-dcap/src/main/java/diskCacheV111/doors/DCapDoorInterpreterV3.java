@@ -915,6 +915,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected void sendReply( String tag , int rc , String msg , String posixErr){
 
+            sendReply(tag, rc, msg, posixErr, msg);
+        }
+
+        protected void sendReply( String tag , int rc , String msg ,
+                String posixErr , String billingMessage){
+
             String problem;
             _info.setTransactionDuration(System.currentTimeMillis()-_timestamp);
             if( rc == 0 ){
@@ -923,7 +929,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 problem = String.format("%d %d %s failed %d \"%s\" %s",
                         _sessionId, _commandId, _vargs.getName(),
                         rc, msg, posixErr);
-                _info.setResult( rc , msg ) ;
+                _info.setResult( rc , billingMessage ) ;
             }
 
             _log.debug("{}: {}", tag, problem);
@@ -2169,9 +2175,34 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                        _fileAttributes.getPnfsId(),
                        (System.currentTimeMillis() - _started));
 
+            Object error = reply.getErrorObject();
+
+            switch (reply.getReturnCode()) {
+            case CacheException.NO_POOL_CONFIGURED:
+                _log.error("Pool selection failed: no pools configured for transfer: {}", error);
+                sendReply("poolMgrGetPoolArrived", 33,
+                        "No pools configured for transfer.",
+                        reply instanceof PoolMgrSelectWritePoolMsg ? "ENOSPC" : "EPERM",
+                        "No pools configured for transfer: " + error);
+                removeUs();
+                return;
+            case CacheException.NO_POOL_ONLINE:
+                _log.error("Pool selection failed: no pools available for transfer: {}", error);
+                // handle as generic error; i.e., retry, possibly after a delay.
+                break;
+            case CacheException.PERMISSION_DENIED:
+                _log.error("Pool selection failed: permission denied: {}", error);
+                sendReply("poolMgrGetPoolArrived", 33, "Permission denied.",
+                        "EPERM", "Permission denied: " + error);
+                removeUs();
+                return;
+            case CacheException.OUT_OF_DATE:
+                again(true);
+                return;
+            }
+
             if (reply.getReturnCode() != 0) {
-                if (reply.getReturnCode() == CacheException.OUT_OF_DATE ||
-                    _poolRetry == 0) {
+                if (_poolRetry == 0) {
                     again(true);
                 } else {
                     setTimer(_poolRetry);

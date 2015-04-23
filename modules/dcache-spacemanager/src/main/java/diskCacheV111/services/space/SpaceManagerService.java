@@ -39,6 +39,8 @@ import org.springframework.dao.RecoverableDataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.io.PrintWriter;
@@ -65,8 +67,14 @@ import diskCacheV111.services.space.message.GetSpaceTokensMessage;
 import diskCacheV111.services.space.message.Release;
 import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.util.AccessLatency;
+
+import static diskCacheV111.util.CacheException.*;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
+import diskCacheV111.util.InvalidMessageCacheException;
+import diskCacheV111.util.MissingResourceCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -99,10 +107,12 @@ import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.BoundedExecutor;
 import org.dcache.util.CDCExecutorServiceDecorator;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.stream.Collectors.toList;
@@ -498,6 +508,8 @@ public final class SpaceManagerService
             }
         } catch (SpaceAuthorizationException e) {
             message.setFailedConditionally(CacheException.PERMISSION_DENIED, e);
+        } catch (NoPoolConfiguredSpaceException e) {
+            message.setFailed(NO_POOL_CONFIGURED, e.getMessage());
         } catch (NoFreeSpaceException e) {
             message.setFailedConditionally(CacheException.RESOURCE, e);
         } catch (SpaceException e) {
@@ -827,10 +839,25 @@ public final class SpaceManagerService
         throw new SpaceAuthorizationException("Failed to find LinkGroup where user is authorized to reserve space.");
     }
 
+
+    @Nullable
     private LinkGroup findLinkGroupForWrite(Subject subject, ProtocolInfo protocolInfo,
                                             FileAttributes fileAttributes, long size)
-            throws DataAccessException
+            throws DataAccessException, SpaceException
     {
+        boolean hasIdentity = subject.getPrincipals().stream().anyMatch(p ->
+                p instanceof FQANPrincipal ||
+                p instanceof UserNamePrincipal ||
+                p instanceof GidPrincipal);
+
+        if (!hasIdentity) {
+            if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
+                return null;
+            }
+            throw new SpaceAuthorizationException("Unable to reserve space: " +
+                    "user has no FQAN or username.");
+        }
+
         List<LinkGroup> linkGroups =
                 db.get(db.linkGroups()
                                .allowsAccessLatency(fileAttributes.getAccessLatency())
@@ -841,6 +868,14 @@ public final class SpaceManagerService
                         .sorted(Comparator.comparing(LinkGroup::getAvailableSpace).reversed())
                         .collect(toList());
 
+        if (linkGroups.isEmpty()) {
+            if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
+                return null;
+            }
+            throw new NoPoolConfiguredSpaceException("Unable to reserve space: " +
+                    "no linkgroups configured.");
+        }
+
         List<String> linkGroupNames = new ArrayList<>();
         for (LinkGroup linkGroup : linkGroups) {
             try {
@@ -849,23 +884,48 @@ public final class SpaceManagerService
             } catch (SpaceAuthorizationException ignored) {
             }
         }
-        linkGroupNames = findLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
+
+        if (linkGroupNames.isEmpty()) {
+            if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
+                return null;
+            }
+            throw new SpaceAuthorizationException("Unable to reserve space: " +
+                    "user not authorized to reserve space in any linkgroup.");
+        }
+
+        String linkGroupName = findLinkGroupForWrite(protocolInfo, fileAttributes, linkGroupNames);
         LOGGER.trace("Found {} linkgroups protocolInfo={}, fileAttributes={}",
                      linkGroups.size(), protocolInfo, fileAttributes);
 
-        if (!linkGroupNames.isEmpty()) {
-            String linkGroupName = linkGroupNames.get(0);
-            for (LinkGroup lg : linkGroups) {
-                if (lg.getName().equals(linkGroupName)) {
-                    return lg;
-                }
+        if (linkGroupName == null) {
+            if (isWriteableOutsideLinkgroup(protocolInfo, fileAttributes)) {
+                return null;
+            }
+
+            String hostName = (protocolInfo instanceof IpProtocolInfo)
+                ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
+                : null;
+            String protocol = protocolInfo.getProtocol() + '/' + protocolInfo.getMajorVersion();
+            throw new NoPoolConfiguredSpaceException("Unable to reserve space: " +
+                    "no write link in linkgroups " + linkGroupNames + " for " +
+                    "writing a file with [net=" + hostName + ",protocol=" + protocol +
+                    ",store=" + fileAttributes.getStorageClass() + "@" + fileAttributes.getHsm() +
+                    ",cache=" + nullToEmpty(fileAttributes.getCacheClass()) + "]");
+        }
+
+        for (LinkGroup lg : linkGroups) {
+            if (lg.getName().equals(linkGroupName)) {
+                return lg;
             }
         }
-        return null;
+
+        throw new IllegalStateException("Unable to reserve space for upload: " +
+                "failed to find linkgroup " + linkGroupName + ".");
     }
 
-    private List<String> findLinkGroupForWrite(ProtocolInfo protocolInfo, FileAttributes fileAttributes,
-                                               Collection<String> linkGroups)
+    @Nullable
+    private String findLinkGroupForWrite(ProtocolInfo protocolInfo, FileAttributes fileAttributes,
+                                               Iterable<String> linkGroups)
     {
         String protocol = protocolInfo.getProtocol() + '/' + protocolInfo.getMajorVersion();
         String hostName =
@@ -873,19 +933,33 @@ public final class SpaceManagerService
                 ? ((IpProtocolInfo) protocolInfo).getSocketAddress().getAddress().getHostAddress()
                 : null;
 
-        List<String> outputLinkGroups = new ArrayList<>(linkGroups.size());
         for (String linkGroup : linkGroups) {
-            PoolPreferenceLevel[] level =
+            PoolPreferenceLevel[] levels =
                     poolMonitor.getPoolSelectionUnit().match(PoolSelectionUnit.DirectionType.WRITE,
                                                              hostName,
                                                              protocol,
                                                              fileAttributes,
                                                              linkGroup);
-            if (level.length > 0) {
-                outputLinkGroups.add(linkGroup);
+            if (levels.length > 0) {
+                return linkGroup;
             }
         }
-        return outputLinkGroups;
+        return null;
+    }
+
+    private boolean isWriteableOutsideLinkgroup(ProtocolInfo info, FileAttributes attributes)
+            throws NoFreeSpaceException
+    {
+        String protocol = info.getProtocol() + '/' + info.getMajorVersion();
+        String hostname = (info instanceof IpProtocolInfo)
+                ? ((IpProtocolInfo) info).getSocketAddress().getAddress().getHostAddress()
+                : null;
+
+        PoolPreferenceLevel[] levels = poolMonitor.getPoolSelectionUnit().
+                match(PoolSelectionUnit.DirectionType.WRITE, hostname, protocol,
+                        attributes, null);
+
+        return levels.length != 0;
     }
 
     private VOInfo getVoInfo(Subject subject)
@@ -922,12 +996,6 @@ public final class SpaceManagerService
         String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
         Subject subject = selectWritePool.getSubject();
 
-        // REVISIT: look at moving this into Subjects.
-        boolean hasIdentity = subject.getPrincipals().stream().anyMatch(p ->
-                p instanceof FQANPrincipal ||
-                p instanceof UserNamePrincipal ||
-                p instanceof GidPrincipal);
-
         if (defaultSpaceToken != null) {
             LOGGER.trace("selectPool: file is not " +
                          "found, found default space " +
@@ -962,10 +1030,8 @@ public final class SpaceManagerService
             }
             LOGGER.trace("selectPool: found linkGroup = {}, " +
                          "forwarding message", linkGroupName);
-        } else if (allowUnreservedUploadsToLinkGroups && hasIdentity) {
-            LOGGER.trace("selectPool: file is " +
-                         "not found, no prior " +
-                         "reservations for this file");
+        } else if (allowUnreservedUploadsToLinkGroups) {
+            LOGGER.trace("Upload outside a reservation, identifying appropriate linkgroup");
 
             LinkGroup linkGroup =
                     findLinkGroupForWrite(subject, selectWritePool
@@ -974,20 +1040,12 @@ public final class SpaceManagerService
                 String linkGroupName = linkGroup.getName();
                 selectWritePool.setLinkGroup(linkGroupName);
                 fileAttributes.getStorageInfo().setKey("LinkGroupId", Long.toString(linkGroup.getId()));
-                LOGGER.trace("selectPool: found linkGroup = {}, " +
-                             "forwarding message", linkGroupName);
-            } else {
-                LOGGER.trace("selectPool: did not find linkGroup that can " +
-                             "hold this file, processing file without space reservation.");
+                LOGGER.trace("selectPool: found linkGroup = {}, forwarding message", linkGroupName);
             }
+        } else if (isWriteableOutsideLinkgroup(selectWritePool.getProtocolInfo(), fileAttributes)) {
+            LOGGER.debug("Upload proceeding outside of any linkgroup.");
         } else {
-            LOGGER.trace("selectPool: file is " +
-                         "not found, no prior " +
-                         "reservations for this file " +
-                         "allowUnreservedUploadsToLinkGroups={} " +
-                         "subject={}",
-                         allowUnreservedUploadsToLinkGroups,
-                         subject.getPrincipals());
+            throw new NoPoolConfiguredSpaceException("No write pools configured outside of a linkgroup.");
         }
     }
 

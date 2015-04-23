@@ -48,9 +48,12 @@ import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.Option;
+
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -70,6 +73,8 @@ import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.BadStateidException;
+import org.dcache.nfs.status.NoSpcException;
+import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -101,6 +106,7 @@ import org.dcache.nfs.vfs.ChimeraVfs;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
+import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -547,16 +553,30 @@ public class NFSv41Door extends AbstractCellComponent implements
         } catch (FileInCacheException e) {
 	    cleanStateAndKillMover(stateid);
             throw new NfsIoException(e.getMessage(), e);
+        } catch (PermissionDeniedCacheException e) {
+            cleanStateAndKillMover(stateid);
+            throw new PermException(e.getMessage(), e);
         } catch (CacheException e) {
-	   cleanStateAndKillMover(stateid);
+	    cleanStateAndKillMover(stateid);
+            switch (e.getRc()) {
             /*
              * error 243: file is broken on tape.
              * can't do a much. Tell it to client.
              */
-            if (e.getRc() == CacheException.BROKEN_ON_TAPE) {
+            case CacheException.BROKEN_ON_TAPE:
                 throw new NfsIoException(e.getMessage(), e);
-            } else {
-                throw new LayoutTryLaterException(e.getMessage(), e);
+            /*
+             * Configuration prevents transfer.
+             */
+            case CacheException.NO_POOL_CONFIGURED:
+                if (ioMode == layoutiomode4.LAYOUTIOMODE4_READ) {
+                    throw new PermException(e.getMessage(), e);
+                } else {
+                    throw new NoSpcException(e.getMessage(), e);
+                }
+            case CacheException.NO_POOL_ONLINE:
+            default:
+                throw new LayoutTryLaterException();
             }
         } catch (InterruptedException e) {
             cleanStateAndKillMover(stateid);
