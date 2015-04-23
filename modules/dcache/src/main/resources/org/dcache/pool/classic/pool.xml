@@ -177,7 +177,6 @@
       <property name="repository" ref="rep"/>
       <property name="checksumModule" ref="csm"/>
       <property name="pnfsHandler" ref="pnfs"/>
-      <property name="flushMessageTarget" ref="flush-notification-stub"/>
       <property name="billingStub" ref="billing-stub"/>
       <property name="hsmSet" ref="hsmset"/>
   </bean>
@@ -195,11 +194,6 @@
     <description>Controller for centralising flushing</description>
     <constructor-arg ref="queue"/>
     <property name="poolMode" ref="pool-mode"/>
-  </bean>
-
-  <bean id="flush-notification-stub" class="org.dcache.cells.CellStub">
-      <description>Flush notification stub</description>
-      <property name="destination" value="${pool.destination.flush-notification}"/>
   </bean>
 
   <bean id="billing-stub" class="org.dcache.cells.CellStub">

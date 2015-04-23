@@ -9,7 +9,7 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class PoolFileFlushedMessage extends PnfsMessage
 {
-    private FileAttributes _fileAttributes;
+    private final FileAttributes _fileAttributes;
     private final String _poolName;
 
     private static final long serialVersionUID = 1856537534158868883L;

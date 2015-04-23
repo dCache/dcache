@@ -67,7 +67,6 @@ import diskCacheV111.util.HsmLocationExtractorFactory;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
-import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
@@ -123,7 +122,6 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     private Repository repository;
     private ChecksumModule checksumModule;
     private PnfsHandler pnfs;
-    private CellStub flushMessageTarget;
     private CellStub billingStub;
     private HsmSet hsmSet;
     private long stageTimeout;
@@ -159,12 +157,6 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     public void setPnfsHandler(PnfsHandler pnfs)
     {
         this.pnfs = checkNotNull(pnfs);
-    }
-
-    @Required
-    public void setFlushMessageTarget(CellStub flushMessageTarget)
-    {
-        this.flushMessageTarget = flushMessageTarget;
     }
 
     @Required
@@ -775,7 +767,6 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
 
                 PnfsId pnfsId = getFileAttributes().getPnfsId();
                 notifyNamespace(pnfsId, fileAttributesForNotification);
-                notifyFlushMessageTarget(pnfsId, fileAttributesForNotification);
 
                 try {
                     repository.setState(pnfsId, EntryState.CACHED);
@@ -856,14 +847,6 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 }
                 TimeUnit.MINUTES.sleep(2);
             }
-        }
-
-        private void notifyFlushMessageTarget(PnfsId pnfsId, FileAttributes fileAttributes)
-        {
-            PoolFileFlushedMessage poolFileFlushedMessage =
-                    new PoolFileFlushedMessage(getCellName(), pnfsId, fileAttributes);
-            poolFileFlushedMessage.setReplyRequired(false);
-            flushMessageTarget.notify(poolFileFlushedMessage);
         }
 
         private void done(Throwable cause)

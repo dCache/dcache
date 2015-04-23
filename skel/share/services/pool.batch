@@ -52,7 +52,6 @@ check -strong pool.service.pinmanager.timeout
 check -strong pool.service.pinmanager.timeout.unit
 check -strong pool.service.billing
 check -strong pool.destination.heartbeat
-check -strong pool.destination.flush-notification
 check pool.destination.replicate
 check pool.destination.replicate.ip
 check pool.check-health-command
