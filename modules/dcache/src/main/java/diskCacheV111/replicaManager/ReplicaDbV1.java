@@ -1022,10 +1022,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     +"         FROM replicas rd, pools pd"
                     +"            WHERE rd.poolid = pd.poolid AND pd.status = '"+ONLINE+"'"
                     +"         GROUP BY pnfsid"
-                    +"         UNION ALL"
-                    +"         SELECT pnfsid FROM actions"
-                    +"         UNION ALL"
-                    +"         SELECT pnfsid FROM excluded"
+                    +"        )";
+            stmt.executeUpdate(sql);
+            sql = "DELETE FROM drainoff WHERE pnfsid IN"
+                    +"        (SELECT pnfsid FROM actions"
+                    +"        )";
+            stmt.executeUpdate(sql);
+            sql = "DELETE FROM drainoff WHERE pnfsid IN"
+                    +"        (SELECT pnfsid FROM excluded"
                     +"        )";
             stmt.executeUpdate(sql);
             conn.commit();
