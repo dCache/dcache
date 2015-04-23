@@ -17,7 +17,7 @@
     <property name="costModule" ref="cm"/>
     <property name="poolMonitor" ref="poolMonitor"/>
     <property name="requestContainer" ref="rc"/>
-    <property name="broadcastStub" ref="broadcast-stub"/>
+    <property name="poolStatusTopic" ref="poolStatusTopic"/>
     <property name="quotaManager" value="#{ '${poolmanager.plugins.quota-manager}' == 'none' ? null : quota-stub }"/>
     <property name="pnfsHandler" ref="pnfs"/>
   </bean>
@@ -70,8 +70,8 @@
       <property name="timeoutUnit" value="SECONDS"/>
   </bean>
 
-  <bean id="broadcast-stub" class="org.dcache.cells.CellStub">
-      <property name="destination" value="${poolmanager.service.broadcast}"/>
+  <bean id="poolStatusTopic" class="org.dcache.cells.CellStub">
+      <property name="destination" value="${poolmanager.destination.pool-status}"/>
   </bean>
 
   <bean id="rc-pool" class="org.dcache.util.CDCExecutorServiceDecorator"

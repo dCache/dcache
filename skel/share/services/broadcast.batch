@@ -15,7 +15,6 @@ check -strong broadcast.service.poolmanager
 #   It is off by default
 onerror continue
 define env replicaManagerOn.exe endExe
-  set env -c broadcastSetupReplicaManager1 "register diskCacheV111.vehicles.PoolStatusChangedMessage       ${broadcast.service.replica}"
   set env -c broadcastSetupReplicaManager2 "register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage ${broadcast.service.replica}"
 endExe
 eval ${broadcast.enable.replica} true ==

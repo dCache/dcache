@@ -4,14 +4,14 @@ onerror shutdown
 
 check -strong poolmanager.cell.name
 check -strong poolmanager.cell.export
-check -strong poolmanager.cell.subscribe
+check poolmanager.cell.subscribe
 check -strong poolmanager.plugins.selection-unit
 check -strong poolmanager.plugins.quota-manager
-check -strong poolmanager.service.broadcast
 check -strong poolmanager.service.pnfsmanager
 check -strong poolmanager.service.billing
 check -strong poolmanager.service.pool.timeout
 check -strong poolmanager.service.pool.timeout.unit
+check -stronf poolmanager.destination.pool-status
 check -strong poolmanager.enable.cache-hit-message
 check poolmanager.setup.file
 

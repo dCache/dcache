@@ -87,7 +87,7 @@ public class PoolManagerV5
     private PoolMonitor _poolMonitor;
 
     private CostModule   _costModule  ;
-    private CellStub _broadcast;
+    private CellStub _poolStatusTopic;
     private PnfsHandler _pnfsHandler;
 
     private RequestContainerV5 _requestContainer ;
@@ -130,9 +130,9 @@ public class PoolManagerV5
         _requestContainer = requestContainer;
     }
 
-    public void setBroadcastStub(CellStub stub)
+    public void setPoolStatusTopic(CellStub stub)
     {
-        _broadcast = stub;
+        _poolStatusTopic = stub;
     }
 
     public void setQuotaManager(CellStub stub)
@@ -418,21 +418,18 @@ public class PoolManagerV5
         }
     }
 
-    private void sendPoolStatusRelay( String poolName , int status ){
-       sendPoolStatusRelay( poolName , status , null , 0 , null ) ;
+    private void sendPoolStatusRelay(String poolName, int status)
+    {
+        sendPoolStatusRelay(poolName, status, null, 0, null);
     }
-    private void sendPoolStatusRelay( String poolName , int status ,
-                                      PoolV2Mode poolMode ,
-                                      int statusCode , String statusMessage ){
-       try {
-          PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
-          msg.setPoolMode( poolMode ) ;
-          msg.setDetail( statusCode , statusMessage ) ;
-          _log.trace("sendPoolStatusRelay: {}", msg);
-          _broadcast.notify(msg);
-       }catch(RuntimeException ee ){
-          _log.warn("Failed to send poolStatus changed message: {}", ee.toString());
-       }
+
+    private void sendPoolStatusRelay(String poolName, int status, PoolV2Mode poolMode,
+                                     int statusCode, String statusMessage)
+    {
+        PoolStatusChangedMessage msg = new PoolStatusChangedMessage(poolName, status);
+        msg.setPoolMode(poolMode);
+        msg.setDetail(statusCode, statusMessage);
+        _poolStatusTopic.notify(msg);
     }
 
     public PoolManagerGetPoolListMessage
