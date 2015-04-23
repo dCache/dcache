@@ -45,7 +45,6 @@ import diskCacheV111.vehicles.Pool2PoolTransferMsg;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolQueryRepositoryMsg;
-import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 import dmg.cells.nucleus.CellAdapter;
@@ -1220,9 +1219,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        PoolStatusChangedMessage pscm = (PoolStatusChangedMessage)obj;
        _log.debug( "DCacheCoreController: preprocess Cell message PoolStatusChangedMessage <" +pscm +">" ) ;
      }
-     else if ( obj instanceof PoolRemoveFilesMessage ) {
-       PoolRemoveFilesMessage prmf = (PoolRemoveFilesMessage)obj;
-       _log.debug( "DCacheCoreController: preprocess Cell message PoolRemoveFilesMessage <" +prmf +">" ) ;
+     else if ( obj instanceof PnfsDeleteEntryNotificationMessage ) {
+       _log.debug( "DCacheCoreController: preprocess Cell message PnfsDeleteEntryNotificationMessage <" +obj +">" ) ;
      } else {
        msgFound  = false;
 

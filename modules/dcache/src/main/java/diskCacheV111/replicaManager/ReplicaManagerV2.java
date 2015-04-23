@@ -34,7 +34,6 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
 import diskCacheV111.vehicles.PnfsModifyCacheLocationMessage;
 import diskCacheV111.vehicles.PoolModifyModeMessage;
-import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 import dmg.cells.nucleus.CellEvent;
