@@ -1,5 +1,7 @@
 package org.dcache.chimera.namespace;
 
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
@@ -125,8 +127,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     @Option(
         name="reportRemove",
-        description="The cells to report removes to",
-        required=true
+        description="The cells to report removes to"
     )
     protected String _reportTo;
 
@@ -204,7 +205,12 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         _notificationStub = new CellStub(this);
         _deleteNotificationTargets =
-                Stream.of(_reportTo.split(",")).map(CellPath::new).toArray(CellPath[]::new);
+                Splitter.on(",")
+                        .omitEmptyStrings()
+                        .splitToList(Strings.nullToEmpty(_reportTo))
+                        .stream()
+                        .map(CellPath::new)
+                        .toArray(CellPath[]::new);
 
         _executor = Executors.newScheduledThreadPool(_threadPoolSize);
 

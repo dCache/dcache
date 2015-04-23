@@ -21,7 +21,7 @@ check -strong cleaner.limits.period.unit
 check -strong cleaner.limits.batch-size
 check -strong cleaner.limits.hsm-batch-size
 check -strong cleaner.limits.threads
-check -strong cleaner.destination.remove-notification
+check cleaner.destination.remove-notification
 check -strong cleaner.db.user
 check -strong cleaner.db.url
 check cleaner.db.password
