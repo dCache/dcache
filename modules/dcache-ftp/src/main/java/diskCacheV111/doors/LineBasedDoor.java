@@ -190,7 +190,7 @@ public class LineBasedDoor
 
     public void messageArrived(NoRouteToCellException e)
     {
-        LOGGER.warn("Failed to send message: {}", e.getMessage());
+        LOGGER.warn(e.getMessage());
     }
 
     /**

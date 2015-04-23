@@ -429,7 +429,7 @@ public class UserAdminShell
                                               @Override
                                               public void answerTimedOut(CellMessage request)
                                               {
-                                                  future.setException(new NoRouteToCellException("No reply"));
+                                                  future.setException(new NoRouteToCellException(request.getUOID(), request.getDestinationPath(), "No reply"));
                                               }
                                           }, MoreExecutors.directExecutor(), CD_PROBE_MESSAGE_TIMEOUT_MS);
                 CellPath returnPath = future.get();

@@ -34,6 +34,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellRoute;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.util.Args;
 
@@ -308,6 +309,8 @@ public class RoutingManager
                 msg.setMessageObject(new GetAllDomainsReply(domains));
                 sendMessage(msg);
             }
+        } else if (obj instanceof NoRouteToCellException) {
+            _log.info(((NoRouteToCellException) obj).getMessage());
         } else {
             _log.warn("Unidentified message ignored: {}", obj);
         }

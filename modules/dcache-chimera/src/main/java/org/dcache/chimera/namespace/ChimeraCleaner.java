@@ -459,7 +459,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
     public void messageArrived(NoRouteToCellException e)
     {
-        _log.warn("Failed to send message: {}", e.getMessage());
+        _log.warn(e.getMessage());
     }
 
     public void messageArrived(PoolManagerPoolUpMessage poolUpMessage) {

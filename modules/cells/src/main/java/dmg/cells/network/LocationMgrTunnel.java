@@ -190,8 +190,8 @@ public class LocationMgrTunnel
                 _output.writeObject(msg);
             } catch (IOException e) {
                 _log.warn("Error while sending message: " + e.getMessage());
-                returnToSender(msg,
-                               new NoRouteToCellException("Communication failure. Message could not be delivered."));
+                returnToSender(msg, new NoRouteToCellException(msg.getUOID(), msg.getDestinationPath(),
+                                                               "Communication failure. Message could not be delivered."));
                 kill();
             }
         } else {

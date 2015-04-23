@@ -84,7 +84,7 @@ public class PoolInfoObserverV3 extends AbstractCell
 
     public void messageArrived(NoRouteToCellException e)
     {
-        _log.warn("Failed to send message: {}", e.getMessage());
+        _log.warn(e.getMessage());
     }
 
     private void refresh()

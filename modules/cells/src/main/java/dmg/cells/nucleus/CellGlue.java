@@ -520,7 +520,7 @@ class CellGlue
              */
             if (address.getCellDomainName().equals(_cellDomainName)) {
                 if (!deliverLocally(msg, address)) {
-                    sendException(msg, destination, address.getCellName());
+                    sendException(msg, destination, address.toString());
                 }
                 return;
             }
@@ -534,7 +534,7 @@ class CellGlue
                 }
                 if (!resolveRemotely) {
                     // not allowed to use routing table to resolve the destination
-                    sendException(msg, destination, address.getCellName());
+                    sendException(msg, destination, address.toString());
                     return;
                 }
             }
@@ -575,7 +575,7 @@ class CellGlue
         // end of big iteration loop
 
         LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
-        sendException(msg, destination, address.getCellName());
+        sendException(msg, destination, address.toString());
     }
 
     private boolean deliverLocally(CellMessage msg, CellAddressCore address)
@@ -591,7 +591,7 @@ class CellGlue
                 } catch (SerializationException e) {
                     LOGGER.error("Received malformed message from %s with UOID %s and session [%s]: %s",
                                  msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
-                    sendException(msg, destinationPath, address.getCellName());
+                    sendException(msg, destinationPath, address.toString());
                 }
             } else if (msg.getSourcePath().hops() > 30) {
                 LOGGER.error("Hop count exceeds 30: {}", msg);

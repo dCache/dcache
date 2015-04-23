@@ -780,7 +780,7 @@ public class UniversalSpringCell
 
     public void messageArrived(NoRouteToCellException e)
     {
-        LOGGER.warn("Failed to send message: {}", e.getMessage());
+        LOGGER.warn(e.getMessage());
     }
 
     public BeanQueryMessage messageArrived(BeanQueryAllPropertiesMessage message)
