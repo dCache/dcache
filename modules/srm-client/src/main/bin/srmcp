@@ -62,7 +62,20 @@ fargs=
 for arg in $args;
   do
   case "${arg}" in
-      -help|-version|--help|-copyjobfile*)
+      -help|-version|--help)
+	  skip=1
+	  continue
+	  ;;
+      -copyjobfile*)
+	  hasThirdPartyTransfer=0
+	  copyJobFile="${arg##-copyjobfile=}"
+	  if [ -r "$copyJobFile" ]; then
+	      hasThirdPartyTransfer=1
+	      grep -E -e '^ *(srm|gsiftp|gridftp|https):[^ ]* (srm|gsiftp|gridftp|https):' "$copyJobFile" >/dev/null || hasThirdPartyTransfer=0
+	  fi
+	  if [ $hasThirdPartyTransfer -eq 1 ]; then
+	      delegationMakesSense=1
+	  fi
 	  skip=1
 	  continue
 	  ;;
@@ -209,7 +222,7 @@ if [ "${skip}" -eq 0 ]
 	fi
     fi
 else
-    if [ "$haveSrm" = 1 ] && [ "$delegationMakesSense" = 1 ] && [ "$haveDelegate" = 0 ]; then
+    if [ "$delegationMakesSense" = 1 ] && [ "$haveDelegate" = 0 ]; then
         delegate=-delegate=true
     fi
     "${SRM_PATH}/lib/srm" -copy $delegate "$@"
