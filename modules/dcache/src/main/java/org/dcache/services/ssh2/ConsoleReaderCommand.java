@@ -162,7 +162,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
     }
 
     private void runAsciiMode() throws IOException {
-        Ansi.setEnabled(_useColors);
+        Ansi.setEnabled(_console.getTerminal().isAnsiSupported() && _useColors);
         while (true) {
             String prompt = Ansi.ansi().bold().a(_userAdminShell.getPrompt()).boldOff().toString();
             Object result;
@@ -278,7 +278,7 @@ public class ConsoleReaderCommand implements Command, Runnable {
         {
             super(true);
             _env = env;
-            setAnsiSupported(true);
+            setAnsiSupported(env.getEnv().get(Environment.ENV_TERM) != null);
             setEchoEnabled(false);
         }
 
@@ -291,11 +291,13 @@ public class ConsoleReaderCommand implements Command, Runnable {
                      * even when it got no local TTY.
                      */
                     int i = Integer.parseInt(h);
-                    return i == 0 ? Integer.MAX_VALUE : i;
+                    if (i > 0) {
+                        return i;
+                    }
                 } catch(NumberFormatException ignored) {
                 }
             }
-            return super.getHeight();
+            return Integer.MAX_VALUE;
         }
 
         @Override
@@ -307,11 +309,13 @@ public class ConsoleReaderCommand implements Command, Runnable {
                      * even when it got no local TTY.
                      */
                     int i = Integer.parseInt(w);
-                    return i == 0 ? Integer.MAX_VALUE : i;
+                    if (i > 0) {
+                        return i;
+                    }
                 } catch(NumberFormatException ignored) {
                 }
             }
-            return super.getWidth();
+            return Integer.MAX_VALUE;
         }
     }
 
