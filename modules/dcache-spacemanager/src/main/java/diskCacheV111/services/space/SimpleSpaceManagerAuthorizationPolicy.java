@@ -23,11 +23,26 @@ public class SimpleSpaceManagerAuthorizationPolicy
         String spaceRole  = space.getVoRole();
 
         if (spaceGroup != null) {
-            if (spaceRole == null && spaceGroup.equals(Subjects.getUserName(subject))) {
-                logger.debug("Subject with user name {} has permission to release space {}",
-                             Subjects.getUserName(subject), space);
-                return;
+            if (spaceRole == null) {
+                if (spaceGroup.equals(Subjects.getUserName(subject))) {
+                    logger.debug("Subject with user name {} has permission to release space {}",
+                                 Subjects.getUserName(subject), space);
+                    return;
+                }
+
+                try {
+                    long authorisedGid = Long.parseLong(spaceGroup);
+
+                    if (Subjects.hasGid(subject, authorisedGid)) {
+                        logger.debug("Subject with gid {} has permission to release space {}",
+                                authorisedGid, space);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    // It is OK for spaceGroup not to be a valid Long.
+                }
             }
+
             for (FQANPrincipal principal : subject.getPrincipals(FQANPrincipal.class)) {
                 FQAN fqan = principal.getFqan();
                 if (spaceGroup.equals(fqan.getGroup()) && (spaceRole == null || spaceRole.equals(fqan.getRole()))) {
@@ -50,6 +65,13 @@ public class SimpleSpaceManagerAuthorizationPolicy
             if (userName != null && voInfo.match(userName, null)) {
                 logger.debug("Subject with user name {} has permission to reserve {}", userName, linkGroup);
                 return new VOInfo(userName, null);
+            }
+
+            for (long gid : Subjects.getGids(subject)) {
+                if (voInfo.match(Long.toString(gid), null)) {
+                    logger.debug("Subject with gid {} has permission to reserve {}", gid, linkGroup);
+                    return new VOInfo(Long.toString(gid), null);
+                }
             }
 
             for (FQANPrincipal principal : subject.getPrincipals(FQANPrincipal.class)) {

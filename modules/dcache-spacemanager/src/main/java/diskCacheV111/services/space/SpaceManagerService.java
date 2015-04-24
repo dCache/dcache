@@ -90,7 +90,10 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.auth.FQAN;
+import org.dcache.auth.FQANPrincipal;
+import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.UserNamePrincipal;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.poolmanager.PoolMonitor;
@@ -890,12 +893,16 @@ public final class SpaceManagerService
         String effectiveGroup;
         String effectiveRole;
         String primaryFqan = Subjects.getPrimaryFqan(subject);
+        String username = Subjects.getUserName(subject);
         if (primaryFqan != null) {
             FQAN fqan = new FQAN(primaryFqan);
             effectiveGroup = fqan.getGroup();
             effectiveRole = fqan.getRole();
-        } else {
+        } else if (username != null) {
             effectiveGroup = Subjects.getUserName(subject);
+            effectiveRole = null;
+        } else {
+            effectiveGroup = Long.toString(Subjects.getPrimaryGid(subject));
             effectiveRole = null;
         }
         return new VOInfo(effectiveGroup, effectiveRole);
@@ -914,8 +921,12 @@ public final class SpaceManagerService
         FileAttributes fileAttributes = selectWritePool.getFileAttributes();
         String defaultSpaceToken = fileAttributes.getStorageInfo().getMap().get("writeToken");
         Subject subject = selectWritePool.getSubject();
-        boolean hasIdentity =
-                !Subjects.getFqans(subject).isEmpty() || Subjects.getUserName(subject) != null;
+
+        // REVISIT: look at moving this into Subjects.
+        boolean hasIdentity = subject.getPrincipals().stream().anyMatch(p ->
+                p instanceof FQANPrincipal ||
+                p instanceof UserNamePrincipal ||
+                p instanceof GidPrincipal);
 
         if (defaultSpaceToken != null) {
             LOGGER.trace("selectPool: file is not " +
