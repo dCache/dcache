@@ -487,7 +487,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         try {
             future.checkedGet(60, TimeUnit.SECONDS);
             setPinId(null);
-            this.saveJob();
+            saveJob(true);
             return new TReturnStatus(TStatusCode.SRM_SUCCESS, null);
         } catch (TimeoutException e) {
             throw new SRMInternalErrorException("Operation timed out.");
