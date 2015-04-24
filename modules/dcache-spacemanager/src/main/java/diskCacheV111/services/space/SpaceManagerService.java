@@ -700,7 +700,14 @@ public final class SpaceManagerService
         private void transferFinished(DoorTransferFinishedMessage finished)
                 throws DataAccessException
         {
-                transferFinished(finished.getPnfsId(), finished.getFileAttributes().getSize());
+        if (finished.getReturnCode() == CacheException.FILE_NOT_FOUND) {
+            /* File is gone from name space, but we may never receive a notification
+             * from cleaner if the file location didn't get registered first.
+             */
+            fileRemoved(finished.getPnfsId());
+        } else {
+            transferFinished(finished.getPnfsId(), finished.getFileAttributes().getSize());
+        }
         }
 
         @Transactional
