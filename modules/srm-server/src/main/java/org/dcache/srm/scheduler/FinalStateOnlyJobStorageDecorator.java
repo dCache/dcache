@@ -4,7 +4,6 @@ import org.springframework.dao.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Set;
 
 import org.dcache.srm.request.Job;
@@ -80,7 +79,7 @@ public class FinalStateOnlyJobStorageDecorator<J extends Job> implements JobStor
     @Override
     public Set<J> getActiveJobs()
     {
-        return Collections.emptySet();
+        return jobStorage.getActiveJobs();
     }
 
     @Override
