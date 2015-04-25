@@ -1080,6 +1080,9 @@ public abstract class Job  {
                 return;
             }
 
+            setScheduler(scheduler.getId(), scheduler.getTimestamp());
+            notifySchedulerOfStateChange(State.RESTORED, state);
+
             if (shouldFailJobs) {
                 setState(State.FAILED, "Aborted due to SRM service restart.");
                 return;
@@ -1089,8 +1092,6 @@ public abstract class Job  {
                 setState(State.FAILED, "Expired during SRM service restart.");
                 return;
             }
-
-            setScheduler(scheduler.getId(), scheduler.getTimestamp());
 
             switch (state) {
             // Pending jobs were never worked on before the SRM restart; we
@@ -1109,7 +1110,6 @@ public abstract class Job  {
             // the job into the DONE state, respectively.
             case READY:
             case RQUEUED:
-                scheduler.add(this);
                 break;
 
             // Other job states need request-specific recovery process.
