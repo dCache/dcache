@@ -635,6 +635,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     case ASYNCWAIT:
                         logger.trace("Storage info arrived for file {}.", fr.getSurlString());
                         fr.setFileId(fileId);
+                        fr.saveJob(true);
                         Scheduler<?> scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                         try {
                             scheduler.schedule(fr);

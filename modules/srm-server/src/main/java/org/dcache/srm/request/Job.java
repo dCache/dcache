@@ -754,7 +754,7 @@ public abstract class Job  {
             }
 
             lifetime = now + newLifetimeInMillis - creationTime;
-            saveJob();
+            saveJob(true);
             return newLifetimeInMillis;
         } finally {
             wunlock();
