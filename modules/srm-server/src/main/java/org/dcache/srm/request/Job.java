@@ -72,20 +72,13 @@ import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nonnull;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.dcache.srm.SRMAbortedException;
@@ -244,39 +237,19 @@ public abstract class Job  {
     public static final <T extends Job> T getJob(long id, Class<T> type)
             throws SRMInvalidRequestException
     {
-        return getJob(id, type, null);
-    }
-
-    /**
-     * Fetch the Job associated with the supplied ID.  If no such job exists
-     * then throw SRMInvalidRequestException.  This method never returns null.
-     * @param jobId the ID of the Job
-     * @param _con either a valid database Connection or null
-     * @return a object representing this job.
-     * @throws SRMInvalidRequestException if the job cannot be found
-     */
-    @Nonnull
-    public static <T extends Job> T getJob(long jobId, Class<T> type, Connection _con)
-            throws SRMInvalidRequestException
-    {
         for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry: JobStorageFactory.getJobStorageFactory().getJobStorages().entrySet()) {
             if (type.isAssignableFrom(entry.getKey())) {
                 try {
-                    Job job;
-                    if (_con == null) {
-                        job = entry.getValue().getJob(jobId);
-                    } else {
-                        job = entry.getValue().getJob(jobId, _con);
-                    }
+                    Job job = entry.getValue().getJob(id);
                     if (job != null) {
                         return type.cast(job);
                     }
-                } catch (DataAccessException | SQLException e) {
+                } catch (DataAccessException e) {
                     logger.error("Failed to read job", e);
                 }
             }
         }
-        throw new SRMInvalidRequestException("Id " + jobId + " does not correspond to any known job");
+        throw new SRMInvalidRequestException("Id " + id + " does not correspond to any known job");
     }
 
     /** Performs state transition checking the legality first.

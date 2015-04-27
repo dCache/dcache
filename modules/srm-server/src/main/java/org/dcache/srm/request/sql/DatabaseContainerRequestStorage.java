@@ -1,9 +1,3 @@
-/*
- * FileRequestStorage.java
- *
- * Created on June 17, 2004, 3:18 PM
- */
-
 package org.dcache.srm.request.sql;
 
 import com.google.common.collect.Iterables;
@@ -20,18 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.Job;
+import org.dcache.srm.scheduler.JobStorageFactory;
 import org.dcache.srm.util.Configuration;
 
-/**
- *
- * @author  timur
- */
-public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest<F>, F extends FileRequest<C>> extends DatabaseRequestStorage<C> {
+public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest<F>, F extends FileRequest<C>>
+        extends DatabaseRequestStorage<C>
+{
    private final static Logger logger =
             LoggerFactory.getLogger(DatabaseContainerRequestStorage.class);
 
@@ -112,10 +104,9 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
 
         List<F> fileRequests = new ArrayList<>(fileIds.size());
         for (Long fileId : fileIds) {
-            try {
-                fileRequests.add(Job.getJob(fileId, fileRequestType, _con));
-            } catch (SRMInvalidRequestException ire) {
-                logger.error("Failed to restore job from database: {}", ire.getMessage());
+            F job = getFileRequest(fileId, _con);
+            if (job != null) {
+                fileRequests.add(job);
             }
         }
 
@@ -141,6 +132,20 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         Iterables.toArray(fileRequests, fileRequestType),
         set,
         next_index );
+    }
+
+    private F getFileRequest(long jobId, Connection _con)
+    {
+        try {
+            Job job = JobStorageFactory.getJobStorageFactory().getJobStorage(fileRequestType).getJob(jobId, _con);
+            if (job != null) {
+                return fileRequestType.cast(job);
+            }
+            logger.error("Job {} not found in database.", jobId);
+        } catch (DataAccessException | SQLException e) {
+            logger.error("Failed to read job {}: {}", jobId, e.toString());
+        }
+        return null;
     }
 
     @Override
