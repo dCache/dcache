@@ -332,7 +332,7 @@ public abstract class Job  {
                 throw new IllegalStateTransition("Scheduler ID is null");
             }
             stateChanged(oldState);
-            saveJob();
+            saveJob(state == State.RQUEUED);
         } finally {
             wunlock();
         }
