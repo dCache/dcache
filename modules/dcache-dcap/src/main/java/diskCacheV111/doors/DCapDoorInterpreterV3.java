@@ -1103,7 +1103,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }
 
             if (_path != null) {
-                _info.setPath(_path);
+                _info.setBillingPath(_path);
+                _info.setTransferPath(_path);
             }
 
             _message.setId(_sessionId);
@@ -1401,7 +1402,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             infoRemove.setSubject(_subject);
             infoRemove.setPnfsId(attributes.getPnfsId());
             infoRemove.setFileSize(attributes.getSize());
-            infoRemove.setPath(path);
+            infoRemove.setBillingPath(path);
             infoRemove.setClient(_clientAddress.getHostAddress());
 
             postToBilling(infoRemove);
@@ -1973,6 +1974,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                        pnfsEntry.getPnfsId(), pnfsEntry.getPnfsPath());
             _message = pnfsEntry;
 
+            if (pnfsEntry.getFileAttributes().isDefined(STORAGEINFO) && pnfsEntry.getFileAttributes().getStorageInfo().getKey("path") != null) {
+                _info.setBillingPath(pnfsEntry.getFileAttributes().getStorageInfo().getKey("path"));
+            }
+
             _isNew = true;
 
             return true ;
@@ -2084,7 +2089,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, getPreallocated());
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
-                    getPoolMessage.setPnfsPath(new FsPath(_path));
+                    getPoolMessage.setBillingPath(new FsPath(_info.getBillingPath()));
                 }
             }else{
                 //
@@ -2237,7 +2242,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
 
-            poolMessage.setPnfsPath(new FsPath(_path));
+            poolMessage.setBillingPath(new FsPath(_info.getBillingPath()));
+            poolMessage.setTransferPath(new FsPath(_info.getTransferPath()));
             poolMessage.setId( _sessionId ) ;
             poolMessage.setSubject(_subject);
 

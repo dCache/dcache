@@ -1,7 +1,6 @@
 package diskCacheV111.vehicles;
 
 import java.util.EnumSet;
-import java.util.Objects;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
@@ -23,6 +22,7 @@ public class PoolIoFileMessage extends PoolMessage {
     private String       _initiator = "<undefined>";
     private boolean      _forceSourceMode;
     private String _pnfsPath;
+    private String _transferPath;
 
     private static final long serialVersionUID = -6549886547049510754L;
 
@@ -42,7 +42,7 @@ public class PoolIoFileMessage extends PoolMessage {
     public PoolIoFileMessage( String pool ,
                               PnfsId pnfsId ,
                               ProtocolInfo protocolInfo  ){
-       super( pool ) ;
+       super(pool) ;
        _protocolInfo = protocolInfo ;
         _fileAttributes = new FileAttributes();
         _fileAttributes.setPnfsId(pnfsId);
@@ -84,14 +84,24 @@ public class PoolIoFileMessage extends PoolMessage {
         return _initiator;
     }
 
-    public FsPath getPnfsPath()
+    public FsPath getBillingPath()
     {
         return _pnfsPath != null ? new FsPath(_pnfsPath) : null;
     }
 
-    public void setPnfsPath(FsPath path)
+    public void setBillingPath(FsPath path)
     {
-        this._pnfsPath = Objects.toString(path, null);
+        _pnfsPath = path.toString();
+    }
+
+    public FsPath getTransferPath()
+    {
+        return _transferPath != null ? new FsPath(_transferPath) : getBillingPath();
+    }
+
+    public void setTransferPath(FsPath path)
+    {
+        _transferPath = path.toString();
     }
 
     public FileAttributes getFileAttributes()

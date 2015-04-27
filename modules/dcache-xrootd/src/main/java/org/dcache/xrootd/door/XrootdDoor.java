@@ -483,7 +483,7 @@ public class XrootdDoor
             DoorRequestInfoMessage infoRemove =
                     new DoorRequestInfoMessage(getCellAddress().toString(), "remove");
             infoRemove.setSubject(subject);
-            infoRemove.setPath(path);
+            infoRemove.setBillingPath(path);
             infoRemove.setPnfsId(pnfsId);
             Origin origin = Subjects.getOrigin(subject);
             if (origin != null) {

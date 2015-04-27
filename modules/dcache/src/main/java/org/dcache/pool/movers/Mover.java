@@ -134,9 +134,14 @@ public interface Mover<T extends ProtocolInfo>
     Set<Checksum> getExpectedChecksums();
 
     /**
-     * Returns the name space path of the file being transferred.
+     * Returns the billable name space path of the file being transferred.
      */
-    FsPath getPath();
+    FsPath getBillingPath();
+
+    /**
+     * Returns the temporary name space path of the file being transferred.
+     */
+    FsPath getTransferPath();
 
     /**
      * Initiates the actual transfer phase. The operation is asynchronous.

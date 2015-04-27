@@ -38,16 +38,16 @@ public class PnfsFileInfoMessage extends InfoMessage {
       _storageInfo = storageInfo ;
    }
    public StorageInfo getStorageInfo(){ return _storageInfo ; }
-   public String getPath() { return _path; }
-   public void setPath(String path) { _path = path; }
-   public void setPath(FsPath path) { _path = Objects.toString(path, "Unknown"); }
+   public String getBillingPath() { return _path; }
+   public void setBillingPath(String path) { _path = path; }
+   public void setBillingPath(FsPath path) { _path = Objects.toString(path, "Unknown"); }
 
     @Override
     public void fillTemplate(ST template)
     {
         super.fillTemplate(template);
         template.add("pnfsid", getPnfsId());
-        template.add("path", getPath());
+        template.add("path", getBillingPath());
         template.add("filesize", getFileSize());
         template.add("storage", getStorageInfo());
     }
