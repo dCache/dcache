@@ -596,7 +596,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                 }
             };
             setTransferId(getStorage().getFromRemoteTURL(getUser(), getSourceTurl(), getDestinationFileId(), getUser(), credential.getId(), extraInfo, copycallbacks));
-            saveJob();
+            saveJob(true);
         } else {
             // transfer id is not null and we are scheduled
             // there was some kind of error during the transfer
@@ -656,7 +656,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
             setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
             setState(State.RUNNINGWITHOUTTHREAD, "Transferring file.");
-            saveJob();
+            saveJob(true);
         } else {
             // transfer id is not null and we are scheduled
             // there was some kind of error durign the transfer
@@ -1034,6 +1034,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest>
                     if (state == State.ASYNCWAIT) {
                         LOG.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
                         fr.setDestinationFileId(fileId);
+                        fr.saveJob(true);
                         Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                         try {
                             scheduler.schedule(fr);
