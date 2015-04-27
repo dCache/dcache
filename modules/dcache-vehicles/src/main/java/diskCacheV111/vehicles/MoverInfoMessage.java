@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage
@@ -13,6 +14,7 @@ public class MoverInfoMessage extends PnfsFileInfoMessage
     private boolean _isP2p;
 
     private static final long serialVersionUID = -7013160118909496211L;
+    private String _transferPath;
 
     public MoverInfoMessage(String cellName,
                             PnfsId pnfsId)
@@ -74,6 +76,21 @@ public class MoverInfoMessage extends PnfsFileInfoMessage
     public ProtocolInfo getProtocolInfo()
     {
         return _protocolInfo;
+    }
+
+    public String getTransferPath()
+    {
+        return _transferPath != null ? _transferPath : getBillingPath();
+    }
+
+    public void setTransferPath(String path)
+    {
+        _transferPath = path;
+    }
+
+    public void setTransferPath(FsPath path)
+    {
+        setTransferPath(path.toString());
     }
 
     public String getAdditionalInfo()

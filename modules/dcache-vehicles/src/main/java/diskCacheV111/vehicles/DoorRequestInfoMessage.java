@@ -2,6 +2,8 @@ package diskCacheV111.vehicles;
 
 import javax.security.auth.Subject;
 
+import diskCacheV111.util.FsPath;
+
 import org.dcache.auth.Subjects;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
@@ -10,6 +12,7 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     private String _client = "unknown";
 
     private static final long serialVersionUID = 2469895982145157834L;
+    private String _transferPath;
 
     public DoorRequestInfoMessage(String cellName)
     {
@@ -78,5 +81,20 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     public void accept(InfoMessageVisitor visitor)
     {
         visitor.visit(this);
+    }
+
+    public String getTransferPath()
+    {
+        return _transferPath != null ? _transferPath : getBillingPath();
+    }
+
+    public void setTransferPath(String path)
+    {
+        _transferPath = path;
+    }
+
+    public void setTransferPath(FsPath path)
+    {
+        setTransferPath(path.toString());
     }
 }

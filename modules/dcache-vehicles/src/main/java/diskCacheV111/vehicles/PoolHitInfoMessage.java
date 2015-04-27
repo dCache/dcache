@@ -1,5 +1,6 @@
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 public class PoolHitInfoMessage extends PnfsFileInfoMessage {
@@ -8,6 +9,7 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
     private boolean      _fileCached;
 
     private static final long serialVersionUID = -1487408937648228544L;
+    private String _transferPath;
 
     public PoolHitInfoMessage(String cellName, PnfsId pnfsId)
     {
@@ -32,6 +34,21 @@ public class PoolHitInfoMessage extends PnfsFileInfoMessage {
     public ProtocolInfo getProtocolInfo()
     {
 		return _protocolInfo;
+    }
+
+    public String getTransferPath()
+    {
+        return _transferPath != null ? _transferPath : getBillingPath();
+    }
+
+    public void setTransferPath(String path)
+    {
+        _transferPath = path;
+    }
+
+    public void setTransferPath(FsPath path)
+    {
+        setTransferPath(path.toString());
     }
 
     public String toString()
