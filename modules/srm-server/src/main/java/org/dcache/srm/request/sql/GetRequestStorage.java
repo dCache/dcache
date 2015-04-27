@@ -172,9 +172,9 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
     }
 
     @Override
-    protected void dbInit(boolean clean) throws DataAccessException
+    protected void dbInit() throws DataAccessException
     {
-        super.dbInit(clean);
+        super.dbInit();
 
         String protocolsTableName = getProtocolsTableName().toLowerCase();
         if (droppedOldTable || !validateProtocolsTableSchema(protocolsTableName)) {

@@ -30,9 +30,9 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
     }
 
     @Override
-    protected void dbInit(boolean clean) throws DataAccessException
+    protected void dbInit() throws DataAccessException
     {
-           super.dbInit(clean);
+           super.dbInit();
            String columns[] = {
 		    "REQUESTID"};
 	   createIndex(columns, getTableName().toLowerCase());
