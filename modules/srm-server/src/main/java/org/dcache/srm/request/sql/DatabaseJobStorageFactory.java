@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +47,8 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
                                // requests are cached before container requests are loaded
     private final Map<Class<? extends Job>, JobStorage<?>> unmodifiableJobStorageMap =
             Collections.unmodifiableMap(jobStorageMap);
+    private final Map<Class<? extends Job>, Configuration.DatabaseParameters> configurations =
+            new HashMap<>();
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduledExecutor;
 
@@ -72,6 +75,7 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
             js = new NoopJobStorage<>();
         }
         jobStorageMap.put(entityClass, new CanonicalizingJobStorage<>(new SharedMemoryCacheJobStorage<>(js, entityClass), entityClass));
+        configurations.put(entityClass, config);
     }
 
     public DatabaseJobStorageFactory(Configuration config) throws DataAccessException, IOException
@@ -139,9 +143,10 @@ public class DatabaseJobStorageFactory extends JobStorageFactory
 
     public void restoreJobsOnSrmStart(SchedulerContainer schedulers)
     {
-        for (JobStorage<?> storage: jobStorageMap.values()) {
-            Set<? extends Job> jobs = storage.getActiveJobs();
-            schedulers.restoreJobsOnSrmStart(jobs);
+        for (Map.Entry<Class<? extends Job>, JobStorage<?>> entry : jobStorageMap.entrySet()) {
+            Configuration.DatabaseParameters config = configurations.get(entry.getKey());
+            Set<? extends Job> jobs = entry.getValue().getActiveJobs();
+            schedulers.restoreJobsOnSrmStart(jobs, config.isCleanPendingRequestsOnRestart());
         }
     }
 
