@@ -153,9 +153,10 @@ public class DefaultPostTransferService extends AbstractCellComponent implements
         info.setFileSize(fileSize);
         info.setResult(mover.getErrorCode(), mover.getErrorMessage());
         info.setTransferAttributes(mover.getBytesTransferred(),
-                mover.getTransferTime(),
-                mover.getProtocolInfo());
-        info.setPath(mover.getPath());
+                                   mover.getTransferTime(),
+                                   mover.getProtocolInfo());
+        info.setBillingPath(mover.getBillingPath());
+        info.setTransferPath(mover.getTransferPath());
 
         try {
             _billing.notify(info);

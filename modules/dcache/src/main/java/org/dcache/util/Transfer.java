@@ -280,6 +280,26 @@ public class Transfer implements Comparable<Transfer>
     }
 
     /**
+     * The name space path of the file being transferred.
+     */
+    public synchronized FsPath getTransferPath()
+    {
+        return _path;
+    }
+
+    /**
+     * The billable name space path of the file being transferred.
+     */
+    public synchronized FsPath getBillingPath()
+    {
+        if (_fileAttributes.isDefined(STORAGEINFO) && _fileAttributes.getStorageInfo().getKey("path") != null) {
+            return new FsPath(_fileAttributes.getStorageInfo().getKey("path"));
+        } else {
+            return _path;
+        }
+    }
+
+    /**
      * Returns the PnfsId of the file to be transferred.
      */
     public synchronized PnfsId getPnfsId()
@@ -764,7 +784,8 @@ public class Transfer implements Comparable<Transfer>
                                                   allocated);
                 request.setId(_sessionId);
                 request.setSubject(_subject);
-                request.setPnfsPath(_path);
+                request.setBillingPath(getBillingPath());
+                request.setTransferPath(getTransferPath());
 
                 PoolMgrSelectWritePoolMsg reply =
                     _poolManager.sendAndWait(request, timeout);
@@ -784,7 +805,8 @@ public class Transfer implements Comparable<Transfer>
                                                  allowedStates);
                 request.setId(_sessionId);
                 request.setSubject(_subject);
-                request.setPnfsPath(_path);
+                request.setBillingPath(getBillingPath());
+                request.setTransferPath(getTransferPath());
 
                 PoolMgrSelectReadPoolMsg reply =
                     _poolManager.sendAndWait(request, timeout);
@@ -844,7 +866,8 @@ public class Transfer implements Comparable<Transfer>
                 message =
                     new PoolDeliverFileMessage(pool, protocolInfo, fileAttributes);
             }
-            message.setPnfsPath(_path);
+            message.setBillingPath(getBillingPath());
+            message.setTransferPath(getTransferPath());
             message.setIoQueueName(queue);
             message.setInitiator(getTransaction());
             message.setId(_sessionId);
@@ -970,7 +993,8 @@ public class Transfer implements Comparable<Transfer>
             DoorRequestInfoMessage msg =
                 new DoorRequestInfoMessage(getCellName() + "@" + getDomainName());
             msg.setSubject(_subject);
-            msg.setPath(_path);
+            msg.setBillingPath(getBillingPath());
+            msg.setTransferPath(getTransferPath());
             msg.setTransactionDuration(System.currentTimeMillis() - _startedAt);
             msg.setTransaction(getTransaction());
             msg.setClient(_clientAddress.getAddress().getHostAddress());

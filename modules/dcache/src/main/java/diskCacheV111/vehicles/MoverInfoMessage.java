@@ -3,6 +3,7 @@ package diskCacheV111.vehicles ;
 
 import org.stringtemplate.v4.ST;
 
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 public class MoverInfoMessage extends PnfsFileInfoMessage {
@@ -16,8 +17,9 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    private boolean _isP2p;
 
    private static final long serialVersionUID = -7013160118909496211L;
+    private String _transferPath;
 
-   public MoverInfoMessage( String cellName ,
+    public MoverInfoMessage( String cellName ,
                             PnfsId pnfsId     ){
 
       super( "transfer" , "pool" , cellName , pnfsId ) ;
@@ -47,6 +49,21 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
    public boolean isP2P(){ return _isP2p ; }
    public ProtocolInfo getProtocolInfo(){ return _protocolInfo ; }
 
+    public String getTransferPath()
+    {
+        return _transferPath != null ? _transferPath : getBillingPath();
+    }
+
+    public void setTransferPath(String path)
+    {
+        _transferPath = path;
+    }
+
+    public void setTransferPath(FsPath path)
+    {
+        setTransferPath(path.toString());
+    }
+
     public String getAdditionalInfo() {
        return _dataTransferred + " "
                 + _connectionTime + " "
@@ -71,5 +88,6 @@ public class MoverInfoMessage extends PnfsFileInfoMessage {
         template.add("protocol", _protocolInfo);
         template.add("initiator", _initiator);
         template.add("p2p", _isP2p);
+        template.add("transferPath", getTransferPath());
     }
 }

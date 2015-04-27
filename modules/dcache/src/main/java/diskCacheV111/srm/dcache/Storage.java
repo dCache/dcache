@@ -1089,7 +1089,8 @@ public final class Storage
             DoorRequestInfoMessage infoMsg =
                     new DoorRequestInfoMessage(getCellAddress().toString());
             infoMsg.setSubject(subject);
-            infoMsg.setPath(fullPath.toString());
+            infoMsg.setBillingPath(fullPath);
+            infoMsg.setTransferPath(localTransferPath);
             infoMsg.setTransaction(CDC.getSession());
             infoMsg.setPnfsId(msg.getPnfsId());
             infoMsg.setResult(0, "");
@@ -1128,7 +1129,7 @@ public final class Storage
             DoorRequestInfoMessage infoMsg =
                     new DoorRequestInfoMessage(getCellAddress().toString());
             infoMsg.setSubject(subject);
-            infoMsg.setPath(actualPnfsPath.toString());
+            infoMsg.setBillingPath(actualPnfsPath.toString());
             infoMsg.setTransaction(CDC.getSession());
             infoMsg.setPnfsId(msg.getPnfsId());
             infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, reason);

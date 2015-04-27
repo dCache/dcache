@@ -42,18 +42,15 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
 
     protected synchronized ProtocolInfo createProtocolInfo() {
         InetSocketAddress client = getClientAddress();
-        XrootdProtocolInfo protocolInfo =
-            new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
-                                   XrootdDoor.XROOTD_PROTOCOL_MAJOR_VERSION,
-                                   XrootdDoor.XROOTD_PROTOCOL_MINOR_VERSION,
-                                   client,
-                                   new CellPath(getCellName(), getDomainName()),
-                                   getPnfsId(),
-                                   _fileHandle,
-                                   _uuid,
-                                   _doorAddress);
-        protocolInfo.setPath(_path.toString());
-        return protocolInfo;
+        return new XrootdProtocolInfo(XrootdDoor.XROOTD_PROTOCOL_STRING,
+                                      XrootdDoor.XROOTD_PROTOCOL_MAJOR_VERSION,
+                                      XrootdDoor.XROOTD_PROTOCOL_MINOR_VERSION,
+                                      client,
+                                      new CellPath(getCellName(), getDomainName()),
+                                      getPnfsId(),
+                                      _fileHandle,
+                                      _uuid,
+                                      _doorAddress);
     }
 
     @Override
