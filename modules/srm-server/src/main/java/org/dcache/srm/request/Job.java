@@ -74,6 +74,7 @@ import javax.annotation.Nonnull;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1108,7 +1109,7 @@ public abstract class Job  {
      * some JobStorage (such as a DatabaseJobStorage) and the job is in a
      * non-final state.
      */
-    public void onSrmRestart(Scheduler scheduler)
+    public void onSrmRestart(Scheduler scheduler, boolean shouldFailJobs)
     {
         wlock();
         try {
@@ -1116,8 +1117,13 @@ public abstract class Job  {
                 return;
             }
 
+            if (shouldFailJobs) {
+                setState(State.FAILED, "Aborted due to SRM service restart.");
+                return;
+            }
+
             if (getRemainingLifetime() == 0) {
-                setState(State.FAILED, "Expired during SRM service restart");
+                setState(State.FAILED, "Expired during SRM service restart.");
                 return;
             }
 
@@ -1170,6 +1176,6 @@ public abstract class Job  {
             throws IllegalStateTransition
     {
         // By default, simply fail such requests.
-        setState(State.FAILED, "Aborted due to SRM service restart");
+        setState(State.FAILED, "Aborted due to SRM service restart.");
     }
 }
