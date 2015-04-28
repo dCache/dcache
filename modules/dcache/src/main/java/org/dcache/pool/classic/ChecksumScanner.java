@@ -37,6 +37,8 @@ import org.dcache.pool.repository.Repository.OpenFlags;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class ChecksumScanner
     implements CellCommandListener, CellLifeCycleAware
 {
@@ -92,6 +94,7 @@ public class ChecksumScanner
     {
         private volatile int _totalCount;
         private volatile int _badCount;
+        private volatile int _unableCount;
 
         public FullScan()
         {
@@ -122,14 +125,17 @@ public class ChecksumScanner
                         _bad.put(id, e.getActualChecksums().get());
                         _badCount++;
                     } catch (CacheException e) {
-                        _log.warn("Checksum scanner failed for {}: {}", id, e.getMessage());
-                        _badCount++;
+                        _log.warn("csm scan command unable to verify {}: {}", id, e.getMessage());
+                        _unableCount++;
                     } catch (IOException e) {
-                        _log.error("Checksum scanner failed with IO error for {}: {}", id, e.getMessage());
-                        _badCount++;
+                        _unableCount++;
+                        throw new IOException("failed to read " + id + ": " + e.getMessage(), e);
                     }
                     _totalCount++;
                 }
+            } catch (IOException e) {
+                _log.error("Aborting 'cms check' full-scan: {}", e.getMessage());
+                setAbortMessage("failure in underlying storage: " + e.getMessage());
             } finally {
                 startScrubber();
             }
@@ -138,8 +144,9 @@ public class ChecksumScanner
         public String toString()
         {
             return super.toString() + " "
-                + _totalCount + " checked; "
-                + _badCount + " errors detected";
+                + _totalCount + " files: "
+                + _badCount + " corrupt, "
+                + _unableCount + " unable to check";
         }
     }
 
@@ -212,6 +219,7 @@ public class ChecksumScanner
         private volatile int _badCount;
         private volatile int _numFiles;
         private volatile int _totalCount;
+        private volatile int _unableCount;
 
         private PnfsId _lastFileChecked;
         private long _lastCheckpoint;
@@ -345,17 +353,24 @@ public class ChecksumScanner
                         _numFiles = toScan.length;
                         _badCount = 0;
                         _totalCount = 0;
+                        _unableCount = 0;
                         scanFiles(toScan);
                         if (_badCount > 0) {
                             _log.warn("Finished scrubbing. Found {} bad files of {}",
                                        _badCount, _numFiles);
                         }
                         isFinished = true;
-                    } catch (IllegalStateException | TimeoutCacheException e) {
+                    } catch (IOException e) {
+                        _log.error("Aborting scrubber run: {}", e.getMessage());
+                        setAbortMessage("failure in underlying storage: " + e.getMessage());
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
-                    } catch (CacheException | NoSuchAlgorithmException e) {
-                        _log.error("Received an unexpected error during scrubbing: {}",
-                                   e.getMessage());
+                    } catch (IllegalStateException e) {
+                        _log.error("Aborting scrubber run: {}", e.getMessage());
+                        setAbortMessage("illegal state: " + e.getMessage());
+                        Thread.sleep(FAILURE_RATELIMIT_DELAY);
+                    } catch (NoSuchAlgorithmException e) {
+                        _log.error("Aborting scrubber run: {}", e.getMessage());
+                        setAbortMessage("checksum algorithm not supported: " + e.getMessage());
                         Thread.sleep(FAILURE_RATELIMIT_DELAY);
                     }
                 }
@@ -409,7 +424,7 @@ public class ChecksumScanner
         }
 
         private void scanFiles(PnfsId[] repository)
-                throws InterruptedException, NoSuchAlgorithmException, CacheException
+                throws InterruptedException, NoSuchAlgorithmException, IOException
         {
             for (PnfsId id : repository) {
                 try {
@@ -431,13 +446,15 @@ public class ChecksumScanner
                     } catch (IllegalTransitionException | CacheException f) {
                         _log.warn("Failed to mark {} as BROKEN: {}", id, f.getMessage());
                     }
+                } catch (IOException e) {
+                    _unableCount++;
+                    throw new IOException("Unable to read " + id + ": " + e.getMessage(), e);
                 } catch (FileNotInCacheException | NotInTrashCacheException e) {
                     /* It was removed before we could get it. No problem.
                      */
-                } catch (IOException e) {
-                    _log.error("Failed to verify the checksum of {} (skipping): {}",
-                            id, e.getMessage());
-                    _badCount++;
+                } catch (CacheException e) {
+                    _log.warn("Scrubber unable to verify {}: {}", id, e.getMessage());
+                    _unableCount++;
                 }
                 _lastFileChecked = id;
                 _totalCount++;
@@ -449,8 +466,10 @@ public class ChecksumScanner
         @Override
         public String toString()
         {
-            return super.toString() + " " + _totalCount + " of " + _numFiles +
-                " checked; " + _badCount + " errors detected";
+            return super.toString() + " processed "
+                + _totalCount + " of " + _numFiles + " files: "
+                + _badCount + " corrupt, "
+                + _unableCount + " unable to check";
         }
     }
 
@@ -460,6 +479,7 @@ public class ChecksumScanner
 
         private Exception _lastException;
         private Thread _currentThread;
+        private String _abortMessage;
 
         private Singleton(String name)
         {
@@ -480,9 +500,19 @@ public class ChecksumScanner
             return (_currentThread != null);
         }
 
+        public synchronized void setAbortMessage(String reason)
+        {
+            _abortMessage = checkNotNull(reason);
+        }
+
         private synchronized void stopped()
         {
             _currentThread = null;
+        }
+
+        public synchronized void setException(Exception e)
+        {
+            _lastException = e;
         }
 
         public synchronized void start()
@@ -490,6 +520,7 @@ public class ChecksumScanner
             if (isActive()) {
                 throw new IllegalStateException("Still active");
             }
+            _abortMessage = null;
             _lastException = null;
             _currentThread = new Thread(_name) {
                     @Override
@@ -497,7 +528,7 @@ public class ChecksumScanner
                         try {
                             runIt();
                         } catch (Exception ee) {
-                            _lastException = ee;
+                            setException(ee);
                         } finally {
                             stopped();
                         }
@@ -506,10 +537,21 @@ public class ChecksumScanner
             _currentThread.start();
         }
 
+        @Override
         public synchronized String toString()
         {
-            return _name + (isActive() ? " Active " : " Idle ") +
-                (_lastException == null ? "" : _lastException.toString());
+            return _name + " " + getState() + (_lastException == null ? "" : " " + _lastException.toString()) + " ";
+        }
+
+        private synchronized String getState()
+        {
+            if (isActive()) {
+                return "Active";
+            } else if (_abortMessage != null) {
+                return "Aborted (" + _abortMessage + ")";
+            } else {
+                return "Idle";
+            }
         }
     }
 
