@@ -55,21 +55,21 @@ public class PoolMgrSelectPoolMsg extends PoolMgrGetPoolMsg {
     public void setIoQueueName( String ioQueueName ){ _ioQueueName = ioQueueName ; }
     public String getIoQueueName(){ return _ioQueueName ; }
 
-    public FsPath getBillingPath() {
-        return _pnfsPath != null ? new FsPath(_pnfsPath) : null;
+    public String getBillingPath() {
+        return _pnfsPath;
     }
 
-    public void setBillingPath(FsPath pnfsPath) {
-        _pnfsPath = pnfsPath.toString();
+    public void setBillingPath(String pnfsPath) {
+        _pnfsPath = pnfsPath;
     }
 
-    public FsPath getTransferPath()
+    public String getTransferPath()
     {
-        return _transferPath != null ? new FsPath(_transferPath) : getBillingPath();
+        return _transferPath != null ? _transferPath : getBillingPath();
     }
 
-    public void setTransferPath(FsPath path) {
-        _transferPath = path.toString();
+    public void setTransferPath(String path) {
+        _transferPath = path;
     }
 
     public void setLinkGroup(String linkGroup) {

@@ -1,6 +1,7 @@
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.FsPath;
+import java.util.Objects;
+
 import diskCacheV111.util.PnfsId;
 
 public abstract class PnfsFileInfoMessage extends InfoMessage
@@ -66,11 +67,6 @@ public abstract class PnfsFileInfoMessage extends InfoMessage
 
     public void setBillingPath(String path)
     {
-        _path = path;
-    }
-
-    public void setBillingPath(FsPath path)
-    {
-        setBillingPath(path.toString());
+        _path = Objects.toString(path, "Unknown");
     }
 }

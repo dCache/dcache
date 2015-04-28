@@ -18,7 +18,6 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -373,7 +372,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
         PoolMgrSelectPoolMsg request = store
                 ? new PoolMgrSelectWritePoolMsg(fileAttributes, protocol_info)
                 : new PoolMgrSelectReadPoolMsg(fileAttributes, protocol_info, _readPoolSelectionContext);
-        request.setBillingPath(new FsPath(pnfsPath));
+        request.setBillingPath(pnfsPath);
         request.setSubject(transferRequest.getSubject());
         log.debug("PoolMgrSelectPoolMsg: " + request);
         setState(WAITING_FOR_POOL_INFO_STATE);
@@ -409,8 +408,8 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 pool,
                 protocol_info,
                 fileAttributes);
-        poolMessage.setBillingPath(new FsPath(info.getBillingPath()));
-        poolMessage.setTransferPath(new FsPath(info.getTransferPath()));
+        poolMessage.setBillingPath(info.getBillingPath());
+        poolMessage.setTransferPath(info.getTransferPath());
         poolMessage.setSubject(transferRequest.getSubject());
         if (manager.getIoQueueName() != null) {
             poolMessage.setIoQueueName(manager.getIoQueueName());
