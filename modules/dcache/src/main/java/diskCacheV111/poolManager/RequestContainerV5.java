@@ -752,8 +752,8 @@ public class RequestContainerV5
         private   StorageInfo  _storageInfo;
         private   ProtocolInfo _protocolInfo;
         private   String       _linkGroup;
-        private   FsPath _billingPath;
-        private   FsPath _transferPath;
+        private   String _billingPath;
+        private   String _transferPath;
 
         private   boolean _enforceP2P;
         private   int     _destinationFileStatus = Pool2PoolTransferMsg.UNDETERMINED ;
