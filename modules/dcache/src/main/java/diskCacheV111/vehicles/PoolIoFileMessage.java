@@ -2,7 +2,6 @@ package diskCacheV111.vehicles;
 
 import java.util.EnumSet;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
@@ -84,24 +83,24 @@ public class PoolIoFileMessage extends PoolMessage {
         return _initiator;
     }
 
-    public FsPath getBillingPath()
+    public String getBillingPath()
     {
-        return _pnfsPath != null ? new FsPath(_pnfsPath) : null;
+        return _pnfsPath != null ? _pnfsPath : null;
     }
 
-    public void setBillingPath(FsPath path)
+    public void setBillingPath(String path)
     {
-        _pnfsPath = path.toString();
+        _pnfsPath = path;
     }
 
-    public FsPath getTransferPath()
+    public String getTransferPath()
     {
-        return _transferPath != null ? new FsPath(_transferPath) : getBillingPath();
+        return _transferPath != null ? _transferPath : getBillingPath();
     }
 
-    public void setTransferPath(FsPath path)
+    public void setTransferPath(String path)
     {
-        _transferPath = path.toString();
+        _transferPath = path;
     }
 
     public FileAttributes getFileAttributes()

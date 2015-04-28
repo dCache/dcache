@@ -2089,7 +2089,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_fileAttributes, _protocolInfo, getPreallocated());
                 getPoolMessage.setIoQueueName(_ioQueueName );
                 if( _path != null ) {
-                    getPoolMessage.setBillingPath(new FsPath(_info.getBillingPath()));
+                    getPoolMessage.setBillingPath(_info.getBillingPath());
                 }
             }else{
                 //
@@ -2242,8 +2242,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
 
-            poolMessage.setBillingPath(new FsPath(_info.getBillingPath()));
-            poolMessage.setTransferPath(new FsPath(_info.getTransferPath()));
+            poolMessage.setBillingPath(_info.getBillingPath());
+            poolMessage.setTransferPath(_info.getTransferPath());
             poolMessage.setId( _sessionId ) ;
             poolMessage.setSubject(_subject);
 

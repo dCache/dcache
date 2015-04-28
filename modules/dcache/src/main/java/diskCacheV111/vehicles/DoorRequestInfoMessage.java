@@ -5,8 +5,6 @@ import org.stringtemplate.v4.ST;
 
 import javax.security.auth.Subject;
 
-import diskCacheV111.util.FsPath;
-
 import org.dcache.auth.Subjects;
 
 public class DoorRequestInfoMessage extends PnfsFileInfoMessage
@@ -92,10 +90,5 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage
     public void setTransferPath(String path)
     {
         _transferPath = path;
-    }
-
-    public void setTransferPath(FsPath path)
-    {
-        setTransferPath(path.toString());
     }
 }
