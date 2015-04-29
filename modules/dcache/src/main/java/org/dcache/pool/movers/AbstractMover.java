@@ -30,7 +30,6 @@ import java.nio.channels.CompletionHandler;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -68,8 +67,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     protected final IoMode _ioMode;
     protected final TransferService<Mover<P>> _transferService;
     protected final PostTransferService _postTransferService;
-    protected final FsPath _billingPath;
-    protected final FsPath _transferPath;
+    protected final String _billingPath;
+    protected final String _transferPath;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
 
@@ -169,13 +168,13 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends Mover<P>> 
     }
 
     @Override
-    public FsPath getBillingPath()
+    public String getBillingPath()
     {
         return _billingPath;
     }
 
     @Override
-    public FsPath getTransferPath()
+    public String getTransferPath()
     {
         return _transferPath;
     }

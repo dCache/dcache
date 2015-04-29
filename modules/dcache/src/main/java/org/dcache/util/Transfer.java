@@ -283,20 +283,20 @@ public class Transfer implements Comparable<Transfer>
     /**
      * The name space path of the file being transferred.
      */
-    public synchronized FsPath getTransferPath()
+    public synchronized String getTransferPath()
     {
-        return _path;
+        return _path.toString();
     }
 
     /**
      * The billable name space path of the file being transferred.
      */
-    public synchronized FsPath getBillingPath()
+    public synchronized String getBillingPath()
     {
         if (_fileAttributes.isDefined(STORAGEINFO) && _fileAttributes.getStorageInfo().getKey("path") != null) {
-            return new FsPath(_fileAttributes.getStorageInfo().getKey("path"));
+            return _fileAttributes.getStorageInfo().getKey("path");
         } else {
-            return _path;
+            return _path.toString();
         }
     }
 
