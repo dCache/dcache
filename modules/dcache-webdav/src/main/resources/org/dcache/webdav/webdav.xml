@@ -23,6 +23,7 @@
       </property>
   </bean>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
       <description>PnfsManager communication stub</description>

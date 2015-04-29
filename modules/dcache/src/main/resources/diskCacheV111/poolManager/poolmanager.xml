@@ -10,6 +10,8 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="poolManager" class="diskCacheV111.poolManager.PoolManagerV5"
         init-method="init" destroy-method="shutdown">
     <description>Pool manager</description>

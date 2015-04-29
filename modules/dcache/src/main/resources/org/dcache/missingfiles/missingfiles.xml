@@ -6,6 +6,9 @@
            http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
   <context:property-placeholder/>
+
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="message-handler" class="org.dcache.missingfiles.MissingFileHandler">
     <description>handles incoming notification of missing files</description>
 

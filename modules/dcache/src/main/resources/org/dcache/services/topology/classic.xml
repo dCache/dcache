@@ -10,6 +10,8 @@
 
   <context:property-placeholder/>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="topology" class="org.dcache.services.topology.ClassicCellsTopology">
     <property name="cellStub" ref="stub"/>
   </bean>

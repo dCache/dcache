@@ -778,11 +778,6 @@ public class UniversalSpringCell
         }
     }
 
-    public void messageArrived(NoRouteToCellException e)
-    {
-        LOGGER.warn(e.getMessage());
-    }
-
     public BeanQueryMessage messageArrived(BeanQueryAllPropertiesMessage message)
             throws CacheException
     {

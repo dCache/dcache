@@ -10,6 +10,8 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="executor"
         class="java.util.concurrent.Executors"
         factory-method="newCachedThreadPool"

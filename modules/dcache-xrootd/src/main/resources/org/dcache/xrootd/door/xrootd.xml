@@ -22,6 +22,8 @@
       </property>
   </bean>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
     <property name="timeout" value="${xrootd.service.pool.timeout}"/>

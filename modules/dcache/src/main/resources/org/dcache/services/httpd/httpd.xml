@@ -14,6 +14,8 @@
     <context:property-placeholder/>
     <context:annotation-config/>
 
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
     <bean id="cli" class="org.dcache.services.httpd.HttpdCommandLineInterface">
         <property name="delegator" ref="delegator"/>
     </bean>

@@ -26,6 +26,8 @@
         </property>
     </bean>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <!-- The lock protects the pool from being accessed by multiple
        instances. If the lock cannot be acquired, pool creation will
        fail with an exception. Although the wrapper script will

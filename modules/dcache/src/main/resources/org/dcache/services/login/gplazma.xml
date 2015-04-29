@@ -7,6 +7,8 @@
 
   <context:property-placeholder/>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="message-thread-pool"
 	class="java.util.concurrent.Executors"
 	factory-method="newFixedThreadPool"

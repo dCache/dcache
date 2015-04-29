@@ -30,6 +30,8 @@
        =====================================================================================
     -->
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
     <property name="destination" value="${srm.service.poolmanager}"/>

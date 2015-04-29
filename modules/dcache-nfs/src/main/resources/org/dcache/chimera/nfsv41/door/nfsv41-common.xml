@@ -8,6 +8,8 @@
     <context:property-placeholder/>
     <context:property-placeholder/>
 
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
     <!-- Convert properties with multiple values separated by comma into an array of strings:
          key=value1,value2,value3 : String[] {value1, value2, value3}
      -->

@@ -20,6 +20,8 @@
 
   <context:property-placeholder/>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
     <property name="destination" value="${billing.service.poolmanager}"/>

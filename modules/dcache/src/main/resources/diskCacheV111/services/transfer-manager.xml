@@ -13,6 +13,8 @@
 
   <context:property-placeholder/>
 
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
   <bean id="billing" class="org.dcache.cells.CellStub">
         <property name="destination" value="${transfermanagers.service.billing}"/>
         <property name="timeout" value="${transfermanagers.service.billing.timeout}"/>

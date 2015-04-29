@@ -10,6 +10,8 @@
     <context:annotation-config/>
     <context:property-placeholder/>
 
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+
     <bean id="gplazma" class="org.dcache.cells.CellStub">
         <description>gPlazma communication stub</description>
         <property name="destination" value="${admin.service.gplazma}"/>
