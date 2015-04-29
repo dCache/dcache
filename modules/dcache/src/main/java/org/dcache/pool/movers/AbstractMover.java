@@ -64,8 +64,8 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     protected final ReplicaDescriptor _handle;
     protected final IoMode _ioMode;
     protected final TransferService<M> _transferService;
-    protected final FsPath _billingPath;
-    protected final FsPath _transferPath;
+    protected final String _billingPath;
+    protected final String _transferPath;
     protected volatile int _errorCode;
     protected volatile String _errorMessage = "";
 
@@ -165,13 +165,13 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     }
 
     @Override
-    public FsPath getBillingPath()
+    public String getBillingPath()
     {
         return _billingPath;
     }
 
     @Override
-    public FsPath getTransferPath()
+    public String getTransferPath()
     {
         return _transferPath;
     }

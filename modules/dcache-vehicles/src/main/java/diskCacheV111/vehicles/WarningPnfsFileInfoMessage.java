@@ -1,6 +1,5 @@
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 public class WarningPnfsFileInfoMessage extends PnfsFileInfoMessage
@@ -32,10 +31,5 @@ public class WarningPnfsFileInfoMessage extends PnfsFileInfoMessage
     public void setTransferPath(String path)
     {
         _transferPath = path;
-    }
-
-    public void setTransferPath(FsPath path)
-    {
-        setTransferPath(path.toString());
     }
 }

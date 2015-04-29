@@ -1127,7 +1127,7 @@ public final class Storage
             DoorRequestInfoMessage infoMsg =
                     new DoorRequestInfoMessage(getCellAddress().toString());
             infoMsg.setSubject(subject);
-            infoMsg.setBillingPath(fullPath);
+            infoMsg.setBillingPath(fullPath.toString());
             infoMsg.setTransferPath(localTransferPath);
             infoMsg.setTransaction(CDC.getSession());
             infoMsg.setPnfsId(msg.getPnfsId());
