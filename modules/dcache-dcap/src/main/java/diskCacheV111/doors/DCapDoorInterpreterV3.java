@@ -1219,7 +1219,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected boolean fileAttributesNotAvailable() throws CacheException
         {
-            sendReply("fileAttributesNotAvailable", _message);
+            sendReply("fileAttributesNotAvailable", _message.getReturnCode(), "No such file or directory", "ENOENT");
             return false;
         }
 
