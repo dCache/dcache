@@ -136,12 +136,12 @@ public interface Mover<T extends ProtocolInfo>
     /**
      * Returns the billable name space path of the file being transferred.
      */
-    FsPath getBillingPath();
+    String getBillingPath();
 
     /**
      * Returns the temporary name space path of the file being transferred.
      */
-    FsPath getTransferPath();
+    String getTransferPath();
 
     /**
      * Initiates the actual transfer phase. The operation is asynchronous.

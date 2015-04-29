@@ -6,7 +6,6 @@ import org.stringtemplate.v4.ST;
 
 import java.util.Objects;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 public class PnfsFileInfoMessage extends InfoMessage {
@@ -39,8 +38,7 @@ public class PnfsFileInfoMessage extends InfoMessage {
    }
    public StorageInfo getStorageInfo(){ return _storageInfo ; }
    public String getBillingPath() { return _path; }
-   public void setBillingPath(String path) { _path = path; }
-   public void setBillingPath(FsPath path) { _path = Objects.toString(path, "Unknown"); }
+   public void setBillingPath(String path) { _path = Objects.toString(path, "Unknown"); }
 
     @Override
     public void fillTemplate(ST template)
