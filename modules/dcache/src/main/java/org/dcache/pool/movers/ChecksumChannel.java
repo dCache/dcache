@@ -302,9 +302,10 @@ public class ChecksumChannel implements RepositoryChannel
 
         for (Range<Long> range : complement) {
             long rangeLength = range.upperEndpoint() - range.lowerEndpoint();
-            for (int totalDigestedZeros = 0; totalDigestedZeros < rangeLength; totalDigestedZeros += _zerosBuffer.limit()) {
+            for (long totalDigestedZeros = 0; totalDigestedZeros < rangeLength; totalDigestedZeros += _zerosBuffer.limit()) {
                 _zerosBuffer.clear();
-                _zerosBuffer.limit((int) Math.min(rangeLength - totalDigestedZeros, _zerosBuffer.capacity()));
+                long limit = Math.min(_zerosBuffer.capacity(), rangeLength - totalDigestedZeros);
+                _zerosBuffer.limit((int)limit);
                 updateChecksum(_zerosBuffer, range.lowerEndpoint() + totalDigestedZeros, _zerosBuffer.limit());
             }
         }
@@ -358,10 +359,10 @@ public class ChecksumChannel implements RepositoryChannel
         _digest.update(buffer);
         long bytesToRead = digestEnd - digestStart;
         long lastBytesRead;
-        for (int totalBytesRead = 0; totalBytesRead < bytesToRead; totalBytesRead += lastBytesRead) {
+        for (long totalBytesRead = 0; totalBytesRead < bytesToRead; totalBytesRead += lastBytesRead) {
             _readBackBuffer.clear();
-            int limit = (int) Math.min(_readBackBuffer.capacity(), bytesToRead - totalBytesRead);
-            _readBackBuffer.limit(limit);
+            long limit = Math.min(_readBackBuffer.capacity(), bytesToRead - totalBytesRead);
+            _readBackBuffer.limit((int)limit);
             lastBytesRead = _channel.read(_readBackBuffer, digestStart + totalBytesRead);
             if (lastBytesRead < 0) {
                 throw new IOException("Checksum: Unexpectedly hit end-of-stream while reading data back from channel.");

@@ -2,6 +2,7 @@ package org.dcache.pool.movers;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -24,6 +25,7 @@ import org.dcache.util.ChecksumType;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
@@ -253,6 +255,39 @@ public class ChecksumChannelTest {
     public void shouldThrowIllegalStateExceptionOnWritesAfterGetChecksum() throws IOException {
         chksumChannel.getChecksum();
         chksumChannel.write(buffers[0], 0);
+    }
+
+    @Test
+    @Ignore
+    public void shouldBeAbleToHandleFilesGreater4Gb() throws IOException {
+        ByteBuffer bigbuffer = ByteBuffer.allocate(1024*1024);
+        for (long i = 0; i < 2L*Integer.MAX_VALUE; i += bigbuffer.capacity()) {
+            chksumChannel.write(bigbuffer, i);
+            bigbuffer.rewind();
+        }
+        assertThat(chksumChannel.getChecksum(), notNullValue());
+    }
+
+    @Test
+    @Ignore
+    public void shouldBeAbleToReadBackRangesOfSizeGreater4Gb() throws IOException {
+        chksumChannel._readBackBuffer = ByteBuffer.allocate(256*1024);
+        ByteBuffer bigbuffer = ByteBuffer.allocate(1024*1024);
+        for (long i = bigbuffer.capacity(); i < 2L*Integer.MAX_VALUE; i += bigbuffer.capacity()) {
+            chksumChannel.write(bigbuffer, i);
+            bigbuffer.rewind();
+        }
+        chksumChannel.write(bigbuffer, 0);
+        assertThat(chksumChannel.getChecksum(), notNullValue());
+    }
+
+    @Test
+    @Ignore
+    public void shouldBeAbleToFillZeroRangesOfSizeGreater4Gb() throws IOException {
+        chksumChannel._zerosBuffer = ByteBuffer.allocate(256*1024);
+        chksumChannel._readBackBuffer = ByteBuffer.allocate(256*1024);
+        chksumChannel.write(buffers[0], 2L*Integer.MAX_VALUE);
+        assertThat(chksumChannel.getChecksum(), notNullValue());
     }
 
     @Test
