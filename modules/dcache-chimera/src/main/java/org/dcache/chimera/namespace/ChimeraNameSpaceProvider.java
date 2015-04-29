@@ -897,10 +897,8 @@ public class ChimeraNameSpaceProvider
                         cacheInfo.writeCacheInfo(level2);
                         break;
                     case ACL:
-                        if(_aclEnabled) {
-                            ACL acl = attr.getAcl();
-                            _fs.setACL(inode, acl.getList());
-                        }
+                        ACL acl = attr.getAcl();
+                        _fs.setACL(inode, acl.getList());
                         break;
                     case STORAGEINFO:
                         _extractor.setStorageInfo(inode, attr.getStorageInfo());
