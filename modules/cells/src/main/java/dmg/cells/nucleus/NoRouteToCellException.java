@@ -1,6 +1,8 @@
 package dmg.cells.nucleus;
 
-import static java.util.Objects.requireNonNull;
+import javax.annotation.Nullable;
+
+import java.io.Serializable;
 
 public class NoRouteToCellException extends Exception
 {
@@ -8,12 +10,14 @@ public class NoRouteToCellException extends Exception
 
     private final UOID _uoid;
     private final CellPath _path;
+    private final CellMessage _envelope;
 
-    public NoRouteToCellException(UOID uoid, CellPath path, String str)
+    public NoRouteToCellException(CellMessage envelope, String str)
     {
         super(str);
-        _uoid = requireNonNull(uoid);
-        _path = path.clone();
+        _envelope = envelope.isStreamMode() ? envelope : envelope.encode();
+        _uoid = envelope.getUOID();
+        _path = envelope.getDestinationPath();
     }
 
     @Override
@@ -25,7 +29,12 @@ public class NoRouteToCellException extends Exception
     @Override
     public String getMessage()
     {
-        return "Failed to deliver message " + _uoid + " to " + _path + ": " + super.getMessage();
+        Serializable messageObject = getMessageObject();
+        if (messageObject == null) {
+            return "Failed to deliver message " + _uoid + " to " + _path + ": " + super.getMessage();
+        } else {
+            return "Failed to deliver " + messageObject.getClass().getSimpleName() + " message " + _uoid + " to " + _path + ": " + super.getMessage();
+        }
     }
 
     public UOID getUOID()
@@ -36,5 +45,17 @@ public class NoRouteToCellException extends Exception
     public CellPath getDestinationPath()
     {
         return _path;
+    }
+
+    @Nullable
+    public CellMessage getCellMessage()
+    {
+        return _envelope != null ? _envelope.decode() : null;
+    }
+
+    @Nullable
+    public Serializable getMessageObject()
+    {
+        return _envelope != null ? _envelope.decode().getMessageObject() : null;
     }
 }

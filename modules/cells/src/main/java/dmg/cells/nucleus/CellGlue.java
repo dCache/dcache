@@ -523,7 +523,7 @@ class CellGlue
              */
             while (address.equals(_domainAddress)) {
                 if (!destination.next()) {
-                    sendException(msg, destination, "*");
+                    sendException(msg, "*");
                     return;
                 }
                 address = destination.getCurrent();
@@ -537,7 +537,7 @@ class CellGlue
              */
             if (address.getCellDomainName().equals(_cellDomainName)) {
                 if (!deliverLocally(msg, address)) {
-                    sendException(msg, destination, address.toString());
+                    sendException(msg, address.toString());
                 }
                 return;
             }
@@ -550,7 +550,7 @@ class CellGlue
                     return;
                 }
                 if (!resolveRemotely) {
-                    sendException(msg, destination, address.toString());
+                    sendException(msg, address.toString());
                     return;
                 }
 
@@ -575,7 +575,7 @@ class CellGlue
              */
             if (!hasDestinationChanged && msg.getSourcePath().getDestinationAddress().equals(address)) {
                 if (!hasTopicRoutes) {
-                    sendException(msg, destination, address.toString());
+                    sendException(msg, address.toString());
                 }
                 return;
             }
@@ -591,7 +591,7 @@ class CellGlue
             if (route == null) {
                 LOGGER.trace("sendMessage : no route destination for : {}", address);
                 if (!hasTopicRoutes) {
-                    sendException(msg, destination, address.toString());
+                    sendException(msg, address.toString());
                 }
                 return;
             }
@@ -609,7 +609,7 @@ class CellGlue
         // end of big iteration loop
 
         LOGGER.trace("sendMessage : max route iteration reached: {}", destination);
-        sendException(msg, destination, address.toString());
+        sendException(msg, address.toString());
     }
 
     private boolean deliverLocally(CellMessage msg, CellAddressCore address)
@@ -625,11 +625,11 @@ class CellGlue
                 } catch (SerializationException e) {
                     LOGGER.error("Received malformed message from %s with UOID %s and session [%s]: %s",
                                  msg.getSourcePath(), msg.getUOID(), msg.getSession(), e.getMessage());
-                    sendException(msg, destinationPath, address.toString());
+                    sendException(msg, address.toString());
                 }
             } else if (msg.getSourcePath().hops() > 30) {
                 LOGGER.error("Hop count exceeds 30: {}", msg);
-                sendException(msg, destinationPath, address.toString());
+                sendException(msg, address.toString());
             } else {
                 msg.addSourceAddress(_domainAddress);
                 destNucleus.addToEventQueue(new RoutedMessageEvent(msg));
@@ -640,23 +640,20 @@ class CellGlue
     }
 
     private void sendException(CellMessage msg,
-                               CellPath destination,
                                String routeTarget)
             throws SerializationException
     {
         if (msg instanceof CellExceptionMessage) {
             LOGGER.warn(
                     "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
-                    destination, ((CellExceptionMessage) msg.decode()).getException().getDestinationPath(),
+                    msg.getDestinationPath(), ((CellExceptionMessage) msg.decode()).getException().getDestinationPath(),
                     routeTarget, _cellDomainName);
         } else {
             LOGGER.debug(
                     "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
                     msg.getSourcePath(), routeTarget);
             NoRouteToCellException exception =
-                    new NoRouteToCellException(
-                            msg.getUOID(),
-                            destination,
+                    new NoRouteToCellException(msg,
                             "Route for >" + routeTarget +
                             "< not found at >" + _cellDomainName + "<");
             CellPath retAddr = msg.getSourcePath().revert();

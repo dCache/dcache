@@ -458,9 +458,7 @@ public final class SpaceManagerService
 
     private void notifyShutdown(CellMessage envelope)
     {
-        envelope.setMessageObject(new NoRouteToCellException(
-                envelope.getUOID(), envelope.getDestinationPath(),
-                "Space manager is shutting down."));
+        envelope.setMessageObject(new NoRouteToCellException(envelope, "Space manager is shutting down."));
         returnMessage(envelope);
     }
 

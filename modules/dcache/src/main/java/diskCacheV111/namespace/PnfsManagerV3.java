@@ -374,7 +374,7 @@ public class PnfsManagerV3
                     UOID uoid = envelope.getUOID();
                     CellExceptionMessage ret =
                             new CellExceptionMessage(envelope.getSourcePath().revert(),
-                                                     new NoRouteToCellException(uoid, self, error));
+                                                     new NoRouteToCellException(envelope, error));
                     ret.setLastUOID(uoid);
                     sendMessage(ret);
                 }

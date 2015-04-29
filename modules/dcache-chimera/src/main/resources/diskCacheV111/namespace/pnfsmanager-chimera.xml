@@ -18,6 +18,10 @@
         </property>
     </bean>
 
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <property name="excludedDestinations" value="${pnfsmanager.destination.cache-notification}"/>
+    </bean>
+
   <bean id="pnfs-manager" class="diskCacheV111.namespace.PnfsManagerV3"
         init-method="init" destroy-method="shutdown">
       <description>Request processor</description>

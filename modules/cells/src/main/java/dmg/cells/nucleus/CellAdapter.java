@@ -775,9 +775,7 @@ public class CellAdapter
             CellMessage msg = me.getMessage();
             if (!msg.isReply()) {
                 NoRouteToCellException e =
-                        new NoRouteToCellException(msg.getUOID(),
-                                                   msg.getDestinationPath(),
-                                                   getCellName() + " is still initializing.");
+                        new NoRouteToCellException(msg, getCellName() + " is still initializing.");
                 msg.revertDirection();
                 msg.setMessageObject(e);
                 _nucleus.sendMessage(msg, true, true);
