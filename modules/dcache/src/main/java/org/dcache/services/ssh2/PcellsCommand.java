@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import diskCacheV111.admin.LegacyAdminShell;
 import diskCacheV111.services.space.LinkGroup;
@@ -36,6 +37,7 @@ import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.CommandException;
 
 import org.dcache.cells.CellStub;
@@ -167,6 +169,20 @@ public class PcellsCommand implements Command, Runnable
                                     break;
                                 default:
                                     result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
+                                    if (result instanceof LoginBrokerInfo[]) {
+                                        result = Stream.of((LoginBrokerInfo[]) result)
+                                                .map(i -> new LoginBrokerInfo(i.getCellName(),
+                                                                              i.getDomainName(),
+                                                                              i.getProtocolFamily(),
+                                                                              i.getProtocolVersion(),
+                                                                              i.getProtocolEngine(),
+                                                                              i.getRoot(),
+                                                                              i.getAddresses(),
+                                                                              i.getPort(),
+                                                                              i.getLoad(),
+                                                                              i.getUpdateTime()))
+                                                .toArray(LoginBrokerInfo[]::new);
+                                    }
                                     break;
                                 }
                             }

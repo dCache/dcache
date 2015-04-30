@@ -136,6 +136,11 @@ public class LoginBrokerInfo implements Serializable
         return _protocolEngine;
     }
 
+    public String getRoot()
+    {
+        return _root;
+    }
+
     public FsPath getRoot(FsPath userRoot)
     {
         return (_root == null) ? userRoot : new FsPath(_root);
