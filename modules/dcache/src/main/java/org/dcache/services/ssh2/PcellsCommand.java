@@ -1,5 +1,7 @@
 package org.dcache.services.ssh2;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
@@ -11,6 +13,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +30,7 @@ import dmg.cells.applets.login.DomainObjectFrame;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.login.LoginBrokerInfo;
 import dmg.util.CommandException;
 
 import org.dcache.cells.CellStub;
@@ -129,6 +133,32 @@ public class PcellsCommand implements Command, Runnable
 
                                 default:
                                     result = _userAdminShell.executeCommand(frame.getDestination(), frame.getPayload());
+                                    if (result instanceof LoginBrokerInfo[]) {
+                                        result =
+                                                Iterables.toArray(
+                                                        Iterables.transform(
+                                                                Arrays.asList((LoginBrokerInfo[]) result),
+                                                                new Function<LoginBrokerInfo, LoginBrokerInfo>()
+                                                                {
+                                                                    @Override
+                                                                    public LoginBrokerInfo apply(LoginBrokerInfo i)
+                                                                    {
+                                                                        LoginBrokerInfo copy = new LoginBrokerInfo(
+                                                                                i.getCellName(),
+                                                                                i.getDomainName(),
+                                                                                i.getProtocolFamily(),
+                                                                                i.getProtocolVersion(),
+                                                                                i.getProtocolEngine(),
+                                                                                i.getRoot());
+                                                                        copy.setHosts(i.getHosts());
+                                                                        copy.setPort(i.getPort());
+                                                                        copy.setLoad(i.getLoad());
+                                                                        copy.setUpdateTime(i.getUpdateTime());
+                                                                        return copy;
+                                                                    }
+                                                                }),
+                                                        LoginBrokerInfo.class);
+                                    }
                                     break;
                                 }
                             }
