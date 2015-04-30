@@ -216,6 +216,8 @@ public class AnsiTerminalCommand implements Command, Runnable {
                 _console.flush();
                 _console.getCursorBuffer().clear();
                 result = null;
+            } catch (IOException e) {
+                throw e;
             } catch (Exception e) {
                 result = e.getMessage();
                 if(result == null) {
@@ -240,6 +242,7 @@ public class AnsiTerminalCommand implements Command, Runnable {
                     s = Strings.toMultilineString(result);
                     if (!s.isEmpty()) {
                         _console.println(s);
+                        _console.flush();
                     }
                 }
             }
