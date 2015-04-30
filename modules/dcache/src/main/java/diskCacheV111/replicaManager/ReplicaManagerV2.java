@@ -619,9 +619,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
       _log.debug("Asking for Pool List");
 
-      List<String> allPools = getPoolList();
-      _log.info("Got " + allPools.size() + " pools (any pools) connected");
-
       List<String> pools = getPoolListResilient();
       _log.info("Got " + pools.size() + " resilient pools connected");
 
