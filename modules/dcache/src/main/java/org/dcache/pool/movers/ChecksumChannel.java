@@ -39,7 +39,8 @@ public class ChecksumChannel implements RepositoryChannel
     /**
      * Inner channel to which all operations are delegated.
      */
-    private final RepositoryChannel _channel;
+    @VisibleForTesting
+    RepositoryChannel _channel;
 
     /**
      * Factory object for creating digests.
@@ -302,7 +303,8 @@ public class ChecksumChannel implements RepositoryChannel
 
         for (Range<Long> range : complement) {
             long rangeLength = range.upperEndpoint() - range.lowerEndpoint();
-            for (long totalDigestedZeros = 0; totalDigestedZeros < rangeLength; totalDigestedZeros += _zerosBuffer.limit()) {
+            for (long totalDigestedZeros = 0L; totalDigestedZeros < rangeLength; totalDigestedZeros += _zerosBuffer.limit()) {
+                assert totalDigestedZeros >= 0L;
                 _zerosBuffer.clear();
                 long limit = Math.min(_zerosBuffer.capacity(), rangeLength - totalDigestedZeros);
                 _zerosBuffer.limit((int)limit);

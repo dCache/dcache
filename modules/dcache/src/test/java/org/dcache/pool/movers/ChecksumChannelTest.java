@@ -2,7 +2,6 @@ package org.dcache.pool.movers;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -24,9 +23,9 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -146,7 +145,7 @@ public class ChecksumChannelTest {
     @Test
     public void shouldReturnNullDigestOnPartlyOverlappingWrites() throws IOException {
         chksumChannel.write(buffers[1], blocksize);
-        chksumChannel.write(buffers[0], blocksize-1);
+        chksumChannel.write(buffers[0], blocksize - 1);
 
         if (blocksize == 1) {
             fail("Pick a blocksize > 1 for testing correct handling of partly overlapping writes!");
@@ -258,34 +257,34 @@ public class ChecksumChannelTest {
     }
 
     @Test
-    @Ignore
-    public void shouldBeAbleToHandleFilesGreater4Gb() throws IOException {
-        ByteBuffer bigbuffer = ByteBuffer.allocate(1024*1024);
-        for (long i = 0; i < 2L*Integer.MAX_VALUE; i += bigbuffer.capacity()) {
-            chksumChannel.write(bigbuffer, i);
-            bigbuffer.rewind();
-        }
-        assertThat(chksumChannel.getChecksum(), notNullValue());
-    }
-
-    @Test
-    @Ignore
     public void shouldBeAbleToReadBackRangesOfSizeGreater4Gb() throws IOException {
-        chksumChannel._readBackBuffer = ByteBuffer.allocate(256*1024);
-        ByteBuffer bigbuffer = ByteBuffer.allocate(1024*1024);
-        for (long i = bigbuffer.capacity(); i < 2L*Integer.MAX_VALUE; i += bigbuffer.capacity()) {
-            chksumChannel.write(bigbuffer, i);
-            bigbuffer.rewind();
+        /*
+        Because of the way the methods in this test are mocked,
+        readBackCapacity has to be a divisor of writeBufferCapacity
+         */
+        int readBackCapacity = 256 * 1024;
+        int writeBufferCapacity = 4 * readBackCapacity;
+        ByteBuffer writeBuffer = ByteBuffer.allocate(writeBufferCapacity);
+        chksumChannel._readBackBuffer = ByteBuffer.allocate(readBackCapacity);
+        chksumChannel._channel = mock(FileRepositoryChannel.class);
+        when(chksumChannel._channel.write(any(), anyLong())).thenReturn(writeBufferCapacity);
+        when(chksumChannel._channel.read(any(), longThat(lessThan(0L)))).thenThrow(new IllegalArgumentException("Negative Position"));
+        when(chksumChannel._channel.read(any(), longThat(greaterThanOrEqualTo(0L)))).thenReturn(readBackCapacity);
+        for (long i = writeBuffer.capacity(); i < 2L*Integer.MAX_VALUE; i += writeBufferCapacity) {
+            chksumChannel.write(writeBuffer, i);
+            writeBuffer.rewind();
         }
-        chksumChannel.write(bigbuffer, 0);
+        chksumChannel.write(writeBuffer, 0);
         assertThat(chksumChannel.getChecksum(), notNullValue());
     }
 
     @Test
-    @Ignore
     public void shouldBeAbleToFillZeroRangesOfSizeGreater4Gb() throws IOException {
-        chksumChannel._zerosBuffer = ByteBuffer.allocate(256*1024);
-        chksumChannel._readBackBuffer = ByteBuffer.allocate(256*1024);
+        chksumChannel._zerosBuffer = ByteBuffer.allocate(256 * 1024);
+        chksumChannel._channel = mock(FileRepositoryChannel.class);
+        when(chksumChannel._channel.write(any(), anyLong())).thenReturn(buffers[0].capacity());
+        when(chksumChannel._channel.read(any(), anyLong())).thenReturn(2);
+        when(chksumChannel._channel.size()).thenReturn(2L*Integer.MAX_VALUE + 2);
         chksumChannel.write(buffers[0], 2L*Integer.MAX_VALUE);
         assertThat(chksumChannel.getChecksum(), notNullValue());
     }
