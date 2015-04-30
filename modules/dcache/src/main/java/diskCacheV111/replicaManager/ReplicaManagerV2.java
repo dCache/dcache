@@ -37,6 +37,8 @@ import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 import dmg.cells.nucleus.CellEvent;
+import dmg.util.command.Command;
+import dmg.util.command.DelayedCommand;
 
 import org.dcache.util.Args;
 
@@ -2217,6 +2219,60 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
       dbUpdatePoolRunnable r = new dbUpdatePoolRunnable( poolName );
       getNucleus().newThread(r,"RepMgr-dbUpdatePool").start();
       return "Initiated";
+    }
+
+    //--------------------------------------------------------------------------
+    // === Pool ===
+    //----------------------------------------------------------------------------
+    @Command(name = "update poolgroup", hint = "re-fetch pool group and initialize newly discovered pools")
+    public class UpdatePoolGroup extends DelayedCommand<String>
+    {
+
+        @Override
+        protected String execute() throws Exception {
+
+            List<String> currentPools = _resilientPools.getResilientPools();
+            List<String> newPools = _resilientPools.init();
+            List<String> addedPools = new ArrayList<>();
+
+            for (String pool : newPools) {
+                if (currentPools.contains(pool)) {
+                    continue;
+                }
+
+                synchronized (_dbLock) {
+
+                    String oldStatus = _poolMap.get(pool);
+
+                    _dbrmv2.setPoolStatus(pool, ReplicaDb1.OFFLINE); // ... and add it - so record will be
+
+                    try {
+                        dbUpdatePool(pool);
+                    } catch (Exception ee) {
+                        _log.info(" initDb - Problem fetching repository from " + pool + " : " + ee);
+                        _log.info(" initDb - pool " + pool + " stays '" + ReplicaDb1.OFFLINE + "'");
+                        continue;
+                    }
+
+                // Set status online for only 'new' (unknown) pools,
+                    // otherwise leave pool state as it was before
+                    String newStatus = (oldStatus == null || oldStatus
+                            .equals("UNKNOWN"))
+                                    ? ReplicaDb1.ONLINE
+                                    : oldStatus;
+
+                    _dbrmv2.setPoolStatus(pool, newStatus);
+
+                    if (newStatus.equals(ReplicaDb1.ONLINE)) {
+                        _poolsToWait.remove(pool);
+                    }
+                }
+                addedPools.add(pool);
+            }
+
+            return "Added pools: " + addedPools;
+        }
+
     }
 
     //--------------------------------------------------------------------------
