@@ -172,7 +172,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
             client.call(nfs4_prot.NFSPROC4_COMPOUND_4, arg, result, IO_TIMEOUT);
         } catch (IOException e) {
             // unfortunately RPC library maps timeout to IOException
-            throw new DelayException();
+            throw new DelayException(e.getMessage(), e);
         }
 
         return result;
