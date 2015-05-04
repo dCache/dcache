@@ -549,7 +549,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         } catch (FileInCacheException e) {
 	    cleanStateAndKillMover(stateid);
-            throw new NfsIoException(e.getMessage());
+            throw new NfsIoException(e.getMessage(), e);
         } catch (CacheException e) {
 	   cleanStateAndKillMover(stateid);
             /*
@@ -557,13 +557,13 @@ public class NFSv41Door extends AbstractCellComponent implements
              * can't do a much. Tell it to client.
              */
             if (e.getRc() == CacheException.BROKEN_ON_TAPE) {
-                throw new NfsIoException();
+                throw new NfsIoException(e.getMessage(), e);
             } else {
-                throw new LayoutTryLaterException();
+                throw new LayoutTryLaterException(e.getMessage(), e);
             }
         } catch (InterruptedException e) {
             cleanStateAndKillMover(stateid);
-            throw new LayoutTryLaterException();
+            throw new LayoutTryLaterException(e.getMessage(), e);
         } finally {
             CDC.clearMessageContext();
             NDC.pop();
@@ -610,7 +610,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         } catch (CacheException | InterruptedException e) {
             _log.info("Failed to kill mover: {}@{} : {}",
                     transfer.getMoverId(), transfer.getPool(), e.getMessage());
-            throw new NfsIoException(e.getMessage());
+            throw new NfsIoException(e.getMessage(), e);
         }
     }
 
