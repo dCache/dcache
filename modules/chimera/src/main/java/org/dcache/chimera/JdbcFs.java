@@ -196,7 +196,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         FsInode inode;
@@ -219,10 +219,10 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException se) {
             tryToRollback(dbConnection);
             if (_sqlDriver.isDuplicatedKeyError(se)) {
-                throw new FileExistsChimeraFsException();
+                throw new FileExistsChimeraFsException(se);
             }
             _log.error("createLink ", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -250,7 +250,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -268,9 +268,9 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if(_sqlDriver.isDuplicatedKeyError(e)) {
-                throw new FileExistsChimeraFsException();
+                throw new FileExistsChimeraFsException(e);
             }
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -311,7 +311,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         FsInode inode = null;
@@ -350,7 +350,7 @@ public class JdbcFs implements FileSystemProvider {
                     } catch (SQLException se) {
                         tryToRollback(dbConnection);
                         if (_sqlDriver.isDuplicatedKeyError(se)) {
-                            throw new FileExistsChimeraFsException(name);
+                            throw new FileExistsChimeraFsException(name, se);
                         }
                         _log.error("create File: ", se);
                     }
@@ -376,7 +376,7 @@ public class JdbcFs implements FileSystemProvider {
                             tryToRollback(dbConnection);
 
                             if (_sqlDriver.isDuplicatedKeyError(se)) {
-                                throw new FileExistsChimeraFsException(name);
+                                throw new FileExistsChimeraFsException(name, se);
                             }
                             _log.error("create File: ", se);
                         }
@@ -411,10 +411,10 @@ public class JdbcFs implements FileSystemProvider {
                 tryToRollback(dbConnection);
 
                 if (_sqlDriver.isDuplicatedKeyError(se)) {
-                    throw new FileExistsChimeraFsException();
+                    throw new FileExistsChimeraFsException(se);
                 }
                 _log.error("create File: ", se);
-                throw new IOHimeraFsException(se.getMessage());
+                throw new IOHimeraFsException(se.getMessage(), se);
             }
         } finally {
             tryToClose(dbConnection);
@@ -446,7 +446,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -475,10 +475,10 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isDuplicatedKeyError(se)) {
-                throw new FileExistsChimeraFsException();
+                throw new FileExistsChimeraFsException(se);
             }
             _log.error("create File: ", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -490,7 +490,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         // if exist table parent_dir create an entry
@@ -506,7 +506,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException se) {
             _log.error("create level: ", se);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -532,7 +532,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         String[] list = null;
@@ -545,7 +545,7 @@ public class JdbcFs implements FileSystemProvider {
             list = _sqlDriver.listDir(dbConnection, dir);
         } catch (SQLException se) {
             _log.error("list: ", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -561,7 +561,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -574,7 +574,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException se) {
             _log.error("list full: ", se);
             tryToClose(dbConnection);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         }
         /*
          * Database resources are close by  DirectoryStreamB.close()
@@ -604,7 +604,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -634,7 +634,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -684,7 +684,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         Stat stat = null;
@@ -697,7 +697,7 @@ public class JdbcFs implements FileSystemProvider {
             stat = _sqlDriver.stat(dbConnection, inode, level);
 
         } catch (SQLException e) {
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -739,7 +739,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         FsInode inode = null;
@@ -763,10 +763,10 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isDuplicatedKeyError(se)) {
-                throw new FileExistsChimeraFsException(name);
+                throw new FileExistsChimeraFsException(name, se);
             }
             _log.error("mkdir", se);
-            throw new ChimeraFsException(se.getMessage());
+            throw new ChimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -784,7 +784,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         FsInode inode = null;
@@ -806,10 +806,10 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isDuplicatedKeyError(se)) {
-                throw new FileExistsChimeraFsException(name);
+                throw new FileExistsChimeraFsException(name, se);
             }
             _log.error("mkdir", se);
-            throw new ChimeraFsException(se.getMessage());
+            throw new ChimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -830,7 +830,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         FsInode inode = null;
@@ -846,7 +846,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("path2inode", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -869,7 +869,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         List<FsInode> inodes;
@@ -883,7 +883,7 @@ public class JdbcFs implements FileSystemProvider {
             }
         } catch (SQLException e) {
             _log.error("path2inode", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1100,7 +1100,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1115,7 +1115,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("inodeOf", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1145,7 +1145,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         String path = null;
@@ -1158,7 +1158,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("inode2path", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1175,7 +1175,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         boolean rc = false;
@@ -1190,7 +1190,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("removeFileMetadata", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1206,7 +1206,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         FsInode parent = null;
@@ -1223,7 +1223,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("getPathOf", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1244,7 +1244,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1288,7 +1288,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("setInodeAttributes", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1302,7 +1302,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         boolean ioEnabled = false;
@@ -1316,7 +1316,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("isIoEnabled", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1333,7 +1333,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1345,7 +1345,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("setInodeIo", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1369,7 +1369,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1382,10 +1382,10 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isForeignKeyError(e)) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(e);
             }
             _log.error("write", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1412,7 +1412,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1423,7 +1423,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException se) {
             _log.debug("read:", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } catch (IOException e) {
             _log.debug("read IO:", e);
         } finally {
@@ -1482,7 +1482,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1537,7 +1537,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("move:", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1558,7 +1558,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         List<StorageLocatable> locations = null;
@@ -1572,7 +1572,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException se) {
             _log.error("getInodeLocations", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1588,7 +1588,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         List<StorageLocatable> locations = null;
@@ -1602,7 +1602,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException se) {
             _log.error("getInodeLocations", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1618,7 +1618,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1631,12 +1631,12 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isForeignKeyError(se)) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(se);
             }
 
             if (!_sqlDriver.isDuplicatedKeyError(se)) {
                 _log.error("addInodeLocation:", se);
-                throw new IOHimeraFsException(se.getMessage());
+                throw new IOHimeraFsException(se.getMessage(), se);
             }
         } finally {
             tryToClose(dbConnection);
@@ -1651,7 +1651,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1663,7 +1663,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException se) {
             _log.error("clearInodeLocation", se);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1681,7 +1681,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         String[] list = null;
@@ -1693,7 +1693,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException se) {
             _log.error("tags", se);
-            throw new IOHimeraFsException(se.getMessage());
+            throw new IOHimeraFsException(se.getMessage(), se);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1708,7 +1708,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1735,7 +1735,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1747,7 +1747,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("createTag", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1760,7 +1760,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1772,7 +1772,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("setTag", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } catch (ChimeraFsException e) {
             _log.error("setTag", e);
         } finally {
@@ -1791,7 +1791,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1803,7 +1803,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("removeTag", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1816,7 +1816,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1828,7 +1828,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("removeTag", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1841,7 +1841,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         int count = -1;
@@ -1855,7 +1855,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
 
             _log.error("getTag", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } catch (IOException e) {
             _log.error("getTag io", e);
         } finally {
@@ -1872,7 +1872,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
 
@@ -1887,7 +1887,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("statTag", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1902,7 +1902,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1913,7 +1913,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("setTagOwner", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1926,7 +1926,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1937,7 +1937,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("setTagOwnerGroup", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1950,7 +1950,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -1961,7 +1961,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("setTagMode", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -1988,7 +1988,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -2001,12 +2001,12 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isForeignKeyError(se)) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(se);
             }
 
             if (!_sqlDriver.isDuplicatedKeyError(se)) {
                 _log.error("setStorageInfo:", se);
-                throw new IOHimeraFsException(se.getMessage());
+                throw new IOHimeraFsException(se.getMessage(), se);
             }
         } finally {
             tryToClose(dbConnection);
@@ -2026,7 +2026,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -2039,10 +2039,10 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isForeignKeyError(e)) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(e);
             }
             _log.error("setAccessLatency:", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2055,7 +2055,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -2068,10 +2068,10 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isForeignKeyError(e)) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(e);
             }
             _log.error("setRetentionPolicy:", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2085,7 +2085,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         InodeStorageInformation storageInfo = null;
@@ -2098,7 +2098,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("setSorageInfo", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2115,7 +2115,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         AccessLatency accessLatency = null;
@@ -2129,7 +2129,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("setSorageInfo", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2146,7 +2146,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         RetentionPolicy retentionPolicy = null;
@@ -2160,7 +2160,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("setSorageInfo", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2180,7 +2180,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
 
@@ -2195,12 +2195,12 @@ public class JdbcFs implements FileSystemProvider {
             tryToRollback(dbConnection);
 
             if (_sqlDriver.isForeignKeyError(e)) {
-                throw new FileNotFoundHimeraFsException();
+                throw new FileNotFoundHimeraFsException(e);
             }
 
             if (!_sqlDriver.isDuplicatedKeyError(e)) {
                 _log.error("setInodeChecksum:", e);
-                throw new IOHimeraFsException(e.getMessage());
+                throw new IOHimeraFsException(e.getMessage(), e);
             }
         } finally {
             tryToClose(dbConnection);
@@ -2215,7 +2215,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -2225,7 +2225,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("removeInodeChecksum", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2239,14 +2239,14 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
         try {
             dbConnection.setAutoCommit(true);
             _sqlDriver.getInodeChecksums(dbConnection, inode, checkSums);
         } catch (SQLException e) {
             _log.error("getInodeChecksum", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2266,7 +2266,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         List<ACE> acl;
@@ -2277,7 +2277,7 @@ public class JdbcFs implements FileSystemProvider {
 
         } catch (SQLException e) {
             _log.error("Failed go getACL:", e);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }
@@ -2286,7 +2286,6 @@ public class JdbcFs implements FileSystemProvider {
 
     /**
      * Set inode's Access Control List. The existing ACL will be replaced.
-     * @param dbConnection
      * @param inode
      * @param acl
      */
@@ -2297,7 +2296,7 @@ public class JdbcFs implements FileSystemProvider {
             // get from pool
             dbConnection = _dbConnectionsPool.getConnection();
         } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage());
+            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         }
 
         try {
@@ -2309,7 +2308,7 @@ public class JdbcFs implements FileSystemProvider {
         } catch (SQLException e) {
             _log.error("Failed to set ACL: ", e);
             tryToRollback(dbConnection);
-            throw new IOHimeraFsException(e.getMessage());
+            throw new IOHimeraFsException(e.getMessage(), e);
         } finally {
             tryToClose(dbConnection);
         }

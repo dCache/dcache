@@ -20,9 +20,12 @@ public class FileNotFoundHimeraFsException extends ChimeraFsException {
 
     private static final long serialVersionUID = 2898082345212568953L;
 
-    /** Creates a new instance of FileNotFoundHimeraFsException */
     public FileNotFoundHimeraFsException() {
         super();
+    }
+
+    public FileNotFoundHimeraFsException(Throwable cause) {
+        super(null, cause);
     }
 
     public FileNotFoundHimeraFsException(String path) {

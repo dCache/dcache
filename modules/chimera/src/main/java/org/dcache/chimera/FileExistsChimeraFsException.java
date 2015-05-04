@@ -25,7 +25,15 @@ public class FileExistsChimeraFsException extends ChimeraFsException {
         super();
     }
 
+    public FileExistsChimeraFsException(Throwable cause) {
+        super(null, cause);
+    }
+
     public FileExistsChimeraFsException(String path) {
-        super("path [" + path + "] already exist");
+        this(path, null);
+    }
+
+    public FileExistsChimeraFsException(String path, Throwable cause) {
+        super("path [" + path + "] already exist", cause);
     }
 }
