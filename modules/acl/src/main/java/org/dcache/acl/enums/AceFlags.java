@@ -29,7 +29,8 @@ public enum AceFlags {
      * Such ACEs only take effect once they are applied (with this bit cleared) to newly
      * created files and directories as specified by the above two flags.
      */
-    INHERIT_ONLY_ACE(0x00000008, 'o'),
+    INHERIT_ONLY_ACE_LEGACY(0x00000008, 'o'),
+    INHERIT_ONLY_ACE(0x00000008, 'r'),
 
     /**
      * Indicates that the "who" refers to a GROUP.
@@ -153,6 +154,7 @@ public enum AceFlags {
         case 'd':
             return DIRECTORY_INHERIT_ACE;
         case 'o':
+        case 'i':
             return INHERIT_ONLY_ACE;
         case 'g':
             return IDENTIFIER_GROUP;
