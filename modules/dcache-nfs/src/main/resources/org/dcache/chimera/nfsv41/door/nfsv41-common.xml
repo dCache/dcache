@@ -175,6 +175,8 @@
         <property name="maxEntries" value="${nfs.namespace-cache.size}" />
         <property name="lifeTime" value="${nfs.namespace-cache.time}" />
         <property name="timeUnit" value="${nfs.namespace-cache.time.unit}" />
+        <property name="fsStatLifeTime" value="${nfs.fs-stat-cache.time}" />
+        <property name="fsStatTimeUnit" value="${nfs.fs-stat-cache.time.unit}" />
     </bean>
 
     <beans  profile="portmap-true">

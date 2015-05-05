@@ -86,61 +86,35 @@ class FsSqlDriver {
         }
 
     }
-    private static final String sqlUsedSpace = "SELECT SUM(isize) AS usedSpace FROM t_inodes WHERE itype=32768";
+
+
+    private static final String sqlGetFsStat = "SELECT count(ipnfsid) AS usedFiles, SUM(isize) AS usedSpace FROM t_inodes WHERE itype=32768";
 
     /**
-     *
+     * Get FsStat for a given filesystem.
      * @param dbConnection
-     * @return total space used by files
+     * @return fsStat
      * @throws SQLException
      */
-    long usedSpace(Connection dbConnection) throws SQLException {
-        long usedSpace = 0;
-        PreparedStatement stUsedSpace = null;
-        ResultSet rs = null;
-        try {
+    FsStat getFsStat(Connection dbConnection) throws SQLException {
 
-            stUsedSpace = dbConnection.prepareStatement(sqlUsedSpace);
-
-            rs = stUsedSpace.executeQuery();
-            if (rs.next()) {
-                usedSpace = rs.getLong("usedSpace");
-            }
-
-        } finally {
-            SqlHelper.tryToClose(rs);
-            SqlHelper.tryToClose(stUsedSpace);
-        }
-
-        return usedSpace;
-    }
-    private static final String sqlUsedFiles = "SELECT count(ipnfsid) AS usedFiles FROM t_inodes WHERE itype=32768";
-
-    /**
-     *
-     * @param dbConnection
-     * @return total number of files
-     * @throws SQLException
-     */
-    long usedFiles(Connection dbConnection) throws SQLException {
         long usedFiles = 0;
-        PreparedStatement stUsedFiles = null;
+        long usedSpace = 0;
+        PreparedStatement stFsStat = null;
         ResultSet rs = null;
         try {
-
-            stUsedFiles = dbConnection.prepareStatement(sqlUsedFiles);
-
-            rs = stUsedFiles.executeQuery();
+            stFsStat = dbConnection.prepareStatement(sqlGetFsStat);
+            rs = stFsStat.executeQuery();
             if (rs.next()) {
                 usedFiles = rs.getLong("usedFiles");
+                usedSpace = rs.getLong("usedSpace");
             }
-
         } finally {
             SqlHelper.tryToClose(rs);
-            SqlHelper.tryToClose(stUsedFiles);
+            SqlHelper.tryToClose(stFsStat);
         }
 
-        return usedFiles;
+        return new FsStat(JdbcFs.AVAILABLE_SPACE, JdbcFs.TOTAL_FILES, usedSpace, usedFiles);
     }
 
     /**
