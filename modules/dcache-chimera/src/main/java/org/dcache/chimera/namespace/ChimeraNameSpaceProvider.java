@@ -704,7 +704,7 @@ public class ChimeraNameSpaceProvider
                 stat = inode.statCache();
                 // REVISIT when we have another way to detect new files
                 ExtendedInode level2 = inode.getLevel(2);
-                boolean isNew = (stat.getSize() == 0) && (!level2.exists());
+                boolean isNew = (stat.getSize() == 0) && !level2.exists() && inode.getLocations().isEmpty();
                 if (!isNew) {
                     attributes.setSize(stat.getSize());
                 }
