@@ -82,6 +82,7 @@ import javax.annotation.Nonnull;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
@@ -100,6 +101,8 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static java.util.stream.Collectors.toList;
 
 /*
  * @author  timur
@@ -135,12 +138,11 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             this.protocols = null;
         }
         this.desiredOnlineLifetimeInSeconds = desiredOnlineLifetimeInSeconds;
-        List<BringOnlineFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
-        for(URI surl : surls) {
-            BringOnlineFileRequest request = new BringOnlineFileRequest(getId(),
-                    surl, lifetime);
-            requests.add(request);
-        }
+
+        List<BringOnlineFileRequest> requests =
+                Stream.of(surls).distinct()
+                        .map(surl -> new BringOnlineFileRequest(getId(), surl, lifetime))
+                        .collect(toList());
         setFileRequests(requests);
     }
 

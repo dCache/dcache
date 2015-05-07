@@ -83,6 +83,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
@@ -101,6 +102,8 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static java.util.stream.Collectors.toList;
 
 /*
  * @author  timur
@@ -122,11 +125,10 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         super(user, max_update_period, lifetime, description, client_host);
         this.protocols = Arrays.copyOf(protocols, protocols.length);
 
-        List<GetFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
-        for(URI surl : surls) {
-            GetFileRequest request = new GetFileRequest(getId(), surl, lifetime);
-            requests.add(request);
-        }
+        List<GetFileRequest> requests =
+                Stream.of(surls).distinct()
+                        .map(surl -> new GetFileRequest(getId(), surl, lifetime))
+                        .collect(toList());
         setFileRequests(requests);
     }
 
