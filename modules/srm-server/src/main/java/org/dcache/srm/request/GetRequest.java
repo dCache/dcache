@@ -82,6 +82,7 @@ import javax.annotation.Nonnull;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
@@ -101,6 +102,8 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+
+import static java.util.Arrays.asList;
 
 /*
  * @author  timur
@@ -130,8 +133,9 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                 client_host);
         this.protocols = Arrays.copyOf(protocols, protocols.length);
 
-        List<GetFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
-        for(URI surl : surls) {
+        HashSet<URI> uris = new HashSet<>(asList(surls));
+        List<GetFileRequest> requests = Lists.newArrayListWithCapacity(uris.size());
+        for(URI surl : uris) {
             GetFileRequest request = new GetFileRequest(getId(),
                     requestCredentialId, surl, lifetime,
                     max_number_of_retries);
