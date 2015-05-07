@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
@@ -93,10 +94,8 @@ public class ProtocolConnectionPool extends Thread {
     @Override
     public void run() {
 
-        while (!_stop) {
-
-            try {
-
+        try {
+            while (!_stop) {
                 SocketChannel newSocketChannel = _serverSocketChannel.accept();
                 if (_logSocketIO.isDebugEnabled()) {
                     _logSocketIO.debug("Socket OPEN (ACCEPT) remote = " + newSocketChannel.socket().getInetAddress() + ":" + newSocketChannel.socket().getPort() +
@@ -120,16 +119,17 @@ public class ProtocolConnectionPool extends Thread {
                     Thread.yield();
                 }
 
-            } catch (IOException e) {
-                _logSocketIO.error("Accept loop", e);
-                _stop = true;
-                try {
-                    _logSocketIO.debug("Socket SHUTDOWN local = {}:{}",
-                            _serverSocketChannel.socket().getInetAddress(),
-                            _serverSocketChannel.socket().getLocalPort());
-                    _serverSocketChannel.close();
-                } catch (IOException ignored) {
-                }
+            }
+        } catch (ClosedByInterruptException e) {
+            // Shutdown while waiting for client to connect.
+        } catch (IOException e) {
+            _logSocketIO.error("Accept loop", e);
+            try {
+                _logSocketIO.debug("Socket SHUTDOWN local = {}:{}",
+                        _serverSocketChannel.socket().getInetAddress(),
+                        _serverSocketChannel.socket().getLocalPort());
+                _serverSocketChannel.close();
+            } catch (IOException ignored) {
             }
         }
     }
