@@ -14,12 +14,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
+import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv4Defaults;
@@ -50,6 +53,7 @@ import org.dcache.nfs.vfs.Stat.Type;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.nfs.vfs.AclCheckable;
 import org.dcache.util.PortRange;
+import org.dcache.utils.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.IpProtocolType;
 import org.dcache.xdr.OncRpcProgram;
@@ -258,7 +262,7 @@ public class NFSv4MoverHandler {
         _activeIO.remove(mover.getStateId());
     }
 
-    private static class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
+    private class EDSNFSv4OperationFactory implements NFSv4OperationFactory {
 
         private final Map<stateid4, NfsMover> _activeIO;
 
@@ -279,9 +283,9 @@ public class NFSv4MoverHandler {
                 case nfs_opnum4.OP_PUTROOTFH:
                     return new OperationPUTROOTFH(op);
                 case nfs_opnum4.OP_READ:
-                    return new EDSOperationREAD(op, _activeIO);
+                    return new EDSOperationREAD(op, NFSv4MoverHandler.this);
                 case nfs_opnum4.OP_WRITE:
-                    return new EDSOperationWRITE(op, _activeIO);
+                    return new EDSOperationWRITE(op, NFSv4MoverHandler.this);
                 case nfs_opnum4.OP_EXCHANGE_ID:
                     return new OperationEXCHANGE_ID(op, nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS);
                 case nfs_opnum4.OP_CREATE_SESSION:
@@ -301,6 +305,26 @@ public class NFSv4MoverHandler {
 
             return new OperationILLEGAL(op);
         }
+    }
+
+    NfsMover getOrCreateMover(stateid4 stateid, byte[] fh) throws ChimeraNFSException {
+        NfsMover mover = _activeIO.get(stateid);
+        if (mover == null) {
+            /*
+             * a mover for the same file and the same client can be re-used.
+             */
+            /**
+             * FIXME: this is very fragile, as we assume that stateid
+             * structure is known and contains clientid.
+             */
+            long clientId = Bytes.getLong(stateid.other, 0);
+            for(NfsMover m: _activeIO.values()) {
+                if ((Bytes.getLong(m.getStateId().other, 0) == clientId) && Arrays.equals(fh, m.getNfsFilehandle())) {
+                    return m;
+                }
+            }
+        }
+        return mover;
     }
 
     /**

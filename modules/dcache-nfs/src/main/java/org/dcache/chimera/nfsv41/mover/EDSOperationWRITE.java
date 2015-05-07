@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
@@ -31,11 +30,11 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(EDSOperationWRITE.class.getName());
 
-    private final Map<stateid4, NfsMover> _activeIO;
+    private final NFSv4MoverHandler _moverHandler;
 
-    public EDSOperationWRITE(nfs_argop4 args, Map<stateid4, NfsMover> activeIO) {
+    public EDSOperationWRITE(nfs_argop4 args, NFSv4MoverHandler moverHandler) {
         super(args, nfs_opnum4.OP_WRITE);
-        _activeIO = activeIO;
+        _moverHandler = moverHandler;
     }
 
     @Override
@@ -45,7 +44,7 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
         try {
 
-            NfsMover mover = _activeIO.get( _args.opwrite.stateid);
+            NfsMover mover = _moverHandler.getOrCreateMover(_args.opwrite.stateid, context.currentInode().toNfsHandle());
             if (mover == null) {
                 throw new BadStateidException("No mover associated with given stateid: " + _args.opwrite.stateid);
             }

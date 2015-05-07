@@ -456,7 +456,10 @@ public class NFSv41Door extends AbstractCellComponent implements
 
                 final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
                 final PnfsId pnfsId = new PnfsId(inode.toString());
-                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote, new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid));
+                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
+                            new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                            nfsInode.toNfsHandle()
+                        );
 
                 Transfer.initSession();
                 NfsTransfer transfer = _ioMessages.get(stateid);
