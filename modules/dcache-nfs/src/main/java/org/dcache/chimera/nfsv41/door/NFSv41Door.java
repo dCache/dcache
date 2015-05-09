@@ -43,7 +43,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginBrokerHandler;
+import dmg.cells.services.login.LoginBrokerPublisher;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
@@ -57,7 +57,6 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.nfsv41.door.proxy.NfsProxyIoFactory;
-import org.dcache.chimera.nfsv41.door.proxy.ProxyIoAdapter;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoFactory;
 import org.dcache.chimera.nfsv41.door.proxy.ProxyIoMdsOpFactory;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
@@ -185,7 +184,7 @@ public class NFSv41Door extends AbstractCellComponent implements
 
     private VfsCache _vfs;
 
-    private LoginBrokerHandler _loginBrokerHandler;
+    private LoginBrokerPublisher _loginBrokerPublisher;
 
     private ProxyIoFactory _proxyIoFactory;
 
@@ -250,8 +249,8 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     @Required
-    public void setLoginBrokerHandler(LoginBrokerHandler loginBrokerHandler) {
-        _loginBrokerHandler = loginBrokerHandler;
+    public void setLoginBrokerPublisher(LoginBrokerPublisher loginBrokerPublisher) {
+        _loginBrokerPublisher = loginBrokerPublisher;
     }
 
     @Required
@@ -283,6 +282,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V3:
                     NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
                     _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+                    _loginBrokerPublisher.setTags();
                     break;
                 case V41:
                     final NFSv41DeviceManager _dm = this;
@@ -290,7 +290,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
-                    _loginBrokerHandler.start();
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported NFS version: " + version);
@@ -302,7 +301,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public void destroy() throws IOException {
-        _loginBrokerHandler.stop();
         _rpcService.stop();
         if (_nfs4 != null) {
             _nfs4.getStateHandler().shutdown();

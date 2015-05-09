@@ -146,7 +146,7 @@ public class StateUpdate
      * @param items The Collection of names.
      * @param lifetime the lifetime, in seconds, for the StateComposites.
      */
-    public void appendUpdateCollection(StatePath path, List<String> items,
+    public void appendUpdateCollection(StatePath path, Collection<String> items,
             long lifetime)
     {
         for (String item : items) {

@@ -7,12 +7,12 @@ check -strong nfs.cell.name
 check -strong nfs.cell.export
 check -strong nfs.net.port
 check -strong nfs.version
-check nfs.service.loginbroker
-check -strong nfs.service.loginbroker.update-period
-check -strong nfs.service.loginbroker.update-period.unit
-check -strong nfs.service.loginbroker.update-threshold
-check -strong nfs.service.loginbroker.family
-check -strong nfs.service.loginbroker.version
+check nfs.loginbroker.update-topic
+check -strong nfs.loginbroker.update-period
+check -strong nfs.loginbroker.update-period.unit
+check -strong nfs.loginbroker.update-threshold
+check -strong nfs.loginbroker.family
+check -strong nfs.loginbroker.version
 check -strong nfs.service.poolmanager
 check -strong nfs.service.poolmanager.timeout
 check -strong nfs.service.poolmanager.timeout.unit

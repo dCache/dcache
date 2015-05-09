@@ -4,15 +4,18 @@ import com.google.common.base.Joiner;
 
 import javax.annotation.Nonnull;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Consumer;
 
 import diskCacheV111.util.FsPath;
 
@@ -20,6 +23,7 @@ import org.dcache.util.NetworkUtils.InetAddressScope;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Immutable object to capture information about a door.
@@ -33,6 +37,11 @@ public class LoginBrokerInfo implements Serializable
 {
     private static final long serialVersionUID = 4077557054990432737L;
 
+    public enum Capability
+    {
+        READ, WRITE
+    }
+
     private final String _cellName;
     private final String _domainName;
     private final String _protocolFamily;
@@ -45,6 +54,13 @@ public class LoginBrokerInfo implements Serializable
     private final int _port;
     private final double _load;
     private final long _update;
+    private final Collection<String> _tags;
+    private final Collection<String> _readPaths;
+    private final Collection<String> _writePaths;
+
+    private transient FsPath _rootFsPath;
+    private transient Collection<FsPath> _readFsPaths;
+    private transient Collection<FsPath> _writeFsPaths;
 
     public LoginBrokerInfo(String cellName,
                            String domainName,
@@ -52,17 +68,24 @@ public class LoginBrokerInfo implements Serializable
                            String protocolVersion,
                            String protocolEngine,
                            String root,
+                           Collection<String> readPaths,
+                           Collection<String> writePaths,
+                           Collection<String> tags,
                            List<InetAddress> addresses,
                            int port,
                            double load,
                            long updateTime)
     {
+        checkArgument(!addresses.isEmpty());
         _cellName = checkNotNull(cellName);
         _domainName = checkNotNull(domainName);
         _protocolFamily = checkNotNull(protocolFamily);
         _protocolVersion = checkNotNull(protocolVersion);
         _protocolEngine = checkNotNull(protocolEngine);
         _root = root;
+        _tags = checkNotNull(tags);
+        _readPaths = checkNotNull(readPaths);
+        _writePaths = checkNotNull(writePaths);
         _addresses = checkNotNull(addresses);
         _port = port;
         _load = load;
@@ -71,7 +94,11 @@ public class LoginBrokerInfo implements Serializable
         for (int i = 0; i < addresses.size(); i++) {
             _hosts[i] = addresses.get(i).getHostAddress();
         }
-        checkArgument(!addresses.isEmpty());
+        if (_root != null) {
+            _rootFsPath = new FsPath(_root);
+        }
+        _readFsPaths = _readPaths.stream().map(FsPath::new).collect(toList());
+        _writeFsPaths = _writePaths.stream().map(FsPath::new).collect(toList());
     }
 
     public boolean supports(InetAddressScope scope)
@@ -143,7 +170,58 @@ public class LoginBrokerInfo implements Serializable
 
     public FsPath getRoot(FsPath userRoot)
     {
-        return (_root == null) ? userRoot : new FsPath(_root);
+        return (_rootFsPath == null) ? userRoot : _rootFsPath;
+    }
+
+    public FsPath relativize(FsPath userRoot, FsPath path)
+    {
+        return getRoot(userRoot).relativize(path);
+    }
+
+    public boolean canWrite(FsPath userRoot, FsPath path)
+    {
+        return path.startsWith(getRoot(userRoot)) &&
+               _writeFsPaths.stream().anyMatch(path::startsWith);
+    }
+
+    public boolean canRead(FsPath userRoot, FsPath path)
+    {
+        return path.startsWith(getRoot(userRoot)) &&
+               _readFsPaths.stream().anyMatch(path::startsWith);
+    }
+
+    public Collection<String> getTags()
+    {
+        return Collections.unmodifiableCollection(_tags);
+    }
+
+    public Collection<String> getReadPaths()
+    {
+        return Collections.unmodifiableCollection(_readPaths);
+    }
+
+    public Collection<String> getWritePaths()
+    {
+        return Collections.unmodifiableCollection(_writePaths);
+    }
+
+    public void ifCapableOf(Capability capability, Consumer<LoginBrokerInfo> action)
+    {
+        Collection<String> paths;
+        switch (capability) {
+        case READ:
+            paths = _readPaths;
+            break;
+        case WRITE:
+            paths = _writePaths;
+            break;
+        default:
+            paths = Collections.emptyList();
+            break;
+        }
+        if (!paths.isEmpty()) {
+            action.accept(this);
+        }
     }
 
     public double getLoad()
@@ -160,23 +238,6 @@ public class LoginBrokerInfo implements Serializable
     public String getIdentifier()
     {
         return _cellName + "@" + _domainName;
-    }
-
-    public boolean equals(Object that)
-    {
-        if (this == that) {
-            return true;
-        }
-        if (!(that instanceof LoginBrokerInfo)) {
-            return false;
-        }
-        LoginBrokerInfo info = (LoginBrokerInfo) that;
-        return _cellName.equals(info._cellName) && _domainName.equals(info._domainName);
-    }
-
-    public int hashCode()
-    {
-        return Objects.hash(_cellName, _domainName);
     }
 
     public String toString()
@@ -200,5 +261,16 @@ public class LoginBrokerInfo implements Serializable
         sb.append(_update).append(">;");
 
         return sb.toString();
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
+        stream.defaultReadObject();
+        if (_root != null) {
+            _rootFsPath = new FsPath(_root);
+        }
+        _readFsPaths = _readPaths.stream().map(FsPath::new).collect(toList());
+        _writeFsPaths = _writePaths.stream().map(FsPath::new).collect(toList());
     }
 }

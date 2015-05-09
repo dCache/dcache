@@ -7,15 +7,19 @@ check -strong dcap.limits.clients
 check -strong dcap.net.port
 check -strong dcap.cell.name
 check -strong dcap.cell.export
+check dcap.cell.subscribe
 check -strong dcap.service.poolmanager
 check -strong dcap.service.pnfsmanager
 check -strong dcap.service.gplazma
 check -strong dcap.service.billing
 check -strong dcap.service.pinmanager
-check dcap.service.loginbroker
-check -strong dcap.service.loginbroker.update-period
-check -strong dcap.service.loginbroker.update-period.unit
-check -strong dcap.service.loginbroker.update-threshold
+check dcap.loginbroker.update-topic
+check dcap.loginbroker.tags
+check -strong dcap.loginbroker.family
+check -strong dcap.loginbroker.version
+check -strong dcap.loginbroker.update-period
+check -strong dcap.loginbroker.update-period.unit
+check -strong dcap.loginbroker.update-threshold
 check -strong dcap.authn.protocol
 check -strong dcap.authz.truncate
 check -strong dcap.authz.readonly
@@ -37,6 +41,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \
              -listen=${dcap.net.listen} \
              -export=${dcap.cell.export} \
+             -subscribe=${dcap.cell.subscribe} \
              -acceptErrorWait=60000 \
              -keepAlive=300 \
              -poolRetry=2700 \
@@ -46,11 +51,14 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -read-only=${dcap.authz.readonly} \
              -truncate=${dcap.authz.truncate} \
              -maxLogin=${dcap.limits.clients} \
-             -brokerUpdateTime=${dcap.service.loginbroker.update-period} \
-             -brokerUpdateTimeUnit=${dcap.service.loginbroker.update-period.unit} \
-             -brokerUpdateOffset=${dcap.service.loginbroker.update-threshold} \
-             -protocolFamily=${dcap.service.loginbroker.family} \
-             -protocolVersion=${dcap.service.loginbroker.version} \
+             -brokerTopic=${dcap.loginbroker.update-topic} \
+             -brokerTags=${dcap.loginbroker.tags} \
+             -brokerUpdateTime=${dcap.loginbroker.update-period} \
+             -brokerUpdateTimeUnit=${dcap.loginbroker.update-period.unit} \
+             -brokerUpdateOffset=${dcap.loginbroker.update-threshold} \
+             -brokerReadOnly=${dcap.authz.readonly} \
+             -protocolFamily=${dcap.loginbroker.family} \
+             -protocolVersion=${dcap.loginbroker.version} \
              -loginBroker=${dcap.service.loginbroker}  \
              -pnfsManager=${dcap.service.pnfsmanager} \
              -poolManager=${dcap.service.poolmanager}  \

@@ -14,7 +14,9 @@
     <context:property-placeholder/>
     <context:annotation-config/>
 
-    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <property name="excludedDestinations" value="${httpd.loginbroker.request-topic}"/>
+    </bean>
 
     <bean id="cli" class="org.dcache.services.httpd.HttpdCommandLineInterface">
         <property name="delegator" ref="delegator"/>

@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -47,7 +46,6 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     private Thread     _senderThread;
     private long       _counter;
     private int        _repeatHeader    = 30;
-    private final Collection<CellAddressCore> _loginBrokerTable = new ArrayList<>();
 
     private class SleepHandler
     {
@@ -202,7 +200,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
             aggressive = !aggressive;
 
-            _log.info("Agressive mode : "+aggressive);
+            _log.info("Aggressive mode : "+aggressive);
 
             _sleepHandler = new SleepHandler(aggressive);
 
@@ -210,15 +208,6 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 addQuery(new CellAddressCore(_args.argv(i)));
             }
 
-            String loginBrokers = _args.getOpt("loginBroker");
-            if (loginBrokers != null && !loginBrokers.isEmpty()) {
-                for (String broker : loginBrokers.split(",")) {
-                    _log.info("Login Broker : {}", broker);
-                    CellAddressCore address = new CellAddressCore(broker);
-                    _loginBrokerTable.add(address);
-                    addQuery(address);
-                }
-            }
             (_senderThread  = _nucleus.newThread(this, "sender")).start();
             _log.info("Sender started");
             _log.info("Collector will be started a bit delayed");
@@ -288,11 +277,6 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         try {
             while (!Thread.interrupted()) {
                 _counter++;
-                for (CellAddressCore broker : _loginBrokerTable) {
-                    CellPath path = new CellPath(broker);
-                    _log.debug("Sending LoginBroker query to : {}", path);
-                    sendMessage(new CellMessage(path, "ls -binary"));
-                }
                 //sendMessage(loginBrokerMessage);
                 synchronized (_infoLock) {
                     for (CellQueryInfo info : _infoMap.values()) {
@@ -310,48 +294,47 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
     @Override
     public void messageArrived(CellMessage message)
     {
-        CellPath path = message.getSourcePath();
-        CellAddressCore address = path.getSourceAddress();
-        CellQueryInfo info = _infoMap.get(address);
-        if (info == null) {
-            // We may have registered the cell as a well known cell
-            info = _infoMap.get(new CellAddressCore(address.getCellName()));
-            if (info == null) {
-                _log.info("Unexpected reply arrived from: {}", path);
-                return;
-            }
-        }
         Object reply = message.getMessageObject();
 
         int modified = 0;
 
-        if (reply instanceof CellInfo) {
-            _log.debug("CellInfo: {}", ((CellInfo)reply).getCellName());
-            info.infoArrived((CellInfo)reply);
-        }
-        if (reply instanceof PoolManagerCellInfo) {
-            Set<CellAddressCore> pools = ((PoolManagerCellInfo)reply).getPoolCells();
+        if (reply instanceof LoginBrokerInfo) {
+            LoginBrokerInfo brokerInfo = (LoginBrokerInfo) reply;
             synchronized (_infoLock) {
-                for (CellAddressCore pool : pools) {
-                    if (addQuery(pool)) {
-                        modified++;
+                _log.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
+                if (addQuery(new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
+                    modified++;
+                }
+            }
+        } else {
+            CellPath path = message.getSourcePath();
+            CellAddressCore address = path.getSourceAddress();
+            CellQueryInfo info = _infoMap.get(address);
+            if (info == null) {
+                // We may have registered the cell as a well known cell
+                info = _infoMap.get(new CellAddressCore(address.getCellName()));
+                if (info == null) {
+                    _log.info("Unexpected reply arrived from: {}", path);
+                    return;
+                }
+            }
+
+            if (reply instanceof CellInfo) {
+                _log.debug("CellInfo: {}", ((CellInfo) reply).getCellName());
+                info.infoArrived((CellInfo) reply);
+            }
+            if (reply instanceof PoolManagerCellInfo) {
+                Set<CellAddressCore> pools = ((PoolManagerCellInfo) reply).getPoolCells();
+                synchronized (_infoLock) {
+                    for (CellAddressCore pool : pools) {
+                        if (addQuery(pool)) {
+                            modified++;
+                        }
                     }
                 }
             }
         }
 
-        if (reply instanceof LoginBrokerInfo[]) {
-            LoginBrokerInfo [] brokerInfos = (LoginBrokerInfo [])reply;
-            _log.debug("Login broker reply: {}", brokerInfos.length);
-            synchronized (_infoLock) {
-                for (LoginBrokerInfo brokerInfo : brokerInfos) {
-                    _log.debug("Login broker reports: {}@{}", brokerInfo.getCellName(), brokerInfo.getDomainName());
-                    if (addQuery(new CellAddressCore(brokerInfo.getCellName(), brokerInfo.getDomainName()))) {
-                        modified++;
-                    }
-                }
-            }
-        }
         _sleepHandler.topologyChanged(modified > 0);
     }
 

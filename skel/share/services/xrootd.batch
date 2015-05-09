@@ -6,6 +6,7 @@ onerror shutdown
 
 check -strong xrootd.cell.name
 check -strong xrootd.cell.export
+check xrootd.cell.subscribe
 check -strong xrootd.net.port
 check -strong xrootd.net.listen
 check -strong xrootd.net.backlog
@@ -21,12 +22,12 @@ check -strong xrootd.service.gplazma
 check -strong xrootd.service.gplazma.timeout
 check -strong xrootd.service.gplazma.timeout.unit
 check -strong xrootd.service.billing
-check xrootd.service.loginbroker
-check -strong xrootd.service.loginbroker.update-period
-check -strong xrootd.service.loginbroker.update-period.unit
-check -strong xrootd.service.loginbroker.update-threshold
-check -strong xrootd.service.loginbroker.version
-check -strong xrootd.service.loginbroker.family
+check xrootd.loginbroker.update-topic
+check -strong xrootd.loginbroker.update-period
+check -strong xrootd.loginbroker.update-period.unit
+check -strong xrootd.loginbroker.update-threshold
+check -strong xrootd.loginbroker.version
+check -strong xrootd.loginbroker.family
 
 check -strong xrootd.mover.timeout
 check -strong xrootd.mover.timeout.unit
@@ -40,5 +41,8 @@ check xrootd.authz.upload-directory
 onerror continue
 
 create org.dcache.cells.UniversalSpringCell ${xrootd.cell.name} \
-       "classpath:org/dcache/xrootd/door/xrootd.xml -export=${xrootd.cell.export} -cellClass=XrootdDoor"
+       "classpath:org/dcache/xrootd/door/xrootd.xml \
+        -export=${xrootd.cell.export} \
+        -subscribe=${xrootd.cell.subscribe} \
+        -cellClass=XrootdDoor"
 

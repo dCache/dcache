@@ -1,13 +1,13 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import org.springframework.beans.factory.annotation.Required;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.util.TransferCollector;
 import org.dcache.util.backoff.IBackoffAlgorithm.Status;
@@ -15,24 +15,22 @@ import org.dcache.webadmin.controller.util.BeanDataMapper;
 import org.dcache.webadmin.model.dataaccess.communication.ContextPaths;
 import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 
-import static java.util.stream.Collectors.toList;
-
 public class ActiveTransfersCollector extends Collector
 {
     private TransferCollector collector;
-    private List<CellPath> loginBrokers;
+    private Collection<LoginBrokerInfo> doors;
 
-    public void setLoginBrokerNames(String loginBrokerNames)
+    @Required
+    public void setDoors(Collection<LoginBrokerInfo> doors)
     {
-        loginBrokers = Splitter.on(",").omitEmptyStrings().splitToList(loginBrokerNames).stream()
-                .map(CellPath::new).collect(toList());
+        this.doors = doors;
     }
 
     @Override
     public void initialize()
     {
         super.initialize();
-        collector = new TransferCollector(_cellStub, loginBrokers);
+        collector = new TransferCollector(_cellStub, doors);
     }
 
     @Override

@@ -4,18 +4,11 @@ import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.Command;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.Arrays;
-import java.util.List;
-
 import dmg.cells.nucleus.CellEndpoint;
-
 import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.login.LoginBrokerSource;
 
 import org.dcache.cells.CellStub;
-import org.dcache.util.TransferCollector;
-
-import static java.util.stream.Collectors.toList;
 
 public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessageSender
 {
@@ -23,7 +16,7 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
     private CellStub spaceManager;
     private CellStub poolManager;
     private CellStub pnfsManager;
-    private List<CellPath> loginBrokers;
+    private LoginBrokerSource loginBrokerSource;
 
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
@@ -38,12 +31,6 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
     }
 
     @Required
-    public void setLoginBrokers(String loginBrokers)
-    {
-        this.loginBrokers = Arrays.stream(loginBrokers.split(",")).map(CellPath::new).collect(toList());
-    }
-
-    @Required
     public void setPoolManager(CellStub poolManager)
     {
         this.poolManager = poolManager;
@@ -55,6 +42,12 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
         this.pnfsManager = pnfsManager;
     }
 
+    @Required
+    public void setLoginBrokerSource(LoginBrokerSource source)
+    {
+        this.loginBrokerSource = source;
+    }
+
     @Override
     public String getName()
     {
@@ -64,7 +57,6 @@ public class PcellsSubsystemFactory implements NamedFactory<Command>, CellMessag
     @Override
     public Command create()
     {
-        TransferCollector transferCollector = new TransferCollector(new CellStub(endpoint), loginBrokers);
-        return new PcellsCommand(endpoint, spaceManager, poolManager, pnfsManager, transferCollector);
+        return new PcellsCommand(endpoint, spaceManager, poolManager, pnfsManager, loginBrokerSource);
     }
 }

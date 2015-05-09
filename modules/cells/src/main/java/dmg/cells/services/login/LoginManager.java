@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -83,7 +84,7 @@ public class LoginManager
     private final ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
     private final CellPath _authenticator;
     private final KeepAliveTask _keepAlive;
-    private final LoginBrokerHandler _loginBrokerHandler;
+    private final LoginBrokerPublisher _loginBrokerPublisher;
     private final String _protocol;
     private final Class<?> _authClass;
     private final LoginCellFactory _loginCellFactory;
@@ -184,31 +185,37 @@ public class LoginManager
                     .build();
             _version = new CellVersion(Version.of(_loginCellFactory));
 
-            String loginBroker = _args.getOpt("loginBroker");
-            if (loginBroker != null) {
-                Iterable<String> loginBrokers = Splitter.on(",").omitEmptyStrings().split(loginBroker);
-                _loginBrokerHandler = new LoginBrokerHandler();
-                _loginBrokerHandler.beforeSetup();
-                _loginBrokerHandler.setExecutor(_scheduledExecutor);
-                _loginBrokerHandler.setLoginBrokers(Iterables.toArray(loginBrokers, String.class));
-                _loginBrokerHandler.setCellEndpoint(this);
-                _loginBrokerHandler.setProtocolEngine(_loginCellFactory.getName());
-                _loginBrokerHandler.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
-                _loginBrokerHandler.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
-                _loginBrokerHandler.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
-                _loginBrokerHandler.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
-                _loginBrokerHandler.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
-                _loginBrokerHandler.setRoot(Strings.emptyToNull(_args.getOption("root")));
-                _loginBrokerHandler.afterSetup();
-                _loginBrokerHandler.start();
-                _loginBrokerHandler.afterStart();
-                addCommandListener(_loginBrokerHandler);
+            String topic = _args.getOpt("brokerTopic");
+            if (topic != null) {
+                String[] tags = Iterables.toArray(
+                        Splitter.on(",").omitEmptyStrings().split(_args.getOption("brokerTags")),
+                        String.class);
+                _loginBrokerPublisher = new LoginBrokerPublisher();
+                _loginBrokerPublisher.beforeSetup();
+                _loginBrokerPublisher.setExecutor(_scheduledExecutor);
+                _loginBrokerPublisher.setTopic(topic);
+                _loginBrokerPublisher.setCellEndpoint(this);
+                _loginBrokerPublisher.setTags(tags);
+                _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
+                _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
+                _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
+                _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
+                _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
+                _loginBrokerPublisher.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
+                _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("root")));
+                _loginBrokerPublisher.setReadPaths("/");
+                if (!_args.getBooleanOption("brokerReadOnly", false)) {
+                    _loginBrokerPublisher.setWritePaths("/");
+                }
+                addCommandListener(_loginBrokerPublisher);
+                addCellEventListener(_loginBrokerPublisher);
+                _loginBrokerPublisher.afterSetup();
 
                 if (_maxLogin < 0) {
                     _maxLogin = 100000;
                 }
             } else {
-                _loginBrokerHandler = null;
+                _loginBrokerPublisher = null;
             }
 
             _nucleus.addCellEventListener(new LoginEventListener());
@@ -235,6 +242,22 @@ public class LoginManager
         }
 
         start();
+        if (_loginBrokerPublisher != null) {
+            _loginBrokerPublisher.afterStart();
+        }
+    }
+
+    @Override
+    public void messageArrived(CellMessage envelope)
+    {
+        if (_loginBrokerPublisher != null) {
+            Serializable message = envelope.getMessageObject();
+            if (message instanceof NoRouteToCellException) {
+                _loginBrokerPublisher.messageArrived((NoRouteToCellException) message);
+            } else if (message instanceof LoginBrokerInfoRequest) {
+                _loginBrokerPublisher.messageArrived((LoginBrokerInfoRequest) message);
+            }
+        }
     }
 
     private static Class<?> toAuthClass(String authClassName, String protocol) throws ClassNotFoundException
@@ -468,9 +491,9 @@ public class LoginManager
                     " (" + (_sending ? "Sending" : "Informed") + ")");
         }
 
-        if (_loginBrokerHandler != null) {
+        if (_loginBrokerPublisher != null) {
             pw.println("  LoginBroker Info :");
-            _loginBrokerHandler.getInfo(pw);
+            _loginBrokerPublisher.getInfo(pw);
         }
     }
 
@@ -492,9 +515,8 @@ public class LoginManager
         if (_listenThread != null) {
             _listenThread.shutdown();
         }
-        if (_loginBrokerHandler != null) {
-            _loginBrokerHandler.beforeStop();
-            _loginBrokerHandler.stop();
+        if (_loginBrokerPublisher != null) {
+            _loginBrokerPublisher.beforeStop();
         }
         if (_scheduledExecutor != null) {
             _scheduledExecutor.shutdown();
@@ -593,8 +615,8 @@ public class LoginManager
             }
             _serverSocket.bind(_socketAddress);
 
-            if (_loginBrokerHandler != null) {
-                _loginBrokerHandler.setSocketAddress(_socketAddress);
+            if (_loginBrokerPublisher != null) {
+                _loginBrokerPublisher.setSocketAddress(_socketAddress);
             }
 
             LOGGER.info("Listening on {}", _serverSocket.getLocalSocketAddress());
@@ -857,8 +879,8 @@ public class LoginManager
     {
         int children = _children.size();
         LOGGER.info("New child count : {}", children);
-        if (_loginBrokerHandler != null) {
-            _loginBrokerHandler.setLoad(children, _maxLogin);
+        if (_loginBrokerPublisher != null) {
+            _loginBrokerPublisher.setLoad(children, _maxLogin);
         }
     }
 

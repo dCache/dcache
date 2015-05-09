@@ -6,11 +6,13 @@ onerror shutdown
 
 check -strong info.cell.name
 check -strong info.cell.export
+check -strong info.cell.subscribe
 check -strong info.net.port
 check -strong info.net.listen
 check -strong info.net.backlog
 
 create org.dcache.cells.UniversalSpringCell ${info.cell.name} \
      "classpath:org/dcache/services/info/info.xml \
+      -subscribe=${info.cell.subscribe} \
       -export=${info.cell.export}"
 

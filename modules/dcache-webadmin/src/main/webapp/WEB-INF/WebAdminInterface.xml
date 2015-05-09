@@ -171,7 +171,7 @@
                     <property name="sleepInterval" value="${httpd.service.activetransfers-collector.period}"/>
                     <property name="sleepIntervalUnit" value="${httpd.service.activetransfers-collector.period.unit}"/>
                     <property name="algorithmFactory" ref="TransfersConstantBackoff"/>
-                    <property name="loginBrokerNames" value="${httpd.service.loginbroker}"/>
+                    <property name="doors" value="#{ @ServiceCellEndpoint.getDomainContext().get('doors') }"/>
                 </bean>
                 <bean id="CellStatusCollector" class="org.dcache.webadmin.model.dataaccess.communication.collectors.CellStatusCollector"
                     init-method="initialize">
@@ -180,7 +180,7 @@
                     <property name="sleepInterval" value="${httpd.service.cellstatus-collector.period}"/>
                     <property name="sleepIntervalUnit" value="${httpd.service.cellstatus-collector.period.unit}"/>
                     <property name="algorithmFactory" ref="FastConstantBackoff"/>
-                    <property name="loginBrokerNames" value="${httpd.service.loginbroker}"/>
+                    <property name="doors" value="#{ @ServiceCellEndpoint.getDomainContext().get('doors') }"/>
                     <property name="pnfsManagerName" value="${httpd.service.pnfsmanager}"/>
                     <property name="poolManagerName" value="${httpd.service.poolmanager}"/>
                     <property name="gPlazmaName" value="${httpd.service.gplazma}"/>

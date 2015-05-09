@@ -1,6 +1,5 @@
 org.dcache.services.info.gathers.cells.CellsDgaFactoryService
 org.dcache.services.info.gathers.domain.DomainDgaFactoryService
-org.dcache.services.info.gathers.loginbroker.LoginBrokerDgaFactoryService
 org.dcache.services.info.gathers.poolmanager.PoolManagerDgaFactoryService
 org.dcache.services.info.gathers.routingmanager.RoutingManagerDgaFactoryService
 org.dcache.services.info.gathers.srm.SrmDgaFactoryService

@@ -68,14 +68,12 @@ package diskCacheV111.srm.dcache;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
+import com.google.common.base.Predicate;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.primitives.Ints;
@@ -122,7 +120,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -168,6 +165,7 @@ import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerSource;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
@@ -231,8 +229,9 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Iterables.*;
-import static com.google.common.collect.Multimaps.filterKeys;
-import static com.google.common.collect.Multimaps.filterValues;
+import static com.google.common.collect.Maps.filterKeys;
+import static com.google.common.collect.Maps.filterValues;
+import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.*;
@@ -276,7 +275,6 @@ public final class Storage
     private CellStub _copyManagerStub;
     private CellStub _transferManagerStub;
     private CellStub _pinManagerStub;
-    private CellStub _loginBrokerStub;
     private CellStub _billingStub;
 
     private PnfsHandler _pnfs;
@@ -300,7 +298,7 @@ public final class Storage
 
     private boolean _isVerificationRequired;
 
-    private Supplier<Multimap<String,LoginBrokerInfo>> loginBrokerInfo;
+    private LoginBrokerSource loginBrokerSource;
     private final Random rand = new Random();
     private int numDoorInRanSelection = 3;
 
@@ -367,12 +365,6 @@ public final class Storage
     public void setExecutor(Executor executor)
     {
         _executor = executor;
-    }
-
-    @Required
-    public void setLoginBrokerStub(CellStub loginBrokerStub)
-    {
-        _loginBrokerStub = loginBrokerStub;
     }
 
     @Required
@@ -479,10 +471,9 @@ public final class Storage
     }
 
     @Required
-    public void setLoginBrokerUpdatePeriod(long period)
+    public void setLoginBrokerSource(LoginBrokerSource provider)
     {
-        loginBrokerInfo =
-                Suppliers.memoizeWithExpiration(new LoginBrokerInfoSupplier(), period, TimeUnit.MILLISECONDS);
+        loginBrokerSource = provider;
     }
 
     public void setNumberOfDoorsInRandomSelection(int value)
@@ -672,7 +663,7 @@ public final class Storage
     public String[] supportedGetProtocols()
             throws SRMInternalErrorException
     {
-        return toArray(filter(getLoginBrokerInfos().keySet(),
+        return toArray(filter(loginBrokerSource.readDoorsByProtocol().keySet(),
                               not(in(asList(srmGetNotSupportedProtocols)))), String.class);
     }
 
@@ -680,94 +671,79 @@ public final class Storage
     public String[] supportedPutProtocols()
             throws SRMInternalErrorException
     {
-        return toArray(filter(getLoginBrokerInfos().keySet(),
+        return toArray(filter(loginBrokerSource.writeDoorsByProtocol().keySet(),
                               not(in(asList(srmPutNotSupportedProtocols)))), String.class);
     }
 
     @Override
-    public URI getGetTurl(SRMUser user, URI surl, String[] protocols, URI previousTurl)
+    public URI getGetTurl(SRMUser srmUser, URI surl, String[] protocols, URI previousTurl)
         throws SRMException
     {
+        DcacheUser user = (DcacheUser) srmUser;
         FsPath path = getPath(surl);
-        if (!verifyUserPathIsRootSubpath(path, user)) {
+        if (!verifyUserPathIsRootSubpath(path, srmUser)) {
             throw new SRMAuthorizationException(String.format("Access denied: Path [%s] is outside user's root [%s]",
-                                                              path, ((DcacheUser) user).getRoot()));
+                                                              path, (user).getRoot()));
         }
-        return getTurl((DcacheUser) user, path, protocols, srmGetNotSupportedProtocols, previousTurl);
+
+        return getTurl(loginBrokerSource.readDoorsByProtocol(), user, path, protocols,
+                       srmGetNotSupportedProtocols, previousTurl, d -> d.canWrite(user.getRoot(), path));
     }
 
     @Override
-    public URI getPutTurl(SRMUser user, String fileId, String[] protocols, URI previousTurl)
+    public URI getPutTurl(SRMUser srmUser, String fileId, String[] protocols, URI previousTurl)
         throws SRMException
     {
-        return getTurl((DcacheUser) user, new FsPath(fileId), protocols, srmPutNotSupportedProtocols, previousTurl);
+        DcacheUser user = (DcacheUser) srmUser;
+        FsPath path = new FsPath(fileId);
+        return getTurl(loginBrokerSource.writeDoorsByProtocol(), user,
+                       path, protocols, srmPutNotSupportedProtocols, previousTurl,
+                       d -> d.canWrite(user.getRoot(), path));
     }
 
     private static boolean isHostAndPortNeeded(String protocol) {
         return !protocol.equalsIgnoreCase("file");
     }
 
-    private URI getTurl(DcacheUser user, FsPath path, String[] includes, String[] excludes, URI previousTurl)
-            throws SRMAuthorizationException, SRMInternalErrorException, SRMNotSupportedException
+    /**
+     * @param doorsByProtocol doors to select from, grouped by protocol
+     * @param user user issuing the request
+     * @param path full dCache file system path
+     * @param includes protocols to select from
+     * @param excludes protocols to exclude
+     * @param previousTurl previous TURL used in the same bulk request
+     * @param predicate door predicate to filter doors that can serve path
+     * @return
+     * @throws SRMNotSupportedException
+     * @throws SRMInternalErrorException
+     */
+    private URI getTurl(Map<String, Collection<LoginBrokerInfo>> doorsByProtocol, DcacheUser user, FsPath path,
+                        String[] includes, String[] excludes, URI previousTurl, Predicate<LoginBrokerInfo> predicate)
+            throws SRMNotSupportedException, SRMInternalErrorException
     {
+        List<String> protocols = new ArrayList<>(asList(includes));
+        protocols.removeAll(asList(excludes));
+
         try {
-            /* For DCAP we try to reuse the previous door in bulk requests.
-             */
-            if (previousTurl != null && previousTurl.getScheme().equals("dcap")) {
-                LoginBrokerInfo door = findDoor(previousTurl);
-                FsPath root = door.getRoot(user.getRoot());
-                if (path.startsWith(root)) {
-                    String transferPath = stripRootPath(root, path);
-                    return new URI("dcap", null, previousTurl.getHost(), previousTurl.getPort(), transferPath, null, null);
-                }
-            }
-
             InetAddress address = Subjects.getOrigin(user.getSubject()).getAddress();
-
-            /* Reduce the set of doors to those that expose the path, support one
-             * of the protocols accepted by the client and not disallowed by the
-             * server, and support the network "scope" of the client as determined
-             * from the client's address.
-             */
             InetAddressScope scope = InetAddressScope.of(address);
-            List<String> protocols = new ArrayList<>(asList(includes));
-            protocols.removeAll(asList(excludes));
-            Multimap<String, LoginBrokerInfo> doors =
-                    filterValues(filterKeys(getLoginBrokerInfos(), protocols::contains),
-                                 d -> d.supports(scope) && path.startsWith(d.getRoot(user.getRoot())));
-
-            /* Attempt to match the protocol family of the SRM client. This is not
-             * a hard requirement and we fall back to all families if necessary.
-             */
             ProtocolFamily family = NetworkUtils.getProtocolFamily(address);
-            Multimap<String, LoginBrokerInfo> filtered = filterValues(doors, d -> d.supports(family));
-            if (!filtered.isEmpty()) {
-                doors = filtered;
-            }
 
-            /* Now choose one of the protocols based on our preferences and the
-             * preference of the client.
-             */
-            String protocol = selectProtocol(doors.keySet(), protocols);
-            if (protocol == null) {
+            LoginBrokerInfo door = selectDoor(doorsByProtocol, scope, family, protocols, previousTurl, predicate);
+            if (door == null) {
                 /* Since this may be due to a common misconfiguration in which no
                  * door exposes the path, we warn about that situation.
                  */
-                if (any(getLoginBrokerInfos().values(), d -> protocols.contains(d.getProtocolFamily()) && d.supports(scope))) {
+                if (selectDoor(doorsByProtocol, scope, family, protocols, null, d -> true) != null) {
                     _log.warn("No door for {} provides access to {}.", protocols, path);
                 }
                 throw new SRMNotSupportedException("Protocol(s) not supported: " + Joiner.on(",").join(includes));
             }
 
-            /* Now select one of the candidate doors. As our load information is not perfect, we choose
-             * randomly from the least loaded doors.
-             */
-            LoginBrokerInfo door = selectRandomDoor(doors.get(protocol));
-
             /* Determine path component of TURL.
              */
-            FsPath root = door.getRoot(user.getRoot());
-            String transferPath = stripRootPath(root, path);
+            String protocol = door.getProtocolFamily();
+            String transferPath = door.relativize(user.getRoot(), path).toString();
             if (protocol.equals("gsiftp") || protocol.equals("ftp") || protocol.equals("gkftp")) {
                 /* According to RFC 1738 an FTP URL is relative to the FTP server's initial
                  * working directory, which in dCache is the user's home directory.
@@ -795,8 +771,8 @@ public final class Storage
             /* Compose the TURL.
              */
             URI turl = isHostAndPortNeeded(protocol)
-                    ? new URI(protocol, null, selectHostName(door, scope, family), door.getPort(), transferPath, null, null)
-                    : new URI(protocol, null, transferPath, null);
+                       ? new URI(protocol, null, selectHostName(door, scope, family), door.getPort(), transferPath, null, null)
+                       : new URI(protocol, null, transferPath, null);
             _log.trace("getTurl() returns {}", turl);
             return turl;
         } catch (URISyntaxException e) {
@@ -804,7 +780,65 @@ public final class Storage
         }
     }
 
-    private LoginBrokerInfo selectRandomDoor(Collection<LoginBrokerInfo> doors)
+    private static <K,V,C extends Iterable<V>> Map<K, Iterable<V>> filterValues(Map<K, C> unfiltered, Predicate<V> predicate)
+    {
+        return Maps.filterValues(Maps.transformValues(unfiltered, values -> filter(values, predicate)), values -> !isEmpty(values));
+    }
+
+    /**
+     * @param doorsByProtocol doors to select from, grouped by protocol
+     * @param scope minimum address scope required
+     * @param family preferred protocol family
+     * @param protocols protocol to select from, ordered by the clients preference
+     * @param previousTurl previous TURL used in the same bulk request
+     * @param predicate additional predicate to filter doors
+     * @return A door matching the requirements or null if non match
+     */
+    private LoginBrokerInfo selectDoor(Map<String, Collection<LoginBrokerInfo>> doorsByProtocol,
+                                       InetAddressScope scope, ProtocolFamily family,
+                                       List<String> protocols, URI previousTurl, Predicate<LoginBrokerInfo> predicate)
+    {
+        /* For DCAP we try to reuse the previous door in bulk requests.
+         */
+        if (previousTurl != null && previousTurl.getScheme().equals("dcap")) {
+            LoginBrokerInfo door = findDoor(doorsByProtocol, previousTurl);
+            if (door != null && predicate.apply(door)) {
+                return door;
+            }
+        }
+
+        /* Reduce the set of doors to those that expose the path, support one
+         * of the protocols accepted by the client and not disallowed by the
+         * server, and support the network "scope" of the client as determined
+         * from the client's address.
+         */
+        Map<String, Iterable<LoginBrokerInfo>> doors =
+                filterValues(filterKeys(doorsByProtocol, protocols::contains),
+                             d -> d.supports(scope) && predicate.apply(d));
+
+        /* Attempt to match the protocol family of the SRM client. This is not
+         * a hard requirement and we fall back to all families if necessary.
+         */
+        Map<String, Iterable<LoginBrokerInfo>> filtered = filterValues(doors, d -> d.supports(family));
+        if (!filtered.isEmpty()) {
+            doors = filtered;
+        }
+
+        /* Now choose one of the protocols based on our preferences and the
+         * preference of the client.
+         */
+        String protocol = selectProtocol(doors.keySet(), protocols);
+        if (protocol == null) {
+            return null;
+        }
+
+        /* Now select one of the candidate doors. As our load information is not perfect, we choose
+         * randomly from the least loaded doors.
+         */
+        return selectRandomDoor(doors.get(protocol));
+    }
+
+    private LoginBrokerInfo selectRandomDoor(Iterable<LoginBrokerInfo> doors)
     {
         List<LoginBrokerInfo> loginBrokerInfos = LOAD_ORDER.leastOf(doors, numDoorInRanSelection);
         int index = rand.nextInt(Math.min(loginBrokerInfos.size(), numDoorInRanSelection));
@@ -823,42 +857,14 @@ public final class Storage
         return true;
     }
 
-    private String stripRootPath(FsPath root, FsPath path)
-        throws SRMAuthorizationException
-    {
-        if (!path.startsWith(root)) {
-            throw new SRMAuthorizationException(String.format("Access denied for path [%s]", path));
-        }
-
-        List<String> l = path.getPathItemsList();
-        return FsPath.toString(l.subList(root.getPathItemsList().size(),
-                                         l.size()));
-    }
-
-    private Multimap<String,LoginBrokerInfo> getLoginBrokerInfos()
-        throws SRMInternalErrorException
-    {
-        try {
-            return loginBrokerInfo.get();
-        } catch (RuntimeException e) {
-            throw new SRMInternalErrorException(e.getMessage(), e);
-        }
-    }
-
     @Override
     public boolean isLocalTransferUrl(URI url)
-            throws SRMInternalErrorException
     {
         try {
-            String protocol = url.getScheme();
             String host = url.getHost();
             int port = url.getPort();
             InetAddress address = InetAddress.getByName(host);
-            for (LoginBrokerInfo info: getLoginBrokerInfos().get(protocol)) {
-                if (info.getPort() == port && info.getAddresses().contains(address)) {
-                    return true;
-                }
-            }
+            return loginBrokerSource.anyMatch(info -> info.getPort() == port && info.getAddresses().contains(address));
         } catch (UnknownHostException ignored) {
         }
         return false;
@@ -880,17 +886,16 @@ public final class Storage
     }
 
     /**
-     * Attempts to locate the door
+     * Attempts to locate the door referred to in the given uri.
      */
-    private LoginBrokerInfo findDoor(URI uri)
-            throws SRMInternalErrorException
+    private LoginBrokerInfo findDoor(Map<String, Collection<LoginBrokerInfo>> doorsByProtocol, URI uri)
     {
         try {
             String protocol = uri.getScheme();
             String host = uri.getHost();
             int port = uri.getPort();
             InetAddress address = InetAddress.getByName(host);
-            for (LoginBrokerInfo door : getLoginBrokerInfos().get(protocol)) {
+            for (LoginBrokerInfo door : doorsByProtocol.get(protocol)) {
                 if (door.getAddresses().contains(address) && door.getPort() == port) {
                     return door;
                 }
@@ -2554,40 +2559,6 @@ public final class Storage
             return path;
         } catch (UnknownHostException e) {
             throw new SRMInvalidPathException(e.getMessage());
-        }
-    }
-
-    private class LoginBrokerInfoSupplier implements Supplier<Multimap<String,LoginBrokerInfo>>
-    {
-        private static final int MAX_LOGIN_BROKER_RETRIES = 5;
-
-        @Override
-        public Multimap<String,LoginBrokerInfo> get()
-        {
-            String brokerMessage = "ls -binary";
-            String error;
-            try {
-                int retry = 0;
-                do {
-                    try {
-                        LoginBrokerInfo[] doors =
-                                _loginBrokerStub.sendAndWait(brokerMessage, LoginBrokerInfo[].class);
-                        Multimap<String,LoginBrokerInfo> map = ArrayListMultimap.create();
-                        for (LoginBrokerInfo door : doors) {
-                            map.put(door.getProtocolFamily(), door);
-                        }
-                        return map;
-                    } catch (TimeoutCacheException e) {
-                        error = "LoginBroker is unavailable";
-                    } catch (CacheException e) {
-                        error = e.getMessage();
-                    }
-                    Thread.sleep(5 * 1000);
-                } while (++retry < MAX_LOGIN_BROKER_RETRIES);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Request was interrupted", e);
-            }
-            throw new RuntimeException(error);
         }
     }
 

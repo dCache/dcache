@@ -22,7 +22,9 @@
       </property>
   </bean>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+    <property name="excludedDestinations" value="${xrootd.loginbroker.update-topic}"/>
+  </bean>
 
   <bean id="pool-stub" class="org.dcache.cells.CellStub">
     <description>Pool cell stub</description>
@@ -136,20 +138,21 @@
     <property name="cellStub" ref="gPlazma-stub" />
   </bean>
 
-  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler"
-        init-method="start"
-        destroy-method="stop">
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
     <description>Notifies LoginBroker </description>
     <property name="executor" ref="scheduled-thread-pool"/>
-    <property name="updateTime" value="${xrootd.service.loginbroker.update-period}"/>
-    <property name="updateTimeUnit" value="${xrootd.service.loginbroker.update-period.unit}"/>
-    <property name="updateThreshold" value="${xrootd.service.loginbroker.update-threshold}"/>
+    <property name="updateTime" value="${xrootd.loginbroker.update-period}"/>
+    <property name="updateTimeUnit" value="${xrootd.loginbroker.update-period.unit}"/>
+    <property name="updateThreshold" value="${xrootd.loginbroker.update-threshold}"/>
     <property name="protocolEngine" value="org.dcache.xrootd.door.XrootdDoor"/>
-    <property name="protocolVersion" value="${xrootd.service.loginbroker.version}"/>
-    <property name="protocolFamily" value="${xrootd.service.loginbroker.family}"/>
+    <property name="protocolVersion" value="${xrootd.loginbroker.version}"/>
+    <property name="protocolFamily" value="${xrootd.loginbroker.family}"/>
     <property name="port" value="${xrootd.net.port}"/>
     <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
-    <property name="loginBrokers" value="${xrootd.service.loginbroker}"/>
+    <property name="topic" value="${xrootd.loginbroker.update-topic}"/>
+    <property name="tags" value="${xrootd.loginbroker.tags}"/>
     <property name="root" value="${xrootd.root}"/>
+    <property name="readPaths" value="${xrootd.authz.read-paths}"/>
+    <property name="writePaths" value="${xrootd.authz.write-paths}"/>
   </bean>
 </beans>

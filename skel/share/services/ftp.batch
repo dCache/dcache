@@ -6,18 +6,20 @@ onerror shutdown
 
 check -strong ftp.cell.name
 check -strong ftp.cell.export
+check ftp.cell.subscribe
 check -strong ftp.implementation
 check -strong ftp.net.port
 check -strong ftp.net.port-range
 check -strong ftp.limits.clients
 check -strong ftp.limits.retries
 check -strong ftp.limits.streams-per-client
-check ftp.service.loginbroker
-check -strong ftp.service.loginbroker.update-period
-check -strong ftp.service.loginbroker.update-period.unit
-check -strong ftp.service.loginbroker.update-threshold
-check -strong ftp.service.loginbroker.family
-check -strong ftp.service.loginbroker.version
+check ftp.loginbroker.update-topic
+check ftp.loginbroker.tags
+check -strong ftp.loginbroker.update-period
+check -strong ftp.loginbroker.update-period.unit
+check -strong ftp.loginbroker.update-threshold
+check -strong ftp.loginbroker.family
+check -strong ftp.loginbroker.version
 check -strong ftp.service.gplazma
 check -strong ftp.service.billing
 check -strong ftp.service.pnfsmanager
@@ -55,15 +57,18 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -listen=${ftp.net.listen} \
    -prot=raw \
    -export=${ftp.cell.export} \
+   -subscribe=${ftp.cell.subscribe} \
    -root=\"${ftp.root}\" \
    -upload=\"${ftp.authz.upload-directory}\" \
    -clientDataPortRange=${ftp.net.port-range} \
-   -protocolFamily=${ftp.service.loginbroker.family} \
-   -protocolVersion=${ftp.service.loginbroker.version} \
-   -brokerUpdateTime=${ftp.service.loginbroker.update-period} \
-   -brokerUpdateTimeUnit=${ftp.service.loginbroker.update-period.unit} \
-   -brokerUpdateOffset=${ftp.service.loginbroker.update-threshold} \
-   -loginBroker=\"${ftp.service.loginbroker}\" \
+   -protocolFamily=${ftp.loginbroker.family} \
+   -protocolVersion=${ftp.loginbroker.version} \
+   -brokerUpdateTime=${ftp.loginbroker.update-period} \
+   -brokerUpdateTimeUnit=${ftp.loginbroker.update-period.unit} \
+   -brokerUpdateOffset=${ftp.loginbroker.update-threshold} \
+   -brokerTopic=\"${ftp.loginbroker.update-topic}\" \
+   -brokerTags=\"${ftp.loginbroker.tags}\" \
+   -brokerReadOnly=${ftp.authz.readonly} \
    -gplazma=\"${ftp.service.gplazma}\" \
    -billing=\"${ftp.service.billing}\" \
    -pnfsManager=\"${ftp.service.pnfsmanager}\" \

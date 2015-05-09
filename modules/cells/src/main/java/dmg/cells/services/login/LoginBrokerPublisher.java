@@ -1,7 +1,6 @@
 package dmg.cells.services.login;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,17 +8,19 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 import java.io.PrintWriter;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -28,36 +29,41 @@ import java.util.function.Supplier;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellEvent;
+import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
-import org.dcache.util.Args;
+import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
- * Utility class to periodically register a door in a login broker.
+ * Utility class to periodically publish login broker information.
  */
-public class LoginBrokerHandler
+public class LoginBrokerPublisher
     extends AbstractCellComponent
-    implements CellCommandListener, CellMessageReceiver
+    implements CellCommandListener, CellMessageReceiver, CellEventListener
 {
     private static final Logger _log =
-            LoggerFactory.getLogger(LoginBrokerHandler.class);
+            LoggerFactory.getLogger(LoginBrokerPublisher.class);
 
-    enum UpdateMode
+    private enum UpdateMode
     {
         EAGER, NORMAL
     }
 
-    private static final long EAGER_UPDATE_TIME = SECONDS.toMillis(1);
-
-    private String[] _loginBrokers;
+    private CellAddressCore _topic;
     private String _protocolFamily;
     private String _protocolVersion;
     private String _protocolEngine;
@@ -70,62 +76,158 @@ public class LoginBrokerHandler
     private int _port;
     private ScheduledExecutorService _executor;
     private ScheduledFuture<?> _task;
-    private String _root;
+    private String _root = "/";
+    private List<String> _readPaths = Collections.emptyList();
+    private List<String> _writePaths = Collections.emptyList();
+    private boolean _readEnabled = true;
+    private boolean _writeEnabled = true;
 
-    public static final String hh_lb_set_update = "<updateTime/sec>";
-    public synchronized String ac_lb_set_update_$_1(Args args)
+    /**
+     * Tags to advertise. For thread safety, the list must not be modified.
+     * Instead it has to be copied and the field must be updated.
+     */
+    private List<String> _tags = Collections.emptyList();
+
+    @Command(name = "lb set update", hint = "set login broker update frequency",
+            description = "Defines how often information about this doors should be published.")
+    class SetUpdateCommand implements Callable<String>
     {
-        long time = Long.parseLong(args.argv(0));
-        if (time < 2) {
-            throw new IllegalArgumentException("Update time out of range");
+        @Argument(metaVar = "seconds")
+        int time;
+
+        @Override
+        public String call() throws Exception
+        {
+            checkArgument(time >= 2, "Update time out of range.");
+
+            _brokerUpdateTime = time;
+            _brokerUpdateTimeUnit = TimeUnit.SECONDS;
+            rescheduleTask();
+
+            return "";
         }
-
-        _brokerUpdateTime = time;
-        _brokerUpdateTimeUnit = TimeUnit.SECONDS;
-        rescheduleTask();
-
-        return "";
     }
 
-    public static final String hh_lb_set_threshold = "<threshold>";
-    public synchronized String ac_lb_set_threshold_$_1(Args args)
+    @Command(name = "lb set threshold", hint = "set threshold load for OOB updates",
+            description = "Sets the relative threshold for sending out-of-band updates. If the " +
+                          "load of this for changes by a factor more than this threshold, an " +
+                          "immediate update is published.")
+    class SetThresholdCommand implements Callable<String>
     {
-        setUpdateThreshold(Double.parseDouble(args.argv(0)));
-        return "";
+        @Argument
+        double load;
+
+        @Override
+        public String call() throws Exception
+        {
+            setUpdateThreshold(load);
+            return "";
+        }
+    }
+
+    @Command(name = "lb set tags", hint = "set published tags",
+            description = "Doors may be tagged and subscribers of door information may filter " +
+                          "by these tags.")
+    class SetTagCommand implements Callable<String>
+    {
+        @Argument
+        String[] tags;
+
+        @Override
+        public String call() throws Exception
+        {
+            setTags(tags);
+            return "";
+        }
+    }
+
+    @Command(name = "lb disable", hint = "suspend publishing capabilities",
+            description = "Allows to temporarily suppress publishing of read and write capabilities. " +
+                          "It will appear as it the door does not authorize access to any read and/or " +
+                          "write paths. Without additional options, both read and write capabilities " +
+                          "will be suspended.\n\n" +
+                          "Note that this does not actually disable the door. Only the advertized " +
+                          "capabilities are changed.")
+    class DisableCommand implements Callable<String>
+    {
+        @Option(name = "read")
+        boolean read;
+
+        @Option(name = "write")
+        boolean write;
+
+        @Override
+        public String call() throws Exception
+        {
+            if (read || !write) {
+                setReadEnabled(false);
+            }
+            if (write || !read) {
+                setWriteEnabled(false);
+            }
+            return "";
+        }
+    }
+
+    @Command(name = "lb enable", hint = "resume publishing capabilities",
+            description = "Allows to continue publishing read and/or write capabilities. Without " +
+                          "additional options, both read and write capabilities will be published " +
+                          "in correspondence with the door's configuration.")
+    class EnableCommand implements Callable<String>
+    {
+        @Option(name = "read")
+        boolean read;
+
+        @Option(name = "write")
+        boolean write;
+
+        @Override
+        public String call() throws Exception
+        {
+            if (read || !write) {
+                setReadEnabled(true);
+            }
+            if (write || !read) {
+                setWriteEnabled(true);
+            }
+            return "";
+        }
     }
 
     protected LoginBrokerInfo newInfo(String cell, String domain,
-                                      String protocolFamily, String protocolVersion,
-                                      String protocolEngine, String root, List<InetAddress> addresses, int port,
+                                      String protocolFamily, String protocolVersion, String protocolEngine,
+                                      String root, Collection<String> readPaths, Collection<String> writePaths, Collection<String> tags,
+                                      List<InetAddress> addresses, int port,
                                       double load, long updateTime)
     {
         return new LoginBrokerInfo(cell, domain, protocolFamily, protocolVersion,
-                                   protocolEngine, root, addresses, port, load, updateTime);
+                                   protocolEngine, root, readPaths, writePaths, tags, addresses, port, load, updateTime);
+    }
+
+    private synchronized Optional<LoginBrokerInfo> createLoginBrokerInfo()
+    {
+        if (_task != null) {
+            List<InetAddress> addresses = _addresses.get();
+            if (!addresses.isEmpty()) {
+                return Optional.of(newInfo(getCellName(), getCellDomainName(),
+                                           _protocolFamily, _protocolVersion, _protocolEngine, _root,
+                                           _readEnabled ? _readPaths : Collections.emptyList(),
+                                           _writeEnabled ? _writePaths : Collections.emptyList(),
+                                           _tags, addresses, _port, _load.getLoad(),
+                                           _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime)));
+            }
+        }
+        return Optional.empty();
     }
 
     private synchronized void sendUpdate()
     {
-        if (_loginBrokers == null) {
-            return;
-        }
-
-        List<InetAddress> addresses = _addresses.get();
-        if (addresses.isEmpty()) {
-            return;
-        }
-
-        LoginBrokerInfo info =
-                newInfo(getCellName(), getCellDomainName(),
-                        _protocolFamily, _protocolVersion, _protocolEngine, _root, addresses, _port, _load.getLoad(),
-                        _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime));
-
-        for (String loginBroker : _loginBrokers) {
-            sendMessage(new CellMessage(new CellPath(loginBroker), info));
-        }
-
-        if (_currentUpdateMode != UpdateMode.NORMAL) {
+        if (_topic != null) {
             _currentUpdateMode = UpdateMode.NORMAL;
-            rescheduleTask();
+            Optional<LoginBrokerInfo> info = createLoginBrokerInfo();
+            if (info.isPresent()) {
+                sendMessage(new CellMessage(_topic, info.get()));
+            }
         }
     }
 
@@ -133,31 +235,65 @@ public class LoginBrokerHandler
     {
         if (_currentUpdateMode != UpdateMode.EAGER) {
             CellAddressCore destinationAddress = e.getDestinationPath().getDestinationAddress();
-            for (String loginBroker : _loginBrokers) {
-                if (destinationAddress.equals(new CellAddressCore(loginBroker))) {
-                    _currentUpdateMode = UpdateMode.EAGER;
-                    rescheduleTask();
-                    break;
-                }
+            if (destinationAddress.equals(_topic)) {
+                _currentUpdateMode = UpdateMode.EAGER;
+            }
+        }
+    }
+
+    public LoginBrokerInfo messageArrived(LoginBrokerInfoRequest msg)
+    {
+        return createLoginBrokerInfo().orElse(null);
+    }
+
+    @Override
+    public void cellCreated(CellEvent ce)
+    {
+    }
+
+    @Override
+    public void cellDied(CellEvent ce)
+    {
+    }
+
+    @Override
+    public void cellExported(CellEvent ce)
+    {
+    }
+
+    @Override
+    public synchronized void routeAdded(CellEvent ce)
+    {
+        if (_currentUpdateMode == UpdateMode.EAGER) {
+            CellRoute route = (CellRoute) ce.getSource();
+            if (route.getRouteType() == CellRoute.TOPIC || route.getRouteType() == CellRoute.DOMAIN) {
+                sendUpdate();
             }
         }
     }
 
     @Override
+    public void routeDeleted(CellEvent ce)
+    {
+    }
+
+    @Override
     public synchronized void getInfo(PrintWriter pw)
     {
-        if (_loginBrokers == null || _task == null) {
+        if (_topic == null || _task == null) {
             pw.println("    Login Broker : DISABLED");
             return;
         }
-        pw.println("    LoginBroker      : " + Arrays.toString(_loginBrokers));
+        pw.println("    LoginBroker      : " + _topic);
         pw.println("    Protocol Family  : " + _protocolFamily);
         pw.println("    Protocol Version : " + _protocolVersion);
         pw.println("    Port             : " + _port);
-        pw.println("    Hosts            : " + _addresses.get());
+        pw.println("    Addresses        : " + _addresses.get());
+        pw.println("    Tags             : " + _tags);
+        pw.println("    Read paths       : " + _readPaths + (_readEnabled ? "" : " (disabled)"));
+        pw.println("    Write paths      : " + _writePaths  + (_writeEnabled ? "" : " (disabled)"));
         pw.println("    Update Time      : " + _brokerUpdateTime + " " + _brokerUpdateTimeUnit);
-        pw.println("    Update Threshold : " +
-                   ((int) (_brokerUpdateThreshold * 100.0)) + " %");
+        pw.println("    Update Threshold : " + ((int) (_brokerUpdateThreshold * 100.0)) + " %");
     }
 
     /**
@@ -229,15 +365,15 @@ public class LoginBrokerHandler
         _load = load;
     }
 
-    public synchronized void setLoginBrokers(String[] loginBrokers)
+    public synchronized void setTopic(String topic)
     {
-        _loginBrokers = loginBrokers;
+        _topic = new CellAddressCore(topic);
         rescheduleTask();
     }
 
-    public synchronized String[] getLoginBrokers()
+    public synchronized String getTopic()
     {
-        return Arrays.copyOf(_loginBrokers, _loginBrokers.length);
+        return Objects.toString(_topic, null);
     }
 
     public synchronized void setProtocolFamily(String protocolFamily)
@@ -306,12 +442,42 @@ public class LoginBrokerHandler
 
     /**
      * Root directory of door.
-     *
+     * <p>
      * If null, then a per-user root directory is assumed.
      */
     public synchronized void setRoot(String root)
     {
         _root = root;
+    }
+
+    public synchronized void setReadPaths(String... paths)
+    {
+        _readPaths = asList(paths);
+        rescheduleTask();
+    }
+
+    public synchronized void setWritePaths(String... paths)
+    {
+        _writePaths = asList(paths);
+        rescheduleTask();
+    }
+
+    public synchronized void setTags(String... tags)
+    {
+        _tags = asList(tags);
+        rescheduleTask();
+    }
+
+    public synchronized void setWriteEnabled(boolean enabled)
+    {
+        _writeEnabled = enabled;
+        rescheduleTask();
+    }
+
+    public synchronized void setReadEnabled(boolean enabled)
+    {
+        _readEnabled = enabled;
+        rescheduleTask();
     }
 
     public synchronized void setExecutor(ScheduledExecutorService executor)
@@ -320,12 +486,14 @@ public class LoginBrokerHandler
         rescheduleTask();
     }
 
-    public synchronized void start()
+    @Override
+    public synchronized void afterStart()
     {
         scheduleTask();
     }
 
-    public synchronized void stop()
+    @Override
+    public synchronized void beforeStop()
     {
         if (_task != null) {
             _task.cancel(false);
@@ -343,30 +511,8 @@ public class LoginBrokerHandler
 
     private void scheduleTask()
     {
-        Runnable command = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    sendUpdate();
-                } catch (Throwable e) {
-                    Thread thisThread = Thread.currentThread();
-                    UncaughtExceptionHandler ueh = thisThread.getUncaughtExceptionHandler();
-                    ueh.uncaughtException(thisThread, e);
-                    Throwables.propagateIfPossible(e);
-                }
-            }
-        };
-        switch (_currentUpdateMode) {
-        case EAGER:
-            _task = _executor.scheduleWithFixedDelay(command, EAGER_UPDATE_TIME, EAGER_UPDATE_TIME, MILLISECONDS);
-            break;
-
-        case NORMAL:
-            _task = _executor.scheduleWithFixedDelay(command, 0, _brokerUpdateTime, _brokerUpdateTimeUnit);
-            break;
-        }
+        _task = _executor.scheduleWithFixedDelay(
+                new FireAndForgetTask(this::sendUpdate), 0, _brokerUpdateTime, _brokerUpdateTimeUnit);
     }
 
     public static Supplier<List<InetAddress>> createSingleAddressSupplier(InetAddress address)

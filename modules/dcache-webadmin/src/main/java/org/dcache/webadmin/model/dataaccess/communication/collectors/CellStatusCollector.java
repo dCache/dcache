@@ -1,8 +1,6 @@
 package org.dcache.webadmin.model.dataaccess.communication.collectors;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
@@ -37,29 +35,12 @@ public class CellStatusCollector extends Collector {
 
 //    After 2 days a cell is considered removed and will no longer be queried
     private static final long CONSIDERED_REMOVED_TIME_MS = 172800000;
-    private String[] _loginBrokerNames;
+    private Collection<LoginBrokerInfo> _doors;
     private String _pnfsManagerName;
     private String _poolManagerName;
     private String _gPlazmaName;
     private Map<CellAddressCore, CellStatus> _statusTargets = new HashMap<>();
     private static final Logger _log = LoggerFactory.getLogger(CellStatusCollector.class);
-
-    private Set<CellAddressCore> getDoorNamesFromBroker(String loginBrokerName)
-            throws InterruptedException {
-        _log.debug("Requesting doorInfo from LoginBroker {}", loginBrokerName);
-        Set<CellAddressCore> newDoors = new HashSet<>();
-        try {
-            LoginBrokerInfo[] infos = _cellStub.sendAndWait(new CellPath(loginBrokerName),
-                    "ls -binary -all", LoginBrokerInfo[].class);
-            for (LoginBrokerInfo info : infos) {
-                newDoors.add(new CellAddressCore(info.getCellName(), info.getDomainName()));
-            }
-            _log.debug("Doors found: {}", newDoors);
-        } catch (CacheException ex) {
-            _log.debug("Could not retrieve Doors from {}", loginBrokerName);
-        }
-        return newDoors;
-    }
 
     private Set<CellAddressCore> getPoolCells() throws InterruptedException {
         _log.debug("Requesting Pools from {}", _poolManagerName);
@@ -83,17 +64,17 @@ public class CellStatusCollector extends Collector {
         cellNames.add(new CellAddressCore(_gPlazmaName));
     }
 
-    private void addLoginBrokerTargets(Set<CellAddressCore> targetCells, String broker)
-            throws InterruptedException {
-        targetCells.addAll(getDoorNamesFromBroker(broker));
-        targetCells.add(new CellAddressCore(broker));
+    private void addLoginBrokerTargets(Set<CellAddressCore> targetCells)
+            throws InterruptedException
+    {
+        _doors.stream()
+                .map(i -> new CellAddressCore(i.getCellName(), i.getDomainName()))
+                .forEach(targetCells::add);
     }
 
     private Set<CellAddressCore> getTargetCells() throws InterruptedException {
         Set<CellAddressCore> targetCells = new HashSet<>();
-        for (String broker : _loginBrokerNames) {
-            addLoginBrokerTargets(targetCells, broker);
-        }
+        addLoginBrokerTargets(targetCells);
         targetCells.addAll(getPoolCells());
         addStandardNames(targetCells);
         return targetCells;
@@ -157,8 +138,8 @@ public class CellStatusCollector extends Collector {
         return removables;
     }
 
-    public void setLoginBrokerNames(String loginBrokerNames) {
-        _loginBrokerNames = Iterables.toArray(Splitter.on(",").omitEmptyStrings().split(loginBrokerNames), String.class);
+    public void setDoors(Collection<LoginBrokerInfo> doors) {
+        _doors = doors;
     }
 
     public void setPnfsManagerName(String pnfsManagerName) {

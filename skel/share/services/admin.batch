@@ -1,6 +1,7 @@
 # Starts ssh2 Admin Interface
 
 check -strong admin.cell.name
+check admin.cell.subscribe
 check -strong admin.net.port
 check -strong admin.paths.dsa-host-key.private
 check -strong admin.paths.dsa-host-key.public
@@ -13,13 +14,13 @@ check -strong admin.service.poolmanager.timeout.unit
 check -strong admin.service.spacemanager
 check -strong admin.service.spacemanager.timeout
 check -strong admin.service.spacemanager.timeout.unit
-check -strong admin.service.loginbroker
 check -strong admin.service.pnfsmanager
 check -strong admin.service.pnfsmanager.timeout
 check -strong admin.service.pnfsmanager.timeout.unit
 check -strong admin.service.acm
 check -strong admin.service.acm.timeout
 check -strong admin.service.acm.timeout.unit
+check admin.loginbroker.request-topic
 check -strong admin.authz.gid
 check admin.paths.authorized-keys
 
@@ -39,4 +40,5 @@ onerror shutdown
 exec env failMissingServerKey.exe -ifnotok=have_server_key
 
 create org.dcache.cells.UniversalSpringCell ${admin.cell.name} \
-    "classpath:org/dcache/services/ssh2/ssh2Admin.xml"
+    "classpath:org/dcache/services/ssh2/ssh2Admin.xml \
+     -subscribe=${admin.cell.subscribe}"

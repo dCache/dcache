@@ -164,6 +164,7 @@ public class StatePersistentMetadata
 
         this.add(StatePath.parsePath("doors.*"), branchMetadata("door", "name"));
         this.add(StatePath.parsePath("doors.*.interfaces.*"), branchMetadata("interface", "id"));
+        this.add(StatePath.parsePath("doors.*.tags.*"), branchMetadata("tag", "id"));
 
         this.add(StatePath.parsePath("nas.*"), branchMetadata("nas", "id"));
         this.add(StatePath.parsePath("nas.*.links.*"), branchMetadata("linkref", "name"));

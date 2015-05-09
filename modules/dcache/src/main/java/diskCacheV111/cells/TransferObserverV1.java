@@ -5,11 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,9 +25,11 @@ import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoJobInfo;
 
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerSubscriber;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.cells.CellStub;
@@ -37,7 +39,6 @@ import org.dcache.util.TransferCollector;
 import org.dcache.util.TransferCollector.Transfer;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
 
 public class TransferObserverV1
     extends CellAdapter
@@ -50,8 +51,8 @@ public class TransferObserverV1
     private final CellStub      _cellStub;
     private final Args          _args;
     private final TransferCollector _collector;
-    private final String        _loginBroker;
     private final Thread        _workerThread;
+    private final LoginBrokerSubscriber _loginBrokerSource;
     private       long          _update         = 120000L;
     private       long          _timeUsed;
     private       long          _processCounter;
@@ -158,9 +159,19 @@ public class TransferObserverV1
         _nucleus = getNucleus();
         _cellStub = new CellStub(this, null, 30, SECONDS);
         _args    = getArgs();
-        _loginBroker = _args.getOpt("loginBroker");
-        _collector = new TransferCollector(_cellStub,
-                                           Arrays.stream(_loginBroker.split(",")).map(CellPath::new).collect(toList()));
+
+        _loginBrokerSource = new LoginBrokerSubscriber();
+        addCellEventListener(_loginBrokerSource);
+        addCommandListener(_loginBrokerSource);
+        _loginBrokerSource.setCellEndpoint(this);
+        _loginBrokerSource.setTopic(_args.getOpt("loginBroker"));
+
+        /* Ugly hack: We don't have a good way to get unsolicited messages into webadmin,
+         * so we piggyback on the transfer observer's LoginBrokerSubscriber.
+         */
+        getDomainContext().put("doors", _loginBrokerSource.doors());
+
+        _collector = new TransferCollector(_cellStub, _loginBrokerSource.doors());
 
         try {
             if (_args.argc() < 0) {
@@ -194,6 +205,7 @@ public class TransferObserverV1
         }
         useInterpreter(true);
         start();
+        _loginBrokerSource.afterStart();
     }
 
     private static class TableEntry
@@ -352,6 +364,17 @@ public class TransferObserverV1
     }
 
     @Override
+    public void messageArrived(CellMessage envelope)
+    {
+        Serializable message = envelope.getMessageObject();
+        if (message instanceof LoginBrokerInfo) {
+            _loginBrokerSource.messageArrived((LoginBrokerInfo) message);
+        } else if (message instanceof NoRouteToCellException) {
+            _loginBrokerSource.messageArrived((NoRouteToCellException) message);
+        }
+    }
+
+    @Override
     public void run()
     {
         try {
@@ -386,7 +409,7 @@ public class TransferObserverV1
     {
         try {
             Collection<LoginBrokerInfo> loginBrokerInfos =
-                    _collector.collectLoginBrokerInfo().get();
+                    _collector.getLoginBrokerInfo();
             Collection<LoginManagerChildrenInfo> loginManagerInfos =
                     _collector.collectLoginManagerInfo(TransferCollector.getLoginManagers(loginBrokerInfos)).get();
             Collection<IoDoorInfo> doorInfos =

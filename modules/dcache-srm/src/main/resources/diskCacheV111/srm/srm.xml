@@ -30,7 +30,9 @@
        =====================================================================================
     -->
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <property name="excludedDestinations" value="${srm.loginbroker.request-topic}"/>
+  </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>
@@ -80,13 +82,6 @@
     <property name="timeoutUnit" value="${srm.service.pinmanager.timeout.unit}" />
   </bean>
 
-  <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
-    <description>Login broker communication stub</description>
-    <property name="destination" value="${srm.protocols.loginbroker}"/>
-    <property name="timeout" value="${srm.protocols.loginbroker.timeout}" />
-    <property name="timeoutUnit" value="${srm.protocols.loginbroker.timeout.unit}" />
-  </bean>
-
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PNFS manager communication stub</description>
     <property name="destination" value="${srm.service.pnfsmanager}"/>
@@ -120,9 +115,12 @@
       </constructor-arg>
   </bean>
 
-  <bean id="lb" class="diskCacheV111.srm.dcache.SrmLoginBrokerHandler"
-        init-method="start"
-        destroy-method="stop">
+  <bean id="login-broker-source" class="dmg.cells.services.login.LoginBrokerSubscriber">
+      <property name="topic" value="${srm.loginbroker.request-topic}"/>
+      <property name="tags" value="${srm.protocols.tags}"/>
+  </bean>
+
+  <bean id="lb" class="diskCacheV111.srm.dcache.SrmLoginBrokerPublisher">
     <description>Registers the door with a LoginBroker</description>
     <property name="executor">
       <bean class="java.util.concurrent.Executors"
@@ -131,16 +129,19 @@
         <description>Thread pool for scheduled activities</description>
       </bean>
     </property>
-    <property name="updateTime" value="${srm.service.loginbroker.update-period}"/>
-    <property name="updateTimeUnit" value="${srm.service.loginbroker.update-period.unit}"/>
-    <property name="updateThreshold" value="${srm.service.loginbroker.update-threshold}"/>
+    <property name="updateTime" value="${srm.loginbroker.update-period}"/>
+    <property name="updateTimeUnit" value="${srm.loginbroker.update-period.unit}"/>
+    <property name="updateThreshold" value="${srm.loginbroker.update-threshold}"/>
     <property name="protocolEngine" value="diskCacheV111.srm.dcache.Storage"/>
-    <property name="protocolVersion" value="${srm.service.loginbroker.version}"/>
-    <property name="protocolFamily" value="${srm.service.loginbroker.family}"/>
+    <property name="protocolVersion" value="${srm.loginbroker.version}"/>
+    <property name="protocolFamily" value="${srm.loginbroker.family}"/>
     <property name="address" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
     <property name="port" value="${srm.net.port}"/>
-    <property name="loginBrokers" value="${srm.service.loginbroker}"/>
+    <property name="topic" value="${srm.loginbroker.update-topic}"/>
+    <property name="tags" value="${srm.loginbroker.tags}"/>
     <property name="root" value="${srm.root}"/>
+    <property name="readPaths" value="/"/>
+    <property name="writePaths" value="/"/>
     <property name="srm" ref="srm"/>
     <property name="httpsPort" value="${srm.net.ssl-port}"/>
     <property name="host" value="${srm.net.host}"/>
@@ -212,7 +213,7 @@
         </bean>
     </property>
     <property name="directoryListSource" ref="list-handler"/>
-    <property name="loginBrokerStub" ref="login-broker-stub"/>
+    <property name="loginBrokerSource" ref="login-broker-source"/>
     <property name="pnfsStub" ref="pnfs-stub"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="poolManagerStub" ref="pool-manager-stub"/>
@@ -224,10 +225,6 @@
     <property name="billingStub" ref="billing-stub"/>
     <property name="isSpaceManagerEnabled"
               value="${srm.enable.space-reservation}"/>
-    <property name="loginBrokerUpdatePeriod"
-              value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.protocols.loginbroker.period},
-                     '${srm.protocols.loginbroker.period.unit}')}" />
     <property name="numberOfDoorsInRandomSelection"
               value="${srm.protocols.population-size}"/>
     <property name="useCustomGetHostByAddress"

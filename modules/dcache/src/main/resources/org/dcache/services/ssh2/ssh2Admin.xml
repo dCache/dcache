@@ -10,7 +10,9 @@
     <context:annotation-config/>
     <context:property-placeholder/>
 
-    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <property name="excludedDestinations" value="${admin.loginbroker.request-topic}"/>
+    </bean>
 
     <bean id="gplazma" class="org.dcache.cells.CellStub">
         <description>gPlazma communication stub</description>
@@ -83,7 +85,11 @@
         <property name="pnfsManager" ref="pnfsmanager"/>
         <property name="poolManager" ref="poolmanager"/>
         <property name="spaceManager" ref="spacemanager"/>
-        <property name="loginBrokers" value="${admin.service.loginbroker}"/>
+        <property name="loginBrokerSource">
+            <bean class="dmg.cells.services.login.LoginBrokerSubscriber">
+                <property name="topic" value="${webdav.loginbroker.request-topic}"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="ssh2Server" class="org.dcache.services.ssh2.Ssh2Admin">

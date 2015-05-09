@@ -10,6 +10,7 @@ onerror shutdown
 check -strong httpd.net.listen
 check -strong httpd.net.port
 check -strong httpd.cell.name
+check httpd.cell.subscribe
 check -strong httpd.setup
 check -strong httpd.enable.authn
 check -strong httpd.enable.plots.pool-queue
@@ -23,11 +24,12 @@ check -strong httpd.static-content.styles
 check -strong httpd.static-content.index
 check -strong httpd.static-content.plots
 check -strong httpd.service.billing
-check -strong httpd.service.loginbroker
 check -strong httpd.service.gplazma
 check -strong httpd.service.pnfsmanager
 check -strong httpd.service.poolmanager
 check -strong httpd.service.spacemanager
+check httpd.loginbroker.update-topic
+check httpd.loginbroker.request-topic
 check -strong httpd.limits.idle-time
 check -strong httpd.limits.idle-time.unit
 check -strong httpd.limits.threads
@@ -232,7 +234,8 @@ endDefine
 
 create diskCacheV111.cells.TransferObserverV1 ${httpd.cell.name}TransferObserver \
               "default \
-               -loginBroker=${httpd.service.loginbroker} \
+               -subscribe=${httpd.cell.subscribe} \
+               -loginBroker=${httpd.loginbroker.request-topic} \
                -update=60"
 
 
@@ -252,7 +255,7 @@ create diskCacheV111.cells.WebCollectorV3 ${httpd.cell.name}Collector \
     "PnfsManager \
      PoolManager \
      gPlazma \
-     -loginBroker=${httpd.service.loginbroker} \
+     -subscribe=${httpd.cell.subscribe} \
      -replyObject"
 
 # Any of the above defaults can be redefined in etc/httpd.conf
@@ -270,4 +273,5 @@ onerror shutdown
 
 onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${httpd.cell.name} \
-        "classpath:org/dcache/services/httpd/httpd.xml -profiles=authn-${httpd.enable.authn}"
+        "classpath:org/dcache/services/httpd/httpd.xml -profiles=authn-${httpd.enable.authn} \
+         -subscribe=${httpd.cell.subscribe}"

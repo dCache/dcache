@@ -100,6 +100,10 @@
       </property>
   </bean>
 
+  <bean id="login-broker-message-handler"
+        class="org.dcache.services.info.gathers.loginbroker.LoginBrokerMsgHandler">
+      <constructor-arg ref="state-update-manager"/>
+  </bean>
 
   <bean id="message-handler-chain"
         class="org.dcache.services.info.gathers.MessageHandlerChain">

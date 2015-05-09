@@ -1,14 +1,11 @@
 package org.dcache.services.info.gathers.loginbroker;
 
-import com.google.common.net.InetAddresses;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 
-import dmg.cells.nucleus.UOID;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.services.login.LoginBrokerInfo;
 
 import org.dcache.services.info.base.FloatingPointStateValue;
@@ -17,8 +14,6 @@ import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StateUpdateManager;
 import org.dcache.services.info.base.StringStateValue;
-import org.dcache.services.info.gathers.CellMessageHandlerSkel;
-import org.dcache.services.info.gathers.MessageMetadataRepository;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
@@ -26,54 +21,27 @@ import static com.google.common.net.InetAddresses.toUriString;
 
 
 /**
- * Parse the reply messages from sending the LoginBroker CellMessages with "ls -binary".
- * These replies are an array of LoginBrokerInfo objects.
- *
- * @author Paul Millar <paul.millar@desy.de>
+ * Collects LoginBrokerInfo messages.
  */
-public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
+public class LoginBrokerMsgHandler implements CellMessageReceiver
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoginBrokerLsMsgHandler.class);
-
     private static final StatePath PATH_TO_DOORS = new StatePath("doors");
+    private static final double EXPIRATION_FACTOR = 2.5;
 
+    private final StateUpdateManager _sum;
 
-    public LoginBrokerLsMsgHandler(StateUpdateManager sum,
-            MessageMetadataRepository<UOID> msgMetaRepo)
+    public LoginBrokerMsgHandler(StateUpdateManager sum)
     {
-        super(sum, msgMetaRepo);
+        _sum = sum;
     }
 
-    @Override
-    public void process(Object msgPayload, long metricLifetime)
+    public void messageArrived(LoginBrokerInfo info)
     {
-        if (!msgPayload.getClass().isArray()) {
-            LOGGER.error("unexpected received non-array payload");
-            return;
-        }
-
-        Object[] array = (Object []) msgPayload;
-
-        if (array.length == 0) {
-            return;
-        }
-
         StateUpdate update = new StateUpdate();
-
-        for (Object element : array) {
-            if (!(element instanceof LoginBrokerInfo)) {
-                LOGGER.warn("Skipping array element that is not LoginBrokerInfo");
-                continue;
-            }
-
-            LoginBrokerInfo info = (LoginBrokerInfo) element;
-            addDoorInfo(update, PATH_TO_DOORS
-                    .newChild(info.getIdentifier()), info, metricLifetime);
-        }
-
-        applyUpdates(update);
+        addDoorInfo(update, PATH_TO_DOORS.newChild(info.getIdentifier()), info,
+                    TimeUnit.MILLISECONDS.toSeconds((long) (EXPIRATION_FACTOR * info.getUpdateTime())));
+        _sum.enqueueUpdate(update);
     }
-
 
     /**
      * Add additional state-update to record information about a door.
@@ -90,24 +58,23 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
         conditionalAddString(update, pathToProtocol, "engine",  info.getProtocolEngine(), lifetime);
         conditionalAddString(update, pathToProtocol, "family",  info.getProtocolFamily(), lifetime);
         conditionalAddString(update, pathToProtocol, "version", info.getProtocolVersion(), lifetime);
+        conditionalAddString(update, pathToProtocol, "root", info.getRoot(), lifetime);
 
         update.appendUpdate(pathToDoor.newChild("load"),
-                new FloatingPointStateValue(info.getLoad(), lifetime));
+                            new FloatingPointStateValue(info.getLoad(), lifetime));
         update.appendUpdate(pathToDoor.newChild("port"),
                 new IntegerStateValue(info.getPort(), lifetime));
-
         update.appendUpdate(pathToDoor.newChild("cell"),
                 new StringStateValue(info.getCellName(), lifetime));
-
         update.appendUpdate(pathToDoor.newChild("domain"),
                 new StringStateValue(info.getDomainName(), lifetime));
-
         update.appendUpdate(pathToDoor.newChild("update-time"),
-                new IntegerStateValue(info.getUpdateTime(), lifetime));
+                            new IntegerStateValue(info.getUpdateTime(), lifetime));
 
-        info.getAddresses().stream().forEach((i) ->
-                {addInterfaceInfo(update, pathToDoor.newChild("interfaces"),
-                        i, lifetime);});
+        info.getAddresses().stream().forEach(
+                i -> addInterfaceInfo(update, pathToDoor.newChild("interfaces"), i, lifetime));
+
+        update.appendUpdateCollection(pathToDoor.newChild("tags"), info.getTags(), lifetime);
     }
 
 
@@ -146,7 +113,6 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel
      * </pre>
      * @param update The StateUpdate to append the new metrics.
      * @param parentPath the path that the id branch will be added.
-     * @param order the order in which the interfaces should be considered: 1 is the lowest number.
      * @param lifetime how long the created metrics should last.
      */
     private void addInterfaceInfo(StateUpdate update, StatePath parentPath,

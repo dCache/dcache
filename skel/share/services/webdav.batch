@@ -5,6 +5,7 @@
 onerror shutdown
 check -strong webdav.cell.name
 check -strong webdav.cell.export
+check webdav.cell.subscribe
 check -strong webdav.net.port
 check -strong webdav.net.listen
 check -strong webdav.service.pnfsmanager
@@ -19,12 +20,12 @@ check -strong webdav.service.gplazma
 check -strong webdav.service.gplazma.timeout
 check -strong webdav.service.gplazma.timeout.unit
 check -strong webdav.service.billing
-check webdav.service.loginbroker
-check -strong webdav.service.loginbroker.update-period
-check -strong webdav.service.loginbroker.update-period.unit
-check -strong webdav.service.loginbroker.update-threshold
-check -strong webdav.service.loginbroker.version
-check -strong webdav.service.loginbroker.family
+check webdav.loginbroker.update-topic
+check -strong webdav.loginbroker.update-period
+check -strong webdav.loginbroker.update-period.unit
+check -strong webdav.loginbroker.update-threshold
+check -strong webdav.loginbroker.version
+check -strong webdav.loginbroker.family
 check -strong webdav.root
 check -strong webdav.authz.allowed-paths
 check -strong webdav.authz.readonly
@@ -97,4 +98,6 @@ onerror shutdown
 create org.dcache.cells.UniversalSpringCell ${webdav.cell.name} \
    "classpath:org/dcache/webdav/webdav.xml \
     -profiles=connector-${webdav.authn.profile},missing-files-${webdav.enable.missing-files} \
-    -export=${webdav.cell.export} -cellClass=WebDAVDoor"
+    -export=${webdav.cell.export} \
+    -subscribe=${webdav.cell.subscribe} \
+    -cellClass=WebDAVDoor"

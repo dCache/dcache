@@ -65,19 +65,22 @@ public class TransferCollector
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferCollector.class);
 
     private final CellStub stub;
-    private final List<CellPath> loginBrokers;
+    private final Collection<LoginBrokerInfo> doors;
 
-    public TransferCollector(CellStub stub, List<CellPath> loginBrokers)
+    /**
+     * @param stub communication stub
+     * @param doors doors to query - if the collection is updated the changes will be reflected in
+     *              the data collected by this class
+     */
+    public TransferCollector(CellStub stub, Collection<LoginBrokerInfo> doors)
     {
         this.stub = stub;
-        this.loginBrokers = loginBrokers;
+        this.doors = doors;
     }
 
-    public ListenableFuture<Collection<LoginBrokerInfo>> collectLoginBrokerInfo()
+    public Collection<LoginBrokerInfo> getLoginBrokerInfo()
     {
-        return transform(query(loginBrokers, "ls -binary -all", LoginBrokerInfo[].class,
-                               "Failed to query login broker: {}", new LoginBrokerInfo[0]),
-                         flatten());
+        return doors;
     }
 
     public ListenableFuture<Collection<LoginManagerChildrenInfo>> collectLoginManagerInfo(Set<CellPath> loginManagers)
@@ -103,11 +106,10 @@ public class TransferCollector
 
     public ListenableFuture<List<Transfer>> collectTransfers()
     {
-        ListenableFuture<Collection<LoginBrokerInfo>> loginBrokerInfo =
-                collectLoginBrokerInfo();
+        Collection<LoginBrokerInfo> loginBrokerInfo =
+                getLoginBrokerInfo();
         ListenableFuture<Collection<LoginManagerChildrenInfo>> loginManagerInfo =
-                transform(loginBrokerInfo,
-                          (Collection<LoginBrokerInfo> l) -> collectLoginManagerInfo(getLoginManagers(l)));
+                collectLoginManagerInfo(getLoginManagers(loginBrokerInfo));
         ListenableFuture<Collection<IoDoorInfo>> doorInfo =
                 transform(loginManagerInfo,
                           (Collection<LoginManagerChildrenInfo> l) -> collectDoorInfo(getDoors(l)));

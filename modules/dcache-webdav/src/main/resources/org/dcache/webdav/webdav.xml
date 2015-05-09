@@ -23,7 +23,9 @@
       </property>
   </bean>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <property name="excludedDestinations" value="${webdav.loginbroker.request-topic},${webdav.loginbroker.update-topic}"/>
+  </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
       <description>PnfsManager communication stub</description>
@@ -31,16 +33,6 @@
       <property name="timeout" value="${webdav.service.pnfsmanager.timeout}"/>
       <property name="timeoutUnit" value="${webdav.service.pnfsmanager.timeout.unit}"/>
   </bean>
-
-
-  <bean id="login-broker-stub" class="org.dcache.cells.CellStub">
-      <description>LoginBroker communication stub</description>
-
-      <property name="destination" value="${webdav.srm-discovery.loginbroker}"/>
-      <property name="timeout" value="${webdav.srm-discovery.loginbroker.timeout}"/>
-      <property name="timeoutUnit" value="${webdav.srm-discovery.loginbroker.timeout.unit}"/>
-  </bean>
-
 
   <bean id="transfer-manager-stub" class="org.dcache.cells.CellStub">
       <description>TransferManager communication stub</description>
@@ -127,17 +119,15 @@
       <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
   </bean>
 
-  <bean id="srm-handler" class="org.dcache.webdav.transfer.SrmHandler"
-        init-method="start" destroy-method="stop">
+  <bean id="srm-handler" class="org.dcache.webdav.transfer.SrmHandler">
       <description>Handles communication with SRM</description>
 
-      <property name="loginBrokerStub" ref="login-broker-stub"/>
-      <property name="srmStub" ref="srm-stub"/>
-      <property name="executor">
-          <bean class="java.util.concurrent.Executors"
-                  factory-method="newSingleThreadScheduledExecutor"
-                  destroy-method="shutdown"/>
+      <property name="loginBrokerSource">
+          <bean class="dmg.cells.services.login.LoginBrokerSubscriber">
+              <property name="topic" value="${webdav.loginbroker.request-topic}"/>
+          </bean>
       </property>
+      <property name="srmStub" ref="srm-stub"/>
   </bean>
 
   <bean id="remote-transfer-handler" class="org.dcache.webdav.transfer.RemoteTransferHandler">
@@ -258,22 +248,23 @@
   </bean>
 
 
-  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler"
-	init-method="start" destroy-method="stop">
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
       <description>Registers the door with a LoginBroker</description>
 
       <property name="executor" ref="scheduled-thread-pool"/>
-      <property name="updateTime" value="${webdav.service.loginbroker.update-period}"/>
-      <property name="updateTimeUnit" value="${webdav.service.loginbroker.update-period.unit}"/>
-      <property name="updateThreshold" value="${webdav.service.loginbroker.update-threshold}"/>
-      <property name="protocolEngine"
-		value="org.dcache.webdav.DcacheResourceFactory"/>
-      <property name="protocolVersion" value="${webdav.service.loginbroker.version}"/>
-      <property name="protocolFamily" value="${webdav.service.loginbroker.family}"/>
+      <property name="updateTime" value="${webdav.loginbroker.update-period}"/>
+      <property name="updateTimeUnit" value="${webdav.loginbroker.update-period.unit}"/>
+      <property name="updateThreshold" value="${webdav.loginbroker.update-threshold}"/>
+      <property name="protocolEngine" value="org.dcache.webdav.DcacheResourceFactory"/>
+      <property name="protocolVersion" value="${webdav.loginbroker.version}"/>
+      <property name="protocolFamily" value="${webdav.loginbroker.family}"/>
       <property name="address" value="#{ '${webdav.net.listen}'.equals('any') ? null : '${webdav.net.listen}' }"/>
       <property name="port" value="${webdav.net.port}"/>
-      <property name="loginBrokers" value="${webdav.service.loginbroker}"/>
+      <property name="topic" value="${webdav.loginbroker.update-topic}"/>
+      <property name="tags" value="${webdav.loginbroker.tags}"/>
       <property name="root" value="${webdav.root}"/>
+      <property name="readPaths" value="/"/>
+      <property name="writePaths" value="#{ '${webdav.authz.readonly}'.equals('true') ? '' : '/' }"/>
   </bean>
 
     <bean id="banned-ciphers" class="org.dcache.util.Crypto"

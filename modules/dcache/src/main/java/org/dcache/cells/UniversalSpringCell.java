@@ -59,6 +59,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellCommandListener;
+import dmg.cells.nucleus.CellEventListener;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellLifeCycleAware;
@@ -69,7 +70,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.cells.nucleus.DomainContextAware;
 import dmg.cells.nucleus.EnvironmentAware;
-import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.SetupInfoMessage;
 import dmg.util.CommandException;
 import dmg.util.CommandThrowableException;
@@ -1007,6 +1007,10 @@ public class UniversalSpringCell
 
         if (bean instanceof DomainContextAware) {
             ((DomainContextAware) bean).setDomainContext(getDomainContext());
+        }
+
+        if (bean instanceof CellEventListener) {
+            addCellEventListener((CellEventListener) bean);
         }
 
         return bean;

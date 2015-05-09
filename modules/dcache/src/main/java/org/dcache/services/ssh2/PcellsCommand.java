@@ -38,6 +38,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginBrokerInfo;
+import dmg.cells.services.login.LoginBrokerSource;
 import dmg.util.CommandException;
 
 import org.dcache.cells.CellStub;
@@ -54,6 +55,7 @@ public class PcellsCommand implements Command, Runnable
     private final CellStub _spaceManager;
     private final CellStub _poolManager;
     private final CellStub _pnfsManager;
+    private final LoginBrokerSource _loginBrokerSource;
     private LegacyAdminShell _shell;
     private InputStream _in;
     private ExitCallback _exitCallback;
@@ -69,13 +71,14 @@ public class PcellsCommand implements Command, Runnable
                          CellStub spaceManager,
                          CellStub poolManager,
                          CellStub pnfsManager,
-                         TransferCollector transferCollector)
+                         LoginBrokerSource loginBrokerSource)
     {
         _endpoint = endpoint;
         _spaceManager = spaceManager;
         _poolManager = poolManager;
         _pnfsManager = pnfsManager;
-        _collector = transferCollector;
+        _loginBrokerSource = loginBrokerSource;
+        _collector = new TransferCollector(new CellStub(endpoint), loginBrokerSource.doors());
     }
 
     @Override
@@ -167,22 +170,30 @@ public class PcellsCommand implements Command, Runnable
                                         result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                     }
                                     break;
-                                default:
-                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
-                                    if (result instanceof LoginBrokerInfo[]) {
-                                        result = Stream.of((LoginBrokerInfo[]) result)
+                                case "LoginBroker":
+                                    String cmd = frame.getPayload().toString();
+                                    if (cmd.startsWith("ls") && cmd.contains("-binary")) {
+                                        result = _loginBrokerSource.doors().stream()
                                                 .map(i -> new LoginBrokerInfo(i.getCellName(),
                                                                               i.getDomainName(),
                                                                               i.getProtocolFamily(),
                                                                               i.getProtocolVersion(),
                                                                               i.getProtocolEngine(),
                                                                               i.getRoot(),
+                                                                              i.getReadPaths(),
+                                                                              i.getWritePaths(),
+                                                                              i.getTags(),
                                                                               i.getAddresses(),
                                                                               i.getPort(),
                                                                               i.getLoad(),
                                                                               i.getUpdateTime()))
                                                 .toArray(LoginBrokerInfo[]::new);
+                                    } else {
+                                        result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                     }
+                                    break;
+                                default:
+                                    result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                     break;
                                 }
                             }

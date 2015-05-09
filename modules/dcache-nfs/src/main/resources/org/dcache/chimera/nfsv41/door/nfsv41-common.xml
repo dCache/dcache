@@ -8,7 +8,9 @@
     <context:property-placeholder/>
     <context:property-placeholder/>
 
-    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+    <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <property name="excludedDestinations" value="${nfs.loginbroker.update-topic}"/>
+    </bean>
 
     <!-- Convert properties with multiple values separated by comma into an array of strings:
          key=value1,value2,value3 : String[] {value1, value2, value3}
@@ -138,18 +140,21 @@
         <property name="fallBackToNumeric" value="${nfs.idmap.legacy}" />
     </bean>
 
-    <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler">
+    <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
         <description>Notifies LoginBroker </description>
         <property name="executor" ref="scheduled-thread-pool"/>
-        <property name="updateTime" value="${nfs.service.loginbroker.update-period}"/>
-        <property name="updateTimeUnit" value="${nfs.service.loginbroker.update-period.unit}"/>
-        <property name="updateThreshold" value="${nfs.service.loginbroker.update-threshold}"/>
+        <property name="updateTime" value="${nfs.loginbroker.update-period}"/>
+        <property name="updateTimeUnit" value="${nfs.loginbroker.update-period.unit}"/>
+        <property name="updateThreshold" value="${nfs.loginbroker.update-threshold}"/>
         <property name="protocolEngine" value="org.dcache.chimera.nfsv41.door.NFSv41Door"/>
-        <property name="protocolVersion" value="${nfs.service.loginbroker.version}"/>
-        <property name="protocolFamily" value="${nfs.service.loginbroker.family}"/>
+        <property name="protocolVersion" value="${nfs.loginbroker.version}"/>
+        <property name="protocolFamily" value="${nfs.loginbroker.family}"/>
         <property name="port" value="${nfs.net.port}"/>
-        <property name="loginBrokers" value="${nfs.service.loginbroker}"/>
+        <property name="topic" value="${nfs.loginbroker.update-topic}"/>
+        <property name="tags" value="${nfs.loginbroker.tags}"/>
         <property name="root" value="/"/>
+        <property name="writePaths" value="/"/>
+        <property name="readPaths" value="/"/>
     </bean>
 
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"
@@ -166,7 +171,7 @@
         <property name="portNumber" value="${nfs.net.port}" />
         <property name="versions" value="${nfs.version}" />
         <property name="enableRpcsecGss" value="${nfs.rpcsec_gss}" />
-        <property name="loginBrokerHandler" ref="lb" />
+        <property name="loginBrokerPublisher" ref="lb" />
         <property name="vfsCacheConfig" ref="cache-config" />
     </bean>
 
