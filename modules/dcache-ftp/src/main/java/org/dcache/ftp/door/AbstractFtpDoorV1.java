@@ -3961,9 +3961,7 @@ public abstract class AbstractFtpDoorV1
         public synchronized void run()
         {
             try (CDC ignored = _cdc.restore()) {
-                CellMessage msg =
-                        new CellMessage(new CellPath(_pool),
-                                "mover ls -binary " + _moverId);
+                CellMessage msg = new CellMessage(_pool, "mover ls -binary " + _moverId);
                 _cellEndpoint.sendMessage(msg, this, _executor, _timeout);
             }
         }

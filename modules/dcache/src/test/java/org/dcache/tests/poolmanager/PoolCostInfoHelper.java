@@ -7,7 +7,6 @@ import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.pool.classic.IoQueueManager;
 
@@ -24,7 +23,7 @@ public class PoolCostInfoHelper {
 
         poolCost.setSpaceUsage(total, free, precious, removable);
 
-        CellMessage envelope = new CellMessage(new CellPath("PoolManager"), null);
+        CellMessage envelope = new CellMessage(new CellAddressCore("PoolManager"), null);
         envelope.addSourceAddress(new CellAddressCore(pool));
         PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool,
                 serialId, poolMode, poolCost);

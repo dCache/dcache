@@ -89,9 +89,9 @@ public class PoolMonitorTest
         PoolManagerPoolUpMessage pool2UpMessage = new PoolManagerPoolUpMessage("pool2",
                 serialId, poolMode, poolCost2);
 
-        CellMessage envelope1 = new CellMessage(new CellPath("PoolManager"), null);
+        CellMessage envelope1 = new CellMessage(new CellAddressCore("PoolManager"), null);
         envelope1.addSourceAddress(new CellAddressCore("pool1"));
-        CellMessage envelope2 = new CellMessage(new CellPath("PoolManager"), null);
+        CellMessage envelope2 = new CellMessage(new CellAddressCore("PoolManager"), null);
         envelope2.addSourceAddress(new CellAddressCore("pool2"));
 
         _costModule.messageArrived(envelope1, pool1UpMessage);

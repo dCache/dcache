@@ -33,7 +33,6 @@ import diskCacheV111.util.CostException;
 import diskCacheV111.util.DestinationCostException;
 import diskCacheV111.util.ExtendedRunnable;
 import diskCacheV111.util.FileNotInCacheException;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -670,7 +669,7 @@ public class RequestContainerV5
                                                                  new InetSocketAddress(args.argv(1),
                                                                  2222)));
 
-            sendMessage( new CellMessage(new CellPath("PoolManager"), req) );
+            sendMessage( new CellMessage(new CellAddressCore("PoolManager"), req) );
 
         } catch (CacheException e) {
             commandReply = "P2P failed : " + e.getMessage();

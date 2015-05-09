@@ -13,9 +13,9 @@ import java.io.PrintWriter;
 import java.util.NoSuchElementException;
 
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
 
 import org.dcache.util.Args;
 
@@ -153,7 +153,7 @@ public class SetupManager extends CellAdapter {
       SetupInfoMessage info =
             new SetupInfoMessage( name , className ) ;
 
-       CellMessage reply = getNucleus().sendAndWait(new CellMessage(new CellPath("setupManager"),
+       CellMessage reply = getNucleus().sendAndWait(new CellMessage(new CellAddressCore("setupManager"),
                                                                     info), (long) 10000);
 
       if( reply == null ) {

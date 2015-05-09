@@ -292,7 +292,7 @@ public class RoutingManager
             return;
         }
         String[] topics = _topics.toArray(new String[_topics.size()]);
-        CellMessage msg = new CellMessage(new CellPath(_nucleus.getCellName()),
+        CellMessage msg = new CellMessage(new CellAddressCore(_nucleus.getCellName()),
                                           new TopicRouteUpdate(topics));
         _nucleus.sendMessage(msg, false, true);
     }

@@ -12,9 +12,9 @@ import java.net.InetAddress;
 import java.util.Hashtable;
 
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.UOID;
 import dmg.util.Gate;
 import dmg.util.StreamEngine;
@@ -118,7 +118,7 @@ public class      ObjectLoginCell
    {
       CellMessage msg;
       try{
-         msg = new CellMessage( new CellPath( "System" ) ,  "ps -a" ) ;
+         msg = new CellMessage( new CellAddressCore( "System" ) ,  "ps -a" ) ;
          sendMessage( msg ) ;
          _log.info( "sendMessage o.k. : "+msg ) ;
       }catch( RuntimeException e ){

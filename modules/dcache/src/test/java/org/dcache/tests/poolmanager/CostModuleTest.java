@@ -250,7 +250,7 @@ public class CostModuleTest {
 
     private static CellMessage buildEnvelope(CellAddressCore source)
     {
-        CellMessage envelope = new CellMessage(new CellPath("irrelevant"), null);
+        CellMessage envelope = new CellMessage(new CellAddressCore("irrelevant"), null);
         envelope.addSourceAddress(source);
         return envelope;
     }

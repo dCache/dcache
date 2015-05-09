@@ -47,16 +47,23 @@ public class CellMessage implements Cloneable , Serializable {
   private static final int   DUMMY_MODE     = 2 ;
   private transient long _receivedAt;
 
-  public CellMessage( CellPath addr , Serializable msg ){
+  public CellMessage(CellAddressCore address, Serializable msg) {
+      this(msg, new CellPath(address));
+  }
 
-     _destination  = addr.clone();
-     _message      = msg ;
-     _source       = new CellPath() ;
-     _creationTime = System.currentTimeMillis() ;
+  public CellMessage(CellPath addr, Serializable msg) {
+      this(msg, addr.clone());
+  }
+
+  private CellMessage(Serializable msg, CellPath path) {
+     _destination  = path;
+     _message      = msg;
+     _source       = new CellPath();
+     _creationTime = System.currentTimeMillis();
      _receivedAt   = _creationTime;
-     _mode         = ORIGINAL_MODE ;
-     _umid         = new UOID() ;
-     _lastUmid     = _umid ;
+     _mode         = ORIGINAL_MODE;
+     _umid         = new UOID();
+     _lastUmid     = _umid;
      _session      = CDC.getSession();
      _messageStream = null;
   }

@@ -156,7 +156,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         private CellMessage getCellMessage()
         {
             _start = System.currentTimeMillis();
-            return new CellMessage(new CellPath(_destination), "xgetcellinfo");
+            return new CellMessage(_destination, "xgetcellinfo");
         }
 
         private void infoArrived(CellInfo info)

@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 import diskCacheV111.util.CacheException;
 
+import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
@@ -154,7 +155,7 @@ public class CellMessageDispatcherTest
     {
         try {
             return
-                dispatcher.call(new CellMessage(new CellPath("test"), msg));
+                dispatcher.call(new CellMessage(new CellAddressCore("test"), msg));
         } finally {
             assertEquals(listener1.delivered, result1);
             assertEquals(listener2.delivered, result2);

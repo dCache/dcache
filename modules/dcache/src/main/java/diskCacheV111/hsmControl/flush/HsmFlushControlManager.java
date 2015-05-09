@@ -406,7 +406,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                      ( rdOnly ? 0 : PoolManagerPoolModeMessage.WRITE ) ) ;
 
 
-           sendMessage( new CellMessage( new CellPath("PoolManager") , msg ) ) ;
+           sendMessage( new CellMessage( new CellAddressCore("PoolManager") , msg ) ) ;
 
        }catch(RuntimeException ee ){
            _log.warn("setPoolReadOnly : couldn't sent message to PoolManager"+ee);
@@ -420,7 +420,7 @@ public class HsmFlushControlManager  extends CellAdapter {
                      PoolManagerPoolModeMessage.UNDEFINED  ) ;
 
 
-           sendMessage( new CellMessage( new CellPath("PoolManager") , msg ) ) ;
+           sendMessage( new CellMessage( new CellAddressCore("PoolManager") , msg ) ) ;
 
        }catch(RuntimeException ee ){
            _log.warn("queryPoolMode : couldn't sent message to PoolManager"+ee);
