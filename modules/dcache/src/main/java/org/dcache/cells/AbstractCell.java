@@ -319,7 +319,7 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      *
      * The method is called from the <code>executeInit</code> method,
      * but using a thread belonging to the thread group of the
-     * associated cell nucleus. This ensure correct logging and
+     * associated cell nucleus. This ensures correct logging and
      * correct thread group inheritance.
      *
      * It is valid for the method to call

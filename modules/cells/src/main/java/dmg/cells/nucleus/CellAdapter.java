@@ -165,12 +165,6 @@ public class CellAdapter
             _definedSetup = null;
         }
 
-        if (_args.getBooleanOption("export")) {
-            export();
-        }
-        for (String topic : Splitter.on(",").omitEmptyStrings().split(_args.getOption("subscribe", ""))) {
-            subscribe(topic);
-        }
         if (!_args.getBooleanOption("replyObject", true)) {
             setCommandExceptionEnabled(false);
         }
@@ -184,13 +178,26 @@ public class CellAdapter
      * executes the auto and defined Setup context.
      * (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
      * This method has to be called if the
-     * contructor has been used with the startNow
+     * constructor has been used with the startNow
      * argument set to 'false'.
      */
-    public void start()
+    public synchronized void start()
     {
-        executeSetupContext();
-        _startGate.open();
+        /* Suppress repeated open - in particular UniversalSpringCell will call
+         * open twice due to the way cell initialization is structured. REVISIT
+         * once we get better life cycle hooks.
+         */
+        if (!_startGate.isOpen()) {
+            executeSetupContext();
+            _startGate.open();
+
+            if (_args.getBooleanOption("export")) {
+                export();
+            }
+            for (String topic : Splitter.on(",").omitEmptyStrings().split(_args.getOption("subscribe", ""))) {
+                subscribe(topic);
+            }
+        }
     }
 
     public void addCommandListener(Object commandListener)
@@ -773,7 +780,7 @@ public class CellAdapter
     public void   messageArrived(MessageEvent me) {
         if (!_startGate.isOpen()) {
             CellMessage msg = me.getMessage();
-            if (!msg.isReply()) {
+            if (!msg.isReply() && !(msg instanceof CellExceptionMessage)) {
                 NoRouteToCellException e =
                         new NoRouteToCellException(msg, getCellName() + " is still initializing.");
                 msg.revertDirection();
