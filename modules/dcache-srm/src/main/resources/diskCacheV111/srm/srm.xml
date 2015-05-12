@@ -31,7 +31,8 @@
     -->
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
-      <property name="excludedDestinations" value="${srm.loginbroker.request-topic}"/>
+      <property name="excludedDestinations"
+                value="${srm.loginbroker.update-topic},${srm.credential-service.topic}"/>
   </bean>
 
   <bean id="pool-manager-stub" class="org.dcache.cells.CellStub">
@@ -82,6 +83,11 @@
     <property name="timeoutUnit" value="${srm.service.pinmanager.timeout.unit}" />
   </bean>
 
+  <bean id="credential-service-stub" class="org.dcache.cells.CellStub">
+    <description>Pin manager communication stub</description>
+    <property name="destination" value="${srm.credential-service.topic}"/>
+  </bean>
+
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
     <description>PNFS manager communication stub</description>
     <property name="destination" value="${srm.service.pnfsmanager}"/>
@@ -115,20 +121,20 @@
       </constructor-arg>
   </bean>
 
+  <bean id="scheduledExecutor" class="java.util.concurrent.Executors"
+        factory-method="newSingleThreadScheduledExecutor"
+        destroy-method="shutdown">
+      <description>Thread pool for scheduled activities</description>
+  </bean>
+
   <bean id="login-broker-source" class="dmg.cells.services.login.LoginBrokerSubscriber">
       <property name="topic" value="${srm.loginbroker.request-topic}"/>
       <property name="tags" value="${srm.protocols.tags}"/>
   </bean>
 
-  <bean id="lb" class="diskCacheV111.srm.dcache.SrmLoginBrokerPublisher">
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerPublisher">
     <description>Registers the door with a LoginBroker</description>
-    <property name="executor">
-      <bean class="java.util.concurrent.Executors"
-            factory-method="newSingleThreadScheduledExecutor"
-            destroy-method="shutdown">
-        <description>Thread pool for scheduled activities</description>
-      </bean>
-    </property>
+    <property name="executor" ref="scheduledExecutor"/>
     <property name="updateTime" value="${srm.loginbroker.update-period}"/>
     <property name="updateTimeUnit" value="${srm.loginbroker.update-period.unit}"/>
     <property name="updateThreshold" value="${srm.loginbroker.update-threshold}"/>
@@ -142,9 +148,11 @@
     <property name="root" value="${srm.root}"/>
     <property name="readPaths" value="/"/>
     <property name="writePaths" value="/"/>
-    <property name="srm" ref="srm"/>
-    <property name="httpsPort" value="${srm.net.ssl-port}"/>
-    <property name="host" value="${srm.net.host}"/>
+    <property name="loadProvider">
+        <bean class="diskCacheV111.srm.dcache.SrmLoadProvider">
+            <property name="srm" ref="srm"/>
+        </bean>
+    </property>
   </bean>
 
     <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
@@ -234,7 +242,6 @@
     <property name="srmPutNotSupportedProtocols" value="${srm.protocols.disallowed.put}"/>
     <property name="srmGetNotSupportedProtocols" value="${srm.protocols.disallowed.get}"/>
     <property name="srmPreferredProtocols" value="${srm.protocols.preferred}"/>
-    <property name="credentialStore" ref="gridsite-credential-store"/>
     <property name="verificationRequired" value="${srm.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
@@ -679,6 +686,15 @@
       <description>Generation of GridSite delegated credentials that uses BouncyCastle</description>
 
       <property name="keyPairCache" ref="keypair-cache"/>
+  </bean>
+
+  <bean id="gridsite-credential-service" class="diskCacheV111.srm.CredentialService">
+      <description>GridSite delegation service providing delegated credentials to other dCache services</description>
+      <property name="credentialStore" ref="gridsite-credential-store"/>
+      <property name="httpsPort" value="${srm.net.ssl-port}"/>
+      <property name="host" value="${srm.net.host}"/>
+      <property name="executor" ref="scheduledExecutor"/>
+      <property name="topicStub" ref="credential-service-stub"/>
   </bean>
 
   <bean id="keypair-cache"

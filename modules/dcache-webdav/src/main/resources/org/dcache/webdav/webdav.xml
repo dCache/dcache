@@ -24,7 +24,7 @@
   </bean>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
-      <property name="excludedDestinations" value="${webdav.loginbroker.request-topic},${webdav.loginbroker.update-topic}"/>
+      <property name="excludedDestinations" value="${webdav.loginbroker.update-topic},${webdav.credential-service.topic}"/>
   </bean>
 
   <bean id="pnfs-stub" class="org.dcache.cells.CellStub">
@@ -43,11 +43,12 @@
   </bean>
 
 
-  <bean id="srm-stub" class="org.dcache.cells.CellStub">
-      <description>SRM communication stub</description>
+  <bean id="credential-service-stub" class="org.dcache.cells.CellStub">
+      <description>Credential service communication stub</description>
 
-      <property name="timeout" value="${webdav.service.srm.timeout}"/>
-      <property name="timeoutUnit" value="${webdav.service.srm.timeout.unit}"/>
+      <property name="destination" value="${webdav.credential-service.topic}"/>
+      <property name="timeout" value="${webdav.credential-service.timeout}"/>
+      <property name="timeoutUnit" value="${webdav.credential-service.timeout.unit}"/>
   </bean>
 
 
@@ -119,15 +120,9 @@
       <property name="uploadPath" value="${webdav.authz.upload-directory}"/>
   </bean>
 
-  <bean id="srm-handler" class="org.dcache.webdav.transfer.SrmHandler">
-      <description>Handles communication with SRM</description>
-
-      <property name="loginBrokerSource">
-          <bean class="dmg.cells.services.login.LoginBrokerSubscriber">
-              <property name="topic" value="${webdav.loginbroker.request-topic}"/>
-          </bean>
-      </property>
-      <property name="srmStub" ref="srm-stub"/>
+  <bean id="credential-service-client" class="org.dcache.webdav.transfer.CredentialServiceClient">
+      <description>Client for credential service</description>
+      <property name="topicStub" ref="credential-service-stub"/>
   </bean>
 
   <bean id="remote-transfer-handler" class="org.dcache.webdav.transfer.RemoteTransferHandler">
@@ -144,7 +139,7 @@
   <bean id="3rd-party-copy-filter" class="org.dcache.webdav.transfer.CopyFilter">
       <description>Handles requests for 3rd-party copies</description>
 
-      <property name="srmHandler" ref="srm-handler"/>
+      <property name="credentialServiceClient" ref="credential-service-client"/>
       <property name="pnfsStub" ref="pnfs-stub"/>
       <property name="remoteTransferHandler" ref="remote-transfer-handler"/>
       <property name="rootPath" value="${webdav.root}"/>

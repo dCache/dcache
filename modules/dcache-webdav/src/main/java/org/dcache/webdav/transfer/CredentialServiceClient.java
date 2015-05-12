@@ -17,77 +17,80 @@
  */
 package org.dcache.webdav.transfer;
 
-import io.milton.http.Response.Status;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.globus.gsi.X509Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.PostConstruct;
+
+import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import diskCacheV111.srm.dcache.SrmLoginBrokerPublisher.SrmLoginBrokerInfo;
+import diskCacheV111.srm.CredentialServiceAnnouncement;
+import diskCacheV111.srm.CredentialServiceRequest;
 import diskCacheV111.srm.dcache.SrmRequestCredentialMessage;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.services.login.LoginBrokerInfo;
-import dmg.cells.services.login.LoginBrokerSource;
 
 import org.dcache.cells.CellStub;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
- * This class acts as a client to dCache SRM instance(s); in particular, to
- * their credential storage and discovery of their delegation end-point.
+ * This class acts as a client to credential services.
  */
-public class SrmHandler
+public class CredentialServiceClient
+    implements CellMessageReceiver
 {
-    private static final Logger _log = LoggerFactory.getLogger(SrmHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CredentialServiceClient.class);
 
-    private CellStub _srmStub;
-    private LoginBrokerSource _loginBrokerSource;
+    private CellStub topic;
 
-    @Required
-    public void setLoginBrokerSource(LoginBrokerSource provider)
-    {
-        _loginBrokerSource = provider;
-    }
+    private Cache<CellAddressCore, URI> cache = CacheBuilder.newBuilder().expireAfterWrite(70, SECONDS).build();
 
     @Required
-    public void setSrmStub(CellStub srmStub)
+    public void setTopicStub(CellStub topic)
     {
-        _srmStub = srmStub;
+        this.topic = topic;
     }
 
-    public String getDelegationEndpoints()
+    @PostConstruct
+    public void init()
     {
-        return _loginBrokerSource.writeDoorsByProtocol().get("srm").stream()
-                .map(i -> ((SrmLoginBrokerInfo) i).getDelegationEndpoint())
-                .collect(Collectors.joining(" "));
+        topic.notify(new CredentialServiceRequest());
+    }
+
+    public void messageArrived(CredentialServiceAnnouncement message)
+    {
+        cache.put(message.getCellAddress(), message.getDelegationEndpoint());
+    }
+
+    public Collection<URI> getDelegationEndpoints()
+    {
+        return cache.asMap().values();
     }
 
     public X509Credential getDelegatedCredential(String dn, String primaryFqan,
             int minimumValidity, TimeUnit units) throws InterruptedException, ErrorResponseException
     {
-        Collection<LoginBrokerInfo> srms = _loginBrokerSource.writeDoorsByProtocol().get("srm");
-
-        if (srms.isEmpty()) {
-            _log.error("Cannot advise client to delegate for third-party COPY: no srm service found.");
-            throw new ErrorResponseException(Status.SC_INTERNAL_SERVER_ERROR,
-                    "problem with internal communication");
-        }
-
         long bestRemainingLifetime = 0;
         X509Credential bestCredential = null;
 
-        for (LoginBrokerInfo srm : srms) {
-            CellPath path = new CellPath(new CellAddressCore(srm.getCellName(), srm.getDomainName()));
+        for (CellAddressCore address : cache.asMap().keySet()) {
+            CellPath path = new CellPath(address);
             SrmRequestCredentialMessage msg = new SrmRequestCredentialMessage(dn, primaryFqan);
             try {
-                msg = _srmStub.sendAndWait(path, msg);
+                msg = topic.sendAndWait(path, msg);
 
                 if (!msg.hasCredential()) {
                     continue;
@@ -102,8 +105,8 @@ public class SrmHandler
                     bestRemainingLifetime = lifetime;
                 }
             } catch (CacheException e) {
-                _log.debug("failed to contact SRM {} querying for {}, {}: {}",
-                           path, dn, primaryFqan, e.getMessage());
+                LOGGER.debug("failed to contact SRM {} querying for {}, {}: {}",
+                             path, dn, primaryFqan, e.getMessage());
             }
         }
 

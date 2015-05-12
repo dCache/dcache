@@ -35,11 +35,11 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessController;
-import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -49,12 +49,9 @@ import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.util.X509Utils;
 import org.dcache.cells.CellStub;
-import org.dcache.gplazma.AuthenticationException;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
-import org.dcache.webdav.SecurityFilter;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -141,7 +138,7 @@ public class CopyFilter implements Filter
     }
 
     private PnfsHandler _pnfs;
-    private SrmHandler _srmHandler;
+    private CredentialServiceClient _credentialService;
     private FsPath _rootPath;
     private RemoteTransferHandler _remoteTransfers;
 
@@ -163,9 +160,9 @@ public class CopyFilter implements Filter
     }
 
     @Required
-    public void setSrmHandler(SrmHandler handler)
+    public void setCredentialServiceClient(CredentialServiceClient client)
     {
-        _srmHandler = handler;
+        _credentialService = client;
     }
 
     @Required
@@ -290,7 +287,7 @@ public class CopyFilter implements Filter
                                                  "user must present valid X.509 certificate");
             }
 
-            return _srmHandler.getDelegatedCredential(
+            return _credentialService.getDelegatedCredential(
                     dn, Subjects.getPrimaryFqan(subject),
                     20, MINUTES);
 
@@ -321,7 +318,8 @@ public class CopyFilter implements Filter
 
         try {
             response.setNonStandardHeader("X-Delegate-To",
-                    _srmHandler.getDelegationEndpoints());
+                                          _credentialService.getDelegationEndpoints().stream()
+                                                  .map(URI::toASCIIString).collect(Collectors.joining(" ")));
             response.sendRedirect(buildRedirectUrl(request));
         } catch (IllegalArgumentException e) {
             _log.debug(e.getMessage());

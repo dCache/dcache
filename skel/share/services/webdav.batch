@@ -20,6 +20,9 @@ check -strong webdav.service.gplazma
 check -strong webdav.service.gplazma.timeout
 check -strong webdav.service.gplazma.timeout.unit
 check -strong webdav.service.billing
+check -strong webdav.credential-service.topic
+check -strong webdav.credential-service.timeout
+check -strong webdav.credential-service.timeout.unit
 check webdav.loginbroker.update-topic
 check -strong webdav.loginbroker.update-period
 check -strong webdav.loginbroker.update-period.unit

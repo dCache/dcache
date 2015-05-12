@@ -286,8 +286,6 @@ public final class Storage
 
     private PoolMonitor _poolMonitor;
 
-    private CredentialStore _credentialStore;
-
     private Configuration config;
     private boolean customGetHostByAddr; //falseByDefault
 
@@ -492,12 +490,6 @@ public final class Storage
         _listSource = source;
     }
 
-    @Required
-    public void setCredentialStore(CredentialStore store)
-    {
-        _credentialStore = store;
-    }
-
     public void setVerificationRequired(boolean required)
     {
         _isVerificationRequired = required;
@@ -573,31 +565,6 @@ public final class Storage
         if (msg.isReply() && msg.getReturnCode() == 0) {
             _spaceManagerStub.notify(new Release(msg.getSpaceToken(), null));
         }
-    }
-
-    public SrmRequestCredentialMessage messageArrived(SrmRequestCredentialMessage message)
-    {
-        String dn = message.getDn();
-        FQAN fqan = message.getPrimaryFqan();
-
-        GSSCredential genericCredential =
-                _credentialStore.search(dn, fqan != null ? fqan.toString() : null);
-
-        if (genericCredential != null) {
-            if (!(genericCredential instanceof GlobusGSSCredentialImpl)) {
-                throw new RuntimeException("Unable to work with unknown GSSCredential instance: " +
-                        genericCredential.getClass().getCanonicalName());
-            }
-            GlobusGSSCredentialImpl credential = (GlobusGSSCredentialImpl) genericCredential;
-            try {
-                message.setPrivateKey(credential.getPrivateKey());
-                message.setCertificateChain(credential.getCertificateChain());
-            } catch (GSSException ex) {
-                _log.warn("Unable to extract private key: {}", ex);
-            }
-        }
-
-        return message;
     }
 
     @Override

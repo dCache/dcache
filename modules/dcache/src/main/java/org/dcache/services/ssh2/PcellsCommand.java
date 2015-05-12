@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import diskCacheV111.admin.LegacyAdminShell;
 import diskCacheV111.services.space.LinkGroup;
@@ -173,21 +172,7 @@ public class PcellsCommand implements Command, Runnable
                                 case "LoginBroker":
                                     String cmd = frame.getPayload().toString();
                                     if (cmd.startsWith("ls") && cmd.contains("-binary")) {
-                                        result = _loginBrokerSource.doors().stream()
-                                                .map(i -> new LoginBrokerInfo(i.getCellName(),
-                                                                              i.getDomainName(),
-                                                                              i.getProtocolFamily(),
-                                                                              i.getProtocolVersion(),
-                                                                              i.getProtocolEngine(),
-                                                                              i.getRoot(),
-                                                                              i.getReadPaths(),
-                                                                              i.getWritePaths(),
-                                                                              i.getTags(),
-                                                                              i.getAddresses(),
-                                                                              i.getPort(),
-                                                                              i.getLoad(),
-                                                                              i.getUpdateTime()))
-                                                .toArray(LoginBrokerInfo[]::new);
+                                        result = _loginBrokerSource.doors().stream().toArray(LoginBrokerInfo[]::new);
                                     } else {
                                         result = _shell.executeCommand(new CellPath(frame.getDestination()), frame.getPayload());
                                     }

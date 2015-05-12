@@ -202,6 +202,8 @@ check -strong srm.service.gplazma
 check -strong srm.service.gplazma.timeout
 check -strong srm.service.gplazma.timeout.unit
 
+check -strong srm.credential-service.topic
+
 check srm.loginbroker.update-topic
 check srm.loginbroker.request-topic
 check srm.loginbroker.tags
