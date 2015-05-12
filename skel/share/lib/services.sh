@@ -186,25 +186,6 @@ domainStart() # $1 = domain
         fi
     fi
 
-    if [ "$(getProperty dcache.terracotta.enabled "$domain")" = "true" ] ; then
-        # TC_INSTALL_DIR and TC_CONFIG_PATH need to be defined for a
-        # successful execution of dso-env.sh
-        TC_INSTALL_DIR="$(getProperty dcache.terracotta.install.dir "$domain")"
-        TC_CONFIG_PATH="$(getProperty dcache.terracotta.config.path "$domain")"
-        export TC_INSTALL_DIR
-        export TC_CONFIG_PATH
-
-        # Result of this script execution is the definition of the
-        # options needed for startup of the defined in ${TC_JAVA_OPTS}
-        if [ -f "${TC_INSTALL_DIR}/bin/dso-env.sh" ] ; then
-            . "${TC_INSTALL_DIR}/bin/dso-env.sh"
-        elif [ -f "${TC_INSTALL_DIR}/platform/bin/dso-env.sh" ] ; then
-           . "${TC_INSTALL_DIR}/platform/bin/dso-env.sh"
-        else
-            fail 1 "Terracotta is enabled, but dso-env.sh can't be found"
-        fi
-    fi
-
     # Start daemon
     RESTART_FILE="$(getProperty dcache.restart.file "$domain")"
     RESTART_DELAY="$(getProperty dcache.restart.delay "$domain")"

@@ -365,44 +365,19 @@ public abstract class Job  {
     }
 
     /**
-     * Try to change the state of the job to READY. the request into the ready state
+     * Try to change the state of the job into the READY state.
      */
     public void tryToReady() {
-        rlock();
+        wlock();
         try {
-            if(state != State.RQUEUED) {
-                return;
+            if (state == State.RQUEUED && schedulerId != null) {
+                Scheduler scheduler = Scheduler.getScheduler(schedulerId);
+                if (scheduler != null) {
+                    scheduler.tryToReadyJob(this);
+                }
             }
         } finally {
-            runlock();
-        }
-
-        /*
-         * The job should be readied, only if the job's scheduler's
-         * count of the "ready" jobs is bellow the maximum allowed number of the
-         * Ready jobs. If the job is replicated in multiple jvm's,
-         * the job might not have a scheduler associated with it in this jvm,
-         * then in this jvm nothing needs to happen. Whatever clastering
-         * mechanizm used needs to makes sure that if this method is called in
-         * an instance that is different from the one where the job was
-         * originally scheduled leads to the call of the invocation of the same
-         * method in the instance of jvm where the job was orignally
-         * scheduled, and where the scheduler is  non-null.
-         * In case of terracotta it is achived by including this method in the
-         * "distributed-method" section of the configuration file  :
-         *       <distributed-methods>
-         *          <method-expression>
-         *            void Job.tryToReady()
-         *          </method-expression>
-         *       <method-expression>
-         */
-        if(schedulerId != null) {
-            Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
-            // we excpect that the scheduler in not null only in the jvm
-            // that created and scheduled the job in the first place
-            if(scheduler != null) {
-                scheduler.tryToReadyJob(this);
-            }
+            wunlock();
         }
     }
 
@@ -961,51 +936,15 @@ public abstract class Job  {
      * @param newState
      */
     private void notifySchedulerOfStateChange(State oldState, State newState) {
-        // we need to lock again, even if the call is from the setState method
-        // where weh have locked already. The method is configured to run in
-        // multiple jvms though "dsitributed method" invocation, which means
-        // the method can be called on its own by terracotta framework
-        wlock();
-        try {
-            /*
-             * The state change needs to be correctly accounted by the scheduler that
-             * executes this job. This is done by call to scheduler's stateChanged
-             * method. If the job is replicated in multiple jvm's, the job might have
-             * a scheduler associated with it in different jvm.
-             * Then in this jvm call to stateChanged should not take place.
-             * Insted whatever clastering mechanizm is used needs to makes sure that
-             * if this method is also called in an instance where the job was
-             * originally scheduled and where the Scheduler.getScheduler(schedulerId)
-             * will return non null result.
-             * In case of terracotta it is achived by including this method in the
-             * "distributed-method" section of the configuration file  :
-             *       <distributed-methods>
-             *          <method-expression>
-             *            void Job.notifySchedulerOfStateChange(..)
-             *          </method-expression>
-             *       <method-expression>
-             *
-             */
-
-             if (schedulerId != null) {
-                Scheduler scheduler = Scheduler.getScheduler(schedulerId);
-                // we excpect that the scheduler in not null only in the jvm
-                // that created and scheduled the job in the first place
-                if (scheduler != null) {
-                    // code bellow is executed only in one SRM in the cluster
-                    // the SRM that created this job
-                    logger.debug("notifySchedulerOfStateChange calls " +
-                            "scheduler.stateChanged()");
-                    scheduler.stateChanged(this, oldState, newState);
-                    // set schedulerId to null only in jvm
-                    // that has scheduler that "owns" this job
-                    if(state.isFinal()) {
-                        schedulerId = null;
-                    }
+         if (schedulerId != null) {
+            Scheduler scheduler = Scheduler.getScheduler(schedulerId);
+            if (scheduler != null) {
+                logger.debug("notifySchedulerOfStateChange calls scheduler.stateChanged()");
+                scheduler.stateChanged(this, oldState, newState);
+                if (state.isFinal()) {
+                    schedulerId = null;
                 }
             }
-        } finally {
-            wunlock();
         }
     }
 
