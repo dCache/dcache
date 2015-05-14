@@ -6,9 +6,11 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -21,7 +23,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * This class maintains filter thresholds. Two types of inheritance
+ * This class maintains a set of filter thresholds. Two types of inheritance
  * are supported:
  *
  * - Inheritance from a parent FilterThresholds
@@ -31,27 +33,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * appender, then the parent FilterThresholds is consulted recursively.
  * If not defined in the parent, the threshold of the parent logger is
  * used recursively.
+ *
+ * The thus calculated effective log level is cached. The cache is invalidated
+ * if the set of thresholds is modified, but it is not invalidated if the
+ * thresholds in the parent set are modified. Thus once cached, only newly
+ * created cells will inherit the thresholds from its parent cell (this is mostly
+ * to simplify the design).
  */
-public class FilterThresholds
+public class FilterThresholdSet
 {
-    private final FilterThresholds _parent;
+    private final FilterThresholdSet _parent;
 
     private final Set<String> _appenders = Sets.newHashSet();
 
     /* Logger x Appender -> Level */
-    private final Map<LoggerName,Map<String,Level>> _rules = Maps.newHashMap();
+    private final Table<LoggerName, String, Level> _rules = HashBasedTable.create();
 
-    /* Logger x Appender -> Level */
+    /* Logger -> (Appender -> Level) */
     private final LoadingCache<LoggerName,Map<String,Level>> _effectiveMaps =
-            CacheBuilder.newBuilder().build(
-                    new CacheLoader<LoggerName,Map<String,Level>>()
-                    {
-                        @Override
-                        public Map<String, Level> load(LoggerName logger)
-                        {
-                            return computeEffectiveMap(logger);
-                        }
-                    });
+            CacheBuilder.newBuilder().build(CacheLoader.from(this::computeEffectiveMap));
 
     /* Logger -> Level */
     private final LoadingCache<LoggerName,Optional<Level>> _effectiveLevels =
@@ -73,36 +73,32 @@ public class FilterThresholds
                     });
 
     private static final Comparator<Level> LEVEL_ORDER =
-        new Comparator<Level>() {
-            @Override
-            public int compare(Level o1, Level o2)
-            {
-                if (!o1.isGreaterOrEqual(o2)) {
-                    return -1;
-                } else if (!o2.isGreaterOrEqual(o1)) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        };
+            (o1, o2) -> Integer.compare(o1.toInt(), o2.toInt());
 
-    public FilterThresholds()
+    public FilterThresholdSet()
     {
         this(null);
     }
 
-    public FilterThresholds(FilterThresholds parent)
+    public FilterThresholdSet(FilterThresholdSet parent)
     {
         _parent = parent;
     }
 
+    /**
+     * Adds an appender, which will become available for threshold definitions.
+     */
     public synchronized void addAppender(String name)
     {
         checkNotNull(name);
         _appenders.add(name);
     }
 
+    /**
+     * Returns the list of appenders available for threshold definitions. This
+     * is the union of the appenders of the parents thresholds and the appenders
+     * of these thresholds.
+     */
     public synchronized Collection<String> getAppenders()
     {
         if (_parent == null) {
@@ -114,51 +110,62 @@ public class FilterThresholds
         }
     }
 
+    /**
+     * Returns whether the appender is valid is valid for use in a threshold
+     * definition.
+     */
     public synchronized boolean hasAppender(String appender)
     {
         return _appenders.contains(appender) ||
             (_parent != null && _parent.hasAppender(appender));
     }
 
+    /**
+     * Returns the threshold of the given logger and appender combination. Neither the
+     * parent thresholds nor the parent loggers are taken into account.
+     */
     public synchronized Level get(LoggerName logger, String appender)
     {
-        return getMap(logger).get(appender);
+        return _rules.get(logger, appender);
     }
 
+    /**
+     * Sets a threshold for the given logger and appender.
+     */
     public synchronized void setThreshold(LoggerName logger, String appender, Level level)
     {
         checkNotNull(logger);
         checkNotNull(level);
         checkArgument(hasAppender(appender));
-
-        Map<String,Level> map = _rules.get(logger);
-        if (map == null) {
-            map = Maps.newHashMap();
-            _rules.put(logger, map);
-        }
-        map.put(appender, level);
-
+        _rules.put(logger, appender, level);
         clearCache();
     }
 
+    /**
+     * Removes the threshold of the given logger and appender combination in this
+     * threshold set. The new effective threshold will be derived from the regular
+     * inheritance rules.
+     */
     public synchronized void remove(LoggerName logger, String appender)
     {
-        Map<String,Level> map = _rules.get(logger);
-        if (map != null) {
-            map.remove(appender);
-            if (map.isEmpty()) {
-                _rules.remove(logger);
-            }
+        if (_rules.remove(logger, appender) != null) {
             clearCache();
         }
     }
 
+    /**
+     * Removes all thresholds from this set.
+     */
     public synchronized void clear()
     {
         _rules.clear();
         clearCache();
     }
 
+    /**
+     * Wipes the cache of computed effective thresholds. Called whenever any of the thresholds
+     * have been updated.
+     */
     private void clearCache()
     {
         _effectiveMaps.invalidateAll();
@@ -168,26 +175,15 @@ public class FilterThresholds
     /**
      * Returns a map from appenders to levels for a logger.
      *
-     * Neither the parent levels nor parent loggers are consulted.
-     */
-    private synchronized Map<String,Level> getMap(LoggerName logger)
-    {
-        Map<String,Level> map = _rules.get(logger);
-        return (map == null) ? Collections.<String,Level>emptyMap() : map;
-    }
-
-    /**
-     * Returns a map from appenders to levels for a logger.
-     *
-     * The map contains inherited levels from parent levels.
+     * The map contains inherited levels from parent filter threshold sets.
      */
     public synchronized Map<String,Level> getInheritedMap(LoggerName logger)
     {
         if (_parent == null) {
-            return Maps.newHashMap(getMap(logger));
+            return Maps.newHashMap(_rules.row(logger));
         } else {
             Map<String,Level> map = _parent.getInheritedMap(logger);
-            map.putAll(getMap(logger));
+            map.putAll(_rules.row(logger));
             return map;
         }
     }
@@ -212,7 +208,7 @@ public class FilterThresholds
     }
 
     /**
-     * Returns the effectice log level for a given pair of logger and appender.
+     * Returns the effective log threshold for a given pair of logger and appender.
      */
     public Level getThreshold(LoggerName logger, String appender)
     {
@@ -223,6 +219,9 @@ public class FilterThresholds
         }
     }
 
+    /**
+     * Gets the effective minimum threshold for a given pair regardless of appender.
+     */
     public Level getThreshold(LoggerName logger)
     {
         try {

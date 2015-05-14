@@ -19,11 +19,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class FilterShell
 {
-    private final FilterThresholds _thresholds;
+    private final FilterThresholdSet _thresholds;
     private final LoggerContext _context =
         (LoggerContext) LoggerFactory.getILoggerFactory();
 
-    public FilterShell(FilterThresholds thresholds)
+    public FilterShell(FilterThresholdSet thresholds)
     {
         checkNotNull(thresholds);
         _thresholds = thresholds;

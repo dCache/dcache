@@ -40,7 +40,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dmg.util.Pinboard;
-import dmg.util.logback.FilterThresholds;
+import dmg.util.logback.FilterThresholdSet;
 import dmg.util.logback.RootFilterThresholds;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -95,7 +95,7 @@ public class CellNucleus implements ThreadFactory
     private TimerTask _timeoutTask;
 
     private Pinboard _pinboard;
-    private FilterThresholds _loggingThresholds;
+    private FilterThresholdSet _loggingThresholds;
     private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<Runnable>());
 
     public CellNucleus(Cell cell, String name) {
@@ -155,11 +155,11 @@ public class CellNucleus implements ThreadFactory
          */
         CellNucleus parentNucleus =
                 CellNucleus.getLogTargetForCell(MDC.get(CDC.MDC_CELL));
-        FilterThresholds parentThresholds =
+        FilterThresholdSet parentThresholds =
                 (parentNucleus.isSystemNucleus() || parentNucleus == this)
                         ? RootFilterThresholds.getInstance()
                         : parentNucleus.getLoggingThresholds();
-        setLoggingThresholds(new FilterThresholds(parentThresholds));
+        setLoggingThresholds(new FilterThresholdSet(parentThresholds));
 
         _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
@@ -315,12 +315,12 @@ public class CellNucleus implements ThreadFactory
         return info;
     }
 
-    public void setLoggingThresholds(FilterThresholds thresholds)
+    public void setLoggingThresholds(FilterThresholdSet thresholds)
     {
         _loggingThresholds = thresholds;
     }
 
-    public FilterThresholds getLoggingThresholds()
+    public FilterThresholdSet getLoggingThresholds()
     {
         return _loggingThresholds;
     }

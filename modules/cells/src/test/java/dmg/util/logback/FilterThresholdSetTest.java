@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class FilterThresholdsTest
+public class FilterThresholdSetTest
 {
     private final static String APPENDER1 = "appender1";
     private final static String APPENDER2 = "appender2";
@@ -19,14 +19,14 @@ public class FilterThresholdsTest
     private final static Level LEVEL2 = Level.INFO;
     private final static Level LEVEL3 = Level.ERROR;
 
-    private FilterThresholds _root;
-    private FilterThresholds _inherited;
+    private FilterThresholdSet _root;
+    private FilterThresholdSet _inherited;
 
     @Before
     public void setup()
     {
-        _root = new FilterThresholds();
-        _inherited = new FilterThresholds(_root);
+        _root = new FilterThresholdSet();
+        _inherited = new FilterThresholdSet(_root);
     }
 
     @Test(expected=NullPointerException.class)

@@ -37,7 +37,7 @@ public class CellThresholdFilterCompanion extends Filter<ILoggingEvent>
             return FilterReply.NEUTRAL;
         }
 
-        FilterThresholds thresholds = nucleus.getLoggingThresholds();
+        FilterThresholdSet thresholds = nucleus.getLoggingThresholds();
         if (thresholds == null) {
             return FilterReply.NEUTRAL;
         }

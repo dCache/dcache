@@ -128,7 +128,7 @@ public class CellThresholdFilter extends TurboFilter
             return FilterReply.NEUTRAL;
         }
 
-        FilterThresholds thresholds = nucleus.getLoggingThresholds();
+        FilterThresholdSet thresholds = nucleus.getLoggingThresholds();
         if (thresholds == null) {
             return FilterReply.NEUTRAL;
         }
