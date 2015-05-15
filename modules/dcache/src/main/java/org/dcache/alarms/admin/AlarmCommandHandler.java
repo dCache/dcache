@@ -350,8 +350,7 @@ public final class AlarmCommandHandler implements CellCommandListener {
     class PredifinedListCommand implements Callable<String> {
         public String call() throws Exception {
             return "PREDEFINED DCACHE ALARM TYPES:\n\n"
-                            + ListPredefinedTypes.getSortedList()
-                            + "---------------------------------------------\n";
+                            + ListPredefinedTypes.getSortedList();
         }
     }
 
