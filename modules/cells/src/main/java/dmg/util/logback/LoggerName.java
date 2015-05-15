@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 
 public class LoggerName
 {
-    public final static LoggerName ROOT =
+    public static final LoggerName ROOT =
         new LoggerName(Logger.ROOT_LOGGER_NAME);
 
     private String _name;
@@ -38,11 +38,13 @@ public class LoggerName
         return logger.getName().equals(_name);
     }
 
+    @Override
     public String toString()
     {
         return _name;
     }
 
+    @Override
     public boolean equals(Object that)
     {
         if (this == that) {
@@ -57,6 +59,7 @@ public class LoggerName
         return _name.equals(other._name);
     }
 
+    @Override
     public int hashCode()
     {
         return _name.hashCode();

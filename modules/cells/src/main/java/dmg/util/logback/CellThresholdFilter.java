@@ -7,12 +7,12 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.spi.FilterReply;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.MDC;
 import org.slf4j.Marker;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -78,11 +78,7 @@ public class CellThresholdFilter extends TurboFilter
     {
         Set<Appender<ILoggingEvent>> appenders = Sets.newHashSet();
         for (Logger logger: context.getLoggerList()) {
-            Iterator<Appender<ILoggingEvent>> i = logger.iteratorForAppenders();
-            while (i.hasNext()) {
-                Appender<ILoggingEvent> appender = i.next();
-                appenders.add(appender);
-            }
+            Iterators.addAll(appenders, logger.iteratorForAppenders());
         }
         return appenders;
     }
@@ -91,6 +87,10 @@ public class CellThresholdFilter extends TurboFilter
     public void start()
     {
         LoggerContext context = (LoggerContext) getContext();
+
+        for (Logger logger: context.getLoggerList()) {
+            RootFilterThresholds.setRoot(LoggerName.getInstance(logger.getName()), !logger.isAdditive());
+        }
 
         for (Appender<ILoggingEvent> appender: getAppenders(context)) {
             String appenderName = appender.getName();
@@ -134,7 +134,7 @@ public class CellThresholdFilter extends TurboFilter
         }
 
         Level threshold =
-            thresholds.getThreshold(LoggerName.getInstance(logger));
+            thresholds.getThreshold(logger);
         if (threshold == null) {
             return FilterReply.NEUTRAL;
         }

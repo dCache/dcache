@@ -3,6 +3,8 @@ package dmg.util.logback;
 import ch.qos.logback.classic.Level;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.helpers.NOPLogger;
 
 import static org.junit.Assert.*;
 
@@ -246,16 +248,16 @@ public class FilterThresholdSetTest
         _root.setThreshold(CHILD, APPENDER1, LEVEL2);
         _inherited.setThreshold(LOGGER, APPENDER1, LEVEL3);
 
-        assertNull(_root.getThreshold(LOGGER));
-        assertEquals(LEVEL2, _root.getThreshold(CHILD));
-        assertEquals(LEVEL3, _inherited.getThreshold(LOGGER));
-        assertEquals(LEVEL2, _inherited.getThreshold(CHILD));
+        assertNull(_root.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL2, _root.getThreshold(getLogger(CHILD)));
+        assertEquals(LEVEL3, _inherited.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL2, _inherited.getThreshold(getLogger(CHILD)));
 
         // Test twice to check caching
-        assertNull(_root.getThreshold(LOGGER));
-        assertEquals(LEVEL2, _root.getThreshold(CHILD));
-        assertEquals(LEVEL3, _inherited.getThreshold(LOGGER));
-        assertEquals(LEVEL2, _inherited.getThreshold(CHILD));
+        assertNull(_root.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL2, _root.getThreshold(getLogger(CHILD)));
+        assertEquals(LEVEL3, _inherited.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL2, _inherited.getThreshold(getLogger(CHILD)));
     }
 
     @Test
@@ -267,15 +269,26 @@ public class FilterThresholdSetTest
         _root.setThreshold(LOGGER, APPENDER2, LEVEL1);
         _inherited.setThreshold(LOGGER, APPENDER1, LEVEL3);
 
-        assertEquals(LEVEL1, _root.getThreshold(LOGGER));
-        assertEquals(LEVEL1, _root.getThreshold(CHILD));
-        assertEquals(LEVEL1, _inherited.getThreshold(LOGGER));
-        assertEquals(LEVEL1, _inherited.getThreshold(CHILD));
+        assertEquals(LEVEL1, _root.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL1, _root.getThreshold(getLogger(CHILD)));
+        assertEquals(LEVEL1, _inherited.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL1, _inherited.getThreshold(getLogger(CHILD)));
 
         // Test twice to check caching
-        assertEquals(LEVEL1, _root.getThreshold(LOGGER));
-        assertEquals(LEVEL1, _root.getThreshold(CHILD));
-        assertEquals(LEVEL1, _inherited.getThreshold(LOGGER));
-        assertEquals(LEVEL1, _inherited.getThreshold(CHILD));
+        assertEquals(LEVEL1, _root.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL1, _root.getThreshold(getLogger(CHILD)));
+        assertEquals(LEVEL1, _inherited.getThreshold(getLogger(LOGGER)));
+        assertEquals(LEVEL1, _inherited.getThreshold(getLogger(CHILD)));
+    }
+
+    private Logger getLogger(LoggerName loggerName)
+    {
+        return new NOPLogger()
+        {
+            public String getName()
+            {
+                return loggerName.toString();
+            }
+        };
     }
 }

@@ -11,10 +11,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -46,31 +48,29 @@ public class FilterThresholdSet
 
     private final Set<String> _appenders = Sets.newHashSet();
 
+    private final Set<LoggerName> _roots = new HashSet<>();
+
     /* Logger x Appender -> Level */
     private final Table<LoggerName, String, Level> _rules = HashBasedTable.create();
 
     /* Logger -> (Appender -> Level) */
-    private final LoadingCache<LoggerName,Map<String,Level>> _effectiveMaps =
-            CacheBuilder.newBuilder().build(CacheLoader.from(this::computeEffectiveMap));
+    private final LoadingCache<String,Map<String,Level>> _effectiveMaps =
+            CacheBuilder.newBuilder().build(CacheLoader.from(
+                    logger -> computeEffectiveMap(LoggerName.getInstance(logger))));
 
     /* Logger -> Level */
-    private final LoadingCache<LoggerName,Optional<Level>> _effectiveLevels =
-            CacheBuilder.newBuilder().build(
-                    new CacheLoader<LoggerName,Optional<Level>>()
-                    {
-                        @Override
-                        public Optional<Level> load(LoggerName logger)
-                        {
-                            try {
-                                Map<String,Level> map = _effectiveMaps.get(logger);
-                                return map.isEmpty()
-                                        ? Optional.<Level>absent()
-                                        : Optional.of(Collections.min(map.values(), LEVEL_ORDER));
-                            } catch (ExecutionException e) {
-                                throw Throwables.propagate(e.getCause());
-                            }
+    private final LoadingCache<Logger,Optional<Level>> _effectiveLevels =
+            CacheBuilder.newBuilder().build(CacheLoader.from(
+                    logger -> {
+                        try {
+                            Map<String,Level> map = _effectiveMaps.get(logger.getName());
+                            return map.isEmpty()
+                                   ? Optional.<Level>absent()
+                                   : Optional.of(Collections.min(map.values(), LEVEL_ORDER));
+                        } catch (ExecutionException e) {
+                            throw Throwables.propagate(e.getCause());
                         }
-                    });
+                    }));
 
     private static final Comparator<Level> LEVEL_ORDER =
             (o1, o2) -> Integer.compare(o1.toInt(), o2.toInt());
@@ -142,6 +142,29 @@ public class FilterThresholdSet
     }
 
     /**
+     * Returns whether the logger is marked additive.
+     */
+    public synchronized boolean isRoot(LoggerName logger)
+    {
+        return _parent != null && _parent.isRoot(logger) || _roots.contains(logger);
+    }
+
+    /**
+     * Sets whether a logger is additive. Non-additive loggers form roots of the logging
+     * hierarchy as log messages do not propagate to appenders attached to any of the
+     * parent loggers.
+     */
+    public synchronized void setRoot(LoggerName logger, boolean isRoot)
+    {
+        if (isRoot) {
+            _roots.add(logger);
+        } else {
+            _roots.remove(logger);
+        }
+        clearCache();
+    }
+
+    /**
      * Removes the threshold of the given logger and appender combination in this
      * threshold set. The new effective threshold will be derived from the regular
      * inheritance rules.
@@ -196,21 +219,30 @@ public class FilterThresholdSet
      */
     private synchronized Map<String,Level> computeEffectiveMap(LoggerName logger)
     {
-        LoggerName parent = logger.getParent();
-        Map<String,Level> map;
-        if (parent == null) {
-            map = getInheritedMap(logger);
-        } else {
-            map = computeEffectiveMap(parent);
-            map.putAll(getInheritedMap(logger));
+        Map<String,Level> inheritedMap = getInheritedMap(logger);
+        if (!isRoot(logger)) {
+            LoggerName parent = logger.getParent();
+            if (parent != null) {
+                Map<String, Level> mergedMap = computeEffectiveMap(parent);
+                mergedMap.putAll(inheritedMap);
+                return mergedMap;
+            }
         }
-        return map;
+        return inheritedMap;
     }
 
     /**
      * Returns the effective log threshold for a given pair of logger and appender.
      */
     public Level getThreshold(LoggerName logger, String appender)
+    {
+        return getThreshold(logger.toString(), appender);
+    }
+
+    /**
+     * Returns the effective log threshold for a given pair of logger and appender.
+     */
+    public Level getThreshold(String logger, String appender)
     {
         try {
             return _effectiveMaps.get(logger).get(appender);
@@ -222,7 +254,7 @@ public class FilterThresholdSet
     /**
      * Gets the effective minimum threshold for a given pair regardless of appender.
      */
-    public Level getThreshold(LoggerName logger)
+    public Level getThreshold(Logger logger)
     {
         try {
             return _effectiveLevels.get(logger).orNull();

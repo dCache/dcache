@@ -25,4 +25,9 @@ public abstract class RootFilterThresholds
     {
         _instance.setThreshold(logger, appender, level);
     }
+
+    public static void setRoot(LoggerName logger, boolean isRoot)
+    {
+        _instance.setRoot(logger, isRoot);
+    }
 }

@@ -43,7 +43,7 @@ public class CellThresholdFilterCompanion extends Filter<ILoggingEvent>
         }
 
         Level threshold =
-            thresholds.getThreshold(LoggerName.getInstance(event.getLoggerName()), _name);
+            thresholds.getThreshold(event.getLoggerName(), _name);
         if (threshold == null) {
             return FilterReply.NEUTRAL;
         }
