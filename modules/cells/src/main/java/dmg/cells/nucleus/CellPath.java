@@ -255,10 +255,13 @@ public final class CellPath  implements Cloneable , Serializable
        }
    }
 
-   @Override
-   public synchronized int hashCode(){
-       return (_list.hashCode() * 17) ^ _position;
-   }
+    @Override
+    public synchronized int hashCode()
+    {
+        /* Beware that equals only takes the list of addresses into account.
+         */
+        return _list.hashCode();
+    }
 
     private static Stream<CellAddressCore> streamOfPath(String path)
     {
