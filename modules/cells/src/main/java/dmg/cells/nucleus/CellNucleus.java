@@ -1026,25 +1026,7 @@ public class CellNucleus implements ThreadFactory
     List<CellTunnelInfo> getCellTunnelInfos() { return __cellGlue.getCellTunnelInfos(); }
     //
 
-    private abstract class AbstractNucleusTask implements Runnable
-    {
-        protected abstract void innerRun();
-
-        @Override
-        public void run ()
-        {
-            try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                try {
-                    innerRun();
-                } catch (Throwable e) {
-                    Thread t = Thread.currentThread();
-                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                }
-            }
-        }
-    }
-
-    private class CallbackTask extends AbstractNucleusTask
+    private class CallbackTask implements Runnable
     {
         private final CellLock _lock;
         private final CellMessage _message;
@@ -1056,35 +1038,40 @@ public class CellNucleus implements ThreadFactory
         }
 
         @Override
-        public void innerRun()
+        public void run()
         {
             _eventQueueSize.decrementAndGet();
             try (CDC ignored = _lock.getCdc().restore()) {
-                CellMessageAnswerable callback = _lock.getCallback();
-                CellMessage request = _lock.getMessage();
                 try {
-                    Object obj = _message.getMessageObject();
-                    if (obj instanceof Exception) {
-                        callback.exceptionArrived(request, (Exception) obj);
-                    } else {
-                        callback.answerArrived(request, _message);
+                    CellMessageAnswerable callback = _lock.getCallback();
+                    CellMessage request = _lock.getMessage();
+                    try {
+                        Object obj = _message.getMessageObject();
+                        if (obj instanceof Exception) {
+                            callback.exceptionArrived(request, (Exception) obj);
+                        } else {
+                            callback.answerArrived(request, _message);
+                        }
+                        EventLogger.sendEnd(request);
+                    } catch (RejectedExecutionException e) {
+                        /* May happen when the callback itself tries to schedule the call
+                         * on an executor. Put the request back and let it time out.
+                         */
+                        synchronized (_waitHash) {
+                            _waitHash.put(request.getUOID(), _lock);
+                        }
+                        LOGGER.error("Failed to invoke callback: {}", e.toString());
                     }
-                    EventLogger.sendEnd(request);
-                } catch (RejectedExecutionException e) {
-                    /* May happen when the callback itself tries to schedule the call
-                     * on an executor. Put the request back and let it time out.
-                     */
-                    synchronized (_waitHash) {
-                        _waitHash.put(request.getUOID(), _lock);
-                    }
-                    LOGGER.error("Failed to invoke callback: {}", e.toString());
+                    LOGGER.trace("addToEventQueue : callback done for : {}", _message);
+                } catch (Throwable e) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
                 }
-                LOGGER.trace("addToEventQueue : callback done for : {}", _message);
             }
         }
     }
 
-    private class DeliverMessageTask extends AbstractNucleusTask
+    private class DeliverMessageTask implements Runnable
     {
         private final CellEvent _event;
 
@@ -1094,28 +1081,33 @@ public class CellNucleus implements ThreadFactory
         }
 
         @Override
-        public void innerRun()
+        public void run()
         {
-            EventLogger.queueEnd(_event);
-            _eventQueueSize.decrementAndGet();
-
-            if (_event instanceof RoutedMessageEvent) {
-                _cell.messageArrived((RoutedMessageEvent) _event);
-            } else if (_event instanceof MessageEvent) {
-                MessageEvent event = (MessageEvent) _event;
-                CDC.setMessageContext(event.getMessage());
+            try (CDC ignored = CDC.reset(CellNucleus.this)) {
                 try {
-                    _cell.messageArrived(event);
-                } catch (RuntimeException e) {
-                    CellMessage msg = event.getMessage();
-                    if (!msg.isReply()) {
-                        msg.revertDirection();
-                        msg.setMessageObject(e);
-                        sendMessage(msg, true, true);
+                    EventLogger.queueEnd(_event);
+                    _eventQueueSize.decrementAndGet();
+
+                    if (_event instanceof RoutedMessageEvent) {
+                        _cell.messageArrived((RoutedMessageEvent) _event);
+                    } else if (_event instanceof MessageEvent) {
+                        MessageEvent event = (MessageEvent) _event;
+                        CDC.setMessageContext(event.getMessage());
+                        try {
+                            _cell.messageArrived(event);
+                        } catch (RuntimeException e) {
+                            CellMessage msg = event.getMessage();
+                            if (!msg.isReply()) {
+                                msg.revertDirection();
+                                msg.setMessageObject(e);
+                                sendMessage(msg, true, true);
+                            }
+                            throw e;
+                        }
                     }
-                    throw e;
-                } finally {
-                    CDC.clearMessageContext();
+                } catch (Throwable e) {
+                    Thread t = Thread.currentThread();
+                    t.getUncaughtExceptionHandler().uncaughtException(t, e);
                 }
             }
         }

@@ -187,7 +187,8 @@ public boolean equals( Object obj ){
 
     protected static byte[] encode(Object message)
     {
-        ByteArrayOutputStream array = new ByteArrayOutputStream();
+        int initialBufferSize = 256;
+        ByteArrayOutputStream array = new ByteArrayOutputStream(initialBufferSize);
         try (ObjectOutputStream out = new ObjectOutputStream(array)) {
             out.writeObject(message);
         } catch (InvalidClassException e) {

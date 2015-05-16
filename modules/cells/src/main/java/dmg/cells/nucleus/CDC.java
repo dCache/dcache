@@ -177,22 +177,22 @@ public class CDC implements AutoCloseable
      */
     static protected String getMessageContext(CellMessage envelope)
     {
-        StringBuilder s = new StringBuilder();
+        Object sessionObject = envelope.getSession();
+        String session = (sessionObject == null) ? null : sessionObject.toString();
+        String cellName = envelope.getSourcePath().getCellName();
+        Object msg = envelope.getMessageObject();
+        String context = (msg instanceof HasDiagnosticContext) ? ((HasDiagnosticContext) msg).getDiagnosticContext() : null;
 
-        Object session = envelope.getSession();
+        StringBuilder s = new StringBuilder(((session == null) ? 0 : session.length() + 1) +
+                                            cellName.length() +
+                                            ((context == null) ? 0 : 1 + context.length()));
         if (session != null) {
             s.append(session).append(' ');
         }
-
-        s.append(envelope.getSourcePath().getCellName());
-
-        Object msg = envelope.getMessageObject();
-        if (msg instanceof HasDiagnosticContext) {
-            String context =
-                ((HasDiagnosticContext) msg).getDiagnosticContext();
+        s.append(cellName);
+        if (context != null) {
             s.append(' ').append(context);
         }
-
         return s.toString();
     }
 
