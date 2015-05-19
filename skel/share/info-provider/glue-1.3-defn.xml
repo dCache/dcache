@@ -60,7 +60,7 @@
               |     :
               +-->
           <object rdn="GlueSEAccessProtocolLocalID"
-                  select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global']"
+                  select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global'][../../d:tags/d:tag[@id='&info-provider.door.tag;']]"
                   classes="GlueSETop GlueSEAccessProtocol GlueKey GlueSchemaVersion">
             <!-- Never publish SRM here -->
             <suppress test="srm">
@@ -107,7 +107,7 @@
               |     :
               +-->
           <object rdn="GlueSEControlProtocolLocalID"
-                  select="/d:dCache/d:doors/d:door[d:protocol/d:metric[@name='family']='srm']/d:interfaces/d:interface[d:metric[@name='scope']='global']"
+                  select="/d:dCache/d:doors/d:door[d:protocol/d:metric[@name='family']='srm']/d:interfaces/d:interface[d:metric[@name='scope']='global'][../../d:tags/d:tag[@id='&info-provider.door.tag;']]"
                   classes="GlueSETop GlueSEControlProtocol GlueKey GlueSchemaVersion">
             <attr name="GlueChunkKey">
               <parent-rdn rdn="GlueSEUniqueID" use="rdn"/>
@@ -940,7 +940,7 @@
             |
             +-->
         <object rdn="GlueServiceUniqueID"
-		select="/d:dCache/d:doors/d:door[d:protocol/d:metric[@name='family']='srm']/d:interfaces/d:interface[d:metric[@name='scope']='global']"
+		select="/d:dCache/d:doors/d:door[d:protocol/d:metric[@name='family']='srm']/d:interfaces/d:interface[d:metric[@name='scope']='global'][../../d:tags/d:tag[@id='&info-provider.door.tag;']]"
                 classes="GlueTop GlueKey GlueSchemaVersion GlueService">
 
 

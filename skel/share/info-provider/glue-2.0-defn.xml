@@ -431,7 +431,7 @@
               |       +- GLUE2AccessPolicy
               +-->
           <object rdn="GLUE2EndpointID"
-                  select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global']"
+                  select="/d:dCache/d:doors/d:door/d:interfaces/d:interface[d:metric[@name='scope']='global'][../../d:tags/d:tag[@id='&info-provider.door.tag;']]"
                   classes="GLUE2StorageEndpoint GLUE2Endpoint">
 
             <attr name="GLUE2EntityCreationTime"><date format="yyyy-MM-dd'T'HH:mm:ssX"/></attr>
