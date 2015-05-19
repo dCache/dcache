@@ -138,7 +138,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                 metaVar="bytes")
         String size;
 
-        @Option(name = "owner", usage = "User name or FQAN.", valueSpec="USER|FQAN")
+        @Option(name = "owner",
+                usage = "Changes the owner. Using the empty string makes the space reservation unowned.",
+                valueSpec="USER|FQAN|GID")
         String owner;
 
         @Option(name = "lifetime",
@@ -319,23 +321,23 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
     @Command(name = "ls spaces", hint = "list space reservations",
              description = "If an argument is given, the command displays space reservations for which the " +
-                     "space description matches the pattern. If the argument is an integer, the argument " +
-                     "is interpreted as a space token and a matching space reservation is displayed." +
-                     "If no argument is given, all space reservations are displayed. The list can be " +
-                     "further restricted using the options.\n\n" +
+                           "space description matches the pattern. If the argument is an integer, the argument " +
+                           "is interpreted as a space token and a matching space reservation is displayed." +
+                           "If no argument is given, all space reservations are displayed. The list can be " +
+                           "further restricted using the options.\n\n" +
 
-                     "For each space reservation the following information may be displayed left to right: " +
-                     "Space token, reservation state (reserved(-), released(r), expired(e)), default " +
-                     "retention policy, default access latency, number of files in space reservation, owner, " +
-                     "allocated bytes, used bytes, unused bytes, size of space, creation time, expiration time, " +
-                     "and space description.\n\n" +
+                           "For each space reservation the following information may be displayed left to right: " +
+                           "Space token, reservation state (reserved(-), released(r), expired(e)), default " +
+                           "retention policy, default access latency, number of files in space reservation, owner, " +
+                           "allocated bytes, used bytes, unused bytes, size of space, creation time, expiration " +
+                           "time, and space description.\n\n" +
 
-                     "Space reservations have a size. This size can be partitioned into space that is " +
-                     "used by files stored in the space reservation, space that is allocated for named " +
-                     "files that have not yet been uploaded, and free space. The latter two make up the " +
-                     "reserved space of the link group within which the space exists. Note that ones " +
-                     "a file is uploaded to a space reservation, the space consumed by the file is " +
-                     "obviously not free anymore and will thus not appear in the link group statistics.")
+                           "Space reservations have a size. This size is partitioned into space that is " +
+                           "used by files stored in the space reservation, space that is allocated for named " +
+                           "files that have not yet been uploaded, and free space. The latter two make up the " +
+                           "reserved space of the link group within which the space exists. Note that ones " +
+                           "a file is uploaded to a space reservation, the space consumed by the file is " +
+                           "obviously not free anymore and will thus not appear in the link group statistics.\n\n")
     public class ListSpacesCommand extends AsyncCommand
     {
         @Option(name = "a", usage = "Include ephemeral, expired and released space reservations.")
@@ -349,7 +351,7 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
         @Option(name = "owner",
                 usage = "Only show reservations whose owner matches this pattern.",
-                valueSpec="USER|FQAN")
+                valueSpec="USER|FQAN|GID")
         String owner;
 
         @Option(name = "al",
@@ -508,29 +510,29 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
     @Command(name = "ls files", hint = "list file reservations",
              description = "If an argument is given, the command displays reserved files for which the " +
-                     "PNFS ID or path matches the argument. If no argument is " +
-                     "given, all file reservations in a transient state are displayed. The list can be " +
-                     "further expanded or restricted using the options.\n\n" +
+                           "PNFS ID or path matches the argument. If no argument is given, all file reservations " +
+                           "in a transient state are displayed. The list can be further expanded or restricted " +
+                           "using the options.\n\n" +
 
-                     "For each file reservation the following information may be displayed left to right: " +
-                     "current state [transferring(t), stored(s), flushed(f)], space token, owner, size in " +
-                     "bytes, creation time, expiration time, PNFS ID, and path.\n\n" +
+                           "For each file reservation the following information may be displayed left to right: " +
+                           "current state [transferring(t), stored(s), flushed(f)], space token, owner, size in " +
+                           "bytes, creation time, expiration time, PNFS ID, and path.\n\n" +
 
-                     "A space reservation contains file reservations that consume the reserved space. " +
-                     "Each file reservation is in one of three states: TRANSFERRING, STORED, or FLUSHED.\n\n" +
+                           "A space reservation contains file reservations that consume the reserved space. " +
+                           "Each file reservation is in one of three states: TRANSFERRING, STORED, or FLUSHED.\n\n" +
 
-                     "TRANSFERRING files are in the process of being uploaded. Such files have " +
-                     "a PNFS ID associated with them.\n\n" +
+                           "TRANSFERRING files are in the process of being uploaded. Such files have " +
+                           "a PNFS ID associated with them.\n\n" +
 
-                     "STORED files have finished uploading.\n\n" +
+                           "STORED files have finished uploading.\n\n" +
 
-                     "FLUSHED files have been flushed to tape and no longer consume space in the " +
-                     "space reservation.")
+                           "FLUSHED files have been flushed to tape and no longer consume space in the " +
+                           "space reservation.")
     public class ListFilesCommand extends AsyncCommand
     {
         @Option(name = "owner",
                 usage = "Only show files whose owner matches this pattern.",
-                valueSpec="USER|FQAN")
+                valueSpec="USER|FQAN|GID")
         String owner;
 
         @Option(name = "token",
@@ -670,7 +672,11 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
                      "IEEE 1541 prefixes.")
     public class ReserveSpaceCommand extends AsyncCommand
     {
-        @Option(name = "owner", usage = "User name or FQAN.", valueSpec="USER|FQAN")
+        @Option(name = "owner",
+                usage = "Only the owner can release the space through SRM. If not specified, " +
+                        "the reservation becomes unowned. Unowned reservations can only be " +
+                        "released through the admin interface.",
+                valueSpec="USER|FQAN|GID")
         String owner;
 
         @Option(name = "al", usage = "Access latency.", required = true,
