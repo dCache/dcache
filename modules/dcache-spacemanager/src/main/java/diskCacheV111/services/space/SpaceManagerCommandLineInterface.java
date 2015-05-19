@@ -169,30 +169,35 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
             }
 
             if (owner != null) {
-                String group;
-                String role;
+                if (owner.isEmpty()) {
+                    space.setVoGroup(null);
+                    space.setVoRole(null);
+                } else {
+                    String group;
+                    String role;
 
-                // check that linkgroup allows this owner combination
-                LinkGroup lg = db.getLinkGroup(space.getLinkGroupId());
+                    // check that linkgroup allows this owner combination
+                    LinkGroup lg = db.getLinkGroup(space.getLinkGroupId());
 
-                FQAN fqan = new FQAN(owner);
-                group = fqan.getGroup();
-                role = emptyToNull(fqan.getRole());
+                    FQAN fqan = new FQAN(owner);
+                    group = fqan.getGroup();
+                    role = emptyToNull(fqan.getRole());
 
-                boolean foundMatch = false;
-                for (VOInfo info : lg.getVOs()) {
-                    if (info.match(group, role)) {
-                        foundMatch = true;
-                        break;
+                    boolean foundMatch = false;
+                    for (VOInfo info : lg.getVOs()) {
+                        if (info.match(group, role)) {
+                            foundMatch = true;
+                            break;
+                        }
                     }
+                    if (!foundMatch) {
+                        return "Cannot change owner to " + owner + ". " +
+                               "Authorized for this link group are:\n" +
+                               Joiner.on('\n').join(lg.getVOs());
+                    }
+                    space.setVoGroup(group);
+                    space.setVoRole(role);
                 }
-                if (!foundMatch) {
-                    return "Cannot change owner to " + owner + ". " +
-                            "Authorized for this link group are:\n"+
-                            Joiner.on('\n').join(lg.getVOs());
-                }
-                space.setVoGroup(group);
-                space.setVoRole(role);
             }
 
             if (eternal) {
@@ -492,9 +497,9 @@ public class SpaceManagerCommandLineInterface implements CellCommandListener
 
     private String toOwner(String voGroup, String voRole)
     {
-        if (voGroup == null) {
+        if (voGroup == null || voGroup.isEmpty()) {
             return null;
-        } else if (voGroup.charAt(0) != '/' || voRole == null || voRole.equals("*")) {
+        } else if (voGroup.charAt(0) != '/' || voRole == null || voRole.isEmpty() || voRole.equals("*")) {
             return voGroup;
         } else {
             return voGroup + "/Role=" + voRole;
