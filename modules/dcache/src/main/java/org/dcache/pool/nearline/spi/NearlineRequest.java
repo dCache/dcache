@@ -47,6 +47,14 @@ public interface NearlineRequest<T>
      * request will be cancelled, nor is it a promise that the request will
      * not be cancelled ahead of time.
      *
+     * The current implementation of timeouts is temporary. Currently the
+     * pool allows timeouts to be configured starting at the activation
+     * timeout and the deadline reflects these. Eventually, pool specific
+     * timeouts wil be removed and replaced by two timeouts: One defined
+     * by the user submitting the request (e.g. a stage request by the SRM)
+     * and optionally a provider specific timeout. This deadline will reflect
+     * the former.
+     *
      * @return Deadline in milliseconds since the epoch
      */
     long getDeadline();
