@@ -841,7 +841,7 @@ public class CellNucleus implements ThreadFactory
                 synchronized (_waitHash) {
                     _waitHash.put(msg.getLastUOID(), lock);
                 }
-                LOGGER.error("Message queue overflow. Dropping {}", ce);
+                LOGGER.error("Dropping reply: {}", e.getMessage());
             }
         } else {
             try {
@@ -851,7 +851,7 @@ public class CellNucleus implements ThreadFactory
             } catch (RejectedExecutionException e) {
                 EventLogger.queueEnd(ce);
                 _eventQueueSize.decrementAndGet();
-                LOGGER.error("Message queue overflow. Dropping {}", ce);
+                LOGGER.error("Dropping message: {}", e.getMessage());
             }
         }
     }
@@ -1069,6 +1069,12 @@ public class CellNucleus implements ThreadFactory
                 }
             }
         }
+
+        @Override
+        public String toString()
+        {
+            return "Delivery-of-" + _message;
+        }
     }
 
     private class DeliverMessageTask implements Runnable
@@ -1110,6 +1116,12 @@ public class CellNucleus implements ThreadFactory
                     t.getUncaughtExceptionHandler().uncaughtException(t, e);
                 }
             }
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Delivery-of-" + _event;
         }
     }
 }
