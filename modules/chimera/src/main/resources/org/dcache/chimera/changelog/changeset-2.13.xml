@@ -120,4 +120,48 @@
             <column name="ilocation"></column>
         </createIndex>
     </changeSet>
+
+    <changeSet author="behrmann" id="4">
+        <comment>Removes leaked tag inodes</comment>
+
+        <createTable tableName="t_tags_inodes2">
+            <column name="itagid" type="varchar(36)"/>
+            <column name="imode" type="INT"/>
+            <column name="inlink" type="INT"/>
+            <column name="iuid" type="INT"/>
+            <column name="igid" type="INT"/>
+            <column name="isize" type="INT"/>
+            <column name="ictime" type="DATETIME"/>
+            <column name="iatime" type="DATETIME"/>
+            <column name="imtime" type="DATETIME"/>
+            <column name="ivalue" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            INSERT INTO t_tags_inodes2 (SELECT * FROM t_tags_inodes i WHERE EXISTS (SELECT 1 FROM t_tags t WHERE t.itagid = i.itagid))
+        </sql>
+
+        <dropForeignKeyConstraint baseTableName="t_tags" constraintName="t_tags_itagid_fkey"/>
+
+        <sql>
+            TRUNCATE TABLE t_tags_inodes
+        </sql>
+
+        <sql>
+            INSERT INTO t_tags_inodes SELECT * FROM t_tags_inodes2
+        </sql>
+
+        <addForeignKeyConstraint baseColumnNames="itagid" baseTableName="t_tags"
+                                 constraintName="t_tags_itagid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="itagid"
+                                 referencedTableName="t_tags_inodes"/>
+
+        <dropTable tableName="t_tags_inodes2"/>
+
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>
