@@ -81,6 +81,7 @@ public class LoginBrokerPublisher
     private List<String> _writePaths = Collections.emptyList();
     private boolean _readEnabled = true;
     private boolean _writeEnabled = true;
+    private List<InetAddress> _lastAddresses = Collections.emptyList();
 
     /**
      * Tags to advertise. For thread safety, the list must not be modified.
@@ -194,41 +195,33 @@ public class LoginBrokerPublisher
         }
     }
 
-    protected LoginBrokerInfo newInfo(String cell, String domain,
-                                      String protocolFamily, String protocolVersion, String protocolEngine,
-                                      String root, Collection<String> readPaths, Collection<String> writePaths, Collection<String> tags,
-                                      List<InetAddress> addresses, int port,
-                                      double load, long updateTime)
+    private synchronized Optional<LoginBrokerInfo> createLoginBrokerInfo(List<InetAddress> addresses)
     {
-        return new LoginBrokerInfo(cell, domain, protocolFamily, protocolVersion,
-                                   protocolEngine, root, readPaths, writePaths, tags, addresses, port, load, updateTime);
-    }
-
-    private synchronized Optional<LoginBrokerInfo> createLoginBrokerInfo()
-    {
-        if (_task != null) {
-            List<InetAddress> addresses = _addresses.get();
-            if (!addresses.isEmpty()) {
-                return Optional.of(newInfo(getCellName(), getCellDomainName(),
-                                           _protocolFamily, _protocolVersion, _protocolEngine, _root,
-                                           _readEnabled ? _readPaths : Collections.emptyList(),
-                                           _writeEnabled ? _writePaths : Collections.emptyList(),
-                                           _tags, addresses, _port, _load.getLoad(),
-                                           _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime)));
-            }
+        _lastAddresses = addresses;
+        if (_task != null && !addresses.isEmpty()) {
+            Collection<String> readPaths = _readEnabled ? _readPaths : Collections.emptyList();
+            Collection<String> writePaths = _writeEnabled ? _writePaths : Collections.emptyList();
+            return Optional.of(
+                    new LoginBrokerInfo(getCellName(), getCellDomainName(), _protocolFamily, _protocolVersion,
+                                        _protocolEngine, _root, readPaths, writePaths, _tags, addresses, _port,
+                                        _load.getLoad(), _brokerUpdateTimeUnit.toMillis(_brokerUpdateTime)));
         }
         return Optional.empty();
     }
 
-    private synchronized void sendUpdate()
+    private synchronized void sendUpdate(Optional<LoginBrokerInfo> info)
     {
         if (_topic != null) {
             _currentUpdateMode = UpdateMode.NORMAL;
-            Optional<LoginBrokerInfo> info = createLoginBrokerInfo();
             if (info.isPresent()) {
                 sendMessage(new CellMessage(_topic, info.get()));
             }
         }
+    }
+
+    private void sendUpdate()
+    {
+        sendUpdate(createLoginBrokerInfo(getAddressSupplier().get()));
     }
 
     public synchronized void messageArrived(NoRouteToCellException e)
@@ -243,7 +236,7 @@ public class LoginBrokerPublisher
 
     public LoginBrokerInfo messageArrived(LoginBrokerInfoRequest msg)
     {
-        return createLoginBrokerInfo().orElse(null);
+        return createLoginBrokerInfo(getAddressSupplier().get()).orElse(null);
     }
 
     @Override
@@ -288,7 +281,7 @@ public class LoginBrokerPublisher
         pw.println("    Protocol Family  : " + _protocolFamily);
         pw.println("    Protocol Version : " + _protocolVersion);
         pw.println("    Port             : " + _port);
-        pw.println("    Addresses        : " + _addresses.get());
+        pw.println("    Addresses        : " + _lastAddresses);
         pw.println("    Tags             : " + _tags);
         pw.println("    Read paths       : " + _readPaths + (_readEnabled ? "" : " (disabled)"));
         pw.println("    Write paths      : " + _writePaths  + (_writeEnabled ? "" : " (disabled)"));
@@ -335,6 +328,11 @@ public class LoginBrokerPublisher
         } else {
             setAddressSupplier(() -> Collections.singletonList(address));
         }
+    }
+
+    public synchronized Supplier<List<InetAddress>> getAddressSupplier()
+    {
+        return _addresses;
     }
 
     public synchronized void setAddressSupplier(Supplier<List<InetAddress>> addresses)
