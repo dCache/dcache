@@ -364,7 +364,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
      */
     private abstract static class AbstractRequest<K> implements Comparable<AbstractRequest<K>>
     {
-        private enum State { QUEUED, ACTIVE, CANCELED }
+        protected enum State { QUEUED, ACTIVE, CANCELED }
 
         private final List<CompletionHandler<Void,K>> callbacks = new ArrayList<>();
         protected final long createdAt = System.currentTimeMillis();
@@ -516,7 +516,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
              * the shutdown call might have missed them when cancelling requests.
              */
             if (state.isShutdown()) {
-                cancelRequests(0);
+                cancelRequests();
             }
         }
 
@@ -532,16 +532,24 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         }
 
         /**
-         * Cancels requests older than {@code age}.
+         * Cancels requests whose deadline has past.
          */
-        public void cancelRequests(long age)
+        public void cancelExpiredRequests()
         {
             long now = System.currentTimeMillis();
             for (R request : requests.values()) {
-                if (now - request.getCreatedAt() >= age) {
+                if (request.getDeadline() <= now) {
                     request.cancel();
                 }
             }
+        }
+
+        /**
+         * Cancels all requests.
+         */
+        public void cancelRequests()
+        {
+            requests.values().forEach(AbstractRequest::cancel);
         }
 
         /**
@@ -551,7 +559,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         public void shutdown()
         {
             state.shutdown();
-            cancelRequests(0);
+            cancelRequests();
         }
 
         /**
@@ -720,7 +728,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public long getDeadline()
         {
-            return createdAt + flushTimeout;
+            return (state.get() == State.ACTIVE) ? activatedAt + flushTimeout : Long.MAX_VALUE;
         }
 
         @Override
@@ -989,7 +997,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public long getDeadline()
         {
-            return createdAt + stageTimeout;
+            return (state.get() == State.ACTIVE) ? activatedAt + stageTimeout : Long.MAX_VALUE;
         }
 
         @Override
@@ -1077,9 +1085,10 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
             return uri;
         }
 
+        @Override
         public long getDeadline()
         {
-            return createdAt + removeTimeout;
+            return (state.get() == State.ACTIVE) ? activatedAt + removeTimeout : Long.MAX_VALUE;
         }
 
         public void failed(Exception cause)
@@ -1287,9 +1296,9 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public void run()
         {
-            flushRequests.cancelRequests(flushTimeout);
-            stageRequests.cancelRequests(stageTimeout);
-            removeRequests.cancelRequests(removeTimeout);
+            flushRequests.cancelExpiredRequests();
+            stageRequests.cancelExpiredRequests();
+            removeRequests.cancelExpiredRequests();
         }
     }
 
