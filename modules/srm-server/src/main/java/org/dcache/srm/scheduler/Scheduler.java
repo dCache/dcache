@@ -973,7 +973,7 @@ public class Scheduler <T extends Job>
                                   Ints.max(24, 20 + fieldWidth),
                                   28 + fieldWidth);
         formatter.column2("Queued", getTotalTQueued(), State.TQUEUED);
-        formatter.column1("Waiting for CPU", getTotalTQueued(), State.PRIORITYTQUEUED);
+        formatter.column1("Waiting for CPU", getTotalPriorityTQueued(), State.PRIORITYTQUEUED);
         formatter.column1("Running (max " + getThreadPoolSize() + ")", getTotalRunningState(), State.RUNNING);
         formatter.column1("Running without thread", getTotalRunningWithoutThreadState(), State.RUNNINGWITHOUTTHREAD);
         formatter.column1("Waiting for callback", getTotalAsyncWait(), State.ASYNCWAIT);
