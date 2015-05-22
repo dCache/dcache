@@ -9,7 +9,8 @@ check -strong spacemanager.cell.name
 check -strong spacemanager.cell.export
 check -strong spacemanager.db.url
 check -strong spacemanager.db.user
-check -strong spacemanager.db.password
+check spacemanager.db.password
+check spacemanager.db.password.file
 check -strong spacemanager.db.connections.idle
 check -strong spacemanager.db.connections.max
 check -strong spacemanager.limits.threads
