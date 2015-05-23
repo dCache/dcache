@@ -247,7 +247,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             }
 
             while(!pendingSurlsToIndex.isEmpty()) {
-                long estimatedWaitInSeconds = 5;
+                long estimatedWaitInSeconds = 60;
                 for (TBringOnlineRequestFileStatus bringOnlineRequestFileStatus : bringOnlineRequestFileStatuses) {
                     URI surl = bringOnlineRequestFileStatus.getSourceSURL();
                     if (surl == null) {
@@ -283,13 +283,9 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                                 from[indx].getURL() + " brought online, use request id " + requestToken + " to release");
                         continue;
                     }
-                    if (bringOnlineRequestFileStatus.getEstimatedWaitTime() != null &&
-                        bringOnlineRequestFileStatus
-                                .getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                        bringOnlineRequestFileStatus
-                                .getEstimatedWaitTime() >= 1) {
-                        estimatedWaitInSeconds = bringOnlineRequestFileStatus
-                                .getEstimatedWaitTime();
+                    Integer estimatedWaitTime = bringOnlineRequestFileStatus.getEstimatedWaitTime();
+                    if (estimatedWaitTime != null && estimatedWaitTime < estimatedWaitInSeconds && estimatedWaitTime >= 1) {
+                        estimatedWaitInSeconds = estimatedWaitTime;
                     }
                 }
 
@@ -297,10 +293,6 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                     dsay("no more pending transfers, breaking the loop");
                     Runtime.getRuntime().removeShutdownHook(hook);
                     break;
-                }
-                // do not wait longer then 60 seconds
-                if(estimatedWaitInSeconds > 60) {
-                    estimatedWaitInSeconds = 60;
                 }
                 try {
 
