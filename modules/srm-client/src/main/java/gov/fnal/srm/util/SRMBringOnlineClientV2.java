@@ -248,46 +248,46 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
 
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
-                for(int i = 0 ; i<len;++i) {
-                    TBringOnlineRequestFileStatus bringOnlineRequestFileStatus = bringOnlineRequestFileStatuses[i];
+                for (TBringOnlineRequestFileStatus bringOnlineRequestFileStatus : bringOnlineRequestFileStatuses) {
                     URI surl = bringOnlineRequestFileStatus.getSourceSURL();
-                    if(surl == null) {
+                    if (surl == null) {
                         esay("invalid bringOnlineRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
-                    if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        esay("invalid bringOnlineRequestFileStatus, surl = "+surl_string+" not found");
+                    if (!pendingSurlsToIndex.containsKey(surl_string)) {
+                        esay("invalid bringOnlineRequestFileStatus, surl = " + surl_string + " not found");
                         continue;
                     }
                     TReturnStatus fileStatus = bringOnlineRequestFileStatus.getStatus();
-                    if(fileStatus == null) {
+                    if (fileStatus == null) {
                         throw new IOException(" null file return status");
                     }
                     TStatusCode fileStatusCode = fileStatus.getStatusCode();
-                    if(fileStatusCode == null) {
+                    if (fileStatusCode == null) {
                         throw new IOException(" null file status code");
                     }
-                    if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
-                        String error ="retrieval of surl "+surl_string+
-                        " failed, status = "+fileStatusCode+
-                        " explanation="+fileStatus.getExplanation();
+                    if (RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
+                        String error = "retrieval of surl " + surl_string +
+                                       " failed, status = " + fileStatusCode +
+                                       " explanation=" + fileStatus.getExplanation();
                         esay(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportFailed(from[indx],from[indx],error);
+                        setReportFailed(from[indx], from[indx], error);
                         continue;
                     }
-                    if(fileStatus.getStatusCode() == TStatusCode.SRM_SUCCESS ) {
+                    if (fileStatus.getStatusCode() == TStatusCode.SRM_SUCCESS) {
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportSucceeded(from[indx],from[indx]);
-                        System.out.println(from[indx].getURL()+" brought online, use request id "+requestToken+" to release");
+                        setReportSucceeded(from[indx], from[indx]);
+                        System.out.println(
+                                from[indx].getURL() + " brought online, use request id " + requestToken + " to release");
                         continue;
                     }
-                    if(bringOnlineRequestFileStatus.getEstimatedWaitTime() != null &&
-                            bringOnlineRequestFileStatus
-                                    .getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                            bringOnlineRequestFileStatus
-                                    .getEstimatedWaitTime() >=1) {
+                    if (bringOnlineRequestFileStatus.getEstimatedWaitTime() != null &&
+                        bringOnlineRequestFileStatus
+                                .getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                        bringOnlineRequestFileStatus
+                                .getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = bringOnlineRequestFileStatus
                                 .getEstimatedWaitTime();
                     }
@@ -380,7 +380,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                 }
             }
         } catch(Exception e) {
-            say(e.toString());
+            esay(e.toString());
         } finally {
             report.dumpReport();
             if (!report.everythingAllRight()){

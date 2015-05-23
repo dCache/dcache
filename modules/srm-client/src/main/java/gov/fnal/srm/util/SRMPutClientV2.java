@@ -288,8 +288,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             }
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
-                for(int i = 0 ; i<len;++i) {
-                    TPutRequestFileStatus putRequestFileStatus = putRequestFileStatuses[i];
+                for (TPutRequestFileStatus putRequestFileStatus : putRequestFileStatuses) {
                     URI surl = putRequestFileStatus.getSURL();
                     if(surl == null) {
                         esay("invalid putRequestFileStatus, surl is null");

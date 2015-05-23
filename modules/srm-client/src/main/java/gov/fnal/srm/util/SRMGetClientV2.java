@@ -256,46 +256,45 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
 
             while(!pendingSurlsToIndex.isEmpty()) {
                 long estimatedWaitInSeconds = 5;
-                for(int i = 0 ; i<getRequestFileStatuses.length;++i) {
-                    TGetRequestFileStatus getRequestFileStatus = getRequestFileStatuses[i];
+                for (TGetRequestFileStatus getRequestFileStatus : getRequestFileStatuses) {
                     URI surl = getRequestFileStatus.getSourceSURL();
-                    if(surl == null) {
+                    if (surl == null) {
                         esay("invalid getRequestFileStatus, surl is null");
                         continue;
                     }
                     String surl_string = surl.toString();
-                    if(!pendingSurlsToIndex.containsKey(surl_string)) {
-                        esay("invalid getRequestFileStatus, surl = "+surl_string+" not found");
+                    if (!pendingSurlsToIndex.containsKey(surl_string)) {
+                        esay("invalid getRequestFileStatus, surl = " + surl_string + " not found");
                         continue;
                     }
                     TReturnStatus fileStatus = getRequestFileStatus.getStatus();
-                    if(fileStatus == null) {
+                    if (fileStatus == null) {
                         throw new IOException(" null file return status");
                     }
                     TStatusCode fileStatusCode = fileStatus.getStatusCode();
-                    if(fileStatusCode == null) {
+                    if (fileStatusCode == null) {
                         throw new IOException(" null file status code");
                     }
-                    if(RequestStatusTool.isFailedFileRequestStatus(fileStatus)){
-                        String error ="retreval of surl "+surl_string+" failed, status = "+fileStatusCode+
-                        " explanation="+fileStatus.getExplanation();
+                    if (RequestStatusTool.isFailedFileRequestStatus(fileStatus)) {
+                        String error = "retreval of surl " + surl_string + " failed, status = " + fileStatusCode +
+                                       " explanation=" + fileStatus.getExplanation();
                         esay(error);
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportFailed(from[indx],to[indx],error);
+                        setReportFailed(from[indx], to[indx], error);
                         continue;
                     }
-                    if(getRequestFileStatus.getTransferURL() != null ) {
+                    if (getRequestFileStatus.getTransferURL() != null) {
                         GlobusURL globusTURL = new GlobusURL(getRequestFileStatus.getTransferURL().toString());
                         int indx = pendingSurlsToIndex.remove(surl_string);
-                        setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
+                        setReportFailed(from[indx], to[indx], "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(globusTURL,
-                                to[indx],srmv2,requestToken,logger,from[indx],true,this);
+                                                       to[indx], srmv2, requestToken, logger, from[indx], true, this);
                         copier.addCopyJob(job);
                         continue;
                     }
-                    if(getRequestFileStatus.getEstimatedWaitTime() != null &&
-                            getRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
-                            getRequestFileStatus.getEstimatedWaitTime() >=1) {
+                    if (getRequestFileStatus.getEstimatedWaitTime() != null &&
+                        getRequestFileStatus.getEstimatedWaitTime() < estimatedWaitInSeconds &&
+                        getRequestFileStatus.getEstimatedWaitTime() >= 1) {
                         estimatedWaitInSeconds = getRequestFileStatus
                                 .getEstimatedWaitTime();
                     }
