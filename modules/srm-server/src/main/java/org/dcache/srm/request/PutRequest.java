@@ -389,11 +389,12 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         Date deadline = getDateRelativeToNow(timeout);
         int counter = _stateChangeCounter.get();
         SrmPrepareToPutResponse response = getSrmPrepareToPutResponse();
-        while (response.getReturnStatus().getStatusCode().isProcessing() &&
-               _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
+               && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
             response = getSrmPrepareToPutResponse();
         }
+
         return response;
     }
 
