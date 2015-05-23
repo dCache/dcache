@@ -544,11 +544,6 @@ public class Scheduler <T extends Job>
                 Job job = requestQueue.getGreatestValueObject(calc);
 
                 if (job == null) {
-                    //logger.debug("updateThreadQueue(), job is null, trying threadQueue.peek();");
-                    job = requestQueue.peek();
-                }
-
-                if (job == null) {
                     //logger.debug("updateThreadQueue no jobs were found, breaking the update loop");
                     break;
                 }
