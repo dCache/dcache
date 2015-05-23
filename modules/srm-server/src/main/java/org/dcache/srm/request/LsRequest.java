@@ -214,7 +214,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 Date deadline = getDateRelativeToNow(timeout);
                 int counter = _stateChangeCounter.get();
                 SrmLsResponse response = getSrmLsResponse();
-                while (response.getReturnStatus().getStatusCode().isProcessing() &&
+                while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date()) &&
                        _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
                         counter = _stateChangeCounter.get();
                         response = getSrmLsResponse();

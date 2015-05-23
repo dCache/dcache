@@ -306,8 +306,8 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
         Date deadline = getDateRelativeToNow(timeout);
         int counter = _stateChangeCounter.get();
         SrmBringOnlineResponse response = getSrmBringOnlineResponse();
-        while (response.getReturnStatus().getStatusCode().isProcessing() &&
-               _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
+               && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
             response = getSrmBringOnlineResponse();
         }
