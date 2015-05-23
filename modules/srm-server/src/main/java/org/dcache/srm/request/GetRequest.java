@@ -314,8 +314,8 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
         Date deadline = getDateRelativeToNow(timeout);
         int counter = _stateChangeCounter.get();
         SrmPrepareToGetResponse response = getSrmPrepareToGetResponse();
-        while (response.getReturnStatus().getStatusCode().isProcessing() &&
-               _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
+        while (response.getReturnStatus().getStatusCode().isProcessing() && deadline.after(new Date())
+               && _stateChangeCounter.awaitChangeUntil(counter, deadline)) {
             counter = _stateChangeCounter.get();
             response = getSrmPrepareToGetResponse();
         }
