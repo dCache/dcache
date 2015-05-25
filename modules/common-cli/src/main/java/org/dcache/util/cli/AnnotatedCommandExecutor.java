@@ -763,7 +763,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         @Override
         public Integer apply(String value)
         {
-            return Integer.valueOf(value);
+            return Integer.decode(value);
         }
     }
 
@@ -775,7 +775,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         @Override
         public Long apply(String value)
         {
-            return Long.valueOf(value);
+            return Long.decode(value);
         }
     }
 
@@ -787,7 +787,7 @@ public class AnnotatedCommandExecutor implements CommandExecutor
         @Override
         public Short apply(String value)
         {
-            return Short.valueOf(value);
+            return Short.decode(value);
         }
     }
 
