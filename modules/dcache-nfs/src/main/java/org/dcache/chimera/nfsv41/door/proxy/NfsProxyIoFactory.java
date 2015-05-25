@@ -137,4 +137,9 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
     public void forEach(Consumer<ProxyIoAdapter> action) {
         _proxyIO.asMap().values().forEach(action);
     }
+
+    @Override
+    public int getCount() {
+        return (int)_proxyIO.size();
+    }
 }
