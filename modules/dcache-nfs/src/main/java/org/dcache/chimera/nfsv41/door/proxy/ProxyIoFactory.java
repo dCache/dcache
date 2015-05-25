@@ -39,6 +39,11 @@ public interface ProxyIoFactory {
     void forEach(Consumer<ProxyIoAdapter> action);
 
     /**
+     * Get number of active adapter.
+     */
+    int getCount();
+
+    /**
      * Close all active proxies and free up any additional resources.
      * After calling this method, the behavior of all other methods is not
      * guaranteed.

@@ -50,6 +50,7 @@ import dmg.util.command.Command;
 import dmg.util.command.Option;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
@@ -626,34 +627,15 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         pw.println("NFS (" + _versions + ") door (MDS):");
         if (_nfs4 != null) {
-            pw.printf("  IO queue: %s\n", _ioQueue);
-            pw.println("  Known pools (DS):\n");
-            for (Map.Entry<String, PoolDS> ioDevice : _poolDeviceMap.getEntries()) {
-                pw.println(String.format("    %s : [%s]", ioDevice.getKey(), ioDevice.getValue()));
-            }
-
-            pw.println();
-            pw.println("  Known movers (layouts):");
-            for (NfsTransfer io : _ioMessages.values()) {
-                pw.println(io);
-            }
+            pw.printf("  IO queue                : %s\n", _ioQueue);
+            pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
+            pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().stream().count());
+            pw.printf("  Active transfers        : %d\n", _ioMessages.values().size());
 
             if (_proxyIoFactory != null) {
-                pw.println();
-                pw.println("  Known proxy adapters (proxy-io):");
-                _proxyIoFactory.forEach(a -> { pw.print("    "); pw.println(a); });
+                pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
             }
 
-            pw.println();
-            pw.println("  Known clients:");
-            for (NFS4Client client : _nfs4.getStateHandler().getClients()) {
-                pw.println(String.format("    %s", client));
-                for (NFSv41Session session : client.sessions()) {
-                    pw.println(String.format("        %s, max slot: %d/%d",
-                            session, session.getHighestSlot(), session.getHighestUsedSlot()));
-
-                }
-            }
         }
     }
 
@@ -734,6 +716,89 @@ public class NFSv41Door extends AbstractCellComponent implements
             NFS4Client client = _nfs4.getStateHandler().getClientByID(clientid);
             _nfs4.getStateHandler().removeClient(client);
             return "Done.";
+        }
+    }
+
+    @Command(name = "show clients", hint = "show active NFSv4 clients",
+            description = "Show NFSv4 clients and corresponding sessions.")
+    public class ShowClientsCmd implements Callable<String> {
+
+        @Argument(required = false, metaVar = "host")
+        String host;
+
+        @Override
+        public String call() throws IOException {
+            if (_nfs4 == null) {
+                return "NFSv4 server not running.";
+            }
+
+            InetAddress clientAddress = InetAddress.getByName(host);
+            StringBuilder sb = new StringBuilder();
+
+            _nfs4.getStateHandler().getClients()
+                    .stream()
+                    .filter(c -> host == null? true : c.getRemoteAddress().getAddress().equals(clientAddress))
+                    .forEach(c -> {
+                        sb.append("    ").append(c).append("\n");
+                        c.sessions().forEach((session) -> {
+                            sb.append("        ")
+                            .append(session)
+                            .append(" max slot: ")
+                            .append(session.getHighestSlot())
+                            .append("/")
+                            .append(session.getHighestUsedSlot())
+                            .append("\n");
+                    });
+                });
+            return sb.toString();
+        }
+    }
+
+    @Command(name = "show pools", hint = "show pools to pNFS device mapping",
+            description = "Show pools as pNFS devices, including id mapping and "
+             + "known IP addresses.")
+    public class ShowPoolsCmd implements Callable<String> {
+
+        @Argument(required = false, metaVar = "pool")
+        String pool;
+
+        @Override
+        public String call() throws IOException {
+            return _poolDeviceMap.getEntries()
+                    .stream()
+                    .filter(d -> pool == null ? true : d.getKey().equals(pool))
+                    .map(d -> String.format("    %s : [%s]\n", d.getKey(), d.getValue()))
+                    .collect(Collectors.joining());
+        }
+    }
+
+    @Command(name = "show transfers", hint = "show active transfers",
+            description = "Show active transfers excluding proxy-io.")
+    public class ShowTransfersCmd implements Callable<String> {
+
+        @Override
+        public String call() throws IOException {
+
+            return _ioMessages.values()
+                    .stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining("\n"));
+        }
+    }
+
+    @Command(name = "show proxyio", hint = "show proxy-io transfers",
+            description = "Show active proxy-io transfers.")
+    public class ShowProxyIoTransfersCmd implements Callable<String> {
+
+        @Override
+        public String call() throws IOException {
+            if (_proxyIoFactory == null) {
+                return "";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            _proxyIoFactory.forEach(t -> sb.append(t).append('\n'));
+            return sb.toString();
         }
     }
 
