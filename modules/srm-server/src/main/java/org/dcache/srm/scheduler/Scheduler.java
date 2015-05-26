@@ -519,29 +519,34 @@ public class Scheduler <T extends Job>
                 throws SRMInvalidRequestException, InterruptedException
         {
             while (true) {
-                ModifiableQueue.ValueCalculator calc =
-                        new ModifiableQueue.ValueCalculator()
-                        {
-                            private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
-                            private final int maxRunningByOwner = getMaxRunningByOwner();
-
-                            @Override
-                            public int calculateValue(
-                                    int queueLength,
-                                    int queuePosition,
-                                    Job job)
+                Job job;
+                if (requestQueue.size() <= getMaxInProgress() - getTotalInprogress()) {
+                    job = requestQueue.peek();
+                } else {
+                    ModifiableQueue.ValueCalculator calc =
+                            new ModifiableQueue.ValueCalculator()
                             {
-                                int numOfRunningBySameCreator = getTotalRunningByCreator(job);
-                                int value = jobAppraiser.evaluateJobPriority(
-                                        queueLength, queuePosition,
-                                        numOfRunningBySameCreator,
-                                        maxRunningByOwner,
-                                        job);
-                                //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
-                                return value;
-                            }
-                        };
-                Job job = requestQueue.getGreatestValueObject(calc);
+                                private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
+                                private final int maxRunningByOwner = getMaxRunningByOwner();
+
+                                @Override
+                                public int calculateValue(
+                                        int queueLength,
+                                        int queuePosition,
+                                        Job job)
+                                {
+                                    int numOfRunningBySameCreator = getTotalRunningByCreator(job);
+                                    int value = jobAppraiser.evaluateJobPriority(
+                                            queueLength, queuePosition,
+                                            numOfRunningBySameCreator,
+                                            maxRunningByOwner,
+                                            job);
+                                    //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
+                                    return value;
+                                }
+                            };
+                    job = requestQueue.getGreatestValueObject(calc);
+                }
 
                 if (job == null) {
                     //logger.debug("updateThreadQueue(), job is null, trying threadQueue.peek();");
