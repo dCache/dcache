@@ -146,6 +146,15 @@ public class ModifiableQueue  {
         return greatestValueJob;
     }
 
+    public Job peek() throws SRMInvalidRequestException
+    {
+        Long id;
+        synchronized (queue) {
+            id = queue.isEmpty() ? null : queue.get(0);
+        }
+        return (id == null) ? null : Job.getJob(id, type);
+    }
+
     public void printQueue(StringBuilder sb) {
         synchronized(queue)
         {
