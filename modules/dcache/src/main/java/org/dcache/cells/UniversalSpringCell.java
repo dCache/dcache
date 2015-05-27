@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import diskCacheV111.util.CacheException;
@@ -280,9 +281,9 @@ public class UniversalSpringCell
     {
         if (messageExecutor != null) {
             Object executor = getBean(messageExecutor);
-            checkState(executor instanceof ThreadPoolExecutor,
+            checkState(executor instanceof ExecutorService,
                        "No such bean: " + messageExecutor);
-            getNucleus().setMessageExecutor((ThreadPoolExecutor) executor);
+            getNucleus().setMessageExecutor((ExecutorService) executor);
         }
     }
 

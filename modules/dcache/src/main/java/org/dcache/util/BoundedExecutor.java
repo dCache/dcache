@@ -32,6 +32,7 @@ public class BoundedExecutor extends AbstractExecutorService
     private final Executor executor;
     private final List<Thread> workers;
     private int maxThreads;
+    private int maxQueued;
     private int threads;
 
     private final Monitor monitor = new Monitor();
@@ -51,10 +52,21 @@ public class BoundedExecutor extends AbstractExecutorService
         this(Executors.newCachedThreadPool(), maxThreads);
     }
 
+    public BoundedExecutor(int maxThreads, int maxQueued)
+    {
+        this(Executors.newCachedThreadPool(), maxThreads, maxQueued);
+    }
+
     public BoundedExecutor(Executor executor, int maxThreads)
+    {
+        this(executor,  maxThreads,  Integer.MAX_VALUE);
+    }
+
+    public BoundedExecutor(Executor executor, int maxThreads, int maxQueued)
     {
         this.executor = executor;
         this.maxThreads = maxThreads;
+        this.maxQueued = maxQueued;
         this.workers = new ArrayList<>(maxThreads);
     }
 
@@ -138,6 +150,9 @@ public class BoundedExecutor extends AbstractExecutorService
             if (isShutdown) {
                 throw new RejectedExecutionException("Executor has been shut down.");
             }
+            if (workQueue.size() - maxThreads + threads >= maxQueued) {
+                throw new RejectedExecutionException("Executor queue limit has been reached.");
+            }
             if (threads < maxThreads) {
                 threads++;
                 executor.execute(worker);
@@ -169,6 +184,26 @@ public class BoundedExecutor extends AbstractExecutorService
         monitor.enter();
         try {
             return maxThreads;
+        } finally {
+            monitor.leave();
+        }
+    }
+
+    public void setMaximumQueueSize(int size)
+    {
+        monitor.enter();
+        try {
+            maxQueued = size;
+        } finally {
+            monitor.leave();
+        }
+    }
+
+    public int getMaximumQueueSize()
+    {
+        monitor.enter();
+        try {
+            return maxQueued;
         } finally {
             monitor.leave();
         }
