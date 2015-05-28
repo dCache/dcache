@@ -43,23 +43,4 @@
           <version>1.0.12</version>
       </dependency>
   </dependencies>
-
-  <build>
-      <plugins>
-          <!-- Needed to allow animal-sniffer to run from the command-line -->
-          <plugin>
-              <groupId>org.codehaus.mojo</groupId>
-              <artifactId>animal-sniffer-maven-plugin</artifactId>
-              <version>1.7</version>
-              <configuration>
-                  <signature>
-                      <groupId>org.codehaus.mojo.signature</groupId>
-                      <artifactId>java16-sun</artifactId>
-                      <version>1.0</version>
-                  </signature>
-              </configuration>
-          </plugin>
-      </plugins>
-  </build>
-
 </project>
