@@ -99,7 +99,7 @@
          -->
         <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
         <bouncycastle.version>1.45</bouncycastle.version>
-        <datanucleus-core.version>4.0.4</datanucleus-core.version>
+        <datanucleus-core.version>4.0.5</datanucleus-core.version>
         <datanucleus.plugin.version>4.0.0-release</datanucleus.plugin.version>
     </properties>
 
@@ -355,17 +355,17 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
-                <version>4.0.26.Final</version>
+                <version>4.0.28.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.grizzly</groupId>
                 <artifactId>grizzly-framework</artifactId>
-                <version>2.3.19</version>
+                <version>2.3.21</version>
             </dependency>
             <dependency>
                 <groupId>com.sleepycat</groupId>
                 <artifactId>je</artifactId>
-                <version>6.1.5</version>
+                <version>6.3.8</version>
             </dependency>
             <dependency>
                 <groupId>javax.jdo</groupId>
@@ -390,7 +390,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-cache</artifactId>
-                <version>${datanucleus-core.version}</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -405,7 +405,7 @@
             <dependency>
                 <groupId>org.datanucleus</groupId>
                 <artifactId>datanucleus-rdbms</artifactId>
-                <version>4.0.7</version>
+                <version>4.0.8</version>
             </dependency>
             <dependency>
                 <groupId>org.datanucleus</groupId>
@@ -468,7 +468,7 @@
             <dependency>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
-                <version>3.3.2</version>
+                <version>3.3.4</version>
             </dependency>
             <dependency>
                 <groupId>com.mattbertolini</groupId>
@@ -841,7 +841,7 @@
         <dependency>
            <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.2</version>
             <scope>test</scope>
             <exclusions>
                 <!-- powermock-api-mockito depends on mockito-all,
@@ -866,8 +866,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <!-- Powermock 1.6.1 is incompatible with versions newer than 1.10.8 -->
-            <version>1.10.8</version>
+            <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -879,7 +878,7 @@
         <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
