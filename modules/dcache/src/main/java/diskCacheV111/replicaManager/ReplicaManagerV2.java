@@ -2224,7 +2224,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     //--------------------------------------------------------------------------
     // === Pool ===
     //----------------------------------------------------------------------------
-    @Command(name = "update poolgroup", hint = "re-fetch pool group and initialize newly discovered pools")
+    @Command(name = "update poolgroup", hint = "refresh list of resilient pools",
+            description = "Refresh list of resilient pools and initialize newly  "
+             + "discovered set of pools." )
     public class UpdatePoolGroup extends DelayedCommand<String>
     {
 
