@@ -320,7 +320,8 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>2.3.6</version>
+                <version>2.3.7</version>
+                <!-- Version 2.3.8 downgrades JavaAssist and becomes incompatible with Mockito/PowerMock -->
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
