@@ -6,6 +6,7 @@ onerror shutdown
 check -strong dcap.limits.clients
 check -strong dcap.net.port
 check -strong dcap.cell.name
+check -strong dcap.cell.name.dir
 check -strong dcap.cell.export
 check dcap.cell.subscribe
 check -strong dcap.service.poolmanager
@@ -32,6 +33,18 @@ check -strong dcache.paths.share
 
 exec file:${dcache.paths.share}/cells/stage.fragment dcap doors
 
+# Starts an embedded dir cell if one does not exist in the domain already
+define env startDir.exe enddefine
+  onerror shutdown
+  create diskCacheV111.pools.DirectoryLookUpPool ${dcap.cell.name.dir} \
+     "-pnfsManager=\"${dcap.service.pnfsmanager}\""
+enddefine
+
+onerror continue
+test -i ${dcap.cell.name.dir}
+exec env startDir.exe -ifnotok
+onerror shutdown
+
 set env arguments-plain "-localOk"
 set env arguments-auth "-pswdfile=${dcap.authn.passwd} -authorization=required"
 set env arguments-gsi "-localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.authn.ciphers}'\\\""
@@ -41,6 +54,7 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \
              -listen=${dcap.net.listen} \
              -export=${dcap.cell.export} \
+             -lookupPool=${dcap.cell.name.dir} \
              -subscribe=${dcap.cell.subscribe} \
              -acceptErrorWait=60000 \
              -keepAlive=300 \

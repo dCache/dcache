@@ -1,7 +1,0 @@
-onerror shutdown
-check -strong dir.cell.name
-check -strong dir.cell.export
-check -strong dir.service.pnfsmanager
-
-create diskCacheV111.pools.DirectoryLookUpPool ${dir.cell.name} \
-   "-export=${dir.cell.export} -pnfsManager=\"${dir.service.pnfsmanager}\""

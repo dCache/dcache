@@ -211,7 +211,7 @@ public class DirectoryLookUpPool extends AbstractCell
     }
 
     // commands
-    public final static String hh_ls_$_1 = "ls <path>";
+    public final static String hh_ls = "ls <path>";
     public DelayedReply ac_ls_$_1(Args args)
     {
         FsPath path = new FsPath(args.argv(0));
