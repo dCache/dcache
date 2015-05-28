@@ -42,6 +42,8 @@ check -strong nfs.db.connections.max
 check -strong nfs.namespace-cache.time
 check -strong nfs.namespace-cache.time.unit
 check -strong nfs.namespace-cache.size
+check -strong pool.mover.nfs.port.min
+check -strong pool.mover.nfs.port.max
 check nfs.db.password
 check nfs.db.password.file
 check nfs.domain

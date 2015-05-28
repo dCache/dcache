@@ -338,6 +338,8 @@
       <property name="faultListener" ref="pool"/>
       <property name="doorStub" ref="doorStub"/>
       <property name="checksumModule" ref="csm"/>
+      <property name="minTcpPort" value="${pool.mover.nfs.port.min}"/>
+      <property name="maxTcpPort" value="${pool.mover.nfs.port.max}"/>
   </bean>
 
   <bean id="xrootd-transfer-service" class="org.dcache.xrootd.pool.XrootdTransferService"
