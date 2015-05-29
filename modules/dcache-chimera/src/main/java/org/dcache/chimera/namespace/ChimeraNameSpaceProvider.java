@@ -2,7 +2,6 @@ package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -25,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import diskCacheV111.namespace.NameSpaceProvider;
@@ -95,6 +95,16 @@ public class ChimeraNameSpaceProvider
      */
     private long _atimeGap;
 
+    private final ThreadLocal<Integer> threadId = new ThreadLocal<Integer>() {
+        private final AtomicInteger counter = new AtomicInteger();
+
+        @Override
+        protected Integer initialValue()
+        {
+            return counter.getAndIncrement();
+        }
+    };
+
     @Required
     public void setExtractor(ChimeraStorageInfoExtractable extractor)
     {
@@ -131,6 +141,15 @@ public class ChimeraNameSpaceProvider
         _aclEnabled = isEnabled;
     }
 
+    /**
+     * Base directory for temporary upload directories. If not an absolute path, the directory
+     * is relative to the user's root directory.
+     *
+     * May be parametrised by a thread id by inserting %d into the string. This allows Chimera
+     * lock contention on the base directory to be reduced. If used it is important that the
+     * same set threads call into the provider repeatedly as otherwise a large number of
+     * base directories will be created.
+     */
     @Required
     public void setUploadDirectory(String path)
     {
@@ -1171,7 +1190,7 @@ public class ChimeraNameSpaceProvider
              * or relative path.
              */
             FsPath uploadDirectory = new FsPath(rootPath);
-            uploadDirectory.add(_uploadDirectory);
+            uploadDirectory.add(String.format(_uploadDirectory, threadId.get()));
 
             /* Upload directory must exist and have the right permissions.
              */
