@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.BadStateidException;
+import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.READ4res;
@@ -40,7 +41,11 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
             NfsMover mover = _moverHandler.getOrCreateMover(_args.opread.stateid, context.currentInode().toNfsHandle());
             if(mover == null) {
-                throw new BadStateidException("No mover associated with given stateid: " + _args.opread.stateid);
+                /*
+                 * return IO error instead of BadStateidException to avoid state recovery.
+                 * The client will fall back to IO through MDS.
+                 */
+                throw new NfsIoException("No mover associated with given stateid: " + _args.opread.stateid);
             }
             mover.attachSession(context.getSession());
 
