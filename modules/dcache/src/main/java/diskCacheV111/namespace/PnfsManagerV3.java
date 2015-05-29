@@ -128,6 +128,7 @@ public class PnfsManagerV3
         PnfsGetParentMessage.class,
         PnfsCreateEntryMessage.class,
         PnfsCreateDirectoryMessage.class,
+        PnfsCreateUploadPath.class,
         PnfsGetFileAttributes.class,
         PnfsListDirectoryMessage.class
     };
