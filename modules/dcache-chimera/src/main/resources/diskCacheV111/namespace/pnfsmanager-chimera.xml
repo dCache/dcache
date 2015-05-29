@@ -28,14 +28,12 @@
       <property name="threads" value="${pnfsmanager.limits.threads-per-group}"/>
       <property name="threadGroups" value="${pnfsmanager.limits.thread-groups}"/>
       <property name="listThreads" value="${pnfsmanager.limits.list-threads}"/>
-      <property name="cacheLocationThreads" value="${cachelocation-threads}"/>
       <property name="cacheModificationRelay" value="${pnfsmanager.destination.cache-notification}"/>
       <property name="logSlowThreshold" value="${pnfsmanager.limits.log-slow-threshold}"/>
       <property name="folding" value="${pnfsmanager.enable.folding}"/>
       <property name="directoryListLimit" value="${pnfsmanager.limits.list-chunk-size}"/>
       <property name="permissionHandler" ref="permission-handler"/>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
-      <property name="cacheLocationProvider" ref="name-space-provider"/>
       <property name="queueMaxSize" value="${pnfsmanager.limits.queue-length}"/>
       <property name="atimeGap" value="${pnfsmanager.atime-gap}" />
       <property name="flushNotificationTarget" value="${pnfsmanager.destination.flush-notification}"/>

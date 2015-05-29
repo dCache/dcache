@@ -15,6 +15,8 @@ import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
 import org.dcache.util.list.DirectoryEntry;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Requests a directory listing. Since the result set may be very
  * large, a single request may result in multiple replies. The request
@@ -55,8 +57,8 @@ public class PnfsListDirectoryMessage extends PnfsMessage
                                     Range<Integer> range,
                                     Set<FileAttribute> attr)
     {
+        setPnfsPath(checkNotNull(path));
         setReplyRequired(true);
-        setPnfsPath(path);
         _pattern = pattern;
         _lower = range.hasLowerBound() ? range.lowerEndpoint() : null;
         _upper = range.hasUpperBound() ? range.upperEndpoint() : null;
