@@ -87,21 +87,31 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     @Override
     public synchronized void update(long nextExecTime) {
 
-        if(nextExecTime <0) {
-            LOG.info("possible backwards timeshift detected; discarding invalid data ({})",
-                    nextExecTime);
-            return;
+        try {
+            if (nextExecTime < 0) {
+                LOG.info("possible backwards time shift detected; discarding invalid data ({})",
+                         nextExecTime);
+                return;
+            }
+
+            minExecutionTime = (updateNum == 0) ? nextExecTime : Math.min(minExecutionTime, nextExecTime);
+            maxExecutionTime = Math.max(maxExecutionTime, nextExecTime);
+
+            sumExecutionTime = Math.addExact(sumExecutionTime, nextExecTime);
+            sumExecutionTimeSquared = Math.addExact(sumExecutionTimeSquared, nextExecTime * nextExecTime);
+
+            updateNum++;
+
+            lastExecutionTime = nextExecTime;
+        } catch (ArithmeticException e) {
+            startTime = System.currentTimeMillis();
+            sumExecutionTime = nextExecTime;
+            minExecutionTime = nextExecTime;
+            maxExecutionTime = nextExecTime;
+            sumExecutionTimeSquared = nextExecTime * nextExecTime;
+            lastExecutionTime = nextExecTime;
+            updateNum = 1;
         }
-
-        minExecutionTime = updateNum == 0 ? nextExecTime : Math.min(getMinExecutionTime(), nextExecTime);
-        maxExecutionTime = Math.max(getMaxExecutionTime(), nextExecTime);
-
-        sumExecutionTime += nextExecTime;
-        sumExecutionTimeSquared += nextExecTime * nextExecTime;
-
-        updateNum++;
-
-        lastExecutionTime = nextExecTime;
     }
 
     /**
