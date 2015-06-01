@@ -149,6 +149,7 @@ public class RequestCounterImpl implements RequestCounterMXBean {
      *  number of requests executed and the failed requests are recorded
      *  accurately
      */
+    @Override
     public synchronized int getSuccessful() {
         return requests - failed;
     }

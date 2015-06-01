@@ -14,28 +14,29 @@ public interface RequestCounter {
      *
      * @return number of faild request invocations known to this counter
      */
-    public int getFailed();
+    int getFailed();
 
     /**
      *
      * @return name of this counter
      */
-    public String getName();
+    String getName();
 
     /**
      *
      * @return number of request invocations known to this counter
      */
-    public int getTotalRequests();
+    int getTotalRequests();
 
     /**
      * Reset the counter.
      */
-    public void reset();
+    void reset();
 
     /**
      * Shutdown the counter.
      */
-    public void shutdown();
+    void shutdown();
 
+    int getSuccessful();
 }

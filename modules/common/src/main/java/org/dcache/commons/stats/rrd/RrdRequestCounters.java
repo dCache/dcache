@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.dcache.commons.stats.RequestCounter;
 import org.dcache.commons.stats.RequestCounterImpl;
 import org.dcache.commons.stats.RequestCounters;
 
@@ -121,7 +122,7 @@ public class RrdRequestCounters<T> {
             for(T key:requestCounters.keySet()) {
                 logger.debug("updatePrds(): key is "+key);
                 if(!rrdcounters.containsKey(key)) {
-                    RequestCounterImpl requestCounter = requestCounters.getCounter(key);
+                    RequestCounter requestCounter = requestCounters.getCounter(key);
                     logger.debug("updatePrds(): creating RRDRequestCounter for "+requestCounter);
                     RRDRequestCounter rrdRequestCounter =
                             new RRDRequestCounter(rrdDir,requestCounter,updatePeriodSecs);

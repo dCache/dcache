@@ -2,6 +2,9 @@
 
 package org.dcache.commons.stats;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Ordering;
+
 import java.lang.reflect.Method;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -28,8 +31,17 @@ import static org.dcache.commons.util.Strings.toStringSignature;
 public class RequestCounters<T> {
     private final String name;
     private final boolean autoCreate ;
-    private final Map<T,RequestCounterImpl> counters =
-            new HashMap<>();
+    private final Map<T,RequestCounterImpl> counters = new HashMap<>();
+
+    private static final Ordering<RequestCounter> ORDERING =
+            Ordering.natural().onResultOf(new Function<RequestCounter, String>()
+            {
+                @Override
+                public String apply(RequestCounter counter)
+                {
+                    return counter.getName();
+                }
+            });
 
     /**
      * Creates an instance of the RequestCounters collection
@@ -111,8 +123,7 @@ public class RequestCounters<T> {
             int totalRequests=0;
             int totalFailed=0;
             synchronized(this) {
-                for(T key: counters.keySet()) {
-                    RequestCounterImpl counter = counters.get(key);
+                for (RequestCounter counter: ORDERING.sortedCopy(counters.values())) {
                     totalRequests += counter.getTotalRequests();
                     totalFailed += counter.getFailed();
                     sb.append("\n  ").append(counter);
@@ -131,7 +142,7 @@ public class RequestCounters<T> {
      * @throws  NoSuchElementException if counter counterKey for is not defined
      */
     public String counterToString(T counterKey) {
-        RequestCounterImpl counter;
+        RequestCounter counter;
         synchronized(this) {
             counter = counters.get(counterKey);
         }
@@ -145,24 +156,25 @@ public class RequestCounters<T> {
 
     /**
      *
-     * @param counterKey a key corresponding to a counter
-     * @return a RequestCounter associated with counterKey
-     * @throws  NoSuchElementException if counter for counterKey is not defined
+     * @param key a key corresponding to a counter
+     * @return a RequestCounter associated with key
+     * @throws  NoSuchElementException if counter for key is not defined
      */
-    public RequestCounterImpl getCounter(T counterKey) {
-        synchronized(this) {
-            if(counters.containsKey(counterKey)) {
-                return counters.get(counterKey);
-            } else {
-                if(autoCreate) {
-                    addCounter(counterKey);
-                    return counters.get(counterKey);
-                } else {
-                    throw new NoSuchElementException("counter with name "+
-                            counterKey+" is not defined in "+name+" counters" );
-                }
+    public RequestCounter getCounter(T key) {
+        return getCounterImpl(key);
+    }
+
+    private synchronized RequestCounterImpl getCounterImpl(T key) {
+        RequestCounterImpl counter = counters.get(key);
+        if (counter == null) {
+            if (!autoCreate) {
+                throw new NoSuchElementException("counter with name "+
+                        key+" is not defined in "+name+" counters" );
             }
+            addCounter(key);
+            counter = counters.get(key);
         }
+        return counter;
     }
 
     /**
@@ -203,14 +215,14 @@ public class RequestCounters<T> {
      * @param counterKey a key corresponding to a counter
      */
     public void incrementRequests(T counterKey) {
-        getCounter(counterKey).incrementRequests();
+        getCounterImpl(counterKey).incrementRequests();
     }
     /**
      *  increments count of the failed request invocations by one
      * @param counterKey a key corresponding to a counter
      */
     public void incrementFailed(T counterKey) {
-        getCounter(counterKey).incrementFailed();
+        getCounterImpl(counterKey).incrementFailed();
     }
 
     /**
@@ -219,7 +231,7 @@ public class RequestCounters<T> {
      * @param increment a value by which to increment the counter
      */
     public void incrementRequests(T counterKey,int increment) {
-       getCounter(counterKey).incrementRequests(increment);
+       getCounterImpl(counterKey).incrementRequests(increment);
     }
 
     /**
@@ -228,7 +240,7 @@ public class RequestCounters<T> {
      * @param increment
      */
     public void incrementFailed(T counterKey,int increment) {
-        getCounter(counterKey).incrementFailed(increment);
+        getCounterImpl(counterKey).incrementFailed(increment);
     }
 
     /**
@@ -322,6 +334,12 @@ public class RequestCounters<T> {
             @Override
             public void shutdown() {
                 RequestCounters.this.shutdown();
+            }
+
+            @Override
+            public int getSuccessful()
+            {
+                return RequestCounters.this.getTotalSuccessful();
             }
         };
     }

@@ -1,6 +1,9 @@
 
 package org.dcache.commons.stats;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Ordering;
+
 import java.lang.reflect.Method;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -16,6 +19,15 @@ import static org.dcache.commons.util.Strings.toStringSignature;
  * @author timur
  */
 public class RequestExecutionTimeGauges<T> {
+    private static final Ordering<RequestExecutionTimeGauge> ORDERING =
+            Ordering.natural().onResultOf(new Function<RequestExecutionTimeGauge, String>()
+            {
+                @Override
+                public String apply(RequestExecutionTimeGauge gauge)
+                {
+                    return gauge.getName();
+                }
+            });
     private final String name;
     private final boolean autoCreate ;
     private final Map<T,RequestExecutionTimeGauge> gauges =
@@ -104,8 +116,7 @@ public class RequestExecutionTimeGauges<T> {
                     "Samples","Period");
         }
         synchronized(this) {
-            for(T key: gauges.keySet()) {
-                RequestExecutionTimeGauge gauge = gauges.get(key);
+            for(RequestExecutionTimeGauge gauge: ORDERING.sortedCopy(gauges.values())) {
                 sb.append("\n  ").append(gauge);
             }
         }
