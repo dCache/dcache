@@ -1,5 +1,6 @@
 package org.dcache.pinmanager;
 
+import com.google.common.primitives.Longs;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.BufferedReader;
@@ -27,11 +28,11 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 
+import dmg.cells.nucleus.AbstractCellComponent;
+import dmg.cells.nucleus.CellCommandListener;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 
-import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pinmanager.model.Pin;
@@ -200,18 +201,21 @@ public class PinManagerCLI
     public class ListCommand implements Callable<String>
     {
         @Argument(index = 0, required = false, valueSpec="PIN|PNFSID")
-        String id;
+        String s;
 
         @Override
         public String call() throws IllegalArgumentException
         {
             Collection<Pin> pins;
-            if (id != null) {
-                if (!PnfsId.isValid(id)) {
-                    Pin pin = _dao.getPin(Long.parseLong(id));
-                    return (pin == null) ? "" : pin.toString();
+            if (s != null) {
+                Long id = Longs.tryParse(s);
+                if (id != null) {
+                    Pin pin = _dao.getPin(id);
+                    if (pin != null) {
+                        return pin.toString();
+                    }
                 }
-                pins = _dao.getPins(new PnfsId(id));
+                pins = _dao.getPins(new PnfsId(s));
             } else {
                 pins = _dao.getPins();
             }
