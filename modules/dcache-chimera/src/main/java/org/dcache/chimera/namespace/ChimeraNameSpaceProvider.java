@@ -19,6 +19,7 @@ import javax.security.auth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -61,6 +62,9 @@ import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.commons.stats.MonitoringProxy;
+import org.dcache.commons.stats.RequestCounters;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -104,6 +108,10 @@ public class ChimeraNameSpaceProvider
             return counter.getAndIncrement();
         }
     };
+    private final RequestCounters<Method> _counters =
+            new RequestCounters<>(ChimeraNameSpaceProvider.class.getSimpleName());
+    private final RequestExecutionTimeGauges<Method> _gauges =
+            new RequestExecutionTimeGauges<>(ChimeraNameSpaceProvider.class.getSimpleName());
 
     @Required
     public void setExtractor(ChimeraStorageInfoExtractable extractor)
@@ -132,7 +140,8 @@ public class ChimeraNameSpaceProvider
     @Required
     public void setFileSystem(FileSystemProvider fs)
     {
-        _fs = fs;
+        _fs = MonitoringProxy.decorateWithMonitoringProxy(new Class[] { FileSystemProvider.class }, fs, _counters,
+                                                          _gauges);
     }
 
     @Required
@@ -656,6 +665,9 @@ public class ChimeraNameSpaceProvider
     {
         pw.append("Acl Enabled: ").println(_aclEnabled);
         pw.append(_fs.getInfo());
+        pw.println("Statistics:");
+        pw.println(_gauges);
+        pw.println(_counters);
     }
 
     @Override
