@@ -492,19 +492,40 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             conn.setAutoCommit(false);
             stmt = conn.createStatement();
-            stmt.executeUpdate("TRUNCATE TABLE replicas");
-            stmt.executeUpdate("TRUNCATE TABLE pools");
-            stmt.executeUpdate("TRUNCATE TABLE deficient");
-            stmt.executeUpdate("TRUNCATE TABLE redundant");
-            stmt.executeUpdate("TRUNCATE TABLE excluded");
+            /*
+             *  PostgreSQL-specific syntax.
+             */
+            stmt.executeUpdate("TRUNCATE TABLE replicas, pools, deficient, redundant, excluded");
             conn.commit();
-        } catch (Exception ex) {
+        } catch (Exception original) {
             try {
                 conn.rollback();
-            } catch (SQLException e1) {
-                _log.error(e1.toString());
+            } catch (SQLException e) {
+                _log.error(e.toString());
             }
-            _log.warn("Can't clear the tables");
+
+            _log.warn("Failed to truncate the tables: {}; retrying separately.",
+                            original.toString());
+
+            /*
+             *  Try HSQLDB-compatible syntax.
+             */
+            try {
+                stmt.executeUpdate("TRUNCATE TABLE replicas");
+                stmt.executeUpdate("TRUNCATE TABLE pools");
+                stmt.executeUpdate("TRUNCATE TABLE deficient");
+                stmt.executeUpdate("TRUNCATE TABLE redundant");
+                stmt.executeUpdate("TRUNCATE TABLE excluded");
+                conn.commit();
+            } catch (Exception retry) {
+                try {
+                    conn.rollback();
+                } catch (SQLException e) {
+                    _log.error(e.toString());
+                }
+
+                _log.warn("Failed to clear the tables: {}.", retry);
+            }
         } finally {
             tryToClose(stmt);
             tryToClose(conn);
