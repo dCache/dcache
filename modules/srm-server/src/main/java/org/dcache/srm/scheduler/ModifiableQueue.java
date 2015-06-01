@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -103,35 +104,10 @@ public class ModifiableQueue  {
         return Job.getJob(headId, type);
     }
 
-
-    public Job take()
-            throws InterruptedException,
-            SRMInvalidRequestException {
-        while (true) {
-            Long id = null;
-            synchronized (queue) {
-                if (!queue.isEmpty()) {
-                    id = queue.remove(0);
-                    queue.notifyAll();
-                }
-                if (id != null) {
-                    return Job.getJob(id, type);
-                }
-                try {
-                    queue.wait();
-                } catch (InterruptedException ie) {
-                    queue.notify();
-                    throw ie;
-                }
-            }
-        }
-    }
-
     public void put(Job job) {
         long id = job.getId();
         synchronized (queue) {
             queue.add(id);
-            queue.notifyAll();
         }
     }
 
@@ -141,52 +117,40 @@ public class ModifiableQueue  {
         }
     }
 
-    public Job remove(Job job)  {
-        if(job == null ) {
-            return null;
-        }
-        long id = job.getId();
-        synchronized(queue) {
-            boolean found = queue.contains(id);
-            while(queue.contains(id)){
-                queue.remove(id);
+    public void remove(Job job)  {
+        if (job != null) {
+            long id = job.getId();
+            synchronized (queue) {
+                Iterator<Long> iterator = queue.iterator();
+                while (iterator.hasNext()) {
+                    if (iterator.next() == id) {
+                        iterator.remove();
+                    }
+                }
             }
-            if(found) {
-                queue.notifyAll();
-                 return job;
-            }
-            return null;
         }
     }
 
     public interface ValueCalculator {
-        public int calculateValue(int queueLength, int queuePosition, Job job);
+        int calculateValue(int queueLength, int queuePosition, Job job);
     }
 
     public Job getGreatestValueObject(ValueCalculator calc)
             throws SRMInvalidRequestException{
-        Job greatestValueJob;
-        int greatestValue;
-       //System.out.println("QUEUE.getGreatestValueObject()");
         List<Long> queueCopy;
 
         synchronized(queue) {
-
-            if(queue.isEmpty()) {
-               //System.out.println("QUEUE.getGreatestValueObject() returns NULL, queue is empty");
+            if (queue.isEmpty()) {
                 return null;
             }
             queueCopy = new ArrayList<>(queue);
         }
 
-        greatestValueJob =null;
-        greatestValue = Integer.MIN_VALUE;
-        //int i=0;
-        //while(currentJob.getNextJobId() != null) {
-        // i++;
-        int index =0;
+        Job greatestValueJob = null;
+        int greatestValue = Integer.MIN_VALUE;
+        int index = 0;
         int size = queueCopy.size();
-        for (long currentJobId:queueCopy) {
+        for (long currentJobId: queueCopy) {
             Job currentJob = Job.getJob(currentJobId, type);
             int currentValue = calc.calculateValue(size,index,currentJob);
             if(currentValue > greatestValue) {
@@ -195,7 +159,6 @@ public class ModifiableQueue  {
             }
             index++;
         }
-        //System.out.println("QUEUE.getGreatestValueObject() returns" +greatestValueJob.getId());
         return greatestValueJob;
     }
 
