@@ -34,13 +34,10 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     private static final Logger LOG = LoggerFactory.getLogger(RequestExecutionTimeGaugeImpl.class);
 
     private final String name;
-    // These are the variables that keep the
-    // the average for the duration of the existance of the
-    // gauge
-    /**
-     * average
-     */
-    private long averageExecutionTime=0;
+
+    private long sumExecutionTime =0;
+    private long sumExecutionTimeSquared =0;
+
     /**
      * Minimum
      */
@@ -49,12 +46,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      * Maximum
      */
     private long maxExecutionTime=0;
-    /**
-     *  Square of the RMS (Root Mean Square)
-     *  sum(value_i)/n
-     * RMSS(i+1)=(RMSS(i)+value(i+1)**2)/(i+1)
-     */
-    private long executionTimeRMSS=0;
+
     /**
      * number of updates
      */
@@ -114,13 +106,11 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
             return;
         }
 
-        averageExecutionTime
-                = (averageExecutionTime * updateNum + nextExecTime) / (updateNum + 1);
-        minExecutionTime = Math.min(getMinExecutionTime(), nextExecTime);
+        minExecutionTime = updateNum == 0 ? nextExecTime : Math.min(getMinExecutionTime(), nextExecTime);
         maxExecutionTime = Math.max(getMaxExecutionTime(), nextExecTime);
-        executionTimeRMSS
-                = (executionTimeRMSS * updateNum + nextExecTime * nextExecTime)
-                / (updateNum + 1);
+
+        sumExecutionTime += nextExecTime;
+        sumExecutionTimeSquared += nextExecTime * nextExecTime;
 
         updateNum++;
 
@@ -134,17 +124,15 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     }
 
     /**
-     * return average over the lifetime of the gauge
-     * @return
+     * Returns average over the lifetime of the gauge.
      */
     @Override
     public synchronized long getAverageExecutionTime() {
-        return averageExecutionTime;
+        return sumExecutionTime / updateNum;
     }
 
     /**
-     * return average over the last period, and start new period
-     * @return
+     * Returns average over the last period and reset the gauge.
      */
     @Override
     public synchronized long resetAndGetAverageExecutionTime() {
@@ -156,28 +144,22 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     }
 
     /**
-     *
-     * @return String representation of this RequestExecutionTimeGauge
+     * Returns string representation of this RequestExecutionTimeGauge
      *  Only long term statistics is printed
      */
         @Override
     public synchronized String toString() {
 
-        String aName = name;
-        if(name.length() >34) {
-             aName = aName.substring(0,34);
-        }
-        long updatePeriod= System.currentTimeMillis() -
-                startTime;
+        String aName = (name.length() > 34) ? name.substring(0, 34) : name;
+        long updatePeriod = System.currentTimeMillis() - startTime;
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format("%-34s %12d\u00B1%10f %,12d %,12d %,12d %,12d %,12d",
-                    aName, averageExecutionTime,getStandardError(),
+                    aName, getAverageExecutionTime(),getStandardError(),
                     minExecutionTime,maxExecutionTime,
                     getStandardDeviation(), updateNum,
                     TimeUnit.MILLISECONDS.toSeconds(updatePeriod));
         }
-
         return sb.toString();
     }
 
@@ -210,14 +192,15 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized double getExecutionTimeRMS() {
-        return Math.sqrt(executionTimeRMSS);
+        return Math.sqrt(sumExecutionTimeSquared / updateNum);
     }
 
     @Override
     public synchronized long getStandardDeviation() {
-        long deviationSquare = executionTimeRMSS - averageExecutionTime*averageExecutionTime;
-        assert (deviationSquare >=0);
-        return (long) Math.sqrt(executionTimeRMSS - averageExecutionTime*averageExecutionTime);
+        long averageExecutionTime = getAverageExecutionTime();
+        long deviationSquare = (sumExecutionTimeSquared / updateNum) - (averageExecutionTime * averageExecutionTime);
+        assert (deviationSquare >= 0);
+        return (long) Math.sqrt(deviationSquare);
     }
 
     /**
@@ -281,10 +264,10 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         periodStartTime = System.currentTimeMillis();
         periodAverageExecutionTime = 0;
         periodUpdateNum = 0;
-        averageExecutionTime=0;
         minExecutionTime=0;
         maxExecutionTime=0;
-        executionTimeRMSS=0;
+        sumExecutionTime = 0;
+        sumExecutionTimeSquared = 0;
         lastExecutionTime = 0;
         updateNum = 0;
     }
