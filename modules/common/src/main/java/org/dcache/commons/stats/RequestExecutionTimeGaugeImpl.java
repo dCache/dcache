@@ -127,7 +127,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized long getAverageExecutionTime() {
-        return sumExecutionTime / updateNum;
+        return (updateNum == 0) ? 0 : sumExecutionTime / updateNum;
     }
 
     /**
@@ -194,11 +194,14 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized double getExecutionTimeRMS() {
-        return Math.sqrt(sumExecutionTimeSquared / updateNum);
+        return (updateNum == 0) ? 0 : Math.sqrt(sumExecutionTimeSquared / updateNum);
     }
 
     @Override
     public synchronized long getStandardDeviation() {
+        if (updateNum == 0) {
+            return 0;
+        }
         long averageExecutionTime = getAverageExecutionTime();
         long deviationSquare = (sumExecutionTimeSquared / updateNum) - (averageExecutionTime * averageExecutionTime);
         assert (deviationSquare >= 0);
@@ -211,7 +214,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized double getStandardError() {
-        return getStandardDeviation() / Math.sqrt(updateNum);
+        return (updateNum == 0) ? 0 : getStandardDeviation() / Math.sqrt(updateNum);
     }
     /**
      * @return the updateNum
