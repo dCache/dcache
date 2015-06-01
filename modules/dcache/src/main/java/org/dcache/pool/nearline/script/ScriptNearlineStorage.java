@@ -209,7 +209,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
 
     private String getRemoveCommand(URI uri)
     {
-        String s = command + " remove -uri=" + uri;
+        String s = command + " remove -uri=" + uri + options;
         LOGGER.debug("COMMAND: {}", s);
         return s;
     }
