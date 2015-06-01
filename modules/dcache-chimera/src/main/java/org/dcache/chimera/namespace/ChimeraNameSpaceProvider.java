@@ -18,6 +18,7 @@ import javax.security.auth.Subject;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -42,6 +43,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellInfoProvider;
+
 import org.dcache.acl.ACL;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
@@ -49,9 +53,9 @@ import org.dcache.chimera.DirNotEmptyHimeraFsException;
 import org.dcache.chimera.DirectoryStreamB;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
-import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.StorageLocatable;
@@ -70,7 +74,7 @@ import org.dcache.vehicles.FileAttributes;
 import static org.dcache.acl.enums.AccessType.ACCESS_ALLOWED;
 
 public class ChimeraNameSpaceProvider
-    implements NameSpaceProvider
+    implements NameSpaceProvider, CellInfoProvider
 {
     private static final int SYMLINK_MODE = 0777;
 
@@ -80,7 +84,7 @@ public class ChimeraNameSpaceProvider
     public static final String TAG_RETENTION_POLICY = "RetentionPolicy";
     public static final String TAG_ACCESS_LATENCY = "AccessLatency";
 
-    private JdbcFs       _fs;
+    private FileSystemProvider       _fs;
     private ChimeraStorageInfoExtractable _extractor;
 
     private static final Logger _log =  LoggerFactory.getLogger(ChimeraNameSpaceProvider.class);
@@ -126,7 +130,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Required
-    public void setFileSystem(JdbcFs fs)
+    public void setFileSystem(FileSystemProvider fs)
     {
         _fs = fs;
     }
@@ -642,14 +646,16 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public String toString() {
-       StringBuilder sb = new StringBuilder();
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
+    }
 
-       sb.append("$Id: ChimeraNameSpaceProvider.java,v 1.7 2007-10-01 12:28:03 tigran Exp $ \n");
-       sb.append("Acl Enabled: ").append(_aclEnabled).append("\n");
-       sb.append(_fs.getInfo() );
-        return sb.toString();
-
+    @Override
+    public void getInfo(PrintWriter pw)
+    {
+        pw.append("Acl Enabled: ").println(_aclEnabled);
+        pw.append(_fs.getInfo());
     }
 
     @Override

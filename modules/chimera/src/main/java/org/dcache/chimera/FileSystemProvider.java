@@ -83,6 +83,10 @@ public interface FileSystemProvider extends Closeable {
             String name, int owner, int group, int mode, int type)
             throws ChimeraFsException;
 
+    String[] listDir(String dir);
+
+    String[] listDir(FsInode dir) throws IOHimeraFsException;
+
     public abstract DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir)
             throws ChimeraFsException;
 

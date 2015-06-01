@@ -351,8 +351,6 @@ public class PnfsManagerV3
 
     @Override
     public void getInfo( PrintWriter pw ){
-        pw.println( "NameSpace Provider: ");
-        pw.println( _nameSpaceProvider.toString() );
         pw.print("atime precision: ");
         if (_atimeGap < 0 ) {
             pw.println("Disabled");
