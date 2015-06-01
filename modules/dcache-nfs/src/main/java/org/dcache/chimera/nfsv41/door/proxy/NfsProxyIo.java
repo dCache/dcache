@@ -77,10 +77,15 @@ public class NfsProxyIo implements ProxyIoAdapter {
     private final XdrTransport transport;
     private final ScheduledExecutorService sessionThread;
 
-    public NfsProxyIo(InetSocketAddress poolAddress,  InetSocketAddress remoteClient, Inode inode, stateid4 stateid, long size) throws IOException {
+    public NfsProxyIo(InetSocketAddress poolAddress,  InetSocketAddress remoteClient, Inode inode, stateid4 stateid, long timeout, TimeUnit timeUnit) throws IOException {
         this.remoteClient = remoteClient;
         rpcClient = new OncRpcClient(poolAddress, IpProtocolType.TCP);
-        transport = rpcClient.connect();
+        try {
+            transport = rpcClient.connect(timeout, timeUnit);
+        } catch (IOException | Error | RuntimeException e) {
+            rpcClient.close();
+            throw e;
+        }
 
         RpcAuth credential = new RpcAuthTypeUnix(ROOT_UID, ROOT_GID, ROOT_GIDS,
                 (int) (System.currentTimeMillis() / 1000),

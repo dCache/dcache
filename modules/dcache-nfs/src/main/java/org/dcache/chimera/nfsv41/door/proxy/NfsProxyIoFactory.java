@@ -1,12 +1,20 @@
 package org.dcache.chimera.nfsv41.door.proxy;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.net.HostAndPort;
 import diskCacheV111.util.CacheException;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.NfsIoException;
@@ -27,11 +35,19 @@ import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout4;
 import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
+import org.dcache.util.backoff.ExponentialBackoffAlgorithmFactory;
+import org.dcache.util.backoff.IBackoffAlgorithm;
 import org.dcache.utils.net.InetSocketAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NfsProxyIoFactory implements ProxyIoFactory {
+
+    private static final TimeUnit MAX_CONNECT_TIMEOUT_UNIT = TimeUnit.SECONDS;
+    private static final long MAX_CONNECT_TIMEOUT = 15;
+
+    private static final TimeUnit TIMEOUT_STEP_UNIT = TimeUnit.MILLISECONDS;
+    private static final long TIMEOUT_STEP = 100;
 
     private static final Logger _log = LoggerFactory.getLogger(NfsProxyIoFactory.class);
 
@@ -40,9 +56,13 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
             .build();
 
     private final NFSv41DeviceManager deviceManager;
+    private final ExponentialBackoffAlgorithmFactory backoffFactory;
 
     public NfsProxyIoFactory(NFSv41DeviceManager deviceManager) {
         this.deviceManager = deviceManager;
+        backoffFactory = new ExponentialBackoffAlgorithmFactory();
+        backoffFactory.setMinDelay(TIMEOUT_STEP);
+        backoffFactory.setMinUnit(TIMEOUT_STEP_UNIT);
     }
 
 
@@ -104,16 +124,57 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         deviceid4 dsId = fileLayoutSegment.nfl_deviceid;
         device_addr4 deviceAddr = deviceManager.getDeviceInfo(context, dsId);
         nfsv4_1_file_layout_ds_addr4 nfs4DeviceAddr = GetDeviceListStub.decodeFileDevice(deviceAddr.da_addr_body);
-        // we assume that device points only to one server
-        for(netaddr4 na: nfs4DeviceAddr.nflda_multipath_ds_list[0].value) {
-            if (na.na_r_netid.equals("tcp") || na.na_r_netid.equals("tcp6") ) {
-                InetSocketAddress poolAddress = InetSocketAddresses.forUaddrString(na.na_r_addr);
-                if (poolAddress.getAddress().isReachable(100) ) {
-                    return new NfsProxyIo(poolAddress, context.getRemoteSocketAddress(), inode, stateid, 0);
-                }
+
+        Stopwatch connectStopwatch = Stopwatch.createStarted();
+        IBackoffAlgorithm backoff = backoffFactory.getAlgorithm();
+
+retry:  while (true) {
+            long timeout = backoff.getWaitDuration();
+
+            if (timeout == IBackoffAlgorithm.NO_WAIT) {
+                break;
             }
-        }
+
+            // we assume that only device points only to one server
+            for (netaddr4 na : nfs4DeviceAddr.nflda_multipath_ds_list[0].value) {
+                if (connectStopwatch.elapsed(MAX_CONNECT_TIMEOUT_UNIT) > MAX_CONNECT_TIMEOUT) {
+                    break retry;
+                }
+
+                if (na.na_r_netid.equals("tcp") || na.na_r_netid.equals("tcp6")) {
+                    InetSocketAddress poolSocketAddress = InetSocketAddresses.forUaddrString(na.na_r_addr);
+                    InetAddress address = poolSocketAddress.getAddress();
+                    if (!isHostLocal(address)) {
+                        try {
+                            return new NfsProxyIo(poolSocketAddress, context.getRemoteSocketAddress(), inode, stateid, timeout, TIMEOUT_STEP_UNIT);
+                        } catch (IOException e) {
+                            _log.warn("Failed to connect to remote mover {} : {}", address, e.getMessage());
+                        }
+                    }
+                 }
+             }
+
+            _log.warn("Failed to connect to pool {} within {}, Retrying...", toString(nfs4DeviceAddr.nflda_multipath_ds_list[0].value), connectStopwatch);
+         }
+
+        _log.error("Failed to connect to pool {} within {}, Giving up!", toString(nfs4DeviceAddr.nflda_multipath_ds_list[0].value), connectStopwatch);
+        deviceManager.layoutReturn(context, stateid);
+        context.getStateHandler().getClientIdByStateId(stateid).releaseState(layout.getStateid());
         throw new NfsIoException("can't connect to pool");
+    }
+
+    private static boolean isHostLocal(InetAddress address) {
+        return address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress();
+    }
+
+    // FIXME: move this into generic NFS code
+    private static String toString(netaddr4[] netaddr) {
+        return Arrays.stream(netaddr)
+                .filter(n -> (n.na_r_netid.equals("tcp") || n.na_r_netid.equals("tcp6")))
+                .map(n -> InetSocketAddresses.forUaddrString(n.na_r_addr))
+                .map(a -> HostAndPort.fromParts(a.getHostString(), a.getPort()))
+                .map(Object::toString)
+                .collect(Collectors.joining(",", "[", "]"));
     }
 
     private static void tryToClose(ProxyIoAdapter adapter) {
