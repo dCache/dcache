@@ -160,7 +160,7 @@ public class RequestExecutionTimeGauges<T> {
      * @return an average execution time of request invocations measured by
      * RequestExecutionTimeGauge associated with gaugeKey
      */
-    public long getAverageExecutionTime(T gaugeKey) {
+    public double getAverageExecutionTime(T gaugeKey) {
         return getGauge(gaugeKey).getAverageExecutionTime();
     }
 

@@ -187,7 +187,7 @@ public class RRDRequestExecutionTimeGauge {
             Sample sample = rrdDb.createSample();
             long currentTimeSecs =   Util.getTime();
             String update = Long.toString(currentTimeSecs) +':'+
-                    gauge.resetAndGetAverageExecutionTime()+':';
+                            (long) gauge.resetAndGetAverageExecutionTime()+':';
             sample.setAndUpdate(update);
             logger.debug("RRDRequestExecutionTimeGauge.update() updated with : "+update);
 

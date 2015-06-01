@@ -7,13 +7,13 @@ public interface RequestExecutionTimeGauge {
      * return average over the last period, and start new period
      * @return
      */
-    long resetAndGetAverageExecutionTime();
+    double resetAndGetAverageExecutionTime();
 
     /**
      * return average over the lifetime of the gauge
      * @return
      */
-    long getAverageExecutionTime();
+    double getAverageExecutionTime();
 
     /**
      * @return the RMS of executionTime
@@ -40,7 +40,7 @@ public interface RequestExecutionTimeGauge {
      */
     String getName();
 
-    long getStandardDeviation();
+    double getStandardDeviation();
 
     /**
      *

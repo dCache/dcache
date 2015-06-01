@@ -118,16 +118,16 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      * Returns average over the lifetime of the gauge.
      */
     @Override
-    public synchronized long getAverageExecutionTime() {
-        return (updateNum == 0) ? 0 : sumExecutionTime / updateNum;
+    public synchronized double getAverageExecutionTime() {
+        return (updateNum == 0) ? 0 : (double) sumExecutionTime / updateNum;
     }
 
     /**
      * Returns average over the last period and reset the gauge.
      */
     @Override
-    public synchronized long resetAndGetAverageExecutionTime() {
-        long avg = getAverageExecutionTime();
+    public synchronized double resetAndGetAverageExecutionTime() {
+        double avg = getAverageExecutionTime();
         reset();
         return  avg;
     }
@@ -143,7 +143,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         long updatePeriod = System.currentTimeMillis() - startTime;
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
-            formatter.format("%-34s %,12d\u00B1%,10.2f %,12d %,12d %,12d %,12d %12s",
+            formatter.format("%-34s %,12.2f\u00B1%,10.2f %,12d %,12d %,12.2f %,12d %12s",
                     aName, getAverageExecutionTime(),getStandardError(),
                     minExecutionTime,maxExecutionTime,
                     getStandardDeviation(), updateNum,
@@ -181,18 +181,18 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized double getExecutionTimeRMS() {
-        return (updateNum == 0) ? 0 : Math.sqrt(sumExecutionTimeSquared / updateNum);
+        return (updateNum == 0) ? 0 : Math.sqrt((double) sumExecutionTimeSquared / updateNum);
     }
 
     @Override
-    public synchronized long getStandardDeviation() {
+    public synchronized double getStandardDeviation() {
         if (updateNum == 0) {
             return 0;
         }
-        long averageExecutionTime = getAverageExecutionTime();
-        long deviationSquare = (sumExecutionTimeSquared / updateNum) - (averageExecutionTime * averageExecutionTime);
+        double averageExecutionTime = getAverageExecutionTime();
+        double deviationSquare = ((double) sumExecutionTimeSquared / updateNum) - (averageExecutionTime * averageExecutionTime);
         assert (deviationSquare >= 0);
-        return (long) Math.sqrt(deviationSquare);
+        return Math.sqrt(deviationSquare);
     }
 
     /**
