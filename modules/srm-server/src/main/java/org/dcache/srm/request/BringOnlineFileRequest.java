@@ -72,7 +72,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
@@ -420,21 +419,26 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from "+oldState+" to "+getState());
-        if(state == State.READY) {
+        logger.debug("State changed from {} to {}", oldState, getState());
+        switch (state) {
+        case READY:
             try {
                 getContainerRequest().resetRetryDeltaTime();
-            }
-            catch (SRMInvalidRequestException ire) {
+            } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
-        }
-        if(state == State.CANCELED || state == State.FAILED ) {
-            if(getFileId() != null && getPinId() != null) {
-                logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
-                try {
+            break;
+        case CANCELED:
+        case FAILED:
+            try {
+                SRMUser user = getUser();
+                String pinId = getPinId();
+                String fileId = getFileId();
+                AbstractStorageElement storage = getStorage();
+                if (fileId != null && pinId != null) {
+                    logger.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
                     final CheckedFuture<String, ? extends SRMException> future =
-                            getStorage().unPinFile(getUser(), getFileId(), getPinId());
+                            storage.unPinFile(user, fileId, pinId);
                     future.addListener(new Runnable()
                     {
                         @Override
@@ -449,12 +453,14 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
 
                         }
                     }, MoreExecutors.sameThreadExecutor());
+                } else {
+                    unpinBySURLandRequestToken(storage, user, String.valueOf(getRequestId()), getSurl());
                 }
-                catch (SRMInvalidRequestException ire) {
-                    logger.error(ire.toString());
-                    return;
-                }
+            } catch (SRMInternalErrorException | SRMInvalidRequestException ire) {
+                logger.error(ire.toString());
+                return;
             }
+            break;
         }
         super.stateChanged(oldState);
     }
@@ -487,7 +493,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
             case FAILED:
                 return new TReturnStatus(TStatusCode.SRM_FAILURE, "Pinning failed");
             default:
-                logger.warn("Canceled by the srmReleaseFiles");
                 setState(State.CANCELED, "Aborted by srmReleaseFile request.");
                 return new TReturnStatus(TStatusCode.SRM_ABORTED, "SURL is not yet pinned, pinning aborted");
             }
