@@ -212,7 +212,7 @@ public class ChimeraNameSpaceProvider
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
-            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
+            ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
 
             if (!Subjects.isRoot(subject)) {
                 FileAttributes attributes
@@ -274,7 +274,7 @@ public class ChimeraNameSpaceProvider
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
-            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
+            ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
             inode = mkdir(subject, parent, newEntryFile.getName(), uid, gid, mode);
         } catch (NotDirChimeraException e) {
             throw new NotDirCacheException("Not a directory: " + path);
@@ -302,7 +302,7 @@ public class ChimeraNameSpaceProvider
             if (parentPath == null) {
                 throw new FileExistsCacheException("File exists: " + path);
             }
-            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
+            ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
 
             if (!Subjects.isRoot(subject)) {
                 FileAttributes attributes
@@ -394,7 +394,7 @@ public class ChimeraNameSpaceProvider
                 String parentPath = file.getParent();
 
                 if (parentPath != null) {
-                    ExtendedInode inode = new ExtendedInode(pathToInode(subject, path));
+                    ExtendedInode inode = new ExtendedInode(_fs, pathToInode(subject, path));
                     FsInode inodeParent = _fs.path2inode(parentPath);
 
                     FileAttributes parentAttributes =
@@ -694,7 +694,7 @@ public class ChimeraNameSpaceProvider
     {
         return (inode == null)
                 ? null
-                : getFileAttributesForPermissionHandler(new ExtendedInode(inode));
+                : getFileAttributesForPermissionHandler(new ExtendedInode(_fs, inode));
     }
 
     private FileAttributes getFileAttributesForPermissionHandler(@Nonnull ExtendedInode inode)
@@ -968,7 +968,7 @@ public class ChimeraNameSpaceProvider
     {
         try {
             Pattern pattern = (glob == null) ? null : glob.toPattern();
-            ExtendedInode dir = new ExtendedInode(pathToInode(subject, path));
+            ExtendedInode dir = new ExtendedInode(_fs, pathToInode(subject, path));
             if (!dir.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + path);
             }
@@ -999,7 +999,7 @@ public class ChimeraNameSpaceProvider
                             FileAttributes fa =
                                     attrs.isEmpty()
                                             ? null
-                                            : getFileAttributes(new ExtendedInode(entry.getInode()), attrs);
+                                            : getFileAttributes(new ExtendedInode(_fs, entry.getInode()), attrs);
                             handler.addEntry(name, fa);
                         }
                     } catch (FileNotFoundHimeraFsException e) {
@@ -1069,7 +1069,7 @@ public class ChimeraNameSpaceProvider
     private ExtendedInode lookupDirectory(Subject subject, FsPath path) throws ChimeraFsException, CacheException
     {
         try {
-            ExtendedInode inode = new ExtendedInode(pathToInode(subject, path.toString()));
+            ExtendedInode inode = new ExtendedInode(_fs, pathToInode(subject, path.toString()));
             if (!inode.isDirectory()) {
                 throw new NotDirCacheException("Not a directory: " + path);
             }

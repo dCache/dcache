@@ -70,13 +70,13 @@ public class ExtendedInode extends FsInode
 
     public ExtendedInode(ExtendedInode parent, FsInode inode)
     {
-        this(inode);
+        this(parent.getFs(), inode);
         this.parent = Optional.of(parent);
     }
 
-    public ExtendedInode(FsInode inode)
+    public ExtendedInode(FileSystemProvider fs, FsInode inode)
     {
-        this(inode.getFs(), inode.toString());
+        this(fs, inode.toString());
     }
 
     public ExtendedInode(FileSystemProvider fs, PnfsId id)
@@ -139,7 +139,7 @@ public class ExtendedInode extends FsInode
     {
         if (parent == null) {
             FsInode actualParent = super.getParent();
-            parent = Optional.fromNullable(actualParent != null ? new ExtendedInode(actualParent) : null);
+            parent = Optional.fromNullable(actualParent != null ? new ExtendedInode(getFs(), actualParent) : null);
         }
         return parent.get();
     }
