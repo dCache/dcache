@@ -70,17 +70,12 @@ public class NfsTransferService extends AbstractCellComponent
     private boolean _sortMultipathList;
     private PnfsHandler _pnfsHandler;
     private ChecksumModule _checksumModule;
+    private int _minTcpPort;
+    private int _maxTcpPort;
 
     public void init() throws IOException, GSSException, OncRpcException {
 
-        String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
-        PortRange portRange;
-        if (dcachePorts != null) {
-            portRange = PortRange.valueOf(dcachePorts);
-        } else {
-            portRange = new PortRange(0);
-        }
-
+        PortRange portRange = new PortRange(_minTcpPort, _maxTcpPort);
         _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
         _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
 
@@ -120,6 +115,16 @@ public class NfsTransferService extends AbstractCellComponent
     @Required
     public void setChecksumModule(ChecksumModule checksumModule) {
         _checksumModule = checksumModule;
+    }
+
+    @Required
+    public void setMinTcpPort(int minPort) {
+        _minTcpPort = minPort;
+    }
+
+    @Required
+    public void setMaxTcpPort(int maxPort) {
+        _maxTcpPort = maxPort;
     }
 
     public void shutdown() throws IOException {
