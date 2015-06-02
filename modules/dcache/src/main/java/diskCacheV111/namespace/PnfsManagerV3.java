@@ -1199,6 +1199,7 @@ public class PnfsManagerV3
                                                                     message.getSpaceToken(),
                                                                     message.getOptions());
             message.setUploadPath(uploadPath);
+            message.setSucceeded();
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
@@ -1220,6 +1221,7 @@ public class PnfsManagerV3
                 message.setFileAttributes(
                         _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsId, attributes));
             }
+            message.setSucceeded();
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
@@ -1232,6 +1234,7 @@ public class PnfsManagerV3
     {
         try {
             _nameSpaceProvider.cancelUpload(message.getSubject(), message.getUploadPath(), message.getPath());
+            message.setSucceeded();
         } catch (CacheException e) {
             message.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
