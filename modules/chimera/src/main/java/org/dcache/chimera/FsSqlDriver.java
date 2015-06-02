@@ -1636,22 +1636,22 @@ class FsSqlDriver {
             ps1.setString(1, dir.toString());
             rs = ps1.executeQuery();
 
-            /* Remove the links.
-             */
-            ps2 = dbConnection.prepareStatement(sqlRemoveTag);
-            ps2.setString(1, dir.toString());
-            ps2.executeUpdate();
-
-            /* Remove any tag inode of of the tag links removed above, which
-             * are not referenced by any other links either.
-             *
-             * We ought to maintain the link count in the inode, but Chimera
-             * has not done so in the past. In the interest of avoiding costly
-             * schema corrections in patch level releases, the current solution
-             * queries for the existance of other links instead.
-             */
-            ps3 = dbConnection.prepareStatement(sqlRemoveTagInodes);
             if (rs.next()) {
+                /* Remove the links.
+                 */
+                ps2 = dbConnection.prepareStatement(sqlRemoveTag);
+                ps2.setString(1, dir.toString());
+                ps2.executeUpdate();
+
+                /* Remove any tag inode of of the tag links removed above, which
+                 * are not referenced by any other links either.
+                 *
+                 * We ought to maintain the link count in the inode, but Chimera
+                 * has not done so in the past. In the interest of avoiding costly
+                 * schema corrections in patch level releases, the current solution
+                 * queries for the existence of other links instead.
+                 */
+                ps3 = dbConnection.prepareStatement(sqlRemoveTagInodes);
                 do {
                     ps3.setString(1, rs.getString(1));
                     ps3.addBatch();
