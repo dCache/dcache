@@ -171,7 +171,7 @@ public class SrmAuthorizer
             requestCredential.keepBestDelegatedCredential(credential);
             requestCredential.saveCredential();
             return requestCredential;
-        } catch (GSSException | AuthorizationException e) {
+        } catch (GSSException e) {
             throw new SRMAuthenticationException("Problem getting request credential: " + e.getMessage(), e);
         }
     }

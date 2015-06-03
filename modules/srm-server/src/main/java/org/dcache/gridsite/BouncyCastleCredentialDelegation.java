@@ -21,9 +21,9 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1StreamParser;
-import org.bouncycastle.asn1.DEREncodable;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -132,7 +132,7 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
 
         DERSequence seq;
         try {
-            DERObject object = parser.readObject().getDERObject();
+            ASN1Encodable object = parser.readObject().getDERObject();
             if (!(object instanceof DERSequence)) {
                 throw new IOException("not a DER-encoded ASN.1 sequence");
             }
@@ -142,12 +142,12 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
                     e.getMessage());
         }
 
-        List<DEREncodable> rdn = new ArrayList<>(seq.size()+1);
+        List<ASN1Encodable> rdn = new ArrayList<>(seq.size()+1);
         for(Enumeration e = seq.getObjects(); e.hasMoreElements();) {
-            rdn.add((DEREncodable) e.nextElement());
+            rdn.add((ASN1Encodable) e.nextElement());
         }
 
-        DERSequence atv = new DERSequence(new ASN1Encodable[]{X509Name.CN,
+        DERSequence atv = new DERSequence(new ASN1Object[]{X509Name.CN,
             new DERPrintableString("proxy")});
         rdn.add(new DERSet(atv));
 
