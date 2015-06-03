@@ -793,7 +793,10 @@ public class NFSv41Door extends AbstractCellComponent implements
             }
 
             StringBuilder sb = new StringBuilder();
-            _proxyIoFactory.forEach(t -> sb.append(t).append('\n'));
+            _proxyIoFactory.forEach(p -> {
+                NfsTransfer t = _ioMessages.get(p.getStateId());
+                sb.append(t).append('\n');
+            });
             return sb.toString();
         }
     }
