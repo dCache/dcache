@@ -51,7 +51,7 @@
         <version.jetty>9.2.4.v20141103</version.jetty>
         <version.wicket>6.16.0</version.wicket>
         <version.xrootd4j>1.3.7</version.xrootd4j>
-        <version.jglobus>2.0.6-rc8.d</version.jglobus>
+        <version.jglobus>2.0.6-rc9.d</version.jglobus>
         <version.openmq>4.5.2</version.openmq>
 
         <!-- BouncyCastle seems to change the naming convention of
