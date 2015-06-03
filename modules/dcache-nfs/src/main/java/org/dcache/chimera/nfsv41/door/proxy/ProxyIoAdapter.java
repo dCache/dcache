@@ -3,6 +3,7 @@ package org.dcache.chimera.nfsv41.door.proxy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 
 /**
@@ -34,7 +35,10 @@ public interface ProxyIoAdapter extends Closeable {
      */
     VirtualFileSystem.WriteResult write(ByteBuffer src, long position) throws IOException;
 
-    int getSessionId();
+    /**
+     * Returns open-stateid associated with this proxy-io adapter.
+     */
+    stateid4 getStateId();
 
     // FIXME: move into generic NFS code
     public static class ReadResult {
