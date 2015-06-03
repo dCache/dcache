@@ -80,7 +80,7 @@
                1.43     bcprov-jdk16    JDK v1.6; used by JGlobus-1.8.x
          -->
         <bouncycastle.bcprov>bcprov-jdk16</bouncycastle.bcprov>
-        <bouncycastle.version>1.45</bouncycastle.version>
+        <bouncycastle.version>1.46</bouncycastle.version>
         <datanucleus-core.version>4.0.1</datanucleus-core.version>
         <datanucleus.plugin.version>4.0.0-release</datanucleus.plugin.version>
     </properties>
