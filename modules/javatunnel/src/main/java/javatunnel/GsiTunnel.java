@@ -1,6 +1,5 @@
 package javatunnel;
 
-import org.glite.voms.FQAN;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.cert.X509Certificate;
+import org.bouncycastle.voms.VOMSAttribute;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.auth.util.GSSUtils;
@@ -120,16 +120,7 @@ class GsiTunnel extends GssTunnel  {
             boolean primary = true;
 
             for (String fqanValue : GSSUtils.getFQANsFromGSSContext(vomsDir, caDir, gssContext)) {
-                FQAN fqan = new FQAN(fqanValue);
-                String group = fqan.getGroup();
-                String role = fqan.getRole();
-                String s;
-                if(role == null  || role.equals("") ) {
-                    s = group;
-                }else{
-                    s = group + "/Role=" + role;
-                }
-                _subject.getPrincipals().add( new FQANPrincipal(s, primary));
+                _subject.getPrincipals().add( new FQANPrincipal(fqanValue, primary));
                 primary = false;
             }
 

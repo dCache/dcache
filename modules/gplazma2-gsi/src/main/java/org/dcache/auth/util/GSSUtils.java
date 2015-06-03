@@ -1,32 +1,21 @@
 package org.dcache.auth.util;
 
-import com.google.common.base.Objects;
-import org.glite.voms.PKIStore;
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSAttribute;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
+
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSCredential;
+import org.italiangrid.voms.ac.VOMSACValidator;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
-import org.slf4j.MDC;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.cert.CRLException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
 
 /**
  * Extraction and conversion methods useful when dealing with GSS/VOMS
@@ -45,61 +34,6 @@ public class GSSUtils {
     static final String CAPNULL = "/Capability=NULL";
     static final String ROLENULL = "/Role=NULL";
 
-    /**
-     * Re-use the verifier throughout the domain/JVM when possible, as it
-     * is costly in both time and memory to instantiate (avoid out-of-memory
-     * errors).  The map allows for multiple instances mapped to different
-     * certificate directories.
-     */
-    private static final Map<PKIKey, PKIVerifier> verifiers = new HashMap<>();
-
-    /**
-     * For storing the verifier.  Key is concatenation of two directory paths.
-     *
-     * @author arossi
-     */
-    private static class PKIKey {
-        private final String vomsDir;
-        private final String caDir;
-
-        private PKIKey(String vomsDir, String caDir)
-        {
-            if (vomsDir == null) {
-                vomsDir = System.getProperty(SYS_VOMSDIR);
-            }
-            if (vomsDir == null) {
-                vomsDir = PKIStore.DEFAULT_VOMSDIR;
-            }
-            this.vomsDir = checkNotNull(vomsDir);
-
-            if (caDir == null) {
-                caDir = System.getProperty(SYS_CADIR);
-            }
-            if (caDir == null) {
-                caDir = PKIStore.DEFAULT_CADIR;
-            }
-            this.caDir = checkNotNull(caDir);
-        }
-
-        public String toString() {
-            return Objects.toStringHelper(PKIKey.class)
-                    .add("vomsDir", vomsDir)
-                    .add("caDir", caDir)
-                    .toString();
-        }
-
-        public boolean equals(Object object) {
-            if (!(object instanceof PKIKey)) {
-                return false;
-            }
-            PKIKey other = (PKIKey) object;
-            return vomsDir.equals(other.vomsDir) && caDir.equals(other.caDir);
-        }
-
-        public int hashCode() {
-            return (33 * vomsDir.hashCode()) ^ caDir.hashCode();
-        }
-    }
 
     /**
      * Extracts the X509Certificate chain from the GSS context, then extracts
@@ -142,19 +76,10 @@ public class GSSUtils {
     }
 
     public static Iterable<String> extractFQANs(String vomsDir, String caDir, X509Certificate[] chain)
-            throws AuthorizationException
     {
-        try {
-            VOMSValidator validator = new VOMSValidator(null,
-                    new ACValidator(getPkiVerifier(vomsDir, caDir)));
-            validator.setClientChain(chain).parse();
-            List<VOMSAttribute> listOfAttributes = validator.getVOMSAttributes();
-            return getFQANSfromVOMSAttributes(listOfAttributes);
-        } catch (AuthorizationException e) {
-            throw e;
-        } catch (CertificateException | CRLException | IOException e) {
-            throw new AuthorizationException("Could not validate role: " + e.getMessage(), e);
-        }
+        VOMSACValidator validator = VOMSValidators.newValidator();
+        List<VOMSAttribute> listOfAttributes = validator.validate(chain);
+        return getFQANSfromVOMSAttributes(listOfAttributes);
     }
 
     /**
@@ -166,7 +91,7 @@ public class GSSUtils {
         Set<String> fqans = new LinkedHashSet<>();
 
         for (VOMSAttribute vomsAttribute : listOfAttributes) {
-            List<?> listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
+            List<?> listOfFqans = vomsAttribute.getFQANs();
             for (Object fqan : listOfFqans) {
                 String attr = (String) fqan;
                 if (attr.endsWith(CAPNULL)) {
@@ -182,52 +107,4 @@ public class GSSUtils {
         return fqans;
     }
 
-    /**
-     * The verifier is used in validating and extracting the VOMS attributes and
-     * extensions.
-     *
-     * @param vomsDir
-     *            a specialized non-default location
-     * @param caDir
-     *            a specialized non-default location
-     */
-    public static synchronized PKIVerifier getPkiVerifier(String vomsDir, String caDir)
-            throws IOException, CertificateException, CRLException
-    {
-        PKIKey key = new PKIKey(vomsDir, caDir);
-        PKIVerifier verifier = verifiers.get(key);
-        if (verifier == null) {
-            /*
-             * Since PKIStore instantiates internal threads to periodically
-             * reload the store, we reset the MDC to avoid that messages logged
-             * by the refresh thread have the wrong context.
-             */
-            Map<String, String> map = MDC.getCopyOfContextMap();
-            try {
-                MDC.clear();
-
-                PKIStore vomsStore = null;
-                File actualDir = new File(key.vomsDir);
-                if (actualDir.exists() && actualDir.isDirectory()
-                                && actualDir.list().length > 0) {
-                    vomsStore = new PKIStore(key.vomsDir, PKIStore.TYPE_VOMSDIR);
-                }
-
-                PKIStore caStore = null;
-                actualDir = new File(key.caDir);
-                if (actualDir.exists() && actualDir.isDirectory()
-                                && actualDir.list().length > 0) {
-                    caStore = new PKIStore(key.caDir, PKIStore.TYPE_CADIR);
-                }
-
-                verifier = new PKIVerifier(vomsStore, caStore);
-                verifiers.put(key, verifier);
-            } finally {
-                if (map != null) {
-                    MDC.setContextMap(map);
-                }
-            }
-        }
-        return verifier;
-    }
 }

@@ -127,7 +127,7 @@ public class X509Utils {
         Enumeration<?> e = seq.getObjects();
         StringBuilder buf = new StringBuilder();
         while (e.hasMoreElements()) {
-            ASN1Set set = (ASN1Set) e.nextElement();
+            ASN1Set set = ASN1Set.getInstance(e.nextElement());
             Enumeration<?> ee = set.getObjects();
             boolean didappend = false;
             while (ee.hasMoreElements()) {
