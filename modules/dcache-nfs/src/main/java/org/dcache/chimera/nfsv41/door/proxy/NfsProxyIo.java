@@ -146,9 +146,8 @@ public class NfsProxyIo implements ProxyIoAdapter {
     }
 
     @Override
-    public int getSessionId() {
-        // forced by interface
-        throw new UnsupportedOperationException("Not supported yet.");
+    public stateid4 getStateId() {
+        return stateid;
     }
 
     @Override
