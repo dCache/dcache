@@ -69,6 +69,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -104,9 +105,11 @@ import java.net.ProtocolFamily;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -169,12 +172,10 @@ import dmg.cells.services.login.LoginBrokerSource;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
-import org.dcache.auth.FQAN;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
-import org.dcache.gridsite.CredentialStore;
 import org.dcache.namespace.ACLPermissionHandler;
 import org.dcache.namespace.ChainedPermissionHandler;
 import org.dcache.namespace.CreateOption;
@@ -226,6 +227,7 @@ import org.dcache.util.list.DirectoryStream;
 import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Iterables.*;
@@ -352,6 +354,65 @@ public final class Storage
                                 }
                             });
 
+    /**
+     * A loading cache for looking up space tokens by owner and description.
+     */
+    private final LoadingCache<GetSpaceTokensKey, long[]> spaceTokens =
+            CacheBuilder.newBuilder()
+                    .maximumSize(1000)
+                    .expireAfterWrite(30, SECONDS)
+                    .refreshAfterWrite(10, SECONDS)
+                    .build(new CacheLoader<GetSpaceTokensKey, long[]>()
+                    {
+                        @Override
+                        public long[] load(GetSpaceTokensKey key) throws Exception
+                        {
+                            try {
+                                return _spaceManagerStub.sendAndWait(createRequest(key)).getSpaceTokens();
+                            } catch (TimeoutCacheException e) {
+                                throw new SRMInternalErrorException("Space manager timeout", e);
+                            } catch (InterruptedException e) {
+                                throw new SRMInternalErrorException("Operation interrupted", e);
+                            } catch (CacheException e) {
+                                _log.warn("GetSpaceTokens failed with rc={} error={}", e.getRc(), e.getMessage());
+                                throw new SRMException("GetSpaceTokens failed with rc=" + e.getRc() +
+                                                       " error=" + e.getMessage(), e);
+                            }
+                        }
+
+                        private GetSpaceTokens createRequest(GetSpaceTokensKey key)
+                        {
+                            GetSpaceTokens message = new GetSpaceTokens(key.description);
+                            message.setSubject(new Subject(true, key.principals,
+                                                           Collections.emptySet(), Collections.emptySet()));
+                            return message;
+                        }
+
+                        @Override
+                        public ListenableFuture<long[]> reload(GetSpaceTokensKey key, long[] oldValue) throws Exception
+                        {
+                            final SettableFuture<long[]> future = SettableFuture.create();
+                            CellStub.addCallback(
+                                    _spaceManagerStub.send(createRequest(key)),
+                                    new AbstractMessageCallback<GetSpaceTokens>()
+                                    {
+                                        @Override
+                                        public void success(GetSpaceTokens message)
+                                        {
+                                            future.set(message.getSpaceTokens());
+                                        }
+
+                                        @Override
+                                        public void failure(int rc, Object error)
+                                        {
+                                            CacheException exception = CacheExceptionFactory.exceptionOf(
+                                                    rc, Objects.toString(error, null));
+                                            future.setException(exception);
+                                        }
+                                    }, _executor);
+                            return future;
+                        }
+                    });
 
     public Storage()
     {
@@ -2184,8 +2245,35 @@ public final class Storage
             SrmReserveSpaceCallback callback) {
         if (_isSpaceManagerEnabled) {
             SrmReserveSpaceCompanion.reserveSpace(((DcacheUser) user).getSubject(),
-                    sizeInBytes, spaceReservationLifetime, retentionPolicy,
-                    accessLatency, description, callback, _spaceManagerStub, _executor);
+                                                  sizeInBytes, spaceReservationLifetime, retentionPolicy,
+                                                  accessLatency, description, new SrmReserveSpaceCallback()
+                    {
+                        public void failed(String reason)
+                        {
+                            callback.failed(reason);
+                        }
+
+                        public void failed(Exception e)
+                        {
+                            callback.failed(e);
+                        }
+
+                        public void internalError(String reason)
+                        {
+                            callback.internalError(reason);
+                        }
+
+                        public void success(String spaceReservationToken, long reservedSpaceSize)
+                        {
+                            spaceTokens.invalidateAll();
+                            callback.success(spaceReservationToken, reservedSpaceSize);
+                        }
+
+                        public void noFreeSpace(String reason)
+                        {
+                            callback.noFreeSpace(reason);
+                        }
+                    }, _spaceManagerStub, _executor);
         } else {
             callback.failed(SPACEMANAGER_DISABLED_MESSAGE);
         }
@@ -2218,6 +2306,7 @@ public final class Storage
                         public void success(String spaceReservationToken, long remainingSpaceSize)
                         {
                             spaces.invalidate(spaceToken);
+                            spaceTokens.invalidateAll();
                             callbacks.success(spaceReservationToken, remainingSpaceSize);
                         }
                     }, _spaceManagerStub, _executor);
@@ -2316,42 +2405,25 @@ public final class Storage
         return spaceMetaDatas;
     }
 
-    /**
-     *
-     * @param description
-     * @throws SRMException
-     * @return
-     */
     @Override @Nonnull
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException
     {
         _log.trace("srmGetSpaceTokens ({})", description);
-        guardSpaceManagerEnabled();
-        DcacheUser duser = (DcacheUser) user;
-        GetSpaceTokens getTokens = new GetSpaceTokens(description);
-        getTokens.setSubject(duser.getSubject());
+        if (!_isSpaceManagerEnabled) {
+            return new String[0];
+        }
         try {
-            getTokens = _spaceManagerStub.sendAndWait(getTokens);
-        } catch (TimeoutCacheException e) {
-            throw new SRMInternalErrorException("Space manager timeout", e);
-        } catch (InterruptedException e) {
-            throw new SRMInternalErrorException("Operation interrupted", e);
-        } catch (CacheException e) {
-            _log.warn("GetSpaceTokens failed with rc=" + e.getRc() +
-                      " error="+e.getMessage());
-            throw new SRMException("GetSpaceTokens failed with rc="+
-                                   e.getRc() + " error=" + e.getMessage(), e);
+            DcacheUser duser = (DcacheUser) user;
+            long[] tokens = spaceTokens.get(new GetSpaceTokensKey(duser.getSubject().getPrincipals(), description));
+            if (_log.isTraceEnabled()) {
+                _log.trace("srmGetSpaceTokens returns: {}", Arrays.toString(tokens));
+            }
+            return Arrays.stream(tokens).mapToObj(Long::toString).toArray(String[]::new);
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), SRMException.class);
+            throw Throwables.propagate(e.getCause());
         }
-        long tokens[] = getTokens.getSpaceTokens();
-        String tokenStrings[] = new String[tokens.length];
-        for (int i = 0; i < tokens.length; ++i) {
-            tokenStrings[i] = Long.toString(tokens[i]);
-        }
-        if (_log.isTraceEnabled()) {
-            _log.trace("srmGetSpaceTokens returns: {}", Arrays.toString(tokenStrings));
-        }
-        return tokenStrings;
     }
 
     /**
@@ -2600,6 +2672,42 @@ public final class Storage
             } catch (NamingException e) {
                 throw new UnknownHostException(e.getMessage());
             }
+        }
+    }
+
+    private static class GetSpaceTokensKey
+    {
+        private final Set<Principal> principals;
+        private final String description;
+
+        public GetSpaceTokensKey(Set<Principal> principals, String description)
+        {
+            this.principals = checkNotNull(principals);
+            this.description = description;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            GetSpaceTokensKey that = (GetSpaceTokensKey) o;
+            return principals.equals(that.principals) &&
+                   (description == null ? that.description == null : description.equals(that.description));
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = principals.hashCode();
+            result = 31 * result + (description != null ? description.hashCode() : 0);
+            return result;
         }
     }
 }
