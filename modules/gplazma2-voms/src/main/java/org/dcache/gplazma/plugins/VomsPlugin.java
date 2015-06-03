@@ -1,10 +1,5 @@
 package org.dcache.gplazma.plugins;
 
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
-import org.slf4j.MDC;
-
 import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.CRLException;
@@ -14,12 +9,15 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.util.GSSUtils;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.CertPaths;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import java.util.List;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate chain in
@@ -30,8 +28,6 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
     private static final String CADIR = "gplazma.vomsdir.ca";
     private static final String VOMSDIR = "gplazma.vomsdir.dir";
 
-    private final PKIVerifier _pkiVerifier;
-
     public VomsPlugin(Properties properties) throws CertificateException,
                     CRLException, IOException {
         String caDir = properties.getProperty(CADIR);
@@ -39,8 +35,6 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
 
         checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(vomsDir != null, "Undefined property: " + CADIR);
-
-        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir);
     }
 
     @Override
@@ -48,8 +42,8 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Object> privateCredentials,
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
-        VOMSValidator validator
-            = new VOMSValidator(null, new ACValidator(_pkiVerifier));
+        VOMSACValidator validator
+            = VOMSValidators.newValidator();
 
         boolean primary = true;
         boolean hasX509 = false;
@@ -58,11 +52,13 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
         for (Object credential : publicCredentials) {
             if (CertPaths.isX509CertPath(credential)) {
                 hasX509 = true;
-                validator.setClientChain(CertPaths.getX509Certificates((CertPath) credential)).validate();
-                for (String fqan : validator.getAllFullyQualifiedAttributes()) {
-                    hasFQANs = true;
-                    identifiedPrincipals.add(new FQANPrincipal(fqan, primary));
-                    primary = false;
+                List<VOMSAttribute> attrs = validator.validate(CertPaths.getX509Certificates((CertPath) credential));
+                for (VOMSAttribute attr : attrs) {
+                    for (String fqan : attr.getFQANs()) {
+                        hasFQANs = true;
+                        identifiedPrincipals.add(new FQANPrincipal(fqan, primary));
+                        primary = false;
+                    }
                 }
             }
         }

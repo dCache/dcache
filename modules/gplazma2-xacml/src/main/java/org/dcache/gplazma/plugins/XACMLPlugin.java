@@ -5,12 +5,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+
 import com.google.common.collect.Ordering;
-import org.glite.voms.PKIVerifier;
-import org.glite.voms.VOMSAttribute;
-import org.glite.voms.VOMSValidator;
-import org.glite.voms.ac.ACValidator;
-import org.glite.voms.ac.AttributeCertificate;
 import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.GlobusCredentialException;
 import org.ietf.jgss.GSSException;
@@ -44,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.util.GSSUtils;
 import org.dcache.auth.util.X509Utils;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.util.CertPaths;
@@ -55,6 +50,9 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
 
 /**
  * Responsible for taking an X509Certificate chain from the public credentials
@@ -253,11 +251,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     private LoadingCache<VomsExtensions, LocalId> _localIdCache;
 
     /*
-     * for VOMS attribute extraction
-     */
-    private final PKIVerifier _pkiVerifier;
-
-    /*
      * VOMS attribute validation turned off by default
      */
     private boolean _vomsAttrValidate;
@@ -299,8 +292,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
 
         String caDir = properties.getProperty(CADIR);
         String vomsDir = properties.getProperty(VOMSDIR);
-
-        _pkiVerifier = GSSUtils.getPkiVerifier(vomsDir, caDir);
 
 
         /*
@@ -351,8 +342,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         /*
          * validator not thread-safe; reinstantiated with each authenticate call
          */
-        VOMSValidator validator
-            = new VOMSValidator(null, new ACValidator(_pkiVerifier));
+        VOMSACValidator validator = VOMSValidators.newValidator();
         Set<VomsExtensions> extensions = new LinkedHashSet<>();
 
         /*
@@ -494,7 +484,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      */
     @SuppressWarnings("deprecation")
     private void extractExtensionsFromChain(X509Certificate[] chain,
-                    Set<VomsExtensions> extensionsSet, VOMSValidator validator)
+                    Set<VomsExtensions> extensionsSet, VOMSACValidator validator)
                     throws AuthenticationException {
         if (chain == null) {
             return;
@@ -516,13 +506,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         String vomsSubject
             = X509Utils.getSubjectX509Issuer(chain, false);
 
-        if (_vomsAttrValidate) {
-            validator.setClientChain(chain).validate();
-        } else {
-            validator.setClientChain(chain).parse();
-        }
-
-        List<VOMSAttribute> vomsAttributes = validator.getVOMSAttributes();
+        List<VOMSAttribute> vomsAttributes = validator.validate(chain);
         boolean primary = true;
 
         if (vomsAttributes.isEmpty()) {
@@ -534,9 +518,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             extensionsSet.add(vomsExtensions);
         } else {
             for (VOMSAttribute vomsAttr : vomsAttributes) {
-                AttributeCertificate ac = vomsAttr.getAC();
-                X500Principal x500 = ac == null? null : ac.getIssuer();
-                List<String> fqans = vomsAttr.getFullyQualifiedAttributes();
+                X500Principal x500 = vomsAttr.getIssuer();
+                List<String> fqans = vomsAttr.getFQANs();
                 if (fqans.isEmpty()) {
                     VomsExtensions vomsExtensions
                         = new VomsExtensions(proxySubject, proxySubjectIssuer,
@@ -547,7 +530,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                                     this, vomsExtensions);
                     extensionsSet.add(vomsExtensions);
                 } else {
-                    for (Object fqan : vomsAttr.getFullyQualifiedAttributes()) {
+                    for (Object fqan : vomsAttr.getFQANs()) {
                         VomsExtensions vomsExtensions
                             = new VomsExtensions(proxySubject, proxySubjectIssuer,
                                                vomsAttr.getVO(), vomsSubject, x500,
