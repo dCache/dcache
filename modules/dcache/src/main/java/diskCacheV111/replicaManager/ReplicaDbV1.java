@@ -505,7 +505,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 _log.error(e.toString());
             }
 
-            _log.warn("Failed to truncate the tables: {}; retrying separately.",
+            _log.debug("Failed to truncate the tables: {}; retrying separately.",
                             original.toString());
 
             /*
