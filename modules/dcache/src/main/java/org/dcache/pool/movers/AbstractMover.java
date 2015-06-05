@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
 
@@ -247,7 +246,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         case WRITE:
             try {
                 channel = new FileRepositoryChannel(_handle.getFile(), "rw");
-            } catch (IOException e) {
+            } catch (FileNotFoundException e) {
                 throw new DiskErrorCacheException(
                         "File could not be created; please check the file system", e);
             }
@@ -255,7 +254,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         case READ:
             try {
                 channel = new FileRepositoryChannel(_handle.getFile(), "r");
-            } catch (IOException e) {
+            } catch (FileNotFoundException e) {
                 throw new DiskErrorCacheException("File could not be opened  [" +
                         e.getMessage() + "]; please check the file system", e);
             }

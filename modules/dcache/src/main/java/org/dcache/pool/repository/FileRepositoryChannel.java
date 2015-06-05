@@ -3,36 +3,20 @@ package org.dcache.pool.repository;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.EnumSet;
-import java.util.Set;
-
-import static java.nio.file.StandardOpenOption.*;
 
 public class FileRepositoryChannel implements RepositoryChannel {
 
-    private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute<?>[0];
-    private static final Set<StandardOpenOption> O_READ = EnumSet.of(READ);
-    private static final Set<StandardOpenOption> O_RW = EnumSet.of(READ, WRITE, CREATE_NEW);
-    private static final Set<StandardOpenOption> O_RWD = EnumSet.of(READ, WRITE, CREATE_NEW, DSYNC);
-    private static final Set<StandardOpenOption> O_RWS = EnumSet.of(READ, WRITE, CREATE_NEW, DSYNC, SYNC);
-
     private final FileChannel _fileChannel;
+    private final RandomAccessFile _raf;
+    private final File _file;
 
-    /**
-     * Cached value of the file size.
-     */
-    private final long _size;
-
-    public FileRepositoryChannel(String f, String mode) throws FileNotFoundException, IOException {
+    public FileRepositoryChannel(String f, String mode) throws FileNotFoundException {
         this(new File(f), mode);
     }
 
@@ -40,7 +24,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
      * Creates a {@link RepositortyChannel} to read from, and optionally to
      * write to, the file specified by the {@link File} argument.
      *
-     * The <tt>mode</tt> argument specifies the access mode
+     * <a name="mode"><p> The <tt>mode</tt> argument specifies the access mode
      * in which the file is to be opened.  The permitted values and their
      * meanings are:
      *
@@ -96,34 +80,10 @@ public class FileRepositoryChannel implements RepositoryChannel {
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
      */
-    @SuppressWarnings("fallthrough")
-    public FileRepositoryChannel(File file, String mode) throws FileNotFoundException, IOException {
-        Path path = file.toPath();
-        Set<StandardOpenOption> openOptions;
-        switch (mode) {
-            case "rws":
-                openOptions = O_RWS;
-		break;
-            case "rwd":
-                openOptions = O_RWD;
-		break;
-            case "rw":
-                openOptions = O_RW;
-		break;
-            case "r":
-                openOptions = O_READ;
-                break;
-            default:
-                throw new IllegalArgumentException("Illegal mode \"" + mode + "\"");
-        }
-
-        _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
-        if (mode.equals("r")) {
-            // read-only. Cache the file size;
-            _size = _fileChannel.size();
-        } else {
-            _size = -1L;
-        }
+    public FileRepositoryChannel(File f, String mode) throws FileNotFoundException {
+        _file = f;
+        _raf = new RandomAccessFile(f, mode);
+        _fileChannel = _raf.getChannel();
     }
 
     @Override
@@ -139,12 +99,12 @@ public class FileRepositoryChannel implements RepositoryChannel {
 
     @Override
     public long size() throws IOException {
-        return _size != -1 ? _size : _fileChannel.size();
+        return _file.length();
     }
 
     @Override
     public void sync() throws SyncFailedException, IOException {
-        _fileChannel.force(true);
+        _raf.getFD().sync();
     }
 
     @Override
