@@ -649,7 +649,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             pw.printf("  Active transfers        : %d\n", _ioMessages.values().size());
 
             if (_proxyIoFactory != null) {
-                pw.printf("  Known proxy adapters    : %d", _proxyIoFactory.getCount());
+                pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
             }
 
         }
