@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import diskCacheV111.util.ChecksumFactory;
 
@@ -25,7 +26,6 @@ import org.dcache.util.ChecksumType;
 import static com.google.common.collect.Lists.newArrayList;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 public class ChecksumChannelTest {
 
 
+    private final String TMP_DIR = System.getProperty("java.io.tmpdir");
     private ChecksumChannel chksumChannel;
 
     private byte[] data = "\0Just\0A\0Short\0TestString\0To\0Verify\0\0Checksumming\0\0Works\12".getBytes(StandardCharsets.ISO_8859_1); // \12 is a octal 10, linefeed
@@ -45,7 +46,7 @@ public class ChecksumChannelTest {
 
     @Before
     public void setUp() throws NoSuchAlgorithmException, IOException {
-        testFile = File.createTempFile("ChecksumChannelTest", ".tmp");
+        testFile = new File(TMP_DIR, "ChecksumChannelTest" + UUID.randomUUID().toString() + ".tmp");
         RepositoryChannel mockRepositoryChannel = new FileRepositoryChannel(testFile, "rw");
         ChecksumFactory checksumFactory = ChecksumFactory.getFactory(ChecksumType.MD5_TYPE);
         chksumChannel = new ChecksumChannel(mockRepositoryChannel, checksumFactory);
