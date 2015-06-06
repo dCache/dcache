@@ -1373,7 +1373,7 @@ public class UserAdminShell
             throws NoRouteToCellException, InterruptedException, CommandException
     {
        try {
-           return _cellStub.send(cellPath, object, Object.class).get();
+           return _cellStub.send(cellPath, object, Object.class, _timeout).get();
        } catch (ExecutionException e) {
            Throwable cause = e.getCause();
            if (_fullException) {
