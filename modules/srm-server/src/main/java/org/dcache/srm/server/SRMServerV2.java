@@ -89,6 +89,7 @@ import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -191,6 +192,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.NetLoggerBuilder;
 
+import static java.util.Arrays.asList;
 import static org.dcache.srm.v2_2.TStatusCode.*;
 
 public class SRMServerV2 implements ISRM  {
@@ -215,6 +217,7 @@ public class SRMServerV2 implements ISRM  {
             { new RequestExecutionTimeGaugeLogger(), new CounterLogger(), new AccessLogger() };
 
     private final ArrayOfTExtraInfo pingExtraInfo;
+    private final boolean isEnabled;
 
     public SRMServerV2()
     {
@@ -228,6 +231,7 @@ public class SRMServerV2 implements ISRM  {
         srmServerGauges = srm.getSrmServerV2Gauges();
         pingExtraInfo = buildExtraInfo(config.getPingExtraInfo());
         isClientDNSLookup = config.isClientDNSLookup();
+        isEnabled = asList(config.getVersions()).contains("2");
     }
 
     private ArrayOfTExtraInfo buildExtraInfo(Map<String,String> items)
@@ -246,7 +250,13 @@ public class SRMServerV2 implements ISRM  {
         return new ArrayOfTExtraInfo(extraInfo);
     }
 
-    private Object handleRequest(String requestName, Object request)  throws RemoteException {
+    private Object handleRequest(String requestName, Object request)  throws RemoteException
+    {
+        if (!isEnabled) {
+            LOGGER.warn("Rejecting SRM v2 client request from '{}' by '{}' because SRM v2 is disabled.",
+                        Axis.getRemoteAddress(), Axis.getDN().orElse(""));
+            throw new java.rmi.RemoteException("SRM version 2 is not supported by this server.");
+        }
         long startTimeStamp = System.currentTimeMillis();
         // requestName values all start "srm".  This is redundant, so may
         // be removed when creating the session id.  The initial character is

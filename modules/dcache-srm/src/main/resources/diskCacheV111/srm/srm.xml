@@ -245,6 +245,7 @@
               value="#{T(java.util.concurrent.TimeUnit).SECONDS.convert(
                      ${srm.limits.external-copy-script.timeout},
                      '${srm.limits.external-copy-script.timeout.unit}')}" />
+    <property name="versions" value="${srm.version}"/>
     <property name="srmHost" value="${srm.net.host}"/>
     <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
     <property name="caCertificatePath" value="${srm.authn.capath}"/>

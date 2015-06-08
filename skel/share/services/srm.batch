@@ -9,6 +9,7 @@ check -strong srm.cell.export
 check srm.cell.subscribe
 check -strong srm.cell.limits.message.threads.max
 check -strong srm.cell.limits.message.queue.max
+check -strong srm.version
 
 check -strong srm.net.port
 check -strong srm.net.ssl-port

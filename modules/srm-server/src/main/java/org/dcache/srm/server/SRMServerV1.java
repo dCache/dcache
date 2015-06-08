@@ -5,6 +5,8 @@ import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.rmi.RemoteException;
+
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.SRM;
@@ -25,6 +27,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     private final RequestCounters<String> srmServerCounters;
     private final RequestExecutionTimeGauges<String> srmServerGauges;
     private final boolean isClientDNSLookup;
+    private final boolean isEnabled;
 
     public SRMServerV1()
     {
@@ -40,6 +43,15 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
          isClientDNSLookup = config.isClientDNSLookup();
          srmServerCounters = srm.getSrmServerV1Counters();
          srmServerGauges = srm.getSrmServerV1Gauges();
+    }
+
+    private void checkEnabled() throws RemoteException
+    {
+        if (!isEnabled) {
+            log.warn("Rejecting SRM v1 client request from '{}' by '{}' because SRM v1 is disabled.",
+                     Axis.getRemoteAddress(), Axis.getDN().orElse(""));
+            throw new java.rmi.RemoteException("SRM version 1 is not supported by this server.");
+        }
     }
 
     private String getRemoteHost() {
@@ -60,6 +72,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     public org.dcache.srm.client.axis.RequestStatus put(java.lang.String[] arg0,
             java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4)
             throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "put";
       try (JDC ignored = JDC.createSession("srm1:put")) {
@@ -97,6 +110,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus get(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "get";
       incrementRequest(methodName);
@@ -134,6 +148,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus copy(java.lang.String[] arg0, java.lang.String[] arg1, boolean[] arg2) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "copy";
       incrementRequest(methodName);
@@ -172,6 +187,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public boolean ping() throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "ping";
       incrementRequest(methodName);
@@ -194,6 +210,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus pin(java.lang.String[] arg0) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "pin";
       incrementRequest(methodName);
@@ -217,6 +234,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus unPin(java.lang.String[] arg0, int arg1) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "unPin";
       incrementRequest(methodName);
@@ -240,6 +258,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus setFileStatus(int arg0, int arg1, java.lang.String arg2) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "setFileStatus";
       incrementRequest(methodName);
@@ -271,6 +290,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus getRequestStatus(int arg0) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getRequestStatus";
       incrementRequest(methodName);
@@ -303,7 +323,8 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     @Override
     public org.dcache.srm.client.axis.FileMetaData[] getFileMetaData(
     java.lang.String[] arg0) throws java.rmi.RemoteException {
-              log.debug("Entering ISRMImpl.getFileMetaData");
+      checkEnabled();
+      log.debug("Entering ISRMImpl.getFileMetaData");
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "mkPermanent";
       incrementRequest(methodName);
@@ -337,6 +358,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus mkPermanent(java.lang.String[] arg0) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "mkPermanent";
       incrementRequest(methodName);
@@ -369,6 +391,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus getEstGetTime(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getEstGetTime";
       incrementRequest(methodName);
@@ -402,6 +425,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public org.dcache.srm.client.axis.RequestStatus getEstPutTime(java.lang.String[] arg0, java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getEstPutTime";
       incrementRequest(methodName);
@@ -435,6 +459,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public void advisoryDelete(java.lang.String[] arg0) throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "advisoryDelete";
       incrementRequest(methodName);
@@ -466,6 +491,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     @Override
     public java.lang.String[] getProtocols() throws java.rmi.RemoteException {
+      checkEnabled();
       long startTimeStamp = System.currentTimeMillis();
       String methodName = "getProtocols";
       incrementRequest(methodName);

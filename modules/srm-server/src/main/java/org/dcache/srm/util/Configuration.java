@@ -211,6 +211,7 @@ public class Configuration {
     private String vomsdir;
 
     private ImmutableMap<String,String> pingExtraInfo = ImmutableMap.of();
+    private String[] versions;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1148,6 +1149,16 @@ public class Configuration {
     public String getVomsdir()
     {
         return vomsdir;
+    }
+
+    public String[] getVersions()
+    {
+        return versions;
+    }
+
+    public void setVersions(String[] versions)
+    {
+        this.versions = versions;
     }
 
     public class DatabaseParameters

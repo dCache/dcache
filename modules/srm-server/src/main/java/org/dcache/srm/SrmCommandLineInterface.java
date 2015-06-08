@@ -72,6 +72,8 @@ import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -93,6 +95,8 @@ import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.util.Args;
+
+import static java.util.Arrays.asList;
 
 public class SrmCommandLineInterface
         implements CellCommandListener
@@ -652,17 +656,41 @@ public class SrmCommandLineInterface
 
     public String ac_print_srm_counters_$_0(Args args)
     {
-        return srm.getSrmServerV1Counters().toString() +
-                '\n' +
-                srm.getSrmServerV2Counters().toString() +
-                '\n' +
-                srm.getAbstractStorageElementCounters().toString() +
-                '\n' +
-                srm.getSrmServerV1Gauges().toString() +
-                '\n' +
-                srm.getSrmServerV2Gauges().toString() +
-                '\n' +
-                srm.getAbstractStorageElementGauges().toString();
+        List<String> versions = asList(config.getVersions());
+        boolean isVersion1Enabled = versions.contains("1");
+        boolean isVersion2Enabled = versions.contains("2");
+        if (isVersion2Enabled && isVersion1Enabled) {
+            return srm.getSrmServerV1Counters().toString() +
+                   '\n' +
+                   srm.getSrmServerV2Counters().toString() +
+                   '\n' +
+                   srm.getAbstractStorageElementCounters().toString() +
+                   '\n' +
+                   srm.getSrmServerV1Gauges().toString() +
+                   '\n' +
+                   srm.getSrmServerV2Gauges().toString() +
+                   '\n' +
+                   srm.getAbstractStorageElementGauges().toString();
+        }
+        if (isVersion2Enabled && !isVersion1Enabled) {
+            return srm.getSrmServerV2Counters().toString() +
+                   '\n' +
+                   srm.getAbstractStorageElementCounters().toString() +
+                   '\n' +
+                   srm.getSrmServerV2Gauges().toString() +
+                   '\n' +
+                   srm.getAbstractStorageElementGauges().toString();
+        }
+        if (!isVersion2Enabled && isVersion1Enabled) {
+            return srm.getSrmServerV1Counters().toString() +
+                   '\n' +
+                   srm.getAbstractStorageElementCounters().toString() +
+                   '\n' +
+                   srm.getSrmServerV1Gauges().toString() +
+                   '\n' +
+                   srm.getAbstractStorageElementGauges().toString();
+        }
+        return "";
     }
 
     public static final String fh_db_history_log = " Syntax: db history log [on|off] " +
