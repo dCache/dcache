@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.rmi.RemoteException;
 
 /**
  * This class wraps the default Axis Java dispatcher (RPCProvider) to provide
@@ -83,6 +84,13 @@ public class LoggingRPCProvider extends RPCProvider
                         "reason={}, string={}",
                         fault.getClass().getSimpleName(), fault.getFaultCode(),
                         fault.getFaultReason(), fault.getFaultString());
+            } else if(t instanceof RemoteException) {
+                if (t.getCause() == null) {
+                    _log.debug("Invocation produced fault: {}", t.getMessage());
+                } else {
+                    _log.debug("Invocation produced fault: {} (caused by {})",
+                               t.getMessage(), t.getCause());
+                }
             } else if(t instanceof RuntimeException) {
                 _log.error("Bug detected, please report this to " +
                         "support@dCache.org", t);

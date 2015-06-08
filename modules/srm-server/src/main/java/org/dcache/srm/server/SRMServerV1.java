@@ -26,27 +26,20 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
     private final RequestExecutionTimeGauges<String> srmServerGauges;
     private final boolean isClientDNSLookup;
 
-    public SRMServerV1() throws java.rmi.RemoteException {
-       try
-       {
-          // srmConn = SrmDCacheConnector.getInstance();
-          log = LoggerFactory.getLogger(this.getClass().getName());
+    public SRMServerV1()
+    {
+         log = LoggerFactory.getLogger(this.getClass().getName());
+         srm = Axis.getSRM();
+         Configuration config = Axis.getConfiguration();
 
-             srm = Axis.getSRM();
-             Configuration config = Axis.getConfiguration();
-
-             srmAuth = new SrmAuthorizer(config.getAuthorization(),
-                    srm.getRequestCredentialStorage(),
-                    config.isClientDNSLookup(),
-                    config.getVomsdir(),
-                    config.getCaCertificatePath());
-             isClientDNSLookup = config.isClientDNSLookup();
-             srmServerCounters = srm.getSrmServerV1Counters();
-             srmServerGauges = srm.getSrmServerV1Gauges();
-       } catch (Exception e) {
-           throw new java.rmi.RemoteException("exception",e);
-       }
-
+         srmAuth = new SrmAuthorizer(config.getAuthorization(),
+                srm.getRequestCredentialStorage(),
+                config.isClientDNSLookup(),
+                config.getVomsdir(),
+                config.getCaCertificatePath());
+         isClientDNSLookup = config.isClientDNSLookup();
+         srmServerCounters = srm.getSrmServerV1Counters();
+         srmServerGauges = srm.getSrmServerV1Gauges();
     }
 
     private String getRemoteHost() {
