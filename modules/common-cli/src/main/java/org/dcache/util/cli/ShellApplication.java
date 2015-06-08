@@ -168,8 +168,8 @@ public abstract class ShellApplication implements Closeable
             if (out.charAt(out.length() - 1) != '\n') {
                 console.println();
             }
-            console.flush();
         }
+        console.flush();
     }
 
     /**
