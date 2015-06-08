@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.door.proxy;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
@@ -33,9 +34,14 @@ public interface ProxyIoFactory {
     void shutdownAdapter(stateid4 stateid);
 
     /**
-     * Allow the caller to iterate over all currently active proxies.
+     * Performs the given action for active {@link ProxyIoAdapter}.
      */
-    Iterable<ProxyIoAdapter> getAdapters();
+    void forEach(Consumer<ProxyIoAdapter> action);
+
+    /**
+     * Get number of active adapter.
+     */
+    int getCount();
 
     /**
      * Close all active proxies and free up any additional resources.

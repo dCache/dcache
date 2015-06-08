@@ -194,7 +194,12 @@ retry:  while (true) {
     }
 
     @Override
-    public Iterable<ProxyIoAdapter> getAdapters() {
-        return _proxyIO.asMap().values();
+    public void forEach(Consumer<ProxyIoAdapter> action) {
+        _proxyIO.asMap().values().forEach(action);
+    }
+
+    @Override
+    public int getCount() {
+        return (int)_proxyIO.size();
     }
 }
