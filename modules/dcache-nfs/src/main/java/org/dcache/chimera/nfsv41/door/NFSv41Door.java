@@ -861,8 +861,9 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String toString() {
-            return String.format("    %s : %s@%s, OS=%s,cl=[%s]",
+            return String.format("    %s : %s %s@%s, OS=%s,cl=[%s]",
                     getPnfsId(),
+                    isWrite() ? "WRITE" : "READ",
                     getMoverId(),
                     getPool(),
                     ((NFS4ProtocolInfo)getProtocolInfoForPool()).stateId(),
