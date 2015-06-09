@@ -302,7 +302,7 @@ public final class Storage
      * Used during  uploads to verify the availability of a space reservation. In case
      * of stale data, a TURL may be handed out to the client even though the reservation
      * doesn't exist or is full. In that case the upload to the TURL will fail. This is
-     * however a failure path to would exist in any case, as the reservation may expire
+     * however a failure path that would exist in any case, as the reservation may expire
      * after handing out the TURL.
      */
     private final LoadingCache<String,Optional<Space>> spaces =
@@ -2242,13 +2242,34 @@ public final class Storage
 
     @Override
     public void srmReleaseSpace(SRMUser user,
-            String spaceToken,
+            final String spaceToken,
             Long releaseSizeInBytes, // everything is null
-            SrmReleaseSpaceCallback callbacks) {
+            final SrmReleaseSpaceCallback callbacks) {
         if (_isSpaceManagerEnabled) {
             SrmReleaseSpaceCompanion.releaseSpace(((DcacheUser) user).getSubject(),
-                    spaceToken, releaseSizeInBytes, callbacks, _spaceManagerStub, _executor);
-            spaces.invalidate(spaceToken);
+                                                  spaceToken, releaseSizeInBytes, new SrmReleaseSpaceCallback()
+                    {
+                        public void failed(String reason)
+                        {
+                            callbacks.failed(reason);
+                        }
+
+                        public void internalError(String reason)
+                        {
+                            callbacks.internalError(reason);
+                        }
+
+                        public void invalidRequest(String reason)
+                        {
+                            callbacks.invalidRequest(reason);
+                        }
+
+                        public void success(String spaceReservationToken, long remainingSpaceSize)
+                        {
+                            spaces.invalidate(spaceToken);
+                            callbacks.success(spaceReservationToken, remainingSpaceSize);
+                        }
+                    }, _spaceManagerStub, _executor);
         } else {
             callbacks.failed(SPACEMANAGER_DISABLED_MESSAGE);
         }
