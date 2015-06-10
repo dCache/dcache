@@ -18,7 +18,8 @@ public class Crypto
     public enum CipherFlag
     {
         DISABLE_BROKEN_DH,
-        DISABLE_EC
+        DISABLE_EC,
+        DISABLE_RC4
     }
 
     private static final Splitter CIPHER_FLAG_SPLITTER =
@@ -280,6 +281,39 @@ public class Crypto
     };
 
     /**
+     * A list of Ciphers that make use of the RC4 (Rivest Cipher 4) stream
+     * cipher.  RC4 has several potential attacks and general recommendation
+     * seems to disable RC4 whenever possible, as presented in RFC 7465.
+     *
+     * This list was generated with the following command:
+     *
+     * sed -n 's%^.*add( *"\([^"]*_RC4_[^"]*\)".*%            "\1",%p'  sun/security/ssl/CipherSuite.java|sort
+     */
+    public static final String[] RC4_CIPHERS = new String[] {
+            "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
+            "SSL_DH_anon_WITH_RC4_128_MD5",
+            "SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",
+            "SSL_DHE_DSS_WITH_RC4_128_SHA",
+            "SSL_RSA_EXPORT1024_WITH_RC4_56_SHA",
+            "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
+            "SSL_RSA_WITH_RC4_128_MD5",
+            "SSL_RSA_WITH_RC4_128_SHA",
+            "TLS_DHE_PSK_WITH_RC4_128_SHA",
+            "TLS_ECDH_anon_WITH_RC4_128_SHA",
+            "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+            "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+            "TLS_ECDHE_PSK_WITH_RC4_128_SHA",
+            "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+            "TLS_ECDH_RSA_WITH_RC4_128_SHA",
+            "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
+            "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
+            "TLS_KRB5_WITH_RC4_128_MD5",
+            "TLS_KRB5_WITH_RC4_128_SHA",
+            "TLS_PSK_WITH_RC4_128_SHA",
+            "TLS_RSA_PSK_WITH_RC4_128_SHA",
+    };
+
+    /**
      * @throws IllegalArgumentException if the value could not be parsed
      */
     public static String[] getBannedCipherSuitesFromConfigurationValue(String value)
@@ -307,6 +341,9 @@ public class Crypto
                 break;
             case DISABLE_EC:
                 banned.addAll(asList(EC_CIPHERS));
+                break;
+            case DISABLE_RC4:
+                banned.addAll(asList(RC4_CIPHERS));
                 break;
             }
         }
