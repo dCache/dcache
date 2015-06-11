@@ -2003,41 +2003,43 @@ class FsSqlDriver {
     void createTags(Connection dbConnection, FsInode inode, int uid, int gid, int mode, Map<String, byte[]> tags)
             throws SQLException
     {
-        PreparedStatement stmt = null;
-        try {
-            Map<String,String> ids = new HashMap<>();
-            Timestamp now = new Timestamp(System.currentTimeMillis());
+        if (!tags.isEmpty()) {
+            PreparedStatement stmt = null;
+            try {
+                Map<String, String> ids = new HashMap<>();
+                Timestamp now = new Timestamp(System.currentTimeMillis());
 
-            stmt = dbConnection.prepareStatement("INSERT INTO t_tags_inodes VALUES(?,?,1,?,?,?,?,?,?,?)");
-            for (Map.Entry<String, byte[]> tag : tags.entrySet()) {
-                String id = UUID.randomUUID().toString().toUpperCase();
-                ids.put(tag.getKey(), id);
-                byte[] value = tag.getValue();
-                int len = value.length;
-                stmt.setString(1, id);
-                stmt.setInt(2, mode | UnixPermission.S_IFREG);
-                stmt.setInt(3, uid);
-                stmt.setInt(4, gid);
-                stmt.setLong(5, len);
-                stmt.setTimestamp(6, now);
-                stmt.setTimestamp(7, now);
-                stmt.setTimestamp(8, now);
-                stmt.setBinaryStream(9, new ByteArrayInputStream(value), len);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-            stmt.close();
+                stmt = dbConnection.prepareStatement("INSERT INTO t_tags_inodes VALUES(?,?,1,?,?,?,?,?,?,?)");
+                for (Map.Entry<String, byte[]> tag : tags.entrySet()) {
+                    String id = UUID.randomUUID().toString().toUpperCase();
+                    ids.put(tag.getKey(), id);
+                    byte[] value = tag.getValue();
+                    int len = value.length;
+                    stmt.setString(1, id);
+                    stmt.setInt(2, mode | UnixPermission.S_IFREG);
+                    stmt.setInt(3, uid);
+                    stmt.setInt(4, gid);
+                    stmt.setLong(5, len);
+                    stmt.setTimestamp(6, now);
+                    stmt.setTimestamp(7, now);
+                    stmt.setTimestamp(8, now);
+                    stmt.setBinaryStream(9, new ByteArrayInputStream(value), len);
+                    stmt.addBatch();
+                }
+                stmt.executeBatch();
+                stmt.close();
 
-            stmt = dbConnection.prepareStatement("INSERT INTO t_tags VALUES(?,?,?,1)");
-            for (Map.Entry<String, String> tag : ids.entrySet()) {
-                stmt.setString(1, inode.toString()); // ipnfsid
-                stmt.setString(2, tag.getKey());     // itagname
-                stmt.setString(3, tag.getValue());   // itagid
-                stmt.addBatch();
+                stmt = dbConnection.prepareStatement("INSERT INTO t_tags VALUES(?,?,?,1)");
+                for (Map.Entry<String, String> tag : ids.entrySet()) {
+                    stmt.setString(1, inode.toString()); // ipnfsid
+                    stmt.setString(2, tag.getKey());     // itagname
+                    stmt.setString(3, tag.getValue());   // itagid
+                    stmt.addBatch();
+                }
+                stmt.executeBatch();
+            } finally {
+                SqlHelper.tryToClose(stmt);
             }
-            stmt.executeBatch();
-        } finally {
-            SqlHelper.tryToClose(stmt);
         }
     }
 

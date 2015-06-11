@@ -1085,6 +1085,25 @@ public class ChimeraNameSpaceProvider
         return parent.mkdir(name, uid, gid, mode);
     }
 
+    private ExtendedInode installSystemDirectory(FsPath path, int mode, List<ACE> acl, Map<String, byte[]> tags)
+            throws ChimeraFsException, CacheException
+    {
+        ExtendedInode inode;
+        try {
+            inode = lookupDirectory(Subjects.ROOT, path);
+        } catch (FileNotFoundCacheException e) {
+            ExtendedInode parentOfPath = installDirectory(Subjects.ROOT, path.getParent(), 0, 0, mode);
+            try {
+                inode = parentOfPath.mkdir(path.getName(), 0, 0, mode, acl, tags);
+            } catch (FileExistsChimeraFsException e1) {
+                /* Concurrent directory creation. Do another lookup.
+                 */
+                inode = lookupDirectory(Subjects.ROOT, path);
+            }
+        }
+        return inode;
+    }
+
     private ExtendedInode installDirectory(Subject subject, FsPath path, int uid, int gid, int mode) throws ChimeraFsException, CacheException
     {
         ExtendedInode inode;
@@ -1226,7 +1245,7 @@ public class ChimeraNameSpaceProvider
 
             /* Upload directory must exist and have the right permissions.
              */
-            FsInode inodeOfUploadDir = installDirectory(Subjects.ROOT, uploadDirectory, 0, 0, 0711);
+            FsInode inodeOfUploadDir = installSystemDirectory(uploadDirectory, 0711, Collections.emptyList(), Collections.emptyMap());
             if (inodeOfUploadDir.statCache().getUid() != 0) {
                 _log.error("Owner must be root: {}", uploadDirectory);
                 throw new CacheException("Owner must be root: " + uploadDirectory);
