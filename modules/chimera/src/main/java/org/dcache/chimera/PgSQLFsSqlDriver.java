@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.commons.util.SqlHelper;
 
@@ -55,13 +56,14 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
 
     @Override
     FsInode mkdir(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode,
-                  Map<String, byte[]> tags) throws ChimeraFsException, SQLException
+                  List<ACE> acl, Map<String, byte[]> tags) throws ChimeraFsException, SQLException
     {
         FsInode inode = mkdir(dbConnection, parent, name, owner, group, mode);
         /* There is a trigger that copies tags on mkdir, but we don't want those tags.
          */
         removeTag(dbConnection, inode);
         createTags(dbConnection, inode, owner, group, mode & 0666, tags);
+        setACL(dbConnection, inode, acl);
         return inode;
     }
 
