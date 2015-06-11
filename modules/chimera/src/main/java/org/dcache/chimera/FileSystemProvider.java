@@ -124,11 +124,12 @@ public interface FileSystemProvider extends Closeable {
      * @param owner UID of owner
      * @param group GID of group
      * @param mode Permissions
+     * @param acl ACL to set on new directory
      * @param tags Tags to set on new directory
      * @return Inode of newly created directory
      * @throws ChimeraFsException
      */
-    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode, Map<String,byte[]> tags)
+    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode, List<ACE> acl, Map<String, byte[]> tags)
             throws ChimeraFsException;
 
     public abstract FsInode path2inode(String path) throws ChimeraFsException;
