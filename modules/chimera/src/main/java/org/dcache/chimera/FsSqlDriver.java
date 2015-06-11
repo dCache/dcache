@@ -426,10 +426,11 @@ class FsSqlDriver {
     }
 
     FsInode mkdir(Connection dbConnection, FsInode parent, String name, int owner, int group, int mode,
-                  Map<String,byte[]> tags) throws ChimeraFsException, SQLException
+            List<ACE> acl, Map<String,byte[]> tags) throws ChimeraFsException, SQLException
     {
         FsInode inode = mkdir(dbConnection, parent, name, owner, group, mode);
         createTags(dbConnection, inode, owner, group, mode & 0666, tags);
+        setACL(dbConnection, inode, acl);
         return inode;
     }
 
@@ -2478,9 +2479,10 @@ class FsSqlDriver {
      * @param dbConnection
      * @param inode
      * @param acl
+     * @return true if ACLs of inode might have been modified, false otherwise
      * @throws SQLException
      */
-    void setACL(Connection dbConnection, FsInode inode, List<ACE> acl) throws SQLException {
+    public boolean setACL(Connection dbConnection, FsInode inode, List<ACE> acl) throws SQLException {
 
         PreparedStatement stDeleteACL = null;
         PreparedStatement stAddACL = null;
@@ -2488,33 +2490,32 @@ class FsSqlDriver {
         try {
             stDeleteACL = dbConnection.prepareStatement(sqlDeleteACL);
             stDeleteACL.setString(1, inode.toString());
-            stDeleteACL.executeUpdate();
+            boolean modified = stDeleteACL.executeUpdate() > 0;
 
-            if(acl.isEmpty()) {
-                return;
+            if (!acl.isEmpty()) {
+                stAddACL = dbConnection.prepareStatement(sqlAddACL);
+
+                int order = 0;
+                RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
+                for (ACE ace : acl) {
+
+                    stAddACL.setString(1, inode.toString());
+                    stAddACL.setInt(2, rsType.getValue());
+                    stAddACL.setInt(3, ace.getType().getValue());
+                    stAddACL.setInt(4, ace.getFlags());
+                    stAddACL.setInt(5, ace.getAccessMsk());
+                    stAddACL.setInt(6, ace.getWho().getValue());
+                    stAddACL.setInt(7, ace.getWhoID());
+                    stAddACL.setString(8, ace.getAddressMsk());
+                    stAddACL.setInt(9, order);
+
+                    stAddACL.addBatch();
+                    order++;
+                }
+                stAddACL.executeBatch();
+                modified = true;
             }
-            stAddACL = dbConnection.prepareStatement(sqlAddACL);
-
-            int order = 0;
-            RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
-            for (ACE ace : acl) {
-
-                stAddACL.setString(1, inode.toString());
-                stAddACL.setInt(2, rsType.getValue() );
-                stAddACL.setInt(3, ace.getType().getValue());
-                stAddACL.setInt(4, ace.getFlags());
-                stAddACL.setInt(5, ace.getAccessMsk());
-                stAddACL.setInt(6, ace.getWho().getValue());
-                stAddACL.setInt(7, ace.getWhoID());
-                stAddACL.setString(8, ace.getAddressMsk());
-                stAddACL.setInt(9, order);
-
-                stAddACL.addBatch();
-                order++;
-            }
-            stAddACL.executeBatch();
-	    // emty stat will update ctime any way
-            setInodeAttributes(dbConnection, inode, 0, new Stat());
+            return modified;
         }finally{
             SqlHelper.tryToClose(stDeleteACL);
             SqlHelper.tryToClose(stAddACL);
