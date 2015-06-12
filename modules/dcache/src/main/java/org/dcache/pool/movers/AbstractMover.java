@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,6 +26,7 @@ import javax.security.auth.Subject;
 
 import java.io.FileNotFoundException;
 import java.io.InterruptedIOException;
+import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 
 import diskCacheV111.util.CacheException;
@@ -246,7 +247,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         case WRITE:
             try {
                 channel = new FileRepositoryChannel(_handle.getFile(), "rw");
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 throw new DiskErrorCacheException(
                         "File could not be created; please check the file system", e);
             }
@@ -254,7 +255,7 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
         case READ:
             try {
                 channel = new FileRepositoryChannel(_handle.getFile(), "r");
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 throw new DiskErrorCacheException("File could not be opened  [" +
                         e.getMessage() + "]; please check the file system", e);
             }
