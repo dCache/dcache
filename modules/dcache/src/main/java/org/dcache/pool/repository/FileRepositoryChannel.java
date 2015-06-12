@@ -16,7 +16,13 @@ public class FileRepositoryChannel implements RepositoryChannel {
     private final RandomAccessFile _raf;
     private final File _file;
 
-    public FileRepositoryChannel(String f, String mode) throws FileNotFoundException {
+    /*
+     * Cached value of files size. If value is -1, then we have to get file size
+     * by querying the underlying file system.
+     */
+    private final long _fileSize;
+
+    public FileRepositoryChannel(String f, String mode) throws FileNotFoundException, IOException {
         this(new File(f), mode);
     }
 
@@ -80,10 +86,11 @@ public class FileRepositoryChannel implements RepositoryChannel {
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
      */
-    public FileRepositoryChannel(File f, String mode) throws FileNotFoundException {
+    public FileRepositoryChannel(File f, String mode) throws FileNotFoundException, IOException {
         _file = f;
         _raf = new RandomAccessFile(f, mode);
         _fileChannel = _raf.getChannel();
+        _fileSize = mode.equals("r") ? _raf.length() : -1;
     }
 
     @Override
@@ -99,7 +106,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
 
     @Override
     public long size() throws IOException {
-        return _file.length();
+        return _fileSize == -1 ? _file.length() : _fileSize;
     }
 
     @Override
