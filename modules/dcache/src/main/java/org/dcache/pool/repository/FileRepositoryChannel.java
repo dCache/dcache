@@ -3,17 +3,29 @@ package org.dcache.pool.repository;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileAttribute;
+import java.util.EnumSet;
+import java.util.Set;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class FileRepositoryChannel implements RepositoryChannel {
 
+    private static final FileAttribute<?>[] NO_ATTRIBUTES = new FileAttribute<?>[0];
+
+    private static final Set<StandardOpenOption> O_READ = EnumSet.of(READ);
+    private static final Set<StandardOpenOption> O_RW = EnumSet.of(READ, WRITE, CREATE);
+    private static final Set<StandardOpenOption> O_RWD = EnumSet.of(READ, WRITE, CREATE, DSYNC);
+    private static final Set<StandardOpenOption> O_RWS = EnumSet.of(READ, WRITE, CREATE, DSYNC, SYNC);
+
     private final FileChannel _fileChannel;
-    private final RandomAccessFile _raf;
     private final File _file;
 
     /*
@@ -22,8 +34,8 @@ public class FileRepositoryChannel implements RepositoryChannel {
      */
     private final long _fileSize;
 
-    public FileRepositoryChannel(String f, String mode) throws FileNotFoundException, IOException {
-        this(new File(f), mode);
+    public FileRepositoryChannel(String file, String mode) throws FileNotFoundException, IOException {
+        this(new File(file), mode);
     }
 
     /**
@@ -86,11 +98,28 @@ public class FileRepositoryChannel implements RepositoryChannel {
      *            that name cannot be created, or if some other error occurs
      *            while opening or creating the file
      */
-    public FileRepositoryChannel(File f, String mode) throws FileNotFoundException, IOException {
-        _file = f;
-        _raf = new RandomAccessFile(f, mode);
-        _fileChannel = _raf.getChannel();
-        _fileSize = mode.equals("r") ? _raf.length() : -1;
+    public FileRepositoryChannel(File file, String mode) throws FileNotFoundException, IOException {
+        _file = file;
+        Path path = file.toPath();
+        Set<StandardOpenOption> openOptions;
+        switch (mode) {
+            case "rws":
+                openOptions = O_RWS;
+                break;
+            case "rwd":
+                openOptions = O_RWD;
+                break;
+            case "rw":
+                openOptions = O_RW;
+                break;
+            case "r":
+                openOptions = O_READ;
+                break;
+            default:
+                throw new IllegalArgumentException("Illegal mode \"" + mode + "\"");
+        }
+        _fileChannel = FileChannel.open(path, openOptions, NO_ATTRIBUTES);
+        _fileSize = mode.equals("r") ? _fileChannel.size() : -1;
     }
 
     @Override
@@ -111,7 +140,7 @@ public class FileRepositoryChannel implements RepositoryChannel {
 
     @Override
     public void sync() throws SyncFailedException, IOException {
-        _raf.getFD().sync();
+        _fileChannel.force(false);
     }
 
     @Override
