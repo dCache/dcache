@@ -228,11 +228,11 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.append(" Restore Timeout  : ").print(stageTimeout / 1000L);
+        pw.append(" Restore Timeout  : ").print(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
         pw.println(" seconds");
-        pw.append("   Store Timeout  : ").print(flushTimeout / 1000L);
+        pw.append("   Store Timeout  : ").print(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
         pw.println(" seconds");
-        pw.append("  Remove Timeout  : ").print(removeTimeout / 1000L);
+        pw.append("  Remove Timeout  : ").print(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
         pw.println(" seconds");
         pw.println("  Job Queues (active/queued)");
         pw.append("    to store   ").print(getActiveStoreJobs());
@@ -244,6 +244,14 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         pw.append("    delete     " + "").print(getActiveRemoveJobs());
         pw.append("/").print(getRemoveQueueSize());
         pw.println();
+    }
+
+    @Override
+    public void printSetup(PrintWriter pw)
+    {
+        pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
+        pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
+        pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
     }
 
     /**
