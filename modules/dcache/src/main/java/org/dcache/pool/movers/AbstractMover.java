@@ -243,25 +243,11 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     public RepositoryChannel openChannel() throws DiskErrorCacheException
     {
         RepositoryChannel channel;
-        switch (getIoMode()) {
-        case WRITE:
-            try {
-                channel = new FileRepositoryChannel(_handle.getFile(), "rw");
-            } catch (IOException e) {
-                throw new DiskErrorCacheException(
-                        "File could not be created; please check the file system", e);
-            }
-            break;
-        case READ:
-            try {
-                channel = new FileRepositoryChannel(_handle.getFile(), "r");
-            } catch (IOException e) {
-                throw new DiskErrorCacheException("File could not be opened  [" +
-                        e.getMessage() + "]; please check the file system", e);
-            }
-            break;
-        default:
-            throw new RuntimeException("Invalid I/O mode");
+        try {
+            channel = new FileRepositoryChannel(_handle.getFile(), getIoMode().toOpenString());
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(
+                    "File could not be opened; please check the file system: " + e.getMessage(), e);
         }
         return channel;
     }
