@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2013 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2013 - 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,6 +36,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
+import java.io.IOException;
 
 import org.dcache.pool.classic.Cancellable;
 import org.dcache.pool.classic.TransferService;
@@ -242,25 +243,11 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
     public RepositoryChannel openChannel() throws DiskErrorCacheException
     {
         RepositoryChannel channel;
-        switch (getIoMode()) {
-        case WRITE:
-            try {
-                channel = new FileRepositoryChannel(_handle.getFile(), "rw");
-            } catch (FileNotFoundException e) {
-                throw new DiskErrorCacheException(
-                        "File could not be created; please check the file system", e);
-            }
-            break;
-        case READ:
-            try {
-                channel = new FileRepositoryChannel(_handle.getFile(), "r");
-            } catch (FileNotFoundException e) {
-                throw new DiskErrorCacheException("File could not be opened  [" +
-                        e.getMessage() + "]; please check the file system", e);
-            }
-            break;
-        default:
-            throw new RuntimeException("Invalid I/O mode");
+        try {
+            channel = new FileRepositoryChannel(_handle.getFile(), getIoMode().toOpenString());
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(
+                    "File could not be created; please check the file system", e);
         }
         return channel;
     }
