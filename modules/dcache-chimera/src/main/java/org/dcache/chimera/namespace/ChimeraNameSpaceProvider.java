@@ -18,6 +18,7 @@ import javax.security.auth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -1245,7 +1246,8 @@ public class ChimeraNameSpaceProvider
 
             /* Upload directory must exist and have the right permissions.
              */
-            FsInode inodeOfUploadDir = installSystemDirectory(uploadDirectory, 0711, Collections.emptyList(), Collections.emptyMap());
+            FsInode inodeOfUploadDir = installSystemDirectory(uploadDirectory, 0711, Collections.<ACE>emptyList(),
+                                                              Collections.<String,byte[]>emptyMap());
             if (inodeOfUploadDir.statCache().getUid() != 0) {
                 _log.error("Owner must be root: {}", uploadDirectory);
                 throw new CacheException("Owner must be root: " + uploadDirectory);
