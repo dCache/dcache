@@ -138,8 +138,9 @@ printLimitedClassPath() # $1..$n = list of jar files
     classpath="$(printPluginClassPath)"
     classes_path="$(getProperty dcache.paths.classes)"
     for name in "$@"; do
-        jar="$(echo $classes_path/$name-*.jar)"
-        classpath="${classpath}:${jar}"
+        for jar in $classes_path/$name-*.jar; do
+            classpath="${classpath}:${jar}"
+        done
     done
 
     echo ${classpath#:}
