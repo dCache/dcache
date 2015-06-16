@@ -28,6 +28,7 @@ import com.google.common.io.ByteSource;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.util.AccessLatency;
@@ -35,6 +36,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 
+import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.ChimeraFsException;
@@ -120,6 +122,13 @@ public class ExtendedInode extends FsInode
     public ExtendedInode mkdir(String name, int owner, int group, int mode) throws ChimeraFsException
     {
         return new ExtendedInode(this, super.mkdir(name, owner, group, mode));
+    }
+
+    @Override
+    public ExtendedInode mkdir(String name, int owner, int group, int mode, List<ACE> acl, Map<String, byte[]> tags)
+            throws ChimeraFsException
+    {
+        return new ExtendedInode(this, super.mkdir(name, owner, group, mode, acl, tags));
     }
 
     @Override
