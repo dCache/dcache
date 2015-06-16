@@ -1306,6 +1306,8 @@ public class DcacheResourceFactory
      */
     private class WriteTransfer extends HttpTransfer
     {
+        private boolean hasLength;
+
         public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
                 throws URISyntaxException
         {
@@ -1325,8 +1327,9 @@ public class DcacheResourceFactory
                     connection.setRequestMethod("PUT");
                     connection.setRequestProperty("Connection", "Close");
                     connection.setDoOutput(true);
-                    if (getFileAttributes().isDefined(SIZE)) {
-                        connection.setFixedLengthStreamingMode(getFileAttributes().getSize());
+                    FileAttributes fileAttributes = getFileAttributes();
+                    if (hasLength || fileAttributes.isDefined(SIZE) && fileAttributes.getSize() > 0) {
+                        connection.setFixedLengthStreamingMode(fileAttributes.getSize());
                     } else {
                         connection.setChunkedStreamingMode(8192);
                     }
@@ -1361,6 +1364,7 @@ public class DcacheResourceFactory
         public void setLength(Long length)
         {
             if (length != null) {
+                hasLength = true;
                 super.setLength(length);
             }
         }
