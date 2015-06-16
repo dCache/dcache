@@ -30,7 +30,7 @@ public class RandomPoolSelectionStrategy
                     public boolean apply(PoolManagerPoolInformation pool)
                     {
                         PoolCostInfo.PoolSpaceInfo info = pool.getPoolCostInfo().getSpaceInfo();
-                        return info.getFreeSpace() >= info.getGap();
+                        return info.getFreeSpace() + info.getRemovableSpace() >= info.getGap();
                     }
                 });
         if (isEmpty(nonFullPools)) {
