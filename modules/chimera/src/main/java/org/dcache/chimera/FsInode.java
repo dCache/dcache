@@ -18,6 +18,10 @@ package org.dcache.chimera;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 
 /**
@@ -315,6 +319,14 @@ public class FsInode {
      */
     public FsInode mkdir(String name, int owner, int group, int mode) throws ChimeraFsException {
         return _fs.mkdir(this, name, owner, group, mode);
+    }
+
+    /**
+     * crate a directory with name 'newDir' in current inode with different access rights
+     */
+    public FsInode mkdir(String name, int owner, int group, int mode, List<ACE> acl, Map<String, byte[]> tags)
+            throws ChimeraFsException {
+        return _fs.mkdir(this, name, owner, group, mode, acl, tags);
     }
 
     /**

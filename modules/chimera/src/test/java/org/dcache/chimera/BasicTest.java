@@ -8,6 +8,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +79,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test
     public void testMkDirWithTags() throws Exception {
         byte[] bytes = "value".getBytes();
-        FsInode dir1 = _fs.mkdir(_rootInode, "junit", 1, 2, 02755, ImmutableMap.of("tag", bytes));
+        FsInode dir1 = _fs.mkdir(_rootInode, "junit", 1, 2, 02755, Collections.<ACE>emptyList(), ImmutableMap.of("tag", bytes));
         assertThat(_fs.getAllTags(dir1), hasEntry("tag", bytes));
     }
 
