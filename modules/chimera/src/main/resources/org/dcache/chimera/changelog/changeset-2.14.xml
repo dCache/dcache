@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="behrmann" id="1" dbms="hsqldb">
+        <createProcedure>
+            CREATE TRIGGER tgs_insert_acl_dir AFTER INSERT ON t_dirs
+              REFERENCING NEW ROW new
+              FOR EACH ROW WHEN (new.iname = '..' AND (SELECT itype FROM t_inodes WHERE ipnfsid = new.ipnfsid) = 16384)
+                INSERT INTO t_acl
+                  SELECT new.ipnfsid, 0, type, BITANDNOT(flags, 8), access_msk, who, who_id, address_msk, ace_order
+                  FROM t_acl
+                  WHERE rs_id = new.iparent AND BITAND(flags, 3) > 0;
+        </createProcedure>
+        <createProcedure>
+            CREATE TRIGGER tgs_insert_acl_file AFTER INSERT ON t_dirs
+              REFERENCING NEW ROW new
+              FOR EACH ROW WHEN (new.iname != '..' OR (SELECT itype FROM t_inodes WHERE ipnfsid = new.ipnfsid) != 16384)
+                INSERT INTO t_acl
+                  SELECT new.ipnfsid, 1, type, BITANDNOT(flags, 11), access_msk, who, who_id, address_msk, ace_order
+                  FROM t_acl
+                  WHERE rs_id = new.iparent AND BITAND(flags, 1) > 0;
+        </createProcedure>
+    </changeSet>
+</databaseChangeLog>
