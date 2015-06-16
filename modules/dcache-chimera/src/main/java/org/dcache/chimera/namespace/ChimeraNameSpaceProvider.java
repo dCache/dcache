@@ -42,6 +42,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.acl.ACE;
 import org.dcache.acl.ACL;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
@@ -1036,6 +1037,25 @@ public class ChimeraNameSpaceProvider
         return parent.mkdir(name, uid, gid, mode);
     }
 
+    private ExtendedInode installSystemDirectory(FsPath path, int mode, List<ACE> acl, Map<String, byte[]> tags)
+            throws ChimeraFsException, CacheException
+    {
+        ExtendedInode inode;
+        try {
+            inode = lookupDirectory(Subjects.ROOT, path);
+        } catch (FileNotFoundCacheException e) {
+            ExtendedInode parentOfPath = installDirectory(Subjects.ROOT, path.getParent(), 0, 0, mode);
+            try {
+                inode = parentOfPath.mkdir(path.getName(), 0, 0, mode, acl, tags);
+            } catch (FileExistsChimeraFsException e1) {
+                /* Concurrent directory creation. Do another lookup.
+                 */
+                inode = lookupDirectory(Subjects.ROOT, path);
+            }
+        }
+        return inode;
+    }
+
     private ExtendedInode installDirectory(Subject subject, FsPath path, int uid, int gid, int mode) throws ChimeraFsException, CacheException
     {
         ExtendedInode inode;
@@ -1137,24 +1157,11 @@ public class ChimeraNameSpaceProvider
                 mode = parentOfPath.statCache().getMode() & UMASK_DIR;
             }
 
-            /* Upload directory may optionally be relative to the user's root path. Whether
-             * that's the case depends on if the configured upload directory is an absolute
-             * or relative path.
+            /* ACLs are copied from real parent to the temporary upload directory
+             * such that the upload is allowed (in case write permissions rely
+             * on ACLs) and such that the file will inherit the correct ACLs.
              */
-            FsPath uploadDirectory = new FsPath(rootPath);
-            uploadDirectory.add(String.format(_uploadDirectory, threadId.get()));
-
-            /* Upload directory must exist and have the right permissions.
-             */
-            FsInode inodeOfUploadDir = installDirectory(Subjects.ROOT, uploadDirectory, 0, 0, 0711);
-            if (inodeOfUploadDir.statCache().getUid() != 0) {
-                _log.error("Owner must be root: {}", uploadDirectory);
-                throw new CacheException("Owner must be root: " + uploadDirectory);
-            }
-            if ((inodeOfUploadDir.statCache().getMode() & UnixPermission.S_PERMS) != 0711) {
-                _log.error("File mode must be 0711: {}", uploadDirectory);
-                throw new CacheException("File mode must be 0711: " + uploadDirectory);
-            }
+            List<ACE> acl = _fs.getACL(parentOfPath);
 
             /* The temporary upload directory has the same tags as the real parent,
              * except target file specific properties are stored as tags local to
@@ -1181,10 +1188,29 @@ public class ChimeraNameSpaceProvider
             }
             tags.put(TAG_PATH, path.toString().getBytes(Charsets.UTF_8));
 
+            /* Upload directory may optionally be relative to the user's root path. Whether
+             * that's the case depends on if the configured upload directory is an absolute
+             * or relative path.
+             */
+            FsPath uploadDirectory = new FsPath(rootPath);
+            uploadDirectory.add(String.format(_uploadDirectory, threadId.get()));
+
+            /* Upload directory must exist and have the right permissions.
+             */
+            FsInode inodeOfUploadDir = installSystemDirectory(uploadDirectory, 0711, Collections.emptyList(), Collections.emptyMap());
+            if (inodeOfUploadDir.statCache().getUid() != 0) {
+                _log.error("Owner must be root: {}", uploadDirectory);
+                throw new CacheException("Owner must be root: " + uploadDirectory);
+            }
+            if ((inodeOfUploadDir.statCache().getMode() & UnixPermission.S_PERMS) != 0711) {
+                _log.error("File mode must be 0711: {}", uploadDirectory);
+                throw new CacheException("File mode must be 0711: " + uploadDirectory);
+            }
+
             /* Use cryptographically strong pseudo random UUID to create temporary upload directory.
              */
             UUID uuid = UUID.randomUUID();
-            _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, tags);
+            _fs.mkdir(inodeOfUploadDir, uuid.toString(), uid, gid, mode, acl, tags);
 
             return new FsPath(uploadDirectory, uuid.toString(), path.getName());
         } catch (ChimeraFsException e) {
