@@ -1,15 +1,21 @@
 package org.dcache.chimera.nfsv41.mover;
 
+import com.google.common.io.Files;
+
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import diskCacheV111.util.CacheException;
@@ -59,19 +65,65 @@ public class NfsTransferService extends AbstractCellComponent
     private final long _bootVerifier = System.currentTimeMillis();
     private boolean _sortMultipathList;
 
+    private int _minTcpPort;
+    private int _maxTcpPort;
+
+    /**
+     * file to store TCP port number used by pool.
+     */
+    private File _tcpPortFile;
+
     public void init() throws IOException, GSSException, OncRpcException {
 
-        String dcachePorts = System.getProperty("org.dcache.net.tcp.portrange");
+        _door = new CellStub(getCellEndpoint());
         PortRange portRange;
-        if (dcachePorts != null) {
-            portRange = PortRange.valueOf(dcachePorts);
-        } else {
-            portRange = new PortRange(0);
+        int minTcpPort = _minTcpPort;
+        int maxTcpPort = _maxTcpPort;
+
+        try {
+            String line = Files.readFirstLine(_tcpPortFile, StandardCharsets.US_ASCII);
+            int savedPort = Integer.parseInt(line);
+            if (savedPort >= _minTcpPort && savedPort <= _maxTcpPort) {
+                /*
+                 *if saved port with in the range, then restrict range to a single port
+                 * to enforce it.
+                 */
+                minTcpPort = savedPort;
+                maxTcpPort = savedPort;
+            }
+        } catch (NumberFormatException e) {
+            // garbage in the file.
+            _log.warn("Invalid content in the port file {} : {}", _tcpPortFile, e.getMessage());
+        } catch (FileNotFoundException e) {
         }
 
-        _door = new CellStub(getCellEndpoint());
-        _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
+        boolean bound = false;
+        int retry = 3;
+        BindException bindException = null;
+        do {
+            retry--;
+            portRange = new PortRange(minTcpPort, maxTcpPort);
+            try {
+                _nfsIO = new NFSv4MoverHandler(portRange, _withGss, getCellName(), _door, _bootVerifier);
+                bound = true;
+            } catch (BindException e) {
+                bindException = e;
+                minTcpPort = _minTcpPort;
+                maxTcpPort = _maxTcpPort;
+            }
+        } while (!bound && retry > 0);
+
+        if (!bound) {
+            throw new BindException("Can't bind to a port within the rage: " + portRange + " : " + bindException);
+        }
+
         _localSocketAddresses = localSocketAddresses(NetworkUtils.getLocalAddresses(), _nfsIO.getLocalAddress().getPort());
+
+        // if we had a port range, then store selected port for the next time.
+        if (minTcpPort != maxTcpPort) {
+            _tcpPortFile.delete();
+            Files.write(Integer.toString(_nfsIO.getLocalAddress().getPort()), _tcpPortFile, StandardCharsets.US_ASCII);
+        }
 
         /*
          * we assume, that client's can't handle multipath list correctly
@@ -94,6 +146,20 @@ public class NfsTransferService extends AbstractCellComponent
     @Required
     public void setPostTransferService(PostTransferService postTransferService) {
         _postTransferService = postTransferService;
+    }
+
+    @Required
+    public void setMinTcpPort(int minPort) {
+        _minTcpPort = minPort;
+    }
+
+    @Required
+    public void setMaxTcpPort(int maxPort) {
+        _maxTcpPort = maxPort;
+    }
+
+    public void setTcpPortFile(File path) {
+        _tcpPortFile = path;
     }
 
     public void shutdown() throws IOException {
