@@ -843,7 +843,9 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode, Map<String,byte[]> tags) throws ChimeraFsException
+    public FsInode mkdir(FsInode parent, String name, int owner, int group, int mode,
+                         List<ACE> acl, Map<String, byte[]> tags)
+            throws ChimeraFsException
     {
         checkNameLength(name);
 
@@ -867,7 +869,7 @@ public class JdbcFs implements FileSystemProvider {
                 mode |= UnixPermission.S_ISGID;
             }
 
-            inode = _sqlDriver.mkdir(dbConnection, parent, name, owner, group, mode, tags);
+            inode = _sqlDriver.mkdir(dbConnection, parent, name, owner, group, mode, acl, tags);
             dbConnection.commit();
         } catch (SQLException se) {
 
@@ -2691,7 +2693,9 @@ public class JdbcFs implements FileSystemProvider {
         try {
             dbConnection.setAutoCommit(false);
 
-            _sqlDriver.setACL(dbConnection, inode, acl);
+            if (_sqlDriver.setACL(dbConnection, inode, acl)) {
+                _sqlDriver.setFileCTime(dbConnection, inode, 0, System.currentTimeMillis());
+            }
             dbConnection.commit();
 
         } catch (SQLException e) {
