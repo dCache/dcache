@@ -2,6 +2,9 @@
 
 package  diskCacheV111.services;
 
+import com.google.common.escape.Escaper;
+import com.google.common.escape.Escapers;
+import com.google.common.net.UrlEscapers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,6 +138,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private static final int TRANSFER_OUT = 9;
     private static final int RESTORE      = 10;
     private static final int STORE        = 11;
+
+    private static final Escaper AS_FILENAME = Escapers.builder().
+            addEscape('^', "^o^").
+            addEscape('/', "^s^").
+            build();
+    private static final Escaper AS_PATH_ELEMENT = UrlEscapers.urlPathSegmentEscaper();
 
     private static final String DEFAULT_AUTHOR = "&copy; dCache.org ";
 
@@ -529,7 +538,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                     System.arraycopy(counter, 0, lastInMonth, 0, counter.length);
                 }
                 add(total, counter);
-                html.add(key, list[i].getName()+File.separator+"index.html", counter);
+                html.add(key, AS_PATH_ELEMENT.escape(list[i].getName())+"/index.html", counter);
             } catch(IOException ignored) {}
         }
 
@@ -590,7 +599,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                     System.arraycopy(counter, 0, lastInMonth, 0, counter.length);
                 }
                 add(total, counter);
-                html.add(key, list[i].getName()+File.separator+"index.html", counter);
+                html.add(key, AS_PATH_ELEMENT.escape(list[i].getName())+"/index.html", counter);
             } catch(IOException ignored) {}
         }
         try (PrintWriter pw = new PrintWriter(new FileWriter(new File(dir, "index.html")))) {
@@ -1097,13 +1106,15 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 //
                 // statistics ...
                 //
-                html.add(className, "class-"+className+".html", values);
+                html.add(className, AS_PATH_ELEMENT.escape(AS_FILENAME.escape("class-"+className+".html")), values);
             }
 
+            String filename = AS_FILENAME.escape("pool-" + poolName + ".html");
+
             if (sum != null) {
-                allPoolsHtml.add(poolName, "pool-" + poolName + ".html", sum);
+                allPoolsHtml.add(poolName, AS_PATH_ELEMENT.escape(filename), sum);
             }
-            try (PrintWriter pw = new PrintWriter(new FileWriter(new File(pathBase, "pool-" + poolName + ".html")))) {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(new File(pathBase, filename)))) {
                 html.setPrintWriter(pw);
                 html.dump();
             }
@@ -1153,12 +1164,13 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                 }
                 add(sum, values);
 
-                html.add(poolName, "pool-" + poolName + ".html", values);
+                html.add(poolName, AS_PATH_ELEMENT.escape("pool-" + poolName + ".html"), values);
             }
+            String filename = AS_FILENAME.escape("class-" + className + ".html");
             if (sum != null) {
-                allClassesHtml.add(className, "class-" + className + ".html", sum);
+                allClassesHtml.add(className, AS_PATH_ELEMENT.escape(filename), sum);
             }
-            try (PrintWriter pw = new PrintWriter(new FileWriter(new File(pathBase, "class-" + className + ".html")))) {
+            try (PrintWriter pw = new PrintWriter(new FileWriter(new File(pathBase, filename)))) {
                 html.setPrintWriter(pw);
                 html.dump();
             }
@@ -1509,7 +1521,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
         public void add(String title, String link, long [] counter) {
             Object [] o = new Object[3];
             o[0] = title;
-            o[1] = makeLink(link);
+            o[1] = link;
             o[2] = counter;
             _maxCounterValue = Math.max(_maxCounterValue, getNorm(counter));
             _map.put(title, o);
@@ -1541,21 +1553,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
             }
             printTableTrailer();
             printTrailer(_author+"; Created : "+new Date().toString());
-        }
-
-        private String makeLink(String link) {
-            StringBuilder sb = new StringBuilder();
-            for(int i= 0, n = link.length(); i < n; i ++) {
-                char c = link.charAt(i);
-                switch(c) {
-                    case ':' :
-                        sb.append("%3A");
-                        break;
-                    default :
-                        sb.append(c);
-                }
-            }
-            return sb.toString();
         }
 
         private void printTableHeader() {
