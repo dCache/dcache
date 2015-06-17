@@ -8,12 +8,15 @@ Standards-Version: 3.9.0
 Package: @PackageName@
 Depends: ssh-client, adduser, ssl-cert
 Conflicts: dcache-server
-Recommends: libxml2-utils, python-psycopg2
 Architecture: all
-Suggests: ruby
+Suggests: ruby, libxml2-utils | xsltproc, python-psycopg2
 Description: distributed mass storage system
  dCache is an efficient, modular and configurable mass storage
  management system. It provides a system for storing and retrieving
- huge amounts of data, distributed among a large number of heterogenous server
+ huge amounts of data, distributed among a large number of heterogeneous server
  nodes, under a single virtual filesystem tree with a variety of standard
  access methods.
+ .
+ The GLUE info provider requires either xsltproc or libxml2-utils. The StAR
+ accounting record provider requires python-psycopg2. The example HSM integration
+ script requires ruby.
