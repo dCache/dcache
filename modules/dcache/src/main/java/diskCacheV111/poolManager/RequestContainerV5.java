@@ -1948,7 +1948,7 @@ public class RequestContainerV5
                 return RT_FOUND;
             } catch (PermissionDeniedCacheException e) {
                 setError(e.getRc(), e.getMessage());
-                _log.warn("[p2p] {}", e.toString());
+                _log.info("[p2p] {}", e.toString());
                 return RT_NOT_PERMITTED;
             } catch (SourceCostException e) {
                 setError(e.getRc(), e.getMessage());
