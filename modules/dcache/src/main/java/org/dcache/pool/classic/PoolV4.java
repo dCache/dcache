@@ -700,16 +700,23 @@ public class PoolV4
 
     private boolean isDuplicateIoRequest(CellPath pathFromSource, PoolIoFileMessage message)
     {
-        if (!(message instanceof PoolAcceptFileMessage)
-                && !message.isPool2Pool()) {
-            long id = message.getId();
-            String door = pathFromSource.getSourceAddress().toString();
-            JobInfo job = _ioQueue.findJob(door, id);
-            if (job != null) {
-                switch (_dupRequest) {
+        if (_dupRequest == DUP_REQ_NONE) {
+            // we don't care
+            return false;
+        }
+
+        if ((message instanceof PoolAcceptFileMessage) || message.isPool2Pool()) {
+            // duplicate write and p2p requests are ignored
+            return false;
+        }
+
+        long id = message.getId();
+        String door = pathFromSource.getSourceAddress().toString();
+        JobInfo job = _ioQueue.findJob(door, id);
+        if (job != null) {
+            switch (_dupRequest) {
                 case DUP_REQ_NONE:
-                    _log.info("Dup Request : none <" + door + ":" + id + ">");
-                    break;
+                    throw new RuntimeException("must not reach");
                 case DUP_REQ_IGNORE:
                     _log.info("Dup Request : ignoring <" + door + ":" + id + ">");
                     return true;
@@ -717,12 +724,11 @@ public class PoolV4
                     long jobId = job.getJobId();
                     _log.info("Dup Request : refreshing <" + door + ":"
                             + id + "> old = " + jobId);
-                    _ioQueue.cancel((int)jobId);
+                    _ioQueue.cancel((int) jobId);
                     break;
                 default:
                     throw new RuntimeException("Dup Request : PANIC (code corrupted) <"
                             + door + ":" + id + ">");
-                }
             }
         }
         return false;
