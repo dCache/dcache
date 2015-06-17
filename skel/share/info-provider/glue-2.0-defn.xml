@@ -466,7 +466,9 @@
                 <attr name="GLUE2EndpointInterfaceVersion">2.2</attr>
                 <attr name="GLUE2EndpointCapability">data.management.storage</attr>
                 <attr name="GLUE2EndpointCapability">data.management.transfer</attr>
-                <attr name="GLUE2EndpointURL">httpg://&info-provider.se-unique-id;:<lookup
+                <attr name="GLUE2EndpointURL">httpg://<lookup
+                          path="d:metric[@name='url-name']"><lookup
+                          path="d:metric[@name='FQDN']"/></lookup>:<lookup
                         path="../../d:metric[@name='port']"/>/srm/managerv2</attr>
               </optionally>
 
