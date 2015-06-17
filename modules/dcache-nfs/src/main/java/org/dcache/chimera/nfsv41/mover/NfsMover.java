@@ -71,7 +71,8 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
             ChecksumFactory checksumFactory) {
         super(handle, message, pathToDoor, nfsTransferService, MoverChannel.AllocatorMode.SOFT);
         _nfsIO = nfsTransferService.getNfsMoverHandler();
-        _state = new MoverState();
+        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
+        _state = new MoverState(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
         _namespace = pnfsHandler;
         _bootVerifier = nfsTransferService.getBootVerifier();
         _checksumFactory = checksumFactory;
@@ -112,8 +113,7 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
     }
 
     public stateid4 getStateId() {
-        org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid =  getProtocolInfo().stateId();
-        return new stateid4(legacyStateid.other, legacyStateid.seqid.value);
+        return _state.stateid();
     }
 
     public byte[] getNfsFilehandle() {
@@ -197,8 +197,8 @@ public class NfsMover extends MoverChannelMover<NFS4ProtocolInfo, NfsMover> {
      */
     private class MoverState extends NFS4State {
 
-        MoverState() {
-            super(NfsMover.this.getStateId());
+        MoverState(stateid4 stateid) {
+            super(stateid);
         }
 
         @Override
