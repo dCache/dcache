@@ -84,8 +84,8 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
             /*
              *  Add all the standard queues
              */
-            addQueueInfo(update, pathToQueues, "store", thisPoolInfo.getStoreQueue(), metricLifetime);
-            addQueueInfo(update, pathToQueues, "restore", thisPoolInfo.getRestoreQueue(), metricLifetime);
+            addTapeQueueInfo(update, pathToQueues, "store", thisPoolInfo.getStoreQueue(), metricLifetime);
+            addTapeQueueInfo(update, pathToQueues, "restore", thisPoolInfo.getRestoreQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "mover", thisPoolInfo.getMoverQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "p2p-queue", thisPoolInfo.getP2pQueue(), metricLifetime);
             addQueueInfo(update, pathToQueues, "p2p-clientqueue", thisPoolInfo.getP2pClientQueue(), metricLifetime);
@@ -154,6 +154,46 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel
                 new IntegerStateValue(info.getActive(), lifetime));
         stateUpdate.appendUpdate(queuePath.newChild("max-active"),
                 new IntegerStateValue(info.getMaxActive(), lifetime));
+        stateUpdate.appendUpdate(queuePath.newChild("queued"),
+                new IntegerStateValue(info.getQueued(), lifetime));
+    }
+
+    /**
+     * Add information about a specific tape queue to a pool's portion of dCache state.
+     * The state tree looks like:
+     *
+     * <pre>
+     * [dCache]
+     *  |
+     *  +--[pools]
+     *  |   |
+     *  |   +--[&lt;poolName>]
+     *  |   |   |
+     *  |   |   +--[queues]
+     *  |   |   |   |
+     *  |   |   |   +--[&lt;queueName1>]
+     *  |   |   |   |    |
+     *  |   |   |   |    +--active: nnn
+     *  |   |   |   |    +--queued: nnn
+     *  |   |   |   |
+     *  |   |   |   +--[&lt;queueName2>]
+     * </pre>
+     *
+     * The difference to regular queues is that tape queues to not have a public maximum
+     * value for active tasks (specific providers may have one, but this is internal to
+     * a provider).
+     *
+     * @param pathToQueues the StatePath pointing to queues (e.g.,
+     * "pools.mypool_1.queues")
+     * @param queueName the name of the queue.
+     */
+    private void addTapeQueueInfo(StateUpdate stateUpdate, StatePath pathToQueues,
+            String queueName, PoolQueueInfo info, long lifetime)
+    {
+        StatePath queuePath = pathToQueues.newChild(queueName);
+
+        stateUpdate.appendUpdate(queuePath.newChild("active"),
+                new IntegerStateValue(info.getActive(), lifetime));
         stateUpdate.appendUpdate(queuePath.newChild("queued"),
                 new IntegerStateValue(info.getQueued(), lifetime));
     }
