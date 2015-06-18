@@ -66,12 +66,10 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 
 public class ModifiableQueue  {
@@ -113,46 +111,6 @@ public class ModifiableQueue  {
                 }
             }
         }
-    }
-
-    public interface ValueCalculator {
-        int calculateValue(int queueLength, int queuePosition, Job job);
-    }
-
-    public Job getGreatestValueObject(ValueCalculator calc)
-            throws SRMInvalidRequestException{
-        List<Long> queueCopy;
-
-        synchronized(queue) {
-            if (queue.isEmpty()) {
-                return null;
-            }
-            queueCopy = new ArrayList<>(queue);
-        }
-
-        Job greatestValueJob = null;
-        int greatestValue = Integer.MIN_VALUE;
-        int index = 0;
-        int size = queueCopy.size();
-        for (long currentJobId: queueCopy) {
-            Job currentJob = Job.getJob(currentJobId, type);
-            int currentValue = calc.calculateValue(size,index,currentJob);
-            if(currentValue > greatestValue) {
-                greatestValueJob = currentJob;
-                greatestValue = currentValue;
-            }
-            index++;
-        }
-        return greatestValueJob;
-    }
-
-    public Job peek() throws SRMInvalidRequestException
-    {
-        Long id;
-        synchronized (queue) {
-            id = queue.isEmpty() ? null : queue.get(0);
-        }
-        return (id == null) ? null : Job.getJob(id, type);
     }
 
     public void printQueue(StringBuilder sb) {
