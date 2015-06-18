@@ -455,6 +455,15 @@
     </property>
   </bean>
 
+  <bean id="strategy-provider" class="org.dcache.srm.scheduler.SchedulingStrategyFactoryBean">
+      <property name="name" value="${srm.plugins.scheduler}"/>
+      <property name="configuration">
+          <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+              <property name="prefix" value="srm.scheduler.${srm.plugins.scheduler}"/>
+          </bean>
+      </property>
+  </bean>
+
   <bean id="scheduler-get" class="diskCacheV111.srm.dcache.Scheduler"
 	init-method="start" destroy-method="stop">
       <description>Scheduler for GET operations</description>
@@ -462,6 +471,7 @@
       <constructor-arg value="get_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.GetFileRequest"/>
 
+      <property name="strategyProvider" ref="strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.get.threads}"/>
       <property name="maxRequests" value="${srm.request.get.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.get.max-inprogress}"/>
@@ -470,8 +480,6 @@
       <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.request.get.retry-timeout},
                      '${srm.request.get.retry-timeout.unit}')}" />
-      <property name="maxRunningByOwner" value="${srm.request.get.max-by-same-user}"/>
-      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
 
@@ -482,6 +490,7 @@
       <constructor-arg value="ls_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.LsFileRequest"/>
 
+      <property name="strategyProvider" ref="strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.ls.threads}"/>
       <property name="maxRequests" value="${srm.request.ls.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.ls.max-inprogress}"/>
@@ -489,8 +498,6 @@
       <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.request.ls.retry-timeout},
                      '${srm.request.ls.retry-timeout.unit}')}" />
-      <property name="maxRunningByOwner" value="${srm.request.ls.max-by-same-user}"/>
-      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
 
@@ -501,6 +508,7 @@
       <constructor-arg value="bring_online_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.BringOnlineFileRequest"/>
 
+      <property name="strategyProvider" ref="strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.bring-online.threads}"/>
       <property name="maxRequests" value="${srm.request.bring-online.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.bring-online.max-inprogress}"/>
@@ -508,8 +516,6 @@
       <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.request.bring-online.retry-timeout},
                      '${srm.request.bring-online.retry-timeout.unit}')}" />
-      <property name="maxRunningByOwner" value="${srm.request.bring-online.max-by-same-user}"/>
-      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
 
@@ -520,6 +526,7 @@
       <constructor-arg value="put_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.PutFileRequest"/>
 
+      <property name="strategyProvider" ref="strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.put.threads}"/>
       <property name="maxRequests" value="${srm.request.put.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.put.max-inprogress}"/>
@@ -528,8 +535,6 @@
       <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.request.put.retry-timeout},
                      '${srm.request.put.retry-timeout.unit}')}" />
-      <property name="maxRunningByOwner" value="${srm.request.put.max-by-same-user}"/>
-      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
   <bean id="scheduler-copy" class="diskCacheV111.srm.dcache.Scheduler"
@@ -539,6 +544,7 @@
       <constructor-arg value="copy_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.Job"/>
 
+      <property name="strategyProvider" ref="strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.copy.threads}"/>
       <property name="maxRequests" value="${srm.request.copy.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.copy.max-inprogress}"/>
@@ -546,8 +552,6 @@
       <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.request.copy.retry-timeout},
                      '${srm.request.copy.retry-timeout.unit}')}" />
-      <property name="maxRunningByOwner" value="${srm.request.copy.max-by-same-user}"/>
-      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
   <bean id="scheduler-reserve-space" class="diskCacheV111.srm.dcache.Scheduler"
@@ -557,6 +561,7 @@
       <constructor-arg value="reserve_space_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.ReserveSpaceRequest"/>
 
+      <property name="strategyProvider" ref="strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.reserve-space.threads}"/>
       <property name="maxRequests" value="${srm.request.reserve-space.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.reserve-space.max-inprogress}"/>
@@ -564,8 +569,6 @@
       <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
                      ${srm.request.reserve-space.retry-timeout},
                      '${srm.request.reserve-space.retry-timeout.unit}')}" />
-      <property name="maxRunningByOwner" value="${srm.request.reserve-space.max-by-same-user}"/>
-      <property name="priorityPolicyPlugin" value="DefaultJobAppraiser"/>
   </bean>
 
 
