@@ -75,6 +75,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
+import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
@@ -108,6 +109,7 @@ import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -167,6 +169,8 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
 
 import org.dcache.acl.enums.AccessType;
+import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
@@ -2724,6 +2728,7 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> HELP - Information about SITE commands\r\n" +
             "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
             "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
+            "SITE <SP> CHGRP <SP> <group> <SP> <path> - Change group-owner of <path> to group <group>\r\n" +
             "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>")
     public void ftp_site(String arg)
         throws FTPCommandException
@@ -2760,6 +2765,12 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             doCheckSum("adler32",args[1]);
+        } else if (args[0].equalsIgnoreCase("CHGRP")) {
+            if (args.length != 3) {
+                reply("504 command must be in the form 'SITE CHGRP <group/gid> <file/dir>'");
+                return;
+            }
+            doChgrp(args[1], args[2]);
         } else if (args[0].equalsIgnoreCase("CHMOD")) {
             if (args.length != 3) {
                 reply("500 command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
@@ -2911,6 +2922,67 @@ public abstract class AbstractFtpDoorV1
             reply("550 Permission denied");
         } catch (CacheException ce) {
             reply("550 Permission denied, reason: " + ce);
+        }
+    }
+
+    /*
+     *  If the return code is (>=500 && <= 509 && !504) || 202 then UberFTP
+     *  disables support for this comand.
+     */
+    public void doChgrp(String group, String path) throws FTPCommandException
+    {
+        checkLoggedIn();
+        checkWritable();
+
+        if (path.equals("")){
+            reply(err("SITE CHGRP", path));
+            return;
+        }
+
+        int gid;
+
+        Integer result = Ints.tryParse(group);
+        if (result == null) {
+            try {
+                Principal principal = _loginStrategy.map(new GroupNamePrincipal(group));
+                if (principal == null) {
+                    throw new FTPCommandException(504, "Unknown group '" + group + "'");
+                }
+                if (!(principal instanceof GidPrincipal)) {
+                    LOGGER.warn("Received non-GID {} principal from map request",
+                            principal.getClass().getCanonicalName());
+                    throw new FTPCommandException(431, "Internal error " +
+                            "identifying group '" + group + "'");
+                }
+                gid = (int)((GidPrincipal)principal).getGid();
+            } catch (CacheException e) {
+                LOGGER.warn("Unable to map group '{}' to gid: {}", group, e.toString());
+                throw new FTPCommandException(451, "Unable to process: " + e, e);
+            }
+        } else {
+            gid = result;
+        }
+
+        FileAttributes attributes;
+        try {
+            attributes =
+                _pnfs.getFileAttributes(absolutePath(path).toString(), EnumSet.of(PNFSID, TYPE));
+
+            if (attributes.getFileType() == FileType.LINK) {
+                throw new FTPCommandException(504, "chgrp of symbolic links is not yet supported.");
+            }
+
+            FileAttributes newAttributes = new FileAttributes();
+            newAttributes.setGroup(gid);
+            _pnfs.setFileAttributes(attributes.getPnfsId(), newAttributes);
+
+            reply("250 OK");
+        } catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550, "Permission denied", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(504, "No such file", e);
+        } catch (CacheException e) {
+            throw new FTPCommandException(451, "Unable to process: " + e, e);
         }
     }
 
