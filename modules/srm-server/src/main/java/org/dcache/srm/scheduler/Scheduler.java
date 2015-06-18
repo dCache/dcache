@@ -71,11 +71,13 @@ import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Formatter;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -83,19 +85,18 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.policies.DefaultJobAppraiser;
-import org.dcache.srm.scheduler.policies.JobPriorityPolicyInterface;
+import org.dcache.srm.scheduler.spi.SchedulingStrategy;
+import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
 import org.dcache.srm.util.JDC;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.*;
 import static com.google.common.base.Strings.*;
 
 public class Scheduler <T extends Job>
 {
     private static final Logger LOGGER =
             LoggerFactory.getLogger(Scheduler.class);
+    private final Class<T> type;
 
     private int maxRequests;
 
@@ -109,7 +110,6 @@ public class Scheduler <T extends Job>
             new CountByCreator();
 
     // running state related variables
-    private int maxRunningByOwner;
     private final CountByCreator runningStateJobsNum =
             new CountByCreator();
 
@@ -158,10 +158,11 @@ public class Scheduler <T extends Job>
 
     private static volatile Map<String, Scheduler<?>> schedulers = ImmutableMap.of();
 
-    private JobPriorityPolicyInterface jobAppraiser;
-    private String priorityPolicyPlugin;
-
     private final WorkSupplyService workSupplyService;
+    private final CopyOnWriteArrayList<StateChangeListener> listeners = new CopyOnWriteArrayList<>();
+
+    private SchedulingStrategy strategy;
+    private String strategyName;
 
     public static Scheduler<?> getScheduler(String id)
     {
@@ -178,20 +179,25 @@ public class Scheduler <T extends Job>
 
     public Scheduler(String id, Class<T> type)
     {
+        this.type = type;
         this.id = checkNotNull(id);
         checkArgument(!id.isEmpty(), "need non-empty string as an id");
 
         requestQueue = new ModifiableQueue(type);
         readyQueue = new ModifiableQueue(type);
 
-        jobAppraiser = new DefaultJobAppraiser();
-        priorityPolicyPlugin = jobAppraiser.getClass().getSimpleName();
-
         workSupplyService = new WorkSupplyService();
         retryTimer = new Timer();
         pooledExecutor = new ThreadPoolExecutor(30, 30, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
         addScheduler(id, this);
+    }
+
+    @Required
+    public void setStrategyProvider(SchedulingStrategyProvider provider)
+    {
+        strategyName = provider.getName();
+        strategy = provider.createStrategy(this);
     }
 
     public void start() throws IllegalStateException
@@ -432,6 +438,7 @@ public class Scheduler <T extends Job>
     private boolean threadQueue(Job job)
     {
         if (getTotalRequests() < getMaxRequests()) {
+            strategy.add(job);
             requestQueue.put(job);
             workSupplyService.distributeWork();
             return true;
@@ -518,46 +525,9 @@ public class Scheduler <T extends Job>
         private void updateThreadQueue()
                 throws SRMInvalidRequestException, InterruptedException
         {
-            while (true) {
-                Job job;
-                if (requestQueue.size() <= getMaxInProgress() - getTotalInprogress()) {
-                    job = requestQueue.peek();
-                } else {
-                    ModifiableQueue.ValueCalculator calc =
-                            new ModifiableQueue.ValueCalculator()
-                            {
-                                private final JobPriorityPolicyInterface jobAppraiser = getJobAppraiser();
-                                private final int maxRunningByOwner = getMaxRunningByOwner();
-
-                                @Override
-                                public int calculateValue(
-                                        int queueLength,
-                                        int queuePosition,
-                                        Job job)
-                                {
-                                    int numOfRunningBySameCreator = getTotalRunningByCreator(job);
-                                    int value = jobAppraiser.evaluateJobPriority(
-                                            queueLength, queuePosition,
-                                            numOfRunningBySameCreator,
-                                            maxRunningByOwner,
-                                            job);
-                                    //logger.debug("updateThreadQueue calculateValue return value="+value+" for "+o);
-                                    return value;
-                                }
-                            };
-                    job = requestQueue.getGreatestValueObject(calc);
-                }
-
-                if (job == null) {
-                    //logger.debug("updateThreadQueue no jobs were found, breaking the update loop");
-                    break;
-                }
-
-                /* Don't prepare more jobs if max allowed IN_PROGRESS jobs has been reached. */
-                if (getTotalInprogress() > getMaxInProgress()) {
-                    break;
-                }
-
+            Long id;
+            while (getTotalInprogress() < getMaxInProgress() && (id = strategy.remove()) != null) {
+                Job job = Job.getJob(id, type);
                 job.wlock();
                 try {
                     if (job.getState() == org.dcache.srm.scheduler.State.TQUEUED) {
@@ -576,16 +546,6 @@ public class Scheduler <T extends Job>
                 }
             }
         }
-    }
-
-    private int getTotalRunningByCreator(Job job)
-    {
-        return getAsyncWaitByCreator(job) +
-                getPriorityTQueuedByCreator(job) +
-                getRunningStateByCreator(job) +
-                getRunningWithoutThreadStateByCreator(job) +
-                getRQueuedByCreator(job) +
-                getReadyByCreator(job);
     }
 
     private class JobWrapper implements Runnable
@@ -718,6 +678,16 @@ public class Scheduler <T extends Job>
         retryTimer.schedule(task, retryTimeout);
     }
 
+    public void addStateChangeListener(StateChangeListener listener)
+    {
+        listeners.add(listener);
+    }
+
+    public void removeStateChangeListener(StateChangeListener listener)
+    {
+        listeners.remove(listener);
+    }
+
     public void stateChanged(Job job, State oldState, State newState)
     {
         checkNotNull(job);
@@ -786,6 +756,10 @@ public class Scheduler <T extends Job>
         if (oldState == State.RETRYWAIT && newState.isFinal()) {
             job.cancelRetryTimer();
         }
+
+        for (StateChangeListener listener : listeners) {
+            listener.stateChanged(job, oldState, newState);
+        }
     }
 
     /**
@@ -837,26 +811,6 @@ public class Scheduler <T extends Job>
     public synchronized void setMaxReadyJobs(int maxReadyJobs)
     {
         this.maxReadyJobs = maxReadyJobs;
-    }
-
-    /**
-     * Getter for property maxRunningByOwner.
-     *
-     * @return Value of property maxRunningByOwner.
-     */
-    public synchronized int getMaxRunningByOwner()
-    {
-        return maxRunningByOwner;
-    }
-
-    /**
-     * Setter for property maxRunningByOwner.
-     *
-     * @param maxRunningByOwner New value of property maxRunningByOwner.
-     */
-    public synchronized void setMaxRunningByOwner(int maxRunningByOwner)
-    {
-        this.maxRunningByOwner = maxRunningByOwner;
     }
 
     /**
@@ -986,10 +940,10 @@ public class Scheduler <T extends Job>
         formatter.line();
         formatter.column2("Total requests (max " + getMaxRequests() + ")", getTotalRequests());
         formatter.format("\n");
-        formatter.format("    In progress per user soft limit : %d requests\n", maxRunningByOwner);
         formatter.format("    Maximum number of retries       : %d\n", maxNumberOfRetries);
         formatter.format("    Retry timeout                   : %d ms\n", retryTimeout);
         formatter.format("    Retry limit                     : %d retries\n", maxNumberOfRetries);
+        formatter.format("    Scheduling strategy             : %s\n", strategyName);
     }
 
     public void printThreadQueue(StringBuilder sb)
@@ -1022,35 +976,6 @@ public class Scheduler <T extends Job>
     public synchronized void setQueuesUpdateMaxWait(long queuesUpdateMaxWait)
     {
         this.queuesUpdateMaxWait = queuesUpdateMaxWait;
-    }
-
-    public synchronized JobPriorityPolicyInterface getJobAppraiser()
-    {
-        return jobAppraiser;
-    }
-
-    public synchronized void setJobAppraiser(JobPriorityPolicyInterface jobAppraiser)
-    {
-        this.jobAppraiser = jobAppraiser;
-    }
-
-    public synchronized void setPriorityPolicyPlugin(String name)
-    {
-        priorityPolicyPlugin = name;
-        String className = "org.dcache.srm.scheduler.policies." + priorityPolicyPlugin;
-        try {
-            Class<? extends JobPriorityPolicyInterface> appraiserClass =
-                    Class.forName(className).asSubclass(JobPriorityPolicyInterface.class);
-            jobAppraiser = appraiserClass.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-            LOGGER.error("failed to load {}", className);
-            jobAppraiser = new DefaultJobAppraiser();
-        }
-    }
-
-    public synchronized String getPriorityPolicyPlugin()
-    {
-        return priorityPolicyPlugin;
     }
 
     public Class<T> getType()

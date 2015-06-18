@@ -39,6 +39,8 @@ check -strong srm.service.gplazma.cache.size
 check -strong srm.service.gplazma.cache.timeout
 check -strong srm.service.gplazma.cache.timeout.unit
 
+check -strong srm.plugins.scheduler
+
 check -strong srm.limits.db.threads
 check -strong srm.limits.db.queue
 
@@ -69,7 +71,6 @@ check -strong srm.request.bring-online.max-inprogress
 check -strong srm.request.bring-online.retries
 check -strong srm.request.bring-online.retry-timeout
 check -strong srm.request.bring-online.retry-timeout.unit
-check -strong srm.request.bring-online.max-by-same-user
 check -strong srm.request.bring-online.switch-to-async-mode-delay
 check -strong srm.request.bring-online.switch-to-async-mode-delay.unit
 check -strong srm.request.bring-online.max-poll-period
@@ -91,7 +92,6 @@ check -strong srm.request.copy.max-inprogress
 check -strong srm.request.copy.retries
 check -strong srm.request.copy.retry-timeout
 check -strong srm.request.copy.retry-timeout.unit
-check -strong srm.request.copy.max-by-same-user
 check -strong srm.request.copy.max-poll-period
 check -strong srm.request.copy.max-poll-period.unit
 check -strong srm.persistence.copy.enable
@@ -112,7 +112,6 @@ check -strong srm.request.get.max-transfers
 check -strong srm.request.get.retries
 check -strong srm.request.get.retry-timeout
 check -strong srm.request.get.retry-timeout.unit
-check -strong srm.request.get.max-by-same-user
 check -strong srm.request.get.switch-to-async-mode-delay
 check -strong srm.request.get.switch-to-async-mode-delay.unit
 check -strong srm.request.get.max-poll-period
@@ -134,7 +133,6 @@ check -strong srm.request.ls.max-inprogress
 check -strong srm.request.ls.retries
 check -strong srm.request.ls.retry-timeout
 check -strong srm.request.ls.retry-timeout.unit
-check -strong srm.request.ls.max-by-same-user
 check -strong srm.request.ls.switch-to-async-mode-delay
 check -strong srm.request.ls.switch-to-async-mode-delay.unit
 check -strong srm.request.ls.max-poll-period
@@ -157,7 +155,6 @@ check -strong srm.request.put.max-transfers
 check -strong srm.request.put.retries
 check -strong srm.request.put.retry-timeout
 check -strong srm.request.put.retry-timeout.unit
-check -strong srm.request.put.max-by-same-user
 check -strong srm.request.put.switch-to-async-mode-delay
 check -strong srm.request.put.switch-to-async-mode-delay.unit
 check -strong srm.request.put.max-poll-period
@@ -179,7 +176,6 @@ check -strong srm.request.reserve-space.max-inprogress
 check -strong srm.request.reserve-space.retries
 check -strong srm.request.reserve-space.retry-timeout
 check -strong srm.request.reserve-space.retry-timeout.unit
-check -strong srm.request.reserve-space.max-by-same-user
 check -strong srm.request.reserve-space.max-poll-period
 check -strong srm.request.reserve-space.max-poll-period.unit
 check -strong srm.persistence.reserve-space.enable
