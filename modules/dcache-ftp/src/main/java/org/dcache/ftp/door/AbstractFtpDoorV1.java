@@ -76,8 +76,6 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -752,6 +750,7 @@ public abstract class AbstractFtpDoorV1
     protected FsPath _doorRootPath = new FsPath();
     protected String _cwd = "/";    // Relative to _doorRootPath
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
+    private String _symlinkPath; // User-supplied path of new symlink
     protected String _xferMode = "S";
     protected CellStub _billingStub;
     protected CellStub _poolManagerStub;
@@ -2729,7 +2728,9 @@ public abstract class AbstractFtpDoorV1
             "SITE <SP> BUFSIZE <SP> <size> - Set network buffer to <size>\r\n" +
             "SITE <SP> CHKSUM <SP> <value> - Fail upload if ADLER32 checksum isn't <value>\r\n" +
             "SITE <SP> CHGRP <SP> <group> <SP> <path> - Change group-owner of <path> to group <group>\r\n" +
-            "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>")
+            "SITE <SP> CHMOD <SP> <perm> <SP> <path> - Change permission of <path> to octal value <perm>\r\n" +
+            "SITE <SP> SYMLINKFROM <SP> <path> - Register symlink location; SYMLINKTO must follow\r\n" +
+            "SITE <SP> SYMLINKTO <SP> <path> - Create symlink to <path>; SYMLINKFROM must be earlier command.")
     public void ftp_site(String arg)
         throws FTPCommandException
     {
@@ -2783,6 +2784,18 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             doClientinfo(arg.substring(11));
+        } else if (args[0].equalsIgnoreCase("SYMLINKFROM")) {
+            if (args.length != 2) {
+                reply("500 command must be in the form 'SITE SYMLINKFROM <path>'");
+                return;
+            }
+            doSymlinkFrom(args[1]);
+        } else if (args[0].equalsIgnoreCase("SYMLINKTO")) {
+            if (args.length != 2) {
+                reply("500 command must be in the form 'SITE SYMLINKTO <path>'");
+                return;
+            }
+            doSymlinkTo(args[1]);
         } else {
             reply("500 Unknown SITE command");
         }
@@ -2986,6 +2999,52 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    public void doSymlinkFrom(String path) throws FTPCommandException
+    {
+        checkLoggedIn();
+        checkWritable();
+
+        if (path.equals("")) {
+            throw new FTPCommandException(501, "Command requires path argument.");
+        }
+
+        _symlinkPath = path;
+
+        reply("350 Send SITE SYMLINKTO to continue.");
+    }
+
+    public void doSymlinkTo(String target) throws FTPCommandException
+    {
+        checkLoggedIn();
+        checkWritable();
+
+        if (target.equals("")){
+            throw new FTPCommandException(501, "Command requires path.");
+        }
+
+        if (_symlinkPath == null) {
+            throw new FTPCommandException(503, "Command must follow SITE SYMLINKFROM command.");
+        }
+
+        try {
+            _pnfs.createSymLink(absolutePath(_symlinkPath).toString(), target,
+                    (int)Subjects.getUid(_subject), (int)Subjects.getPrimaryGid(_subject));
+            reply ("257 symlink '" + _symlinkPath + "' created.");
+        } catch (PermissionDeniedCacheException e) {
+            throw new FTPCommandException(550, "Permission denied.", e);
+        } catch (NotDirCacheException e) {
+            throw new FTPCommandException(550, "Not a directory.", e);
+        } catch (FileNotFoundCacheException e) {
+            throw new FTPCommandException(550, "File not found.", e);
+        } catch (FileExistsCacheException e) {
+            throw new FTPCommandException(550, "File exists.", e);
+        } catch (CacheException e) {
+            LOGGER.warn("Unable to create symlink: {}", e.toString());
+            throw new FTPCommandException(451, "Unexpected problem: " + e, e);
+        } finally {
+            _symlinkPath = null;
+        }
+    }
 
     public void doClientinfo(String description)
     {
