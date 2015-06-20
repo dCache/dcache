@@ -848,7 +848,7 @@ public class DcacheResourceFactory
                                   name,
                                   attr.getFileType() == DIR,
                                   mtime,
-                                  attr.getSizeIfPresent().orNull(),
+                                  attr.getSizeIfPresent().transform(SizeWrapper::new).orNull(),
                                   isUploading);
                     }
                 };

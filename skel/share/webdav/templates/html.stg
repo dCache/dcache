@@ -69,7 +69,7 @@ file(f) ::= <<
             <span class="glyphicon glyphicon-cloud-download"></span>
         </a>
     </td>
-    <td>$f.size$</td>
+    <td title="$f.size.humanFriendly$">$f.size$</td>
     <td>
         $f.mtime$
     </td>
