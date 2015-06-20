@@ -605,12 +605,12 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 };
         rows[1] = new int[]{
                     restore.getActive(),
-                    restore.getMaxActive(),
+                    -1,
                     restore.getQueued()
                 };
         rows[2] = new int[]{
                     store.getActive(),
-                    store.getMaxActive(),
+                    -1,
                     store.getQueued()
                 };
 
@@ -697,7 +697,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
                 page.td(3, "integrated", "Integrated");
             } else {
                 page.td("active", row[0]);
-                page.td("max", row[1]);
+                if (row[1] >= 0) {
+                    page.td("max", row[1]);
+                } else {
+                    page.td("max");
+                }
                 if (row[2] > 0) {
                     page.td("queued", row[2]);
                 } else {
@@ -891,7 +895,11 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
         for (int[] row : total) {
             page.td("active", row[0]);
-            page.td("max", row[1]);
+            if (row[1] >= 0) {
+                page.td("max", row[1]);
+            } else {
+                page.td("max");
+            }
             page.td("queued", row[2]);
         }
 

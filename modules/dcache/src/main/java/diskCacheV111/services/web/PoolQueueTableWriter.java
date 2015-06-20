@@ -112,7 +112,11 @@ public class PoolQueueTableWriter
 
         for (int[] row : total) {
             _html.td("active", row[0]);
-            _html.td("max", row[1]);
+            if (row[1] >= 0) {
+                _html.td("max", row[1]);
+            } else {
+                _html.td("max");
+            }
             _html.td("queued", row[2]);
         }
 
@@ -141,7 +145,11 @@ public class PoolQueueTableWriter
                     _html.td(3, "integrated", "Integrated");
                 } else {
                     _html.td("active", row[0]);
-                    _html.td("max",    row[1]);
+                    if (row[1] >= 0) {
+                        _html.td("max", row[1]);
+                    } else {
+                        _html.td("max");
+                    }
                     if (row[2] > 0) {
                         _html.td("queued", row[2]);
                     } else {
@@ -245,12 +253,12 @@ public class PoolQueueTableWriter
 
             rows[1] = new int[3];
             rows[1][0] = restore.getActive();
-            rows[1][1] = restore.getMaxActive();
+            rows[1][1] = -1;
             rows[1][2] = restore.getQueued();
 
             rows[2] = new int[3];
             rows[2][0] = store.getActive();
-            rows[2][1] = store.getMaxActive();
+            rows[2][1] = -1;
             rows[2][2] = store.getQueued();
 
             if (p2pServer == null) {
