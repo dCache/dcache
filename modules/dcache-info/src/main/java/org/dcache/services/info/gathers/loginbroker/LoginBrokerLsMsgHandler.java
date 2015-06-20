@@ -148,7 +148,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 		StatePath pathToInterfaceBranch = parentPath.newChild(address.getHostAddress());
 
-		String hostName = address.getHostAddress();
+		String hostName = address.getHostName();
 		update.appendUpdate( pathToInterfaceBranch.newChild("FQDN"), new StringStateValue(hostName, lifetime));
 
 		String urlName = isInetAddress(hostName) ? toUriString(address) : hostName;
