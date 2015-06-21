@@ -37,22 +37,11 @@ public class LoginCellFactoryBuilder
     public LoginCellFactory build()
     {
         LoginCellProvider bestProvider =
-                Ordering.natural().onResultOf(priorityFor(name)).max(PROVIDERS);
+                Ordering.natural().onResultOf((LoginCellProvider p) -> p.getPriority(name)).max(PROVIDERS);
         if (bestProvider.getPriority(name) == Integer.MIN_VALUE) {
             throw new IllegalArgumentException("No login cell provider found for " + name);
         }
         return bestProvider.createFactory(name, args, loginManagerName);
     }
 
-    private static Function<LoginCellProvider, Integer> priorityFor(final String name)
-    {
-        return new Function<LoginCellProvider, Integer>()
-        {
-            @Override
-            public Integer apply(LoginCellProvider provider)
-            {
-                return provider.getPriority(name);
-            }
-        };
-    }
 }

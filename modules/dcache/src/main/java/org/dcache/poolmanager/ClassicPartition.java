@@ -281,26 +281,11 @@ public abstract class ClassicPartition extends Partition
         return Math.abs(cost.performanceCost) * _performanceCostFactor;
     }
 
-    protected Function<PoolInfo,PoolCost> toPoolCost() {
-        return new Function<PoolInfo,PoolCost>() {
-            @Override
-            public PoolCost apply(PoolInfo pool) {
-                CostCalculatable calculatable =
-                    new CostCalculationV5(pool.getCostInfo());
-                calculatable.recalculate();
-                return new PoolCost(pool, calculatable);
-            }
-        };
-    }
-
-    protected Predicate<PoolCost> performanceCostIsBelow(final double max)
+    protected static PoolCost toPoolCost(PoolInfo pool)
     {
-        return new Predicate<PoolCost>() {
-            @Override
-            public boolean apply(PoolCost cost) {
-                return cost.performanceCost < max;
-            }
-        };
+        CostCalculatable calculatable = new CostCalculationV5(pool.getCostInfo());
+        calculatable.recalculate();
+        return new PoolCost(pool, calculatable);
     }
 
     private void initTransientFields()

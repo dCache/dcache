@@ -166,7 +166,7 @@ public class Task
     {
         List<PoolManagerPoolInformation> pools =
                 newArrayList(filter(_parameters.poolList.getPools(),
-                                    compose(not(in(_replicas)), PoolManagerPoolInformation.GET_NAME)));
+                                    compose(not(in(_replicas)), PoolManagerPoolInformation::getName)));
         PoolManagerPoolInformation pool = _parameters.selectionStrategy.select(pools);
         if (pool == null) {
             if (pools.isEmpty()) {
@@ -226,7 +226,7 @@ public class Task
     private synchronized void setLocations(List<String> locations)
     {
         Collection<String> onlinePools =
-                transform(_parameters.poolList.getPools(), PoolManagerPoolInformation.GET_NAME);
+                transform(_parameters.poolList.getPools(), PoolManagerPoolInformation::getName);
         if (_parameters.isEager) {
             _locations = newArrayDeque(filter(locations, in(onlinePools)));
         } else {

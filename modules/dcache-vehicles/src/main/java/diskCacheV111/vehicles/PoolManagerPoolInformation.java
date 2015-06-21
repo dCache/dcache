@@ -45,14 +45,4 @@ public class PoolManagerPoolInformation
         return String.format("[name=%s;cpu=%f;cost=%s]",
                              _name, _cpuCost, _poolCostInfo);
     }
-
-    public static final Function<PoolManagerPoolInformation, String> GET_NAME =
-            new Function<PoolManagerPoolInformation, String>()
-            {
-                @Override
-                public String apply(PoolManagerPoolInformation info)
-                {
-                    return info.getName();
-                }
-            };
 }

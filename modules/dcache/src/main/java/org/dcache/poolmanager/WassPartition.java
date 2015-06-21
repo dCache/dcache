@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Predicates.*;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Partition that implements the probabilistic weighted available
@@ -114,7 +115,7 @@ public class WassPartition extends ClassicPartition
          * we will only read from the pool
          */
         List<PoolCost> sources =
-            _byPerformanceCost.sortedCopy(transform(src, toPoolCost()));
+                src.stream().map(WassPartition::toPoolCost).sorted(_byPerformanceCost).collect(toList());
         if (!force && isAlertCostExceeded(sources.get(0).performanceCost)) {
             throw new SourceCostException("P2P denied: All source pools are too busy (performance cost > " + _alertCostCut + ")");
         }
@@ -128,10 +129,7 @@ public class WassPartition extends ClassicPartition
             ? _slope * sources.get(0).performanceCost
             : getCurrentCostCut(cm);
         if (!force && maxTargetCost > 0.0) {
-            Predicate<PoolInfo> condition =
-                compose(performanceCostIsBelow(maxTargetCost),
-                        toPoolCost());
-            dst = Lists.newArrayList(filter(dst, condition));
+            dst = dst.stream().filter(pool -> toPoolCost(pool).performanceCost < maxTargetCost).collect(toList());
         }
 
         if (dst.isEmpty()) {
@@ -221,11 +219,8 @@ public class WassPartition extends ClassicPartition
              * get staged to a pool from which cost prevents us from
              * reading it.
              */
-            Predicate<PoolInfo> belowFallback =
-                compose(performanceCostIsBelow(_fallbackCostCut),
-                        toPoolCost());
             List<PoolInfo> filtered =
-                Lists.newArrayList(filter(pools, belowFallback));
+                    pools.stream().filter(pool -> toPoolCost(pool).performanceCost < _fallbackCostCut).collect(toList());
             PoolInfo pool =
                 selectByPrevious(filtered, previousPool, previousHost, attributes);
             if (pool != null) {

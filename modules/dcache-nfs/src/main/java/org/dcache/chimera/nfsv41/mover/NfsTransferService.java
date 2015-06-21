@@ -247,16 +247,8 @@ public class NfsTransferService extends AbstractCellComponent
         _withGss = withGss;
     }
 
-    private InetSocketAddress[] localSocketAddresses(Iterable<InetAddress> addresses, final int port) {
-        return toArray(transform(addresses,
-                                 new Function<InetAddress, InetSocketAddress>()
-                                 {
-                                     @Override
-                                     public InetSocketAddress apply(InetAddress address)
-                                     {
-                                         return new InetSocketAddress(address, port);
-                                     }
-                                 }), InetSocketAddress.class);
+    private InetSocketAddress[] localSocketAddresses(Iterable<InetAddress> addresses, int port) {
+        return toArray(transform(addresses, address -> new InetSocketAddress(address, port)), InetSocketAddress.class);
     }
 
     private InetSocketAddress[] localSocketAddresses(NfsMover mover) throws SocketException {

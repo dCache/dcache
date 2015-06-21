@@ -69,40 +69,17 @@ public class BillingParserBuilder
 
     public Function<String,String> buildToString()
     {
-        final String attribute = Iterables.getOnlyElement(attributes);
-        final String groupName = toGroupName(attribute);
-        final ImmutableSet<Pattern> patterns = patternsByAttribute.get(attribute);
-        return new Function<String, String>()
-        {
-            @Override
-            public String apply(String line)
-            {
-                Matcher matcher = findMatch(line, patterns);
-                return matcher != null ? matcher.group(groupName) : null;
-            }
-        };
+        String attribute = Iterables.getOnlyElement(attributes);
+        String groupName = toGroupName(attribute);
+        ImmutableSet<Pattern> patterns = patternsByAttribute.get(attribute);
+        return line -> findSingleMatch(line, patterns, groupName);
     }
 
     public Function<String,Map<String,String>> buildToMap()
     {
-        final ImmutableMultimap<Pattern, String> patterns =
+        ImmutableMultimap<Pattern, String> patterns =
                 ImmutableMultimap.copyOf(filterValues(attributesByPattern, in(attributes)));
-        return new Function<String, Map<String, String>>()
-        {
-            @Override
-            public Map<String, String> apply(String line)
-            {
-                Matcher matcher = findMatch(line, patterns.keySet());
-                if (matcher == null) {
-                    return Collections.emptyMap();
-                }
-                Map<String, String> values = new HashMap<>();
-                for (String attribute : patterns.get(matcher.pattern())) {
-                    values.put(attribute, matcher.group(toGroupName(attribute)));
-                }
-                return values;
-            }
-        };
+        return line -> findMatchAsMap(line, patterns);
     }
 
     public Function<String,String[]> buildToArray()
@@ -112,25 +89,43 @@ public class BillingParserBuilder
         final ImmutableMultimap<Pattern, String> patterns =
                 ImmutableMultimap.copyOf(filterValues(attributesByPattern, in(this.attributes)));
         final String[] attributes = this.attributes.toArray(new String[this.attributes.size()]);
-        return new Function<String, String[]>()
-        {
-            @Override
-            public String[] apply(String line)
-            {
-                Matcher matcher = findMatch(line, patterns.keySet());
-                String[] result = new String[attributes.length];
-                if (matcher != null) {
-                    ImmutableCollection<String> attributesInPattern = patterns.get(matcher.pattern());
-                    for (int i = 0; i < attributes.length; i++) {
-                        String attribute = attributes[i];
-                        if (attributesInPattern.contains(attribute)) {
-                            result[i] = matcher.group(toGroupName(attribute));
-                        }
-                    }
+        return line -> findMatchAsArray(line, patterns, attributes);
+    }
+
+    private static String findSingleMatch(String line, ImmutableSet<Pattern> patterns, String groupName)
+    {
+        Matcher matcher = findMatch(line, patterns);
+        return matcher != null ? matcher.group(groupName) : null;
+    }
+
+    private static Map<String, String> findMatchAsMap(String line, ImmutableMultimap<Pattern, String> patterns)
+    {
+        Matcher matcher = findMatch(line, patterns.keySet());
+        if (matcher == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> values = new HashMap<>();
+        for (String attribute : patterns.get(matcher.pattern())) {
+            values.put(attribute, matcher.group(toGroupName(attribute)));
+        }
+        return values;
+    }
+
+    private static String[] findMatchAsArray(String line, ImmutableMultimap<Pattern, String> patterns,
+                                             String[] attributes)
+    {
+        Matcher matcher = findMatch(line, patterns.keySet());
+        String[] result = new String[attributes.length];
+        if (matcher != null) {
+            ImmutableCollection<String> attributesInPattern = patterns.get(matcher.pattern());
+            for (int i = 0; i < attributes.length; i++) {
+                String attribute = attributes[i];
+                if (attributesInPattern.contains(attribute)) {
+                    result[i] = matcher.group(toGroupName(attribute));
                 }
-                return result;
             }
-        };
+        }
+        return result;
     }
 
     private static Matcher findMatch(String line, Collection<Pattern> patterns)
