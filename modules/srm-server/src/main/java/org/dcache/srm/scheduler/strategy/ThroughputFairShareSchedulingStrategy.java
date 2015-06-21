@@ -41,12 +41,11 @@ public class ThroughputFairShareSchedulingStrategy extends DiscriminatingSchedul
     @Override
     protected synchronized void add(String key, Job job)
     {
-        Queue<Long> queue = jobs.get(key);
-        if (queue == null) {
-            queue = new ArrayDeque<>();
-            jobs.put(key, queue);
-            keys.add(key);
-        }
+        Queue<Long> queue =
+                jobs.computeIfAbsent(key, k -> {
+                    keys.add(k);
+                    return new ArrayDeque<>();
+                });
         queue.add(job.getId());
         size++;
     }

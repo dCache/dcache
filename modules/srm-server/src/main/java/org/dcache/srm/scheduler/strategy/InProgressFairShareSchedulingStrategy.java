@@ -17,7 +17,6 @@
  */
 package org.dcache.srm.scheduler.strategy;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Ordering;
@@ -45,17 +44,8 @@ public class InProgressFairShareSchedulingStrategy extends DiscriminatingSchedul
     private final Multiset<String> counters = ConcurrentHashMultiset.create();
     private int size;
 
-    private final Function<Map.Entry<String, Queue<Long>>, Integer> getRunning =
-            new Function<Map.Entry<String, Queue<Long>>, Integer>()
-            {
-                @Override
-                public Integer apply(Map.Entry<String, Queue<Long>> entry)
-                {
-                    return counters.count(entry.getKey());
-                }
-            };
     private final Ordering<Map.Entry<String, Queue<Long>>> byCount =
-            Ordering.natural().onResultOf(getRunning);
+            Ordering.natural().onResultOf(entry -> counters.count(entry.getKey()));
 
     public InProgressFairShareSchedulingStrategy(Scheduler scheduler, String discriminator)
     {
@@ -99,12 +89,7 @@ public class InProgressFairShareSchedulingStrategy extends DiscriminatingSchedul
     @Override
     protected synchronized void add(String key, Job job)
     {
-        Queue<Long> queue = jobs.get(key);
-        if (queue == null) {
-            queue = new ArrayDeque<>();
-            jobs.put(key, queue);
-        }
-        queue.add(job.getId());
+        jobs.computeIfAbsent(key, k -> new ArrayDeque<>()).add(job.getId());
         size++;
     }
 }
