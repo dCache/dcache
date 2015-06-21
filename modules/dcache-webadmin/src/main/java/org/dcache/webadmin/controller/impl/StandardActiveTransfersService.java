@@ -37,15 +37,8 @@ public class StandardActiveTransfersService implements ActiveTransfersService
     public void kill(final Collection<ActiveTransfersBean.Key> keys) throws ActiveTransfersServiceException
     {
         try {
-            getMoverDAO().killMovers(Iterables.filter(getTransfers(),
-                                                      new Predicate<ActiveTransfersBean>()
-                                                      {
-                                                          @Override
-                                                          public boolean apply(ActiveTransfersBean transfer)
-                                                          {
-                                                              return keys.contains(transfer.getKey()) && !transfer.getPool().isEmpty();
-                                                          }
-                                                      }));
+            getMoverDAO().killMovers(
+                    Iterables.filter(getTransfers(), t -> keys.contains(t.getKey()) && !t.getPool().isEmpty()));
         } catch (DAOException e) {
             throw new ActiveTransfersServiceException(e.getMessage(), e);
         }

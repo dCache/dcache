@@ -1,6 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -18,6 +17,7 @@ import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.filter;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Partition that selects the least recently used pool.
@@ -70,17 +70,11 @@ public class LruPartition extends Partition
         return TYPE;
     }
 
-    private Predicate<PoolInfo> canHoldFile(final long size)
+    private static boolean canHoldFile(PoolInfo pool, long size)
     {
-        return new Predicate<PoolInfo>() {
-            @Override
-            public boolean apply(PoolInfo pool) {
-                PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
-                long available =
-                    space.getFreeSpace() + space.getRemovableSpace();
-                return available - size > space.getGap();
-            }
-        };
+        PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
+        long available = space.getFreeSpace() + space.getRemovableSpace();
+        return available - size > space.getGap();
     }
 
     private long next()
@@ -131,7 +125,7 @@ public class LruPartition extends Partition
         throws CacheException
     {
         List<PoolInfo> freePools =
-            Lists.newArrayList(filter(pools, canHoldFile(preallocated)));
+                pools.stream().filter(pool -> canHoldFile(pool, preallocated)).collect(toList());
         if (freePools.isEmpty()) {
             throw new CacheException(21, "All pools are full");
         }

@@ -1,6 +1,5 @@
 package org.dcache.gplazma;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,14 +68,6 @@ public class GPlazma
 
     private static final LoginMonitor LOGGING_LOGIN_MONITOR =
             new LoggingLoginMonitor();
-    private static final Predicate<Object> IS_PUBLIC = new Predicate<Object>()
-    {
-        @Override
-        public boolean apply(Object o)
-        {
-            return Modifier.isPublic(o.getClass().getModifiers());
-        }
-    };
 
     private KnownFailedLogins _failedLogins = new KnownFailedLogins();
 
@@ -296,9 +287,14 @@ public class GPlazma
         doMapPhase(mapStrategy, monitor, principals);
         doAccountPhase(accountStrategy, monitor, principals);
         Set<Object> attributes = doSessionPhase(sessionStrategy, monitor, principals);
-        removeIf(principals, not(IS_PUBLIC));
+        removeIf(principals, p -> !isPublic(p));
 
         return buildReply(monitor, subject, principals, attributes);
+    }
+
+    private static boolean isPublic(Principal p)
+    {
+        return Modifier.isPublic(p.getClass().getModifiers());
     }
 
     private void doAuthPhase(AuthenticationStrategy strategy,

@@ -76,30 +76,29 @@ public class UnpinProcessor implements Runnable
     @Transactional
     protected void unpin(final Semaphore idle, final Executor executor)
     {
-        _dao.all(Pin.State.UNPINNING, new Predicate<Pin>() {
-                @Override
-                public boolean apply(Pin pin)
-                {
-                    try {
-                        /**
-                         * For purposes of migrating from the previous
-                         * PinManager we need to deal with sticky flags
-                         * shared by multiple pins. We will not remove a
-                         * sticky flag as long as there are other pins
-                         * using it.
-                         */
-                        if (pin.getPool() == null || _dao.hasSharedSticky(pin)) {
-                            _dao.deletePin(pin);
-                        } else {
-                            clearStickyFlag(idle, pin, executor);
-                        }
+        _dao.all(Pin.State.UNPINNING, pin -> upin(idle, executor, pin));
+    }
 
-                        return true;
-                    } catch (InterruptedException e) {
-                        return false;
-                    }
-                }
-            });
+    private boolean upin(Semaphore idle, Executor executor, Pin pin)
+    {
+        try {
+            /**
+             * For purposes of migrating from the previous
+             * PinManager we need to deal with sticky flags
+             * shared by multiple pins. We will not remove a
+             * sticky flag as long as there are other pins
+             * using it.
+             */
+            if (pin.getPool() == null || _dao.hasSharedSticky(pin)) {
+                _dao.deletePin(pin);
+            } else {
+                clearStickyFlag(idle, pin, executor);
+            }
+
+            return true;
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 
     private void clearStickyFlag(final Semaphore idle, final Pin pin, Executor executor)
