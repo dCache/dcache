@@ -67,12 +67,15 @@ COPYRIGHT STATUS:
 package org.dcache.srm.scheduler;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.Collection;
 import java.util.Formatter;
 import java.util.Map;
 import java.util.Timer;
@@ -100,54 +103,22 @@ public class Scheduler <T extends Job>
 
     private int maxRequests;
 
-    // thread queue variables
-    private final ModifiableQueue requestQueue;
-    private final CountByCreator threadQueuedJobsNum =
-            new CountByCreator();
-
-    // priority thread queue variables
-    private final CountByCreator priorityThreadQueuedJobsNum =
-            new CountByCreator();
-
-    // running state related variables
-    private final CountByCreator runningStateJobsNum =
-            new CountByCreator();
-
-    // runningWithoutThread state related variables
-    private final CountByCreator runningWithoutThreadStateJobsNum =
-            new CountByCreator();
-
     // thread pool related variables
     private final ThreadPoolExecutor pooledExecutor;
 
-    // ready queue related variables
-    private final CountByCreator readyQueuedJobsNum =
-            new CountByCreator();
-
     // ready state related variables
     private int maxReadyJobs;
-    private final CountByCreator readyJobsNum =
-            new CountByCreator();
 
     // async wait state related variables
     private int maxInProgress;
-    private final CountByCreator asyncWaitJobsNum =
-            new CountByCreator();
 
     // retry wait state related variables
     private int maxNumberOfRetries;
     private long retryTimeout;
-    private final CountByCreator retryWaitJobsNum =
-            new CountByCreator();
-
 
     private final String id;
     private volatile boolean running;
 
-    // this will not prevent jobs from getting into the waiting state but will
-    // prevent the addition of the new jobs to the scheduler
-
-    private final ModifiableQueue readyQueue;
     //
     // this timer is used for tracking the expiration of retry timeout
     private final Timer retryTimer;
@@ -163,6 +134,8 @@ public class Scheduler <T extends Job>
 
     private SchedulingStrategy strategy;
     private String strategyName;
+
+    private Multimap<State,Long> jobs = MultimapBuilder.enumKeys(State.class).hashSetValues().build();
 
     public static Scheduler<?> getScheduler(String id)
     {
@@ -182,9 +155,6 @@ public class Scheduler <T extends Job>
         this.type = type;
         this.id = checkNotNull(id);
         checkArgument(!id.isEmpty(), "need non-empty string as an id");
-
-        requestQueue = new ModifiableQueue(type);
-        readyQueue = new ModifiableQueue(type);
 
         workSupplyService = new WorkSupplyService();
         retryTimer = new Timer();
@@ -235,9 +205,10 @@ public class Scheduler <T extends Job>
             switch (job.getState()) {
             case PENDING:
             case RETRYWAIT:
-                job.setState(State.TQUEUED, "Request enqueued.");
-                if (!threadQueue(job)) {
-                    LOGGER.warn("Thread queue limit reached.");
+                if (threadQueue(job)) {
+                    job.setState(State.TQUEUED, "Request enqueued.");
+                } else {
+                    LOGGER.warn("Maximum request limit reached.");
                     job.setState(State.FAILED, "Site busy: Too many queued requests.");
                 }
                 break;
@@ -261,164 +232,44 @@ public class Scheduler <T extends Job>
         }
     }
 
-    private void increaseNumberOfRunningState(Job job)
+    public synchronized int getTotalRunningState()
     {
-        runningStateJobsNum.increment(job.getSubmitterId());
+        return jobs.get(State.RUNNING).size();
     }
 
-    private void decreaseNumberOfRunningState(Job job)
+    public synchronized int getTotalRunningWithoutThreadState()
     {
-        runningStateJobsNum.decrement(job.getSubmitterId());
+        return jobs.get(State.RUNNINGWITHOUTTHREAD).size();
     }
 
-    public int getRunningStateByCreator(Job job)
+    public synchronized int getTotalTQueued()
     {
-        return runningStateJobsNum.getValue(job.getSubmitterId());
+        return jobs.get(State.TQUEUED).size();
     }
 
-    public int getTotalRunningState()
+    public synchronized int getTotalPriorityTQueued()
     {
-        return runningStateJobsNum.getTotal();
+        return jobs.get(State.PRIORITYTQUEUED).size();
     }
 
-    private void increaseNumberOfRunningWithoutThreadState(Job job)
+    public synchronized int getTotalRQueued()
     {
-        runningWithoutThreadStateJobsNum.increment(job.getSubmitterId());
+        return jobs.get(State.RQUEUED).size();
     }
 
-    private void decreaseNumberOfRunningWithoutThreadState(Job job)
+    public synchronized int getTotalReady()
     {
-        runningWithoutThreadStateJobsNum.decrement(job.getSubmitterId());
+        return jobs.get(State.READY).size();
     }
 
-    public int getRunningWithoutThreadStateByCreator(Job job)
+    public synchronized int getTotalAsyncWait()
     {
-        return runningWithoutThreadStateJobsNum.getValue(job.getSubmitterId());
+        return jobs.get(State.ASYNCWAIT).size();
     }
 
-    public int getTotalRunningWithoutThreadState()
+    public synchronized int getTotalRetryWait()
     {
-        return runningWithoutThreadStateJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfTQueued(Job job)
-    {
-        threadQueuedJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfTQueued(Job job)
-    {
-        threadQueuedJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getTQueuedByCreator(Job job)
-    {
-        return threadQueuedJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalTQueued()
-    {
-        return threadQueuedJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfPriorityTQueued(Job job)
-    {
-        priorityThreadQueuedJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfPriorityTQueued(Job job)
-    {
-        priorityThreadQueuedJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getPriorityTQueuedByCreator(Job job)
-    {
-        return priorityThreadQueuedJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalPriorityTQueued()
-    {
-        return priorityThreadQueuedJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfReadyQueued(Job job)
-    {
-        readyQueuedJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfReadyQueued(Job job)
-    {
-        readyQueuedJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getRQueuedByCreator(Job job)
-    {
-        return readyQueuedJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalRQueued()
-    {
-        return readyQueuedJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfReady(Job job)
-    {
-        readyJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfReady(Job job)
-    {
-        readyJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getReadyByCreator(Job job)
-    {
-        return readyJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalReady()
-    {
-        return readyJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfAsyncWait(Job job)
-    {
-        asyncWaitJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfAsyncWait(Job job)
-    {
-        asyncWaitJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getAsyncWaitByCreator(Job job)
-    {
-        return asyncWaitJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalAsyncWait()
-    {
-        return asyncWaitJobsNum.getTotal();
-    }
-
-    private void increaseNumberOfRetryWait(Job job)
-    {
-        retryWaitJobsNum.increment(job.getSubmitterId());
-    }
-
-    private void decreaseNumberOfRetryWait(Job job)
-    {
-        retryWaitJobsNum.decrement(job.getSubmitterId());
-    }
-
-    public int getRetryWaitByCreator(Job job)
-    {
-        return retryWaitJobsNum.getValue(job.getSubmitterId());
-    }
-
-    public int getTotalRetryWait()
-    {
-        return retryWaitJobsNum.getTotal();
+        return jobs.get(State.RETRYWAIT).size();
     }
 
     public void tryToReadyJob(Job job)
@@ -439,16 +290,15 @@ public class Scheduler <T extends Job>
     {
         if (getTotalRequests() < getMaxRequests()) {
             strategy.add(job);
-            requestQueue.put(job);
             workSupplyService.distributeWork();
             return true;
         }
         return false;
     }
 
-    private int getTotalRequests()
+    private synchronized int getTotalRequests()
     {
-        return getTotalTQueued() + getTotalInprogress() + getTotalRQueued() + getTotalReady();
+        return jobs.size();
     }
 
     private int getTotalInprogress()
@@ -692,65 +542,12 @@ public class Scheduler <T extends Job>
     {
         checkNotNull(job);
 
-        switch (newState) {
-        case TQUEUED:
-            increaseNumberOfTQueued(job);
-            break;
-        case PRIORITYTQUEUED:
-            increaseNumberOfPriorityTQueued(job);
-            break;
-        case RUNNING:
-            increaseNumberOfRunningState(job);
-            break;
-        case RQUEUED:
-            increaseNumberOfReadyQueued(job);
-            readyQueue.put(job);
-            break;
-        case READY:
-        case TRANSFERRING:
-            increaseNumberOfReady(job);
-            break;
-        case ASYNCWAIT:
-            increaseNumberOfAsyncWait(job);
-            break;
-        case RETRYWAIT:
-            increaseNumberOfRetryWait(job);
-            break;
-        case RUNNINGWITHOUTTHREAD:
-            increaseNumberOfRunningWithoutThreadState(job);
-            break;
+        synchronized (this) {
+            jobs.remove(oldState, job.getId());
+            if (!newState.isFinal()) {
+                jobs.put(newState, job.getId());
+            }
         }
-
-        switch (oldState) {
-        case TQUEUED:
-            requestQueue.remove(job);
-            decreaseNumberOfTQueued(job);
-            break;
-        case PRIORITYTQUEUED:
-            decreaseNumberOfPriorityTQueued(job);
-            break;
-        case RUNNING:
-            decreaseNumberOfRunningState(job);
-            break;
-        case RQUEUED:
-            readyQueue.remove(job);
-            decreaseNumberOfReadyQueued(job);
-            break;
-        case READY:
-        case TRANSFERRING:
-            decreaseNumberOfReady(job);
-            break;
-        case ASYNCWAIT:
-            decreaseNumberOfAsyncWait(job);
-            break;
-        case RETRYWAIT:
-            decreaseNumberOfRetryWait(job);
-            break;
-        case RUNNINGWITHOUTTHREAD:
-            decreaseNumberOfRunningWithoutThreadState(job);
-            break;
-        }
-
 
         LOGGER.debug("state changed for job id {} from {} to {}", job.getId(), oldState, newState);
         if (oldState == State.RETRYWAIT && newState.isFinal()) {
@@ -946,16 +743,29 @@ public class Scheduler <T extends Job>
         formatter.format("    Scheduling strategy             : %s\n", strategyName);
     }
 
-    public void printThreadQueue(StringBuilder sb)
+    private static void printQueue(StringBuilder sb, Collection<Long> queue)
     {
-        sb.append("ThreadQueue :\n");
-        requestQueue.printQueue(sb);
+        if (queue.isEmpty()) {
+            sb.append("Queue is empty\n");
+        } else {
+            int index = 0;
+            for (long nextId : queue) {
+                sb.append("queue element # ").append(index).append(" : ").append(nextId).append('\n');
+                index++;
+            }
+        }
     }
 
-    public void printReadyQueue(StringBuilder sb)
+    public synchronized void printThreadQueue(StringBuilder sb)
+    {
+        sb.append("ThreadQueue :\n");
+        printQueue(sb, jobs.get(State.TQUEUED));
+    }
+
+    public synchronized void printReadyQueue(StringBuilder sb)
     {
         sb.append("ReadyQueue :\n");
-        readyQueue.printQueue(sb);
+        printQueue(sb, jobs.get(State.RQUEUED));
     }
 
     /**
@@ -980,7 +790,7 @@ public class Scheduler <T extends Job>
 
     public Class<T> getType()
     {
-        return (Class<T>) requestQueue.getType();
+        return type;
     }
 
     private void checkOwnership(Job job)
