@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -19,6 +20,7 @@ import java.util.regex.PatternSyntaxException;
 
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
 import org.dcache.vehicles.FileAttributes;
 
@@ -59,7 +61,7 @@ public class CheckStagePermission {
 
         try {
             String dn = Subjects.getDn(subject);
-            Collection<String> fqans = Subjects.getFqans(subject);
+            Collection<FQAN> fqans = Subjects.getFqans(subject);
 
             String storageClass = fileAttributes.getStorageClass();
             String hsm = fileAttributes.getHsm();
@@ -74,9 +76,9 @@ public class CheckStagePermission {
             }
 
             if (fqans.isEmpty()) {
-                return canPerformStaging(dn, "", storeUnit);
+                return canPerformStaging(dn, null, storeUnit);
             } else {
-                for (String fqan: fqans) {
+                for (FQAN fqan: fqans) {
                     if (canPerformStaging(dn, fqan, storeUnit)) {
                         return true;
                     }
@@ -99,7 +101,7 @@ public class CheckStagePermission {
      * @throws PatternSyntaxException
      * @throws IOException
      */
-     public boolean canPerformStaging(String dn, String fqan, String storeUnit) throws PatternSyntaxException, IOException {
+     public boolean canPerformStaging(String dn, FQAN fqan, String storeUnit) throws PatternSyntaxException, IOException {
 
          if ( !_isEnabled ) {
              return true;
@@ -114,11 +116,7 @@ public class CheckStagePermission {
              rereadConfig();
          }
 
-         if (fqan==null) {
-             fqan = "";
-         }
-
-         return userMatchesPredicates(dn, fqan, storeUnit);
+         return userMatchesPredicates(dn, Objects.toString(fqan, ""), storeUnit);
      }
 
      /**
@@ -160,7 +158,7 @@ public class CheckStagePermission {
        * given storage group.
        *
        * @param dn user's Distinguished Name
-       * @param fqan user's FQAN as a String
+       * @param fqanStr user's FQAN as a String
        * @param storeUnit object's storage unit
        * @return true if the user and object match predicates
        */

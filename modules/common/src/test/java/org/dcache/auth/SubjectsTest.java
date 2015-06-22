@@ -28,12 +28,9 @@ public class SubjectsTest
         "/O=Grid/O=example/OU=example.org/CN=Tester 2";
 
     private final static String ROLE = "tester";
-    private final static String FQAN1 =
-        "/example";
-    private final static String FQAN2 =
-        "/example/group";
-    private final static String FQAN3 =
-        "/example/group/Role=" + ROLE;
+    private final static FQAN FQAN1 = new FQAN("/example");
+    private final static FQAN FQAN2 = new FQAN("/example/group");
+    private final static FQAN FQAN3 = new FQAN("/example/group/Role=" + ROLE);
 
     private Subject _subject1;
     private Subject _subject2;

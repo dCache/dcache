@@ -38,6 +38,7 @@ import java.security.AccessController;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -288,7 +289,7 @@ public class CopyFilter implements Filter
             }
 
             return _credentialService.getDelegatedCredential(
-                    dn, Subjects.getPrimaryFqan(subject),
+                    dn, Objects.toString(Subjects.getPrimaryFqan(subject), null),
                     20, MINUTES);
 
         case NONE:

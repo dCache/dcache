@@ -32,11 +32,11 @@ public class VoJobDiscriminator extends UserDiscriminator
     @Override
     protected String getDiscriminatingValue(SRMUser user)
     {
-        String fqan = Subjects.getPrimaryFqan(((DcacheUser) user).getSubject());
+        FQAN fqan = Subjects.getPrimaryFqan(((DcacheUser) user).getSubject());
         if (fqan == null) {
             return "";
         }
-        String group = new FQAN(fqan).getGroup();
+        String group = fqan.getGroup();
         int i = group.indexOf('/', 1);
         return (i == -1) ? group : group.substring(0, i);
     }

@@ -1,11 +1,15 @@
 package org.dcache.auth;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+
 import javax.security.auth.Subject;
 
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The class is a Wrapper for the Subject, used for StringTemplate
@@ -37,11 +41,11 @@ public class SubjectWrapper {
     }
 
     public String getPrimaryFqan() {
-        return Subjects.getPrimaryFqan(_subject);
+        return Objects.toString(Subjects.getPrimaryFqan(_subject), null);
     }
 
     public Collection<String> getFqans() {
-        return Subjects.getFqans(_subject);
+        return Collections2.transform(Subjects.getFqans(_subject), FQAN::toString);
     }
 
     public String getUserName() {

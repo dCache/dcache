@@ -17,9 +17,9 @@
  */
 package diskCacheV111.srm;
 
-import com.google.common.base.Strings;
-
 import javax.annotation.Nonnull;
+
+import java.util.Objects;
 
 import diskCacheV111.srm.dcache.DcacheUser;
 
@@ -33,7 +33,7 @@ public class PrimaryFqanJobDiscriminator extends UserDiscriminator
     @Override
     protected String getDiscriminatingValue(SRMUser user)
     {
-        return Strings.nullToEmpty(Subjects.getPrimaryFqan(((DcacheUser) user).getSubject()));
+        return Objects.toString(Subjects.getPrimaryFqan(((DcacheUser) user).getSubject()), "");
     }
 
     @Nonnull

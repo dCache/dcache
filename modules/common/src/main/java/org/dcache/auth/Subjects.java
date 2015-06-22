@@ -246,18 +246,18 @@ public class Subjects
      * @throws IllegalArgumentException if subject has more than one
      *         primary FQANs
      */
-    public static String getPrimaryFqan(Subject subject)
+    public static FQAN getPrimaryFqan(Subject subject)
         throws NoSuchElementException
     {
         Set<FQANPrincipal> principals =
             subject.getPrincipals(FQANPrincipal.class);
-        String fqan = null;
+        FQAN fqan = null;
         for (FQANPrincipal principal: principals) {
             if (principal.isPrimaryGroup()) {
                 if (fqan != null) {
                     throw new IllegalArgumentException("Subject has multiple primary FQANs");
                 }
-                fqan = principal.getName();
+                fqan = principal.getFqan();
             }
         }
         return fqan;
@@ -266,12 +266,12 @@ public class Subjects
     /**
      * Returns the collection of FQANs of a subject.
      */
-    public static Collection<String> getFqans(Subject subject)
+    public static Collection<FQAN> getFqans(Subject subject)
     {
-        Collection<String> fqans = new ArrayList<>();
+        Collection<FQAN> fqans = new ArrayList<>();
         for (Principal principal: subject.getPrincipals()) {
             if (principal instanceof FQANPrincipal) {
-                fqans.add(principal.getName());
+                fqans.add(((FQANPrincipal) principal).getFqan());
             }
         }
         return fqans;

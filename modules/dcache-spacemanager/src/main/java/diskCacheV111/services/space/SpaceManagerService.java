@@ -966,12 +966,11 @@ public final class SpaceManagerService
     {
         String effectiveGroup;
         String effectiveRole;
-        String primaryFqan = Subjects.getPrimaryFqan(subject);
+        FQAN primaryFqan = Subjects.getPrimaryFqan(subject);
         String username = Subjects.getUserName(subject);
         if (primaryFqan != null) {
-            FQAN fqan = new FQAN(primaryFqan);
-            effectiveGroup = fqan.getGroup();
-            effectiveRole = fqan.getRole();
+            effectiveGroup = primaryFqan.getGroup();
+            effectiveRole = primaryFqan.getRole();
         } else if (username != null) {
             effectiveGroup = Subjects.getUserName(subject);
             effectiveRole = null;
@@ -1090,19 +1089,16 @@ public final class SpaceManagerService
         Subject subject = gst.getSubject();
         Set<Long> spaces = new HashSet<>();
         if (description == null) {
-            for (String s : Subjects.getFqans(subject)) {
-                if (s != null) {
-                    FQAN fqan = new FQAN(s);
-                    String role = fqan.getRole();
-                    SpaceManagerDatabase.SpaceCriterion criterion =
-                            db.spaces()
-                                    .whereStateIsIn(SpaceState.RESERVED)
-                                    .whereGroupIs(fqan.getGroup());
-                    if (!isNullOrEmpty(role)) {
-                        criterion.whereRoleIs(role);
-                    }
-                    spaces.addAll(db.getSpaceTokensOf(criterion));
+            for (FQAN fqan : Subjects.getFqans(subject)) {
+                String role = fqan.getRole();
+                SpaceManagerDatabase.SpaceCriterion criterion =
+                        db.spaces()
+                                .whereStateIsIn(SpaceState.RESERVED)
+                                .whereGroupIs(fqan.getGroup());
+                if (!isNullOrEmpty(role)) {
+                    criterion.whereRoleIs(role);
                 }
+                spaces.addAll(db.getSpaceTokensOf(criterion));
             }
             spaces.addAll(db.getSpaceTokensOf(
                     db.spaces()

@@ -12,6 +12,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.dcache.auth.FQAN;
 import org.dcache.auth.Subjects;
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.FireAndForgetTask;
@@ -106,7 +107,7 @@ public class SEMsgPlugin implements Plugin
         if(dn != null) {
             sb.append(dn);
 
-            for(String fqan : Subjects.getFqans(subject)) {
+            for(FQAN fqan : Subjects.getFqans(subject)) {
                 sb.append(',').append(fqan);
             }
         } else {
