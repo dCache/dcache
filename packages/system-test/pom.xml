@@ -58,6 +58,7 @@
                                   <filtersfile file="${project.basedir}/src/main/assembly/filter.properties" />
                                   <filter token="project.version" value="${project.version}" />
                                   <filter token="TARGET" value="${project.build.directory}" />
+                                  <filter token="SOURCE" value="${project.basedir}/src/main"/>
                                   <filter token="DCACHE_LOAD_CONFIG" value=" DCACHE_HOME=&quot;${project.build.directory}/${project.build.finalName}&quot;${line.separator} DCACHE_CLASSPATH=&quot;${DCACHE_HOME}/share/classes/*&quot;${line.separator} DCACHE_DEFAULTS=&quot;${DCACHE_HOME}/share/defaults&quot;${line.separator} DCACHE_CACHED_CONFIG=&quot;${DCACHE_HOME}/var/config/cache&quot;${line.separator} . &quot;${DCACHE_HOME}/share/lib/loadConfig.sh&quot;" />
                               </filterset>
 
