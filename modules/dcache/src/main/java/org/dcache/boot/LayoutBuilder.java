@@ -5,15 +5,19 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
+
+import diskCacheV111.util.FileNotFoundCacheException;
 
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.Version;
@@ -152,12 +156,18 @@ public class LayoutBuilder
         }
         URI uri = new URI(path);
         Layout layout = new Layout(config);
-        layout.load(uri);
+        if (!path.isEmpty()) {
+            try {
+                layout.load(uri);
+            } catch (FileNotFoundException e) {
+                config.getProblemConsumer().warning(e.getMessage());
+            }
 
-        if (Objects.equals(uri.getScheme(), "file")) {
-            _sourceFiles.add(new File(uri.getPath()));
-        } else {
-            layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_CACHE, "false");
+            if (Objects.equals(uri.getScheme(), "file")) {
+                _sourceFiles.add(new File(uri.getPath()));
+            } else {
+                layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_CACHE, "false");
+            }
         }
         layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_FILES,
                 Joiner.on(" ").join(transform(_sourceFiles, file -> '"' + file.getPath() + '"')));
