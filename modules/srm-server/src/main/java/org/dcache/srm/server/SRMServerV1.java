@@ -18,6 +18,8 @@ import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 
+import static java.util.Arrays.asList;
+
 
 public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
@@ -43,6 +45,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
          isClientDNSLookup = config.isClientDNSLookup();
          srmServerCounters = srm.getSrmServerV1Counters();
          srmServerGauges = srm.getSrmServerV1Gauges();
+         isEnabled = asList(config.getVersions()).contains("1");
     }
 
     private void checkEnabled() throws RemoteException
