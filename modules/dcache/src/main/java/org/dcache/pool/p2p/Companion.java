@@ -542,7 +542,7 @@ class Companion
      */
     synchronized void beginTransfer(final String uri)
     {
-        new Thread("P2P Transfer - " + getPnfsId()) {
+        new Thread("P2P Transfer - " + getPnfsId() + " " + _sourcePoolName) {
             @Override
             public void run()
             {
