@@ -453,11 +453,14 @@ public class Scheduler <T extends Job>
                     } catch (NonFatalJobFailure e) {
                         job.wlock();
                         try {
-                            if (job.getNumberOfRetries() < getMaxNumberOfRetries()) {
-                                job.setState(State.RETRYWAIT, e.getMessage());
-                                startRetryTimer(job);
-                            } else {
-                                job.setState(State.FAILED, "Too many retries; most recent failure was " + e.getMessage());
+                            if (!job.getState().isFinal()) {
+                                if (job.getNumberOfRetries() < getMaxNumberOfRetries()) {
+                                    job.setState(State.RETRYWAIT, e.getMessage());
+                                    startRetryTimer(job);
+                                } else {
+                                    job.setState(State.FAILED,
+                                                 "Too many retries; most recent failure was " + e.getMessage());
+                                }
                             }
                         } catch (IllegalStateTransition ist) {
                             LOGGER.error("Illegal State Transition : " + ist.getMessage());
@@ -466,20 +469,28 @@ public class Scheduler <T extends Job>
                         }
                         return;
                     } catch (FatalJobFailure e) {
+                        job.wlock();
                         try {
-                            job.setState(State.FAILED, e.getMessage());
+                            if (!job.getState().isFinal()) {
+                                job.setState(State.FAILED, e.getMessage());
+                            }
                         } catch (IllegalStateTransition ist) {
                             LOGGER.error("Illegal State Transition : " + ist.getMessage());
+                        } finally {
+                            job.wunlock();
                         }
                         return;
                     } catch (RuntimeException e) {
+                        LOGGER.error("Bug detected by SRM Scheduler", e);
+                        job.wlock();
                         try {
-                            LOGGER.error("Bug detected by SRM Scheduler", e);
-                            job.setState(State.FAILED, "Internal error: " + e.toString());
+                            if (!job.getState().isFinal()) {
+                                job.setState(State.FAILED, "Internal error: " + e.toString());
+                            }
                         } catch (IllegalStateTransition ist) {
-                            // FIXME how should we fail a request that is
-                            // already in a terminal state?
                             LOGGER.error("Illegal State Transition : {}", ist.getMessage());
+                        } finally {
+                            job.wunlock();
                         }
                         return;
                     }
