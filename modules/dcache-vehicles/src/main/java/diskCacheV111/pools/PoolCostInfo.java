@@ -1,5 +1,7 @@
 package diskCacheV111.pools;
 
+import com.google.common.collect.Maps;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,9 +103,31 @@ public class PoolCostInfo implements Serializable {
     public PoolQueueInfo getP2pClientQueue(){ return _p2pClient ; }
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
+    public Map<String, NamedPoolQueueInfo> getMoverQueues() {
+        Map<String, NamedPoolQueueInfo> moverQueues = Maps.newHashMap(_extendedMoverHash);
+        if (_store != null) {
+            moverQueues.put("Stores", new NamedPoolQueueInfo("Stores", _store));
+        }
+        if (_restore != null) {
+            moverQueues.put("Restores", new NamedPoolQueueInfo("Restores", _restore));
+        }
+        if (_mover != null) {
+            moverQueues.put("Movers", new NamedPoolQueueInfo("Movers", _mover));
+        }
+        if (_p2p != null) {
+            moverQueues.put("P2P-Server", new NamedPoolQueueInfo("P2P-Server", _p2p));
+        }
+        if (_p2pClient != null) {
+            moverQueues.put("P2P-Client", new NamedPoolQueueInfo("P2P-Client", _p2pClient));
+        }
+        return moverQueues;
+    }
+
     public class PoolSpaceInfo implements Serializable {
 
     	private static final long serialVersionUID = -8966065301943351970L;
+
+
 
         private long _total, _free, _precious, _removable, _lru;
         private long _gap;
@@ -202,7 +226,7 @@ public class PoolCostInfo implements Serializable {
         }
     }
 
-    public Map<String, NamedPoolQueueInfo> getExtendedMoverHash()
+    public Map<String,NamedPoolQueueInfo> getExtendedMoverHash()
     {
         return _extendedMoverHash;
     }
