@@ -5,83 +5,110 @@ import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
+import diskCacheV111.pools.PoolCostInfo.PoolQueueInfo;
 import diskCacheV111.services.space.LinkGroup;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.util.VOInfo;
 import diskCacheV111.vehicles.RestoreHandlerInfo;
-
 import org.dcache.admin.webadmin.datacollector.datatypes.CellStatus;
 import org.dcache.admin.webadmin.datacollector.datatypes.MoverInfo;
-import org.dcache.poolmanager.Partition;
-import org.dcache.webadmin.model.businessobjects.Pool;
-import org.dcache.webadmin.model.businessobjects.RestoreInfo;
-import org.dcache.webadmin.model.util.AccessLatency;
-import org.dcache.webadmin.model.util.RetentionPolicy;
-import org.dcache.webadmin.view.beans.ActiveTransfersBean;
-import org.dcache.webadmin.view.beans.CellServicesBean;
-import org.dcache.webadmin.view.beans.PoolQueueBean;
-import org.dcache.webadmin.view.beans.PoolRequestQueue;
-import org.dcache.webadmin.view.beans.PoolSpaceBean;
-import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
-import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
-import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
-import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
+    import org.dcache.poolmanager.Partition;
+    import org.dcache.webadmin.model.businessobjects.Pool;
+    import org.dcache.webadmin.model.businessobjects.RestoreInfo;
+    import org.dcache.webadmin.model.util.AccessLatency;
+    import org.dcache.webadmin.model.util.RetentionPolicy;
+    import org.dcache.webadmin.view.beans.ActiveTransfersBean;
+    import org.dcache.webadmin.view.beans.CellServicesBean;
+    import org.dcache.webadmin.view.beans.PoolQueueBean;
+    import org.dcache.webadmin.view.beans.PoolRequestQueue;
+    import org.dcache.webadmin.view.beans.PoolSpaceBean;
+    import org.dcache.webadmin.view.pages.poolselectionsetup.beans.PartitionsBean;
+    import org.dcache.webadmin.view.pages.spacetokens.beans.LinkGroupBean;
+    import org.dcache.webadmin.view.pages.spacetokens.beans.SpaceReservationBean;
+    import org.dcache.webadmin.view.pages.tapetransferqueue.beans.RestoreBean;
 
-/**
- * Does the mapping between modelobjects and viewobjects
- * @author jans
- */
-public class BeanDataMapper {
+    /**
+     * Does the mapping between modelobjects and viewobjects
+     * @author jans
+     */
+    public class BeanDataMapper {
 
-    public static PoolSpaceBean poolModelToView(Pool poolBusinessObject,
-            Map<String, List<String>> domainMap) {
-        PoolSpaceBean returnPoolBean = poolModelToView(poolBusinessObject);
-        returnPoolBean.setDomainName(
-                NamedCellUtil.findDomainOfUniqueCell(
-                domainMap, returnPoolBean.getName()));
-        return returnPoolBean;
-    }
-
-    private static PoolSpaceBean poolModelToView(Pool poolBusinessObject) {
-        PoolSpaceBean returnPoolBean = new PoolSpaceBean();
-        returnPoolBean.setEnabled(poolBusinessObject.getSelectionPool().isEnabled());
-        returnPoolBean.setPoolMode(poolBusinessObject.getSelectionPool().getPoolMode());
-        returnPoolBean.setName(poolBusinessObject.getName());
-        PoolCostInfo poolCostInfo = poolBusinessObject.getCostinfo();
-        returnPoolBean.setFreeSpace(poolCostInfo.getSpaceInfo().getFreeSpace());
-        returnPoolBean.setPreciousSpace(poolCostInfo.getSpaceInfo().getPreciousSpace());
-        returnPoolBean.setUsedSpace(poolCostInfo.getSpaceInfo().getUsedSpace());
-        returnPoolBean.setRemovableSpace(poolCostInfo.getSpaceInfo().getRemovableSpace());
-        returnPoolBean.setTotalSpace(poolCostInfo.getSpaceInfo().getTotalSpace());
-        return returnPoolBean;
-    }
-
-    public static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject,
-            Map<String, List<String>> domainMap) {
-        PoolQueueBean returnPoolQueueBean = poolQueueModelToView(poolBusinessObject);
-        returnPoolQueueBean.setDomainName(
-                NamedCellUtil.findDomainOfUniqueCell(
-                domainMap, returnPoolQueueBean.getName()));
-
-        return returnPoolQueueBean;
-    }
-
-    private static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject) {
-        PoolQueueBean returnPoolQueueBean = new PoolQueueBean();
-        returnPoolQueueBean.setName(poolBusinessObject.getName());
-        for (PoolCostInfo.NamedPoolQueueInfo queue :
-                poolBusinessObject.getCostinfo().getMoverQueues().values()) {
-            returnPoolQueueBean.addRequestQueue(queuesModelToView(queue));
+        public static PoolSpaceBean poolModelToView(Pool poolBusinessObject,
+                        Map<String, List<String>> domainMap) {
+            PoolSpaceBean returnPoolBean = poolModelToView(poolBusinessObject);
+            returnPoolBean.setDomainName(
+                            NamedCellUtil.findDomainOfUniqueCell(
+                                            domainMap, returnPoolBean.getName()));
+            return returnPoolBean;
         }
-        return returnPoolQueueBean;
+
+        private static PoolSpaceBean poolModelToView(Pool poolBusinessObject) {
+            PoolSpaceBean returnPoolBean = new PoolSpaceBean();
+            returnPoolBean.setEnabled(poolBusinessObject.getSelectionPool().isEnabled());
+            returnPoolBean.setPoolMode(poolBusinessObject.getSelectionPool().getPoolMode());
+            returnPoolBean.setName(poolBusinessObject.getName());
+            PoolCostInfo poolCostInfo = poolBusinessObject.getCostinfo();
+            returnPoolBean.setFreeSpace(poolCostInfo.getSpaceInfo().getFreeSpace());
+            returnPoolBean.setPreciousSpace(poolCostInfo.getSpaceInfo().getPreciousSpace());
+            returnPoolBean.setUsedSpace(poolCostInfo.getSpaceInfo().getUsedSpace());
+            returnPoolBean.setRemovableSpace(poolCostInfo.getSpaceInfo().getRemovableSpace());
+            returnPoolBean.setTotalSpace(poolCostInfo.getSpaceInfo().getTotalSpace());
+            return returnPoolBean;
+        }
+
+        public static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject,
+                        Map<String, List<String>> domainMap) {
+            PoolQueueBean returnPoolQueueBean = poolQueueModelToView(poolBusinessObject);
+            returnPoolQueueBean.setDomainName(
+                            NamedCellUtil.findDomainOfUniqueCell(
+                                            domainMap, returnPoolQueueBean.getName()));
+
+            return returnPoolQueueBean;
+        }
+
+        private static PoolQueueBean poolQueueModelToView(Pool poolBusinessObject) {
+            PoolCostInfo costInfo = poolBusinessObject.getCostinfo();
+            PoolQueueBean returnPoolQueueBean = new PoolQueueBean();
+            returnPoolQueueBean.setName(poolBusinessObject.getName());
+            returnPoolQueueBean.addRequestQueue(queuesModelToView("Stores", costInfo.getStoreQueue(), -1));
+            returnPoolQueueBean.addRequestQueue(queuesModelToView("Restores", costInfo.getRestoreQueue(),
+                            -1));
+            returnPoolQueueBean.addRequestQueue(
+                            queuesModelToView("Movers", costInfo.getMoverQueue()));
+            returnPoolQueueBean.addRequestQueue(
+                            queuesModelToView("P2P-Server", costInfo.getP2pQueue()));
+            returnPoolQueueBean.addRequestQueue(queuesModelToView("P2P-Client", costInfo.getP2pClientQueue()));
+            for (NamedPoolQueueInfo info : costInfo.getExtendedMoverHash().values() ) {
+                if (info != null) {
+                    returnPoolQueueBean.addRequestQueue(queuesModelToView(info));
+                }
+            }
+            return returnPoolQueueBean;
+        }
+
+    private static PoolRequestQueue queuesModelToView(NamedPoolQueueInfo info) {
+        return queuesModelToView(info.getName(), info);
     }
 
-    private static PoolRequestQueue queuesModelToView(PoolCostInfo.NamedPoolQueueInfo moverQueue) {
+    private static PoolRequestQueue queuesModelToView(String name, PoolQueueInfo info) {
+        if (info == null) {
+            return queuesModelToView(name, info, -1);
+        }
+        return queuesModelToView(name, info, info.getMaxActive());
+    }
+
+    private static PoolRequestQueue queuesModelToView(String name, PoolQueueInfo info, int max) {
         PoolRequestQueue queue = new PoolRequestQueue();
-        queue.setName(moverQueue.getName());
-        queue.setActive(moverQueue.getActive());
-        queue.setMax(moverQueue.getMaxActive());
-        queue.setQueued(moverQueue.getQueued());
+        queue.setName(name);
+        queue.setMax(max);
+        if (info == null) {
+            queue.setActive(-1);
+            queue.setQueued(-1);
+        } else {
+            queue.setActive(info.getActive());
+            queue.setQueued(info.getQueued());
+        }
         return queue;
     }
 

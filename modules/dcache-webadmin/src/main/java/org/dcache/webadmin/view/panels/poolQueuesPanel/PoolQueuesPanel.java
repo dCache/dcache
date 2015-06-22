@@ -8,10 +8,6 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 
 import java.util.List;
-import org.apache.wicket.markup.head.IHeaderResponse;
-import org.apache.wicket.markup.head.JavaScriptHeaderItem;
-import org.apache.wicket.markup.head.OnLoadHeaderItem;
-import org.apache.wicket.markup.head.StringHeaderItem;
 
 import org.dcache.webadmin.view.beans.PoolGroupBean;
 import org.dcache.webadmin.view.beans.PoolQueueBean;
@@ -86,6 +82,22 @@ public class PoolQueuesPanel extends BasePanel {
         }
     }
 
+    private class EmptyStringPropertyModel extends PropertyModel<Object> {
+
+        public EmptyStringPropertyModel(Object modelObject, String expression) {
+            super(modelObject, expression);
+        }
+
+        @Override
+        public String getObject() {
+            Object obj = super.getObject();
+            if (obj instanceof Integer && ((Integer)obj) < 0) {
+                return "";
+            }
+            return obj.toString();
+        }
+    }
+
     private class QueueFragment extends Fragment {
 
         private static final long serialVersionUID = -8844234902202594916L;
@@ -93,7 +105,7 @@ public class PoolQueuesPanel extends BasePanel {
         public QueueFragment(String id, PoolRequestQueue requestQueue) {
             super(id, "queueFragment", PoolQueuesPanel.this);
             this.add(new Label("active", new PropertyModel(requestQueue, "active")));
-            this.add(new Label("max", new PropertyModel(requestQueue, "max")));
+            this.add(new Label("max", new EmptyStringPropertyModel(requestQueue, "max")));
             this.add(new Label("queued", new PropertyModel(requestQueue, "queued")));
         }
     }
