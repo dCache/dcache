@@ -2083,12 +2083,14 @@ public class JdbcFs implements FileSystemProvider {
             _sqlDriver.createTag(dbConnection, inode, name, uid, gid, mode);
             dbConnection.commit();
         } catch (SQLException e) {
-            _log.error("createTag", e);
             try {
                 dbConnection.rollback();
-            } catch (SQLException e1) {
-                _log.error("createTag rollback", e);
+            } catch (SQLException se) {
             }
+            if (_sqlDriver.isDuplicatedKeyError(e.getSQLState())) {
+                throw new FileExistsChimeraFsException();
+            }
+            _log.error("createTag", e);
             throw new IOHimeraFsException(e.getMessage());
         } finally {
             tryToClose(dbConnection);

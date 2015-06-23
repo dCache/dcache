@@ -1080,4 +1080,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode base = _rootInode.mkdir("dir1");
         base.remove("..");
     }
+
+    @Test(expected = FileExistsChimeraFsException.class)
+    public void testCreateDuplicateTag() throws Exception {
+        FsInode dir = _rootInode.mkdir("dir1");
+        _fs.createTag(dir, "aTag", 0, 0, 0644);
+        _fs.createTag(dir, "aTag", 0, 0, 0644);
+    }
+
 }
