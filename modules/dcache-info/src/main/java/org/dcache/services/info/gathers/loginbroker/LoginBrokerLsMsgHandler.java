@@ -169,7 +169,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 			String hostName = address.getHostAddress();
 			update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue(hostName, lifetime));
-			String urlName = isInetAddress(hostName) ? toUriString(address) : hostName;
+			String urlName = isInetAddress(name) ? toUriString(address) : name;
 			update.appendUpdate( pathToInterfaceBranch.newChild("url-name"), new StringStateValue(urlName, lifetime));
 			update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
 								new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
