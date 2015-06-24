@@ -957,10 +957,10 @@ public class ChimeraNameSpaceProvider
                         }
                         break;
                     case ACCESS_LATENCY:
-                        _fs.setAccessLatency(inode, attr.getAccessLatency());
+                        stat.setAccessLatency(attr.getAccessLatency());
                         break;
                     case RETENTION_POLICY:
-                        _fs.setRetentionPolicy(inode, attr.getRetentionPolicy());
+                        stat.setRetentionPolicy(attr.getRetentionPolicy());
                         break;
                     case FLAGS:
                         FsInode level2 = new FsInode(_fs, pnfsId.toString(), 2);

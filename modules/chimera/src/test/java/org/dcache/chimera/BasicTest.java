@@ -11,9 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
 import java.nio.charset.StandardCharsets;
 
 import org.dcache.acl.ACE;
@@ -623,62 +620,6 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.setInodeChecksum(fileInode, 2, sum2);
         assertHasChecksum(new Checksum(ChecksumType.getChecksumType(1), sum1), fileInode);
         assertHasChecksum(new Checksum(ChecksumType.getChecksumType(2), sum2), fileInode);
-    }
-
-    @Test
-    public void testUpdateALNonExist() throws Exception {
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-        try {
-            _fs.setAccessLatency(inode, AccessLatency.ONLINE);
-            fail("was able to update access latency of non existing file");
-        } catch (FileNotFoundHimeraFsException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testUpdateALExist() throws Exception {
-        FsInode base = _rootInode.mkdir("junit");
-        FsInode inode = base.create("testCreateFile", 0, 0, 0644);
-
-        _fs.setAccessLatency(inode, AccessLatency.ONLINE);
-    }
-
-    @Test
-    public void testChangeALExist() throws Exception {
-        FsInode base = _rootInode.mkdir("junit");
-        FsInode inode = base.create("testCreateFile", 0, 0, 0644);
-
-        _fs.setAccessLatency(inode, AccessLatency.ONLINE);
-        _fs.setAccessLatency(inode, AccessLatency.NEARLINE);
-    }
-
-    @Test
-    public void testUpdateRPNonExist() throws Exception {
-        FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-        try {
-            _fs.setRetentionPolicy(inode, RetentionPolicy.CUSTODIAL);
-            fail("was able to update retention policy of non existing file");
-        } catch (FileNotFoundHimeraFsException e) {
-            // OK
-        }
-    }
-
-    @Test
-    public void testUpdateRPExist() throws Exception {
-        FsInode base = _rootInode.mkdir("junit");
-        FsInode inode = base.create("testCreateFile", 0, 0, 0644);
-
-        _fs.setRetentionPolicy(inode, RetentionPolicy.CUSTODIAL);
-    }
-
-    @Test
-    public void testChangeRPExist() throws Exception {
-        FsInode base = _rootInode.mkdir("junit");
-        FsInode inode = base.create("testCreateFile", 0, 0, 0644);
-
-        _fs.setRetentionPolicy(inode, RetentionPolicy.CUSTODIAL);
-        _fs.setRetentionPolicy(inode, RetentionPolicy.OUTPUT);
     }
 
     @Test

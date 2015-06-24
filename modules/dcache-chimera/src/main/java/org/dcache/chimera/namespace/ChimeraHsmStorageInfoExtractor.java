@@ -23,6 +23,7 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.StorageGenericLocation;
+import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 
 public abstract class ChimeraHsmStorageInfoExtractor implements
@@ -69,9 +70,8 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             if (inode.isDirectory()) {
                 dirInode = inode;
             } else {
-                Optional<AccessLatency> al = inode.getAccessLatency();
-                if (al.isPresent()) {
-                    return al.get();
+                if (inode.statCache().isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+                    return inode.statCache().getAccessLatency();
                 }
                 dirInode = inode.getParent();
             }
@@ -111,9 +111,8 @@ public abstract class ChimeraHsmStorageInfoExtractor implements
             if (inode.isDirectory()) {
                 dirInode = inode;
             } else {
-                Optional<RetentionPolicy> rp = inode.getRetentionPolicy();
-                if (rp.isPresent()) {
-                    return rp.get();
+                if (inode.statCache().isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+                    return inode.statCache().getRetentionPolicy();
                 }
                 dirInode = inode.getParent();
             }

@@ -41,8 +41,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -2020,70 +2018,6 @@ public class JdbcFs implements FileSystemProvider {
         }
     }
 
-    /**
-     *
-     * @param inode
-     * @param accessLatency
-     * @throws ChimeraFsException
-     */
-    @Override
-    public void setAccessLatency(FsInode inode, AccessLatency accessLatency) throws ChimeraFsException {
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setAccessLatency(dbConnection, inode, accessLatency);
-            dbConnection.commit();
-        } catch (SQLException e) {
-            tryToRollback(dbConnection);
-
-            if (_sqlDriver.isForeignKeyError(e)) {
-                throw new FileNotFoundHimeraFsException(e);
-            }
-            _log.error("setAccessLatency:", e);
-            throw new IOHimeraFsException(e.getMessage(), e);
-        } finally {
-            tryToClose(dbConnection);
-        }
-    }
-
-    @Override
-    public void setRetentionPolicy(FsInode inode, RetentionPolicy retentionPolicy) throws ChimeraFsException {
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
-        }
-
-        try {
-            // read/write only
-            dbConnection.setAutoCommit(false);
-
-            _sqlDriver.setRetentionPolicy(dbConnection, inode, retentionPolicy);
-            dbConnection.commit();
-        } catch (SQLException e) {
-            tryToRollback(dbConnection);
-
-            if (_sqlDriver.isForeignKeyError(e)) {
-                throw new FileNotFoundHimeraFsException(e);
-            }
-            _log.error("setRetentionPolicy:", e);
-            throw new IOHimeraFsException(e.getMessage(), e);
-        } finally {
-            tryToClose(dbConnection);
-        }
-    }
-
     @Override
     public InodeStorageInformation getStorageInfo(FsInode inode) throws ChimeraFsException {
 
@@ -2111,68 +2045,6 @@ public class JdbcFs implements FileSystemProvider {
         }
 
         return storageInfo;
-
-    }
-
-    @Override
-    public AccessLatency getAccessLatency(FsInode inode) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
-        }
-
-        AccessLatency accessLatency = null;
-
-        try {
-
-            // read only
-            dbConnection.setAutoCommit(true);
-
-            accessLatency = _sqlDriver.getAccessLatency(dbConnection, inode);
-
-        } catch (SQLException e) {
-            _log.error("setSorageInfo", e);
-            throw new IOHimeraFsException(e.getMessage(), e);
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-        return accessLatency;
-
-    }
-
-    @Override
-    public RetentionPolicy getRetentionPolicy(FsInode inode) throws ChimeraFsException {
-
-        Connection dbConnection;
-        try {
-            // get from pool
-            dbConnection = _dbConnectionsPool.getConnection();
-        } catch (SQLException e) {
-            throw new BackEndErrorHimeraFsException(e.getMessage(), e);
-        }
-
-        RetentionPolicy retentionPolicy = null;
-
-        try {
-
-            // read only
-            dbConnection.setAutoCommit(true);
-
-            retentionPolicy = _sqlDriver.getRetentionPolicy(dbConnection, inode);
-
-        } catch (SQLException e) {
-            _log.error("setSorageInfo", e);
-            throw new IOHimeraFsException(e.getMessage(), e);
-        } finally {
-            tryToClose(dbConnection);
-        }
-
-        return retentionPolicy;
 
     }
 

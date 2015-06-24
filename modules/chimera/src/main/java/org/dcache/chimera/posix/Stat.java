@@ -16,6 +16,8 @@
  */
 package org.dcache.chimera.posix;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.EnumSet;
@@ -45,7 +47,9 @@ public class Stat {
         MTIME,
         CTIME,
         CRTIME,
-        BLK_SIZE
+        BLK_SIZE,
+        ACCESS_LATENCY,
+        RETENTION_POLICY
     };
 
     /**
@@ -62,6 +66,8 @@ public class Stat {
     private int _rdev; //
     private long _size; //
     private long _generation; //
+    private int _accessLatency;
+    private int _retentionPolicy;
 
     /*
      * Opposite to classic Unix, all times in milliseconds
@@ -220,6 +226,26 @@ public class Stat {
     public long getCrTime() {
         guard(StatAttributes.CRTIME);
         return _crtime;
+    }
+
+    public AccessLatency getAccessLatency() {
+        guard(StatAttributes.ACCESS_LATENCY);
+        return AccessLatency.getAccessLatency(_accessLatency);
+    }
+
+    public void setAccessLatency(AccessLatency accessLatency) {
+        define(StatAttributes.ACCESS_LATENCY);
+        _accessLatency = accessLatency.getId();
+    }
+
+    public RetentionPolicy getRetentionPolicy() {
+        guard(StatAttributes.RETENTION_POLICY);
+        return RetentionPolicy.getRetentionPolicy(_retentionPolicy);
+    }
+
+    public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
+        define(StatAttributes.RETENTION_POLICY);
+        _retentionPolicy = retentionPolicy.getId();
     }
 
     @Override

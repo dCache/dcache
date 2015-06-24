@@ -26,12 +26,12 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -329,7 +329,7 @@ class FsSqlDriver {
     public Stat stat(Connection dbConnection, FsInode inode) throws SQLException {
         return stat(dbConnection, inode, 0);
     }
-    private static final String sqlStat = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime,icrtime,igeneration FROM t_inodes WHERE ipnfsid=?";
+    private static final String sqlStat = "SELECT isize,inlink,itype,imode,iuid,igid,iatime,ictime,imtime,icrtime,igeneration,iaccess_latency,iretention_policy FROM t_inodes WHERE ipnfsid=?";
 
     public Stat stat(Connection dbConnection, FsInode inode, int level) throws SQLException {
 
@@ -356,6 +356,14 @@ class FsSqlDriver {
                     inodeType = statResult.getInt("itype");
                     ret.setCrTime(statResult.getTimestamp("icrtime").getTime());
                     ret.setGeneration(statResult.getLong("igeneration"));
+                    int rp = statResult.getInt("iretention_policy");
+                    if (!statResult.wasNull()) {
+                        ret.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp));
+                    }
+                    int al = statResult.getInt("iaccess_latency");
+                    if (!statResult.wasNull()) {
+                        ret.setAccessLatency(AccessLatency.getAccessLatency(al));
+                    }
                 } else {
                     inodeType = UnixPermission.S_IFREG;
                     ret.setCrTime(statResult.getTimestamp("imtime").getTime());
@@ -599,7 +607,9 @@ class FsSqlDriver {
 
         return path;
     }
-    private static final String sqlCreateInode = "INSERT INTO t_inodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    private static final String sqlCreateInode = "INSERT INTO t_inodes "
+            + "(ipnfsid,itype,imode,inlink,iuid,igid,isize,iio,ictime,iatime,imtime,icrtime,igeneration) "
+            + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     /**
      *
@@ -2603,7 +2613,12 @@ class FsSqlDriver {
         if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
             sb.append(",icrtime=?");
         }
-
+        if (stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+            sb.append(",iaccess_latency=?");
+        }
+        if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+            sb.append(",iretention_policy=?");
+        }
         sb.append(attrUpdateSuffix);
 
         String statement = sb.toString();
@@ -2632,6 +2647,12 @@ class FsSqlDriver {
         }
         if (stat.isDefined(Stat.StatAttributes.CRTIME)) {
             preparedStatement.setTimestamp(idx++, new Timestamp(stat.getCrTime()));
+        }
+        if (stat.isDefined(Stat.StatAttributes.ACCESS_LATENCY)) {
+            preparedStatement.setInt(idx++, stat.getAccessLatency().getId());
+        }
+        if (stat.isDefined(Stat.StatAttributes.RETENTION_POLICY)) {
+            preparedStatement.setInt(idx++, stat.getRetentionPolicy().getId());
         }
         preparedStatement.setString(idx++, inode.toString());
         return preparedStatement;

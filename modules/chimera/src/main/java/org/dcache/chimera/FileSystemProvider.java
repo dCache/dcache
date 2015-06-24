@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-
 import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
@@ -254,25 +251,7 @@ public interface FileSystemProvider extends Closeable {
     public abstract void setStorageInfo(FsInode inode,
             InodeStorageInformation storageInfo) throws ChimeraFsException;
 
-    /**
-     *
-     * @param inode
-     * @param accessLatency
-     * @throws ChimeraFsException
-     */
-    public abstract void setAccessLatency(FsInode inode,
-            AccessLatency accessLatency) throws ChimeraFsException;
-
-    public abstract void setRetentionPolicy(FsInode inode,
-            RetentionPolicy retentionPolicy) throws ChimeraFsException;
-
     public abstract InodeStorageInformation getStorageInfo(FsInode inode)
-            throws ChimeraFsException;
-
-    public abstract AccessLatency getAccessLatency(FsInode inode)
-            throws ChimeraFsException;
-
-    public abstract RetentionPolicy getRetentionPolicy(FsInode inode)
             throws ChimeraFsException;
 
     public abstract void setInodeChecksum(FsInode inode, int type,

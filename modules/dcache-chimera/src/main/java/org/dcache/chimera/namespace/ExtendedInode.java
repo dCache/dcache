@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -206,22 +206,6 @@ public class ExtendedInode extends FsInode
             flags = builder.build();
         }
         return flags;
-    }
-
-    public Optional<AccessLatency> getAccessLatency() throws ChimeraFsException
-    {
-        if (al == null) {
-            al = Optional.fromNullable(_fs.getAccessLatency(this));
-        }
-        return al;
-    }
-
-    public Optional<RetentionPolicy> getRetentionPolicy() throws ChimeraFsException
-    {
-        if (rp == null) {
-            rp = Optional.fromNullable(_fs.getRetentionPolicy(this));
-        }
-        return rp;
     }
 
     public ACL getAcl() throws ChimeraFsException

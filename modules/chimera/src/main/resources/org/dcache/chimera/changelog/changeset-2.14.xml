@@ -183,4 +183,87 @@
         </rollback>
     </changeSet>
 
+    <changeSet author="tigran" id="23.1" dbms="postgresql">
+        <comment>Prepare t_inodes for whole table update</comment>
+        <sql>ALTER TABLE t_inodes SET (fillfactor=45)</sql>
+
+        <!-- enforce rewrite -->
+        <sql>CLUSTER t_inodes USING t_inodes_pkey</sql>
+        <rollback>
+            <sql>ALTER TABLE t_inodes SET (fillfactor=75)</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="23.2" author="tigran">
+
+        <comment>Add access latency/retention policy columns</comment>
+
+        <addColumn tableName="t_inodes">
+            <column name="iaccess_latency" type="TINYINT" remarks="file's access latency">
+                <constraints nullable="true"/>
+            </column>
+            <column name="iretention_policy" type="TINYINT" remarks="file's retention policy">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <sql>
+            UPDATE t_inodes SET iaccess_latency = (select iaccesslatency from t_access_latency where t_inodes.ipnfsid = t_access_latency.ipnfsid),
+            iretention_policy = (select iretentionpolicy from t_retention_policy where t_inodes.ipnfsid = t_retention_policy.ipnfsid)
+            WHERE itype = 32768;
+        </sql>
+
+        <dropTable tableName="t_access_latency"/>
+        <dropTable tableName="t_retention_policy"/>
+
+        <rollback>
+
+            <comment>how-to downgrade</comment>
+
+            <createTable tableName="t_access_latency">
+                <column name="ipnfsid" type="VARCHAR(36)">
+                    <constraints nullable="false" primaryKey="true" primaryKeyName="t_access_latency_pkey"/>
+                </column>
+                <column name="iaccesslatency" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <createTable tableName="t_retention_policy">
+                <column name="ipnfsid" type="VARCHAR(36)">
+                    <constraints nullable="false" primaryKey="true" primaryKeyName="t_retention_policy_pkey"/>
+                </column>
+                <column name="iretentionpolicy" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_access_latency"
+                                 constraintName="t_access_latency_ipnfsid_fkey" deferrable="false"
+                                 initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+            />
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_retention_policy"
+                                 constraintName="t_retention_policy_ipnfsid_fkey" deferrable="false"
+                                 initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid" referencedTableName="t_inodes"
+            />
+
+            <sql>
+                INSERT INTO t_access_latency SELECT ipnfsid, iaccess_latency FROM t_inodes where iaccess_latency IS NOT NULL;
+                INSERT INTO t_retention_policy SELECT ipnfsid, iretention_policy FROM t_inodes where iretention_policy IS NOT NULL;
+            </sql>
+
+            <dropColumn tableName="t_inodes" columnName="iaccess_latency"/>
+            <dropColumn tableName="t_inodes" columnName="iretention_policy"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet author="tigran" id="23.3" dbms="postgresql">
+        <comment>Prepare t_inodes for whole table update</comment>
+        <sql>ALTER TABLE t_inodes SET (fillfactor=75)</sql>
+        <rollback />
+    </changeSet>
+
 </databaseChangeLog>
