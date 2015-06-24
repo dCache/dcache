@@ -5,19 +5,19 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-
 import com.google.common.collect.Ordering;
 import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.ietf.jgss.GSSException;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
-
-import javax.security.auth.x500.X500Principal;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -27,8 +27,6 @@ import java.security.cert.CRLException;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -36,6 +34,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.x500.X500Principal;
 
 import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
@@ -50,9 +49,6 @@ import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
-import org.italiangrid.voms.ac.VOMSACValidator;
 
 /**
  * Responsible for taking an X509Certificate chain from the public credentials
@@ -350,7 +346,24 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         for (Object credential : publicCredentials) {
             if (CertPaths.isX509CertPath(credential)) {
-                extractExtensionsFromChain(CertPaths.getX509Certificates((CertPath) credential), extensions, validator);
+                X509Certificate[] chain
+                                = CertPaths.getX509Certificates((CertPath) credential);
+
+                if (chain == null) {
+                    continue;
+                }
+
+                /*
+                 *  Add the DN.  This is now required for the
+                 *  ftp door (session logging).
+                 */
+                String dn = X509Utils.getSubjectFromX509Chain(chain, false);
+                identifiedPrincipals.add(new GlobusPrincipal(dn));
+
+                /*
+                 * Get VOMS extensions.
+                 */
+                extractExtensionsFromChain(dn, chain, extensions, validator);
             }
         }
 
@@ -474,24 +487,20 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      *
      * Calls {@link CertificateUtils#getVOMSAttribute(List, String)}
      *
-     * TODO Update this method not to use the deprecated .parse() on the
-     * VOMSValidator
-     *
+     * @param proxySubject
      * @param chain
      *            from the public credentials
      * @param extensionsSet
      *            all groups of extracted VOMS extensions
+     * @param validator
+     *
      */
     @SuppressWarnings("deprecation")
-    private void extractExtensionsFromChain(X509Certificate[] chain,
-                    Set<VomsExtensions> extensionsSet, VOMSACValidator validator)
+    private void extractExtensionsFromChain(String proxySubject,
+                                            X509Certificate[] chain,
+                                            Set<VomsExtensions> extensionsSet,
+                                            VOMSACValidator validator)
                     throws AuthenticationException {
-        if (chain == null) {
-            return;
-        }
-
-        String proxySubject
-            = X509Utils.getSubjectFromX509Chain(chain, false);
         /*
          * this is the issuer of the original cert in the chain (skips
          * impersonation proxies)
