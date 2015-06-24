@@ -13,6 +13,7 @@ import org.glite.voms.ac.ACValidator;
 import org.glite.voms.ac.AttributeCertificate;
 import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.ietf.jgss.GSSException;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
@@ -360,7 +361,16 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          */
         for (Object credential : publicCredentials) {
             if (CertPaths.isX509CertPath(credential)) {
-                extractExtensionsFromChain(CertPaths.getX509Certificates((CertPath) credential), extensions, validator);
+                X509Certificate[] chain
+                                = CertPaths.getX509Certificates((CertPath) credential);
+
+                if (chain == null) {
+                    continue;
+                }
+
+                String dn = X509Utils.getSubjectFromX509Chain(chain, false);
+                identifiedPrincipals.add(new GlobusPrincipal(dn));
+                extractExtensionsFromChain(dn, chain, extensions, validator);
             }
         }
 
@@ -493,15 +503,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      *            all groups of extracted VOMS extensions
      */
     @SuppressWarnings("deprecation")
-    private void extractExtensionsFromChain(X509Certificate[] chain,
+    private void extractExtensionsFromChain(String proxySubject, X509Certificate[] chain,
                     Set<VomsExtensions> extensionsSet, VOMSValidator validator)
                     throws AuthenticationException {
-        if (chain == null) {
-            return;
-        }
-
-        String proxySubject
-            = X509Utils.getSubjectFromX509Chain(chain, false);
         /*
          * this is the issuer of the original cert in the chain (skips
          * impersonation proxies)
