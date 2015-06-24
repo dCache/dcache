@@ -1,5 +1,7 @@
 package org.dcache.ftp.data;
 
+import com.google.common.collect.Iterables;
+import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.dcache.pool.repository.RepositoryChannel;
 
@@ -48,7 +51,7 @@ public abstract class Mode extends AbstractMultiplexerListener
     private final ByteBuffer        _buffer = ByteBuffer.allocate(8192);
 
     /** The address to connect to for outgoing connections. */
-    private   SocketAddress     _address;
+    private   InetSocketAddress     _address;
 
     /** The channel used for incomming connections. */
     private   ServerSocketChannel _channel;
@@ -305,12 +308,21 @@ public abstract class Mode extends AbstractMultiplexerListener
                     connect(multiplexer, key);
                 }
             } catch (IOException e) {
+                SocketAddress remoteAddress = channel.getRemoteAddress();
+
                 // Any error is logged, but otherwise ignored.  As
                 // long as at least one connection succeeds, the
                 // transfer can be completed.
                 channel.close();
                 lastException = e;
-                LOGGER.warn(e.toString());
+                String displayAddress;
+                if (remoteAddress instanceof InetSocketAddress) {
+                    InetSocketAddress ia = (InetSocketAddress) remoteAddress;
+                    displayAddress = InetAddresses.toUriString(ia.getAddress()) + ":" + ia.getPort();
+                } else {
+                    displayAddress = remoteAddress.toString();
+                }
+                LOGGER.warn("Problem with {}: {}", displayAddress, e.getMessage());
                 _failed++;
 
                 if (allConnectionsEstablished()) {
@@ -322,6 +334,26 @@ public abstract class Mode extends AbstractMultiplexerListener
         if (_failed == _parallelism) {
             throw lastException;
         }
+    }
+
+    public String getRemoteAddressDescription()
+    {
+        switch (_direction) {
+        case Outgoing:
+            if (_address == null) {
+                return null;
+            }
+            return InetAddresses.toUriString(_address.getAddress()) + ":" + _address.getPort();
+
+        case Incomming:
+            Set<String> addresses = _remoteAddresses.stream().map(a ->
+                    InetAddresses.toUriString(a.getAddress()) + ":" + a.getPort()).
+                    collect(Collectors.toSet());
+            return addresses.size() == 1 ? Iterables.getOnlyElement(addresses) :
+                    addresses.toString();
+        }
+
+        return null;
     }
 
     /**
