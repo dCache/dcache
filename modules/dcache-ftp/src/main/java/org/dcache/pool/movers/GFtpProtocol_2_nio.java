@@ -5,9 +5,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.BindException;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
+import java.net.PortUnreachableException;
 import java.net.ProtocolFamily;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
 import java.security.MessageDigest;
@@ -22,6 +28,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.util.Exceptions;
 
 import org.dcache.ftp.data.BlockLog;
 import org.dcache.ftp.data.ConnectionMonitor;
@@ -313,11 +320,15 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
              */
             Thread.interrupted();
             throw new InterruptedException();
-        } catch (InterruptedException | FTPException e) {
-            throw e;
+        } catch (BindException | ConnectException | NoRouteToHostException |
+                PortUnreachableException | UnknownHostException e) {
+            throw Exceptions.wrap("Failed to connect " +
+                    mode.getRemoteAddressDescription() + ": " + e.getMessage(),
+                    e, IOException.class);
         } catch (IOException e) {
-            _log.error(e.toString());
-            throw e;
+            throw Exceptions.wrap("Problem while connected to " +
+                    mode.getRemoteAddressDescription() + ": " + e.getMessage(),
+                    e, IOException.class);
         } finally {
             _inProgress = false;
 
