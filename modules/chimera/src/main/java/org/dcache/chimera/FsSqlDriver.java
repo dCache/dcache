@@ -2463,8 +2463,7 @@ class FsSqlDriver {
                         rs.getInt("flags"),
                         rs.getInt("access_msk"),
                         Who.valueOf(rs.getInt("who")),
-                        rs.getInt("who_id"),
-                        rs.getString("address_msk")));
+                        rs.getInt("who_id")));
             }
 
         }finally{
@@ -2475,7 +2474,7 @@ class FsSqlDriver {
     }
 
     private static final String sqlDeleteACL = "DELETE FROM t_acl WHERE rs_id = ?";
-    private static final String sqlAddACL = "INSERT INTO t_acl VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String sqlAddACL = "INSERT INTO t_acl VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     /**
      * Set inode's Access Control List. The existing ACL will be replaced.
      * @param dbConnection
@@ -2508,8 +2507,7 @@ class FsSqlDriver {
                     stAddACL.setInt(5, ace.getAccessMsk());
                     stAddACL.setInt(6, ace.getWho().getValue());
                     stAddACL.setInt(7, ace.getWhoID());
-                    stAddACL.setString(8, ace.getAddressMsk());
-                    stAddACL.setInt(9, order);
+                    stAddACL.setInt(8, order);
 
                     stAddACL.addBatch();
                     order++;

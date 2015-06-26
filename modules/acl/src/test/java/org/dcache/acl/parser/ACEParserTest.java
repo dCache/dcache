@@ -18,7 +18,7 @@ public class ACEParserTest {
     @Test
     public void testParseAllowOnOwner() {
         int mask = toAccessMask(APPEND_DATA, READ_DATA, WRITE_DATA);
-        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, mask, Who.OWNER, -1, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, mask, Who.OWNER, -1);
         ACE parsed = parseLinuxAce("A::OWNER@:rwa");
 
         assertEquals(ace, parsed);
@@ -27,7 +27,7 @@ public class ACEParserTest {
     @Test
     public void testParseDenyOnOwner() {
         int mask = toAccessMask(WRITE_DATA);
-        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, 0, mask, Who.OWNER, -1, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, 0, mask, Who.OWNER, -1);
         ACE parsed = parseLinuxAce("D::OWNER@:w");
 
         assertEquals(ace, parsed);
@@ -36,7 +36,7 @@ public class ACEParserTest {
     @Test
     public void testParseAlloOnPrimaryGroup() {
         int mask = toAccessMask(APPEND_DATA, READ_DATA, WRITE_DATA);
-        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, mask, Who.OWNER_GROUP, -1, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, mask, Who.OWNER_GROUP, -1);
         ACE parsed = parseLinuxAce("A::GROUP@:rwa");
 
         assertEquals(ace, parsed);
@@ -45,7 +45,7 @@ public class ACEParserTest {
     @Test
     public void testParseDenyOnPrimaryGroup() {
         int mask = toAccessMask(WRITE_DATA);
-        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, 0, mask, Who.OWNER_GROUP, -1, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, 0, mask, Who.OWNER_GROUP, -1);
         ACE parsed = parseLinuxAce("D::GROUP@:w");
 
         assertEquals(ace, parsed);
@@ -54,7 +54,7 @@ public class ACEParserTest {
     @Test
     public void testParseAlloOnUser() {
         int mask = toAccessMask(APPEND_DATA, READ_DATA, WRITE_DATA);
-        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, mask, Who.USER, 123, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, 0, mask, Who.USER, 123);
         ACE parsed = parseLinuxAce("A::123:rwa");
 
         assertEquals(ace, parsed);
@@ -63,7 +63,7 @@ public class ACEParserTest {
     @Test
     public void testParseDenyOnUser() {
         int mask = toAccessMask(WRITE_DATA);
-        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, 0, mask, Who.USER, 123, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, 0, mask, Who.USER, 123);
         ACE parsed = parseLinuxAce("D::123:w");
 
         assertEquals(ace, parsed);
@@ -72,7 +72,7 @@ public class ACEParserTest {
     @Test
     public void testParseAlloOnGroup() {
         int mask = toAccessMask(APPEND_DATA, READ_DATA, WRITE_DATA);
-        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP, 123, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_ALLOWED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP, 123);
         ACE parsed = parseLinuxAce("A:g:123:rwa");
 
         assertEquals(ace, parsed);
@@ -81,7 +81,7 @@ public class ACEParserTest {
     @Test
     public void testParseDenyOnGroup() {
         int mask = toAccessMask(WRITE_DATA);
-        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP, 123, ACE.DEFAULT_ADDRESS_MSK);
+        ACE ace = new ACE(ACCESS_DENIED_ACE_TYPE, IDENTIFIER_GROUP.getValue(), mask, Who.GROUP, 123);
         ACE parsed = parseLinuxAce("D:g:123:w");
 
         assertEquals(ace, parsed);

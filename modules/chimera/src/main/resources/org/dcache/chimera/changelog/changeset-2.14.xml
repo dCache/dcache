@@ -25,4 +25,19 @@
                   WHERE rs_id = new.iparent AND BITAND(flags, 1) > 0;
         </createProcedure>
     </changeSet>
+
+    <changeSet id="20" author="tigran">
+
+        <comment>Remove address mask from ACL</comment>
+
+        <dropColumn tableName="t_acl" columnName="address_msk"/>
+        <rollback>
+            <addColumn tableName="t_acl">
+                <column name="address_msk" type="VARCHAR(32)" defaultValue="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" remarks="network address mask">
+                    <constraints nullable="false"/>
+                </column>
+            </addColumn>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

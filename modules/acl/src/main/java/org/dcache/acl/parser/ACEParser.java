@@ -1,7 +1,6 @@
 package org.dcache.acl.parser;
 
 import com.google.common.base.Splitter;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,10 +41,10 @@ public class ACEParser {
 
     /**
      * ace_spec format:
-     * 	who[:who_id]:access_msk[:flags]:type[:address_msk]
+     * 	who[:who_id]:access_msk[:flags]:type
      *
      * ace_spec examples:
-     * 	USER:7:rlwfx:o:ALLOW:FFFF
+     * 	USER:7:rlwfx:o:ALLOW
      * 	EVERYONE@:w:DENY
      *
      * @param ace_spec
@@ -118,30 +117,19 @@ public class ACEParser {
         }
 
         AceType type = AceType.fromAbbreviation(s);
-
-        String addressMsk = ACE.DEFAULT_ADDRESS_MSK;
-        if ( index < len ) {
-            addressMsk = split[index++];
-
-            try {
-                new BigInteger(addressMsk, 16);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid addressMask. NumberFormatException: " + e.getMessage());
-            }
-        }
         if ( index != len ) {
             throw new IllegalArgumentException("Check index failure. Invalid ace_spec: " + ace_spec);
         }
 
-        return new ACE(type, flags, accessMsk, who, whoID, addressMsk);
+        return new ACE(type, flags, accessMsk, who, whoID);
     }
 
     /**
      * ace_spec format:
-     * 	who[:who_id]:+/-access_msk[:flags][:address_msk]
+     * 	who[:who_id]:+/-access_msk[:flags]
      *
      * ace_spec examples:
-     * 	USER:3750:+rlx:o:FFFF
+     * 	USER:3750:+rlx:o
      * 	EVERYONE@:-w
      *
      * @param order
@@ -207,7 +195,6 @@ public class ACEParser {
             throw new IllegalArgumentException("Invalid accessMask: " + sAccessMsk);
         }
 
-        String addressMsk = ACE.DEFAULT_ADDRESS_MSK;
         int flags = 0;
         if ( index < len ) {
             String s = split[index++];
@@ -224,22 +211,13 @@ public class ACEParser {
             if ( s == null && index < len ) {
                 s = split[index++];
             }
-
-            if ( s != null ) {
-                try {
-                    new BigInteger(s, 16);
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid addressMask. NumberFormatException: " + e.getMessage());
-                }
-                addressMsk = s;
-            }
         }
 
         if ( index != len ) {
             throw new IllegalArgumentException("Check index failure. Invalid ace_spec: " + ace_spec);
         }
 
-        return new ACE(type, flags, accessMsk, who, whoID, addressMsk);
+        return new ACE(type, flags, accessMsk, who, whoID);
     }
 
     /**
@@ -395,6 +373,6 @@ public class ACEParser {
             accessMask |= AccessMask.fromAbbreviation(c).getValue();
         }
 
-        return new ACE(type, flags,  accessMask, who, id, ACE.DEFAULT_ADDRESS_MSK);
+        return new ACE(type, flags,  accessMask, who, id);
     }
 }

@@ -41,8 +41,6 @@ import org.dcache.vehicles.FileAttributes;
 public class AclAdmin
     implements CellCommandListener
 {
-    public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-
     final static int ACE_MIN_format2 = 2;
     final static int ACE_MAX_format2 = 5;
 

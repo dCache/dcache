@@ -18,8 +18,6 @@ public class ACE implements Serializable
 {
     private static final long serialVersionUID = -7088617639500399472L;
 
-    public static final String DEFAULT_ADDRESS_MSK = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
-
     private static final String SPACE_SEPARATOR = " ";
     private static final String SEPARATOR = ":";
 
@@ -49,11 +47,6 @@ public class ACE implements Serializable
     private final int _whoID;
 
     /**
-     * The request origin address mask
-     */
-    private final String _addressMsk;
-
-    /**
      * @param type
      *            Type of ACE (ALLOW / DENY)
      * @param flags
@@ -64,32 +57,17 @@ public class ACE implements Serializable
      *            Subject
      * @param whoID
      *            Virtual user or group ID
-     * @param addressMsk
-     *            Request origin address mask
      */
-    public ACE(AceType type, int flags, int accessMsk, Who who, int whoID, String addressMsk) {
+    public ACE(AceType type, int flags, int accessMsk, Who who, int whoID) {
         _type = type;
         _flags = flags;
         _accessMsk = accessMsk;
         _who = who;
         _whoID = whoID;
-        _addressMsk = addressMsk;
     }
 
     public int getAccessMsk() {
         return _accessMsk;
-    }
-
-    public String getAddressMsk() {
-        return _addressMsk;
-    }
-
-    public boolean isDefaultAddressMsk(String addressMsk) {
-        return DEFAULT_ADDRESS_MSK.equalsIgnoreCase(addressMsk);
-    }
-
-    public boolean isDefaultAddressMsk() {
-        return isDefaultAddressMsk(_addressMsk);
     }
 
     public int getFlags() {
@@ -132,17 +110,13 @@ public class ACE implements Serializable
         if (_whoID != other._whoID) {
             return false;
         }
-        if (!_addressMsk.equals(other._addressMsk)) {
-            return false;
-        }
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode()
-                ^ _whoID ^ _addressMsk.hashCode();
+        return _type.hashCode() ^ _flags ^ _accessMsk ^ _who.hashCode() ^ _whoID ;
     }
 
     public String toNFSv4String(RsType rsType) {
@@ -156,9 +130,6 @@ public class ACE implements Serializable
             sb.append(SEPARATOR).append(AceFlags.asString(_flags));
         }
         sb.append(SEPARATOR).append(_type.getAbbreviation());
-        if (!isDefaultAddressMsk()) {
-            sb.append(SEPARATOR).append(_addressMsk);
-        }
         return sb.toString();
     }
 
@@ -169,7 +140,6 @@ public class ACE implements Serializable
         sb.append(_accessMsk).append(SPACE_SEPARATOR);
         sb.append(_who.getValue()).append(SPACE_SEPARATOR);
         sb.append(_whoID).append(SPACE_SEPARATOR);
-        sb.append(_addressMsk).append(SPACE_SEPARATOR);
         return sb.toString();
     }
 
@@ -190,9 +160,6 @@ public class ACE implements Serializable
             .append(_who)
             .append(", whoID = ").append(_whoID);
 
-        if (!isDefaultAddressMsk()) {
-            sb.append(", addressMsk = ").append(_addressMsk);
-        }
         return sb.toString();
     }
 
@@ -233,10 +200,6 @@ public class ACE implements Serializable
 
         if (_flags != 0) {
             sb.append(SEPARATOR).append(AceFlags.asString(_flags));
-        }
-
-        if (!isDefaultAddressMsk()) {
-            sb.append(SEPARATOR).append(_addressMsk);
         }
 
         return sb.toString();

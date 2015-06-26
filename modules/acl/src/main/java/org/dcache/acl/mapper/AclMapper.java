@@ -14,7 +14,6 @@ import org.dcache.acl.Owner;
 import org.dcache.acl.Permission;
 import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.RsType;
-import org.dcache.acl.util.net.InetAddressMatcher;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 
@@ -109,24 +108,6 @@ public class AclMapper {
         Permission perm = null;
         // match this ace only if either recourse is not a directory or an INHERIT_ONLY_ACE bit is not set in ace.flags
         if ( rsType == RsType.DIR && AceFlags.INHERIT_ONLY_ACE.matches(ace.getFlags()) ) {
-            return null;
-        }
-
-        boolean isAddressMatches;
-        if (origin == null) {
-            isAddressMatches = true;
-        } else {
-            isAddressMatches = InetAddressMatcher.matches(ace.getAddressMsk(), origin.getAddress());
-//
-//			isAddressMatches = (origin.getAddressType() == InetAddressType.IPv4 ?
-//					Inet4AddressMatcher.matches(ace.getAddressMsk(), origin.getAddress())
-//					: Inet6AddressMatcher.matches(ace.getAddressMsk(), origin.getAddress()));
-
-        }
-
-        // match this ace only if origin.address matches to an address mask
-        // of ACE
-        if ( isAddressMatches == false ) {
             return null;
         }
 

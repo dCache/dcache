@@ -817,12 +817,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
         List<ACE> aces = new ArrayList<>();
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
-                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK));
+                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-                AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK));
+                AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
 
         _fs.setACL(dirInode, aces);
         List<ACE> l2 = _fs.getACL(dirInode);
@@ -839,12 +837,10 @@ public class BasicTest extends ChimeraTestCaseHelper {
         List<ACE> aces = new ArrayList<>();
 
         aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
-                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK));
+                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
 
         aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-                AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
-                ACE.DEFAULT_ADDRESS_MSK));
+                AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
 
         _fs.setACL(dirInode, aces);
         _fs.setACL(dirInode, new ArrayList<ACE>() );
