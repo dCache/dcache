@@ -17,21 +17,28 @@
  */
 package org.dcache.srm.scheduler.strategy;
 
-import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.spi.SchedulingStrategy;
+import java.util.Map;
 
-public abstract class DiscriminatingSchedulingStrategy extends ForwardingJobDiscriminator implements SchedulingStrategy
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.spi.TransferStrategy;
+import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
+
+public class FirstComeFirstServedTransferStrategyProvider implements TransferStrategyProvider
 {
-    public DiscriminatingSchedulingStrategy(String discriminator)
+    @Override
+    public String getName()
     {
-        super(discriminator);
+        return "first-come-first-served";
     }
 
-    protected abstract void add(String key, Job job);
+    @Override
+    public void setConfiguration(Map<String, String> configuration)
+    {
+    }
 
     @Override
-    public void add(Job job)
+    public TransferStrategy createStrategy(Scheduler scheduler)
     {
-        add(getDiscriminatingValue(job), job);
+        return new FirstComeFirstServedTransferStrategy(scheduler);
     }
 }

@@ -41,6 +41,7 @@ check -strong srm.service.gplazma.cache.timeout
 check -strong srm.service.gplazma.cache.timeout.unit
 
 check -strong srm.plugins.scheduler
+check -strong srm.plugins.transfer
 
 check -strong srm.limits.db.threads
 check -strong srm.limits.db.queue

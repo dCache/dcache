@@ -29,8 +29,8 @@ import org.dcache.srm.request.ReserveSpaceRequest;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.SchedulerContainer;
-import org.dcache.srm.scheduler.strategy.FifoSchedulingStrategy;
 import org.dcache.srm.scheduler.strategy.FifoSchedulingStrategyProvider;
+import org.dcache.srm.scheduler.strategy.FirstComeFirstServedTransferStrategyProvider;
 import org.dcache.util.Args;
 
 /**
@@ -108,7 +108,8 @@ public class Main extends CommandInterpreter implements  Runnable {
         scheduler.setMaxInprogress(getIntConfigValue(configPrefix, "MaxWaitingRequests"));
         scheduler.setMaxNumberOfRetries(getIntConfigValue(configPrefix, "MaxNumOfRetries"));
         scheduler.setRetryTimeout(getLongConfigValue(configPrefix, "RetryTimeout"));
-        scheduler.setStrategyProvider(new FifoSchedulingStrategyProvider());
+        scheduler.setSchedulingStrategyProvider(new FifoSchedulingStrategyProvider());
+        scheduler.setTransferStrategyProvider(new FirstComeFirstServedTransferStrategyProvider());
 
         if (!configPrefix.equals("Copy")) {
             scheduler.setMaxReadyJobs(getIntConfigValue(configPrefix, "MaxReadyJobs"));

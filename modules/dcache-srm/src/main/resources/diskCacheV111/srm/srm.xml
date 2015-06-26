@@ -455,11 +455,20 @@
     </property>
   </bean>
 
-  <bean id="strategy-provider" class="org.dcache.srm.scheduler.SchedulingStrategyFactoryBean">
+  <bean id="scheduling-strategy-provider" class="org.dcache.srm.scheduler.SchedulingStrategyFactoryBean">
       <property name="name" value="${srm.plugins.scheduler}"/>
       <property name="configuration">
           <bean class="org.dcache.util.ConfigurationMapFactoryBean">
               <property name="prefix" value="srm.scheduler.${srm.plugins.scheduler}"/>
+          </bean>
+      </property>
+  </bean>
+
+  <bean id="transfer-strategy-provider" class="org.dcache.srm.scheduler.TransferStrategyFactoryBean">
+      <property name="name" value="${srm.plugins.transfer}"/>
+      <property name="configuration">
+          <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+              <property name="prefix" value="srm.transfer.${srm.plugins.transfer}"/>
           </bean>
       </property>
   </bean>
@@ -471,7 +480,8 @@
       <constructor-arg value="get_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.GetFileRequest"/>
 
-      <property name="strategyProvider" ref="strategy-provider"/>
+      <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+      <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.get.threads}"/>
       <property name="maxRequests" value="${srm.request.get.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.get.max-inprogress}"/>
@@ -490,7 +500,8 @@
       <constructor-arg value="ls_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.LsFileRequest"/>
 
-      <property name="strategyProvider" ref="strategy-provider"/>
+      <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+      <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.ls.threads}"/>
       <property name="maxRequests" value="${srm.request.ls.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.ls.max-inprogress}"/>
@@ -508,7 +519,8 @@
       <constructor-arg value="bring_online_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.BringOnlineFileRequest"/>
 
-      <property name="strategyProvider" ref="strategy-provider"/>
+      <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+      <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.bring-online.threads}"/>
       <property name="maxRequests" value="${srm.request.bring-online.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.bring-online.max-inprogress}"/>
@@ -526,7 +538,8 @@
       <constructor-arg value="put_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.PutFileRequest"/>
 
-      <property name="strategyProvider" ref="strategy-provider"/>
+      <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+      <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.put.threads}"/>
       <property name="maxRequests" value="${srm.request.put.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.put.max-inprogress}"/>
@@ -544,7 +557,8 @@
       <constructor-arg value="copy_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.Job"/>
 
-      <property name="strategyProvider" ref="strategy-provider"/>
+      <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+      <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.copy.threads}"/>
       <property name="maxRequests" value="${srm.request.copy.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.copy.max-inprogress}"/>
@@ -561,7 +575,8 @@
       <constructor-arg value="reserve_space_${srm.cell.name}"/>
       <constructor-arg value="org.dcache.srm.request.ReserveSpaceRequest"/>
 
-      <property name="strategyProvider" ref="strategy-provider"/>
+      <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
+      <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="threadPoolSize" value="${srm.request.reserve-space.threads}"/>
       <property name="maxRequests" value="${srm.request.reserve-space.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.reserve-space.max-inprogress}"/>

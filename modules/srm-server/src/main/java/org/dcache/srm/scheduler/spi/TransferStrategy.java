@@ -15,23 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.srm.scheduler.strategy;
+package org.dcache.srm.scheduler.spi;
 
 import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 
-public abstract class DiscriminatingSchedulingStrategy extends ForwardingJobDiscriminator implements SchedulingStrategy
+/**
+ * SRM TURL request servicing policy.
+ *
+ * A transfer strategy provides provides a policy for servicing requests for TURLs.
+ */
+public interface TransferStrategy
 {
-    public DiscriminatingSchedulingStrategy(String discriminator)
-    {
-        super(discriminator);
-    }
-
-    protected abstract void add(String key, Job job);
-
-    @Override
-    public void add(Job job)
-    {
-        add(getDiscriminatingValue(job), job);
-    }
+    /**
+     * Determines whether a given Job may enter the READY state.
+     */
+    boolean canTransfer(Job job);
 }

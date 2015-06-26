@@ -18,20 +18,24 @@
 package org.dcache.srm.scheduler.strategy;
 
 import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.spi.SchedulingStrategy;
+import org.dcache.srm.scheduler.Scheduler;
+import org.dcache.srm.scheduler.spi.TransferStrategy;
 
-public abstract class DiscriminatingSchedulingStrategy extends ForwardingJobDiscriminator implements SchedulingStrategy
+/**
+ * Simplistic transfer strategy that allows requests to proceed until the maximum is reached.
+ */
+public class FirstComeFirstServedTransferStrategy implements TransferStrategy
 {
-    public DiscriminatingSchedulingStrategy(String discriminator)
+    private final Scheduler scheduler;
+
+    public FirstComeFirstServedTransferStrategy(Scheduler scheduler)
     {
-        super(discriminator);
+        this.scheduler = scheduler;
     }
 
-    protected abstract void add(String key, Job job);
-
     @Override
-    public void add(Job job)
+    public boolean canTransfer(Job job)
     {
-        add(getDiscriminatingValue(job), job);
+        return scheduler.getTotalReady() < scheduler.getMaxReadyJobs();
     }
 }

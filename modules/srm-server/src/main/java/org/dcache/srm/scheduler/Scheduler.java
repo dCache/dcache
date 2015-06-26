@@ -88,6 +88,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
+import org.dcache.srm.scheduler.spi.TransferStrategy;
+import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
 import org.dcache.srm.util.JDC;
@@ -132,8 +134,10 @@ public class Scheduler <T extends Job>
     private final WorkSupplyService workSupplyService;
     private final CopyOnWriteArrayList<StateChangeListener> listeners = new CopyOnWriteArrayList<>();
 
-    private SchedulingStrategy strategy;
-    private String strategyName;
+    private SchedulingStrategy schedulingStrategy;
+    private TransferStrategy transferStrategy;
+    private String schedulingStrategyName;
+    private String transferStrategyName;
 
     private Multimap<State,Long> jobs = MultimapBuilder.enumKeys(State.class).hashSetValues().build();
 
@@ -164,10 +168,17 @@ public class Scheduler <T extends Job>
     }
 
     @Required
-    public void setStrategyProvider(SchedulingStrategyProvider provider)
+    public void setSchedulingStrategyProvider(SchedulingStrategyProvider provider)
     {
-        strategyName = provider.getName();
-        strategy = provider.createStrategy(this);
+        schedulingStrategyName = provider.getName();
+        schedulingStrategy = provider.createStrategy(this);
+    }
+
+    @Required
+    public void setTransferStrategyProvider(TransferStrategyProvider provider)
+    {
+        transferStrategyName = provider.getName();
+        transferStrategy = provider.createStrategy(this);
     }
 
     public void start() throws IllegalStateException
@@ -274,22 +285,20 @@ public class Scheduler <T extends Job>
 
     public void tryToReadyJob(Job job)
     {
-        if (getTotalReady() >= getMaxReadyJobs()) {
-            // can't add any more jobs to ready state
-            return;
-        }
-        try {
-            job.setState(State.READY, "Execution succeeded.");
-        } catch (IllegalStateTransition ist) {
-            //nothing more we can do here
-            LOGGER.error("Illegal State Transition : {}", ist.getMessage());
+        if (transferStrategy.canTransfer(job)) {
+            try {
+                job.setState(State.READY, "Execution succeeded.");
+            } catch (IllegalStateTransition ist) {
+                //nothing more we can do here
+                LOGGER.error("Illegal State Transition : {}", ist.getMessage());
+            }
         }
     }
 
     private boolean threadQueue(Job job)
     {
         if (getTotalRequests() < getMaxRequests()) {
-            strategy.add(job);
+            schedulingStrategy.add(job);
             workSupplyService.distributeWork();
             return true;
         }
@@ -376,7 +385,7 @@ public class Scheduler <T extends Job>
                 throws SRMInvalidRequestException, InterruptedException
         {
             Long id;
-            while (getTotalInprogress() < getMaxInProgress() && (id = strategy.remove()) != null) {
+            while (getTotalInprogress() < getMaxInProgress() && (id = schedulingStrategy.remove()) != null) {
                 Job job = Job.getJob(id, type);
                 job.wlock();
                 try {
@@ -751,7 +760,8 @@ public class Scheduler <T extends Job>
         formatter.format("    Maximum number of retries       : %d\n", maxNumberOfRetries);
         formatter.format("    Retry timeout                   : %d ms\n", retryTimeout);
         formatter.format("    Retry limit                     : %d retries\n", maxNumberOfRetries);
-        formatter.format("    Scheduling strategy             : %s\n", strategyName);
+        formatter.format("    Scheduling strategy             : %s\n", schedulingStrategyName);
+        formatter.format("    Transfer strategy               : %s\n", transferStrategyName);
     }
 
     private static void printQueue(StringBuilder sb, Collection<Long> queue)

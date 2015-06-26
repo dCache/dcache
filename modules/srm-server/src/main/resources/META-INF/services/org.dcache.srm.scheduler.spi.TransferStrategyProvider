@@ -1,0 +1,2 @@
+org.dcache.srm.scheduler.strategy.FairShareTransferStrategyProvider
+org.dcache.srm.scheduler.strategy.FirstComeFirstServedTransferStrategyProvider

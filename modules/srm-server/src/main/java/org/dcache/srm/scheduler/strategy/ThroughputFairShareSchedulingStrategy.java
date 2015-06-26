@@ -25,8 +25,9 @@ import java.util.Map;
 import java.util.Queue;
 
 import org.dcache.srm.request.Job;
+import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 
-public class ThroughputFairShareSchedulingStrategy extends DiscriminatingSchedulingStrategy
+public class ThroughputFairShareSchedulingStrategy extends DiscriminatingSchedulingStrategy implements SchedulingStrategy
 {
     private final Map<String,Queue<Long>> jobs = new HashMap<>();
     private List<String> keys = new ArrayList<>();
