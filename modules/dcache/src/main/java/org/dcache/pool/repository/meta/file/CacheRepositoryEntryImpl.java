@@ -12,8 +12,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfos;
@@ -174,14 +178,18 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         try {
             _state.setState(state);
         } catch (IOException e) {
-            throw new CacheException(e.getMessage());
+            throw new DiskErrorCacheException(e.getMessage(), e);
         }
     }
 
     @Override
-    public synchronized List<StickyRecord> removeExpiredStickyFlags()
+    public synchronized List<StickyRecord> removeExpiredStickyFlags() throws CacheException
     {
-        return _state.removeExpiredStickyFlags();
+        try {
+            return _state.removeExpiredStickyFlags();
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -193,7 +201,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             return false;
 
         } catch (IllegalStateException | IOException e) {
-            throw new CacheException(e.getMessage());
+            throw new DiskErrorCacheException(e.getMessage(), e);
         }
     }
 
@@ -210,10 +218,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
 
     @Override
     public void setFileAttributes(FileAttributes attributes) throws CacheException {
-        if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
-            setStorageInfo(StorageInfos.extractFrom(attributes));
-        } else {
-            setStorageInfo(null);
+        try {
+            if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                setStorageInfo(StorageInfos.extractFrom(attributes));
+            } else {
+                setStorageInfo(null);
+            }
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(_pnfsId + " " + e.getMessage(), e);
         }
     }
 
@@ -225,8 +237,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
                 _dataFile.createNewFile();
             }
         }catch(IOException ee){
-            throw new
-                CacheException("Io Error creating : "+_dataFile ) ;
+            throw new DiskErrorCacheException("Io Error creating : "+_dataFile ,ee);
         }
 
         _lastAccess = System.currentTimeMillis();
@@ -238,25 +249,16 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _storageInfo;
     }
 
-    private synchronized void setStorageInfo(StorageInfo storageInfo) throws CacheException {
+    private synchronized void setStorageInfo(StorageInfo storageInfo) throws IOException
+    {
+        File siFileTemp = File.createTempFile(_siFile.getName(), null, _siFile.getParentFile());
         try {
-            File siFileTemp = File.createTempFile(_siFile.getName(), null, _siFile.getParentFile());
-            try {
-                try (ObjectOutputStream objectOut = new ObjectOutputStream(new FileOutputStream(siFileTemp))) {
-                    objectOut.writeObject(storageInfo);
-                }
-                if (!siFileTemp.renameTo(_siFile)) {
-                    // TODO: disk io error code here
-                    throw new CacheException(10, _pnfsId + " rename failed");
-                }
-            } finally {
-                if (siFileTemp.exists()) {
-                    siFileTemp.delete();
-                }
+            try (ObjectOutputStream objectOut = new ObjectOutputStream(new FileOutputStream(siFileTemp))) {
+                objectOut.writeObject(storageInfo);
             }
-        } catch (IOException e) {
-            // TODO: disk io error code here
-            throw new CacheException(10, _pnfsId + " " + e.getMessage(), e);
+            Files.move(siFileTemp.toPath(), _siFile.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(siFileTemp.toPath());
         }
         _storageInfo = storageInfo;
     }

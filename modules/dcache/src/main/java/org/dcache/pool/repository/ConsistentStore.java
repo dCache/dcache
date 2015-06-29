@@ -117,11 +117,11 @@ public class ConsistentStore
      * redundant meta data entries in the process.
      */
     @Override
-    public synchronized Collection<PnfsId> list()
+    public synchronized Collection<PnfsId> list() throws CacheException
     {
         Collection<PnfsId> files = _fileStore.list();
         Collection<PnfsId> records = _metaDataStore.list();
-        records.removeAll(new HashSet(files));
+        records.removeAll(new HashSet<>(files));
         for (PnfsId id: records) {
             _log.warn(String.format(REMOVING_REDUNDANT_META_DATA, id));
             _metaDataStore.remove(id);
@@ -195,7 +195,7 @@ public class ConsistentStore
         return entry;
     }
 
-    private boolean isBroken(MetaDataRecord entry)
+    private boolean isBroken(MetaDataRecord entry) throws CacheException
     {
         boolean isBroken = true;
         if (entry != null) {
@@ -387,7 +387,7 @@ public class ConsistentStore
      * Calls through to the wrapped meta data store.
      */
     @Override
-    public void remove(PnfsId id)
+    public void remove(PnfsId id) throws CacheException
     {
         File f = _fileStore.get(id);
         if (!f.delete() && f.exists()) {
@@ -438,7 +438,7 @@ public class ConsistentStore
         return _metaDataStore.getTotalSpace();
     }
 
-    private void delete(PnfsId id, File file)
+    private void delete(PnfsId id, File file) throws CacheException
     {
         _metaDataStore.remove(id);
         if (!file.delete() && file.exists()) {

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -157,19 +158,24 @@ public class FileMetaDataRepository
         } catch (IOException e) {
             throw new DiskErrorCacheException(
                     "Failed to read meta data for " + id + ": " + e.getMessage(), e);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Failed to read meta data for " + id, e);
         }
         return null;
     }
 
     @Override
-    public void remove(PnfsId id) {
-        File controlFile = new File(_metadir, id.toString());
-        File siFile = new File(_metadir, "SI-"+id.toString());
+    public void remove(PnfsId id)
+            throws CacheException
+    {
+        try {
+            File controlFile = new File(_metadir, id.toString());
+            File siFile = new File(_metadir, "SI-"+id.toString());
 
-        controlFile.delete();
-        siFile.delete();
+            Files.deleteIfExists(controlFile.toPath());
+            Files.deleteIfExists(siFile.toPath());
+        } catch (IOException e) {
+            throw new DiskErrorCacheException(
+                    "Failed to remove meta data for " + id + ": " + e.getMessage(), e);
+        }
     }
 
     @Override
