@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 
-import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
 
 /**
@@ -69,7 +68,7 @@ public class SchedulingStrategyFactoryBean implements FactoryBean<SchedulingStra
     @Override
     public Class<?> getObjectType()
     {
-        return SchedulingStrategy.class;
+        return SchedulingStrategyProvider.class;
     }
 
     @Override
