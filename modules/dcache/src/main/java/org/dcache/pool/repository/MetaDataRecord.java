@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 
 import org.dcache.vehicles.FileAttributes;
@@ -44,7 +45,7 @@ public interface MetaDataRecord
 
     public void setFileAttributes(FileAttributes attributes) throws CacheException;
 
-    public FileAttributes getFileAttributes();
+    public FileAttributes getFileAttributes() throws CacheException;
 
     public void setState(EntryState state)
         throws CacheException;
@@ -83,7 +84,7 @@ public interface MetaDataRecord
      *
      * @return The expired sticky flags removed from the record.
      */
-    public Collection<StickyRecord> removeExpiredStickyFlags();
+    public Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException;
 
     /**
      * Set sticky flag for a given owner and time. There is at most

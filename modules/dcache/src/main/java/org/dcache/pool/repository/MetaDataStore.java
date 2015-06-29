@@ -18,7 +18,7 @@ public interface MetaDataStore
     /**
      * Returns a collection of PNFS ids of available entries.
      */
-    Collection<PnfsId> list();
+    Collection<PnfsId> list() throws CacheException;
 
     /**
      * Retrieves an existing entry previously created with
@@ -79,7 +79,8 @@ public interface MetaDataStore
      *
      * @param id PNFS id of the entry to return.
      */
-    void remove(PnfsId id);
+    void remove(PnfsId id)
+            throws CacheException;
 
     /**
      * Returns whether the store appears healthy. How this is
