@@ -40,7 +40,7 @@ public class MetaDataCache
      *
      * The operation may be slow as the list method of inner is called.
      */
-    public MetaDataCache(MetaDataStore inner)
+    public MetaDataCache(MetaDataStore inner) throws CacheException
     {
         _inner = inner;
 
@@ -145,7 +145,7 @@ public class MetaDataCache
             return _record;
         }
 
-        private synchronized void remove()
+        private synchronized void remove() throws CacheException
         {
             if (_entries.get(_id) == this) {
                 assert _entries.get(_id) == this;
@@ -181,7 +181,7 @@ public class MetaDataCache
     }
 
     @Override
-    public void remove(PnfsId id)
+    public void remove(PnfsId id) throws CacheException
     {
         Monitor monitor = _entries.get(id);
         if (monitor != null) {

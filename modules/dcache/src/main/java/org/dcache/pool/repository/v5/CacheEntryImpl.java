@@ -2,6 +2,8 @@ package org.dcache.pool.repository.v5;
 
 import java.util.Collection;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -23,7 +25,7 @@ public class CacheEntryImpl implements CacheEntry
     private final Collection<StickyRecord> _sticky;
     private final FileAttributes _fileAttributes;
 
-    public CacheEntryImpl(MetaDataRecord entry)
+    public CacheEntryImpl(MetaDataRecord entry) throws CacheException
     {
         synchronized (entry) {
             _size = entry.getSize();

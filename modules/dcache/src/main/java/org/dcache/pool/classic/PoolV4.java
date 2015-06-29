@@ -529,7 +529,7 @@ public class PoolV4
             break;
         }
 
-        String message = "Fault occured in " + event.getSource() + ": "
+        String message = "Fault occurred in " + event.getSource() + ": "
                         + event.getMessage() +". " + poolState;
 
         if (cause != null) {

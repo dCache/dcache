@@ -2,6 +2,8 @@ package org.dcache.pool.repository.meta.db;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +73,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
-                                    MetaDataRecord entry)
+                                    MetaDataRecord entry) throws CacheException
     {
         _repository   = repository;
         _pnfsId       = entry.getPnfsId();
@@ -173,25 +175,33 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized FileAttributes getFileAttributes()
+    public synchronized FileAttributes getFileAttributes() throws DiskErrorCacheException
     {
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(_pnfsId);
-        StorageInfo storageInfo = getStorageInfo();
-        if (storageInfo != null) {
-            StorageInfos.injectInto(storageInfo, attributes);
+        try {
+            FileAttributes attributes = new FileAttributes();
+            attributes.setPnfsId(_pnfsId);
+            StorageInfo storageInfo = getStorageInfo();
+            if (storageInfo != null) {
+                StorageInfos.injectInto(storageInfo, attributes);
+            }
+            return attributes;
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data lookup failed: " + e.getMessage(), e);
         }
-        return attributes;
     }
 
     @Override
-    public void setFileAttributes(FileAttributes attributes)
+    public void setFileAttributes(FileAttributes attributes) throws DiskErrorCacheException
     {
-        String id = _pnfsId.toString();
-        if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
-            _repository.getStorageInfoMap().put(id, StorageInfos.extractFrom(attributes));
-        } else {
-            _repository.getStorageInfoMap().remove(id);
+        try {
+            String id = _pnfsId.toString();
+            if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                _repository.getStorageInfoMap().put(id, StorageInfos.extractFrom(attributes));
+            } else {
+                _repository.getStorageInfoMap().remove(id);
+            }
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data update failed: " + e.getMessage(), e);
         }
     }
 
@@ -208,7 +218,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void setState(EntryState state)
+    public synchronized void setState(EntryState state) throws DiskErrorCacheException
     {
         if (_state != state) {
             _state = state;
@@ -229,7 +239,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized Collection<StickyRecord> removeExpiredStickyFlags()
+    public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws DiskErrorCacheException
     {
         long now = System.currentTimeMillis();
         List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, r -> !r.isValidAt(now)));
@@ -281,9 +291,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _sticky;
     }
 
-    private synchronized void storeState()
+    private synchronized void storeState() throws DiskErrorCacheException
     {
-        _repository.getStateMap().put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
+        try {
+            _repository.getStateMap().put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data updated failed: " + e.getMessage(), e);
+        }
     }
 
     static CacheRepositoryEntryImpl load(BerkeleyDBMetaDataRepository repository,
