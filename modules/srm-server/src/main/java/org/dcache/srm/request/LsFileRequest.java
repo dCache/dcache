@@ -156,6 +156,9 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
                 PutFileRequest request =
                         Iterables.getFirst(SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl), null);
+
+                TMetaDataPathDetail detail;
+
                 if (request != null) {
                     // [SRM 2.2, 4.4.3]
                     //
@@ -167,20 +170,18 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                         FileMetaData fmd = getStorage().getFileMetaData(getUser(),
                                                                         surl,
                                                                         request.getFileId());
-                        metaDataPathDetail =
-                                convertFileMetaDataToTMetaDataPathDetail(surl,
-                                                                         fmd,
-                                                                         parent.getLongFormat());
+                        detail = convertFileMetaDataToTMetaDataPathDetail(surl,
+                                                                          fmd,
+                                                                          parent.getLongFormat());
                     } catch (SRMInvalidPathException e) {
-                        metaDataPathDetail = new TMetaDataPathDetail();
-                        metaDataPathDetail.setType(TFileType.FILE);
+                        detail = new TMetaDataPathDetail();
+                        detail.setType(TFileType.FILE);
                     }
-                    metaDataPathDetail.setPath(getPath(surl));
-                    metaDataPathDetail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
-                                                                   "The requested SURL is locked by an upload."));
+                    detail.setPath(getPath(surl));
+                    detail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
+                                                       "The requested SURL is locked by an upload."));
                 } else {
-                    metaDataPathDetail =
-                            getMetaDataPathDetail(surl,
+                    detail = getMetaDataPathDetail(surl,
                                                   0,
                                                   parent.getOffset(),
                                                   parent.getCount(),
@@ -197,6 +198,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 }
                 wlock();
                 try {
+                    metaDataPathDetail = detail;
                     if (!getState().isFinal()) {
                         setState(State.DONE, State.DONE.toString());
                     }
@@ -279,13 +281,18 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         }
 
         public TMetaDataPathDetail getMetaDataPathDetail() {
-            if (metaDataPathDetail != null) {
-                return metaDataPathDetail;
+            rlock();
+            try {
+                if (metaDataPathDetail != null) {
+                    return metaDataPathDetail;
+                }
+                TMetaDataPathDetail detail =  new TMetaDataPathDetail();
+                detail.setPath(getPath(surl));
+                detail.setStatus(getReturnStatus());
+                return detail;
+            } finally {
+                runlock();
             }
-            TMetaDataPathDetail detail =  new TMetaDataPathDetail();
-            detail.setPath(getPath(surl));
-            detail.setStatus(getReturnStatus());
-            return detail;
         }
 
         public final TMetaDataPathDetail getMetaDataPathDetail(URI surl,
