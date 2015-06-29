@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.meta.db;
 
+import com.sleepycat.je.DatabaseException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
-                                    MetaDataRecord entry)
+                                    MetaDataRecord entry) throws CacheException
     {
         _repository   = repository;
         _pnfsId       = entry.getPnfsId();
@@ -149,25 +150,33 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized FileAttributes getFileAttributes()
+    public synchronized FileAttributes getFileAttributes() throws DiskErrorCacheException
     {
-        FileAttributes attributes = new FileAttributes();
-        attributes.setPnfsId(_pnfsId);
-        StorageInfo storageInfo = getStorageInfo();
-        if (storageInfo != null) {
-            StorageInfos.injectInto(storageInfo, attributes);
+        try {
+            FileAttributes attributes = new FileAttributes();
+            attributes.setPnfsId(_pnfsId);
+            StorageInfo storageInfo = getStorageInfo();
+            if (storageInfo != null) {
+                StorageInfos.injectInto(storageInfo, attributes);
+            }
+            return attributes;
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data lookup failed: " + e.getMessage(), e);
         }
-        return attributes;
     }
 
     @Override
-    public void setFileAttributes(FileAttributes attributes)
+    public void setFileAttributes(FileAttributes attributes) throws DiskErrorCacheException
     {
-        String id = _pnfsId.toString();
-        if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
-            _repository.getStorageInfoMap().put(id, StorageInfos.extractFrom(attributes));
-        } else {
-            _repository.getStorageInfoMap().remove(id);
+        try {
+            String id = _pnfsId.toString();
+            if (attributes.isDefined(FileAttribute.STORAGEINFO)) {
+                _repository.getStorageInfoMap().put(id, StorageInfos.extractFrom(attributes));
+            } else {
+                _repository.getStorageInfoMap().remove(id);
+            }
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data update failed: " + e.getMessage(), e);
         }
     }
 
@@ -184,7 +193,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void setState(EntryState state)
+    public synchronized void setState(EntryState state) throws DiskErrorCacheException
     {
         _state.setState(state);
         storeStateIfDirty();
@@ -203,7 +212,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized List<StickyRecord> removeExpiredStickyFlags()
+    public synchronized List<StickyRecord> removeExpiredStickyFlags() throws DiskErrorCacheException
     {
         List<StickyRecord> removed = _state.removeExpiredStickyFlags();
         if (!removed.isEmpty()) {
@@ -264,10 +273,14 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             " si={"+(info==null?"<unknown>":info.getStorageClass())+"}" ;
     }
 
-    private synchronized void storeStateIfDirty()
+    private synchronized void storeStateIfDirty() throws DiskErrorCacheException
     {
         if (_state.dirty()) {
-            _repository.getStateMap().put(_pnfsId.toString(), _state);
+            try {
+                _repository.getStateMap().put(_pnfsId.toString(), _state);
+            } catch (DatabaseException e) {
+                throw new DiskErrorCacheException("Meta data updated failed: " + e.getMessage(), e);
+            }
         }
     }
 

@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.namespace.FileAttribute;
@@ -26,7 +27,7 @@ class ReadHandleImpl implements ReplicaDescriptor
 
     ReadHandleImpl(CacheRepositoryV5 repository,
                    PnfsHandler pnfs,
-                   MetaDataRecord entry)
+                   MetaDataRecord entry) throws CacheException
     {
         _repository = checkNotNull(repository);
         _pnfs = checkNotNull(pnfs);

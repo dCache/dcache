@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.v5;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -291,7 +292,7 @@ public class CacheRepositoryV5
 
     @Override
     public void init()
-        throws IllegalStateException
+            throws IllegalStateException, CacheException
     {
         synchronized (this) {
             assert _pnfs != null : "Pnfs handler must be set";
@@ -414,7 +415,15 @@ public class CacheRepositoryV5
     public Iterator<PnfsId> iterator()
     {
         assertOpen();
-        return Collections.unmodifiableCollection(_store.list()).iterator();
+        try {
+            return Collections.unmodifiableCollection(_store.list()).iterator();
+        } catch (DiskErrorCacheException | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw Throwables.propagate(e);
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw Throwables.propagate(e);
+        }
     }
 
     @Override
@@ -466,6 +475,12 @@ public class CacheRepositoryV5
              */
             _pnfs.notify(new PnfsAddCacheLocationMessage(id, getPoolName()));
             throw new FileInCacheException("Entry already exists: " + id);
+        } catch (RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw e;
+        } catch (DiskErrorCacheException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
@@ -525,8 +540,8 @@ public class CacheRepositoryV5
              */
             _pnfs.clearCacheLocation(id);
             throw e;
-        } catch (DiskErrorCacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
+        } catch (DiskErrorCacheException | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
         }
     }
@@ -547,8 +562,8 @@ public class CacheRepositoryV5
             }
         } catch (FileNotInCacheException e) {
             throw e;
-        } catch (DiskErrorCacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
+        } catch (RuntimeException | DiskErrorCacheException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
         }
     }
@@ -574,6 +589,9 @@ public class CacheRepositoryV5
              * indicate a stale registration in the name space.
              */
             _pnfs.clearCacheLocation(id);
+            throw e;
+        } catch (DiskErrorCacheException | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
         }
 
@@ -666,8 +684,8 @@ public class CacheRepositoryV5
             if (state != REMOVED) {
                 throw new IllegalTransitionException(id, NEW, state);
             }
-        } catch (DiskErrorCacheException e) {
-            fail(FaultAction.READONLY, "Internal repository error", e);
+        } catch (RuntimeException | DiskErrorCacheException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
             throw e;
         }
     }
@@ -717,6 +735,9 @@ public class CacheRepositoryV5
             return getMetaDataRecord(id).getState();
         } catch (FileNotInCacheException e) {
             return NEW;
+        } catch (DiskErrorCacheException | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw e;
         }
     }
 
@@ -724,7 +745,11 @@ public class CacheRepositoryV5
     public void getInfo(PrintWriter pw)
     {
         pw.println("State : " + _state);
-        pw.println("Files : " + _store.list().size());
+        try {
+            pw.println("Files : " + _store.list().size());
+        } catch (CacheException e) {
+            pw.println("Files : " + e.getMessage());
+        }
 
         SpaceRecord space = getSpaceRecord();
         long total = space.getTotalSpace();
@@ -828,39 +853,50 @@ public class CacheRepositoryV5
      */
     void setState(MetaDataRecord entry, EntryState state)
     {
-        synchronized (entry) {
-            EntryState oldState = entry.getState();
-            if (oldState == state) {
-                return;
-            }
-
-            CacheEntry oldEntry = new CacheEntryImpl(entry);
-
-            try {
-                entry.setState(state);
-            } catch (CacheException e) {
-                fail(FaultAction.READONLY, "Internal repository error", e);
-                throw new RuntimeException("Internal repository error", e);
-            }
-
-            CacheEntryImpl newEntry = new CacheEntryImpl(entry);
-            stateChanged(oldEntry, newEntry, oldState, state);
-
-            if (state == REMOVED) {
-                if (_log.isInfoEnabled()) {
-                    _log.info("remove entry for: " + entry.getPnfsId().toString());
+        try {
+            synchronized (entry) {
+                EntryState oldState = entry.getState();
+                if (oldState == state) {
+                    return;
                 }
 
-                PnfsId id = entry.getPnfsId();
-                _pnfs.clearCacheLocation(id, _volatile);
+                CacheEntry oldEntry = new CacheEntryImpl(entry);
 
-                ScheduledFuture<?> oldTask = _tasks.remove(id);
-                if (oldTask != null) {
-                    oldTask.cancel(false);
+                try {
+                    entry.setState(state);
+                } catch (CacheException e) {
+                    fail(FaultAction.READONLY, "Internal repository error", e);
+                    throw new RuntimeException("Internal repository error", e);
                 }
-            }
 
-            destroyWhenRemovedAndUnused(entry);
+                CacheEntryImpl newEntry = new CacheEntryImpl(entry);
+                stateChanged(oldEntry, newEntry, oldState, state);
+
+                if (state == REMOVED) {
+                    if (_log.isInfoEnabled()) {
+                        _log.info("remove entry for: " + entry.getPnfsId().toString());
+                    }
+
+                    PnfsId id = entry.getPnfsId();
+                    _pnfs.clearCacheLocation(id, _volatile);
+
+                    ScheduledFuture<?> oldTask = _tasks.remove(id);
+                    if (oldTask != null) {
+                        oldTask.cancel(false);
+                    }
+                }
+
+                destroyWhenRemovedAndUnused(entry);
+            }
+        } catch (DiskErrorCacheException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
+        } catch (RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw e;
         }
     }
 
@@ -893,9 +929,15 @@ public class CacheRepositoryV5
                     scheduleExpirationTask(entry);
                 }
             }
+        } catch (DiskErrorCacheException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         } catch (CacheException e) {
             fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
+        } catch (RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+            throw e;
         }
     }
 
@@ -948,27 +990,33 @@ public class CacheRepositoryV5
      */
     void destroyWhenRemovedAndUnused(MetaDataRecord entry)
     {
-        synchronized (entry) {
-            EntryState state = entry.getState();
-            PnfsId id = entry.getPnfsId();
-            if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
-                setState(entry, DESTROYED);
-                _store.remove(id);
+        try {
+            synchronized (entry) {
+                EntryState state = entry.getState();
+                PnfsId id = entry.getPnfsId();
+                if (entry.getLinkCount() == 0 && state == EntryState.REMOVED) {
+                    setState(entry, DESTROYED);
+                    _store.remove(id);
 
-                /* It is essential to free after we removed the file: This is the opposite
-                 * of what happens during allocation, in which we allocate before writing
-                 * to disk. We rely on never having anything on disk that we haven't accounted
-                 * for in the Account object.
-                 */
-                _account.free(entry.getSize());
+                    /* It is essential to free after we removed the file: This is the opposite
+                     * of what happens during allocation, in which we allocate before writing
+                     * to disk. We rely on never having anything on disk that we haven't accounted
+                     * for in the Account object.
+                     */
+                    _account.free(entry.getSize());
+                }
             }
+        } catch (DiskErrorCacheException | RuntimeException e) {
+            fail(FaultAction.DEAD, "Internal repository error", e);
+        } catch (CacheException e) {
+            fail(FaultAction.READONLY, "Internal repository error", e);
         }
     }
 
     /**
      * Removes all expired sticky flags of entry.
      */
-    private void removeExpiredStickyFlags(MetaDataRecord entry)
+    private void removeExpiredStickyFlags(MetaDataRecord entry) throws CacheException
     {
         synchronized (entry) {
             CacheEntry oldEntry = new CacheEntryImpl(entry);
@@ -1054,8 +1102,12 @@ public class CacheRepositoryV5
         @Override
         public void run()
         {
-            _tasks.remove(_entry.getPnfsId());
-            removeExpiredStickyFlags(_entry);
+            try {
+                _tasks.remove(_entry.getPnfsId());
+                removeExpiredStickyFlags(_entry);
+            } catch (CacheException | RuntimeException e) {
+                fail(FaultAction.DEAD, "Internal repository error", e);
+            }
         }
     }
 
