@@ -37,7 +37,7 @@ public interface Repository
      * @throws IllegalStateException if called multiple times
      */
     void init()
-        throws IllegalStateException;
+            throws IllegalStateException, CacheException;
 
     /**
      * Loads the repository from the on disk state. Must be done

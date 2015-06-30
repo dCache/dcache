@@ -69,15 +69,11 @@ public class CacheRepositoryEntryState
         makeStatePersistent();
     }
 
-    public List<StickyRecord> removeExpiredStickyFlags()
+    public List<StickyRecord> removeExpiredStickyFlags() throws IOException
     {
         List<StickyRecord> removed = _sticky.removeExpired();
-        try {
-            if (!removed.isEmpty()) {
-                makeStatePersistent();
-            }
-        } catch (IOException e) {
-            _log.error("Failed to store repository state: {}", e.getMessage());
+        if (!removed.isEmpty()) {
+            makeStatePersistent();
         }
         return removed;
     }
