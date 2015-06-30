@@ -10,11 +10,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.DiskErrorCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -101,22 +103,30 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public Collection<PnfsId> list()
+    public Collection<PnfsId> list() throws DiskErrorCacheException
     {
-        Set<PnfsId> ids = new HashSet<>();
-        for (Object id: _views.getStorageInfoMap().keySet()) {
-            ids.add(new PnfsId((String) id));
+        try {
+            Set<PnfsId> ids = new HashSet<>();
+            for (Object id: _views.getStorageInfoMap().keySet()) {
+                ids.add(new PnfsId((String) id));
+            }
+            for (Object id: _views.getStateMap().keySet()) {
+                ids.add(new PnfsId((String) id));
+            }
+            return ids;
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data lookup failed: " + e.getMessage(), e);
         }
-        for (Object id: _views.getStateMap().keySet()) {
-            ids.add(new PnfsId((String) id));
-        }
-        return ids;
     }
 
     @Override
-    public MetaDataRecord get(PnfsId id)
+    public MetaDataRecord get(PnfsId id) throws DiskErrorCacheException
     {
-        return CacheRepositoryEntryImpl.load(this, id);
+        try {
+            return CacheRepositoryEntryImpl.load(this, id);
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data updated failed: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -124,7 +134,7 @@ public class BerkeleyDBMetaDataRepository
      */
     @Override
     public MetaDataRecord create(PnfsId id)
-        throws DuplicateEntryException
+            throws DuplicateEntryException, DiskErrorCacheException
     {
         /* CacheRepositoryEntryImpl.load silently drops incomplete
          * entries. To conform to the contract of the MetaDataStore
@@ -154,10 +164,14 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public void remove(PnfsId id)
+    public void remove(PnfsId id) throws DiskErrorCacheException
     {
-        _views.getStorageInfoMap().remove(id.toString());
-        _views.getStateMap().remove(id.toString());
+        try {
+            _views.getStorageInfoMap().remove(id.toString());
+            _views.getStateMap().remove(id.toString());
+        } catch (DatabaseException e) {
+            throw new DiskErrorCacheException("Meta data update failed: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -165,7 +179,7 @@ public class BerkeleyDBMetaDataRepository
     {
         File tmp = new File(_dir, ".repository_is_ok");
         try {
-            tmp.delete();
+            Files.deleteIfExists(tmp.toPath());
             tmp.deleteOnExit();
 
             if (!tmp.createNewFile() || !tmp.exists()) {
@@ -178,10 +192,10 @@ public class BerkeleyDBMetaDataRepository
             }
 
             return true;
-	} catch (IOException e) {
+        } catch (IOException e) {
             _log.error("Failed to touch " + tmp + ": " + e.getMessage());
             return false;
-	}
+        }
     }
 
     /**
