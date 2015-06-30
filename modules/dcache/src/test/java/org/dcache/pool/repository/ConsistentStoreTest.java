@@ -328,7 +328,7 @@ public class ConsistentStoreTest
     }
 
     @Test
-    public void shouldSilentlyIgnoreRemoveOfNonExistingReplicas()
+    public void shouldSilentlyIgnoreRemoveOfNonExistingReplicas() throws CacheException
     {
         _consistentStore.remove(PNFSID);
     }
