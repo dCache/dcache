@@ -17,13 +17,17 @@
  */
 package org.dcache.xrootd.door;
 
-import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.ChannelPromiseNotifier;
+import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +48,7 @@ import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginReply;
@@ -109,6 +114,19 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
         _rootPath = rootPath;
         _uploadPath = uploadPath;
         _executor = executor;
+    }
+
+    @Override
+    protected ChannelFuture respond(ChannelHandlerContext ctx, Object response)
+    {
+        CDC cdc = new CDC();
+        ChannelPromise promise = ctx.newPromise();
+        ctx.executor().execute(() -> {
+            try (CDC ignored = cdc.restore()) {
+                super.respond(ctx, response).addListener(new ChannelPromiseNotifier(promise));
+            }
+        });
+        return promise;
     }
 
     @Override
