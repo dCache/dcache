@@ -69,7 +69,7 @@
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.2.10.v20150310</version.jetty>
         <version.wicket>6.19.0</version.wicket>
-        <version.xrootd4j>2.1.0</version.xrootd4j>
+        <version.xrootd4j>2.1.1</version.xrootd4j>
         <version.jglobus>2.0.6-rc9.d</version.jglobus>
 
         <!-- BouncyCastle seems to change the naming convention of
