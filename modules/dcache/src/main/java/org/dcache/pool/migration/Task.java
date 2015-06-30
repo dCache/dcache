@@ -197,6 +197,7 @@ public class Task
         messageArrived(PoolMigrationCopyFinishedMessage message)
     {
         if (_uuid.equals(message.getUUID())) {
+            _replicas.add(message.getPool());
             _fsm.messageArrived(message);
         }
     }
@@ -294,14 +295,7 @@ public class Task
                                                     _parameters.computeChecksumOnUpdate,
                                                     _parameters.forceSourceMode);
         CellStub.addCallback(_parameters.pool.send(_target, copyReplicaMessage),
-                             new Callback<PoolMigrationCopyReplicaMessage>("copy_") {
-                                 @Override
-                                 public void success(PoolMigrationCopyReplicaMessage message)
-                                 {
-                                     _replicas.add(_target.getCellName());
-                                     super.success(message);
-                                 }
-                             }, _parameters.executor);
+                             new Callback<>("copy_"), _parameters.executor);
     }
 
     /** FSM Action */
