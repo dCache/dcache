@@ -69,7 +69,7 @@
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.2.8.v20150217</version.jetty>
         <version.wicket>6.19.0</version.wicket>
-        <version.xrootd4j>2.0.1</version.xrootd4j>
+        <version.xrootd4j>2.0.2</version.xrootd4j>
         <version.jglobus>2.0.6-rc9.d</version.jglobus>
         <version.openmq>4.5.2</version.openmq>
 
