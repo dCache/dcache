@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import diskCacheV111.util.CacheException;
@@ -86,6 +87,7 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
 
     private int maxFrameSize;
     private List<ChannelHandlerFactory> plugins;
+    private Map<String, String> queryConfig;
 
     public XrootdTransferService()
     {
@@ -112,6 +114,17 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
     public int getMaxFrameSize()
     {
         return maxFrameSize;
+    }
+
+    public Map<String, String> getQueryConfig()
+    {
+        return queryConfig;
+    }
+
+    @Required
+    public void setQueryConfig(Map<String, String> queryConfig)
+    {
+        this.queryConfig = queryConfig;
     }
 
     @Override
@@ -159,6 +172,6 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
                                                          clientIdleTimeout,
                                                          clientIdleTimeoutUnit));
         pipeline.addLast("chunkedWriter", new ChunkedResponseWriteHandler());
-        pipeline.addLast("transfer", new XrootdPoolRequestHandler(this, maxFrameSize));
+        pipeline.addLast("transfer", new XrootdPoolRequestHandler(this, maxFrameSize, queryConfig));
     }
 }

@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -69,6 +70,7 @@ public class NettyXrootdServer implements CellMessageSender
     private String sessionPrefix;
     private EventLoopGroup _acceptGroup;
     private EventLoopGroup _socketGroup;
+    private Map<String, String> _queryConfig;
 
     public int getPort()
     {
@@ -163,6 +165,17 @@ public class NettyXrootdServer implements CellMessageSender
         return (_uploadPath == null) ? null : new File(_uploadPath.toString());
     }
 
+    public Map<String, String> getQueryConfig()
+    {
+        return _queryConfig;
+    }
+
+    @Required
+    public void setQueryConfig(Map<String, String> queryConfig)
+    {
+        _queryConfig = queryConfig;
+    }
+
     public void start()
     {
         _acceptGroup = new NioEventLoopGroup(0, new CDCThreadFactory(new ThreadFactoryBuilder().setNameFormat("xrootd-listen-%d").build()));
@@ -192,7 +205,8 @@ public class NettyXrootdServer implements CellMessageSender
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                             pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                         }
-                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _uploadPath, _requestExecutor));
+                        pipeline.addLast("redirector", new XrootdRedirectHandler(_door, _rootPath, _uploadPath, _requestExecutor,
+                                                                                 _queryConfig));
                     }
                 });
 

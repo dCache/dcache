@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
@@ -105,12 +106,19 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     private boolean _isReadOnly = true;
     private FsPath _userRootPath = new FsPath();
 
-    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath, ListeningExecutorService executor)
+    /**
+     * Custom entries for kXR_Qconfig requests.
+     */
+    private final Map<String,String> _queryConfig;
+
+    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath, ListeningExecutorService executor,
+                                 Map<String, String> queryConfig)
     {
         _door = door;
         _rootPath = rootPath;
         _uploadPath = uploadPath;
         _executor = executor;
+        _queryConfig = queryConfig;
     }
 
     @Override
@@ -440,11 +448,8 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
                 case "csname":
                     s.append("1:ADLER32,2:MD5");
                     break;
-                case "version":
-                    s.append("dCache ").append(Version.of(XrootdRedirectHandler.class).getVersion());
-                    break;
                 default:
-                    s.append(name);
+                    s.append(_queryConfig.getOrDefault(name, name));
                     break;
                 }
                 s.append('\n');

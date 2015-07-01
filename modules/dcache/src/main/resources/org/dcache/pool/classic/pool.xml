@@ -367,6 +367,11 @@
               <constructor-arg value="${pool.mover.xrootd.port.max}"/>
           </bean>
       </property>
+      <property name="queryConfig">
+          <bean class="org.dcache.util.ConfigurationMapFactoryBean">
+              <property name="prefix" value="pool.mover.xrootd.query-config"/>
+          </bean>
+      </property>
   </bean>
 
   <bean id="http-transfer-service" class="org.dcache.http.HttpTransferService"

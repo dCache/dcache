@@ -132,10 +132,17 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
      */
     private final int _maxFrameSize;
 
-    public XrootdPoolRequestHandler(NettyTransferService<XrootdProtocolInfo> server, int maxFrameSize)
+    /**
+     * Custom entries for kXR_Qconfig requests.
+     */
+    private final Map<String,String> _queryConfig;
+
+    public XrootdPoolRequestHandler(NettyTransferService<XrootdProtocolInfo> server, int maxFrameSize,
+                                    Map<String, String> queryConfig)
     {
         _server = server;
         _maxFrameSize = maxFrameSize;
+        _queryConfig = queryConfig;
     }
 
     @Override
@@ -569,7 +576,7 @@ public class XrootdPoolRequestHandler extends AbstractXrootdRequestHandler
                     s.append("dCache ").append(Version.of(XrootdPoolRequestHandler.class).getVersion());
                     break;
                 default:
-                    s.append(name);
+                    s.append(_queryConfig.getOrDefault(name, name));
                     break;
                 }
                 s.append('\n');
