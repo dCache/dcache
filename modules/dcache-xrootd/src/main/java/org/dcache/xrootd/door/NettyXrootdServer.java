@@ -2,7 +2,6 @@ package org.dcache.xrootd.door;
 
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
-import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -27,6 +26,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.FsPath;
@@ -60,7 +60,7 @@ public class NettyXrootdServer implements CellMessageSender
 
     private int _port;
     private int _backlog;
-    private ListeningExecutorService _requestExecutor;
+    private ExecutorService _requestExecutor;
     private XrootdDoor _door;
     private ConnectionTracker _connectionTracker;
     private List<ChannelHandlerFactory> _channelHandlerFactories;
@@ -105,7 +105,7 @@ public class NettyXrootdServer implements CellMessageSender
     }
 
     @Required
-    public void setRequestExecutor(ListeningExecutorService executor)
+    public void setRequestExecutor(ExecutorService executor)
     {
         _requestExecutor = executor;
     }

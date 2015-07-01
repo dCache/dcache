@@ -18,27 +18,17 @@
 package org.dcache.xrootd.door;
 
 import com.google.common.net.InetAddresses;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.ChannelPromiseNotifier;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Future;
+import java.util.concurrent.ExecutorService;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
@@ -49,7 +39,6 @@ import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.TimeoutCacheException;
 
-import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.CellPath;
 
 import org.dcache.auth.LoginReply;
@@ -60,10 +49,8 @@ import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.MessageCallback;
 import org.dcache.util.Checksum;
 import org.dcache.util.Checksums;
-import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
-import org.dcache.xrootd.AbstractXrootdRequestHandler;
 import org.dcache.xrootd.core.XrootdException;
 import org.dcache.xrootd.protocol.messages.AsyncResponse;
 import org.dcache.xrootd.protocol.messages.AwaitAsyncResponse;
@@ -82,7 +69,6 @@ import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
 import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.StatxResponse;
-import org.dcache.xrootd.protocol.messages.XrootdRequest;
 import org.dcache.xrootd.protocol.messages.XrootdResponse;
 import org.dcache.xrootd.util.OpaqueStringParser;
 
@@ -92,7 +78,7 @@ import static org.dcache.xrootd.protocol.XrootdProtocol.*;
 /**
  * Channel handler which redirects all open requests to a pool.
  */
-public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
+public class XrootdRedirectHandler extends ConcurrentXrootdRequestHandler
 {
     private static final Logger _log =
         LoggerFactory.getLogger(XrootdRedirectHandler.class);
@@ -100,13 +86,6 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     private final XrootdDoor _door;
     private final FsPath _rootPath;
     private final FsPath _uploadPath;
-    private final ListeningExecutorService _executor;
-
-    /**
-     * The set of requests which are currently processed for this channel. They
-     * will be interrupted in case the channel is disonnected.
-     */
-    private final Set<Future<?>> _requests = Collections.synchronizedSet(new HashSet<>());
 
     private boolean _isReadOnly = true;
     private FsPath _userRootPath = new FsPath();
@@ -116,46 +95,14 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
      */
     private final Map<String,String> _queryConfig;
 
-    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath, ListeningExecutorService executor,
+    public XrootdRedirectHandler(XrootdDoor door, FsPath rootPath, FsPath uploadPath, ExecutorService executor,
                                  Map<String, String> queryConfig)
     {
+        super(executor);
         _door = door;
         _rootPath = rootPath;
         _uploadPath = uploadPath;
-        _executor = executor;
         _queryConfig = queryConfig;
-    }
-
-    @Override
-    protected ChannelFuture respond(ChannelHandlerContext ctx, Object response)
-    {
-        CDC cdc = new CDC();
-        ChannelPromise promise = ctx.newPromise();
-        ctx.executor().execute(() -> {
-            try (CDC ignored = cdc.restore()) {
-                super.respond(ctx, response).addListener(new ChannelPromiseNotifier(promise));
-            }
-        });
-        return promise;
-    }
-
-    @Override
-    protected void requestReceived(ChannelHandlerContext ctx, XrootdRequest req)
-    {
-        ListenableFuture<?> future = _executor.submit(() -> super.requestReceived(ctx, req));
-        _requests.add(future);
-        future.addListener(() -> _requests.remove(future), MoreExecutors.directExecutor());
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx)
-            throws Exception
-    {
-        synchronized (_requests) {
-            for (Future<?> request : _requests) {
-                request.cancel(true);
-            }
-        }
     }
 
     @Override
