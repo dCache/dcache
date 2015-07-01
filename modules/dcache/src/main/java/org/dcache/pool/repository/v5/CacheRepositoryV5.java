@@ -746,7 +746,7 @@ public class CacheRepositoryV5
     {
         pw.println("State : " + _state);
         try {
-            pw.println("Files : " + _store.list().size());
+            pw.println("Files : " + (_state == State.OPEN ?_store.list().size() : ""));
         } catch (CacheException e) {
             pw.println("Files : " + e.getMessage());
         }
