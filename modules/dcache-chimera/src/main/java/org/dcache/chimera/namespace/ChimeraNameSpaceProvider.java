@@ -384,36 +384,38 @@ public class ChimeraNameSpaceProvider
         throws CacheException
     {
         try {
+            File filePath = new File(path);
+
+            String parentPath = filePath.getParent();
+            if (parentPath == null) {
+                throw new CacheException("Cannot delete file system root.");
+            }
+
+            ExtendedInode parent = new ExtendedInode(pathToInode(subject, parentPath));
+            String name = filePath.getName();
+
             if (!Subjects.isRoot(subject)) {
-                File file = new File(path);
-                String parentPath = file.getParent();
+                ExtendedInode inode = parent.inodeOf(name);
 
-                if (parentPath != null) {
-                    ExtendedInode inode = new ExtendedInode(pathToInode(subject, path));
-                    FsInode inodeParent = _fs.path2inode(parentPath);
+                FileAttributes parentAttributes = getFileAttributesForPermissionHandler(parent);
+                FileAttributes fileAttributes = getFileAttributesForPermissionHandler(inode);
 
-                    FileAttributes parentAttributes =
-                        getFileAttributesForPermissionHandler(inodeParent);
-                    FileAttributes fileAttributes =
-                        getFileAttributesForPermissionHandler(inode);
-
-                    if (inode.isDirectory()) {
-                        if (_permissionHandler.canDeleteDir(subject,
-                                                            parentAttributes,
-                                                            fileAttributes) != ACCESS_ALLOWED) {
-                            throw new PermissionDeniedCacheException("Access denied: " + path);
-                        }
-                    } else {
-                        if (_permissionHandler.canDeleteFile(subject,
-                                                             parentAttributes,
-                                                             fileAttributes) != ACCESS_ALLOWED) {
-                            throw new PermissionDeniedCacheException("Access denied: " + path);
-                        }
+                if (inode.isDirectory()) {
+                    if (_permissionHandler.canDeleteDir(subject,
+                                                        parentAttributes,
+                                                        fileAttributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                    }
+                } else {
+                    if (_permissionHandler.canDeleteFile(subject,
+                                                         parentAttributes,
+                                                         fileAttributes) != ACCESS_ALLOWED) {
+                        throw new PermissionDeniedCacheException("Access denied: " + path);
                     }
                 }
             }
 
-            _fs.remove(path);
+            _fs.remove(parent, name);
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         }catch(DirNotEmptyHimeraFsException e) {
