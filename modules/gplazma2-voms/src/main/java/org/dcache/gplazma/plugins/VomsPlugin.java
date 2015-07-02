@@ -14,10 +14,17 @@ import org.dcache.util.CertPaths;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import java.util.List;
+
+import static java.util.Arrays.asList;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
+
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate chain in
@@ -27,6 +34,8 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
 
     private static final String CADIR = "gplazma.vomsdir.ca";
     private static final String VOMSDIR = "gplazma.vomsdir.dir";
+    private final VOMSTrustStore vomsTrustStore;
+    private final X509CertChainValidatorExt certChainValidator;
 
     public VomsPlugin(Properties properties) throws CertificateException,
                     CRLException, IOException {
@@ -35,6 +44,9 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
 
         checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(vomsDir != null, "Undefined property: " + CADIR);
+
+        vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
+        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
     }
 
     @Override
@@ -43,7 +55,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
         VOMSACValidator validator
-            = VOMSValidators.newValidator();
+            = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
 
         boolean primary = true;
         boolean hasX509 = false;
