@@ -39,8 +39,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     @Override
     public void init() throws UnknownHostException
     {
-        _gssFlavor = "unknown";
         super.init();
+        _gssFlavor = "unknown";
     }
 
     @Override
