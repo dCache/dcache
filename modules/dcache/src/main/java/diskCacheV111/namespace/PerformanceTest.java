@@ -25,6 +25,7 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Args;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
@@ -214,7 +215,7 @@ public class PerformanceTest extends Thread
                                     CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME, CHANGE_TIME));
                     break;
                 case DELETE_ENTRY:
-                    provider.deleteEntry(Subjects.ROOT, getPnfsid(path));
+                    provider.deleteEntry(Subjects.ROOT, EnumSet.allOf(FileType.class), getPnfsid(path));
                     break;
                 case PNFS_ID_TO_PATH:
                     provider.pnfsidToPath(Subjects.ROOT, getPnfsid(path));

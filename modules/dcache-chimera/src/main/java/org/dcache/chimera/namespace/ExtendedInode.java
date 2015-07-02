@@ -44,7 +44,9 @@ import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInodeType;
 import org.dcache.chimera.StorageLocatable;
+import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.store.InodeStorageInformation;
+import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
 
 import static com.google.common.collect.Iterables.filter;
@@ -260,6 +262,20 @@ public class ExtendedInode extends FsInode
     public FsPath getPath() throws ChimeraFsException
     {
         return new FsPath(_fs.inode2path(this));
+    }
+
+    public FileType getFileType() throws ChimeraFsException
+    {
+        switch (UnixPermission.getType(statCache().getMode())) {
+        case UnixPermission.S_IFREG:
+            return FileType.REGULAR;
+        case UnixPermission.S_IFDIR:
+            return FileType.DIR;
+        case UnixPermission.S_IFLNK:
+            return FileType.LINK;
+        default:
+            return FileType.SPECIAL;
+        }
     }
 
     private static class IsType implements Predicate<StorageLocatable>

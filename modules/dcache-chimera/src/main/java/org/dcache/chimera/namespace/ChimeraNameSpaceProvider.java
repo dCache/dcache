@@ -345,12 +345,26 @@ public class ChimeraNameSpaceProvider
         return new PnfsId(inode.toString());
     }
 
+    private void checkAllowed(Set<FileType> allowed,
+                              ExtendedInode inode) throws ChimeraFsException, NotDirCacheException, NotFileCacheException
+    {
+        if (!allowed.contains(inode.getFileType())) {
+            if (allowed.contains(FileType.DIR)) {
+                throw new NotDirCacheException("Path exists but is not of the expected type");
+            } else {
+                throw new NotFileCacheException("Path exists but is not of the expected type");
+            }
+        }
+    }
+
     @Override
-    public void deleteEntry(Subject subject, PnfsId pnfsId)
+    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId)
         throws CacheException
     {
         try {
             ExtendedInode inode = new ExtendedInode(_fs, pnfsId);
+
+            checkAllowed(allowed, inode);
 
             if (!Subjects.isRoot(subject)) {
                 FsInode inodeParent = _fs.getParentOf(inode);
@@ -386,7 +400,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, String path)
+    public void deleteEntry(Subject subject, Set<FileType> allowed, String path)
         throws CacheException
     {
         try {
@@ -400,23 +414,27 @@ public class ChimeraNameSpaceProvider
             ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
             String name = filePath.getName();
 
-            if (!Subjects.isRoot(subject)) {
+            if (!Subjects.isRoot(subject) || !allowed.equals(EnumSet.allOf(FileType.class))) {
                 ExtendedInode inode = parent.inodeOf(name);
 
-                FileAttributes parentAttributes = getFileAttributesForPermissionHandler(parent);
-                FileAttributes fileAttributes = getFileAttributesForPermissionHandler(inode);
+                checkAllowed(allowed, inode);
 
-                if (inode.isDirectory()) {
-                    if (_permissionHandler.canDeleteDir(subject,
-                                                        parentAttributes,
-                                                        fileAttributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + path);
-                    }
-                } else {
-                    if (_permissionHandler.canDeleteFile(subject,
-                                                         parentAttributes,
-                                                         fileAttributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + path);
+                if (!Subjects.isRoot(subject)) {
+                    FileAttributes parentAttributes = getFileAttributesForPermissionHandler(parent);
+                    FileAttributes fileAttributes = getFileAttributesForPermissionHandler(inode);
+
+                    if (inode.isDirectory()) {
+                        if (_permissionHandler.canDeleteDir(subject,
+                                                            parentAttributes,
+                                                            fileAttributes) != ACCESS_ALLOWED) {
+                            throw new PermissionDeniedCacheException("Access denied: " + path);
+                        }
+                    } else {
+                        if (_permissionHandler.canDeleteFile(subject,
+                                                             parentAttributes,
+                                                             fileAttributes) != ACCESS_ALLOWED) {
+                            throw new PermissionDeniedCacheException("Access denied: " + path);
+                        }
                     }
                 }
             }
@@ -781,17 +799,7 @@ public class ChimeraNameSpaceProvider
                 break;
             case SIMPLE_TYPE:
             case TYPE:
-                stat = inode.statCache();
-                UnixPermission perm = new UnixPermission(stat.getMode());
-                if (perm.isReg()) {
-                    attributes.setFileType(FileType.REGULAR);
-                } else if (perm.isDir()) {
-                    attributes.setFileType(FileType.DIR);
-                } else if (perm.isSymLink()) {
-                    attributes.setFileType(FileType.LINK);
-                } else {
-                    attributes.setFileType(FileType.SPECIAL);
-                }
+                attributes.setFileType(inode.getFileType());
                 break;
             case MODE:
                 stat = inode.statCache();

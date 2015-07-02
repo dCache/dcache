@@ -15,6 +15,7 @@ import diskCacheV111.util.RetentionPolicy;
 
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
@@ -44,14 +45,14 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, PnfsId pnfsId)
+    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId)
         throws CacheException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteEntry(Subject subject, String path)
+    public void deleteEntry(Subject subject, Set<FileType> allowed, String path)
         throws CacheException
     {
         throw new UnsupportedOperationException();

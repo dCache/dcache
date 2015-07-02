@@ -1215,26 +1215,6 @@ public class PnfsManagerV3
         }
     }
 
-    /**
-     * Returns true if and only if pnfsid is of one of the given
-     * types.
-     */
-    private boolean isOfType(PnfsId pnfsid, Set<FileType> types)
-        throws CacheException
-    {
-        /* Assuming the file exists, it must be of some type. Hence we
-         * can avoid the query if types contains all types.
-         */
-        if (types.equals(EnumSet.allOf(FileType.class))) {
-            return true;
-        }
-
-        FileAttributes attributes =
-            _nameSpaceProvider.getFileAttributes(Subjects.ROOT, pnfsid,
-                                                 EnumSet.of(FileAttribute.TYPE));
-        return types.contains(attributes.getFileType());
-    }
-
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
 
         String path = pnfsMessage.getPnfsPath();
@@ -1272,29 +1252,13 @@ public class PnfsManagerV3
                     pnfsMessage.setPnfsId(pnfsId);
                 }
 
-                if (!isOfType(pnfsId, allowed)) {
-                    if (allowed.contains(FileType.DIR)) {
-                        throw new NotDirCacheException("Path exists but is not of the expected type");
-                    } else {
-                        throw new NotFileCacheException("Path exists but is not of the expected type");
-                    }
-                }
-
-                _log.info("delete PNFS entry for "+ path );
-                _nameSpaceProvider.deleteEntry(subject, path);
+                _log.info("delete PNFS entry for {}", path);
+                _nameSpaceProvider.deleteEntry(subject, allowed, path);
             } else {
-                if (!isOfType(pnfsId, allowed)) {
-                    if (allowed.contains(FileType.DIR)) {
-                        throw new NotDirCacheException("Path exists but is not of the expected type");
-                    } else {
-                        throw new NotFileCacheException("Path exists but is not of the expected type");
-                    }
-                }
-
                 checkMask(pnfsMessage);
 
-                _log.info("delete PNFS entry for "+ pnfsId );
-                _nameSpaceProvider.deleteEntry(subject, pnfsId);
+                _log.info("delete PNFS entry for {}", pnfsId);
+                _nameSpaceProvider.deleteEntry(subject, allowed, pnfsId);
             }
 
             pnfsMessage.setSucceeded();
@@ -1333,15 +1297,6 @@ public class PnfsManagerV3
     {
         _log.info("Renaming " + pnfsId + " to " + newName );
         _nameSpaceProvider.renameEntry(subject, pnfsId, newName, overwrite);
-    }
-
-
-    private void removeByPnfsId(Subject subject, PnfsId pnfsId )
-        throws CacheException
-    {
-        _log.info("removeByPnfsId : "+pnfsId );
-
-        _nameSpaceProvider.deleteEntry(subject, pnfsId);
     }
 
     private String pathfinder(Subject subject, PnfsId pnfsId )

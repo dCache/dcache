@@ -25,6 +25,7 @@ import diskCacheV111.vehicles.PnfsFlagMessage;
 
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.namespace.FileType;
 import org.dcache.namespace.ListHandler;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
@@ -91,17 +92,17 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, PnfsId id) throws CacheException
+    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId id) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        pnfs.deletePnfsEntry(id);
+        pnfs.deletePnfsEntry(id, null, allowed);
     }
 
     @Override
-    public void deleteEntry(Subject subject, String path) throws CacheException
+    public void deleteEntry(Subject subject, Set<FileType> allowed, String path) throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
-        pnfs.deletePnfsEntry(path);
+        pnfs.deletePnfsEntry(path, allowed);
     }
 
     @Override
