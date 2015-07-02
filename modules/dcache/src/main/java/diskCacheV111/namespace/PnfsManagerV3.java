@@ -1237,7 +1237,7 @@ public class PnfsManagerV3
 
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
 
-        String path = pnfsMessage.getPath();
+        String path = pnfsMessage.getPnfsPath();
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         Subject subject = pnfsMessage.getSubject();
         Set<FileType> allowed = pnfsMessage.getAllowedFileTypes();

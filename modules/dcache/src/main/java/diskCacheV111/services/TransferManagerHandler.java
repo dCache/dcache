@@ -251,7 +251,7 @@ public class TransferManagerHandler extends AbstractMessageCallback<Message>
                 if (state == WAITING_FOR_PNFS_ENTRY_DELETE) {
                     setState(RECEIVED_PNFS_ENTRY_DELETE);
                     log.debug("Received PnfsDeleteEntryMessage, Deleted  : {}",
-                            deleteReply.getPath());
+                            deleteReply.getPnfsPath());
                     sendErrorReply();
                 }
             }

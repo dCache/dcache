@@ -255,7 +255,7 @@ public class RemoteNameSpaceProviderTests
                 getSingleSendAndWaitMessage(PnfsDeleteEntryMessage.class);
         assertThat(sent.getReplyRequired(), is(true));
         assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getPath(), nullValue());
+        assertThat(sent.getPnfsPath(), nullValue());
         assertThat(sent.getPnfsId(), is(A_PNFSID));
     }
 
@@ -271,7 +271,7 @@ public class RemoteNameSpaceProviderTests
                 getSingleSendAndWaitMessage(PnfsDeleteEntryMessage.class);
         assertThat(sent.getReplyRequired(), is(true));
         assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getPath(), is("/path/to/entry"));
+        assertThat(sent.getPnfsPath(), is("/path/to/entry"));
         assertThat(sent.getPnfsId(), nullValue());
     }
 
