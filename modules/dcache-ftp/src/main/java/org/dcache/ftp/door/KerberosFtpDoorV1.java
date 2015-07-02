@@ -50,12 +50,12 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
     @Override
     public void init() throws UnknownHostException
     {
+        super.init();
         _gssFlavor = "k5";
         ftpDoorName = "Kerberos FTP";
         if (_kdcListOption != null) {
             _kdcList = _kdcListOption.split(",");
         }
-        super.init();
     }
 
     @Override
