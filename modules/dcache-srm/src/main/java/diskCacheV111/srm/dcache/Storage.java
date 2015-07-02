@@ -715,7 +715,7 @@ public final class Storage
         }
 
         return getTurl(loginBrokerSource.readDoorsByProtocol(), user, path, protocols,
-                       srmGetNotSupportedProtocols, previousTurl, d -> d.canWrite(user.getRoot(), path));
+                       srmGetNotSupportedProtocols, previousTurl, d -> d.canRead(user.getRoot(), path));
     }
 
     @Override
