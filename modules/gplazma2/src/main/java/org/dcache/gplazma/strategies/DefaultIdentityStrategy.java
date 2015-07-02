@@ -19,7 +19,7 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
     private static final Logger _log =
             LoggerFactory.getLogger(DefaultIdentityStrategy.class);
 
-    private List<GPlazmaPluginElement<GPlazmaIdentityPlugin>> ideStyleStrategies;
+    private volatile List<GPlazmaPluginElement<GPlazmaIdentityPlugin>> ideStyleStrategies;
 
     @Override
     public Principal map(Principal principal) throws NoSuchPrincipalException {

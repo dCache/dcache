@@ -24,7 +24,7 @@ public class DefaultSessionStrategy implements SessionStrategy
     private static final Logger logger =
             LoggerFactory.getLogger(DefaultSessionStrategy.class);
 
-    private PAMStyleStrategy<GPlazmaSessionPlugin> pamStyleSessionStrategy;
+    private volatile PAMStyleStrategy<GPlazmaSessionPlugin> pamStyleSessionStrategy;
 
     /**
      *
@@ -55,7 +55,7 @@ public class DefaultSessionStrategy implements SessionStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void session(final LoginMonitor monitor,
+    public void session(final LoginMonitor monitor,
             final Set<Principal> authorizedPrincipals,
             final Set<Object> attrib) throws AuthenticationException
     {

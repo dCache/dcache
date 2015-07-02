@@ -24,7 +24,7 @@ public class DefaultMappingStrategy implements MappingStrategy
     private static final Logger logger =
             LoggerFactory.getLogger(DefaultMappingStrategy.class);
 
-    private PAMStyleStrategy<GPlazmaMappingPlugin> pamStyleMappingStrategy;
+    private volatile PAMStyleStrategy<GPlazmaMappingPlugin> pamStyleMappingStrategy;
 
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaMappingPlugin>> plugins)
@@ -49,7 +49,7 @@ public class DefaultMappingStrategy implements MappingStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void map(final LoginMonitor monitor,
+    public void map(final LoginMonitor monitor,
             final Set<Principal> principals)
             throws AuthenticationException
     {

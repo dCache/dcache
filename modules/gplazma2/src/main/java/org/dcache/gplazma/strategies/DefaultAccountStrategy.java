@@ -24,7 +24,7 @@ public class DefaultAccountStrategy implements AccountStrategy
     private static final Logger logger =
             LoggerFactory.getLogger(DefaultAccountStrategy.class);
 
-    private PAMStyleStrategy<GPlazmaAccountPlugin> pamStyleAccountStrategy;
+    private volatile PAMStyleStrategy<GPlazmaAccountPlugin> pamStyleAccountStrategy;
 
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaAccountPlugin>> plugins)
@@ -50,7 +50,7 @@ public class DefaultAccountStrategy implements AccountStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void account(final LoginMonitor monitor,
+    public void account(final LoginMonitor monitor,
             final Set<Principal> authorizedPrincipals)
             throws AuthenticationException
     {

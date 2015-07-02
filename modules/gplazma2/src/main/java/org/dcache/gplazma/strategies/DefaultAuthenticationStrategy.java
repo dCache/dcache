@@ -24,7 +24,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
     private static final Logger LOGGER =
             LoggerFactory.getLogger(DefaultAuthenticationStrategy.class);
 
-    private PAMStyleStrategy<GPlazmaAuthenticationPlugin> pamStyleAuthentiationStrategy;
+    private volatile PAMStyleStrategy<GPlazmaAuthenticationPlugin> pamStyleAuthentiationStrategy;
 
     @Override
     public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins)
@@ -46,7 +46,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
      * @see PluginCaller
      */
     @Override
-    public synchronized void authenticate(final LoginMonitor monitor,
+    public void authenticate(final LoginMonitor monitor,
             final Set<Object> publicCredential,
             final Set<Object> privateCredential,
             final Set<Principal> identifiedPrincipals)
