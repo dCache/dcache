@@ -113,7 +113,18 @@ public interface NameSpaceProvider
      * @param path
      * @throws CacheException
      */
-    void deleteEntry(Subject subject, Set<FileType> allowed, String path) throws CacheException;
+    PnfsId deleteEntry(Subject subject, Set<FileType> allowed, String path) throws CacheException;
+
+    /**
+     * Remove file or directory. Path and PnfsID must describe the same object.
+     *
+     * @param subject Subject of user who invoked this method.
+     * @param allowed Only delete if one of these file types.
+     * @param pnfsId PnfsID of file to delete
+     * @param path Path of file to delete
+     * @throws CacheException
+     */
+    void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId, String path) throws CacheException;
 
     void renameEntry(Subject subject, PnfsId pnfsId, String newName,
                      boolean overwrite) throws CacheException;

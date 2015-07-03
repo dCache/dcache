@@ -1229,31 +1229,15 @@ public class PnfsManagerV3
             }
 
             if( path != null ) {
-
-                PnfsId pnfsIdFromPath = pathToPnfsid(subject, path, false);
-
-                checkMask(pnfsMessage.getSubject(), pnfsIdFromPath,
-                          pnfsMessage.getAccessMask());
-
-                /*
-                 * raice condition check:
-                 *
-                 * in some cases ( srm overwrite ) one failed transfer may remove a file
-                 * which belongs to an other transfer.
-                 *
-                 * If both path and id defined check that path points to defined id
-                 */
-                if( pnfsId != null ) {
-                    if( !pnfsIdFromPath.equals(pnfsId) ) {
-                        throw new FileNotFoundCacheException("Pnfsid does not correspond to provided file");
-                    }
-                } else {
-                    pnfsId = pnfsIdFromPath;
-                    pnfsMessage.setPnfsId(pnfsId);
-                }
+                checkMask(pnfsMessage.getSubject(), path, pnfsMessage.getAccessMask());
 
                 _log.info("delete PNFS entry for {}", path);
-                _nameSpaceProvider.deleteEntry(subject, allowed, path);
+
+                if (pnfsId != null) {
+                    _nameSpaceProvider.deleteEntry(subject, allowed, pnfsId, path);
+                } else {
+                    pnfsMessage.setPnfsId(_nameSpaceProvider.deleteEntry(subject, allowed, path));
+                }
             } else {
                 checkMask(pnfsMessage);
 

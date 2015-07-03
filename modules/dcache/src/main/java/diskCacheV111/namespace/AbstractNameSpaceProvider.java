@@ -52,8 +52,14 @@ public class AbstractNameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, Set<FileType> allowed, String path)
+    public PnfsId deleteEntry(Subject subject, Set<FileType> allowed, String path)
         throws CacheException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId, String path) throws CacheException
     {
         throw new UnsupportedOperationException();
     }

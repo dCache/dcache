@@ -357,6 +357,28 @@ public class ChimeraNameSpaceProvider
         }
     }
 
+    private boolean canDelete(Subject subject, ExtendedInode parent, ExtendedInode inode)
+            throws ChimeraFsException, CacheException
+    {
+        FileAttributes parentAttributes = getFileAttributesForPermissionHandler(parent);
+        FileAttributes fileAttributes = getFileAttributesForPermissionHandler(inode);
+
+        if (inode.isDirectory()) {
+            if (_permissionHandler.canDeleteDir(subject,
+                                                parentAttributes,
+                                                fileAttributes) != ACCESS_ALLOWED) {
+                return false;
+            }
+        } else {
+            if (_permissionHandler.canDeleteFile(subject,
+                                                 parentAttributes,
+                                                 fileAttributes) != ACCESS_ALLOWED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId)
         throws CacheException
@@ -366,26 +388,8 @@ public class ChimeraNameSpaceProvider
 
             checkAllowed(allowed, inode);
 
-            if (!Subjects.isRoot(subject)) {
-                FsInode inodeParent = _fs.getParentOf(inode);
-                FileAttributes parentAttributes =
-                    getFileAttributesForPermissionHandler(inodeParent);
-                FileAttributes fileAttributes =
-                    getFileAttributesForPermissionHandler(inode);
-
-                if (inode.isDirectory()) {
-                    if (_permissionHandler.canDeleteDir(subject,
-                                                        parentAttributes,
-                                                        fileAttributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
-                    }
-                } else {
-                    if (_permissionHandler.canDeleteFile(subject,
-                                                         parentAttributes,
-                                                         fileAttributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
-                    }
-                }
+            if (!Subjects.isRoot(subject) && !canDelete(subject, inode.getParent(), inode)) {
+                throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
             }
 
             _fs.remove(inode);
@@ -400,7 +404,7 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void deleteEntry(Subject subject, Set<FileType> allowed, String path)
+    public PnfsId deleteEntry(Subject subject, Set<FileType> allowed, String path)
         throws CacheException
     {
         try {
@@ -414,32 +418,16 @@ public class ChimeraNameSpaceProvider
             ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
             String name = filePath.getName();
 
-            if (!Subjects.isRoot(subject) || !allowed.equals(EnumSet.allOf(FileType.class))) {
-                ExtendedInode inode = parent.inodeOf(name);
+            ExtendedInode inode = parent.inodeOf(name);
+            checkAllowed(allowed, inode);
 
-                checkAllowed(allowed, inode);
-
-                if (!Subjects.isRoot(subject)) {
-                    FileAttributes parentAttributes = getFileAttributesForPermissionHandler(parent);
-                    FileAttributes fileAttributes = getFileAttributesForPermissionHandler(inode);
-
-                    if (inode.isDirectory()) {
-                        if (_permissionHandler.canDeleteDir(subject,
-                                                            parentAttributes,
-                                                            fileAttributes) != ACCESS_ALLOWED) {
-                            throw new PermissionDeniedCacheException("Access denied: " + path);
-                        }
-                    } else {
-                        if (_permissionHandler.canDeleteFile(subject,
-                                                             parentAttributes,
-                                                             fileAttributes) != ACCESS_ALLOWED) {
-                            throw new PermissionDeniedCacheException("Access denied: " + path);
-                        }
-                    }
-                }
+            if (!Subjects.isRoot(subject) && !canDelete(subject, parent, inode)) {
+                throw new PermissionDeniedCacheException("Access denied: " + path);
             }
 
             _fs.remove(parent, name);
+
+            return new PnfsId(inode.toString());
         }catch(FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         }catch(DirNotEmptyHimeraFsException e) {
@@ -447,6 +435,42 @@ public class ChimeraNameSpaceProvider
         }catch(IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId, String path)
+            throws CacheException
+    {
+        try {
+            File filePath = new File(path);
+
+            String parentPath = filePath.getParent();
+            if (parentPath == null) {
+                throw new CacheException("Cannot delete file system root.");
+            }
+
+            ExtendedInode parent = new ExtendedInode(_fs, pathToInode(subject, parentPath));
+            String name = filePath.getName();
+            ExtendedInode inode = parent.inodeOf(name);
+
+            if (!inode.toString().equals(pnfsId.getId())) {
+                throw new FileNotFoundCacheException("PNFSID does not correspond to provided file.");
+            }
+
+            checkAllowed(allowed, inode);
+
+            if (!Subjects.isRoot(subject) && !canDelete(subject, parent, inode)) {
+                throw new PermissionDeniedCacheException("Access denied: " + path);
+            }
+
+            _fs.remove(parent, name);
+        } catch (FileNotFoundHimeraFsException fnf) {
+            throw new FileNotFoundCacheException("No such file or directory: " + path);
+        } catch (DirNotEmptyHimeraFsException e) {
+            throw new CacheException("Directory is not empty: " + path);
+        } catch (IOException e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
 
