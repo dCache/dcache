@@ -1215,38 +1215,32 @@ public class PnfsManagerV3
         }
     }
 
-    public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
-
+    public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage)
+    {
         String path = pnfsMessage.getPnfsPath();
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         Subject subject = pnfsMessage.getSubject();
         Set<FileType> allowed = pnfsMessage.getAllowedFileTypes();
 
         try {
-
-            if( path == null && pnfsId == null) {
-                throw new CacheException(CacheException.INVALID_ARGS, "pnfsid or path have to be defined for PnfsDeleteEntryMessage");
+            if (path == null && pnfsId == null) {
+                throw new InvalidMessageCacheException("pnfsid or path have to be defined for PnfsDeleteEntryMessage");
             }
 
-            if( path != null ) {
-                checkMask(pnfsMessage.getSubject(), path, pnfsMessage.getAccessMask());
-
+            checkMask(pnfsMessage);
+            if (path != null) {
                 _log.info("delete PNFS entry for {}", path);
-
                 if (pnfsId != null) {
                     _nameSpaceProvider.deleteEntry(subject, allowed, pnfsId, path);
                 } else {
                     pnfsMessage.setPnfsId(_nameSpaceProvider.deleteEntry(subject, allowed, path));
                 }
             } else {
-                checkMask(pnfsMessage);
-
                 _log.info("delete PNFS entry for {}", pnfsId);
                 _nameSpaceProvider.deleteEntry(subject, allowed, pnfsId);
             }
 
             pnfsMessage.setSucceeded();
-
         } catch (FileNotFoundCacheException e) {
             pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, e.getMessage());
         } catch (CacheException e) {
@@ -2000,9 +1994,11 @@ public class PnfsManagerV3
     private void checkMask(PnfsMessage message)
         throws CacheException
     {
-        checkMask(message.getSubject(),
-                  message.getPnfsId(),
-                  message.getAccessMask());
+        if (message.getPnfsId() != null) {
+            checkMask(message.getSubject(), message.getPnfsId(), message.getAccessMask());
+        } else {
+            checkMask(message.getSubject(), message.getPnfsPath(), message.getAccessMask());
+        }
     }
 
     /**
