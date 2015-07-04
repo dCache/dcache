@@ -1141,22 +1141,25 @@ public class ChimeraNameSpaceProvider
 
             /* Attributes are inherited from real parent directory.
              */
-            if (uid == DEFAULT) {
-                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
-                    uid = parentOfPath.statCache().getUid();
-                } else {
-                    uid = (int) Subjects.getUid(subject);
-                }
+            if (mode == DEFAULT) {
+                mode = parentOfPath.statCache().getMode() & UnixPermission.S_PERMS;
             }
-            if (gid == DEFAULT) {
+            if ((parentOfPath.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+                gid = parentOfPath.statCache().getGid();
+                mode |= UnixPermission.S_ISGID;
+            } else if (gid == DEFAULT) {
                 if (Subjects.isNobody(subject) || _inheritFileOwnership) {
                     gid = parentOfPath.statCache().getGid();
                 } else {
                     gid = (int) Subjects.getPrimaryGid(subject);
                 }
             }
-            if (mode == DEFAULT) {
-                mode = parentOfPath.statCache().getMode() & UMASK_DIR;
+            if (uid == DEFAULT) {
+                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                    uid = parentOfPath.statCache().getUid();
+                } else {
+                    uid = (int) Subjects.getUid(subject);
+                }
             }
 
             /* ACLs are copied from real parent to the temporary upload directory
@@ -1243,10 +1246,6 @@ public class ChimeraNameSpaceProvider
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryPath, e);
             }
 
-            /* Subject must be authorized to complete the upload.
-             */
-            checkUploadAuthorization(subject, temporaryDirInode);
-
             /* Target directory must exist.
              */
             FsInode finalDirInode;
@@ -1303,17 +1302,11 @@ public class ChimeraNameSpaceProvider
             /* Temporary upload directory must exist.
              */
             FsInode uploadDirInode;
-            FsInode temporaryDirInode;
             try {
                 uploadDirInode = _fs.path2inode(temporaryDir.getParent().toString());
-                temporaryDirInode = uploadDirInode.inodeOf(temporaryPath.getParent().getName());
             } catch (FileNotFoundHimeraFsException e) {
                 throw new FileNotFoundCacheException("No such file or directory: " + temporaryDir, e);
             }
-
-            /* Subject must be authorized to cancel the upload.
-             */
-            checkUploadAuthorization(subject, temporaryDirInode);
 
             /* Delete temporary upload directory and any files in it.
              */
@@ -1336,17 +1329,6 @@ public class ChimeraNameSpaceProvider
                 }
             }
             removeIfExists(parent, name);
-        }
-    }
-
-    private void checkUploadAuthorization(Subject subject, FsInode temporaryDir)
-            throws ChimeraFsException, PermissionDeniedCacheException
-    {
-        /* Subject must be owner of upload directory, i.e. subject must have initiated the download.
-         */
-        if (!Subjects.hasUid(subject, temporaryDir.statCache().getUid()) ||
-                !Subjects.hasGid(subject, temporaryDir.statCache().getGid())) {
-            throw new PermissionDeniedCacheException("File must be committed by owner.");
         }
     }
 
