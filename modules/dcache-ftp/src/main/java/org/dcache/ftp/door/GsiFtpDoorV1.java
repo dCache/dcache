@@ -74,11 +74,15 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 
     private String _user;
 
+    public GsiFtpDoorV1()
+    {
+        super("GSI FTP");
+    }
+
     @Override
     public void init() throws UnknownHostException
     {
         _gssFlavor = "gsi";
-        ftpDoorName="GSI FTP";
         cf = CertificateFactories.newX509CertificateFactory();
         super.init();
     }

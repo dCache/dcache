@@ -807,7 +807,7 @@ public abstract class AbstractFtpDoorV1
     protected int _parallel;
     protected int _bufSize;
 
-    protected String ftpDoorName = "FTP";
+    private final String _ftpDoorName;
     protected Checksum _checkSum;
     protected ChecksumFactory _checkSumFactory;
     protected ChecksumFactory _optCheckSumFactory;
@@ -1261,10 +1261,10 @@ public abstract class AbstractFtpDoorV1
 
     protected FtpTransfer _transfer;
 
-    //
-    // Use initializer to load up hashes.
-    //
+    public AbstractFtpDoorV1(String ftpDoorName)
     {
+        _ftpDoorName = ftpDoorName;
+
         for (Method method : getClass().getMethods()) {
             String name = method.getName();
             if (name.startsWith("ftp_")) {
@@ -1361,7 +1361,7 @@ public abstract class AbstractFtpDoorV1
             _absoluteUploadPath = new FsPath(_uploadPath.getPath());
         }
 
-        reply(_commandLine, "220 " + ftpDoorName + " door ready");
+        reply(_commandLine, "220 " + _ftpDoorName + " door ready");
     }
 
     /**
@@ -1949,55 +1949,12 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
-    public abstract void ftp_auth(String arg);
-
-
-    @Help("ADAT <SP> <arg> - Supply context negotation data.")
-    public abstract void ftp_adat(String arg);
-
-    @Help("MIC <SP> <arg> - Integrity protected command.")
-    public void ftp_mic(String arg)
-        throws CommandExitException
-    {
-        secure_command(arg, "mic");
-    }
-
-    @Help("ENC <SP> <arg> - Privacy protected command.")
-    public void ftp_enc(String arg)
-        throws CommandExitException
-    {
-        secure_command(arg, "enc");
-    }
-
-    @Help("CONF <SP> <arg> - Confidentiality protection command.")
-    public void ftp_conf(String arg)
-        throws CommandExitException
-    {
-        secure_command(arg, "conf");
-    }
-
-    public abstract void secure_command(String arg, String sectype)
-        throws CommandExitException;
-
-
-
-    @Help("CCC - Switch control channel to cleartext.")
-    public void ftp_ccc(String arg)
-    {
-        // We should never received this, only through MIC, ENC or CONF,
-        // in which case it will be intercepted by secure_command()
-        reply("533 CCC must be protected");
-    }
 
     @Help("USER <SP> <name> - Authentication username.")
     public abstract void ftp_user(String arg);
 
-
     @Help("PASS <SP> <password> - Authentication password.")
     public abstract void ftp_pass(String arg);
-
-
 
     @Help("PBSZ <SP> <size> - Protection buffer size.")
     public void ftp_pbsz(String arg)

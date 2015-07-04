@@ -36,6 +36,11 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // GSS GSI context and others
     protected GSSContext _serviceContext;
 
+    public GssFtpDoorV1(String ftpDoorName)
+    {
+        super(ftpDoorName);
+    }
+
     @Override
     public void init() throws UnknownHostException
     {
@@ -57,7 +62,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         println(code + " " + Base64.getEncoder().encodeToString(data));
     }
 
-    @Override
+    @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
     public void ftp_auth(String arg) {
         LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", _gssFlavor);
         if ( !arg.equals("GSSAPI") ) {
@@ -79,7 +84,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         reply("334 ADAT must follow");
     }
 
-    @Override
+    @Help("ADAT <SP> <arg> - Supply context negotation data.")
     public void ftp_adat(String arg) {
         if ( arg == null || arg.length() <= 0 ) {
             reply("501 ADAT must have data");
@@ -139,7 +144,35 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    @Override
+    @Help("CCC - Switch control channel to cleartext.")
+    public void ftp_ccc(String arg)
+    {
+        // We should never received this, only through MIC, ENC or CONF,
+        // in which case it will be intercepted by secure_command()
+        reply("533 CCC must be protected");
+    }
+
+    @Help("MIC <SP> <arg> - Integrity protected command.")
+    public void ftp_mic(String arg)
+        throws CommandExitException
+    {
+        secure_command(arg, "mic");
+    }
+
+    @Help("ENC <SP> <arg> - Privacy protected command.")
+    public void ftp_enc(String arg)
+        throws CommandExitException
+    {
+        secure_command(arg, "enc");
+    }
+
+    @Help("CONF <SP> <arg> - Confidentiality protection command.")
+    public void ftp_conf(String arg)
+        throws CommandExitException
+    {
+        secure_command(arg, "conf");
+    }
+
     public void secure_command(String answer, String sectype)
     throws CommandExitException {
         if ( answer == null || answer.length() <= 0 ) {

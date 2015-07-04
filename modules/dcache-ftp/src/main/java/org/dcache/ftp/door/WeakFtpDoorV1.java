@@ -6,13 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
-import java.net.UnknownHostException;
-
 import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-
-import dmg.util.CommandExitException;
 
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
@@ -26,29 +22,13 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
-    @Override
-    public void init() throws UnknownHostException
+    public WeakFtpDoorV1()
     {
-        ftpDoorName = "Weak FTP";
-        super.init();
+        super("Weak FTP");
     }
 
     @Override
     protected void secure_reply(String answer, String code) {
-    }
-
-    @Override
-    public void ftp_auth(String arg) {
-        reply("500 Not Supported");
-    }
-
-    @Override
-    public void ftp_adat(String arg) {
-        reply("500 Not Supported");
-    }
-
-    @Override
-    public void secure_command(String arg, String sectype) throws CommandExitException {
     }
 
     private String _user;
