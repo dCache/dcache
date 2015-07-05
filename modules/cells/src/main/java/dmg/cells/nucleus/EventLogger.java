@@ -42,7 +42,7 @@ public class EventLogger
         if (o == null) {
             return "";
         } else if (o instanceof String) {
-            return "\"" + o + "\"";
+            return o.toString();
         } else {
             return o.getClass().getSimpleName();
         }
