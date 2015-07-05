@@ -688,7 +688,7 @@ public class UserAdminShell
             if (!buffer.contains("@") && _currentPosition != null) {
                 /* Add local cells in the connected domain too. */
                 candidates.addAll(
-                        getCells(_currentPosition.remote.getCellDomainName(),
+                        getCells(_currentPosition.remote.getDestinationAddress().getCellDomainName(),
                                  toGlobPredicate(buffer + "*")).get());
             }
             return 0;
@@ -721,7 +721,7 @@ public class UserAdminShell
                 candidates.addAll(expandCellPatterns(asList(buffer + "*")));
                 if (_currentPosition != null) {
                     candidates.addAll(
-                            getCells(_currentPosition.remote.getCellDomainName(),
+                            getCells(_currentPosition.remote.getDestinationAddress().getCellDomainName(),
                                      toGlobPredicate(buffer + "*")).get());
                 }
                 return 0;
