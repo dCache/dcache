@@ -77,7 +77,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
-import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -125,7 +124,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
-import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.services.space.Space;
 import diskCacheV111.services.space.SpaceState;
@@ -232,8 +230,6 @@ import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Maps.filterKeys;
-import static com.google.common.collect.Maps.filterValues;
-import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.*;
@@ -1073,8 +1069,6 @@ public final class Storage
                 }
             }
 
-            int uid = Ints.checkedCast(Subjects.getUid(subject));
-            int gid = Ints.checkedCast(Subjects.getPrimaryGid(subject));
             AccessLatency al = (accessLatency != null) ? AccessLatency.valueOf(accessLatency) : null;
             RetentionPolicy rp = (retentionPolicy != null) ? RetentionPolicy.valueOf(retentionPolicy) : null;
             EnumSet<CreateOption> options = EnumSet.noneOf(CreateOption.class);
@@ -1086,9 +1080,7 @@ public final class Storage
             }
             PnfsCreateUploadPath msg =
                     new PnfsCreateUploadPath(subject, fullPath, ((DcacheUser) user).getRoot(),
-                                             uid, gid, NameSpaceProvider.DEFAULT, size,
-                                             al, rp, spaceToken,
-                                             options);
+                                             size, al, rp, spaceToken, options);
 
             final SettableFuture<String> future = SettableFuture.create();
             CellStub.addCallback(_pnfsStub.send(msg),

@@ -30,6 +30,8 @@ import diskCacheV111.util.FsPath;
  */
 public class PnfsCancelUpload extends PnfsMessage
 {
+    private static final long serialVersionUID = 1198546600602532976L;
+
     private final String uploadPath;
 
     public PnfsCancelUpload(Subject subject, FsPath uploadPath, FsPath path)

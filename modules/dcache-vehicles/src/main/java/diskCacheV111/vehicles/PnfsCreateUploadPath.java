@@ -43,10 +43,8 @@ import org.dcache.namespace.CreateOption;
  */
 public class PnfsCreateUploadPath extends PnfsMessage
 {
+    private static final long serialVersionUID = -5657366358578866102L;
 
-    private final int uid;
-    private final int gid;
-    private final int mode;
     private final Long size;
     private final AccessLatency accessLatency;
     private final RetentionPolicy retentionPolicy;
@@ -55,13 +53,10 @@ public class PnfsCreateUploadPath extends PnfsMessage
     private final String rootPath;
     private String uploadPath;
 
-    public PnfsCreateUploadPath(Subject subject, FsPath path, FsPath rootPath, int uid, int gid, int mode, Long size,
+    public PnfsCreateUploadPath(Subject subject, FsPath path, FsPath rootPath, Long size,
                                 AccessLatency accessLatency, RetentionPolicy retentionPolicy, String spaceToken,
                                 Set<CreateOption> options)
     {
-        this.uid = uid;
-        this.gid = gid;
-        this.mode = mode;
         this.size = size;
         this.accessLatency = accessLatency;
         this.retentionPolicy = retentionPolicy;
@@ -71,21 +66,6 @@ public class PnfsCreateUploadPath extends PnfsMessage
         setSubject(subject);
         setPnfsPath(path.toString());
         setReplyRequired(true);
-    }
-
-    public int getUid()
-    {
-        return uid;
-    }
-
-    public int getGid()
-    {
-        return gid;
-    }
-
-    public int getMode()
-    {
-        return mode;
     }
 
     public AccessLatency getAccessLatency()

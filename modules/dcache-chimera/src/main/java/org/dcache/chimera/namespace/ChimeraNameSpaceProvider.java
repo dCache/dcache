@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -1090,7 +1091,7 @@ public class ChimeraNameSpaceProvider
         try {
             inode = lookupDirectory(Subjects.ROOT, path);
         } catch (FileNotFoundCacheException e) {
-            ExtendedInode parentOfPath = installDirectory(Subjects.ROOT, path.getParent(), 0, 0, mode);
+            ExtendedInode parentOfPath = installDirectory(Subjects.ROOT, path.getParent(), mode);
             try {
                 inode = parentOfPath.mkdir(path.getName(), 0, 0, mode, acl, tags);
             } catch (FileExistsChimeraFsException e1) {
@@ -1102,15 +1103,15 @@ public class ChimeraNameSpaceProvider
         return inode;
     }
 
-    private ExtendedInode installDirectory(Subject subject, FsPath path, int uid, int gid, int mode) throws ChimeraFsException, CacheException
+    private ExtendedInode installDirectory(Subject subject, FsPath path, int mode) throws ChimeraFsException, CacheException
     {
         ExtendedInode inode;
         try {
             inode = lookupDirectory(subject, path);
         } catch (FileNotFoundCacheException e) {
-            ExtendedInode parentOfPath = installDirectory(subject, path.getParent(), uid, gid, mode);
+            ExtendedInode parentOfPath = installDirectory(subject, path.getParent(), mode);
             try {
-                inode = mkdir(subject, parentOfPath, path.getName(), uid, gid, mode);
+                inode = mkdir(subject, parentOfPath, path.getName(), DEFAULT, DEFAULT, mode);
             } catch (FileExistsChimeraFsException e1) {
                 /* Concurrent directory creation. Do another lookup.
                  */
@@ -1135,8 +1136,7 @@ public class ChimeraNameSpaceProvider
 
     @Override
     public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
-                                   int uid, int gid, int mode, Long size,
-                                   AccessLatency al, RetentionPolicy rp, String spaceToken,
+                                   Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
                                    Set<CreateOption> options)
             throws CacheException
     {
@@ -1145,7 +1145,7 @@ public class ChimeraNameSpaceProvider
              */
             ExtendedInode parentOfPath =
                     options.contains(CreateOption.CREATE_PARENTS)
-                            ? installDirectory(subject, path.getParent(), uid, gid, mode)
+                            ? installDirectory(subject, path.getParent(), DEFAULT)
                             : lookupDirectory(subject, path.getParent());
 
             FileAttributes attributesOfParent =
@@ -1185,25 +1185,20 @@ public class ChimeraNameSpaceProvider
 
             /* Attributes are inherited from real parent directory.
              */
-            if (mode == DEFAULT) {
-                mode = parentOfPath.statCache().getMode() & UnixPermission.S_PERMS;
-            }
-            if ((parentOfPath.statCache().getMode() & UnixPermission.S_ISGID) != 0) {
+            int mode = parentOfPath.statCache().getMode() & UnixPermission.S_PERMS;
+            int gid;
+            if ((mode & UnixPermission.S_ISGID) != 0) {
                 gid = parentOfPath.statCache().getGid();
-                mode |= UnixPermission.S_ISGID;
-            } else if (gid == DEFAULT) {
-                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
-                    gid = parentOfPath.statCache().getGid();
-                } else {
-                    gid = (int) Subjects.getPrimaryGid(subject);
-                }
+            } else if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                gid = parentOfPath.statCache().getGid();
+            } else {
+                gid = Ints.checkedCast(Subjects.getPrimaryGid(subject));
             }
-            if (uid == DEFAULT) {
-                if (Subjects.isNobody(subject) || _inheritFileOwnership) {
-                    uid = parentOfPath.statCache().getUid();
-                } else {
-                    uid = (int) Subjects.getUid(subject);
-                }
+            int uid;
+            if (Subjects.isNobody(subject) || _inheritFileOwnership) {
+                uid = parentOfPath.statCache().getUid();
+            } else {
+                uid = Ints.checkedCast(Subjects.getUid(subject));
             }
 
             /* ACLs are copied from real parent to the temporary upload directory

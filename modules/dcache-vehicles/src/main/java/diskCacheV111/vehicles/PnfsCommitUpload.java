@@ -36,6 +36,8 @@ import org.dcache.vehicles.FileAttributes;
  */
 public class PnfsCommitUpload extends PnfsMessage
 {
+    private static final long serialVersionUID = -2574528537801095072L;
+
     private final String uploadPath;
     private final Set<FileAttribute> requestedAttributes;
     private final Set<CreateOption> options;

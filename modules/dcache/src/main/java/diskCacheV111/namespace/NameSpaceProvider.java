@@ -240,9 +240,6 @@ public interface NameSpaceProvider
      * @param subject the subject of user who invoked this method
      * @param path the path of the file to upload
      * @param rootPath  a base path relative to which the upload directory may optionally be created
-     * @param uid the UID of new file or -1 for default
-     * @param gid the GID of new file or -1 for default
-     * @param mode the permission mask of the new entry or -1 for default
      * @param size optional expected size
      * @param al optional access latency of new file
      * @param rp optional retention policy of new file
@@ -250,7 +247,7 @@ public interface NameSpaceProvider
      * @param options options specifying how the path should be created
      * @return A temporary upload path that must eventually be committed or cancelled
      */
-    FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath, int uid, int gid, int mode,
+    FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
                             Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
                             Set<CreateOption> options)
             throws CacheException;

@@ -214,15 +214,13 @@ public class RemoteNameSpaceProvider implements NameSpaceProvider
     }
 
     @Override
-    public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath, int uid, int gid, int mode,
+    public FsPath createUploadPath(Subject subject, FsPath path, FsPath rootPath,
                                    Long size, AccessLatency al, RetentionPolicy rp, String spaceToken,
                                    Set<CreateOption> options)
             throws CacheException
     {
         PnfsCreateUploadPath msg = new PnfsCreateUploadPath(subject, path, rootPath,
-                                                            uid, gid, mode, size,
-                                                            al, rp, spaceToken,
-                                                            options);
+                                                            size, al, rp, spaceToken, options);
         return _pnfs.request(msg).getUploadPath();
     }
 
