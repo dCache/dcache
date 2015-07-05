@@ -1,6 +1,7 @@
 package dmg.cells.services.login;
 
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import com.google.common.net.InetAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -283,6 +284,7 @@ public class LoginBrokerPublisher
         pw.println("    Port             : " + _port);
         pw.println("    Addresses        : " + _lastAddresses);
         pw.println("    Tags             : " + _tags);
+        pw.println("    Root             : " + Strings.nullToEmpty(_root));
         pw.println("    Read paths       : " + _readPaths + (_readEnabled ? "" : " (disabled)"));
         pw.println("    Write paths      : " + _writePaths  + (_writeEnabled ? "" : " (disabled)"));
         pw.println("    Update Time      : " + _brokerUpdateTime + " " + _brokerUpdateTimeUnit);
