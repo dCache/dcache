@@ -76,13 +76,15 @@ public class FsInode_CONST extends FsInode {
     @Override
     public Stat stat() throws ChimeraFsException {
 
-        Stat ret = new Stat();
+        Stat ret = super.stat();
         ret.setNlink(1);
         ret.setMode(0444 | UnixPermission.S_IFREG);
         ret.setSize(_version.length);
         ret.setATime(System.currentTimeMillis());
         ret.setMTime(ret.getATime());
         ret.setCTime(ret.getATime());
+        ret.setUid(0);
+        ret.setGid(0);
 
         return ret;
 
