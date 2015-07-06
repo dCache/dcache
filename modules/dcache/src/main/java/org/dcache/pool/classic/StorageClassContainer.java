@@ -154,11 +154,11 @@ public class StorageClassContainer
 
     /**
      *  adds a CacheEntry to the list of HSM storage requests.
+     * @param entry
      */
-    public synchronized boolean addCacheEntry(PnfsId id)
+    public synchronized boolean addCacheEntry(CacheEntry entry)
         throws CacheException, InterruptedException
     {
-        CacheEntry entry = _repository.getEntry(id);
         FileAttributes fileAttributes = entry.getFileAttributes();
         String storageClass = fileAttributes.getStorageClass();
         String hsmName = fileAttributes.getHsm().toLowerCase();

@@ -579,11 +579,11 @@ public class PoolV4
             }
 
             if (to == EntryState.PRECIOUS) {
-                _log.debug("Adding " + id + " to flush queue");
+                _log.debug("Adding {} to flush queue", id);
 
                 if (_hasTapeBackend) {
                     try {
-                        _storageQueue.addCacheEntry(id);
+                        _storageQueue.addCacheEntry(event.getNewEntry());
                     } catch (FileNotInCacheException e) {
                         /* File was deleted before we got a chance to do
                          * anything with it. We don't care about deleted
@@ -591,14 +591,13 @@ public class PoolV4
                          */
                         _log.info("Failed to flush " + id + ": Replica is no longer in the pool", e);
                     } catch (CacheException | InterruptedException e) {
-                        _log.error("Error adding " + id + " to flush queue: "
-                                + e.getMessage());
+                        _log.error("Error adding {} to flush queue: {}", id, e.getMessage());
                     }
                 }
             } else if (from == EntryState.PRECIOUS) {
-                _log.debug("Removing " + id + " from flush queue");
+                _log.debug("Removing {} from flush queue", id);
                 if (!_storageQueue.removeCacheEntry(id)) {
-                    _log.info("File " + id + " not found in flush queue");
+                    _log.info("File {} not found in flush queue", id);
                 }
             }
         }
