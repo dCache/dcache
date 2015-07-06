@@ -142,7 +142,7 @@ public class CacheRepositoryV5
         CLOSED
     }
 
-    private State _state = State.UNINITIALIZED;
+    private volatile State _state = State.UNINITIALIZED;
 
     /**
      * Shared repository account object for tracking space.
@@ -185,7 +185,7 @@ public class CacheRepositoryV5
      * Throws an IllegalStateException if the repository has been
      * initialized.
      */
-    private synchronized void assertUninitialized()
+    private void assertUninitialized()
     {
         if (_state != State.UNINITIALIZED) {
             throw new IllegalStateException("Operation not allowed after initialization");
@@ -195,10 +195,11 @@ public class CacheRepositoryV5
     /**
      * Throws an IllegalStateException if the repository is not open.
      */
-    private synchronized void assertOpen()
+    private void assertOpen()
     {
-        if (_state != State.OPEN) {
-            throw new IllegalStateException("Operation not allowed while repository is in state " + _state);
+        State state = _state;
+        if (state != State.OPEN) {
+            throw new IllegalStateException("Operation not allowed while repository is in state " + state);
         }
     }
 
@@ -206,11 +207,11 @@ public class CacheRepositoryV5
      * Throws an IllegalStateException if the repository is not in
      * either INITIALIZED, LOADING or OPEN.
      */
-    private synchronized void assertInitialized()
+    private void assertInitialized()
     {
-        if (_state != State.INITIALIZED && _state != State.LOADING &&
-            _state != State.OPEN) {
-            throw new IllegalStateException("Operation not allowed while repository is in state " + _state);
+        State state = _state;
+        if (state != State.INITIALIZED && state != State.LOADING && state != State.OPEN) {
+            throw new IllegalStateException("Operation not allowed while repository is in state " + state);
         }
     }
 
@@ -772,9 +773,10 @@ public class CacheRepositoryV5
     @Override
     public void getInfo(PrintWriter pw)
     {
-        pw.println("State : " + _state);
+        State state = _state;
+        pw.println("State : " + state);
         try {
-            pw.println("Files : " + (_state == State.OPEN ?_store.list().size() : ""));
+            pw.println("Files : " + (state == State.OPEN || state == State.LOADING || state == State.INITIALIZED ?_store.list().size() : ""));
         } catch (CacheException e) {
             pw.println("Files : " + e.getMessage());
         }
