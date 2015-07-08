@@ -102,7 +102,6 @@ public class ChecksumModuleV1
         pw.print(" -onwrite="); pw.print(getPolicy(ON_WRITE));
         pw.print(" -onflush="); pw.print(getPolicy(ON_FLUSH));
         pw.print(" -onrestore="); pw.print(getPolicy(ON_RESTORE));
-        pw.print(" -ontransfer="); pw.print(getPolicy(ON_TRANSFER));
         pw.print(" -enforcecrc="); pw.print(getPolicy(ENFORCE_CRC));
         pw.print(" -getcrcfromhsm="); pw.print(getPolicy(GET_CRC_FROM_HSM));
         pw.println("");
@@ -112,7 +111,7 @@ public class ChecksumModuleV1
     public synchronized void getInfo(PrintWriter pw)
     {
         pw.println("          Checksum type : " + _defaultChecksumType);
-        pw.print(" Checkum calculation on : ");
+        pw.print(" Checkum calculation on : transfer ");
         for (PolicyFlag flag: _policy) {
             switch (flag) {
             case ON_READ:
@@ -126,9 +125,6 @@ public class ChecksumModuleV1
                 break;
             case ON_RESTORE:
                 pw.print("restore ");
-                break;
-            case ON_TRANSFER:
-                pw.print("transfer ");
                 break;
             case ENFORCE_CRC:
                 pw.print("enforceCRC ");
@@ -156,7 +152,7 @@ public class ChecksumModuleV1
             append("       on write : ").append(getPolicy(ON_WRITE)).append("\n").
             append("       on flush : ").append(getPolicy(ON_FLUSH)).append("\n").
             append("     on restore : ").append(getPolicy(ON_RESTORE)).append("\n").
-            append("    on transfer : ").append(getPolicy(ON_TRANSFER)).append("\n").
+            append("    on transfer : ").append("on").append("\n").
             append("    enforce crc : ").append(getPolicy(ENFORCE_CRC)).append("\n").
             append("  getcrcfromhsm : ").append(getPolicy(GET_CRC_FROM_HSM)).append("\n").
             append("          scrub : ").append(getPolicy(SCRUB)).append("\n");
@@ -224,7 +220,8 @@ public class ChecksumModuleV1
 
         @Option(name = "ontransfer",
                 category = "Transfer options",
-                usage = "Compute checksum while receiving data from the client. If not supported " +
+                usage = "Deprecated. Always ON." +
+                        "Compute checksum while receiving data from the client. If not supported " +
                         "by the transfer protocol, the checksum is computed after the upload has " +
                         "completed.",
                 values = { "", "on", "off" },
@@ -296,7 +293,6 @@ public class ChecksumModuleV1
                 updatePolicy(onWrite, ON_WRITE);
                 updatePolicy(onFlush, ON_FLUSH);
                 updatePolicy(onRestore, ON_RESTORE);
-                updatePolicy(onTransfer, ON_TRANSFER);
                 updatePolicy(enforceCrc, ENFORCE_CRC);
                 updatePolicy(getCrcFromHsm, GET_CRC_FROM_HSM);
                 updatePolicy(scrub, SCRUB);
@@ -377,20 +373,17 @@ public class ChecksumModuleV1
             ReplicaDescriptor handle, Iterable<Checksum> actualChecksums)
             throws CacheException, NoSuchAlgorithmException, IOException, InterruptedException
     {
-        if (hasPolicy(ON_WRITE) || hasPolicy(ON_TRANSFER) || hasPolicy(ENFORCE_CRC) || !isEmpty(actualChecksums)) {
-            Iterable<Checksum> expectedChecksums = handle.getChecksums();
-            if (hasPolicy(ON_WRITE) ||
-                    (hasPolicy(ON_TRANSFER) && isEmpty(actualChecksums)) ||
-                    (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(actualChecksums))) {
-                ChecksumFactory factory = ChecksumFactory.getFactory(
-                        concat(expectedChecksums, actualChecksums), getDefaultChecksumType());
-                actualChecksums =
-                        concat(actualChecksums,
-                                Collections.singleton(factory.computeChecksum(handle.getFile())));
-            }
-            compareChecksums(expectedChecksums, actualChecksums);
-            handle.addChecksums(actualChecksums);
+        Iterable<Checksum> expectedChecksums = handle.getChecksums();
+        if (hasPolicy(ON_WRITE)
+                || (hasPolicy(ENFORCE_CRC) && isEmpty(expectedChecksums) && isEmpty(actualChecksums))) {
+            ChecksumFactory factory = ChecksumFactory.getFactory(
+                    concat(expectedChecksums, actualChecksums), getDefaultChecksumType());
+            actualChecksums
+                    = concat(actualChecksums,
+                            Collections.singleton(factory.computeChecksum(handle.getFile())));
         }
+        compareChecksums(expectedChecksums, actualChecksums);
+        handle.addChecksums(actualChecksums);
     }
 
     @Override

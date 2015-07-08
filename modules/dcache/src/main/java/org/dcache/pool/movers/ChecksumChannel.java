@@ -102,10 +102,7 @@ public class ChecksumChannel implements RepositoryChannel
     {
         _channel = inner;
         _checksumFactory = checksumFactory;
-        _digest = _checksumFactory == null ? null : _checksumFactory.create();
-        if (_digest == null) {
-            _isChecksumViable = false;
-        }
+        _digest = _checksumFactory.create();
     }
 
     @Override

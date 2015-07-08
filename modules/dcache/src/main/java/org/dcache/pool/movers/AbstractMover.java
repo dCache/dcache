@@ -307,12 +307,10 @@ public abstract class AbstractMover<P extends ProtocolInfo, M extends AbstractMo
 
     private static ChecksumFactory getChecksumFactoryFor(ChecksumModule checksumModule, ReplicaDescriptor handle)
     {
-        if (checksumModule.hasPolicy(ChecksumModule.PolicyFlag.ON_TRANSFER)) {
-            try {
-                return checksumModule.getPreferredChecksumFactory(handle);
-            } catch (NoSuchAlgorithmException | CacheException e) {
-                LOGGER.error("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage(), e);
-            }
+        try {
+            return checksumModule.getPreferredChecksumFactory(handle);
+        } catch (NoSuchAlgorithmException | CacheException e) {
+            LOGGER.error("Failed to instantiate mover due to unsupported checksum type: " + e.getMessage(), e);
         }
         return null;
     }
