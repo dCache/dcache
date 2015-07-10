@@ -905,7 +905,7 @@ class FsSqlDriver {
 
         return parent;
     }
-    private static final String sqlGetParentOfDirectory = "SELECT iparent FROM t_dirs WHERE ipnfsid=? AND iname!='..' AND iname !='.'";
+    private static final String sqlGetParentOfDirectory = "SELECT ipnfsid FROM t_dirs WHERE iparent=? AND iname = '..'";
 
     /**
      *
@@ -929,7 +929,7 @@ class FsSqlDriver {
             result = stGetParentId.executeQuery();
 
             if (result.next()) {
-                parent = new FsInode(inode.getFs(), result.getString("iparent"));
+                parent = new FsInode(inode.getFs(), result.getString("ipnfsid"));
             }
 
         } finally {
