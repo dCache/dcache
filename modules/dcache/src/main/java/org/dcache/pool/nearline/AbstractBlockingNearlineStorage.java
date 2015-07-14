@@ -17,10 +17,8 @@
  */
 package org.dcache.pool.nearline;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
-
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +26,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.dcache.commons.util.NDC;
 import org.dcache.pool.nearline.spi.FlushRequest;
@@ -39,7 +39,6 @@ import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Iterables.filter;
 
 /**
  * Base class for NearlineStorage implementations that follow the one-thread-per-task
@@ -141,9 +140,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     @Override
     public void shutdown()
     {
-        for (Task<?, ?> task : requests.values()) {
-            task.cancel();
-        }
+        requests.values().forEach(Task::cancel);
     }
 
     /**
@@ -152,10 +149,22 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
      * @param fileAttributes Attributes of a file
      * @return The storage locations of the file on this nearline storage.
      */
-    protected Iterable<URI> getLocations(FileAttributes fileAttributes)
+    protected List<URI> getLocations(FileAttributes fileAttributes)
     {
-        return filter(fileAttributes.getStorageInfo().locations(),
-                      uri -> uri.getScheme().equals(type) && uri.getAuthority().equals(name));
+        return filteredLocations(fileAttributes).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the nearline storage locations of a file for this nearline storage.
+     *
+     * @param fileAttributes Attributes of a file
+     * @return The storage locations of the file on this nearline storage.
+     */
+    private Stream<URI> filteredLocations(FileAttributes fileAttributes)
+    {
+        return fileAttributes.getStorageInfo().locations().stream()
+                .filter(uri -> uri.getScheme().equals(type))
+                .filter(uri -> uri.getAuthority().equals(name));
     }
 
     protected abstract Executor getFlushExecutor();

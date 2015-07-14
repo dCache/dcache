@@ -20,9 +20,9 @@ public class HsmRunSystem extends RunSystem
 
     private final String storageName;
 
-    public HsmRunSystem(String storageName, String exec, int maxLines, long timeout)
+    public HsmRunSystem(String storageName, int maxLines, long timeout, String ... exec)
     {
-        super(exec, maxLines, timeout);
+        super(maxLines, timeout, exec);
         this.storageName = storageName;
     }
 
