@@ -15,7 +15,7 @@ import java.io.StringWriter;
 public class RunSystem implements Runnable {
     private final static Logger _log = LoggerFactory.getLogger(RunSystem.class);
     private final static Runtime __runtime = Runtime.getRuntime() ;
-    private final String _exec ;
+    private final String[] _exec ;
     private final int    _maxLines ;
     private final long   _timeout ;
     private final Thread _readErrorThread ;
@@ -37,7 +37,7 @@ public class RunSystem implements Runnable {
     private static int __counter = 100 ;
     private static synchronized int nextId(){ return __counter++ ; }
 
-    public RunSystem(String exec, int maxLines, long timeout)
+    public RunSystem(int maxLines, long timeout, String ... exec)
     {
         _exec     = exec ;
         _maxLines = maxLines ;
@@ -218,7 +218,7 @@ public class RunSystem implements Runnable {
         long timeout = Long.parseLong( args[2] ) * 1000 ;
         int  maxLines = Integer.parseInt( args[1] ) ;
 
-        RunSystem run = new RunSystem( args[0] , maxLines , timeout) ;
+        RunSystem run = new RunSystem(maxLines, timeout, args[0] ) ;
         run.go() ;
 
         int rc = run.getExitValue() ;

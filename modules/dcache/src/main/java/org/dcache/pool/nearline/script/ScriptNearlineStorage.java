@@ -21,7 +21,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +30,19 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HsmRunSystem;
@@ -54,8 +58,7 @@ import org.dcache.util.CDCExecutorServiceDecorator;
 import org.dcache.util.Checksum;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
+import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Arrays.asList;
 
 /**
@@ -88,7 +91,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
             new CDCExecutorServiceDecorator<>(new BoundedExecutor(executor, DEFAULT_REMOVE_THREADS));
 
     private volatile String command;
-    private volatile String options;
+    private volatile List<String> options;
 
     public ScriptNearlineStorage(String type, String name)
     {
@@ -118,8 +121,8 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     {
         try {
             Set<URI> locations = new HashSet<>();
-            String storeCommand = getFlushCommand(request.getFile(), request.getFileAttributes());
-            String output = new HsmRunSystem(name, storeCommand, MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
+            String[] storeCommand = getFlushCommand(request.getFile(), request.getFileAttributes());
+            String output = new HsmRunSystem(name, MAX_LINES, request.getDeadline() - System.currentTimeMillis(), storeCommand).execute();
             for (String uri : Splitter.on("\n").trimResults().omitEmptyStrings().split(output)) {
                 try {
                     locations.add(new URI(uri));
@@ -138,8 +141,8 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     {
         try {
             FileAttributes attributes = request.getFileAttributes();
-            String fetchCommand = getFetchCommand(request.getFile(), attributes);
-            new HsmRunSystem(name, fetchCommand, MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
+            String[] fetchCommand = getFetchCommand(request.getFile(), attributes);
+            new HsmRunSystem(name, MAX_LINES, request.getDeadline() - System.currentTimeMillis(), fetchCommand).execute();
             return readChecksumFromHsm(request.getFile());
         } catch (IllegalThreadStateException  e) {
             throw new CacheException(3, e.getMessage(), e);
@@ -149,7 +152,7 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
     @Override
     protected void remove(RemoveRequest request) throws IOException, CacheException
     {
-        new HsmRunSystem(name, getRemoveCommand(request.getUri()), MAX_LINES, request.getDeadline() - System.currentTimeMillis()).execute();
+        new HsmRunSystem(name, MAX_LINES, request.getDeadline() - System.currentTimeMillis(), getRemoveCommand(request.getUri())).execute();
     }
 
     @Override
@@ -176,42 +179,43 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         executor.shutdown();
     }
 
-    private String getFlushCommand(File file, FileAttributes fileAttributes)
+    private String[] getFlushCommand(File file, FileAttributes fileAttributes)
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
-        StringBuilder sb = new StringBuilder(command);
-        sb.append(" put ").
-                append(fileAttributes.getPnfsId()).append(' ').
-                append(file.getPath());
-        sb.append(" -si=").append(storageInfo.toString());
-        sb.append(options);
-        LOGGER.debug("COMMAND: {}", sb);
-        return sb.toString();
+        String[] argsArray = Stream.concat(Stream.of(
+                command,
+                "put",
+                fileAttributes.getPnfsId().toString(),
+                file.getPath(),
+                "-si=" + storageInfo.toString()),
+                options.stream()).toArray(String[]::new);
+        LOGGER.debug("COMMAND: {}", Arrays.deepToString(argsArray));
+        return argsArray;
     }
 
-    private String getFetchCommand(File file, FileAttributes attributes)
+    private String[] getFetchCommand(File file, FileAttributes fileAttributes)
     {
-        StorageInfo storageInfo = StorageInfos.extractFrom(attributes);
-        StringBuilder sb = new StringBuilder(command);
-        sb.append(" get ").
-                append(attributes.getPnfsId()).append(' ').
-                append(file.getPath());
-        sb.append(" -si=").append(storageInfo.toString());
-        for (URI location: getLocations(attributes)) {
-            if (location.getScheme().equals(type) && location.getAuthority().equals(name)) {
-                sb.append(" -uri=").append(location.toString());
-            }
-        }
-        sb.append(options);
-        LOGGER.debug("COMMAND: {}", sb);
-        return sb.toString();
+        StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
+        String[] argsArray = Stream.concat(Stream.of(
+                command,
+                "get",
+                fileAttributes.getPnfsId().toString(),
+                file.getPath(),
+                "-si=" + storageInfo.toString()),
+                options.stream()).toArray(String[]::new);
+        LOGGER.debug("COMMAND: {}", Arrays.deepToString(argsArray));
+        return argsArray;
     }
 
-    private String getRemoveCommand(URI uri)
+    private String[] getRemoveCommand(URI uri)
     {
-        String s = command + " remove -uri=" + uri + options;
-        LOGGER.debug("COMMAND: {}", s);
-        return s;
+        String[] argsArray = Stream.concat(Stream.of(
+                command,
+                "remove",
+                "-uri=" + uri),
+                options.stream()).toArray(String[]::new);
+        LOGGER.debug("COMMAND: {}", Arrays.deepToString(argsArray));
+        return argsArray;
     }
 
     private Set<Checksum> readChecksumFromHsm(File file)
@@ -250,18 +254,11 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         return properties.get(COMMAND);
     }
 
-    private String buildOptions(Map<String, String> properties)
+    private List<String> buildOptions(Map<String, String> properties)
     {
-        StringBuilder options = new StringBuilder();
-        for (Map.Entry<String,String> attr : Maps.filterKeys(properties, not(in(PROPERTIES))).entrySet()) {
-            String key = attr.getKey();
-            String val = attr.getValue();
-            options.append(" -").append(key);
-            if (!Strings.isNullOrEmpty(val)) {
-                options.append('=').append(val);
-            }
-        }
-        return options.toString();
-
+        return properties.entrySet().stream()
+                .filter(property -> !PROPERTIES.contains(property))
+                .map(entry -> "-" + entry.getKey() + (Strings.isNullOrEmpty(entry.getValue()) ? "" : "="+entry.getValue()))
+                .collect(Collectors.toList());
     }
 }

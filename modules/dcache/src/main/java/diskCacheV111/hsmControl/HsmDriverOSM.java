@@ -64,7 +64,7 @@ import org.dcache.util.Args;
 
              OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
 
-             String tape  = osm.getKey( "hsm.osm.volumeName" ) ;
+             String tape  = osm.getKey("hsm.osm.volumeName") ;
              String store = osm.getStore() ;
 
              if( ( tape == null )  || ( tape.equals("")  ) ||
@@ -73,9 +73,7 @@ import org.dcache.util.Args;
                          IllegalArgumentException("Not enough info in storageInfo (volumeName)");
              }
 
-             String command = _command+" -S "+store+" lsvol -l "+tape ;
-
-             RunSystem system = new RunSystem( command , 1000, 10000L );
+             RunSystem system = new RunSystem(1000, 10000L, _command, "-S", store, "lsvol", "-l", "tape");
              system.go();
 
              int    rc     = system.getExitValue() ;
@@ -85,7 +83,7 @@ import org.dcache.util.Args;
              if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) ) {
                  throw new
                          IllegalArgumentException(error == null ?
-                         "Unknow error in responds to >" + command + "<" :
+                         "Unknow error in responds to >" + _command + "-S" + store + "lsvol" + "-l" + "tape" + "<" :
                          error);
              }
 
@@ -110,7 +108,7 @@ import org.dcache.util.Args;
                  volStat = st.nextToken() ;
              }catch(Exception ee ){
                 throw new
-                IllegalArgumentException("Format error in output of >"+command+"< : "+output);
+                IllegalArgumentException("Format error in output of >" + _command + "-S" + store + "lsvol" + "-l" + "tape" + "< : "+output);
              }
              String details = "volumeNbf="+volNbf+";volumeStatus="+volStat+";volumeCapacity="+volCap+";";
              String tmp = osm.getKey("hsm.details");
@@ -135,9 +133,7 @@ import org.dcache.util.Args;
                          IllegalArgumentException("Not enough info in storageInfo");
              }
 
-             String command = _command+" -S "+store+" lsbf -a "+bfid ;
-
-             RunSystem system = new RunSystem( command , 1000, 10000L );
+             RunSystem system = new RunSystem(1000, 10000L, _command, "-S", store, "lsbf", "-a", bfid);
              system.go();
 
              int    rc     = system.getExitValue() ;
@@ -147,7 +143,7 @@ import org.dcache.util.Args;
              if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) ) {
                  throw new
                          IllegalArgumentException(error == null ?
-                         "Unknow error in responds to >" + command + "<" :
+                         "Unknow error in responds to >" + _command + "-S" + store + "lsbf" + "-a" + bfid + "<" :
                          error);
              }
 
@@ -170,7 +166,7 @@ import org.dcache.util.Args;
                  status = st.nextToken() ;
              }catch(Exception ee ){
                 throw new
-                IllegalArgumentException("Format error in output of >"+command+"< : "+output);
+                IllegalArgumentException("Format error in output of >"+ _command + "-S" + store + "lsbf" + "-a" + bfid +"< : "+output);
              }
              osm.setKey("hsm.details","volumeName="+tape+";bfStatus="+status+";");
              osm.setKey("hsm.osm.volumeName",tape);

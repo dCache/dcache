@@ -50,7 +50,7 @@ public class EnstoreStorageInfo extends GenericStorageInfo {
              ";family="+(_family==null?"<Unknown>":_family)+
              ";bfid="+getBitfileId()+
              ";volume="+_volume+
-             ";location="+_location+";" ;
+             ";location="+_location+";";
    }
    public String getStorageGroup(){ return _group ; }
    public String getFileFamily(){ return _family ; }
