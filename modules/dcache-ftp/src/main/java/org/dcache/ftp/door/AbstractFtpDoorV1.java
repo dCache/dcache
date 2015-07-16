@@ -1094,6 +1094,11 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    protected interface CommandMethodVisitor
+    {
+        void acceptCommand(Method method, String name);
+    }
+
     protected FtpTransfer _transfer;
 
     public AbstractFtpDoorV1(String ftpDoorName, String tlogName)
@@ -1101,15 +1106,24 @@ public abstract class AbstractFtpDoorV1
         _ftpDoorName = ftpDoorName;
         _tlogName = tlogName;
 
-        for (Method method : getClass().getMethods()) {
-            String name = method.getName();
-            if (name.startsWith("ftp_")) {
-                String command = name.substring(4);
+        visitFtpCommands(new CommandMethodVisitor() {
+            @Override
+            public void acceptCommand(Method method, String command) {
                 _methodDict.put(command, method);
                 Help help = method.getAnnotation(Help.class);
                 if (help != null) {
                     _helpDict.put(command, help);
                 }
+            }
+        });
+    }
+
+    final protected void visitFtpCommands(CommandMethodVisitor visitor)
+    {
+        for (Method method : getClass().getMethods()) {
+            String name = method.getName();
+            if (name.startsWith("ftp_")) {
+                visitor.acceptCommand(method, name.substring(4));
             }
         }
     }
@@ -1289,7 +1303,22 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    public void ftpcommand(String cmdline)
+    protected boolean isCommandAllowed(String command, Object commandContext)
+    {
+        // If a transfer is in progress, only permit ABORT and a few
+        // other commands to be processed
+        if (getTransfer() != null && !(command.equals("abor") ||
+                command.equals("mic") || command.equals("conf") ||
+                command.equals("enc") || command.equals("quit") ||
+                command.equals("bye"))) {
+            reply("503 Transfer in progress", false);
+            return false;
+        }
+
+        return true;
+    }
+
+    public void ftpcommand(String cmdline, Object commandContext)
         throws CommandExitException
     {
         int l = 4;
@@ -1315,13 +1344,7 @@ public abstract class AbstractFtpDoorV1
             _lastCommand = cmdline;
         }
 
-        // If a transfer is in progress, only permit ABORT and a few
-        // other commands to be processed
-        if (getTransfer() != null &&
-                !(cmd.equals("abor") || cmd.equals("mic")
-                        || cmd.equals("conf") || cmd.equals("enc")
-                        || cmd.equals("quit") || cmd.equals("bye"))) {
-            reply("503 Transfer in progress", false);
+        if (!isCommandAllowed(cmd, commandContext)) {
             return;
         }
 
@@ -1410,7 +1433,7 @@ public abstract class AbstractFtpDoorV1
                 reply(err("",""));
             } else {
                 _commandCounter++;
-                ftpcommand(command);
+                ftpcommand(command, null);
             }
         } finally {
             _commandLine = null;
@@ -1807,7 +1830,6 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(550,"Cannot delete file, reason:"+e);
         }
     }
-
 
     @Help("USER <SP> <name> - Authentication username.")
     public abstract void ftp_user(String arg);
