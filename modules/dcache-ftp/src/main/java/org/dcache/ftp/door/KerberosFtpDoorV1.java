@@ -135,11 +135,6 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
             return;
         }
 
-        if (_serviceContext == null || !_serviceContext.isEstablished()) {
-            reply("530 Authentication required");
-            return;
-        }
-
         Subject subject = new Subject();
         subject.getPrincipals().add(new LoginNamePrincipal(arg));
         subject.getPrincipals().add(new KerberosPrincipal(_gssIdentity.toString()));
