@@ -136,11 +136,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
             return;
         }
 
-        if (_serviceContext == null || !_serviceContext.isEstablished()) {
-            reply("530 Authentication required");
-            return;
-        }
-
         Subject subject = new Subject();
         try {
             subject.getPrincipals().add(_origin);

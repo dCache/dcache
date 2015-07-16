@@ -47,10 +47,6 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         reply("500 Not Supported");
     }
 
-    @Override
-    public void secure_command(String arg, String sectype) throws CommandExitException {
-    }
-
     private String _user;
 
     @Override
