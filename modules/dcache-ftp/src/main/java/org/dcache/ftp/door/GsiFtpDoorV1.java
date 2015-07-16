@@ -76,7 +76,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
 
     public GsiFtpDoorV1()
     {
-        super("GSI FTP");
+        super("GSI FTP", "gsiftp");
     }
 
     @Override
@@ -88,18 +88,9 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     }
 
     @Override
-    public void startTlog(FTPTransactionLog tlog, String path, String action) {
-        if (_subject != null) {
-            try {
-                String user =
-                    _user + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "gsiftp", action, path, _remoteSocketAddress.getAddress());
-            }
-            catch (Exception e) {
-                LOGGER.error("GsiFtpDoor: couldn't start tLog. " +
-                        "Ignoring exception: {}", e.getMessage());
-            }
-        }
+    protected String getUserName()
+    {
+        return _user;
     }
 
     @Override

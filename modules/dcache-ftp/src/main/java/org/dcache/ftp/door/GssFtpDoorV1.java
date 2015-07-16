@@ -36,9 +36,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // GSS GSI context and others
     protected GSSContext _serviceContext;
 
-    public GssFtpDoorV1(String ftpDoorName)
+    public GssFtpDoorV1(String ftpDoorName, String tlogName)
     {
-        super(ftpDoorName);
+        super(ftpDoorName, tlogName);
     }
 
     @Override

@@ -19,12 +19,11 @@ import org.dcache.auth.Subjects;
  */
 public class WeakFtpDoorV1 extends AbstractFtpDoorV1
 {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
     public WeakFtpDoorV1()
     {
-        super("Weak FTP");
+        super("Weak FTP", "weakftp");
     }
 
     @Override
@@ -60,21 +59,6 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         } catch (CacheException e) {
             LOGGER.error("Login failed for {}: {}", subject, e);
             reply("530 Login failed: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public void startTlog(FTPTransactionLog tlog, String path, String action) {
-        if (_subject != null) {
-            try {
-                String user =
-                    Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "weakftp", action, path, _remoteSocketAddress.getAddress());
-            }
-            catch (Exception e) {
-                LOGGER.error("WeakFtpDoor: couldn't start tLog. " +
-                        "Ignoring exception: {}", e.getMessage());
-            }
         }
     }
 }

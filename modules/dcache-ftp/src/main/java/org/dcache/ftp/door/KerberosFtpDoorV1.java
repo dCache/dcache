@@ -48,7 +48,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
 
     public KerberosFtpDoorV1()
     {
-        super("Kerberos FTP");
+        super("Kerberos FTP", "krbftp");
     }
 
 
@@ -59,21 +59,6 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1
         _gssFlavor = "k5";
         if (_kdcListOption != null) {
             _kdcList = _kdcListOption.split(",");
-        }
-    }
-
-    @Override
-    public void startTlog(FTPTransactionLog tlog, String path, String action) {
-        if (_subject != null) {
-            try {
-                String user =
-                    Subjects.getUserName(_subject) + "("+Subjects.getUid(_subject) + "." + Subjects.getPrimaryGid(_subject) + ")";
-                tlog.begin(user, "krbftp", action, path, _remoteSocketAddress.getAddress());
-            }
-            catch (Exception e) {
-                LOGGER.error("KerberosFTPDoorV1::startTlog: couldn't start tLog. " +
-                        "Ignoring exception: {}", e.getMessage());
-            }
         }
     }
 

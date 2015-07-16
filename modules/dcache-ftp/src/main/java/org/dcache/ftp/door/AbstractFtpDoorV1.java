@@ -808,6 +808,7 @@ public abstract class AbstractFtpDoorV1
     protected int _bufSize;
 
     private final String _ftpDoorName;
+    private final String _tlogName;
     protected Checksum _checkSum;
     protected ChecksumFactory _checkSumFactory;
     protected ChecksumFactory _optCheckSumFactory;
@@ -1035,7 +1036,18 @@ public abstract class AbstractFtpDoorV1
             if (_tLogRoot != null) {
                 LOGGER.info("Door will log ftp transactions to {}", _tLogRoot);
                 _tLog = new FTPTransactionLog(_tLogRoot);
-                startTlog(_tLog, _path.toString(), isWrite() ? "write" : "read");
+
+                if (_subject != null) {
+                    try {
+                        String user = AbstractFtpDoorV1.this.getUserName() + "(" +
+                                Subjects.getUid(_subject) + "." +
+                                Subjects.getPrimaryGid(_subject) + ")";
+                        _tLog.begin(user, _tlogName, isWrite() ? "write" : "read",
+                                _path.toString(), _remoteSocketAddress.getAddress());
+                    } catch (NoSuchElementException | IllegalArgumentException e) {
+                        LOGGER.error("Could not start tLog: " + e.getMessage());
+                    }
+                }
             }
         }
 
@@ -1261,9 +1273,10 @@ public abstract class AbstractFtpDoorV1
 
     protected FtpTransfer _transfer;
 
-    public AbstractFtpDoorV1(String ftpDoorName)
+    public AbstractFtpDoorV1(String ftpDoorName, String tlogName)
     {
         _ftpDoorName = ftpDoorName;
+        _tlogName = tlogName;
 
         for (Method method : getClass().getMethods()) {
             String name = method.getName();
@@ -1277,6 +1290,15 @@ public abstract class AbstractFtpDoorV1
             }
         }
     }
+
+    /**
+     * Get current user's name, as used by the transaction log.
+     */
+    protected String getUserName()
+    {
+        return Subjects.getUserName(_subject);
+    }
+
 
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
@@ -3347,8 +3369,6 @@ public abstract class AbstractFtpDoorV1
             _allo = 0;
         }
     }
-
-    public abstract void startTlog(FTPTransactionLog log, String path, String action);
 
     @Help("STOR <SP> <path> - Tell server to start accepting data.")
     public void ftp_stor(String arg)
