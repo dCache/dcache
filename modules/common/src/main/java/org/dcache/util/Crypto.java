@@ -134,8 +134,16 @@ public class Crypto
      *
      *     https://forums.oracle.com/forums/thread.jspa?messageID=10875177&tstart=0
      *
+     * Oracle bug reference:
+     *
+     *     http://bugs.java.com/bugdatabase/view_bug.do?bug_id=8014618
+     *
      * The problem seems to be caused by a bug in how leading zeros are interpreted
      * in Diffie-Hellman ciphers.
+     *
+     * The problem was fixed with 7u51:
+     *
+     *     http://www.oracle.com/technetwork/java/javase/2col/7u51-bugfixes-2100820.html
      *
      * The following list was generated from OpenJDK source code using the command:
      */
@@ -334,7 +342,7 @@ public class Crypto
             case DISABLE_BROKEN_DH:
                 if (VERSION.startsWith("1.7.0_")) {
                     Integer update = Ints.tryParse(VERSION.substring(6));
-                    if (update != null && update > 5) {
+                    if (update != null && update > 5 && update < 51) {
                         banned.addAll(asList(DH_CIPHERS));
                     }
                 }
