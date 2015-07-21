@@ -41,7 +41,9 @@ public class EDSOperationWRITE extends AbstractNFSv4Operation {
 
         try {
 
-            NfsMover mover = _moverHandler.getOrCreateMover(_args.opwrite.stateid, context.currentInode().toNfsHandle());
+            NfsMover mover = _moverHandler.getOrCreateMover(context.getRemoteSocketAddress(),
+                    _args.opwrite.stateid,
+                    context.currentInode().toNfsHandle());
             if (mover == null) {
                 throw new BadStateidException("No mover associated with given stateid: " + _args.opwrite.stateid);
             }

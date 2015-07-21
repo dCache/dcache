@@ -39,7 +39,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
             long offset = _args.opread.offset.value;
             int count = _args.opread.count.value;
 
-            NfsMover mover = _moverHandler.getOrCreateMover(_args.opread.stateid, context.currentInode().toNfsHandle());
+            NfsMover mover = _moverHandler.getOrCreateMover(context.getRemoteSocketAddress(),
+                    _args.opread.stateid, context.currentInode().toNfsHandle());
             if(mover == null) {
                 /*
                  * return IO error instead of BadStateidException to avoid state recovery.
