@@ -11,7 +11,7 @@ check -strong poolmanager.service.pnfsmanager
 check -strong poolmanager.service.billing
 check -strong poolmanager.service.pool.timeout
 check -strong poolmanager.service.pool.timeout.unit
-check -stronf poolmanager.destination.pool-status
+check -strong poolmanager.destination.pool-status
 check -strong poolmanager.enable.cache-hit-message
 check poolmanager.setup.file
 
