@@ -2,7 +2,6 @@ package org.dcache.util;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Ints;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +16,6 @@ public class Crypto
 {
     public enum CipherFlag
     {
-        DISABLE_BROKEN_DH,
         DISABLE_EC,
         DISABLE_RC4
     }
@@ -25,15 +23,8 @@ public class Crypto
     private static final Splitter CIPHER_FLAG_SPLITTER =
             Splitter.on(",").omitEmptyStrings().trimResults();
 
-    private static String VERSION = System.getProperty("java.version");
-
     private Crypto()
     {
-    }
-
-    static void setJavaVersion(String version)
-    {
-        VERSION = version;
     }
 
     /* The following is a list of cipher suites that are problematic
@@ -127,167 +118,6 @@ public class Crypto
             "TLS_ECDHE_PSK_WITH_NULL_SHA384"
     };
 
-    /* The following is a list of cipher suites that are problematic
-     * with currently available Java versions from 1.7u6 and up.
-     *
-     * The problem is described here:
-     *
-     *     https://forums.oracle.com/forums/thread.jspa?messageID=10875177&tstart=0
-     *
-     * Oracle bug reference:
-     *
-     *     http://bugs.java.com/bugdatabase/view_bug.do?bug_id=8014618
-     *
-     * The problem seems to be caused by a bug in how leading zeros are interpreted
-     * in Diffie-Hellman ciphers.
-     *
-     * The problem was fixed with 7u51:
-     *
-     *     http://www.oracle.com/technetwork/java/javase/2col/7u51-bugfixes-2100820.html
-     *
-     * The following list was generated from OpenJDK source code using the command:
-     */
-    //           sed -n '/add.*DH/s/.*add(\([^,]*\).*/        \1,/p' ~/Downloads/CipherSuite.java | sort
-    //
-    public static final String[] DH_CIPHERS = new String[] {
-            "SSL_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA",
-            "SSL_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",
-            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_DSS_WITH_DES_CBC_SHA",
-            "SSL_DHE_DSS_WITH_RC4_128_SHA",
-            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_RSA_WITH_DES_CBC_SHA",
-            "SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DH_DSS_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DH_DSS_WITH_DES_CBC_SHA",
-            "SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DH_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DH_RSA_WITH_DES_CBC_SHA",
-            "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-            "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DH_anon_WITH_DES_CBC_SHA",
-            "SSL_DH_anon_WITH_RC4_128_MD5",
-            "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
-            "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
-            "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
-            "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA",
-            "TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256",
-            "TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA",
-            "TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256",
-            "TLS_DHE_DSS_WITH_SEED_CBC_SHA",
-            "TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA",
-            "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
-            "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
-            "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
-            "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_PSK_WITH_NULL_SHA",
-            "TLS_DHE_PSK_WITH_NULL_SHA256",
-            "TLS_DHE_PSK_WITH_NULL_SHA384",
-            "TLS_DHE_PSK_WITH_RC4_128_SHA",
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",
-            "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
-            "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",
-            "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",
-            "TLS_DHE_RSA_WITH_SEED_CBC_SHA",
-            "TLS_DH_DSS_WITH_AES_128_CBC_SHA",
-            "TLS_DH_DSS_WITH_AES_128_CBC_SHA256",
-            "TLS_DH_DSS_WITH_AES_128_GCM_SHA256",
-            "TLS_DH_DSS_WITH_AES_256_CBC_SHA",
-            "TLS_DH_DSS_WITH_AES_256_CBC_SHA256",
-            "TLS_DH_DSS_WITH_AES_256_GCM_SHA384",
-            "TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA",
-            "TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256",
-            "TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA",
-            "TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256",
-            "TLS_DH_DSS_WITH_SEED_CBC_SHA",
-            "TLS_DH_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_DH_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_DH_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_DH_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_DH_RSA_WITH_AES_256_CBC_SHA256",
-            "TLS_DH_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA",
-            "TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256",
-            "TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA",
-            "TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256",
-            "TLS_DH_RSA_WITH_SEED_CBC_SHA",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
-            "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
-            "TLS_DH_anon_WITH_AES_256_CBC_SHA",
-            "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
-            "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
-            "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",
-            "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",
-            "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",
-            "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",
-            "TLS_DH_anon_WITH_SEED_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
-            "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
-            "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
-            "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDHE_PSK_WITH_NULL_SHA",
-            "TLS_ECDHE_PSK_WITH_NULL_SHA256",
-            "TLS_ECDHE_PSK_WITH_NULL_SHA384",
-            "TLS_ECDHE_PSK_WITH_RC4_128_SHA",
-            "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_RSA_WITH_NULL_SHA",
-            "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDH_ECDSA_WITH_NULL_SHA",
-            "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDH_RSA_WITH_NULL_SHA",
-            "TLS_ECDH_RSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_anon_WITH_NULL_SHA",
-            "TLS_ECDH_anon_WITH_RC4_128_SHA"
-    };
-
     /**
      * A list of Ciphers that make use of the RC4 (Rivest Cipher 4) stream
      * cipher.  RC4 has several potential attacks and general recommendation
@@ -339,14 +169,6 @@ public class Crypto
         Set<String> banned = new HashSet<>();
         for (CipherFlag flag : flags) {
             switch (flag) {
-            case DISABLE_BROKEN_DH:
-                if (VERSION.startsWith("1.7.0_")) {
-                    Integer update = Ints.tryParse(VERSION.substring(6));
-                    if (update != null && update > 5 && update < 51) {
-                        banned.addAll(asList(DH_CIPHERS));
-                    }
-                }
-                break;
             case DISABLE_EC:
                 banned.addAll(asList(EC_CIPHERS));
                 break;
