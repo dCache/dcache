@@ -96,14 +96,14 @@ public class ExceptionsTests
         // a (String) constructor.
         GSSException cause = new GSSException(GSSException.BAD_MECH);
 
-        Exception wrapped = Exceptions.wrap("Wrapped message", cause, GSSException.class);
+        Exception wrapped = Exceptions.wrap("Wrapped message", cause, Exception.class);
 
         assertThat(wrapped, is(notNullValue()));
         assertThat(wrapped.getMessage(), is(equalTo("Wrapped message")));
         assertThat(wrapped.getCause(), is(cause));
         assertThat(wrapped.getClass(), is(equalTo(Exception.class)));
 
-        assertThat(_log, is(not(empty())));
+        assertThat(_log, is(empty()));
     }
 
     @Test
