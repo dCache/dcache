@@ -79,9 +79,9 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.ServiceUnavailableException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.NoRouteToCellException;
-
 import org.dcache.cells.CellStub;
 import org.dcache.services.billing.histograms.ITimeFrameHistogramFactory;
 import org.dcache.services.billing.histograms.ITimeFrameHistogramFactory.Style;
@@ -150,8 +150,9 @@ public final class StandardBillingService implements IBillingService, Runnable {
     private Thread refresher;
 
     public List<TimeFrameHistogramData> load(PlotType plotType,
-                    TimeFrame timeFrame) throws NoRouteToCellException,
-                                                ServiceUnavailableException {
+                    TimeFrame timeFrame) throws ServiceUnavailableException,
+                                                NoRouteToCellException,
+                                                TimeoutCacheException {
         logger.debug("remote fetch of {} {}", plotType, timeFrame);
         List<TimeFrameHistogramData> histograms = new ArrayList<>();
         try {
@@ -206,6 +207,10 @@ public final class StandardBillingService implements IBillingService, Runnable {
             cause = Exceptions.findCause(ute, NoRouteToCellException.class);
             if (cause != null) {
                 throw (NoRouteToCellException)cause;
+            }
+            cause = Exceptions.findCause(ute, TimeoutCacheException.class);
+            if (cause != null) {
+                throw (TimeoutCacheException)cause;
             }
             cause = ute.getCause();
             Throwables.propagateIfPossible(cause);
@@ -325,6 +330,7 @@ public final class StandardBillingService implements IBillingService, Runnable {
 
     @Override
     public void refresh() throws NoRouteToCellException,
+                                 TimeoutCacheException,
                                  ServiceUnavailableException{
         TimeFrame[] timeFrames = generateTimeFrames();
         for (int tFrame = 0; tFrame < timeFrames.length; tFrame++) {
@@ -356,6 +362,12 @@ public final class StandardBillingService implements IBillingService, Runnable {
                                         + "retrying every 10 seconds");
                     }
                     Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+                } catch (TimeoutCacheException e) {
+                    if (rate.tryAcquire()) {
+                        logger.warn("Billing service currently unreachable; "
+                                        + "retrying after timeout ...");
+                    }
+                    Thread.sleep(timeout);
                 }
             }
         } catch (InterruptedException interrupted) {
@@ -395,6 +407,7 @@ public final class StandardBillingService implements IBillingService, Runnable {
 
     private void generatePlot(PlotType type, TimeFrame timeFrame,
                     String fileName, String title) throws ServiceUnavailableException,
+                                                          TimeoutCacheException,
                                                           NoRouteToCellException {
         List<TimeFrameHistogramData> data = load(type, timeFrame);
         List<HistogramWrapper<?>> config = new ArrayList<>();
