@@ -62,6 +62,7 @@ package org.dcache.webadmin.controller;
 import java.io.File;
 
 import diskCacheV111.util.ServiceUnavailableException;
+import diskCacheV111.util.TimeoutCacheException;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -87,5 +88,6 @@ public interface IBillingService {
 
     void initialize();
 
-    void refresh() throws NoRouteToCellException, ServiceUnavailableException;
+    void refresh() throws NoRouteToCellException,
+                    TimeoutCacheException, ServiceUnavailableException;
 }
