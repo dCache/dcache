@@ -4,6 +4,7 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.glassfish.grizzly.Buffer;
@@ -68,6 +69,7 @@ import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.commons.util.NDC;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
+import org.dcache.nfs.FsExport;
 import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
@@ -296,6 +298,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
+                    updateLbPaths();
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported NFS version: " + version);
@@ -660,6 +663,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         @Override
         public String call() throws IOException {
             _exportFile.rescan();
+            updateLbPaths();
             return "Done.";
         }
     }
@@ -1002,5 +1006,11 @@ public class NFSv41Door extends AbstractCellComponent implements
                 return "pool " + pool + " Not Found.";
             }
         }
+    }
+
+    private void updateLbPaths() {
+        String[] exportPaths = Iterables.toArray( Sets.newHashSet(Iterables.transform(_exportFile.getExports(), FsExport::getPath)), String.class);
+        _loginBrokerPublisher.setReadPaths(exportPaths);
+        _loginBrokerPublisher.setWritePaths(exportPaths);
     }
 }
