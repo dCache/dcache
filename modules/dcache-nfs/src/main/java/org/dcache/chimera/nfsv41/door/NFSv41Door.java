@@ -73,7 +73,6 @@ import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.BadStateidException;
-import org.dcache.nfs.status.NoSpcException;
 import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
@@ -86,7 +85,6 @@ import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSServerV41;
 import org.dcache.nfs.v4.NFSv41DeviceManager;
-import org.dcache.nfs.v4.NFSv41Session;
 import org.dcache.nfs.v4.NFSv4Defaults;
 import org.dcache.nfs.v4.RoundRobinStripingPattern;
 import org.dcache.nfs.v4.StateDisposeListener;
@@ -106,7 +104,6 @@ import org.dcache.nfs.vfs.ChimeraVfs;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
-import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
@@ -118,6 +115,8 @@ import org.dcache.xdr.OncRpcSvc;
 import org.dcache.xdr.OncRpcSvcBuilder;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.gss.GssSessionManager;
+
+import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
@@ -558,26 +557,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             throw new PermException(e.getMessage(), e);
         } catch (CacheException e) {
 	    cleanStateAndKillMover(stateid);
-            switch (e.getRc()) {
-            /*
-             * error 243: file is broken on tape.
-             * can't do a much. Tell it to client.
-             */
-            case CacheException.BROKEN_ON_TAPE:
-                throw new NfsIoException(e.getMessage(), e);
-            /*
-             * Configuration prevents transfer.
-             */
-            case CacheException.NO_POOL_CONFIGURED:
-                if (ioMode == layoutiomode4.LAYOUTIOMODE4_READ) {
-                    throw new PermException(e.getMessage(), e);
-                } else {
-                    throw new NoSpcException(e.getMessage(), e);
-                }
-            case CacheException.NO_POOL_ONLINE:
-            default:
-                throw new LayoutTryLaterException();
-            }
+            throw asNfsException(e, LayoutTryLaterException.class);
         } catch (InterruptedException e) {
             cleanStateAndKillMover(stateid);
             throw new LayoutTryLaterException(e.getMessage(), e);
