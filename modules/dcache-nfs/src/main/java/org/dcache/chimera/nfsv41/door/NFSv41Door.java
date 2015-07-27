@@ -1,6 +1,3 @@
-/*
- * $Id:NFSv41Door.java 140 2007-06-07 13:44:55Z tigran $
- */
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Joiner;
@@ -18,7 +15,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -382,7 +378,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
-    public DoorValidateMoverMessage messageArrived(DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
+    public DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> messageArrived(DoorValidateMoverMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.getChallenge();
         stateid4 stateid = new stateid4(legacyStateid.other, legacyStateid.seqid.value);
 
@@ -425,7 +421,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     public device_addr4 getDeviceInfo(CompoundContext context, deviceid4 deviceId) {
         /* in case of MDS access we return the same interface which client already connected to */
         if (deviceId.equals(MDS_ID)) {
-            return deviceAddrOf( new RoundRobinStripingPattern<InetSocketAddress[]>(),
+            return deviceAddrOf( new RoundRobinStripingPattern<>(),
                     new InetSocketAddress[] { context.getRpcCall().getTransport().getLocalSocketAddress() } );
         }
 
@@ -903,10 +899,11 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public Serializable call() throws Exception {
-            List<IoDoorEntry> entries = new ArrayList<>();
-            for (Transfer transfer : _ioMessages.values()) {
-                entries.add(transfer.getIoDoorEntry());
-            }
+
+            List<IoDoorEntry> entries = _ioMessages.values()
+                    .stream()
+                    .map(Transfer::getIoDoorEntry)
+                    .collect(Collectors.toList());
 
             IoDoorInfo doorInfo = new IoDoorInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName());
             doorInfo.setProtocol("NFSV4.1", "0");
