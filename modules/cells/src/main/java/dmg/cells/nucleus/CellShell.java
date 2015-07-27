@@ -351,11 +351,12 @@ public class CellShell extends CommandInterpreter
       Package p = Package.getPackage( args.argc() == 0 ? "dmg.cells.nucleus" : args.argv(0) );
       StringBuilder sb = new StringBuilder();
       if( p != null ){
-          String tmp = p.getSpecificationTitle() ;
+          // FIXME: wrong description returned for backwards compatibility.
+          String tmp = p.getImplementationTitle();
           sb.append("SpecificationTitle:   ").append(tmp==null?"(Unknown)":tmp).append("\n");
-          tmp = p.getSpecificationVendor() ;
+          tmp = p.getImplementationVendor();
           sb.append("SpecificationVendor:  ").append(tmp==null?"(Unknown)":tmp).append("\n");
-          tmp = p.getSpecificationVersion() ;
+          tmp = p.getImplementationVersion();
           sb.append("SpecificationVersion: ").append(tmp==null?"(Unknown)":tmp).append("\n");
       }else{
           sb.append("No version version found");
