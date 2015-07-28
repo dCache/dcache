@@ -16,11 +16,13 @@
  */
 package org.dcache.chimera;
 
+import java.nio.charset.StandardCharsets;
+
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_PATHOF extends FsInode {
 
-    private String _path;
+    private byte[] _path;
 
     public FsInode_PATHOF(FileSystemProvider fs, String id) {
         super(fs, id, FsInodeType.PATHOF);
@@ -31,22 +33,21 @@ public class FsInode_PATHOF extends FsInode {
 
         if (_path == null) {
             try {
-                _path = _fs.inode2path(this);
+                _path = (_fs.inode2path(this)+'\n').getBytes(StandardCharsets.UTF_8);
             } catch (ChimeraFsException e) {
                 return -1;
             }
         }
 
-        byte[] b = (_path + "\n").getBytes();
         /*
          * are we still inside ?
          */
-        if (pos > b.length) {
+        if (pos > _path.length) {
             return 0;
         }
 
-        int copyLen = Math.min(len, b.length - (int) pos);
-        System.arraycopy(b, (int) pos, data, 0, copyLen);
+        int copyLen = Math.min(len, _path.length - (int) pos);
+        System.arraycopy(_path, (int) pos, data, 0, copyLen);
 
         return copyLen;
     }
@@ -57,10 +58,10 @@ public class FsInode_PATHOF extends FsInode {
         Stat ret = super.stat();
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         if (_path == null) {
-            _path = _fs.inode2path(this);
+            _path = (_fs.inode2path(this)+'\n').getBytes(StandardCharsets.UTF_8);
         }
 
-        ret.setSize(_path.length() + 1);
+        ret.setSize(_path.length);
         return ret;
     }
 
