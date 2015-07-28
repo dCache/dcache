@@ -11,6 +11,7 @@
 package org.dcache.srm.unixfs;
 
 import org.dcache.srm.SRMUser;
+import org.dcache.srm.request.Request;
 
 
 public class UnixfsUser implements SRMUser
@@ -67,7 +68,12 @@ public class UnixfsUser implements SRMUser
       return Integer.toString(uid);
   }
 
-  /** */
+  @Override
+  public boolean hasAccessTo(Request request)
+  {
+      return ((UnixfsUser) request.getUser()).getUid() == uid;
+  }
+
   public boolean equals(Object o) {
     if( ! (o instanceof UnixfsUser)) {
         return false;
