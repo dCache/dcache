@@ -18,8 +18,7 @@
 package org.dcache.util;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
 import com.google.common.util.concurrent.FutureFallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
@@ -30,7 +29,9 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -144,13 +145,25 @@ public class TransferCollector
 
     public static List<Transfer> getTransfers(Collection<IoDoorInfo> doors, Collection<IoJobInfo> movers)
     {
-        ImmutableMap<String, IoJobInfo> index = Maps.uniqueIndex(movers, TransferCollector::getKey);
+        Map<String, IoJobInfo> index = createIndex(movers);
         return doors.stream()
                 .flatMap(info -> getTransfers(info, index))
                 .collect(toList());
     }
 
-    private static Stream<Transfer> getTransfers(IoDoorInfo door, ImmutableMap<String, IoJobInfo> movers)
+    private static Map<String, IoJobInfo> createIndex(Collection<IoJobInfo> movers)
+    {
+        /* The collection is sorted by job id to ensure that for movers with the
+         * same session ID, the one created last is used.
+         */
+        Map<String, IoJobInfo> index = new HashMap<>();
+        for (IoJobInfo info : Ordering.natural().onResultOf(IoJobInfo::getJobId).sortedCopy(movers)) {
+            index.put(getKey(info), info);
+        }
+        return index;
+    }
+
+    private static Stream<Transfer> getTransfers(IoDoorInfo door, Map<String, IoJobInfo> movers)
     {
         return door.getIoDoorEntries().stream().map(e -> new Transfer(door, e, movers.get(getKey(door, e))));
     }
