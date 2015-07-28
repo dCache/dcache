@@ -25,7 +25,9 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 public class BasicTest extends ChimeraTestCaseHelper {
@@ -816,11 +818,9 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         List<ACE> aces = new ArrayList<>();
 
-        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
-                AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
+        aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001));
 
-        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-                AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
+        aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.ADD_FILE.getValue(), Who.USER, 1001));
 
         _fs.setACL(dirInode, aces);
         List<ACE> l2 = _fs.getACL(dirInode);
@@ -1101,4 +1101,41 @@ public class BasicTest extends ChimeraTestCaseHelper {
         _fs.createTag(dir, "aTag", 0, 0, 0644);
     }
 
+    @Test
+    public void testPathofUnicodePath() throws ChimeraFsException {
+        FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
+        FsInode_PATHOF pathof = new FsInode_PATHOF(_fs, file._id);
+        byte[] buffer = new byte[64];
+        int len = pathof.read(0, buffer, 0, 64);
+        assertThat(len, is(equalTo(36)));
+    }
+
+    @Test
+    public void testPathofOnPartOfUnicodePath() throws ChimeraFsException {
+        FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
+        FsInode_PATHOF pathof = new FsInode_PATHOF(_fs, file._id);
+        byte[] buffer = new byte[12];
+        int len = pathof.read(23, buffer, 0, 8);
+        assertThat(len, is(8));
+        assertArrayEquals(buffer, new byte[]{45, 32, -20, -104, -92, -20, -105, -68, 0, 0, 0, 0});
+    }
+
+    @Test
+    public void testNameofUnicodePath() throws ChimeraFsException {
+        FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
+        FsInode_NAMEOF nameof = new FsInode_NAMEOF(_fs, file._id);
+        byte[] buffer = new byte[64];
+        int len = nameof.read(0, buffer, 0, 64);
+        assertThat(len, is(35));
+    }
+
+    @Test
+    public void testNameofOnPartOfUnicodePath() throws ChimeraFsException {
+        FsInode file = _rootInode.create("JC385 - 1300C 12h 15X - \uc624\uc5fc.jpg", 0, 0, 0644);
+        FsInode_NAMEOF nameof = new FsInode_NAMEOF(_fs, file._id);
+        byte[] buffer = new byte[12];
+        int len = nameof.read(23, buffer, 0, 8);
+        assertThat(len, is(8));
+        assertArrayEquals(buffer, new byte[]{32, -20, -104, -92, -20, -105, -68, 46, 0, 0, 0, 0});
+    }
 }
