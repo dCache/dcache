@@ -72,6 +72,8 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm;
 
+import org.dcache.srm.request.Request;
+
 public interface SRMUser
 {
     int getPriority();
@@ -87,4 +89,14 @@ public interface SRMUser
      * Provide a longer description of this user.
      */
     CharSequence getDescriptiveName();
+
+    /**
+     * The SRM protocols has calls to act on existing request. This method is
+     * used to authorize such calls. It returns true if and only if this user
+     * is authorized to access the given request.
+     *
+     * The method does not distinguish between the level of access - the decision
+     * is binary - nor does the method distinguish between different calls.
+     */
+    boolean hasAccessTo(Request request);
 }
