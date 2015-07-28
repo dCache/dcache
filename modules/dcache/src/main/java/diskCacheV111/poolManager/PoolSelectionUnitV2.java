@@ -3,6 +3,7 @@ package diskCacheV111.poolManager;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,23 +14,30 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
+
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
 
 public class PoolSelectionUnitV2
                 implements Serializable,
@@ -185,94 +193,108 @@ public class PoolSelectionUnitV2
     {
         _psuReadLock.lock();
         try {
-
-            pw.append("#\n# Printed by ").append(getClass().getName())
-                            .append(" at ").append(new Date().toString()).append(
-                            "\n#\n#\n");
-            pw.append("psu set regex ").append(_useRegex?"on":"off").append("\n");
-            pw.append("psu set allpoolsactive ").append(_allPoolsActive?"on":"off").append("\n");
-            pw.append("#\n# The units ...\n#\n");
-            for (Unit unit : _units.values()) {
-                int type = unit.getType();
-                pw.append("psu create unit ").append(
-                                type == STORE ? "-store " : type == DCACHE ? "-dcache"
-                                                : type == PROTOCOL ? "-protocol" : "-net   ")
-                                .append(" ").append(unit.getName()).append("\n");
-            }
-            pw.append("#\n# The unit Groups ...\n#\n");
-            for (UGroup group : _uGroups.values()) {
-                pw.append("psu create ugroup ").append(group.getName()).append(
-                                "\n");
-                for (Unit unit : group._unitList.values()) {
-                    pw.append("psu addto ugroup ").append(group.getName())
-                                    .append(" ").append(unit.getName()).append("\n");
-                }
-            }
-            pw.append("#\n# The pools ...\n#\n");
-            for (Pool pool : _pools.values()) {
-                pw.append("psu create pool ").append(pool.getName());
-
-                if (!pool.isPing()) {
-                    pw.append(" -noping");
-                }
-                if (!pool.isEnabled()) {
-                    pw.append(" -disabled");
-                }
-
-                pw.append("\n");
-            }
-            pw.append("#\n# The pool groups ...\n#\n");
-            for (PGroup group : _pGroups.values()) {
-                pw.append("psu create pgroup ").append(group.getName()).append(
-                                "\n");
-                for (Pool pool : group._poolList.values()) {
-                    pw.append("psu addto pgroup ").append(group.getName())
-                                    .append(" ").append(pool.getName()).append("\n");
-                }
-            }
-            pw.append("#\n# The links ...\n#\n");
-            for (Link link : _links.values()) {
-                pw.append("psu create link ").append(link.getName());
-                for (UGroup group : link._uGroupList.values()) {
-                    pw.append(" ").append(group.getName());
-                }
-                pw.append("\n");
-                pw.append("psu set link ").append(link.getName()).append(" ")
+            pw.append("psu set regex ").println(_useRegex ? "on" : "off");
+            pw.append("psu set allpoolsactive ").println(_allPoolsActive ? "on" : "off");
+            pw.println();
+            _units.values().stream().sorted(comparing(Unit::getType).thenComparing(Unit::getName)).forEachOrdered(
+                    unit -> {
+                        pw.append("psu create unit ");
+                        switch (unit.getType()) {
+                        case STORE:
+                            pw.append("-store");
+                            break;
+                        case DCACHE:
+                            pw.append("-dcache");
+                            break;
+                        case PROTOCOL:
+                            pw.append("-protocol");
+                            break;
+                        case NET:
+                            pw.append("-net");
+                            break;
+                        }
+                        pw.append(" ").println(unit.getName());
+                    });
+            pw.println();
+            _uGroups.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
+                    group -> {
+                        pw.append("psu create ugroup ").println(group.getName());
+                        group._unitList.values().stream().sorted(comparing(Unit::getName)).forEachOrdered(
+                                unit -> pw
+                                        .append("psu addto ugroup ")
+                                        .append(group.getName())
+                                        .append(" ")
+                                        .println(unit.getName()));
+                        pw.println();
+                    });
+            _pools.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
+                    pool -> {
+                        pw.append("psu create pool ").append(pool.getName());
+                        if (!pool.isPing()) {
+                            pw.append(" -noping");
+                        }
+                        if (!pool.isEnabled()) {
+                            pw.append(" -disabled");
+                        }
+                        pw.println();
+                    });
+            pw.println();
+            _pGroups.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
+                    group -> {
+                        pw.append("psu create pgroup ").println(group.getName());
+                        group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
+                                pool -> pw
+                                        .append("psu addto pgroup ")
+                                        .append(group.getName())
+                                        .append(" ")
+                                        .println(pool.getName())
+                        );
+                        pw.println();
+                    });
+            _links.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
+                    link -> {
+                        pw.append("psu create link ").append(link.getName());
+                        link._uGroupList.values().stream().map(UGroup::getName).sorted().forEachOrdered(
+                                name -> pw.append(" ").append(name));
+                        pw.println();
+                        pw.append("psu set link ").append(link.getName()).append(" ")
                                 .println(link.getAttraction());
-                for (PoolCore poolCore : link._poolList.values()) {
-                    pw.append("psu add link ").append(link.getName()).append(
-                                    " ").println(poolCore.getName());
-                }
-            }
+                        link._poolList.values().stream().sorted(comparing(PoolCore::getName)).forEachOrdered(
+                                poolCore -> pw
+                                        .append("psu add link ")
+                                        .append(link.getName())
+                                        .append(" ")
+                                        .println(poolCore.getName()));
+                        pw.println();
+                    });
 
-            pw.append("#\n# The link Groups ...\n#\n");
-            for (LinkGroup linkGroup : _linkGroups.values()) {
-                pw.append("psu create linkGroup ").append(linkGroup.getName());
-                pw.append("\n");
+            _linkGroups.values().stream().sorted(comparing(LinkGroup::getName)).forEachOrdered(
+                    linkGroup -> {
+                        pw.append("psu create linkGroup ").println(linkGroup.getName());
 
-                pw.append("psu set linkGroup custodialAllowed ").append(
-                                linkGroup.getName()).append(" ").println(
-                                linkGroup.isCustodialAllowed());
-                pw.append("psu set linkGroup replicaAllowed ").append(
-                                linkGroup.getName()).append(" ").println(
-                                linkGroup.isReplicaAllowed());
-                pw.append("psu set linkGroup nearlineAllowed ").append(
-                                linkGroup.getName()).append(" ").println(
-                                linkGroup.isNearlineAllowed());
-                pw.append("psu set linkGroup outputAllowed ").append(
-                                linkGroup.getName()).append(" ").println(
-                                linkGroup.isOutputAllowed());
-                pw.append("psu set linkGroup onlineAllowed ").append(
-                                linkGroup.getName()).append(" ").println(
-                                linkGroup.isOnlineAllowed());
-
-                for (SelectionLink link : linkGroup.getLinks()) {
-                    pw.append("psu addto linkGroup ").append(
-                                    linkGroup.getName()).append(" ").println(
-                                    link.getName());
-                }
-            }
-
+                        pw.append("psu set linkGroup custodialAllowed ").append(
+                                        linkGroup.getName()).append(" ").println(
+                                        linkGroup.isCustodialAllowed());
+                        pw.append("psu set linkGroup replicaAllowed ").append(
+                                        linkGroup.getName()).append(" ").println(
+                                        linkGroup.isReplicaAllowed());
+                        pw.append("psu set linkGroup nearlineAllowed ").append(
+                                        linkGroup.getName()).append(" ").println(
+                                        linkGroup.isNearlineAllowed());
+                        pw.append("psu set linkGroup outputAllowed ").append(
+                                        linkGroup.getName()).append(" ").println(
+                                        linkGroup.isOutputAllowed());
+                        pw.append("psu set linkGroup onlineAllowed ").append(
+                                        linkGroup.getName()).append(" ").println(
+                                        linkGroup.isOnlineAllowed());
+                        linkGroup.getLinks().stream().sorted(comparing(SelectionLink::getName)).forEachOrdered(
+                                link -> pw
+                                        .append("psu addto linkGroup ")
+                                        .append(linkGroup.getName())
+                                        .append(" ")
+                                        .println(link.getName()));
+                        pw.println();
+                    });
         } finally {
             _psuReadLock.unlock();
         }
@@ -1391,11 +1413,11 @@ public class PoolSelectionUnitV2
                     String protocolUnit) {
         FileAttributes fileAttributes = new FileAttributes();
         fileAttributes.setStorageInfo(
-                        GenericStorageInfo.valueOf(storeUnit, dCacheUnit));
+                GenericStorageInfo.valueOf(storeUnit, dCacheUnit));
         return match(DirectionType.valueOf(direction.toUpperCase()),
-                        netUnit.equals("*") ? null : netUnit,
-                        protocolUnit.equals("*") ? null : protocolUnit,
-                        fileAttributes, linkGroup);
+                     netUnit.equals("*") ? null : netUnit,
+                     protocolUnit.equals("*") ? null : protocolUnit,
+                     fileAttributes, linkGroup);
     }
 
     // ..................................................................
@@ -1406,31 +1428,28 @@ public class PoolSelectionUnitV2
         StringBuilder sb = new StringBuilder();
         _psuReadLock.lock();
         try {
-            Collection<Pool> pools;
+            Stream<Pool> pools;
             if (globs.isEmpty()) {
-                pools = _pools.values();
+                pools = _pools.values().stream();
             } else {
-                pools = new ArrayList<>();
-                globs.stream().forEach((glob) ->
-                                pools.addAll(getPools(Glob.parseGlobToPattern(glob))));
+                pools = globs.stream().flatMap(s -> getPools(Glob.parseGlobToPattern(s)).stream());
             }
-            for (Pool pool: pools) {
-                if (!detail) {
-                    sb.append(pool.getName()).append("\n");
-                } else {
-                    sb.append(pool).append("\n");
-                    sb.append(" linkList   :\n");
-                    for (Link link: pool._linkList.values()) {
-                        sb.append("   ").append(link).append("\n");
-                    }
-                    if (more) {
-                        sb.append(" pGroupList : \n");
-                        for (PGroup group: pool._pGroupList.values()) {
-                            sb.append("   ").append(group).append("\n");
+            pools.sorted(comparing(Pool::getName)).forEachOrdered(
+                    pool -> {
+                        if (!detail) {
+                            sb.append(pool.getName()).append("\n");
+                        } else {
+                            sb.append(pool).append("\n");
+                            sb.append(" linkList   :\n");
+                            pool._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
+                                    link -> sb.append("   ").append(link).append("\n"));
+                            if (more) {
+                                sb.append(" pGroupList : \n");
+                                pool._pGroupList.values().stream().sorted(comparing(PGroup::getName)).forEachOrdered(
+                                        group -> sb.append("   ").append(group).append("\n"));
+                            }
                         }
-                    }
-                }
-            }
+                    });
         } finally {
             _psuReadLock.unlock();
         }
@@ -1459,14 +1478,11 @@ public class PoolSelectionUnitV2
                 sb.append(group.getName()).append("\n");
                 if (detail) {
                     sb.append(" linkList :\n");
-                    for (Link link : group._linkList.values()) {
-                        sb.append("   ").append(link.toString()).append(
-                                        "\n");
-                    }
+                    group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
+                            link -> sb.append("   ").append(link.toString()).append("\n"));
                     sb.append(" poolList :\n");
-                    for (Pool pool : group._poolList.values()) {
-                        sb.append("   ").append(pool.toString()).append("\n");
-                    }
+                    group._poolList.values().stream().sorted(comparing(Pool::getName)).forEachOrdered(
+                            pool -> sb.append("   ").append(pool.toString()).append("\n"));
                 }
             }
         } finally {
@@ -1475,95 +1491,75 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String listPoolLinks(boolean more, boolean detail, ImmutableList<String> links) {
+    public String listPoolLinks(boolean more, boolean detail, ImmutableList<String> names) {
         StringBuilder sb = new StringBuilder();
         _psuReadLock.lock();
         try {
-            Iterator<Link> i;
-            if (links.isEmpty()) {
-                i = _links.values().iterator();
+            Stream<Link> links;
+            if (names.isEmpty()) {
+                links = _links.values().stream();
             } else {
-                ArrayList<Link> l = new ArrayList<>();
-                links.stream().forEach((link) -> {
-                    Link o = _links.get(link);
-                    if (o != null) {
-                        l.add(o);
-                    }
-                });
-                i = l.iterator();
+                links = names.stream().map(_links::get).filter(Objects::nonNull);
             }
-            while (i.hasNext()) {
-                Link link = i.next();
-                sb.append(link.getName()).append("\n");
-                if (detail) {
-                    sb.append(" readPref  : ").append(link.getReadPref()).append(
-                                    "\n");
-                    sb.append(" cachePref : ").append(link.getCachePref()).append(
-                                    "\n");
-                    sb.append(" writePref : ").append(link.getWritePref()).append(
-                                    "\n");
-                    sb.append(" p2pPref   : ").append(link.getP2pPref()).append(
-                                    "\n");
-                    sb.append(" section   : ").append(
-                                    link.getTag() == null ? "None" : link.getTag())
-                                    .append("\n");
-                    sb.append(" linkGroup : ").append(
-                                    link.getLinkGroup() == null ? "None" : link
-                                                    .getLinkGroup().getName()).append("\n");
-                    sb.append(" UGroups :\n");
-                    for (UGroup group : link._uGroupList.values()) {
-                        sb.append("   ").append(group.toString()).append("\n");
-                    }
-                    if (more) {
-                        sb.append(" poolList  :\n");
-                        for (PoolCore core : link._poolList.values()) {
-                            sb.append("   ").append(core.toString()).append(
+            links.sorted(comparing(Link::getName)).forEachOrdered(
+                    link -> {
+                        sb.append(link.getName()).append("\n");
+                        if (detail) {
+                            sb.append(" readPref  : ").append(link.getReadPref()).append(
                                             "\n");
+                            sb.append(" cachePref : ").append(link.getCachePref()).append(
+                                            "\n");
+                            sb.append(" writePref : ").append(link.getWritePref()).append(
+                                            "\n");
+                            sb.append(" p2pPref   : ").append(link.getP2pPref()).append(
+                                            "\n");
+                            sb.append(" section   : ").append(
+                                            link.getTag() == null ? "None" : link.getTag())
+                                            .append("\n");
+                            sb.append(" linkGroup : ").append(
+                                            link.getLinkGroup() == null ? "None" : link
+                                                            .getLinkGroup().getName()).append("\n");
+                            sb.append(" UGroups :\n");
+                            link._uGroupList.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
+                                    group -> sb.append("   ").append(group.toString()).append("\n"));
+                            if (more) {
+                                sb.append(" poolList  :\n");
+                                link._poolList.values().stream().sorted(comparing(PoolCore::getName)).forEachOrdered(
+                                        core -> sb.append("   ").append(core.toString()).append("\n"));
+                            }
                         }
-                    }
-                }
-            }
+                    });
         } finally {
             _psuReadLock.unlock();
         }
         return sb.toString();
     }
 
-    public String listUnitGroups(boolean more, boolean detail, ImmutableList<String> unitGroups) {
+    public String listUnitGroups(boolean more, boolean detail, ImmutableList<String> names) {
 
         StringBuilder sb = new StringBuilder();
         _psuReadLock.lock();
         try {
-            Iterator<UGroup> i;
-            if (unitGroups.isEmpty()) {
-                i = _uGroups.values().iterator();
+            Stream<UGroup> i;
+            if (names.isEmpty()) {
+                i = _uGroups.values().stream();
             } else {
-                ArrayList<UGroup> l = new ArrayList<>();
-                unitGroups.stream().forEach((ugroup) -> {
-                    UGroup o = _uGroups.get(ugroup);
-                    if (o != null) {
-                        l.add(o);
-                    }
-                });
-                i = l.iterator();
+                i = names.stream().map(_uGroups::get).filter(Objects::nonNull);
             }
-            while (i.hasNext()) {
-                UGroup group = i.next();
-                sb.append(group.getName()).append("\n");
-                if (detail) {
-                    sb.append(" unitList :\n");
-                    for (Unit unit : group._unitList.values()) {
-                        sb.append("   ").append(unit.toString()).append("\n");
-                    }
-                    if (more) {
-                        sb.append(" linkList :\n");
-                        for (Link link : group._linkList.values()) {
-                            sb.append("   ").append(link.toString()).append(
-                                            "\n");
+            i.sorted(comparing(UGroup::getName)).forEachOrdered(
+                    group -> {
+                        sb.append(group.getName()).append("\n");
+                        if (detail) {
+                            sb.append(" unitList :\n");
+                            group._unitList.values().stream().sorted(comparing(Unit::getName)).forEachOrdered(
+                                    unit -> sb.append("   ").append(unit.toString()).append("\n"));
+                            if (more) {
+                                sb.append(" linkList :\n");
+                                group._linkList.values().stream().sorted(comparing(Link::getName)).forEachOrdered(
+                                        link -> sb.append("   ").append(link.toString()).append("\n"));
+                            }
                         }
-                    }
-                }
-            }
+                    });
         } finally {
             _psuReadLock.unlock();
         }
@@ -1597,38 +1593,29 @@ public class PoolSelectionUnitV2
         return sb.toString();
     }
 
-    public String listUnits(boolean more, boolean detail, ImmutableList<String> units) {
+    public String listUnits(boolean more, boolean detail, ImmutableList<String> names) {
         StringBuilder sb = new StringBuilder();
         _psuReadLock.lock();
         try {
-            Iterator<Unit> i;
-            if (units.isEmpty()) {
-                i = _units.values().iterator();
+            Stream<Unit> i;
+            if (names.isEmpty()) {
+                i = _units.values().stream();
             } else {
-                ArrayList<Unit> l = new ArrayList<>();
-                units.stream().forEach((unit) -> {
-                    Unit o = _units.get(unit);
-                    if (o != null) {
-                        l.add(o);
-                    }
-                });
-                i = l.iterator();
+                i = names.stream().map(_units::get).filter(Objects::nonNull);
             }
-            while (i.hasNext()) {
-                Unit unit = i.next();
-                if (detail) {
-                    sb.append(unit.toString()).append("\n");
-                    if (more) {
-                        sb.append(" uGroupList :\n");
-                        for (UGroup group : unit._uGroupList.values()) {
-                            sb.append("   ").append(group.toString()).append(
-                                            "\n");
+            i.sorted(comparing(Unit::getName)).forEachOrdered(
+                    unit -> {
+                        if (detail) {
+                            sb.append(unit.toString()).append("\n");
+                            if (more) {
+                                sb.append(" uGroupList :\n");
+                                unit._uGroupList.values().stream().sorted(comparing(UGroup::getName)).forEachOrdered(
+                                        group -> sb.append("   ").append(group.toString()).append("\n"));
+                            }
+                        } else {
+                            sb.append(unit.getName()).append("\n");
                         }
-                    }
-                } else {
-                    sb.append(unit.getName()).append("\n");
-                }
-            }
+                    });
         } finally {
             _psuReadLock.unlock();
         }
@@ -1641,7 +1628,7 @@ public class PoolSelectionUnitV2
         _psuReadLock.lock();
         try {
             if (!linkGroups.isEmpty()) {
-                linkGroups.stream().forEach((lgroup) -> {
+                linkGroups.stream().forEachOrdered(lgroup -> {
                     LinkGroup linkGroup = _linkGroups.get(lgroup);
                     if (linkGroup == null) {
                         throw new IllegalArgumentException(
@@ -1655,20 +1642,8 @@ public class PoolSelectionUnitV2
                     }
                 });
             } else {
-                Set<String> allGroups = _linkGroups.keySet();
-                for (String groupName : allGroups) {
-                    LinkGroup linkGroup = _linkGroups.get(groupName);
-                    if (linkGroup == null) {
-                        throw new IllegalArgumentException(
-                                        "LinkGroup not found : " + groupName);
-                    }
-
-                    if (isLongOutput) {
-                        sb.append(linkGroup).append("\n");
-                    } else {
-                        sb.append(groupName).append("\n");
-                    }
-                }
+                _linkGroups.values().stream().sorted(comparing(LinkGroup::getName)).forEachOrdered(
+                        linkGroup -> sb.append(isLongOutput ? linkGroup : linkGroup.getName()).append("\n"));
             }
         } finally {
             _psuReadLock.unlock();

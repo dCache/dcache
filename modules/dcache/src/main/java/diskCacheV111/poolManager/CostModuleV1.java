@@ -449,8 +449,6 @@ public class CostModuleV1
     @Override
     public void printSetup(PrintWriter pw)
     {
-        pw.append( "#\n# Submodule CostModule (cm) : ")
-            .println(this.getClass().getName());
         pw.println("cm set debug "+(_debug?"on":"off"));
         pw.println("cm set update "+(_update?"on":"off"));
         pw.println("cm set magic "+(_magic?"on":"off"));

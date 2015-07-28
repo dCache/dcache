@@ -184,18 +184,6 @@ public class PoolManagerV5
         return pminfo;
     }
 
-    @Override
-    public void printSetup(PrintWriter writer)
-    {
-        writer.print("#\n# Setup of ");
-        writer.print(getCellName());
-        writer.print(" (");
-        writer.print(getClass().getName());
-        writer.print(") at ");
-        writer.println(new Date().toString());
-        writer.println("#");
-    }
-
     private class WatchdogThread extends Thread {
         private long _deathDetected = 10L * 60L * 1000L; // 10 minutes
         private long _sleepTimer = 1L * 60L * 1000L; // 1 minute
