@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -28,6 +29,7 @@ import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 public class SrmAbortFiles
 {
     private final SrmAbortFilesRequest request;
+    private final SRMUser user;
     private SrmAbortFilesResponse response;
 
     public SrmAbortFiles(
@@ -38,6 +40,7 @@ public class SrmAbortFiles
             SRM srm,
             String clientHost)
     {
+        this.user = user;
         this.request = checkNotNull(request);
     }
 
@@ -46,19 +49,23 @@ public class SrmAbortFiles
         if (response == null) {
             try {
                 response = abortFiles();
-            } catch (SRMInvalidRequestException e) {
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
+            } catch (SRMException e) {
+                response = getFailedResponse(e.getMessage(), e.getStatusCode());
             }
         }
         return response;
     }
 
     private SrmAbortFilesResponse abortFiles()
-            throws SRMInvalidRequestException
+            throws SRMInvalidRequestException, SRMAuthorizationException
     {
         ContainerRequest<?> requestToAbort =
                 Request.getRequest(this.request.getRequestToken(), ContainerRequest.class);
         try (JDC ignored = requestToAbort.applyJdc()) {
+            if (!user.hasAccessTo(requestToAbort)) {
+                throw new SRMAuthorizationException("User is not the owner of request " + request.getRequestToken() + ".");
+            }
+
             org.apache.axis.types.URI[] surls = getSurls();
 
             TSURLReturnStatus[] surlReturnStatusArray = new TSURLReturnStatus[surls.length];
