@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAbortedException;
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -50,15 +52,8 @@ public class SrmPutDone
         if (response == null) {
             try {
                 response = srmPutDone();
-            } catch (SRMInvalidRequestException e) {
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INVALID_REQUEST);
-            } catch (SRMRequestTimedOutException e) {
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_REQUEST_TIMED_OUT);
-            } catch (SRMInternalErrorException e) {
-                LOGGER.error(e.getMessage());
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_INTERNAL_ERROR);
-            } catch (SRMAbortedException e) {
-                response = getFailedResponse(e.getMessage(), TStatusCode.SRM_ABORTED);
+            } catch (SRMException e) {
+                response = getFailedResponse(e.getMessage(), e.getStatusCode());
             }
         }
         return response;
@@ -66,13 +61,17 @@ public class SrmPutDone
 
     private SrmPutDoneResponse srmPutDone()
             throws SRMInvalidRequestException, SRMRequestTimedOutException, SRMAbortedException,
-                   SRMInternalErrorException
+            SRMInternalErrorException, SRMAuthorizationException
     {
         URI[] surls = getSurls(request);
         PutRequest putRequest = Request.getRequest(request.getRequestToken(), PutRequest.class);
         try (JDC ignored = putRequest.applyJdc()) {
             putRequest.wlock();
             try {
+                if (!user.hasAccessTo(putRequest)) {
+                    throw new SRMAuthorizationException("User is not the owner of request " + request.getRequestToken() + ".");
+                }
+
                 switch (putRequest.getState()) {
                 case FAILED:
                     if (putRequest.getStatusCode() == TStatusCode.SRM_REQUEST_TIMED_OUT) {
@@ -93,7 +92,7 @@ public class SrmPutDone
                         PutFileRequest fileRequest = putRequest
                                 .getFileRequestBySurl(java.net.URI.create(surls[i].toString()));
                         try (JDC ignore = fileRequest.applyJdc()) {
-                            returnStatus = fileRequest.done(user);
+                            returnStatus = fileRequest.done(this.user);
                         }
                     } catch (SRMFileRequestNotFoundException e) {
                         returnStatus = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, "File does not exist.");
