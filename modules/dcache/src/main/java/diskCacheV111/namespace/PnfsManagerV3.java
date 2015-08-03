@@ -22,7 +22,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -82,7 +81,6 @@ import org.dcache.acl.enums.AccessType;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
-import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -119,8 +117,6 @@ public class PnfsManagerV3
 
     private final RequestExecutionTimeGauges<Class<? extends PnfsMessage>> _gauges =
         new RequestExecutionTimeGauges<>("PnfsManagerV3");
-    private final RequestCounters<Class<?>> _foldedCounters =
-        new RequestCounters<>("PnfsManagerV3.Folded");
 
     /**
      * Cache of path prefix to database IDs mappings.
@@ -150,19 +146,14 @@ public class PnfsManagerV3
     private long _logSlowThreshold;
 
     /**
-     * Whether to use folding.
-     */
-    private boolean _canFold;
-
-    /**
      * Queues for list operations. There is one queue per thread
      * group.
      */
     private BlockingQueue<CellMessage>[] _listQueues;
 
     /**
-     * Tasks queues used for messages that do not operate on cache
-     * locations.
+     * Queues for non-listing messages. There is one queue per thread
+     * group.
      */
     private BlockingQueue<CellMessage>[] _fifos;
 
@@ -270,12 +261,6 @@ public class PnfsManagerV3
     }
 
     @Required
-    public void setFolding(boolean folding)
-    {
-        _canFold = folding;
-    }
-
-    @Required
     public void setDirectoryListLimit(int limit)
     {
         _directoryListLimit = limit;
@@ -296,22 +281,19 @@ public class PnfsManagerV3
     {
         _stub = new CellStub(getCellEndpoint());
 
-        _fifos = new BlockingQueue[_threads * _threadGroups];
-        _log.info("Starting {} threads", _fifos.length);
-        for (int i = 0; i < _fifos.length; i++) {
+        _fifos = new BlockingQueue[_threadGroups];
+        _log.info("Starting {} threads", _threads * _threadGroups);
+        for (int i = 0; i < _threadGroups; i++) {
             if (_queueMaxSize > 0) {
                 _fifos[i] = new LinkedBlockingQueue<>(_queueMaxSize);
             } else {
                 _fifos[i] = new LinkedBlockingQueue<>();
             }
-            executor.execute(new ProcessThread(_fifos[i]));
+            for (int j = 0; j < _threads; j++) {
+                executor.execute(new ProcessThread(_fifos[i]));
+            }
         }
 
-        /* Start list-threads threads per thread group for list
-         * processing. We use a shared queue per thread group, as
-         * list operations are read only and thus there is no need
-         * to serialize the operations.
-         */
         _listQueues = new BlockingQueue[_threadGroups];
         for (int i = 0; i < _threadGroups; i++) {
             _listQueues[i] = new LinkedBlockingQueue<>();
@@ -364,24 +346,14 @@ public class PnfsManagerV3
             pw.println("    [" + i + "] " + _listQueues[i].size());
         }
         pw.println();
-        pw.println("Threads (" + _fifos.length + ") Queue");
+        pw.println("Message queues (" + _fifos.length + ")");
         for (int i = 0; i < _fifos.length; i++) {
-            pw.println( "    ["+i+"] "+_fifos[i].size() ) ;
-        }
-        pw.println();
-        pw.println("Thread groups (" + _threadGroups + ")");
-        for (int i = 0; i < _threadGroups; i++) {
-            int total = 0;
-            for (int j = 0; j < _threads; j++) {
-                total += _fifos[i * _threads + j].size();
-            }
-            pw.println("    [" + i + "] " + total);
+            pw.println( "    [" + i + "] " +  _fifos[i].size());
         }
         pw.println();
 
         pw.println( "Statistics:" ) ;
         pw.println(_gauges.toString());
-        pw.println(_foldedCounters.toString());
     }
 
     public static final String hh_pnfsidof     = "<globalPath>" ;
@@ -674,17 +646,17 @@ public class PnfsManagerV3
         + "        dumthreadqueus prints the context of\n"
         + "        thread[s] queue[s] into the error log file";
 
-    public static final String hh_dumpthreadqueues = "[<threadId>]";
+    public static final String hh_dumpthreadqueues = "[<group>]";
 
     public String ac_dumpthreadqueues_$_0_1(Args args)
     {
         if (args.argc() > 0) {
-            int threadId = Integer.parseInt(args.argv(0));
-            dumpThreadQueue(threadId);
+            int group = Integer.parseInt(args.argv(0));
+            dumpThreadQueue(group);
             return "dumped";
         }
-        for (int threadId = 0; threadId < _fifos.length; ++threadId) {
-            dumpThreadQueue(threadId);
+        for (int group = 0; group < _fifos.length; ++group) {
+            dumpThreadQueue(group);
         }
         return "dumped";
     }
@@ -1435,7 +1407,7 @@ public class PnfsManagerV3
 
     private class ProcessThread implements Runnable
     {
-        private final BlockingQueue<CellMessage> _fifo ;
+        private final BlockingQueue<CellMessage> _fifo;
 
         private ProcessThread(BlockingQueue<CellMessage> fifo)
         {
@@ -1462,41 +1434,16 @@ public class PnfsManagerV3
                         }
 
                         processPnfsMessage(message, pnfs);
-                        fold(pnfs);
                     } catch (Throwable e) {
                         _log.warn("processPnfsMessage: {} : {}", Thread.currentThread().getName(), e);
                     } finally {
                         CDC.clearMessageContext();
                     }
                 }
+                /* Poison any other threads reading from the same queue */
+                _fifo.offer(SHUTDOWN_SENTINEL);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            }
-        }
-
-        protected void fold(PnfsMessage message)
-        {
-            if (_canFold && message.getReturnCode() == 0) {
-                Iterator<CellMessage> i = _fifo.iterator();
-                while (i.hasNext()) {
-                    CellMessage envelope = i.next();
-                    PnfsMessage other =
-                        (PnfsMessage) envelope.getMessageObject();
-
-                    if (other.invalidates(message)) {
-                        break;
-                    }
-
-                    if (other.fold(message)) {
-                        _log.info("Folded {}", other.getClass().getSimpleName());
-                        _foldedCounters.incrementRequests(message.getClass());
-
-                        i.remove();
-                        envelope.revertDirection();
-
-                        sendMessage(envelope);
-                    }
-                }
             }
         }
     }
@@ -1523,15 +1470,9 @@ public class PnfsManagerV3
         }
 
         PnfsId pnfsId = message.getPnfsId();
-        int index =
-                pnfsIdToThreadGroup(pnfsId) * _threads +
-                (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
-        _log.info("Using thread [{}] {}", pnfsId, index);
+        int index = pnfsIdToThreadGroup(pnfsId);
+        _log.info("Using thread group [{}] {}", pnfsId, index);
 
-        /*
-         * try to add a message into queue.
-         * tell requester, that queue is full
-         */
         if (!_fifos[index].offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
@@ -1543,27 +1484,19 @@ public class PnfsManagerV3
         PnfsId pnfsId = message.getPnfsId();
         String path = message.getPnfsPath();
 
-        int index;
+        int group;
         if (pnfsId != null) {
-            index =
-                pnfsIdToThreadGroup(pnfsId) * _threads +
-                (int) (Math.abs((long) pnfsId.hashCode()) % _threads);
-            _log.info("Using thread [{}] {}", pnfsId, index);
+            group = pnfsIdToThreadGroup(pnfsId);
+            _log.info("Using thread group [{}] {}", pnfsId, group);
         } else if (path != null) {
-            index =
-                pathToThreadGroup(path) * _threads +
-                (int) (Math.abs((long) path.hashCode()) % _threads);
-            _log.info("Using thread [{}] {}", path, index);
+            group = pathToThreadGroup(path);
+            _log.info("Using thread group [{}] {}", path, group);
         } else {
-            index = _random.nextInt(_fifos.length);
-            _log.info("Using random thread {}", index);
+            group = _random.nextInt(_fifos.length);
+            _log.info("Using random thread group {}", group);
         }
 
-        /*
-         * try to add a message into queue.
-         * tell requester, that queue is full
-         */
-        if (!_fifos[index].offer(envelope)) {
+        if (!_fifos[group].offer(envelope)) {
             throw new MissingResourceCacheException("PnfsManager queue limit exceeded");
         }
     }
