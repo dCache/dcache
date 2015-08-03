@@ -335,7 +335,7 @@ public class CellShell extends CommandInterpreter
    }
    private String commandLine( String c ) throws CommandExitException {
       if( _contextString != null ){
-         _contextString.append( c ).append("\n");
+         _contextString.append(c).append("\n");
          return "" ;
       }else {
           return super.command(c);
@@ -371,43 +371,108 @@ public class CellShell extends CommandInterpreter
    public Object ac_getroutes( Args args ){
        return _nucleus.getRoutingList() ;
    }
+    @Command(name = "getroutes", hint = "list all routes",
+            description = "List all message routes available in " +
+                    "this domain. The returned information " +
+                    "comprises of the target cell name, target domain name, " +
+                    "gateway for this route and the route type (such as " +
+                    "default, alias, domain, topic, etc).")
+    public class GetroutesCommand implements Callable<CellRoute[]>
+    {
+        @Override
+        public CellRoute[] call() throws Exception
+        {
+            return _nucleus.getRoutingList() ;
+        }
+    }
+
    public CellTunnelInfo[] ac_getcelltunnelinfos( Args args ){
        List<CellTunnelInfo> cellTunnelInfos = _nucleus.getCellTunnelInfos();
        return cellTunnelInfos.toArray(new CellTunnelInfo[cellTunnelInfos.size()]);
    }
-   public Object ac_getcellinfo_$_1( Args args ) throws CommandException {
-      CellInfo info = _nucleus.getCellInfo( args.argv(0) ) ;
-      if( info == null ) {
-          throw new CommandException(68, "not found : " + args.argv(0));
-      }
 
-      return info ;
-   }
-   public Object ac_getcellinfos( Args args ){
-       List<String> names = _nucleus.getCellNames();
+    @Command(name = "getcellinfo", hint = "display cell information",
+            description = "Shows a brief information on a specified cell. " +
+                    "This information consist of the cell name, " +
+                    "the state of the cell " +
+                    "(a cell can be in one of these following states: Initial, " +
+                    "Active, Removing, Dead and Unknown state which are " +
+                    "denoted by I, A, R, D and U respectively), " +
+                    "the event queue size, thread count,  " +
+                    "the class the cell belong to and, lastly, a short cell " +
+                    "specific information.")
+    public class GetcellinfoCommand implements Callable<CellInfo>
+    {
+        @Argument(usage = "The cell name")
+        String cellName;
 
-       List<CellInfo> infoList = new ArrayList<>(names.size());
+        @Override
+        public CellInfo call() throws Exception
+        {
+            CellInfo info = _nucleus.getCellInfo(cellName);
+            if(info == null ) {
+                throw new CommandException(68, "not found : " + cellName);
+            }
 
-       for(String name : names) {
-           CellInfo info = _nucleus.getCellInfo(name);
-           if(info != null) {
-               infoList.add(info);
-           }
-       }
-
-       return infoList.toArray(new CellInfo[infoList.size()]);
-   }
-   public Object ac_getcontext_$_0_1( Args args ) throws CommandException {
-      if( args.argc() == 0 ){
-          return _nucleus.getDomainContext().keySet().toArray();
-      }else{
-        Object o = _nucleus.getDomainContext( args.argv(0) ) ;
-        if( o == null ) {
-            throw new CommandException("Context not found : " + args.argv(0));
+            return info;
         }
-        return o ;
-      }
-   }
+    }
+
+    @Command(name = "getcellinfos", hint = "get information on all cells",
+            description = "Display a summarised information of all cells " +
+                    "in this domain. This " +
+                    "information (starting from left to right) comprises of " +
+                    "the cell name, cell state " +
+                    "(a cell can be in one of these following states: Initial, " +
+                    "Active, Removing, Dead and Unknown state which are " +
+                    "denoted by I, A, R, D and U respectively), " +
+                    "the event queue size, thread count, " +
+                    "cell class and lastly a short cell specific information.")
+    public class GetcellinfosCommand implements Callable<CellInfo[]>
+    {
+        @Override
+        public CellInfo[] call() throws Exception
+        {
+            List<String> names = _nucleus.getCellNames();
+
+            List<CellInfo> infoList = new ArrayList<>(names.size());
+
+            for(String name : names) {
+                CellInfo info = _nucleus.getCellInfo(name);
+                if(info != null) {
+                    infoList.add(info);
+                }
+            }
+
+            return infoList.toArray(new CellInfo[infoList.size()]);
+        }
+    }
+
+    @Command(name = "getcontext", hint = "list all contexts",
+            description = "Returns a " +
+                    "list of all the contexts in your current domain. " +
+                    "When a context name (within the current domain) is specified, " +
+                    "it will return the content of that context.")
+    public class GetcontextCommand implements Callable<Serializable>
+    {
+        @Argument(required = false,
+                usage = "The context name")
+        String contextName;
+
+        @Override
+        public Serializable call() throws Exception
+        {
+            if (contextName == null) {
+                return _nucleus.getDomainContext().keySet().toArray();
+            }else{
+                Object o = _nucleus.getDomainContext( contextName ) ;
+                if( o == null ) {
+                    throw new CommandException("Context not found : " + contextName);
+                }
+                return (Serializable) o;
+            }
+        }
+    }
    ////////////////////////////////////////////////////////////
    //
    //   waitfor cell/domain/context
