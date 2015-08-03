@@ -368,9 +368,6 @@ public class CellShell extends CommandInterpreter
    //
    //   getroutes, getcelltunnelinfos, getcellinfos
    //
-   public Object ac_getroutes( Args args ){
-       return _nucleus.getRoutingList() ;
-   }
     @Command(name = "getroutes", hint = "list all routes",
             description = "List all message routes available in " +
                     "this domain. The returned information " +
