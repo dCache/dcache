@@ -335,7 +335,7 @@ public class CellShell extends CommandInterpreter
    }
    private String commandLine( String c ) throws CommandExitException {
       if( _contextString != null ){
-         _contextString.append(c).append("\n");
+         _contextString.append( c ).append("\n");
          return "" ;
       }else {
           return super.command(c);
