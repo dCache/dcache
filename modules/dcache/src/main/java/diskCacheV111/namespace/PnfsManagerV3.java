@@ -10,6 +10,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.Subject;
 
@@ -39,7 +41,6 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.MissingResourceCacheException;
 import diskCacheV111.util.NotDirCacheException;
-import diskCacheV111.util.NotFileCacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -1046,7 +1047,7 @@ public class PnfsManagerV3
         try {
             File file = new File(pnfsMessage.getPath());
             checkMask(pnfsMessage.getSubject(), file.getParent(),
-                    pnfsMessage.getAccessMask());
+                      pnfsMessage.getAccessMask());
 
             pnfsId = _nameSpaceProvider.createSymLink(pnfsMessage.getSubject(),
                                                       pnfsMessage.getPath(),
@@ -1575,89 +1576,85 @@ public class PnfsManagerV3
     public void processPnfsMessage(CellMessage message, PnfsMessage pnfsMessage)
     {
         long ctime = System.currentTimeMillis();
+        try {
+            if (!processMessageTransactionally(message, pnfsMessage)) {
+                return;
+            }
+        } catch (TransactionException e) {
+            if (pnfsMessage.getReturnCode() == 0) {
+                _log.error("Name space transaction failed: {}", e.getMessage());
+                pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, "Name space transaction failed.");
+            }
+        }
 
-        if (pnfsMessage instanceof PnfsAddCacheLocationMessage){
-            addCacheLocation((PnfsAddCacheLocationMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsClearCacheLocationMessage){
-            clearCacheLocation((PnfsClearCacheLocationMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsGetCacheLocationsMessage){
-            getCacheLocations((PnfsGetCacheLocationsMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsCreateSymLinkMessage) {
-            createLink((PnfsCreateSymLinkMessage) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsCreateDirectoryMessage){
-            createDirectory((PnfsCreateDirectoryMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsCreateEntryMessage){
-            createEntry((PnfsCreateEntryMessage)pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsCreateUploadPath){
-            createUploadPath((PnfsCreateUploadPath) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsCommitUpload){
-            commitUpload((PnfsCommitUpload) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsCancelUpload){
-            cancelUpload((PnfsCancelUpload) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsDeleteEntryMessage){
-            deleteEntry((PnfsDeleteEntryMessage) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsMapPathMessage){
-            mapPath((PnfsMapPathMessage) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsRenameMessage){
-            rename((PnfsRenameMessage) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsFlagMessage){
-            updateFlag((PnfsFlagMessage) pnfsMessage);
-        }
-        else if ( pnfsMessage instanceof PnfsSetChecksumMessage){
-            setChecksum((PnfsSetChecksumMessage) pnfsMessage);
-        }
-        else if( pnfsMessage instanceof PoolFileFlushedMessage ) {
-            processFlushMessage(message, (PoolFileFlushedMessage) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsGetParentMessage){
-            getParent((PnfsGetParentMessage) pnfsMessage);
-        } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
-            listDirectory(message, (PnfsListDirectoryMessage) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsGetFileAttributes) {
-            getFileAttributes((PnfsGetFileAttributes) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsSetFileAttributes) {
-            setFileAttributes((PnfsSetFileAttributes) pnfsMessage);
-        }
-        else if (pnfsMessage instanceof PnfsRemoveChecksumMessage) {
-            removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
-        }
-        else {
-            _log.warn("Unexpected message class [" + pnfsMessage.getClass() + "] from source [" + message.getSourcePath() + "]");
-            return;
-        }
-        if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
-            _log.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourcePath() );
+        if (pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS) {
+            _log.error("Inconsistent message {} received form {}",
+                       pnfsMessage.getClass(), message.getSourcePath());
         }
 
         long duration = System.currentTimeMillis() - ctime;
         _gauges.update(pnfsMessage.getClass(), duration);
-        String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
-        if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold) {
-            _log.warn(logMsg);
+        if (_logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold) {
+            _log.warn("{} processed in {} ms", pnfsMessage.getClass(), duration);
         } else {
-            _log.info(logMsg);
+            _log.info("{} processed in {} ms", pnfsMessage.getClass(), duration);
         }
 
-
-        if (! pnfsMessage.getReplyRequired() ){
-            return;
+        if (pnfsMessage.getReplyRequired()) {
+            message.revertDirection();
+            sendMessage(message);
         }
-        message.revertDirection();
-        sendMessage(message);
+    }
+
+    @Transactional
+    private boolean processMessageTransactionally(CellMessage message, PnfsMessage pnfsMessage)
+    {
+        if (pnfsMessage instanceof PnfsAddCacheLocationMessage) {
+            addCacheLocation((PnfsAddCacheLocationMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsClearCacheLocationMessage) {
+            clearCacheLocation((PnfsClearCacheLocationMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsGetCacheLocationsMessage) {
+            getCacheLocations((PnfsGetCacheLocationsMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsCreateSymLinkMessage) {
+            createLink((PnfsCreateSymLinkMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsCreateDirectoryMessage) {
+            createDirectory((PnfsCreateDirectoryMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsCreateEntryMessage) {
+            createEntry((PnfsCreateEntryMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsCreateUploadPath) {
+            createUploadPath((PnfsCreateUploadPath) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsCommitUpload) {
+            commitUpload((PnfsCommitUpload) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsCancelUpload) {
+            cancelUpload((PnfsCancelUpload) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsDeleteEntryMessage) {
+            deleteEntry((PnfsDeleteEntryMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsMapPathMessage) {
+            mapPath((PnfsMapPathMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsRenameMessage) {
+            rename((PnfsRenameMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsFlagMessage) {
+            updateFlag((PnfsFlagMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsSetChecksumMessage) {
+            setChecksum((PnfsSetChecksumMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PoolFileFlushedMessage) {
+            processFlushMessage(message, (PoolFileFlushedMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsGetParentMessage) {
+            getParent((PnfsGetParentMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsListDirectoryMessage) {
+            listDirectory(message, (PnfsListDirectoryMessage) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsGetFileAttributes) {
+            getFileAttributes((PnfsGetFileAttributes) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsSetFileAttributes) {
+            setFileAttributes((PnfsSetFileAttributes) pnfsMessage);
+        } else if (pnfsMessage instanceof PnfsRemoveChecksumMessage) {
+            removeChecksum((PnfsRemoveChecksumMessage) pnfsMessage);
+        } else {
+            _log.warn("Unexpected message class [{}] from source [{}]",
+                      pnfsMessage.getClass(), message.getSourcePath());
+            return false;
+        }
+        return true;
     }
 
     public void processFlushMessage(CellMessage envelope, PoolFileFlushedMessage pnfsMessage)

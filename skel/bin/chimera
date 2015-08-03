@@ -7,7 +7,8 @@ lib="$(getProperty dcache.paths.share.lib)"
 
 classpath=$(printLimitedClassPath chimera HikariCP javassist \
     guava jline common-cli dcache-common acl-vehicles acl \
-    slf4j-api logback-classic logback-core logback-console-config \
+    slf4j-api logback-classic logback-core logback-console-config jcl-over-slf4j \
+    spring-core spring-beans spring-jdbc spring-tx \
     $(getProperty chimera.db.jar))
 
 CLASSPATH="$classpath" quickJava -Dlog=${DCACHE_LOG:-warn} \

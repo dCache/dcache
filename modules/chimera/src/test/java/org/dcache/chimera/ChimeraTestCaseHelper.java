@@ -9,6 +9,8 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.After;
 import org.junit.Before;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -47,7 +49,8 @@ public abstract class ChimeraTestCaseHelper {
             liquibase.update("");
         }
 
-        _fs = new JdbcFs(_dataSource, dbProperties.getProperty("chimera.db.dialect"));
+        PlatformTransactionManager txManager =  new DataSourceTransactionManager(_dataSource);
+        _fs = new JdbcFs(_dataSource, txManager, dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
     }
 

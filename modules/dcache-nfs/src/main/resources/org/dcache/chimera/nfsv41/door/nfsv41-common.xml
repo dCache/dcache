@@ -79,6 +79,11 @@
         </constructor-arg>
     </bean>
 
+    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
     <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
         <description>Database schema manager</description>
         <property name="dataSource" ref="dataSource"/>
@@ -90,6 +95,7 @@
             depends-on="liquibase">
         <description>Chimera Filesystem</description>
         <constructor-arg ref="dataSource" />
+        <constructor-arg ref="tx-manager" />
         <constructor-arg value="${nfs.db.dialect}" />
         <property name="pnfsHandler" ref="pnfs"/>
         <property name="poolManagerStub" ref="poolManagerStub"/>

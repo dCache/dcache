@@ -20,11 +20,11 @@ package org.dcache.chimera;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.zaxxer.hikari.HikariDataSource;
-
-import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -53,7 +53,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.auth.Subjects;
 import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
-import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.namespace.PosixPermissionHandler;
@@ -131,6 +130,7 @@ public class PerformanceTest extends Thread
         }
     }
 
+    private static TransactionTemplate tx;
     private static ChimeraNameSpaceProvider provider;
     private static BlockingQueue<String> queue;
     private static List<Operation> ops;
@@ -199,7 +199,8 @@ public class PerformanceTest extends Thread
          */
         System.out.println("Starting chimera... ");
         HikariDataSource dataSource = FsFactory.getDataSource(jdbc, user, password);
-        FileSystemProvider fileSystem = new JdbcFs(dataSource, dialect);
+        PlatformTransactionManager txManager = new DataSourceTransactionManager(dataSource);
+        FileSystemProvider fileSystem = new JdbcFs(dataSource, txManager, dialect);
         provider = new ChimeraNameSpaceProvider();
         provider.setAclEnabled(false);
         provider.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY,
@@ -209,6 +210,7 @@ public class PerformanceTest extends Thread
         provider.setPermissionHandler(new PosixPermissionHandler());
         provider.setUploadDirectory("/upload");
         provider.setVerifyAllLookups(true);
+        tx = new TransactionTemplate(txManager);
 
         /* Read paths.
          */
@@ -257,7 +259,7 @@ public class PerformanceTest extends Thread
         return provider.pathToPnfsid(Subjects.ROOT, path, true);
     }
 
-    private void processOperation(Operation aOp, String path) throws URISyntaxException
+    private void processOperation(Operation aOp, String path)
     {
         try {
             FileAttributes fileAttributes;
@@ -335,22 +337,28 @@ public class PerformanceTest extends Thread
             }
         } catch (CacheException e) {
             System.err.println("Exception " + aOp.getUserInput() + " :" + e.getMessage());
+        } catch (URISyntaxException e) {
+            Throwables.propagate(e);
         }
     }
 
     @Override
     public void run()
     {
-        try {
-            String path;
-            while ((path = queue.poll()) != null) {
-                for (Operation aOp : ops) {
-                    processOperation(aOp, path);
-                }
-            }
-        } catch (URISyntaxException e) {
-            Throwables.propagate(e);
+        String path;
+        while ((path = queue.poll()) != null) {
+            processOperation(path);
         }
+    }
+
+    private void processOperation(String path)
+    {
+        tx.execute(status -> {
+            for (Operation aOp : ops) {
+                processOperation(aOp, path);
+            }
+            return null;
+        });
     }
 
     private static class ProgressTask implements Runnable

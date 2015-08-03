@@ -7,6 +7,8 @@ import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.resource.ClassLoaderResourceAccessor;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.File;
 import java.io.InputStream;
@@ -24,7 +26,6 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HFile;
-import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.pool.repository.FileStore;
 
@@ -57,7 +58,8 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
                     new ClassLoaderResourceAccessor(), database);
             liquibase.update("");
         }
-        _fs = new JdbcFs(_dataSource, dbProperties.getProperty("chimera.db.dialect"));
+        PlatformTransactionManager txManager =  new DataSourceTransactionManager(_dataSource);
+        _fs = new JdbcFs(_dataSource, txManager, dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
     }
 
@@ -115,7 +117,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
                 entries.add( new PnfsId(entry) );
             }
 
-        } catch (IOHimeraFsException e) {
+        } catch (ChimeraFsException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }

@@ -19,12 +19,7 @@ package org.dcache.chimera;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.dcache.commons.util.SqlHelper;
+import javax.sql.DataSource;
 
 /**
  * Oracle specific SQL driver
@@ -39,7 +34,8 @@ class OracleFsSqlDriver extends FsSqlDriver {
      *  this is a utility class which is issues SQL queries on database
      *
      */
-    protected OracleFsSqlDriver() {
+    protected OracleFsSqlDriver(DataSource dataSource) {
+        super(dataSource);
         _log.info("Running Oracle specific Driver");
     }
     private static final String sqlInode2Path = "SELECT iname, LEVEL AS deep FROM (SELECT * FROM  t_dirs WHERE iname !='.' AND iname !='..') start with ipnfsid=? CONNECT BY  ipnfsid = PRIOR iparent ORDER BY deep DESC";
@@ -49,37 +45,19 @@ class OracleFsSqlDriver extends FsSqlDriver {
      * return the path associated with inode, starting from root of the tree.
      * in case of hard link, one of the possible paths is returned
      *
-     * @param dbConnection
      * @param inode
-     * @throws SQLException
      * @return
      */
     @Override
-    String inode2path(Connection dbConnection, FsInode inode, FsInode startFrom, boolean inclusive) throws SQLException {
-
-        String path = null;
-        PreparedStatement ps = null;
-        ResultSet result = null;
-
-        try {
-
-            ps = dbConnection.prepareStatement(sqlInode2Path);
-            ps.setString(1, inode.toString());
-
-            result = ps.executeQuery();
-
-            StringBuilder sb = new StringBuilder();
-            while (result.next()) {
-                sb.append("/").append(result.getString("iname"));
-            }
-
-            path = sb.toString();
-
-        } finally {
-            SqlHelper.tryToClose(result);
-            SqlHelper.tryToClose(ps);
-        }
-
-        return path;
+    String inode2path(FsInode inode, FsInode startFrom) {
+        return _jdbc.query(sqlInode2Path,
+                           rs -> {
+                               StringBuilder sb = new StringBuilder();
+                               while (rs.next()) {
+                                   sb.append("/").append(rs.getString("iname"));
+                               }
+                               return sb.toString();
+                           },
+                           inode.toString());
     }
 }

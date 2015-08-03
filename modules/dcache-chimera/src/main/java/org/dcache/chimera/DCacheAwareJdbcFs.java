@@ -59,6 +59,8 @@ documents or software obtained from this server.
  */
 package org.dcache.chimera;
 
+import org.springframework.transaction.PlatformTransactionManager;
+
 import javax.sql.DataSource;
 
 import java.net.InetSocketAddress;
@@ -93,12 +95,12 @@ public class DCacheAwareJdbcFs extends JdbcFs {
     private CellStub pinManagerStub;
     private PnfsHandler pnfsHandler;
 
-    public DCacheAwareJdbcFs(DataSource dataSource, String dialect) {
-        super(dataSource, dialect);
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect) {
+        super(dataSource, txManager, dialect);
     }
 
-    public DCacheAwareJdbcFs(DataSource dataSource, String dialect, int id) {
-        super(dataSource, dialect, id);
+    public DCacheAwareJdbcFs(DataSource dataSource, PlatformTransactionManager txManager, String dialect, int id) {
+        super(dataSource, txManager, dialect, id);
     }
 
     public void setPnfsHandler(PnfsHandler pnfsHandler) {

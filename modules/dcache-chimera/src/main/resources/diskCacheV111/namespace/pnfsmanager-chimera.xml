@@ -61,6 +61,15 @@
         </constructor-arg>
     </bean>
 
+    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <description>Database transaction manager</description>
+        <property name="dataSource" ref="data-source"/>
+    </bean>
+
+    <bean class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+        <property name="transactionManager" ref="tx-manager"/>
+    </bean>
+
   <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
       <description>Database schema manager</description>
       <property name="dataSource" ref="data-source"/>
@@ -70,6 +79,7 @@
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
       <constructor-arg ref="data-source"/>
+      <constructor-arg ref="tx-manager"/>
       <constructor-arg value="${pnfsmanager.db.dialect}"/>
   </bean>
 

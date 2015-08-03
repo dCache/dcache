@@ -18,6 +18,8 @@ package org.dcache.chimera;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
 
@@ -27,8 +29,9 @@ public class FsFactory
 {
     public static FileSystemProvider createFileSystem(String url, String user, String password, String dialect)
     {
-        AlarmEnabledDataSource  dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
-        return new JdbcFs(dataSource, dialect) {
+        AlarmEnabledDataSource dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
+        PlatformTransactionManager txManager =  new DataSourceTransactionManager(dataSource);
+        return new JdbcFs(dataSource, txManager, dialect) {
             @Override
             public void close() throws IOException
             {

@@ -31,6 +31,10 @@
         <artifactId>postgresql</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.dcache</groupId>
       <artifactId>dcache-common</artifactId>
       <version>${project.version}</version>
@@ -49,6 +53,11 @@
         <groupId>org.liquibase</groupId>
         <artifactId>liquibase-core</artifactId>
         <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>com.mattbertolini</groupId>

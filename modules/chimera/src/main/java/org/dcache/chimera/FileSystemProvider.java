@@ -82,7 +82,7 @@ public interface FileSystemProvider extends Closeable {
 
     String[] listDir(String dir);
 
-    String[] listDir(FsInode dir) throws IOHimeraFsException;
+    String[] listDir(FsInode dir) throws ChimeraFsException;
 
     public abstract DirectoryStreamB<HimeraDirectoryEntry> newDirectoryStream(FsInode dir)
             throws ChimeraFsException;
@@ -152,8 +152,7 @@ public interface FileSystemProvider extends Closeable {
      * @return path of inode starting from startFrom
      * @throws ChimeraFsException
      */
-    public abstract String inode2path(FsInode inode, FsInode startFrom,
-            boolean inclusive) throws ChimeraFsException;
+    public abstract String inode2path(FsInode inode, FsInode startFrom) throws ChimeraFsException;
 
     public abstract boolean isIoEnabled(FsInode inode)
             throws ChimeraFsException;

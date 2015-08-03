@@ -3,6 +3,7 @@
 <aspectj>
     <weaver>
         <include within="diskCacheV111.services.space.*"/>
+        <include within="diskCacheV111.namespace.*"/>
         <include within="org.dcache.pinmanager.*"/>
         <include within="org.dcache.util.aspects.*"/>
         <include within="org.eclipse.jetty.server.HttpConnection"/>

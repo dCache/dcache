@@ -19,8 +19,7 @@ package org.dcache.chimera;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
 
 /**
@@ -34,12 +33,13 @@ class DB2FsSqlDriver extends FsSqlDriver {
      *  this is a utility class which issues SQL queries on database
      *
      */
-    protected DB2FsSqlDriver() {
+    protected DB2FsSqlDriver(DataSource dataSource) {
+        super(dataSource);
         _log.info("Running DB2 specific Driver");
     }
 
     @Override
-    void copyTags(Connection dbConnection, FsInode orign, FsInode destination) throws SQLException {
+    void copyTags(FsInode orign, FsInode destination) {
         // TODO: db2 needs some other solution
     }
 }

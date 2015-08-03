@@ -16,11 +16,9 @@
  */
 package org.dcache.chimera;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
-import org.dcache.commons.util.SqlHelper;
+import java.sql.SQLException;
 
 
 /**
@@ -28,43 +26,25 @@ import org.dcache.commons.util.SqlHelper;
  */
 public class H2FsSqlDriver extends FsSqlDriver {
 
+    protected H2FsSqlDriver(DataSource dataSource)
+    {
+        super(dataSource);
+    }
 
     /**
      * copy all directory tags from origin directory to destination. New copy marked as inherited.
      *
-     * @param dbConnection
      * @param orign
      * @param destination
-     * @throws SQLException
      */
     @Override
-    void copyTags(Connection dbConnection, FsInode orign, FsInode destination) throws SQLException {
-
-
-        String sqlCopyTag = "INSERT INTO t_tags ( SELECT '" + destination.toString() + "' , itagname, itagid, 0 from t_tags WHERE ipnfsid=?)";
-
-        PreparedStatement stCopyTags = null;
-        try {
-
-
-            stCopyTags = dbConnection.prepareStatement(sqlCopyTag);
-            stCopyTags.setString(1, orign.toString());
-            stCopyTags.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(stCopyTags);
-        }
-
-    }
-
-    @Override
-    public boolean isDuplicatedKeyError(SQLException e) {
-        return "23505".equals(e.getSQLState());
+    void copyTags(FsInode orign, FsInode destination) {
+        _jdbc.update("INSERT INTO t_tags ( SELECT '" + destination.toString() + "' , itagname, itagid, 0 from t_tags WHERE ipnfsid=?)",
+                     orign.toString());
     }
 
     @Override
     public boolean isForeignKeyError(SQLException e) {
         return "23506".endsWith(e.getSQLState());
     }
-
 }

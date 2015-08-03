@@ -18,21 +18,11 @@ package org.dcache.chimera;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.sql.DataSource;
+
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import org.dcache.acl.ACE;
-import org.dcache.chimera.posix.Stat;
-import org.dcache.commons.util.SqlHelper;
 
 /**
  * PostgreSQL 9.5 and later specific
@@ -50,73 +40,50 @@ class PgSQL95FsSqlDriver extends PgSQLFsSqlDriver {
      *  this is a utility class which is issues SQL queries on database
      *
      */
-    protected PgSQL95FsSqlDriver() {
+    protected PgSQL95FsSqlDriver(DataSource dataSource) {
+        super(dataSource);
         _log.info("Running PostgreSQL >= 9.5 specific Driver");
     }
 
 
-    private static final String sqlCreateEntryInParent = "INSERT INTO t_dirs VALUES(?,?,?) " +
-            "ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING";
-
     @Override
-    void createEntryInParent(Connection dbConnection, FsInode parent, String name, FsInode inode) throws SQLException {
-        PreparedStatement stInserIntoParent = null;
-        try {
-
-            stInserIntoParent = dbConnection.prepareStatement(sqlCreateEntryInParent);
-            stInserIntoParent.setString(1, parent.toString());
-            stInserIntoParent.setString(2, name);
-            stInserIntoParent.setString(3, inode.toString());
-            int n = stInserIntoParent.executeUpdate();
-            if (n == 0) {
-                /*
-                 * no updates as such entry already exists.
-                 * To be compatible with others, throw corresponding
-                 * SQL exception.
-                 */
-                throw new SQLException("Entry already exists", DUPLICATE_KEY_ERROR);
-            }
-
-        } finally {
-            SqlHelper.tryToClose(stInserIntoParent);
+    void createEntryInParent(FsInode parent, String name, FsInode inode) {
+        int n = _jdbc.update("INSERT INTO t_dirs VALUES(?,?,?) ON CONFLICT ON CONSTRAINT t_dirs_pkey DO NOTHING",
+                             ps -> {
+                                 ps.setString(1, parent.toString());
+                                 ps.setString(2, name);
+                                 ps.setString(3, inode.toString());
+                             });
+        if (n == 0) {
+            /*
+             * no updates as such entry already exists.
+             * To be compatible with others, throw corresponding
+             * DataAccessException.
+             */
+            throw new DuplicateKeyException("Entry already exists");
         }
     }
-
-    private static final String sqlAddInodeLocation = "INSERT INTO t_locationinfo VALUES(?,?,?,?,?,?,?) " +
-            "ON CONFLICT ON CONSTRAINT t_locationinfo_pkey DO NOTHING";
 
     /**
       *
       * adds a new location for the inode
       *
-      *
-      * @param dbConnection
       * @param inode
       * @param type
       * @param location
-      * @throws SQLException
       */
-    void addInodeLocation(Connection dbConnection, FsInode inode, int type, String location) throws
-                                                                                             SQLException {
-        PreparedStatement stAddInodeLocation = null; // add a new  location in the storage system for the inode
-        try {
-
-            stAddInodeLocation = dbConnection.prepareStatement(sqlAddInodeLocation);
-
-            Timestamp now = new Timestamp(System.currentTimeMillis());
-            stAddInodeLocation.setString(1, inode.toString());
-            stAddInodeLocation.setInt(2, type);
-            stAddInodeLocation.setString(3, location);
-            stAddInodeLocation.setInt(4, 10); // default priority
-            stAddInodeLocation.setTimestamp(5, now);
-            stAddInodeLocation.setTimestamp(6, now);
-            stAddInodeLocation.setInt(7, 1); // online
-
-            stAddInodeLocation.executeUpdate();
-
-        } finally {
-            SqlHelper.tryToClose(stAddInodeLocation);
-        }
+    void addInodeLocation(FsInode inode, int type, String location) {
+        _jdbc.update("INSERT INTO t_locationinfo VALUES(?,?,?,?,?,?,?) " +
+                     "ON CONFLICT ON CONSTRAINT t_locationinfo_pkey DO NOTHING",
+                     ps -> {
+                         Timestamp now = new Timestamp(System.currentTimeMillis());
+                         ps.setString(1, inode.toString());
+                         ps.setInt(2, type);
+                         ps.setString(3, location);
+                         ps.setInt(4, 10); // default priority
+                         ps.setTimestamp(5, now);
+                         ps.setTimestamp(6, now);
+                         ps.setInt(7, 1); // online
+                     });
     }
-
 }
