@@ -3,44 +3,9 @@ package dmg.cells.nucleus ;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
-import java.io.Reader;
-import java.io.Serializable;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.SortedSet;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
-import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import dmg.cells.network.PingMessage;
+
 import dmg.util.BufferedLineWriter;
 import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
@@ -58,9 +23,50 @@ import dmg.util.Slf4jErrorWriter;
 import dmg.util.Slf4jInfoWriter;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.DelayedCommand;
 import dmg.util.command.Option;
 
 import org.dcache.util.Args;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.SortedSet;
+import java.util.Stack;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
+import java.util.Vector;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 /**
   *
@@ -343,24 +349,36 @@ public class CellShell extends CommandInterpreter
    //
    //  version
    //
-   public static final String hh_version = "[<package>] ; package info of dmg/cells/nucleus" ;
-   public Object ac_version_$_0_1( Args args ){
-      Package p = Package.getPackage( args.argc() == 0 ? "dmg.cells.nucleus" : args.argv(0) );
-      StringBuilder sb = new StringBuilder();
-      if( p != null ){
-          // FIXME: wrong description returned for backwards compatibility.
-          String tmp = p.getImplementationTitle();
-          sb.append("SpecificationTitle:   ").append(tmp==null?"(Unknown)":tmp).append("\n");
-          tmp = p.getImplementationVendor();
-          sb.append("SpecificationVendor:  ").append(tmp==null?"(Unknown)":tmp).append("\n");
-          tmp = p.getImplementationVersion();
-          sb.append("SpecificationVersion: ").append(tmp==null?"(Unknown)":tmp).append("\n");
-      }else{
-          sb.append("No version version found");
-      }
-      return sb.toString() ;
+    @Command(name = "version", hint = "query jar file metadata",
+            description = "Information about the implementation-title, -vendor " +
+                    "and -version, as described within some jar.  The jar file " +
+                    "is the one that provides some specific Java package.  If " +
+                    "the jar file implementation-vendor is 'dCache.org' then the " +
+                    "implementation-version is the dCache version.")
+    public class VersionCommand implements Callable<Serializable>
+    {
+        @Argument(required = false,
+                usage = "The package used to select the jar file.")
+        String packageName="dmg.cells.nucleus";
 
-   }
+        @Override
+        public Serializable call()
+        {
+            Package p = Package.getPackage(packageName);
+            StringBuilder sb = new StringBuilder();
+            if( p != null ){
+                String tmp = p.getImplementationTitle();
+                sb.append("ImplementationTitle:   ").append(tmp==null?"(Unknown)":tmp).append("\n");
+                tmp = p.getImplementationVendor();
+                sb.append("ImplementationVendor:  ").append(tmp==null?"(Unknown)":tmp).append("\n");
+                tmp = p.getImplementationVersion();
+                sb.append("ImplementationVersion: ").append(tmp==null?"(Unknown)":tmp).append("\n");
+            }else{
+                sb.append("No information found");
+            }
+            return sb.toString() ;
+        }
+    }
    ////////////////////////////////////////////////////////////
    //
    //   getroutes, getcelltunnelinfos, getcellinfos
@@ -840,27 +858,52 @@ public class CellShell extends CommandInterpreter
    //
    //   sleep
    //
-   public static final String hh_sleep = "<secondsToSleep>" ;
-   public String ac_sleep_$_1( Args args ) throws InterruptedException {
-      int s = Integer.parseInt(args.argv(0));
-      Thread.sleep( s*1000) ;
-      return "Ready\n" ;
 
-   }
-
-    @Command(name = "ping")
-    class Pingcommand extends DelayedReply implements Callable<Pingcommand>
+    @Command(name = "sleep", hint = "wait for a period of time",
+            description = "Wait for the specified duration of time then " +
+                    "return 'Ready'.")
+    public class SleepCommand extends DelayedCommand<String>
     {
-        @Argument(index = 0, metaVar = "destinationCell")
-        CellPath destination;
+        @Argument(metaVar = "seconds",
+                usage = "The amount of time to be asleep.")
+        int sleepTime;
 
-        @Argument(index = 1, metaVar = "packetSize", required = false)
-        int size;
+        @Override
+        public String execute() throws InterruptedException
+        {
+            Thread.sleep(sleepTime*1000);
+            return "Ready\n";
+        }
+    }
 
-        @Argument(index = 2, metaVar = "numOfPackets", required = false)
+    @Command(name = "ping", hint = "send a message and wait for the reply",
+            description = "A ping message of a default or specified size is send to " +
+                    "the destination cell. The message is processed and a reply is " +
+                    "send back to the sender. This procedure is repeated based on the " +
+                    "number of iterations specified. A timeout message is returned as " +
+                    "a result of the termination of the command. This happens if the " +
+                    "timeout duration elapsed before the command finish its execution. " +
+                    "On a successful run, the number of pings with the time taken will " +
+                    "be printed.\n\n" +
+                    "The ping command can be use to test a connection to a cell, " +
+                    "check the latency of the message system, and to verify " +
+                    "if a cell is up and running.")
+    public class PingCommand extends DelayedReply implements Callable<PingCommand>
+    {
+        @Argument(index = 0,
+                usage = "Name of the cell to be pinged.")
+        CellPath destinationCell;
+
+        @Argument(index = 1, required = false, metaVar = "bytes",
+                usage = "The size of the message to be sent.")
+        int messageSize;
+
+        @Argument(index = 2, required = false,
+                usage = "The number of times the cell should be pinged.")
         int packets = 1;
 
-        @Option(name = "timeout", metaVar = "millis")
+        @Option(name = "timeout", valueSpec = "MILLISECONDS",
+                usage = "The duration of time that ping waits for a reply.")
         int timeout = 1000;
 
         private int count;
@@ -868,7 +911,7 @@ public class CellShell extends CommandInterpreter
         private final Stopwatch sw = Stopwatch.createUnstarted();
 
         @Override
-        public Pingcommand call() throws Exception
+        public PingCommand call() throws Exception
         {
             sw.start();
             ping();
@@ -879,27 +922,27 @@ public class CellShell extends CommandInterpreter
         {
             if (count < packets) {
                 count++;
-                _nucleus.sendMessage(new CellMessage(destination, new PingMessage(size)), true, true,
-                                     new CellMessageAnswerable()
-                                     {
-                                         @Override
-                                         public void answerArrived(CellMessage request, CellMessage answer)
-                                         {
-                                             ping();
-                                         }
+                _nucleus.sendMessage(new CellMessage(destinationCell, new PingMessage(messageSize)), true, true,
+                        new CellMessageAnswerable()
+                        {
+                            @Override
+                            public void answerArrived(CellMessage request, CellMessage answer)
+                            {
+                                ping();
+                            }
 
-                                         @Override
-                                         public void exceptionArrived(CellMessage request, Exception exception)
-                                         {
-                                             reply(exception);
-                                         }
+                            @Override
+                            public void exceptionArrived(CellMessage request, Exception exception)
+                            {
+                                reply(exception);
+                            }
 
-                                         @Override
-                                         public void answerTimedOut(CellMessage request)
-                                         {
-                                             reply("Timeout");
-                                         }
-                                     }, MoreExecutors.directExecutor(), timeout);
+                            @Override
+                            public void answerTimedOut(CellMessage request)
+                            {
+                                reply("Timeout");
+                            }
+                        }, MoreExecutors.directExecutor(), timeout);
             } else {
                 reply(packets + " pings  in " + sw);
             }
@@ -1074,41 +1117,46 @@ public class CellShell extends CommandInterpreter
       return _nucleus.getCellDomainName()+"\n" ;
    }
 
-   public static final String fh_check =
-      " check [-strong] <var1> [<var2> [] ... ]\n"+
-      "        checks if all of the specified variables are set.\n"+
-      "        Returns an error it not.\n"+
-      "        The -strong option requires that all variables must not be\n"+
-      "        the zero string and must not only contain blanks\n" ;
+    @Command(name = "check", hint = "check if variables are defined",
+            description = "Determine if all variables are defined. " +
+                    "An error is return if at least one of the variables " +
+                    "is not defined.")
+    public class CheckCommand implements Callable<String>
+    {
+        @Argument(usage = "One or more variable names to check.")
+        String[] varName;
 
-   public static final String hh_check = "[-strong] <var1> [<var2> [] ... ]" ;
-   public String ac_check_$_1_99( Args args )throws CommandException {
+        @Option(name = "strong",
+                usage = "This returns an error if any of the variables " +
+                        "contain only whitespace.")
+        boolean strong;
 
-      boolean strong = args.hasOption("strong") ;
 
-      String varName;
-      Object value;
-      for( int i= 0 ;i < args.argc() ; i++ ){
-         varName = args.argv(i) ;
-         if( ( value = _environment.get( varName ) ) == null ) {
-             value = _nucleus.getDomainContext().get(varName);
-         }
-         if( value == null ) {
-             throw new
-                     CommandException(1, "variable is not defined : " + varName);
-         }
+        @Override
+        public String call() throws CommandException
+        {
+            Object value;
+            for (String name : varName) {
+                if ((value = _environment.get(name)) == null) {
+                    value = _nucleus.getDomainContext().get(name);
+                }
+                if (value == null) {
+                    throw new
+                            CommandException(1, "variable is not defined : " + name);
+                }
 
-         if( strong ){
-             String strValue = value.toString() ;
-             if( strValue.trim().equals("") ) {
-                 throw new
-                         CommandException(2, "variable is defined but empty : " + varName);
-             }
-         }
-      }
-      return "" ;
+                if (strong) {
+                    String strValue = value.toString();
+                    if (strValue.trim().equals("")) {
+                        throw new
+                                CommandException(2, "variable is defined but empty : " + name);
+                    }
+                }
+            }
+            return "" ;
+        }
+    }
 
-   }
    public static final String fh_import_context =
      "  import  context|env  [options] <variableName>\n" +
      "           options :\n"+
