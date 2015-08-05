@@ -579,6 +579,33 @@ public class BasicTest extends ChimeraTestCaseHelper {
     }
 
     @Test
+    public void testRemoveFileByPath() throws Exception {
+        FsInode file = _rootInode.create("foo", 0, 0, 0644);
+        _fs.remove("/foo");
+        assertEquals(2, _fs.listDir(_rootInode).length);
+    }
+
+    @Test
+    public void testRemoveDirByPath() throws Exception {
+        FsInode foo = _rootInode.mkdir("foo");
+        _fs.remove("/foo");
+        assertEquals(2, _fs.listDir(_rootInode).length);
+    }
+
+    @Test(expected=DirNotEmptyHimeraFsException.class)
+    public void testRemoveNonEmptyDirByPath() throws Exception
+    {
+        FsInode foo = _rootInode.mkdir("foo");
+        FsInode bar = foo.mkdir("bar");
+        _fs.remove("/foo");
+    }
+
+    @Test(expected=InvalidArgumentChimeraException.class)
+    public void testRemoveRootByPath() throws Exception {
+        _fs.remove("/");
+    }
+
+    @Test
     public void testAddLocationForNonexistong() throws Exception {
         FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
         try {

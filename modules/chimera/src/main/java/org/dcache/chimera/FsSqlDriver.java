@@ -16,10 +16,7 @@
  */
 package org.dcache.chimera;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multiset;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
@@ -153,7 +150,7 @@ class FsSqlDriver {
      */
     FsInode createFileWithId(FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) {
         createInode(inode, type, owner, group, mode, 1);
-        createEntryInParent( parent, name, inode);
+        createEntryInParent(parent, name, inode);
         incNlink(parent);
         return inode;
     }
@@ -207,33 +204,38 @@ class FsSqlDriver {
             throw new DirNotEmptyHimeraFsException("directory is not empty");
         }
 
-        if (removeEntryInParent(parent, name)) {
-
-            removeEntryInParent(inode, ".");
-            removeEntryInParent(inode, "..");
+        if (removeEntryInParent(parent, name, inode)) {
+            if (!removeEntryInParent(inode, ".", inode)) {
+                throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '.' in " + inode + ".");
+            }
+            if (!removeEntryInParent(inode, "..", parent)) {
+                throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '..' in " + inode + ".");
+            }
 
             // decrease reference count ( '.' , '..', and in parent directory ,
             // and inode itself)
             decNlink(inode, 2);
             removeTag(inode);
 
-            decNlink(parent);
+            if (!removeInodeIfUnlinked(inode)) {
+                throw new IncorrectUpdateSemanticsDataAccessException(inode + " has non-zero link count.");
+            }
 
-            removeInode(inode);
+            /* During bulk deletion of files in the same directory,
+             * updating the parent inode is often a contention point. The
+             * link count on the parent is updated last to reduce the time
+             * in which the directory inode is locked by the database.
+             */
+            decNlink(parent);
         }
     }
 
     private void removeFile(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
 
-        boolean isLast = inode.stat().getNlink() == 1;
-
-        if (removeEntryInParent(parent, name)) {
-
+        if (removeEntryInParent(parent, name, inode)) {
             decNlink(inode);
 
-            if (isLast) {
-                removeInode(inode);
-            }
+            removeInodeIfUnlinked(inode);
 
             /* During bulk deletion of files in the same directory,
              * updating the parent inode is often a contention point. The
@@ -271,7 +273,7 @@ class FsSqlDriver {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("DELETE FROM t_dirs WHERE ipnfsid=?", parents.size(), n);
         }
 
-        removeInode(inode);
+        removeInodeIfUnlinked(inode);
     }
 
     public Stat stat(FsInode inode) {
@@ -514,7 +516,7 @@ class FsSqlDriver {
         return new FsInode(inode.getFs(), inode.toString(), level);
     }
 
-    boolean removeInode(FsInode inode) {
+    boolean removeInodeIfUnlinked(FsInode inode) {
         return _jdbc.update("DELETE FROM t_inodes WHERE ipnfsid=? AND inlink = 0", inode.toString()) > 0;
     }
 
@@ -594,16 +596,9 @@ class FsSqlDriver {
                      });
     }
 
-    void removeEntryInParentByID(FsInode parent, FsInode inode) {
-        _jdbc.update("DELETE FROM t_dirs WHERE ipnfsid=? AND iparent=?",
-                     ps -> {
-                         ps.setString(1, inode.toString());
-                         ps.setString(2, parent.toString());
-                     });
-    }
-
-    boolean removeEntryInParent(FsInode parent, String name) {
-        return _jdbc.update("DELETE FROM t_dirs WHERE iname=? AND iparent=?", name, parent.toString()) > 0;
+    boolean removeEntryInParent(FsInode parent, String name, FsInode inode) {
+        return _jdbc.update("DELETE FROM t_dirs WHERE iname=? AND iparent=? AND ipnfsid=?",
+                            name, parent.toString(), inode.toString()) > 0;
     }
 
     /**

@@ -421,13 +421,13 @@ public class JdbcFs implements FileSystemProvider {
 
         String parentPath = filePath.getParent();
         if (parentPath == null) {
-            throw new ChimeraFsException("Cannot delete file system root.");
+            throw new InvalidArgumentChimeraException("Cannot delete file system root.");
         }
 
         inTransaction(status -> {
             FsInode parent = path2inode(parentPath);
             String name = filePath.getName();
-            remove(parent, name);
+            _sqlDriver.remove(parent, name);
             return null;
         });
     }
