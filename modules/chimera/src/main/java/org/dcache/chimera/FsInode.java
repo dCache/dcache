@@ -282,17 +282,14 @@ public class FsInode {
      * @throws FileNotFoundHimeraFsException
      */
     public Stat statCache() throws ChimeraFsException {
-        if (_stat == null) {
-            _stat = this.stat();
-        }
-
-        return _stat;
+        return (_stat == null) ? stat() : _stat;
     }
 
     public int write(long pos, byte[] data, int offset, int len) {
         int ret = -1;
         try {
             ret = _fs.write(this, _level, pos, data, offset, len);
+            _stat = null;
         } catch (ChimeraFsException e) {
         }
         return ret;
@@ -311,14 +308,18 @@ public class FsInode {
      * crate a directory with name 'newDir' in current inode
      */
     public FsInode mkdir(String newDir) throws ChimeraFsException {
-        return _fs.mkdir(this, newDir);
+        FsInode dir = _fs.mkdir(this, newDir);
+        _stat = null;
+        return dir;
     }
 
     /**
      * crate a directory with name 'newDir' in current inode with different access rights
      */
     public FsInode mkdir(String name, int owner, int group, int mode) throws ChimeraFsException {
-        return _fs.mkdir(this, name, owner, group, mode);
+        FsInode dir = _fs.mkdir(this, name, owner, group, mode);
+        _stat = null;
+        return dir;
     }
 
     /**
@@ -326,7 +327,9 @@ public class FsInode {
      */
     public FsInode mkdir(String name, int owner, int group, int mode, List<ACE> acl, Map<String, byte[]> tags)
             throws ChimeraFsException {
-        return _fs.mkdir(this, name, owner, group, mode, acl, tags);
+        FsInode dir = _fs.mkdir(this, name, owner, group, mode, acl, tags);
+        _stat = null;
+        return dir;
     }
 
     /**
@@ -340,7 +343,9 @@ public class FsInode {
      * create new file in the current directory with name 'name'
      */
     public FsInode create(String name, int uid, int gid, int mode) throws ChimeraFsException {
-        return _fs.createFile(this, name, uid, gid, mode);
+        FsInode file = _fs.createFile(this, name, uid, gid, mode);
+        _stat = null;
+        return file;
     }
 
     /**
@@ -351,7 +356,9 @@ public class FsInode {
         if (!this.isDirectory()) {
             throw new NotDirChimeraException(this);
         }
-        return _fs.createLink(this, name, uid, gid, mode, dest);
+        FsInode link = _fs.createLink(this, name, uid, gid, mode, dest);
+        _stat = null;
+        return link;
     }
 
     /**
@@ -366,7 +373,7 @@ public class FsInode {
         boolean rc = false;
 
         try {
-            _stat = this.statCache();
+            statCache();
             rc = true;
         } catch (FileNotFoundHimeraFsException hfe) {
         }
@@ -417,6 +424,7 @@ public class FsInode {
         }
 
         _fs.remove(this, name);
+        _stat = null;
     }
 
     public int fsId() {
