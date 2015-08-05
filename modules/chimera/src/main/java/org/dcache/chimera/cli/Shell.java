@@ -548,7 +548,6 @@ public class Shell extends ShellApplication
                 throw new ChimeraFsException(path + " is a directory");
             }
 
-            // NB remove based on path to handle hard links correctly.
             if (path.isAbsolute()) {
                 fs.remove(path.toString());
             } else {

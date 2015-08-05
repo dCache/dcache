@@ -16,13 +16,18 @@
  */
 package org.dcache.chimera;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multiset;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.IncorrectUpdateSemanticsDataAccessException;
+import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.LobRetrievalFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
@@ -126,7 +131,6 @@ class FsSqlDriver {
      * @param group
      * @param mode
      * @param type
-     * @throws ChimeraFsException
      * @return
      */
     FsInode createFile(FsInode parent, String name, int owner, int group, int mode, int type) {
@@ -240,29 +244,32 @@ class FsSqlDriver {
         }
     }
 
-    void remove(FsInode parent, FsInode inode) throws ChimeraFsException {
-
+    void remove(FsInode inode) {
         if (inode.isDirectory()) {
-
-            Stat dirStat = inode.statCache();
-            if (dirStat.getNlink() > 2) {
-                throw new DirNotEmptyHimeraFsException("directory is not empty");
+            int n = _jdbc.update("DELETE FROM t_dirs WHERE iname IN ('.', '..') AND iparent=?", inode.toString());
+            if (n != 2) {
+                throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("DELETE FROM t_dirs WHERE iname IN ('.', '..') AND iparent=?", 2, n);
             }
-            removeEntryInParent(inode, ".");
-            removeEntryInParent(inode, "..");
-            // decrease reference count ( '.' , '..', and in parent directory ,
-            // and inode itself)
-            decNlink(inode, 2);
             removeTag(inode);
-
-        } else {
-            decNlink(inode);
         }
 
-        removeEntryInParentByID(parent, inode);
-        decNlink(parent);
+        /* Updating the inode effectively blocks anybody else from changing it and thus also from
+         * adding more links.
+         */
+        _jdbc.update("UPDATE t_inodes SET inlink=0 WHERE ipnfsid=?", inode.toString());
 
-        removeStorageInfo(inode);
+        /* Remove all hard-links. */
+        List<String> parents =
+                _jdbc.queryForList(
+                        "SELECT iparent FROM t_dirs WHERE ipnfsid=? AND iname NOT IN ('.', '..')",
+                        String.class, inode.toString());
+        for (String parent : parents) {
+            decNlink(new FsInode(inode.getFs(), parent));
+        }
+        int n = _jdbc.update("DELETE FROM t_dirs WHERE ipnfsid=? AND iname NOT IN ('.', '..')", inode.toString());
+        if (n != parents.size()) {
+            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("DELETE FROM t_dirs WHERE ipnfsid=?", parents.size(), n);
+        }
 
         removeInode(inode);
     }

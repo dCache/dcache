@@ -450,7 +450,7 @@ public class PnfsManagerV3
             attributes.setMode(Integer.parseInt(args.argv(3), 8));
 
             _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
-                    EnumSet.noneOf(FileAttribute.class));
+                                                 EnumSet.noneOf(FileAttribute.class));
 
             return "Ok";
         }catch(Exception e) {

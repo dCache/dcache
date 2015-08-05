@@ -443,17 +443,20 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void remove(FsInode inode) throws ChimeraFsException {
         inTransaction(status -> {
-            FsInode parent = inode.getParent();
-            if (parent == null) {
-                throw new FileNotFoundHimeraFsException("No such file.");
-            }
-
             if (inode.type() != FsInodeType.INODE) {
                 // now allowed
-                throw new FileNotFoundHimeraFsException("Not a file.");
+                throw new InvalidArgumentChimeraException("Not a file.");
             }
-
-            _sqlDriver.remove(parent, inode);
+            if (inode.equals(_rootInode)) {
+                throw new InvalidArgumentChimeraException("Cannot delete file system root.");
+            }
+            if (!inode.exists()) {
+                throw new FileNotFoundHimeraFsException("No such file.");
+            }
+            if (inode.isDirectory() && inode.statCache().getNlink() > 2) {
+                throw new DirNotEmptyHimeraFsException("Directory is not empty");
+            }
+            _sqlDriver.remove(inode);
             return null;
         });
     }

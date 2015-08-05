@@ -453,9 +453,11 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1, base.stat().getNlink());
+        assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1,
+                     base.stat().getNlink());
         assertEquals("link count of destination directory should increase on move in", preStatBase2.getNlink() + 1, base2.stat().getNlink());
-        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(),
+                     fileInode.stat().getNlink());
 
     }
 
@@ -474,7 +476,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
-        assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1, base.stat().getNlink());
+        assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1,
+                     base.stat().getNlink());
         assertEquals("link count of destination directory should not be modified on replace", preStatBase2.getNlink(), base2.stat().getNlink());
         assertEquals("link count of file shold not be modified on move", preStatFile.getNlink(), fileInode.stat().getNlink());
 
@@ -496,7 +499,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         assertFalse("rename of hardlink to itself should do nothing", ok);
         assertEquals("link count of base directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
-        assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
+        assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(),
+                     fileInode.stat().getNlink());
 
     }
 
@@ -516,15 +520,54 @@ public class BasicTest extends ChimeraTestCaseHelper {
         boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
 
         assertFalse("rename of hardlink to itself should do nothing", ok);
-        assertEquals("link count of source directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
+        assertEquals("link count of source directory should not be modified in case of rename", preStatBase.getNlink(),
+                     base.stat().getNlink());
         assertEquals("link count of destination directory should not be modified in case of rename", preStatBase2.getNlink(), base2.stat().getNlink());
         assertEquals("link count of file should not be modified in case of rename", preStatFile.getNlink(), fileInode.stat().getNlink());
 
     }
 
+    @Test
+    public void testRemoveFileById() throws Exception
+    {
+        FsInode file = _rootInode.create("foo", 0, 0, 0644);
+        _fs.remove(file);
+        assertEquals(2, _fs.listDir(_rootInode).length);
+    }
+
+    @Test
+    public void testRemoveSeveralHardlinksById() throws Exception
+    {
+        FsInode file = _rootInode.create("foo", 0, 0, 0644);
+        _fs.createHLink(_rootInode, file, "bar");
+        _fs.remove(file);
+        assertEquals(2, _fs.listDir(_rootInode).length);
+        assertEquals(2, _rootInode.stat().getNlink());
+    }
+
+    @Test
+    public void testRemoveDirById() throws Exception
+    {
+        FsInode foo = _rootInode.mkdir("foo");
+        _fs.remove(foo);
+        assertEquals(2, _fs.listDir(_rootInode).length);
+    }
+
+    @Test(expected=DirNotEmptyHimeraFsException.class)
+    public void testRemoveNonEmptyDirById() throws Exception
+    {
+        FsInode foo = _rootInode.mkdir("foo");
+        FsInode bar = foo.mkdir("bar");
+        _fs.remove(foo);
+    }
+
+    @Test(expected=InvalidArgumentChimeraException.class)
+    public void testRemoveRootById() throws Exception {
+        _fs.remove(_rootInode);
+    }
+
     @Test(expected=FileNotFoundHimeraFsException.class)
     public void testRemoveNonexistgById() throws Exception {
-
         FsInode inode = new FsInode(_fs, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
         _fs.remove(inode);
     }
