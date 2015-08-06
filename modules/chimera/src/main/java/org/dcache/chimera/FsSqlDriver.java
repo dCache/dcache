@@ -179,71 +179,68 @@ class FsSqlDriver {
         return new DirectoryStreamImpl(dir, _jdbc);
     }
 
-    void remove(FsInode parent, String name) throws ChimeraFsException {
-
+    /**
+     * Removes the hard link {@code name} in {@code parent} to {@code inode}. If the
+     * last link is removed the object is deleted.
+     *
+     * @return true if removed, false if the link did not exist.
+     */
+    boolean remove(FsInode parent, String name, FsInode inode) throws ChimeraFsException {
+        if (inode.type() != FsInodeType.INODE) {
+            throw new InvalidArgumentChimeraException("Not a file.");
+        }
         if (name.equals("..") || name.equals(".")) {
             throw new InvalidNameChimeraException("bad name: '" + name + "'");
         }
-
-        FsInode inode = inodeOf(parent, name);
-        if (inode == null || inode.type() != FsInodeType.INODE) {
-            throw new FileNotFoundHimeraFsException("Not a file.");
-        }
-
-        if (inode.isDirectory()) {
-            removeDir(parent, inode, name);
-        } else {
-            removeFile(parent, inode, name);
-        }
+        return inode.isDirectory() ? removeDir(parent, inode, name) : removeFile(parent, inode, name);
     }
 
-    private void removeDir(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
+    private boolean removeDir(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
+        if (!removeEntryInParent(parent, name, inode)) {
+            return false;
+        }
+        if (!removeEntryInParent(inode, ".", inode)) {
+            throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '.' in " + inode + ".");
+        }
+        if (!removeEntryInParent(inode, "..", parent)) {
+            throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '..' in " + inode + ".");
+        }
 
-        Stat dirStat = inode.statCache();
-        if (dirStat.getNlink() > 2) {
+        // decrease reference count ( '.' , '..', and in parent directory ,
+        // and inode itself)
+        decNlink(inode, 2);
+        removeTag(inode);
+
+        if (!removeInodeIfUnlinked(inode)) {
             throw new DirNotEmptyHimeraFsException("directory is not empty");
         }
 
-        if (removeEntryInParent(parent, name, inode)) {
-            if (!removeEntryInParent(inode, ".", inode)) {
-                throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '.' in " + inode + ".");
-            }
-            if (!removeEntryInParent(inode, "..", parent)) {
-                throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '..' in " + inode + ".");
-            }
+        /* During bulk deletion of files in the same directory,
+         * updating the parent inode is often a contention point. The
+         * link count on the parent is updated last to reduce the time
+         * in which the directory inode is locked by the database.
+         */
+        decNlink(parent);
 
-            // decrease reference count ( '.' , '..', and in parent directory ,
-            // and inode itself)
-            decNlink(inode, 2);
-            removeTag(inode);
-
-            if (!removeInodeIfUnlinked(inode)) {
-                throw new IncorrectUpdateSemanticsDataAccessException(inode + " has non-zero link count.");
-            }
-
-            /* During bulk deletion of files in the same directory,
-             * updating the parent inode is often a contention point. The
-             * link count on the parent is updated last to reduce the time
-             * in which the directory inode is locked by the database.
-             */
-            decNlink(parent);
-        }
+        return true;
     }
 
-    private void removeFile(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
-
-        if (removeEntryInParent(parent, name, inode)) {
-            decNlink(inode);
-
-            removeInodeIfUnlinked(inode);
-
-            /* During bulk deletion of files in the same directory,
-             * updating the parent inode is often a contention point. The
-             * link count on the parent is updated last to reduce the time
-             * in which the directory inode is locked by the database.
-             */
-            decNlink(parent);
+    private boolean removeFile(FsInode parent, FsInode inode, String name) throws ChimeraFsException {
+        if (!removeEntryInParent(parent, name, inode)) {
+            return false;
         }
+        decNlink(inode);
+
+        removeInodeIfUnlinked(inode);
+
+        /* During bulk deletion of files in the same directory,
+         * updating the parent inode is often a contention point. The
+         * link count on the parent is updated last to reduce the time
+         * in which the directory inode is locked by the database.
+         */
+        decNlink(parent);
+
+        return true;
     }
 
     void remove(FsInode inode) {
@@ -377,36 +374,56 @@ class FsSqlDriver {
 
 
     /**
-     * move source from srcDir into dest in destDir.
-     * The reference counts if srcDir and destDir is updates.
+     * Move/rename inode from source in srcDir to dest in destDir. The reference counts
+     * of srcDir and destDir are updated.
      *
      * @param srcDir
      * @param source
      * @param destDir
      * @param dest
+     * @param inode
+     * @return true if moved, false if source did not exist
      */
-    void move(FsInode srcDir, String source, FsInode destDir, String dest) {
-        FsInode srcInode = inodeOf(srcDir, source);
+    boolean move(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) {
 
-        _jdbc.update("UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=?",
-                     ps -> {
-                         ps.setString(1, destDir.toString());
-                         ps.setString(2, dest);
-                         ps.setString(3, srcDir.toString());
-                         ps.setString(4, source);
-                     });
-
-        /*
-         * if moving a directory, point '..' to the new parent
-         */
-        Stat stat = stat(srcInode);
-        if ( (stat.getMode() & UnixPermission.F_TYPE) == UnixPermission.S_IFDIR) {
-            _jdbc.update("UPDATE t_dirs SET ipnfsid=? WHERE iparent=? AND iname='..'",
-                         ps -> {
-                             ps.setString(1, destDir.toString());
-                             ps.setString(2, srcInode.toString());
-                         });
+        String moveLink = "UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=? AND ipnfsid=?";
+        int n = _jdbc.update(moveLink,
+                             ps -> {
+                                 ps.setString(1, destDir.toString());
+                                 ps.setString(2, dest);
+                                 ps.setString(3, srcDir.toString());
+                                 ps.setString(4, source);
+                                 ps.setString(5, inode.toString());
+                             });
+        if (n == 0) {
+            return false;
         }
+        if (n > 1) {
+            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(moveLink, 1, n);
+        }
+
+        if (!srcDir.equals(destDir)) {
+            /*
+             * if moving a directory, point '..' to the new parent
+             */
+            if (inode.isDirectory()) {
+                String pointToNewParent = "UPDATE t_dirs SET ipnfsid=? WHERE iparent=? AND iname='..' AND ipnfsid=?";
+                n = _jdbc.update(pointToNewParent,
+                                 ps -> {
+                                     ps.setString(1, destDir.toString());
+                                     ps.setString(2, inode.toString());
+                                     ps.setString(3, srcDir.toString());
+                                 });
+                if (n != 1) {
+                    throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(pointToNewParent, 1, n);
+                }
+            }
+            incNlink(destDir);
+            decNlink(srcDir);
+        } else {
+            incNlink(srcDir, 0);
+        }
+        return true;
     }
 
     /**
@@ -643,15 +660,6 @@ class FsSqlDriver {
                                ps.setString(2, parent.toString());
                            },
                            rs -> rs.next() ? rs.getString("iname") : null);
-    }
-
-    void setFileName(FsInode dir, String oldName, String newName) {
-        _jdbc.update("UPDATE t_dirs SET iname=? WHERE iname=? AND iparent=?",
-                     ps -> {
-                         ps.setString(1, newName);
-                         ps.setString(2, oldName);
-                         ps.setString(3, dir.toString());
-                     });
     }
 
     boolean setInodeAttributes(FsInode inode, int level, Stat stat) {

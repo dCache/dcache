@@ -427,7 +427,10 @@ public class JdbcFs implements FileSystemProvider {
         inTransaction(status -> {
             FsInode parent = path2inode(parentPath);
             String name = filePath.getName();
-            _sqlDriver.remove(parent, name);
+            FsInode inode = _sqlDriver.inodeOf(parent, name);
+            if (inode == null || !_sqlDriver.remove(parent, name, inode)) {
+                throw new FileNotFoundHimeraFsException(path);
+            }
             return null;
         });
     }
@@ -435,7 +438,10 @@ public class JdbcFs implements FileSystemProvider {
     @Override
     public void remove(FsInode parent, String name) throws ChimeraFsException {
         inTransaction(status -> {
-            _sqlDriver.remove(parent, name);
+            FsInode inode = _sqlDriver.inodeOf(parent, name);
+            if (inode == null || !_sqlDriver.remove(parent, name, inode)) {
+                throw new FileNotFoundHimeraFsException(name);
+            }
             return null;
         });
     }
@@ -940,46 +946,37 @@ public class JdbcFs implements FileSystemProvider {
         checkNameLength(dest);
 
         return inTransaction(status -> {
-            Stat destStat = destDir.statCache();
-            if ((destStat.getMode() & UnixPermission.F_TYPE) != UnixPermission.S_IFDIR) {
+            if (!destDir.isDirectory()) {
                 throw new NotDirChimeraException(destDir);
             }
 
-            FsInode destInode = _sqlDriver.inodeOf(destDir, dest);
             FsInode srcInode = _sqlDriver.inodeOf(srcDir, source);
             if (srcInode == null) {
                 throw new FileNotFoundHimeraFsException(source);
             }
+            FsInode destInode = _sqlDriver.inodeOf(destDir, dest);
 
             if (destInode != null) {
-                Stat statDest = _sqlDriver.stat(destInode);
-                Stat statSrc = _sqlDriver.stat(srcInode);
                 if (destInode.equals(srcInode)) {
                     // according to POSIX, we are done
                     return false;
                 }
 
-               /*
-                * renaming only into existing same type is allowed
+               /* Renaming into existing is only allowed for the same type of entry.
                 */
-                if ((statSrc.getMode() & UnixPermission.S_TYPE) != (statDest.getMode() & UnixPermission.S_TYPE)) {
+                if (srcInode.isDirectory() != destInode.isDirectory()) {
                     throw new FileExistsChimeraFsException(dest);
                 }
 
-                _sqlDriver.remove(destDir, dest);
+                if (!_sqlDriver.remove(destDir, dest, destInode)) {
+                    // Concurrent modification - retry
+                    return move(srcDir, source, destDir, dest);
+                }
             }
 
-            if (!srcDir.equals(destDir)) {
-                _sqlDriver.move(srcDir, source, destDir, dest);
-                _sqlDriver.incNlink(destDir);
-                _sqlDriver.decNlink(srcDir);
-            } else {
-                // same directory
-                long now = System.currentTimeMillis();
-                _sqlDriver.setFileName(srcDir, source, dest);
-                Stat stat = new Stat();
-                stat.setMTime(now);
-                _sqlDriver.setInodeAttributes(destDir, 0, stat);
+            if (!_sqlDriver.move(srcInode, srcDir, source, destDir, dest)) {
+                // Concurrent modification - retry
+                return move(srcDir, source, destDir, dest);
             }
             return true;
         });

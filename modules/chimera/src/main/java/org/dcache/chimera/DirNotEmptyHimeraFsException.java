@@ -37,4 +37,9 @@ public class DirNotEmptyHimeraFsException extends ChimeraFsException {
     public DirNotEmptyHimeraFsException(String msg) {
         super(msg);
     }
+
+    public DirNotEmptyHimeraFsException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }
