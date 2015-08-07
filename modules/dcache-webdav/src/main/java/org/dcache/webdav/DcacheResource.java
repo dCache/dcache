@@ -110,7 +110,7 @@ public class DcacheResource
             DcacheDirectoryResource directory =
                 (DcacheDirectoryResource) newParent;
             FsPath newPath = new FsPath(directory._path, name);
-            _factory.move(_attributes.getPnfsId(), newPath);
+            _factory.move(_path, _attributes.getPnfsId(), newPath);
             _path = newPath;
         } catch (CacheException e) {
             throw new RuntimeException(e);

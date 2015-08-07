@@ -826,11 +826,6 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void setFileName(FsInode dir, String oldName, String newName) throws ChimeraFsException {
-        move(dir, oldName, dir, newName);
-    }
-
-    @Override
     public void setInodeAttributes(FsInode inode, int level, Stat stat) throws ChimeraFsException {
         inTransaction(status -> {
             switch (inode.type()) {
@@ -928,21 +923,7 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public boolean move(String source, String dest) {
-        try {
-            return inTransaction(status -> {
-                File what = new File(source);
-                File where = new File(dest);
-                return move(path2inode(what.getParent()), what.getName(),
-                            path2inode(where.getParent()), where.getName());
-            });
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean move(FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
+    public boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) throws ChimeraFsException {
         checkNameLength(dest);
 
         return inTransaction(status -> {
@@ -950,33 +931,28 @@ public class JdbcFs implements FileSystemProvider {
                 throw new NotDirChimeraException(destDir);
             }
 
-            FsInode srcInode = _sqlDriver.inodeOf(srcDir, source);
-            if (srcInode == null) {
-                throw new FileNotFoundHimeraFsException(source);
-            }
             FsInode destInode = _sqlDriver.inodeOf(destDir, dest);
 
             if (destInode != null) {
-                if (destInode.equals(srcInode)) {
+                if (destInode.equals(inode)) {
                     // according to POSIX, we are done
                     return false;
                 }
 
                /* Renaming into existing is only allowed for the same type of entry.
                 */
-                if (srcInode.isDirectory() != destInode.isDirectory()) {
+                if (inode.isDirectory() != destInode.isDirectory()) {
                     throw new FileExistsChimeraFsException(dest);
                 }
 
                 if (!_sqlDriver.remove(destDir, dest, destInode)) {
                     // Concurrent modification - retry
-                    return move(srcDir, source, destDir, dest);
+                    return rename(inode, srcDir, source, destDir, dest);
                 }
             }
 
-            if (!_sqlDriver.move(srcInode, srcDir, source, destDir, dest)) {
-                // Concurrent modification - retry
-                return move(srcDir, source, destDir, dest);
+            if (!_sqlDriver.rename(inode, srcDir, source, destDir, dest)) {
+                throw new FileNotFoundHimeraFsException(source);
             }
             return true;
         });

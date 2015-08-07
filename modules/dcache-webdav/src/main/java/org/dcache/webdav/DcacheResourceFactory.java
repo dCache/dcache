@@ -910,11 +910,11 @@ public class DcacheResourceFactory
         return new DcacheDirectoryResource(this, path, attributes);
     }
 
-    public void move(PnfsId pnfsId, FsPath newPath)
+    public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)
         throws CacheException
     {
         PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
-        pnfs.renameEntry(pnfsId, newPath.toString());
+        pnfs.renameEntry(pnfsId, sourcePath.toString(), newPath.toString(), true);
     }
 
 

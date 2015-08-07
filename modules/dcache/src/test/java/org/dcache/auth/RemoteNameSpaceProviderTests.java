@@ -643,32 +643,6 @@ public class RemoteNameSpaceProviderTests
         assertThat(sent.getOperation(), is(FlagOperation.REMOVE));
     }
 
-
-    @Test
-    public void shouldSucceedForRenameEntry() throws Exception
-    {
-        givenSuccessfulResponse();
-
-        _namespace.renameEntry(ROOT, A_PNFSID, "new-name", true);
-
-        PnfsRenameMessage sent =
-                getSingleSendAndWaitMessage(PnfsRenameMessage.class);
-        assertThat(sent.getSubject(), is(ROOT));
-        assertThat(sent.getPnfsId(), is(A_PNFSID));
-        assertThat(sent.newName(), is("new-name"));
-        assertThat(sent.getOverwrite(), is(true));
-    }
-
-
-    @Test(expected=FileNotFoundCacheException.class)
-    public void shouldFailForRenameEntryWithUnknownPnfsid() throws Exception
-    {
-        givenFailureResponse(FILE_NOT_FOUND);
-
-        _namespace.renameEntry(ROOT, A_PNFSID, "new-name", true);
-    }
-
-
     @Test
     public void shouldSucceedForSetFileAttributesForKnownFile() throws Exception
     {

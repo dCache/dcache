@@ -384,7 +384,7 @@ class FsSqlDriver {
      * @param inode
      * @return true if moved, false if source did not exist
      */
-    boolean move(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) {
+    boolean rename(FsInode inode, FsInode srcDir, String source, FsInode destDir, String dest) {
 
         String moveLink = "UPDATE t_dirs SET iparent=?, iname=? WHERE iparent=? AND iname=? AND ipnfsid=?";
         int n = _jdbc.update(moveLink,

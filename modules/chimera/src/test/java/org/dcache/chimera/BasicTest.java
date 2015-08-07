@@ -411,7 +411,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat preStatBase = base.stat();
         Stat preStatFile = fileInode.stat();
 
-        boolean ok = _fs.move(base, "testCreateFile", base, "testCreateFile2");
+        boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
 
 
@@ -430,7 +430,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         Stat preStatBase = base.stat();
 
-        boolean ok = _fs.move(base, "testCreateFile", base, "testCreateFile2");
+        boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
         assertTrue("can't move", ok);
         assertEquals("link count of base directory should decrease by one", preStatBase.getNlink() - 1, base.stat().getNlink());
@@ -450,7 +450,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat preStatBase2 = base2.stat();
         Stat preStatFile = fileInode.stat();
 
-        boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
+        boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
         assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1,
@@ -473,7 +473,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat preStatBase2 = base2.stat();
         Stat preStatFile = fileInode.stat();
 
-        boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
+        boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertTrue("can't move", ok);
         assertEquals("link count of source directory should decrese on move out", preStatBase.getNlink() - 1,
@@ -495,7 +495,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat preStatBase = base.stat();
         Stat preStatFile = fileInode.stat();
 
-        boolean ok = _fs.move(base, "testCreateFile", base, "testCreateFile2");
+        boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
         assertFalse("rename of hardlink to itself should do nothing", ok);
         assertEquals("link count of base directory should not be modified in case of rename", preStatBase.getNlink(), base.stat().getNlink());
@@ -517,7 +517,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat preStatBase2 = base2.stat();
         Stat preStatFile = fileInode.stat();
 
-        boolean ok = _fs.move(base, "testCreateFile", base2, "testCreateFile2");
+        boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
         assertFalse("rename of hardlink to itself should do nothing", ok);
         assertEquals("link count of source directory should not be modified in case of rename", preStatBase.getNlink(),
@@ -874,7 +874,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode dir12 = dir11.mkdir("dir12", 0, 0, 0755);
         FsInode dir13 = dir12.mkdir("dir13", 0, 0, 0755);
 
-        _fs.move(dir01, "dir02", dir13, "dir14");
+        _fs.rename(dir02, dir01, "dir02", dir13, "dir14");
 
         FsInode newInode = _fs.inodeOf(dir13, "dir14");
         assertEquals("Invalid parent", dir13, newInode.inodeOf(".."));
@@ -885,7 +885,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
 	FsInode src = _rootInode.create("testMoveIntoFile1", 0, 0, 0644);
 	FsInode dest = _rootInode.create("testMoveIntoFile2", 0, 0, 0644);
-	_fs.move(_rootInode, "testMoveIntoFile1", dest, "testMoveIntoFile3");
+	_fs.rename(src, _rootInode, "testMoveIntoFile1", dest, "testMoveIntoFile3");
     }
 
     @Test(expected = FileExistsChimeraFsException.class)
@@ -893,12 +893,12 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
 	FsInode src = _rootInode.create("testMoveIntoDir", 0, 0, 0644);
 	FsInode dir = _rootInode.mkdir("dir", 0, 0, 0755);
-	_fs.move(_rootInode, "testMoveIntoDir", _rootInode, "dir");
+	_fs.rename(src, _rootInode, "testMoveIntoDir", _rootInode, "dir");
     }
 
     @Test(expected = FileNotFoundHimeraFsException.class)
     public void testMoveNotExists() throws Exception {
-        _fs.move(_rootInode, "foo", _rootInode, "bar");
+        _fs.rename(_rootInode, _rootInode, "foo", _rootInode, "bar");
     }
 
     @Test(expected = DirNotEmptyHimeraFsException.class)
@@ -907,7 +907,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 	FsInode dir1 = _rootInode.mkdir("dir1", 0, 0, 0755);
 	FsInode dir2 = _rootInode.mkdir("dir2", 0, 0, 0755);
 	FsInode src = dir2.create("testMoveIntoDir", 0, 0, 0644);
-	_fs.move(_rootInode, "dir1", _rootInode, "dir2");
+	_fs.rename(dir1, _rootInode, "dir1", _rootInode, "dir2");
     }
 
     @Test
@@ -921,7 +921,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         byte[] data = "hello".getBytes();
         level1of1.write(0, data, 0, data.length);
-        assertTrue(_fs.move(base, "testCreateFile2", base, "testCreateFile1"));
+        assertTrue(_fs.rename(inode2, base, "testCreateFile2", base, "testCreateFile1"));
 
     }
 
@@ -940,8 +940,8 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected = InvalidNameChimeraException.class)
     public void testNameTooMoveLong() throws Exception {
         String tooLongName = Strings.repeat("a", 257);
-        _rootInode.mkdir("testNameTooMoveLong");
-        _fs.move(_rootInode, "testNameTooMoveLong", _rootInode, tooLongName);
+        FsInode inode = _rootInode.mkdir("testNameTooMoveLong");
+        _fs.rename(inode, _rootInode, "testNameTooMoveLong", _rootInode, tooLongName);
     }
 
     @Test

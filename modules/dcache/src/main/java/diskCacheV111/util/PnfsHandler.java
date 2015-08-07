@@ -300,16 +300,10 @@ public class PnfsHandler
 
     }
 
-    public void renameEntry(PnfsId pnfsId, String newName)
+    public void renameEntry(PnfsId pnfsId, String path, String newName, boolean overwrite)
         throws CacheException
     {
-        renameEntry(pnfsId, newName, true);
-    }
-
-    public void renameEntry(PnfsId pnfsId, String newName, boolean overwrite)
-        throws CacheException
-    {
-        request(new PnfsRenameMessage(pnfsId, newName, overwrite));
+        request(new PnfsRenameMessage(pnfsId, path, newName, overwrite));
     }
 
     public void renameEntry(String path, String newName, boolean overwrite)

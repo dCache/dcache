@@ -750,6 +750,7 @@ public abstract class AbstractFtpDoorV1
     protected FsPath _doorRootPath = new FsPath();
     protected String _cwd = "/";    // Relative to _doorRootPath
     protected FsPath _filepath; // Absolute filepath to the file to be renamed
+    protected PnfsId _fileId; // Id of the file to be renamed
     private String _symlinkPath; // User-supplied path of new symlink
     protected String _xferMode = "S";
     protected CellStub _billingStub;
@@ -3840,13 +3841,14 @@ public abstract class AbstractFtpDoorV1
 
         try {
             _filepath = null;
+            _fileId = null;
 
             if (Strings.isNullOrEmpty(arg)) {
                 throw new FTPCommandException(500, "Missing file name for RNFR");
             }
 
             FsPath path = absolutePath(arg);
-            _pnfs.getPnfsIdByPath(path.toString());
+            _fileId = _pnfs.getPnfsIdByPath(path.toString());
             _filepath = path;
 
             reply("350 File exists, ready for destination name RNTO");
@@ -3870,7 +3872,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             FsPath newName = absolutePath(arg);
-            _pnfs.renameEntry(_filepath.toString(), newName.toString(), true);
+            _pnfs.renameEntry(_fileId, _filepath.toString(), newName.toString(), true);
 
             reply("250 File renamed");
         } catch (PermissionDeniedCacheException e) {
@@ -3879,6 +3881,7 @@ public abstract class AbstractFtpDoorV1
             throw new FTPCommandException(451, "Transient error: " + e.getMessage());
         } finally {
             _filepath = null;
+            _fileId = null;
         }
     }
     //----------------------------------------------

@@ -476,35 +476,29 @@ public class ChimeraNameSpaceProvider
     }
 
     @Override
-    public void renameEntry(Subject subject, PnfsId pnfsId,
-                            String newName, boolean overwrite)
+    public void rename(Subject subject, @Nullable PnfsId pnfsId,
+                       String sourcePath, String destinationPath, boolean overwrite)
         throws CacheException
     {
         try {
-            FsInode inode = new FsInode(_fs, pnfsId.toIdString());
-            FsPath source = new FsPath(_fs.inode2path(inode));
-            if (source.isEmpty()) {
-                throw new PermissionDeniedCacheException("Access denied: " + source);
-            }
-
-            FsInode sourceDir = _fs.getParentOf(inode);
+            /* Resolve the source directory.
+             */
+            File source = new File(sourcePath);
+            FsInode sourceDir = pathToInode(subject, source.getParent());
             FileAttributes sourceDirAttributes =
                 getFileAttributesForPermissionHandler(sourceDir);
 
-            FsPath dest = new FsPath(newName);
-            if (dest.isEmpty()) {
-                throw new PermissionDeniedCacheException("Access denied: " + dest);
-            }
-
+            /* Resolve the target directory.
+             */
+            File dest = new File(destinationPath);
             FsInode destDir;
             FileAttributes destDirAttributes;
-
             try {
                 if (dest.getParent().equals(source.getParent())) {
                     destDir = sourceDir;
                     destDirAttributes = sourceDirAttributes;
                 } else {
-                    destDir = pathToInode(subject, dest.getParent().toString());
+                    destDir = pathToInode(subject, dest.getParent());
                     destDirAttributes =
                         getFileAttributesForPermissionHandler(destDir);
                 }
@@ -513,54 +507,64 @@ public class ChimeraNameSpaceProvider
                                                dest.getParent());
             }
 
-            if (!Subjects.isRoot(subject) &&
-                _permissionHandler.canRename(subject,
-                                             sourceDirAttributes,
-                                             destDirAttributes,
-                                             inode.isDirectory()) != ACCESS_ALLOWED) {
-                throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
+            /* Resolve the source file.
+             */
+            FsInode inode;
+            if (pnfsId != null) {
+                inode = new FsInode(_fs, pnfsId.toIdString());
+            } else {
+                if (!Subjects.isRoot(subject) &&
+                    _permissionHandler.canLookup(subject, sourceDirAttributes) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + sourcePath);
+                }
+                inode = sourceDir.inodeOf(source.getName());
             }
 
-            if (Subjects.isRoot(subject) && overwrite) {
-                _fs.move(sourceDir, source.getName(), destDir, dest.getName());
-                return;
-            }
-
-            try {
-                FsInode destInode = _fs.path2inode(newName);
-                if (!overwrite) {
-                    throw new FileExistsCacheException("File exists:" + newName);
+            /* Permission checks.
+             */
+            if (!Subjects.isRoot(subject) || !overwrite) {
+                if (!Subjects.isRoot(subject) &&
+                    _permissionHandler.canRename(subject,
+                                                 sourceDirAttributes,
+                                                 destDirAttributes,
+                                                 inode.isDirectory()) != ACCESS_ALLOWED) {
+                    throw new PermissionDeniedCacheException("Access denied: " + pnfsId);
                 }
 
-                /* Destination name exists and we were requested to
-                 * overwrite it.  Thus the subject must have delete
-                 * permission for the destination name.
-                 */
-                FileAttributes destAttributes =
-                    getFileAttributesForPermissionHandler(destInode);
-                if (destInode.isDirectory()) {
-                    if (_permissionHandler.canDeleteDir(subject,
-                                                        destDirAttributes,
-                                                        destAttributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " +
-                                                                 newName);
+                try {
+                    FsInode destInode = destDir.inodeOf(dest.getName());
+                    if (!overwrite) {
+                        throw new FileExistsCacheException("File exists:" + destinationPath);
                     }
-                } else {
-                    if (_permissionHandler.canDeleteFile(subject,
-                                                         destDirAttributes,
-                                                         destAttributes) != ACCESS_ALLOWED) {
-                        throw new PermissionDeniedCacheException("Access denied: " +
-                                                                 newName);
+
+                    /* Destination name exists and we were requested to
+                     * overwrite it.  Thus the subject must have delete
+                     * permission for the destination name.
+                     */
+                    FileAttributes destAttributes =
+                            getFileAttributesForPermissionHandler(destInode);
+                    if (destInode.isDirectory()) {
+                        if (_permissionHandler.canDeleteDir(subject,
+                                                            destDirAttributes,
+                                                            destAttributes) != ACCESS_ALLOWED) {
+                            throw new PermissionDeniedCacheException("Access denied: " + destinationPath);
+                        }
+                    } else {
+                        if (_permissionHandler.canDeleteFile(subject,
+                                                             destDirAttributes,
+                                                             destAttributes) != ACCESS_ALLOWED) {
+                            throw new PermissionDeniedCacheException("Access denied: " + destinationPath);
+                        }
                     }
+                } catch (FileNotFoundHimeraFsException e) {
+                    /* Destination doesn't exist and we can move the file;
+                     * unfortunately there is no way to test this with
+                     * Chimera without throwing an exception.
+                     */
                 }
-            } catch (FileNotFoundHimeraFsException e) {
-                /* Destination doesn't exist and we can move the file;
-                 * unfortunately there is no way to test this with
-                 * Chimera without throwing an exception.
-                 */
             }
 
-            _fs.move(sourceDir, source.getName(), destDir, dest.getName());
+            _fs.rename(inode, sourceDir, source.getName(), destDir, dest.getName());
         } catch (FileNotFoundHimeraFsException e) {
             throw new FileNotFoundCacheException("No such file or directory: "
                                                  + pnfsId);
@@ -569,7 +573,7 @@ public class ChimeraNameSpaceProvider
              * expect this to be thrown. Instead Chimera insists on
              * overwriting the destination file.
              */
-            throw new FileExistsCacheException("File exists:" + newName);
+            throw new FileExistsCacheException("File exists:" + destinationPath);
         } catch (IOException e) {
             throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                      e.getMessage());
@@ -1319,7 +1323,7 @@ public class ChimeraNameSpaceProvider
 
             /* File is moved to correct directory.
              */
-            _fs.move(temporaryDirInode, temporaryPath.getName(), finalDirInode, finalPath.getName());
+            _fs.rename(inodeOfFile, temporaryDirInode, temporaryPath.getName(), finalDirInode, finalPath.getName());
 
             /* Delete temporary upload directory and any files in it.
              */

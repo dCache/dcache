@@ -523,10 +523,13 @@ public class Shell extends ShellApplication
             } catch (FileNotFoundHimeraFsException e) {
                 dst = null;
             }
+            FsInode srcDir = lookup(source.getParentFile());
+            FsInode inode = srcDir.inodeOf(source.getName());
             if (dst != null && dst.isDirectory()) {
-                fs.move(lookup(source.getParentFile()), source.getName(), lookup(destination), source.getName());
+                fs.rename(inode, srcDir, source.getName(), lookup(destination), source.getName());
             } else {
-                fs.move(lookup(source.getParentFile()), source.getName(), lookup(destination.getParentFile()), destination.getName());
+                fs.rename(inode, srcDir, source.getName(), lookup(destination.getParentFile()),
+                          destination.getName());
             }
             return null;
         }

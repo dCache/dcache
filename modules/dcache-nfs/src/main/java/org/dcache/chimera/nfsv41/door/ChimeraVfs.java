@@ -158,7 +158,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         FsInode from = toFsInode(src);
         FsInode to = toFsInode(dest);
 	try {
-	    return _fs.move(from, oldName, to, newName);
+	    return _fs.rename(_fs.inodeOf(from, oldName), from, oldName, to, newName);
 	} catch (NotDirChimeraException e) {
 	    throw new NotDirException("not a directory");
 	} catch (FileExistsChimeraFsException e) {

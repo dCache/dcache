@@ -32,7 +32,6 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -1559,8 +1558,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         public void fileAttributesAvailable()
         {
             try {
-		checkUrl();
-                _pnfs.renameEntry(_fileAttributes.getPnfsId(), _newName);
+                checkUrl();
+                _pnfs.renameEntry(_fileAttributes.getPnfsId(), _path, _newName, true);
                 sendReply("fileAttributesAvailable", 0, "");
             } catch (CacheException e) {
                 sendReply("fileAttributesAvailable", 19, e.getMessage(), "EACCES");

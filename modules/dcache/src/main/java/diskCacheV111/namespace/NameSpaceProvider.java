@@ -2,6 +2,7 @@ package diskCacheV111.namespace;
 
 import com.google.common.collect.Range;
 
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 
 import java.util.List;
@@ -126,8 +127,8 @@ public interface NameSpaceProvider
      */
     void deleteEntry(Subject subject, Set<FileType> allowed, PnfsId pnfsId, String path) throws CacheException;
 
-    void renameEntry(Subject subject, PnfsId pnfsId, String newName,
-                     boolean overwrite) throws CacheException;
+    void rename(Subject subject, @Nullable PnfsId pnfsId, String sourcePath, String destinationPath, boolean overwrite)
+            throws CacheException;
 
     String pnfsidToPath(Subject subject, PnfsId pnfsId) throws CacheException;
     PnfsId pathToPnfsid(Subject subject, String path, boolean followLinks) throws CacheException;

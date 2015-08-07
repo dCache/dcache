@@ -163,9 +163,6 @@ public interface FileSystemProvider extends Closeable {
     public abstract FsInode getParentOf(FsInode inode)
             throws ChimeraFsException;
 
-    public abstract void setFileName(FsInode dir, String oldName, String newName)
-            throws ChimeraFsException;
-
     public abstract void setInodeAttributes(FsInode inode, int level, Stat stat)
             throws ChimeraFsException;
 
@@ -182,13 +179,13 @@ public interface FileSystemProvider extends Closeable {
 
     public abstract byte[] readLink(FsInode inode) throws ChimeraFsException;
 
-    public abstract boolean move(String source, String dest);
-
     /**
-     * Move filesystem object from one directory into an other. If {@code source}
-     * and {@code dest} both refer to the  same  existing  file, the move performs no action.
-     * If destination object exists, then source object must be the same type.
+     * Change the name of a file system object. If {@code source} and {@code dest} both
+     * refer to the  same  existing  file, the move performs no action. If destination
+     * object exists, then source object must be the same type and will overwrite the
+     * destination.
      *
+     * @param inode inode of the file to rename
      * @param srcDir inode of the source directory
      * @param source name of the file in srcDir
      * @param destDir inode of the destination directory
@@ -200,8 +197,8 @@ public interface FileSystemProvider extends Closeable {
      * @throws DirNotEmptyHimeraFsException if destination exists, is a directory
      *	    and not empty
      */
-    public abstract boolean move(FsInode srcDir, String source,
-            FsInode destDir, String dest) throws ChimeraFsException;
+    public abstract boolean rename(FsInode inode, FsInode srcDir, String source,
+                                   FsInode destDir, String dest) throws ChimeraFsException;
 
     public abstract List<StorageLocatable> getInodeLocations(FsInode inode,
             int type) throws ChimeraFsException;

@@ -404,34 +404,6 @@ public class PnfsManagerV3
         return _nameSpaceProvider.pnfsidToPath(ROOT, pnfsId);
     }
 
-    public static final String hh_rename = " # rename <old name> <new name>" ;
-    public String ac_rename_$_2( Args args ){
-
-        PnfsId    pnfsId;
-        String newName;
-        try{
-
-            pnfsId   = new PnfsId( args.argv(0) ) ;
-
-        }catch(Exception ee ){
-            try {
-                pnfsId = pathToPnfsid(ROOT, args.argv(0), true );
-            }catch(Exception e) {
-                return "rename failed: " + e.getMessage() ;
-            }
-        }
-
-
-        try {
-            newName = args.argv(1);
-            rename(ROOT, pnfsId, newName, true);
-        }catch( Exception e) {
-            return "rename failed: " + e.getMessage() ;
-        }
-
-        return "" ;
-    }
-
     public final static String hh_set_meta =
         "<pnfsid>|<globalPath> <uid> <gid> <perm>";
     public String ac_set_meta_$_4(Args args)
@@ -1225,11 +1197,19 @@ public class PnfsManagerV3
     public void rename(PnfsRenameMessage msg)
     {
         try {
-            PnfsId pnfsId = populatePnfsId(msg);
-            String newName = msg.newName();
-            _log.info("rename " + pnfsId + " to new name : " + newName);
             checkMask(msg);
-            rename(msg.getSubject(), pnfsId, newName, msg.getOverwrite());
+            PnfsId pnfsId = msg.getPnfsId();
+            String sourcePath = msg.getPnfsPath();
+            String destinationPath = msg.newName();
+            // This case is for compatibility with versions before 2.14
+            if (sourcePath == null) {
+                if (pnfsId == null) {
+                    throw new InvalidMessageCacheException("Either path or pnfs id is required.");
+                }
+                sourcePath = _nameSpaceProvider.pnfsidToPath(msg.getSubject(), pnfsId);
+            }
+            _log.info("Rename {} to new name: {}", sourcePath, destinationPath);
+            _nameSpaceProvider.rename(msg.getSubject(), pnfsId, sourcePath, destinationPath, msg.getOverwrite());
         } catch (CacheException e){
             msg.setFailed(e.getRc(), e.getMessage());
         } catch (RuntimeException e) {
@@ -1237,14 +1217,6 @@ public class PnfsManagerV3
             msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                           "Pnfs rename failed");
         }
-    }
-
-    private void rename(Subject subject, PnfsId pnfsId,
-                        String newName, boolean overwrite)
-        throws CacheException
-    {
-        _log.info("Renaming " + pnfsId + " to " + newName );
-        _nameSpaceProvider.renameEntry(subject, pnfsId, newName, overwrite);
     }
 
     private String pathfinder(Subject subject, PnfsId pnfsId )
