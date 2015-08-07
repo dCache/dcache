@@ -89,7 +89,16 @@ public interface FileSystemProvider extends Closeable {
 
     public abstract void remove(String path) throws ChimeraFsException;
 
-    public abstract void remove(FsInode parent, String name)
+    /**
+     * Removes a directory entry.
+     *
+     * @param directory Inode of the directory.
+     * @param name Name of the entry to remove.
+     * @param inode Inode of the entry to remove.
+     *
+     * @throws ChimeraFsException
+     */
+    public abstract void remove(FsInode directory, String name, FsInode inode)
             throws ChimeraFsException;
 
     public abstract void remove(FsInode inode) throws ChimeraFsException;

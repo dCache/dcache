@@ -426,7 +426,7 @@ public class ChimeraNameSpaceProvider
                 throw new PermissionDeniedCacheException("Access denied: " + path);
             }
 
-            _fs.remove(parent, name);
+            _fs.remove(parent, name, inode);
 
             return new PnfsId(inode.toString());
         }catch(FileNotFoundHimeraFsException fnf) {
@@ -465,7 +465,7 @@ public class ChimeraNameSpaceProvider
                 throw new PermissionDeniedCacheException("Access denied: " + path);
             }
 
-            _fs.remove(parent, name);
+            _fs.remove(parent, name, inode);
         } catch (FileNotFoundHimeraFsException fnf) {
             throw new FileNotFoundCacheException("No such file or directory: " + path);
         } catch (DirNotEmptyHimeraFsException e) {
@@ -1363,15 +1363,18 @@ public class ChimeraNameSpaceProvider
     private void removeRecursively(FsInode parent, String name) throws ChimeraFsException
     {
         try {
-            removeIfExists(parent, name);
-        } catch (DirNotEmptyHimeraFsException e) {
             FsInode inode = parent.inodeOf(name);
-            for (String entry : _fs.listDir(inode)) {
-                if (!entry.equals(".") && !entry.equals("..")) {
-                    removeRecursively(inode, entry);
+            try {
+                _fs.remove(parent, name, inode);
+            } catch (DirNotEmptyHimeraFsException e) {
+                for (String entry : _fs.listDir(inode)) {
+                    if (!entry.equals(".") && !entry.equals("..")) {
+                        removeRecursively(inode, entry);
+                    }
                 }
+                _fs.remove(parent, name, inode);
             }
-            removeIfExists(parent, name);
+        } catch (FileNotFoundHimeraFsException ignored) {
         }
     }
 
@@ -1384,11 +1387,4 @@ public class ChimeraNameSpaceProvider
         }
     }
 
-    private void removeIfExists(FsInode temporary, String name) throws ChimeraFsException
-    {
-        try {
-            _fs.remove(temporary, name);
-        } catch (FileNotFoundHimeraFsException ignored) {
-        }
-    }
 }

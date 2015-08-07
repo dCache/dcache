@@ -436,10 +436,9 @@ public class JdbcFs implements FileSystemProvider {
     }
 
     @Override
-    public void remove(FsInode parent, String name) throws ChimeraFsException {
+    public void remove(FsInode directory, String name, FsInode inode) throws ChimeraFsException {
         inTransaction(status -> {
-            FsInode inode = _sqlDriver.inodeOf(parent, name);
-            if (inode == null || !_sqlDriver.remove(parent, name, inode)) {
+            if (!_sqlDriver.remove(directory, name, inode)) {
                 throw new FileNotFoundHimeraFsException(name);
             }
             return null;

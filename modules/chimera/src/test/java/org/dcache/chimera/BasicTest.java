@@ -37,7 +37,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode levelInode = new FsInode(_fs, inode.toString(), level);
         assertTrue(levelInode.exists());
 
-        _fs.remove(_rootInode, "testLevelRemoveOnDelete");
+        _fs.remove(_rootInode, "testLevelRemoveOnDelete", inode);
         levelInode = new FsInode(_fs, inode.toString(), level);
         assertFalse(levelInode.exists());
     }
@@ -211,14 +211,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
     @Test(expected=FileNotFoundHimeraFsException.class)
     public void testDeleteNonExistingFile() throws Exception {
-
         _rootInode.remove("testCreateFile");
-    }
-
-    @Test(expected = FileNotFoundHimeraFsException.class)
-    public void testDeleteNonExistingDir() throws Exception {
-        FsInode missingDir = new FsInode(_fs);
-        _fs.remove(missingDir, "aFile");
     }
 
     @Test(expected = FileNotFoundHimeraFsException.class)
@@ -342,7 +335,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
 
         assertEquals("hard link's  have to increase link count by one", stat.getNlink() + 1, hardLinkInode.stat().getNlink());
 
-        _fs.remove(base, "hardLinkTestDestinationFile");
+        _fs.remove(base, "hardLinkTestDestinationFile", hardLinkInode);
         assertTrue("removing of hard link have to decrease link count by one", 1 == fileInode.stat().getNlink());
 
     }
@@ -575,7 +568,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
     @Test(expected=FileNotFoundHimeraFsException.class)
     public void testRemoveNonexistgByPath() throws Exception {
         FsInode base = _rootInode.mkdir("junit");
-        _fs.remove(base, "notexist");
+        base.remove("notexist");
     }
 
     @Test

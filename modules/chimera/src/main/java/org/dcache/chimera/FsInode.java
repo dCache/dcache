@@ -423,7 +423,7 @@ public class FsInode {
             throw new IOHimeraFsException("Not a directory");
         }
 
-        _fs.remove(this, name);
+        _fs.remove(this, name, inodeOf(name));
         _stat = null;
     }
 

@@ -186,7 +186,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     public void remove(Inode parent, String path) throws IOException {
         FsInode parentFsInode = toFsInode(parent);
         try {
-            _fs.remove(parentFsInode, path);
+            _fs.remove(parentFsInode, path, _fs.inodeOf(parentFsInode, path));
         } catch (FileNotFoundHimeraFsException e) {
             throw new NoEntException("path not found");
         } catch (DirNotEmptyHimeraFsException e) {
