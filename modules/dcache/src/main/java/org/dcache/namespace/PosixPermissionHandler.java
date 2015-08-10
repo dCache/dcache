@@ -221,7 +221,6 @@ public class PosixPermissionHandler implements PermissionHandler
         if (attributes.contains(OWNER) ||
             attributes.contains(OWNER_GROUP) ||
             attributes.contains(MODE) ||
-            attributes.contains(PERMISSION) ||
             attributes.contains(ACL)    ) {
 
             if (!Subjects.hasUid(subject, attr.getOwner())) {

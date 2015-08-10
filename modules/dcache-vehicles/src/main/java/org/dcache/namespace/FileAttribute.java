@@ -22,7 +22,6 @@ public enum FileAttribute {
     MODIFICATION_TIME,
     OWNER,
     OWNER_GROUP,
-    PERMISSION,
     RETENTION_POLICY,
     SIZE,
     STORAGECLASS,

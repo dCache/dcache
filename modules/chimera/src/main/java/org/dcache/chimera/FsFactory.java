@@ -18,29 +18,17 @@ package org.dcache.chimera;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import java.io.IOException;
+
+import javax.sql.DataSource;
+
 import org.dcache.db.AlarmEnabledDataSource;
 
 public class FsFactory
 {
-    public static final String USAGE = "<jdbcUrl> <dbDialect> <dbUser> <dbPass>";
-    public static final int ARGC = 4;
-
-    public static FileSystemProvider createFileSystem(String[] args)
+    public static FileSystemProvider createFileSystem(String url, String user, String password, String dialect)
     {
-        if (args.length < ARGC) {
-            throw new IllegalArgumentException("Required argument missing: " + USAGE);
-        }
-        final HikariDataSource  dataSource  = getDataSource(args[0], args[2], args[3]);
-        return new JdbcFs(new AlarmEnabledDataSource(args[0],
-                                                     FsFactory.class.getSimpleName(),
-                                                     dataSource),
-                                                     args[1]) {
-                        @Override
-                        public void close() throws IOException {
-                            dataSource.shutdown();
-                        }
-              };
+        DataSource dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
+        return new JdbcFs(dataSource, dialect);
     }
 
     public static HikariDataSource getDataSource(String url, String user, String pass)

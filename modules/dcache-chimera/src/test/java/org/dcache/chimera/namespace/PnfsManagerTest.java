@@ -38,6 +38,8 @@ import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FileSystemProvider;
+import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.UnixPermission;
@@ -66,7 +68,7 @@ public class PnfsManagerTest
 
     private PnfsManagerV3 _pnfsManager;
     private Connection _conn;
-    private JdbcFs _fs;
+    private FileSystemProvider _fs;
 
     @Before
     public void setUp() throws Exception {
@@ -94,7 +96,7 @@ public class PnfsManagerTest
          */
 
         liquibase.update("");
-        _fs = ChimeraFsHelper.getFileSystemProvider(
+        _fs = FsFactory.createFileSystem(
                 dbProperties.getProperty("chimera.db.url"),
                 dbProperties.getProperty("chimera.db.user"),
                 dbProperties.getProperty("chimera.db.password"),

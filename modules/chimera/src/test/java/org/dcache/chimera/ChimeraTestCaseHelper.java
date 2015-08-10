@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
 import java.util.Properties;
-import org.dcache.db.AlarmEnabledDataSource;
 
 public abstract class ChimeraTestCaseHelper {
 
@@ -48,16 +47,13 @@ public abstract class ChimeraTestCaseHelper {
             liquibase.update("");
         }
 
-        _fs = new JdbcFs(new AlarmEnabledDataSource(dbProperties.getProperty("chimera.db.url"),
-                FsFactory.class.getSimpleName(),
-                _dataSource),
-                dbProperties.getProperty("chimera.db.dialect"));
+        _fs = new JdbcFs(_dataSource, dbProperties.getProperty("chimera.db.dialect"));
         _rootInode = _fs.path2inode("/");
     }
 
     @After
     public void tearDown() throws Exception {
-	Connection conn = _dataSource.getConnection();
+        Connection conn = _dataSource.getConnection();
         conn.createStatement().execute("SHUTDOWN;");
         _dataSource.shutdown();
     }
