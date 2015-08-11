@@ -1,6 +1,3 @@
-#
-# $Id: dcache-srmclient.spec.template,v 1.2 2007-07-05 09:22:06 timur Exp $
-#
 Summary: dCache Client
 Vendor: dCache.ORG
 Name: dcache-srmclient
@@ -8,8 +5,6 @@ Version: @Version@
 Release: @Release@
 BuildArch: noarch
 Prefix: /usr
-#BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}
-#Source0: dcache-srmclient.tar
 AutoReqProv: no
 
 License: Free
@@ -19,25 +14,9 @@ dCache is a distributed mass storage system.
 
 This package contains the client components.
 
-#%prep
-#%setup -c
-#%build
-#%install
-#rm -rf $RPM_BUILD_ROOT/*
-#mkdir -p $RPM_BUILD_ROOT/opt/d-cache/
-#cp -a $RPM_PACKAGE_NAME/* $RPM_BUILD_ROOT/opt/d-cache/
-#%clean
-#rm -rf $RPM_BUILD_ROOT/*
-#rm -rf $RPM_PACKAGE_NAME
-
-
 %pre
 
-#%post
-
 %preun
-
-#%postun
 
 %files
 %defattr(-,root,root)
