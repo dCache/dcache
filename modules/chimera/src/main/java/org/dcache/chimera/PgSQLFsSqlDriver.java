@@ -26,8 +26,11 @@ import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
+import org.dcache.acl.enums.AceFlags;
+import org.dcache.acl.enums.RsType;
 import org.dcache.chimera.posix.Stat;
 
 /**
@@ -172,6 +175,24 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
                     inode.setStatCache(stat);
                     return inode;
                 });
+    }
+
+    @Override
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags)
+    {
+        int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        _jdbc.update("INSERT INTO t_acl " +
+                     "SELECT ?, ?, type, (flags | ?) # ?, access_msk, who, who_id, ace_order " +
+                     "FROM t_acl WHERE rs_id = ? AND ((flags & ?) > 0)",
+                     ps -> {
+                         ps.setString(1, inode.toString());
+                         ps.setInt(2, type.getValue());
+                         ps.setInt(3, msk);
+                         ps.setInt(4, msk);
+                         ps.setString(5, source.toString());
+                         ps.setInt(6, flgs);
+                     });
     }
 
     @Override

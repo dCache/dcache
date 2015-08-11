@@ -43,6 +43,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
 import org.dcache.acl.ACE;
+import org.dcache.acl.enums.AceFlags;
 import org.dcache.acl.enums.AceType;
 import org.dcache.acl.enums.RsType;
 import org.dcache.acl.enums.Who;
@@ -60,6 +62,8 @@ import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * SQL driver
@@ -340,14 +344,7 @@ class FsSqlDriver {
      * @throws ChimeraFsException
      * @return
      */
-    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) throws ChimeraFsException {
-
-        // if exist table parent_dir create an entry
-
-        if (!parent.isDirectory()) {
-            throw new NotDirChimeraException(parent);
-        }
-
+    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) {
         FsInode inode = new FsInode(parent.getFs());
 
         // as soon as directory is created nlink == 2
@@ -362,16 +359,6 @@ class FsSqlDriver {
 
         return inode;
     }
-
-    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode,
-            List<ACE> acl, Map<String,byte[]> tags) throws ChimeraFsException
-    {
-        FsInode inode = mkdir(parent, name, owner, group, mode);
-        createTags(inode, owner, group, mode & 0666, tags);
-        setACL(inode, acl);
-        return inode;
-    }
-
 
     /**
      * Move/rename inode from source in srcDir to dest in destDir. The reference counts
@@ -1473,7 +1460,7 @@ class FsSqlDriver {
      * @param inode
      * @return
      */
-    List<ACE> getACL(FsInode inode) {
+    List<ACE> readAcl(FsInode inode) {
         return _jdbc.query("SELECT * FROM t_acl WHERE rs_id =  ? ORDER BY ace_order",
                            ps -> ps.setString(1, inode.toString()),
                            (rs, rowNum) -> {
@@ -1490,38 +1477,55 @@ class FsSqlDriver {
     }
 
     /**
-     * Set inode's Access Control List. The existing ACL will be replaced.
+     * Set inode's Access Control List. The inode must not have any ACLs prior to this call.
      * @param inode
      * @param acl
-     * @return true if ACLs of inode might have been modified, false otherwise
      */
-    public boolean setACL(FsInode inode, List<ACE> acl) {
-        boolean modified = _jdbc.update("DELETE FROM t_acl WHERE rs_id = ?", inode.toString()) > 0;
-        if (!acl.isEmpty()) {
-            _jdbc.batchUpdate("INSERT INTO t_acl VALUES (?, ?, ?, ?, ?, ?, ?, ?)", acl, acl.size(),
-                              new ParameterizedPreparedStatementSetter<ACE>()
+    void writeAcl(FsInode inode, RsType rsType, List<ACE> acl) {
+        _jdbc.batchUpdate("INSERT INTO t_acl VALUES (?, ?, ?, ?, ?, ?, ?, ?)", acl, acl.size(),
+                          new ParameterizedPreparedStatementSetter<ACE>()
+                          {
+                              int order = 0;
+
+                              @Override
+                              public void setValues(PreparedStatement ps, ACE ace) throws SQLException
                               {
-                                  RsType rsType = inode.isDirectory() ? RsType.DIR : RsType.FILE;
+                                  ps.setString(1, inode.toString());
+                                  ps.setInt(2, rsType.getValue());
+                                  ps.setInt(3, ace.getType().getValue());
+                                  ps.setInt(4, ace.getFlags());
+                                  ps.setInt(5, ace.getAccessMsk());
+                                  ps.setInt(6, ace.getWho().getValue());
+                                  ps.setInt(7, ace.getWhoID());
+                                  ps.setInt(8, order);
+                                  order++;
+                              }
+                          });
+    }
 
-                                  int order = 0;
+    boolean deleteAcl(FsInode inode)
+    {
+        return _jdbc.update("DELETE FROM t_acl WHERE rs_id = ?", inode.toString()) > 0;
+    }
 
-                                  @Override
-                                  public void setValues(PreparedStatement ps, ACE ace) throws SQLException
-                                  {
-                                      ps.setString(1, inode.toString());
-                                      ps.setInt(2, rsType.getValue());
-                                      ps.setInt(3, ace.getType().getValue());
-                                      ps.setInt(4, ace.getFlags());
-                                      ps.setInt(5, ace.getAccessMsk());
-                                      ps.setInt(6, ace.getWho().getValue());
-                                      ps.setInt(7, ace.getWhoID());
-                                      ps.setInt(8, order);
-                                      order++;
-                                  }
-                              });
-            modified = true;
-        }
-        return modified;
+    /**
+     * Copies ACL entries from source to inode. The inode must not have any ACLs prior to this call.
+     *
+     * @param source inode whose ACLs to copy
+     * @param inode inode to add the ACLs to
+     * @param type ACE object type
+     * @param mask Flags to remove from the copied ACEs
+     * @param flags Only copy ACEs that have one or more of these flags set
+     */
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags)
+    {
+        int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        List<ACE> acl = readAcl(source).stream()
+                .filter(ace -> (ace.getFlags() & flgs) > 0)
+                .map(ace -> new ACE(ace.getType(), (ace.getFlags() | msk) ^ msk, ace.getAccessMsk(), ace.getWho(), ace.getWhoID()))
+                .collect(toList());
+        writeAcl(inode, type, acl);
     }
 
     /**

@@ -21,6 +21,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 
+import java.util.EnumSet;
+
+import org.dcache.acl.enums.AceFlags;
+import org.dcache.acl.enums.RsType;
+
 /**
  * Oracle specific SQL driver
  *
@@ -59,5 +64,22 @@ class OracleFsSqlDriver extends FsSqlDriver {
                                return sb.toString();
                            },
                            inode.toString());
+    }
+
+    @Override
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags)
+    {
+        int msk = EnumSet.complementOf(mask).stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        _jdbc.update("INSERT INTO t_acl " +
+                     "SELECT ?, ?, type, BITAND(flags, ?), access_msk, who, who_id, ace_order " +
+                     "FROM t_acl WHERE rs_id = ? AND BITAND(flags, ?) > 0",
+                     ps -> {
+                         ps.setString(1, inode.toString());
+                         ps.setInt(2, type.getValue());
+                         ps.setInt(3, msk);
+                         ps.setString(4, source.toString());
+                         ps.setInt(5, flgs);
+                     });
     }
 }

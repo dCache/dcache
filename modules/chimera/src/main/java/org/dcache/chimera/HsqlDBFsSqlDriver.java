@@ -18,7 +18,11 @@ package org.dcache.chimera;
 
 import javax.sql.DataSource;
 
+import java.util.EnumSet;
 import java.util.List;
+
+import org.dcache.acl.enums.AceFlags;
+import org.dcache.acl.enums.RsType;
 
 public class HsqlDBFsSqlDriver extends FsSqlDriver {
 
@@ -81,5 +85,22 @@ public class HsqlDBFsSqlDriver extends FsSqlDriver {
     void copyTags(FsInode orign, FsInode destination) {
         _jdbc.update("INSERT INTO t_tags ( SELECT ? , itagname, itagid, 0 from t_tags WHERE ipnfsid=?)",
                      destination.toString(), orign.toString());
+    }
+
+    @Override
+    void copyAcl(FsInode source, FsInode inode, RsType type, EnumSet<AceFlags> mask, EnumSet<AceFlags> flags)
+    {
+        int msk = mask.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        int flgs = flags.stream().mapToInt(AceFlags::getValue).reduce(0, (a, b) -> a | b);
+        _jdbc.update("INSERT INTO t_acl " +
+                     "SELECT ?, ?, type, BITANDNOT(flags, ?), access_msk, who, who_id, ace_order " +
+                     "FROM t_acl WHERE rs_id = ? AND BITAND(flags, ?) > 0",
+                     ps -> {
+                         ps.setString(1, inode.toString());
+                         ps.setInt(2, type.getValue());
+                         ps.setInt(3, msk);
+                         ps.setString(4, source.toString());
+                         ps.setInt(5, flgs);
+                     });
     }
 }
