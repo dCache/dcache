@@ -17,12 +17,13 @@
 package org.dcache.chimera;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import org.dcache.chimera.posix.Stat;
 
 public class FsInode_NAMEOF extends FsInode {
 
-    String _name;
+    byte[] _name;
 
     public FsInode_NAMEOF(FileSystemProvider fs, String id) {
         super(fs, id, FsInodeType.NAMEOF);
@@ -38,20 +39,18 @@ public class FsInode_NAMEOF extends FsInode {
             } catch (ChimeraFsException e) {
                 return -1;
             }
-            _name = f.getName();
+            _name = (f.getName()+'\n').getBytes(StandardCharsets.UTF_8);
         }
-
-        byte[] b = (_name + "\n").getBytes();
 
         /*
          * are we still inside ?
          */
-        if (pos > b.length) {
+        if (pos > _name.length) {
             return 0;
         }
 
-        int copyLen = Math.min(len, b.length - (int) pos);
-        System.arraycopy(b, (int) pos, data, 0, copyLen);
+        int copyLen = Math.min(len, _name.length - (int) pos);
+        System.arraycopy(_name, (int) pos, data, 0, copyLen);
 
         return copyLen;
     }
@@ -62,9 +61,9 @@ public class FsInode_NAMEOF extends FsInode {
         ret.setMode((ret.getMode() & 0000777) | UnixPermission.S_IFREG);
         if (_name == null) {
             File f = new File(_fs.inode2path(this));
-            _name = f.getName();
+            _name = (f.getName()+'\n').getBytes(StandardCharsets.UTF_8);
         }
-        ret.setSize(_name.length() + 1);
+        ret.setSize(_name.length);
         return ret;
     }
 
