@@ -27,9 +27,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import org.dcache.acl.ACE;
 import org.dcache.chimera.posix.Stat;
 
 /**
@@ -51,19 +49,6 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
     protected PgSQLFsSqlDriver(DataSource dataSource) {
         super(dataSource);
         _log.info("Running PostgreSQL specific Driver");
-    }
-
-    @Override
-    FsInode mkdir(FsInode parent, String name, int owner, int group, int mode,
-                  List<ACE> acl, Map<String, byte[]> tags) throws ChimeraFsException
-    {
-        FsInode inode = mkdir(parent, name, owner, group, mode);
-        /* There is a trigger that copies tags on mkdir, but we don't want those tags.
-         */
-        removeTag(inode);
-        createTags(inode, owner, group, mode & 0666, tags);
-        setACL(inode, acl);
-        return inode;
     }
 
     /**
@@ -237,15 +222,5 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
              */
             throw new DuplicateKeyException("Entry already exists");
         }
-    }
-
-    /* (non-Javadoc)
-     * @see org.dcache.chimera.FsSqlDriver#copyTags(java.sql.Connection, org.dcache.chimera.FsInode, org.dcache.chimera.FsInode)
-     */
-    @Override
-    void copyTags(FsInode orign, FsInode destination) {
-        /*
-         * There is a trigger which does it
-         */
     }
 }

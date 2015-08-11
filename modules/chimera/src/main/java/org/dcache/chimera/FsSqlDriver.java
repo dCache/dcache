@@ -1162,7 +1162,7 @@ class FsSqlDriver {
      * @param destination
      */
     void copyTags(FsInode orign, FsInode destination) {
-        _jdbc.update("INSERT INTO t_tags ( SELECT ?, itagname, itagid, 0 from t_tags WHERE ipnfsid=?)",
+        _jdbc.update("INSERT INTO t_tags (SELECT ?, itagname, itagid, 0 from t_tags WHERE ipnfsid=?)",
                      destination.toString(), orign.toString());
     }
 
