@@ -38,7 +38,6 @@ some related Data Movement and Storage tools we have found useful.
 #
 %files
 %defattr(-,root,root)
-# %doc --- nothing appropriate to put into /usr/doc yet.
 /opt/%{name}-%{version}
 # NOTE: This will package every file in the above directory into the RPM!
 #
