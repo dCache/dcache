@@ -16,11 +16,6 @@ public interface RequestExecutionTimeGauge {
     double getAverageExecutionTime();
 
     /**
-     * @return the RMS of executionTime
-     */
-    double getExecutionTimeRMS();
-
-    /**
      * @return the lastExecutionTime
      */
     long getLastExecutionTime();

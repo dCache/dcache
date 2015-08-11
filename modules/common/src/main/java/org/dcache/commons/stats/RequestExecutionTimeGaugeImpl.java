@@ -1,4 +1,3 @@
-
 package org.dcache.commons.stats;
 
 import org.slf4j.Logger;
@@ -18,15 +17,7 @@ import java.util.concurrent.TimeUnit;
 import org.dcache.util.TimeUtils;
 
 /**
- * this class stores an average of the execution time of the request
- * if the num is the num of updates that took place before this update
- * then the next average  is calculated using the formula:
- *         newaverage =
- *          (previousaverage*num +nextmeasurment) /(num+1);
- * there is a utility method to read an average(mean), max, mean, RMS, standard deviation
- * and error on mean.
- *
- * @author timur
+ * This class stores an average and other statistics of the execution time of the request.
  */
 public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeMXBean {
 
@@ -34,26 +25,12 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
 
     private final String name;
 
-    private long sumExecutionTime =0;
-    private long sumExecutionTimeSquared =0;
+    private final Statistics statistics = new Statistics();
 
-    /**
-     * Minimum
-     */
-    private long minExecutionTime=0;
-    /**
-     * Maximum
-     */
-    private long maxExecutionTime=0;
-
-    /**
-     * number of updates
-     */
-    private long  updateNum=0;
     /**
      * last value fed to the gauge
      */
-    private long lastExecutionTime=0;
+    private long lastExecutionTime = 0;
     private long startTime;
 
     /**
@@ -87,31 +64,13 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     @Override
     public synchronized void update(long nextExecTime) {
 
-        try {
-            if (nextExecTime < 0) {
-                LOG.info("possible backwards time shift detected; discarding invalid data ({})",
-                         nextExecTime);
-                return;
-            }
-
-            minExecutionTime = (updateNum == 0) ? nextExecTime : Math.min(minExecutionTime, nextExecTime);
-            maxExecutionTime = Math.max(maxExecutionTime, nextExecTime);
-
-            sumExecutionTime = Math.addExact(sumExecutionTime, nextExecTime);
-            sumExecutionTimeSquared = Math.addExact(sumExecutionTimeSquared, nextExecTime * nextExecTime);
-
-            updateNum++;
-
-            lastExecutionTime = nextExecTime;
-        } catch (ArithmeticException e) {
-            startTime = System.currentTimeMillis();
-            sumExecutionTime = nextExecTime;
-            minExecutionTime = nextExecTime;
-            maxExecutionTime = nextExecTime;
-            sumExecutionTimeSquared = nextExecTime * nextExecTime;
-            lastExecutionTime = nextExecTime;
-            updateNum = 1;
+        if (nextExecTime < 0) {
+            LOG.info("possible backwards time shift detected; discarding invalid data ({})", nextExecTime);
+            return;
         }
+
+        statistics.update(nextExecTime);
+        lastExecutionTime = nextExecTime;
     }
 
     /**
@@ -119,7 +78,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized double getAverageExecutionTime() {
-        return (updateNum == 0) ? 0 : (double) sumExecutionTime / updateNum;
+        return statistics.getMean();
     }
 
     /**
@@ -144,10 +103,13 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         StringBuilder sb = new StringBuilder();
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format("%-34s %,12.2f\u00B1%,10.2f %,12d %,12d %,12.2f %,12d %12s",
-                    aName, getAverageExecutionTime(),getStandardError(),
-                    minExecutionTime,maxExecutionTime,
-                    getStandardDeviation(), updateNum,
-                    TimeUtils.duration(updatePeriod, TimeUnit.MILLISECONDS, TimeUtils.TimeUnitFormat.SHORT));
+                             aName,
+                             statistics.getMean(),
+                             statistics.getStandardError(),
+                             getMinExecutionTime(), getMaxExecutionTime(),
+                             statistics.getSampleStandardDeviation(),
+                             statistics.getSampleSize(),
+                             TimeUtils.duration(updatePeriod, TimeUnit.MILLISECONDS, TimeUtils.TimeUnitFormat.SHORT));
         }
         return sb.toString();
     }
@@ -157,7 +119,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized long getMinExecutionTime() {
-        return minExecutionTime;
+        return Math.round(statistics.getMin());
     }
 
     /**
@@ -165,7 +127,7 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized long getMaxExecutionTime() {
-        return maxExecutionTime;
+        return Math.round(statistics.getMax());
     }
 
     /**
@@ -176,23 +138,9 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
         return name;
     }
 
-    /**
-     * @return the RMS of executionTime
-     */
-    @Override
-    public synchronized double getExecutionTimeRMS() {
-        return (updateNum == 0) ? 0 : Math.sqrt((double) sumExecutionTimeSquared / updateNum);
-    }
-
     @Override
     public synchronized double getStandardDeviation() {
-        if (updateNum == 0) {
-            return 0;
-        }
-        double averageExecutionTime = getAverageExecutionTime();
-        double deviationSquare = ((double) sumExecutionTimeSquared / updateNum) - (averageExecutionTime * averageExecutionTime);
-        assert (deviationSquare >= 0);
-        return Math.sqrt(deviationSquare);
+        return statistics.getSampleStandardDeviation();
     }
 
     /**
@@ -201,14 +149,14 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
      */
     @Override
     public synchronized double getStandardError() {
-        return (updateNum == 0) ? 0 : getStandardDeviation() / Math.sqrt(updateNum);
+        return statistics.getStandardError();
     }
     /**
      * @return the updateNum
      */
     @Override
     public synchronized long getUpdateNum() {
-        return updateNum;
+        return statistics.getSampleSize();
     }
 
     /**
@@ -230,11 +178,88 @@ public class RequestExecutionTimeGaugeImpl implements RequestExecutionTimeGaugeM
     @Override
     public synchronized void reset() {
         startTime = System.currentTimeMillis();
-        sumExecutionTime = 0;
-        minExecutionTime = 0;
-        maxExecutionTime = 0;
-        sumExecutionTimeSquared = 0;
         lastExecutionTime = 0;
-        updateNum = 0;
+        statistics.reset();
+    }
+
+    /**
+     * Encapsulates an online algorithm for maintaining various statistics about
+     * samples.
+     *
+     * See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+     * for an explanation.
+     */
+    private static class Statistics
+    {
+        private double mean;              // Running mean
+        private double m2;                // Sum of squares of differences from mean
+        private double min = Double.NaN;  // Smallest sample
+        private double max = Double.NaN;  // Largest sample
+        private long n;                   // Number of samples
+
+        public void reset()
+        {
+            mean = m2 = 0;
+            min = max = Double.NaN;
+            n = 0;
+        }
+
+        public void update(double x)
+        {
+            min = (n == 0) ? x : Math.min(x, min);
+            max = (n == 0) ? x : Math.max(x, max);
+
+            n++;
+
+            double nextMean = mean + (x - mean) / n;
+            double nextM2 = m2 + (x - mean) * (x - nextMean);
+            mean = nextMean;
+            m2 = nextM2;
+        }
+
+        public double getMean()
+        {
+            return (n > 0) ? mean : Double.NaN;
+        }
+
+        public double getSampleVariance()
+        {
+            return (n > 1) ? m2 / (n - 1) : Double.NaN;
+        }
+
+        public double getPopulationVariance()
+        {
+            return (n > 0) ? m2 / n : Double.NaN;
+        }
+
+        public double getSampleStandardDeviation()
+        {
+            return Math.sqrt(getSampleVariance());
+        }
+
+        public double getPopulationStandardDeviation()
+        {
+            return Math.sqrt(getPopulationVariance());
+        }
+
+        public double getStandardError()
+        {
+            return getSampleStandardDeviation() / Math.sqrt(n);
+        }
+
+        public long getSampleSize()
+        {
+            return n;
+        }
+
+        public double getMin()
+        {
+            return min;
+        }
+
+        public double getMax()
+        {
+            return max;
+        }
     }
 }
