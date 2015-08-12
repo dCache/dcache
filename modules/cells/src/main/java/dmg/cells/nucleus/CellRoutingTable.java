@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -125,12 +126,14 @@ public class CellRoutingTable implements Serializable
             }
             break;
         case CellRoute.DEFAULT:
-            if (!_default.compareAndSet(route, null)) {
+            CellRoute currentDefault = _default.get();
+            if (!Objects.equals(currentDefault, route) || !_default.compareAndSet(currentDefault, null)) {
                 throw new IllegalArgumentException("Route entry not found for default");
             }
             break;
         case CellRoute.DUMPSTER:
-            if (!_dumpster.compareAndSet(route, null)) {
+            CellRoute currentDumpster = _dumpster.get();
+            if (!Objects.equals(currentDumpster, route) || !_dumpster.compareAndSet(currentDumpster, null)) {
                 throw new IllegalArgumentException("Route entry not found dumpster");
             }
             break;
