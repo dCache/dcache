@@ -129,7 +129,7 @@ class CellGlue
                 type = "dir";
                 value = provider;
             } else if (provider.indexOf('@') >= 0) {
-                type = "cells";
+                type = "cell";
                 value = provider;
             } else if (provider.equals("system")) {
                 type = "system";
