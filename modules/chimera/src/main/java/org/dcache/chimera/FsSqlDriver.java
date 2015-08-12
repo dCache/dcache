@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.dao.IncorrectUpdateSemanticsDataAccessException;
 import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
 import org.springframework.jdbc.LobRetrievalFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -49,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
@@ -169,7 +169,7 @@ class FsSqlDriver {
     String[] listDir(FsInode dir) {
         List<String> directoryList = _jdbc.queryForList("SELECT iname FROM t_dirs WHERE iparent=?",
                                                         String.class, dir.toString());
-        return directoryList.toArray(new String[directoryList.size()]);
+        return Stream.concat(Stream.of(".", ".."), directoryList.stream()).toArray(String[]::new);
     }
 
     /**
@@ -203,16 +203,10 @@ class FsSqlDriver {
         if (!removeEntryInParent(parent, name, inode)) {
             return false;
         }
-        if (!removeEntryInParent(inode, ".", inode)) {
-            throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '.' in " + inode + ".");
-        }
-        if (!removeEntryInParent(inode, "..", parent)) {
-            throw new IncorrectUpdateSemanticsDataAccessException("Failed to remove '..' in " + inode + ".");
-        }
 
-        // decrease reference count ( '.' , '..', and in parent directory ,
-        // and inode itself)
+        // A directory contains two pseudo entries for '.' and '..'
         decNlink(inode, 2);
+
         removeTag(inode);
 
         if (!removeInodeIfUnlinked(inode)) {
@@ -249,10 +243,6 @@ class FsSqlDriver {
 
     void remove(FsInode inode) {
         if (inode.isDirectory()) {
-            int n = _jdbc.update("DELETE FROM t_dirs WHERE iname IN ('.', '..') AND iparent=?", inode.toString());
-            if (n != 2) {
-                throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("DELETE FROM t_dirs WHERE iname IN ('.', '..') AND iparent=?", 2, n);
-            }
             removeTag(inode);
         }
 
@@ -264,12 +254,12 @@ class FsSqlDriver {
         /* Remove all hard-links. */
         List<String> parents =
                 _jdbc.queryForList(
-                        "SELECT iparent FROM t_dirs WHERE ipnfsid=? AND iname NOT IN ('.', '..')",
+                        "SELECT iparent FROM t_dirs WHERE ipnfsid=?",
                         String.class, inode.toString());
         for (String parent : parents) {
             decNlink(new FsInode(inode.getFs(), parent));
         }
-        int n = _jdbc.update("DELETE FROM t_dirs WHERE ipnfsid=? AND iname NOT IN ('.', '..')", inode.toString());
+        int n = _jdbc.update("DELETE FROM t_dirs WHERE ipnfsid=?", inode.toString());
         if (n != parents.size()) {
             throw new JdbcUpdateAffectedIncorrectNumberOfRowsException("DELETE FROM t_dirs WHERE ipnfsid=?", parents.size(), n);
         }
@@ -354,9 +344,6 @@ class FsSqlDriver {
         // increase parent nlink only
         incNlink(parent);
 
-        createEntryInParent(inode, ".", inode);
-        createEntryInParent(inode, "..", parent);
-
         return inode;
     }
 
@@ -390,21 +377,6 @@ class FsSqlDriver {
         }
 
         if (!srcDir.equals(destDir)) {
-            /*
-             * if moving a directory, point '..' to the new parent
-             */
-            if (inode.isDirectory()) {
-                String pointToNewParent = "UPDATE t_dirs SET ipnfsid=? WHERE iparent=? AND iname='..' AND ipnfsid=?";
-                n = _jdbc.update(pointToNewParent,
-                                 ps -> {
-                                     ps.setString(1, destDir.toString());
-                                     ps.setString(2, inode.toString());
-                                     ps.setString(3, srcDir.toString());
-                                 });
-                if (n != 1) {
-                    throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(pointToNewParent, 1, n);
-                }
-            }
             incNlink(destDir);
             decNlink(srcDir);
         } else {
@@ -422,12 +394,23 @@ class FsSqlDriver {
      * @return null if path is not found
      */
     FsInode inodeOf(FsInode parent, String name) {
-        return _jdbc.query("SELECT ipnfsid FROM t_dirs WHERE iname=? AND iparent=?",
-                           ps -> {
-                               ps.setString(1, name);
-                               ps.setString(2, parent.toString());
-                           },
-                           rs -> rs.next() ? new FsInode(parent.getFs(), rs.getString("ipnfsid")) : null);
+        switch (name) {
+        case ".":
+            return parent.isDirectory() ? parent : null;
+        case "..":
+            if (!parent.isDirectory()) {
+                return null;
+            }
+            FsInode dir = parent.getParent();
+            return (dir == null) ? parent : dir;
+        default:
+            return _jdbc.query("SELECT ipnfsid FROM t_dirs WHERE iname=? AND iparent=?",
+                               ps -> {
+                                   ps.setString(1, name);
+                                   ps.setString(2, parent.toString());
+                               },
+                               rs -> rs.next() ? new FsInode(parent.getFs(), rs.getString("ipnfsid")) : null);
+        }
     }
 
     /**
@@ -450,7 +433,7 @@ class FsSqlDriver {
             String elementId = inode.toString();
             do {
                 Map<String, Object> map = _jdbc.queryForMap(
-                        "SELECT iparent, iname FROM t_dirs WHERE ipnfsid=? AND iname NOT IN ('.', '..')", elementId);
+                        "SELECT iparent, iname FROM t_dirs WHERE ipnfsid=?", elementId);
                 pList.add((String) map.get("iname"));
                 elementId = (String) map.get("iparent");
             } while (!elementId.equals(root));
@@ -614,22 +597,9 @@ class FsSqlDriver {
      */
     FsInode getParentOf(FsInode inode) {
         return _jdbc.query(
-                "SELECT iparent FROM t_dirs WHERE ipnfsid=? AND iname != '.' and iname != '..'",
+                "SELECT iparent FROM t_dirs WHERE ipnfsid=?",
                 ps -> ps.setString(1, inode.toString()),
                 rs -> rs.next() ? new FsInode(inode.getFs(), rs.getString("iparent")) : null);
-    }
-
-    /**
-     *
-     * return a parent of inode. In case of hard links, one of the parents is returned
-     *
-     * @param inode
-     * @return
-     */
-    FsInode getParentOfDirectory(FsInode inode) {
-        return _jdbc.query("SELECT ipnfsid FROM t_dirs WHERE iparent=? AND iname = '..'",
-                           ps -> ps.setString(1, inode.toString()),
-                           rs -> rs.next() ? new FsInode(inode.getFs(), rs.getString("ipnfsid")) : null);
     }
 
     /**

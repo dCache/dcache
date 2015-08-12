@@ -41,7 +41,15 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
     private static final String QUERY =
             "SELECT i.ipnfsid, d.iname, i.isize, i.inlink, i.imode, i.itype, " +
             "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.igeneration " +
-            "FROM t_inodes i, t_dirs d WHERE iparent=? AND i.ipnfsid = d.ipnfsid";
+            "FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.ipnfsid WHERE iparent=? " +
+            "UNION ALL " +
+            "SELECT i.ipnfsid, '.', i.isize, i.inlink, i.imode, i.itype, " +
+            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.igeneration " +
+            "FROM t_inodes i WHERE i.ipnfsid=? " +
+            "UNION ALL " +
+            "SELECT i.ipnfsid, '..', i.isize, i.inlink, i.imode, i.itype, " +
+            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.igeneration " +
+            "FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.iparent WHERE d.ipnfsid=?";
 
     private final ResultSet _resultSet;
     private final FsInode _dir;
@@ -63,6 +71,8 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
             ps = connection.prepareStatement(QUERY);
             ps.setFetchSize(50);
             ps.setString(1, dir.toString());
+            ps.setString(2, dir.toString());
+            ps.setString(3, dir.toString());
             rs = ps.executeQuery();
         } catch (SQLException ex) {
             JdbcUtils.closeStatement(ps);

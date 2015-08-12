@@ -850,9 +850,7 @@ public class JdbcFs implements FileSystemProvider {
 
     @Override
     public FsInode getParentOf(FsInode inode) throws ChimeraFsException {
-        return inode.isDirectory()
-               ? _sqlDriver.getParentOfDirectory(inode)
-               : _sqlDriver.getParentOf(inode);
+        return _sqlDriver.getParentOf(inode);
     }
 
     @Override
