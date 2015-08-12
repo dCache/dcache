@@ -73,14 +73,14 @@ public class ExtendedInode extends FsInode
         this.parent = Optional.of(parent);
     }
 
-    public ExtendedInode(FileSystemProvider fs, FsInode inode)
-    {
-        this(fs, inode.toString());
-    }
-
     public ExtendedInode(FileSystemProvider fs, PnfsId id)
     {
         this(fs, id.toIdString());
+    }
+
+    public ExtendedInode(FileSystemProvider fs, FsInode inode)
+    {
+        super(fs, inode);
     }
 
     public ExtendedInode(FileSystemProvider fs, String id, FsInodeType type)

@@ -54,6 +54,13 @@ public class FsInode {
     private FsInode _parent;
 
     /**
+     * Copy constructor.
+     */
+    public FsInode(FileSystemProvider fs, FsInode inode) {
+        this(fs, inode.toString(), inode.type(), inode.getLevel(), inode.getStatCache());
+    }
+
+    /**
      * create a new inode in filesystem fs with given id and type
      * @param fs file system
      * @param id the new id
@@ -91,10 +98,16 @@ public class FsInode {
      * @param level
      */
     public FsInode(FileSystemProvider fs, String id, FsInodeType type, int level) {
+        this(fs, id, type, level, null);
+    }
+
+    public FsInode(FileSystemProvider fs, String id, FsInodeType type, int level, Stat stat)
+    {
         _id = id;
         _fs = fs;
         _level = level;
         _type = type;
+        _stat = stat;
     }
 
     /**
@@ -457,8 +470,13 @@ public class FsInode {
 	}
     }
 
-    void setStatCache(Stat predefinedStat) {
-	_stat = predefinedStat;
+    protected Stat getStatCache()
+    {
+        return _stat;
+    }
+
+    protected void setStatCache(Stat predefinedStat) {
+        _stat = predefinedStat;
     }
 
     //  for use in Collections
