@@ -153,7 +153,7 @@ class FsSqlDriver {
      * @return
      */
     FsInode createFileWithId(FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) {
-        createInode(inode, type, owner, group, mode, 1);
+        inode = createInode(inode, type, owner, group, mode, 1);
         createEntryInParent(parent, name, inode);
         incNlink(parent);
         return inode;
@@ -335,10 +335,8 @@ class FsSqlDriver {
      * @return
      */
     FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) {
-        FsInode inode = new FsInode(parent.getFs());
-
         // as soon as directory is created nlink == 2
-        createInode(inode, UnixPermission.S_IFDIR, owner, group, mode, 2);
+        FsInode inode = createInode(new FsInode(parent.getFs()), UnixPermission.S_IFDIR, owner, group, mode, 2);
         createEntryInParent(parent, name, inode);
 
         // increase parent nlink only
@@ -455,9 +453,9 @@ class FsSqlDriver {
      * @param mode
      * @param nlink
      */
-    public void createInode(FsInode inode, int type, int uid, int gid, int mode, int nlink) {
-        // default inode - nlink =1, size=0 ( 512 if directory), IO not allowed
+    FsInode createInode(FsInode inode, int type, int uid, int gid, int mode, int nlink) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
+        long size = (type == UnixPermission.S_IFDIR) ? 512 : 0;
         _jdbc.update("INSERT INTO t_inodes (ipnfsid,itype,imode,inlink,iuid,igid,isize,iio," +
                      "ictime,iatime,imtime,icrtime,igeneration) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      ps -> {
@@ -467,7 +465,7 @@ class FsSqlDriver {
                          ps.setInt(4, nlink);
                          ps.setInt(5, uid);
                          ps.setInt(6, gid);
-                         ps.setLong(7, (type == UnixPermission.S_IFDIR) ? 512 : 0);
+                         ps.setLong(7, size);
                          ps.setInt(8, _ioMode);
                          ps.setTimestamp(9, now);
                          ps.setTimestamp(10, now);
@@ -475,6 +473,23 @@ class FsSqlDriver {
                          ps.setTimestamp(12, now);
                          ps.setLong(13, 0);
                      });
+
+        Stat stat = new Stat();
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(0);
+        stat.setSize(size);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(uid);
+        stat.setGid(gid);
+        stat.setMode(mode & UnixPermission.S_PERMS | type);
+        stat.setNlink(nlink);
+        stat.setIno((int) inode.id());
+        stat.setDev(17);
+        stat.setRdev(13);
+
+        return new FsInode(inode.getFs(), inode.toString(), inode.type(), inode.getLevel(), stat);
     }
 
     /**
@@ -500,7 +515,21 @@ class FsSqlDriver {
                          ps.setTimestamp(6, now);
                          ps.setTimestamp(7, now);
                      });
-        return new FsInode(inode.getFs(), inode.toString(), level);
+        Stat stat = new Stat();
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(0);
+        stat.setSize(0);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(uid);
+        stat.setGid(gid);
+        stat.setMode(mode | UnixPermission.S_IFREG);
+        stat.setNlink(1);
+        stat.setIno((int) inode.id());
+        stat.setDev(17);
+        stat.setRdev(13);
+        return new FsInode(inode.getFs(), inode.toString(), FsInodeType.INODE, level, stat);
     }
 
     boolean removeInodeIfUnlinked(FsInode inode) {

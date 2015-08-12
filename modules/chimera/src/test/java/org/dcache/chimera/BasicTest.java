@@ -422,6 +422,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         FsInode file2Inode = base.create("testCreateFile2", 0, 0, 0644);
 
         Stat preStatBase = base.stat();
+        file2Inode.setStatCache(null);
 
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base, "testCreateFile2");
 
@@ -465,6 +466,7 @@ public class BasicTest extends ChimeraTestCaseHelper {
         Stat preStatBase = base.stat();
         Stat preStatBase2 = base2.stat();
         Stat preStatFile = fileInode.stat();
+        fileInode2.setStatCache(null);
 
         boolean ok = _fs.rename(fileInode, base, "testCreateFile", base2, "testCreateFile2");
 
