@@ -18,9 +18,7 @@
 package org.dcache.chimera.namespace;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -48,9 +46,6 @@ import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Checksum;
-
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.transform;
 
 /**
  * A Chimera inode extension that provides easy access to and caching of data
@@ -184,7 +179,7 @@ public class ExtendedInode extends FsInode
     public ImmutableList<String> getLocations(int type) throws ChimeraFsException
     {
         return ImmutableList.copyOf(
-                transform(filter(getLocations(), new IsType(type)), new GetLocation()));
+                getLocations().stream().filter(l -> l.type() == type).map(StorageLocatable::location).iterator());
     }
 
     public ImmutableList<StorageLocatable> getLocations() throws ChimeraFsException
@@ -275,31 +270,6 @@ public class ExtendedInode extends FsInode
             return FileType.LINK;
         default:
             return FileType.SPECIAL;
-        }
-    }
-
-    private static class IsType implements Predicate<StorageLocatable>
-    {
-        private final int type;
-
-        public IsType(int type)
-        {
-            this.type = type;
-        }
-
-        @Override
-        public boolean apply(StorageLocatable location)
-        {
-            return location.type() == type;
-        }
-    }
-
-    private static class GetLocation implements Function<StorageLocatable, String>
-    {
-        @Override
-        public String apply(StorageLocatable location)
-        {
-            return location.location();
         }
     }
 }
