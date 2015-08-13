@@ -1120,16 +1120,31 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    protected interface CommandMethodVisitor
+    {
+        void acceptCommand(Method method, String name);
+    }
+
     protected FtpTransfer _transfer;
 
     //
     // Use initializer to load up hashes.
     //
     {
+        visitFtpCommands(new CommandMethodVisitor() {
+            @Override
+            public void acceptCommand(Method method, String command) {
+                _methodDict.put(command, method);
+            }
+        });
+    }
+
+    final protected void visitFtpCommands(CommandMethodVisitor visitor)
+    {
         for (Method method : getClass().getMethods()) {
             String name = method.getName();
-            if (name.regionMatches(false, 0, "ac_", 0, 3)){
-                _methodDict.put(name.substring(3), method);
+            if (name.startsWith("ac_")) {
+                visitor.acceptCommand(method, name.substring(3));
             }
         }
     }
@@ -1316,8 +1331,22 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    protected boolean isCommandAllowed(String command, Object commandContext)
+    {
+        // If a transfer is in progress, only permit ABORT and a few
+        // other commands to be processed
+        if (_transfer != null && !(command.equals("abor") ||
+                command.equals("mic") || command.equals("conf") ||
+                command.equals("enc") || command.equals("quit") ||
+                command.equals("bye"))) {
+            reply("503 Transfer in progress", false);
+            return false;
+        }
 
-    public void ftpcommand(String cmdline)
+        return true;
+    }
+
+    public void ftpcommand(String cmdline, Object commandContext)
         throws CommandExitException
     {
         int l = 4;
@@ -1346,14 +1375,8 @@ public abstract class AbstractFtpDoorV1
             _logger.info("ftpcommand <{}>", cmdline);
         }
 
-        // If a transfer is in progress, only permit ABORT and a few
-        // other commands to be processed
         synchronized(this) {
-            if (_transfer != null &&
-                !(cmd.equals("abor") || cmd.equals("mic")
-                  || cmd.equals("conf") || cmd.equals("enc")
-                  || cmd.equals("quit") || cmd.equals("bye"))) {
-                reply("503 Transfer in progress", false);
+            if (!isCommandAllowed(cmd, commandContext)) {
                 return;
             }
         }
@@ -1561,7 +1584,7 @@ public abstract class AbstractFtpDoorV1
                 reply(err("",""));
             } else {
                 _commandCounter++;
-                ftpcommand(command);
+                ftpcommand(command, null);
             }
         } catch (CommandExitException e) {
             shutdownInputStream();
@@ -1842,46 +1865,11 @@ public abstract class AbstractFtpDoorV1
 
     public abstract void ac_auth(String arg);
 
-
     public abstract void ac_adat(String arg);
-
-    public void ac_mic(String arg)
-        throws CommandExitException
-    {
-        secure_command(arg, "mic");
-    }
-
-    public void ac_enc(String arg)
-        throws CommandExitException
-    {
-        secure_command(arg, "enc");
-    }
-
-    public void ac_conf(String arg)
-        throws CommandExitException
-    {
-        secure_command(arg, "conf");
-    }
-
-    public abstract void secure_command(String arg, String sectype)
-        throws CommandExitException;
-
-
-
-    public void ac_ccc(String arg)
-    {
-        // We should never received this, only through MIC, ENC or CONF,
-        // in which case it will be intercepted by secure_command()
-        reply("533 CCC must be protected");
-    }
 
     public abstract void ac_user(String arg);
 
-
     public abstract void ac_pass(String arg);
-
-
-
 
     public void ac_pbsz(String arg)
     {

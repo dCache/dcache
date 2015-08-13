@@ -7,10 +7,15 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.cert.CertPathValidatorException;
+import java.util.HashSet;
+import java.util.Set;
 
 import diskCacheV111.util.Base64;
 
@@ -20,9 +25,12 @@ import dmg.util.StreamEngine;
 
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 {
+    private static final GssCommandContext SECURE_COMMAND_CONTEXT = new GssCommandContext();
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
         ":globus-mapping:";
 
@@ -35,10 +43,39 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // GSS GSI context and others
     protected GSSContext _serviceContext;
 
+    private boolean _hasControlPortCleared;
+
+    private final Set<String> _plaintextCommands = new HashSet<>();
+
+    /**
+     * Commands that are annotated @Plaintext are allowed to be sent directly,
+     * as unencrypted commands.  All other commands must be sent indirectly via
+     * an MIC, ENC or CONF command.
+     */
+    @Retention(RUNTIME)
+    @Target(METHOD)
+    @interface Plaintext
+    {
+    }
+
+    public static class GssCommandContext
+    {
+    }
+
     /** Creates a new instance of GsiFtpDoorV1 */
     public GssFtpDoorV1(String name, StreamEngine engine, Args args)
     {
         super(name,engine,args);
+
+        visitFtpCommands(new CommandMethodVisitor() {
+            @Override
+            public void acceptCommand(Method method, String command) {
+                Plaintext plaintext = method.getAnnotation(Plaintext.class);
+                if (plaintext != null) {
+                    _plaintextCommands.add(command);
+                }
+            }
+        });
     }
 
     @Override
@@ -64,6 +101,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
+    @Plaintext
     public void ac_auth(String arg) {
         info("GssFtpDoorV1::secure_reply: going to authorize using " + _gssFlavor);
         if ( !arg.equals("GSSAPI") ) {
@@ -86,6 +124,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
+    @Plaintext
     public void ac_adat(String arg) {
         if ( arg == null || arg.length() <= 0 ) {
             reply("501 ADAT must have data");
@@ -151,7 +190,34 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    @Override
+    public void ac_ccc(String arg)
+    {
+        // We should never received this, only through MIC, ENC or CONF,
+        // in which case it will be intercepted by secure_command()
+        reply("533 CCC must be protected");
+    }
+
+    @Plaintext
+    public void ac_mic(String arg)
+        throws CommandExitException
+    {
+        secure_command(arg, "mic");
+    }
+
+    @Plaintext
+    public void ac_enc(String arg)
+        throws CommandExitException
+    {
+        secure_command(arg, "enc");
+    }
+
+    @Plaintext
+    public void ac_conf(String arg)
+        throws CommandExitException
+    {
+        secure_command(arg, "conf");
+    }
+
     public void secure_command(String answer, String sectype)
     throws CommandExitException {
         if ( answer == null || answer.length() <= 0 ) {
@@ -188,13 +254,28 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
         if ( msg.equalsIgnoreCase("CCC") ) {
             _gReplyType = "clear";
+            _hasControlPortCleared = true;
             reply("200 OK");
         }
         else {
             _gReplyType = sectype;
-            ftpcommand(msg);
+            ftpcommand(msg, SECURE_COMMAND_CONTEXT);
         }
 
+    }
+
+    @Override
+    protected boolean isCommandAllowed(String command, Object commandContext)
+    {
+        boolean isSecureCommand = commandContext == SECURE_COMMAND_CONTEXT;
+
+        if (!_hasControlPortCleared && !isSecureCommand &&
+                !_plaintextCommands.contains(command)) {
+            reply("530 Command must be wrapped in MIC, ENC or CONF", false);
+            return false;
+        }
+
+        return super.isCommandAllowed(command, commandContext);
     }
 
     @Override
