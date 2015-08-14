@@ -17,22 +17,33 @@
  */
 package org.dcache.gridsite;
 
-import com.google.common.collect.Iterables;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.gridforum.jgss.ExtendedGSSCredential;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
+import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
-import org.dcache.gplazma.util.GSSUtils;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.util.Glob;
 
+import static java.util.Collections.singletonList;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 /**
@@ -42,19 +53,19 @@ import static org.dcache.gridsite.Utilities.assertThat;
 public class SrmCredentialStore implements CredentialStore
 {
     private RequestCredentialStorage _store;
-    private String caDir;
-    private String vomsDir;
+    private X509CertChainValidatorExt certChainValidator;
+    private VOMSTrustStore vomsTrustStore;
 
     @Required
     public void setCaCertificatePath(String caDir)
     {
-        this.caDir = caDir;
+        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
     }
 
     @Required
     public void setVomsdir(String vomsDir)
     {
-        this.vomsDir = vomsDir;
+        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsDir));
     }
 
     @Required
@@ -77,16 +88,27 @@ public class SrmCredentialStore implements CredentialStore
             throws DelegationException
     {
         try {
-            Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(vomsDir, caDir, credential);
-            String primaryFqan = Iterables.getFirst(fqans, null);
+            FQAN primaryFqan;
+            if (credential instanceof ExtendedGSSCredential) {
+                X509Certificate[] chain = (X509Certificate[]) ((ExtendedGSSCredential) credential).inquireByOid(GSSConstants.X509_CERT_CHAIN);
+                VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+                primaryFqan = getPrimary(validator.validate(chain));
+            } else {
+                primaryFqan = null;
+            }
 
-            RequestCredential srmCredential = new RequestCredential(nameFromId(id),
-                    primaryFqan, credential, _store);
+            RequestCredential srmCredential =
+                    new RequestCredential(nameFromId(id), Objects.toString(primaryFqan, null), credential, _store);
             _store.saveRequestCredential(srmCredential);
-        } catch (AuthorizationException | GSSException | RuntimeException e) {
+        } catch (GSSException | RuntimeException e) {
             throw new DelegationException("failed to save credential: " +
                     e.getMessage());
         }
+    }
+
+    private static FQAN getPrimary(List<VOMSAttribute> attributes)
+    {
+        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new).orElse(null);
     }
 
     @Override

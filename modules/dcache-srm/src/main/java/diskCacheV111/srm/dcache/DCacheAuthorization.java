@@ -73,11 +73,7 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
-import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,14 +87,11 @@ import java.security.cert.X509Certificate;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
-import diskCacheV111.util.TimeoutCacheException;
 
-import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.LoginReply;
 import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Origin.AuthType;
-import org.dcache.gplazma.AuthenticationException;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;

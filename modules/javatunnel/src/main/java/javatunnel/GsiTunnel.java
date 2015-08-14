@@ -1,5 +1,6 @@
 package javatunnel;
 
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -12,6 +13,11 @@ import org.gridforum.jgss.ExtendedGSSManager;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,20 +27,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.cert.X509Certificate;
+import java.util.function.Consumer;
 
+import org.dcache.auth.FQAN;
 import org.dcache.auth.FQANPrincipal;
-import org.dcache.gplazma.util.GSSUtils;
 import org.dcache.util.Args;
 import org.dcache.util.Crypto;
 
+import static java.util.Collections.singletonList;
 import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
 
 class GsiTunnel extends GssTunnel  {
 
     private static final Logger _log = LoggerFactory.getLogger(GsiTunnel.class);
-    private final String caDir;
-    private final String vomsDir;
+    private final VOMSTrustStore vomsTrustStore;
+    private final X509CertChainValidatorExt certChainValidator;
 
     private ExtendedGSSContext _e_context;
 
@@ -55,8 +63,10 @@ class GsiTunnel extends GssTunnel  {
         X509Credential serviceCredential;
         String service_key = _arguments.getOption(SERVICE_KEY);
         String service_cert = _arguments.getOption(SERVICE_CERT);
-        caDir = _arguments.getOption(SERVICE_TRUSTED_CERTS);
-        vomsDir = _arguments.getOption(SERVICE_VOMS_DIR);
+        String caDir = _arguments.getOption(SERVICE_TRUSTED_CERTS);
+        String vomsDir = _arguments.getOption(SERVICE_VOMS_DIR);
+        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsDir));
+        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
 
         /* Unfortunately, we can't rely on GlobusCredential to provide
          * meaningful error messages so we catch some obvious problems
@@ -116,17 +126,24 @@ class GsiTunnel extends GssTunnel  {
     private void scanExtendedAttributes(ExtendedGSSContext gssContext) {
 
         try {
-            boolean primary = true;
+            X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
 
-            for (String fqanValue : GSSUtils.getFQANsFromGSSContext(vomsDir, caDir, gssContext)) {
-                _subject.getPrincipals().add( new FQANPrincipal(fqanValue, primary));
-                primary = false;
-            }
+            VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+            validator.validate(chain).stream().flatMap(a -> a.getFQANs().stream()).map(FQAN::new).forEachOrdered(
+                    new Consumer<FQAN>()
+                    {
+                        boolean primary = true;
 
-        } catch (AuthorizationException e) {
-            _log.error("Failed to get users group and role context: {}", e.toString());
+                        @Override
+                        public void accept(FQAN fqan)
+                        {
+                            _subject.getPrincipals().add(new FQANPrincipal(fqan, primary));
+                            primary = false;
+                        }
+                    });
+        } catch (GSSException e) {
+            _log.error("Could not extract certificate chain from context {}", e.getMessage());
         }
-
     }
 
     @Override

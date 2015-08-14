@@ -89,9 +89,8 @@
         <artifactId>jdom</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.dcache</groupId>
-        <artifactId>gplazma2</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.italiangrid</groupId>
+        <artifactId>voms-api-java</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
