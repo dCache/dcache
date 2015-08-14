@@ -64,15 +64,21 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
-import com.google.common.collect.Iterables;
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
 
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Objects;
 
-import org.dcache.gplazma.util.GSSUtils;
+import org.dcache.auth.FQAN;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
@@ -82,6 +88,8 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Axis;
 
+import static java.util.Collections.singletonList;
+
 
 /**
  * The SrmAUthorizer provides helper methods that mediates access to
@@ -89,13 +97,11 @@ import org.dcache.srm.util.Axis;
  */
 public class SrmAuthorizer
 {
-    private static final Logger log = LoggerFactory.getLogger(SrmAuthorizer.class);
-
     private final RequestCredentialStorage storage;
-    private final String vomsdir;
-    private final String capath;
     private final SRMAuthorization authorization;
     private final boolean isClientDNSLookup;
+    private final VOMSTrustStore vomsTrustStore;
+    private final X509CertChainValidatorExt certChainValidator;
 
     public SrmAuthorizer(SRMAuthorization authorization,
                          RequestCredentialStorage storage, boolean isClientDNSLookup,
@@ -104,8 +110,8 @@ public class SrmAuthorizer
         this.isClientDNSLookup = isClientDNSLookup;
         this.authorization = authorization;
         this.storage = storage;
-        this.vomsdir = vomsdir;
-        this.capath = capath;
+        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsdir));
+        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(capath).build();
     }
 
     /**
@@ -162,15 +168,20 @@ public class SrmAuthorizer
         GSSCredential credential = Axis.getDelegatedCredential().orElse(null);
 
         try {
-            Iterable<String> roles = GSSUtils.extractFQANs(vomsdir, capath, certificates);
-            String role = Iterables.getFirst(roles, null);
+            VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+            FQAN role = getPrimary(validator.validate(certificates));
 
-            RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, role, storage);
+            RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, Objects.toString(role, null), storage);
             requestCredential.keepBestDelegatedCredential(credential);
             requestCredential.saveCredential();
             return requestCredential;
         } catch (GSSException e) {
             throw new SRMAuthenticationException("Problem getting request credential: " + e.getMessage(), e);
         }
+    }
+
+    private FQAN getPrimary(List<VOMSAttribute> attributes)
+    {
+        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new).orElse(null);
     }
 }
