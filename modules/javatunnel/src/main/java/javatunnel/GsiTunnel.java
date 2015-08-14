@@ -21,10 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.cert.X509Certificate;
-import org.bouncycastle.voms.VOMSAttribute;
 
 import org.dcache.auth.FQANPrincipal;
-import org.dcache.auth.util.GSSUtils;
+import org.dcache.gplazma.util.GSSUtils;
 import org.dcache.util.Args;
 import org.dcache.util.Crypto;
 

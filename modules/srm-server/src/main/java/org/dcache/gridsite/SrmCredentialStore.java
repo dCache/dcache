@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.dcache.auth.util.GSSUtils;
 import org.dcache.delegation.gridsite2.DelegationException;
+import org.dcache.gplazma.util.GSSUtils;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.util.Glob;
