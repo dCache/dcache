@@ -23,18 +23,16 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
-import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.util.X509Utils;
 import org.dcache.cells.Option;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.util.X509Utils;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
-import org.dcache.util.NetLoggerBuilder;
 
 import static java.util.Arrays.asList;
 

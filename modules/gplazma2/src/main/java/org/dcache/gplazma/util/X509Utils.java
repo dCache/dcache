@@ -1,4 +1,4 @@
-package org.dcache.auth.util;
+package org.dcache.gplazma.util;
 
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
