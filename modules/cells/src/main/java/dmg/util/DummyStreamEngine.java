@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -20,6 +19,8 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+
+import dmg.protocols.telnet.TunnelSocket;
 
 public class DummyStreamEngine implements StreamEngine
 {
@@ -35,24 +36,22 @@ public class DummyStreamEngine implements StreamEngine
     private Reader _reader;
     private Writer _writer;
 
-    public DummyStreamEngine(Socket socket)
+    public DummyStreamEngine(Socket socket) throws IOException
     {
         _socket = socket;
+
+        if (socket instanceof TunnelSocket) {
+            if (!((TunnelSocket) socket).verify()) {
+                String hostAddress = (socket.getInetAddress()).getHostAddress();
+                socket.close();
+                throw new IOException("Host " + hostAddress + ": Tunnel verification failed!");
+            }
+            setSubject(((TunnelSocket) socket).getSubject());
+        }
 
         SocketChannel channel = _socket.getChannel();
         if (channel != null) {
             _channel = wrapChannel(channel);
-        }
-
-        try {
-            Method meth = _socket.getClass().getMethod("getSubject", new Class[0]);
-            Subject subject = (Subject)meth.invoke(_socket);
-
-            setSubject(subject);
-        } catch (NoSuchMethodException nsm) {
-
-        } catch (Exception e) {
-            _logger.warn("Failed to initialize user name in DummyStreamEngine", e);
         }
     }
 

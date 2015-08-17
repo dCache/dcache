@@ -13,99 +13,107 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.security.Principal;
 
+import dmg.protocols.telnet.TunnelSocket;
 import dmg.util.UserValidatable;
 
 import org.dcache.auth.UserNamePrincipal;
 
-public class SSLTunnelSocket extends Socket implements UserBindible {
+public class SSLTunnelSocket extends Socket implements TunnelSocket
+{
+    private Socket sock;
+    private Subject _subject = new Subject();
+    private boolean verified;
 
-	private Socket sock;
-        private Subject _subject = new Subject();
+    SSLTunnelSocket(Socket s, UserValidatable uv ) {
 
-	SSLTunnelSocket(Socket s, UserValidatable uv ) {
+        sock = s;
 
-		sock = s;
+        try {
 
-		try {
+            int c;
+            int pos = 0;
+            byte[] buf = new byte[512];
+            InputStream in = sock.getInputStream();
+            boolean isGood = true;
 
-			int c;
-			int pos = 0;
-			byte[] buf = new byte[512];
-			InputStream in = sock.getInputStream();
-			boolean isGood = true;
+            do {
+                c = in.read();
+                if ( c  < 0 ) {
+                    isGood = false;
+                    break;
+                }
 
-			do {
-				c = in.read();
-				if ( c  < 0 ) {
-					isGood = false;
-					break;
-				}
+                buf[pos] = (byte)c;
+                pos ++;
 
-				buf[pos] = (byte)c;
-				pos ++;
-
-			}while(c != '\n');
-
-
-			if( isGood ) {
-				String auth = new String(buf, 0 , pos-1);
-				String user = auth.substring( auth.lastIndexOf('=') +1, auth.lastIndexOf(':'));
-				String pass = auth.substring( auth.lastIndexOf(':') +1 );
-
-				if( uv.validateUser( user , pass ) ) {
-                                    Principal principal = new UserNamePrincipal(user);
-                                    _subject.getPrincipals().add(principal);
-                                    _subject.setReadOnly();
-				}
-
-			}
-
-		} catch( Exception e) {
-			try {
-				s.close();
-			} catch (IOException ignored ) {}
-		}
-	}
+            }while(c != '\n');
 
 
+            if( isGood ) {
+                String auth = new String(buf, 0 , pos-1);
+                String user = auth.substring( auth.lastIndexOf('=') +1, auth.lastIndexOf(':'));
+                String pass = auth.substring( auth.lastIndexOf(':') +1 );
 
-	@Override
-        public OutputStream getOutputStream() throws IOException {
-		return sock.getOutputStream();
-	}
+                if( uv.validateUser( user , pass ) ) {
+                    Principal principal = new UserNamePrincipal(user);
+                    _subject.getPrincipals().add(principal);
+                    _subject.setReadOnly();
+                }
 
-	@Override
-        public InputStream getInputStream() throws IOException {
-		return sock.getInputStream();
-	}
+                verified = true;
+            }
 
-	@Override
-        public void close() throws IOException {
-		sock.close();
-	}
+        } catch( Exception e) {
+            try {
+                s.close();
+            } catch (IOException ignored ) {}
+        }
+    }
 
 
- 	@Override
-         public InetAddress getInetAddress() {
-		return sock.getInetAddress();
-	}
 
-	@Override
-        public int getPort() {
-		return sock.getPort();
-	}
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        return sock.getOutputStream();
+    }
 
-	public String toString() {
-		return sock.toString();
-	}
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return sock.getInputStream();
+    }
+
+    @Override
+    public void close() throws IOException {
+        sock.close();
+    }
+
+
+    @Override
+    public InetAddress getInetAddress() {
+        return sock.getInetAddress();
+    }
+
+    @Override
+    public int getPort() {
+        return sock.getPort();
+    }
+
+    public String toString() {
+        return sock.toString();
+    }
 
     public void setSubject(Subject subject) {
         _subject = subject;
     }
 
     @Override
+    public boolean verify()
+    {
+        return verified;
+    }
+
+    @Override
     public Subject getSubject() {
         return _subject;
     }
-
 }

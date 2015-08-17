@@ -4,6 +4,8 @@
 
 package javatunnel;
 
+import javatunnel.dss.KerberosDssContextFactory;
+
 import javax.net.ServerSocketFactory;
 
 import java.io.DataInputStream;
@@ -13,6 +15,8 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import dmg.protocols.telnet.TunnelSocket;
 
 class SelfTest {
 
@@ -48,7 +52,7 @@ class SelfTest {
             DataInputStream is;
 
             try {
-                s = new TunnelSocket( _host, _port, new GssTunnel("tigran@DESY.DE", "nfs/anahit.desy.de@DESY.DE"));
+                s = new DssSocket( _host, _port, new KerberosDssContextFactory("tigran@DESY.DE", "nfs/anahit.desy.de@DESY.DE"));
                 Thread.sleep(20000);
                 out  = s.getOutputStream();
                 in  =  s.getInputStream();
@@ -101,18 +105,14 @@ class SelfTest {
 
                 String[] initArgs = {"javatunnel.GssTunnel", "nfs/anahit.desy.de@DESY.DE"};
 
-                ServerSocketFactory factory = new TunnelServerSocketCreator(initArgs);
+                ServerSocketFactory factory = new DssServerSocketCreator(initArgs);
 
                 server = factory.createServerSocket();
-
-//                server = new TunnelServerSocket(new GsiTunnel("dummy"));
                 server.bind(new InetSocketAddress( _port ) );
                 s = server.accept();
+                ((TunnelSocket) s).verify();
 
-
-               // Convertable tunnel = new TunnelConverter();
-                TunnelSocket ts = (TunnelSocket)s;
-                ts.verify();
+                DssSocket ts = (DssSocket)s;
                 System.out.println( ts.getSubject() );
 
                    out  = s.getOutputStream();

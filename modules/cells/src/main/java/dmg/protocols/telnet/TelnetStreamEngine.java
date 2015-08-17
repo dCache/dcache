@@ -106,25 +106,6 @@ public class  TelnetStreamEngine extends DummyStreamEngine
       _writer = new TelnetOutputStreamWriter( _telnetOutputStream ) ;
       _reader = new TelnetInputStreamReader( _telnetInputStream , _writer ) ;
 
-      try{
-          Method meth = socket.getClass().getMethod("verify");
-          boolean verified = (Boolean)meth.invoke(socket);
-          if (!verified) {
-              String hostAddress = (socket.getInetAddress()).getHostAddress();
-              socket.close();
-              throw new TelnetAuthenticationException("Host "+hostAddress+": Tunnel verification failed!" ) ;
-          }
-
-          meth = socket.getClass().getMethod("getSubject", new Class[0]);
-          Subject subject = (Subject) meth.invoke(socket);
-
-          setSubject(subject);
-
-      }catch(NoSuchMethodException nsm){
-    	  // nsm.printStackTrace();
-    	  // it's not a tunnel...still OK
-      }
-
       if( _serverAuth != null ) {
           doAuthentication();
       }
