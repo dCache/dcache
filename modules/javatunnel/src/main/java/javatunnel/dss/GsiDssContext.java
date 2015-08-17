@@ -17,58 +17,44 @@
  */
 package javatunnel.dss;
 
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSException;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
-import org.italiangrid.voms.ac.VOMSACValidator;
-import org.italiangrid.voms.store.VOMSTrustStore;
 
 import javax.security.auth.Subject;
 
 import java.io.IOException;
-import java.security.Principal;
+import java.security.cert.CertPath;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
-import org.dcache.auth.FQANPrincipal;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 
 public class GsiDssContext extends GssDssContext
 {
-    private final VOMSTrustStore vomsTrustStore;
-    private final X509CertChainValidatorExt certChainValidator;
+    private final CertificateFactory cf;
 
-    public GsiDssContext(ExtendedGSSContext context, VOMSTrustStore vomsTrustStore,
-                         X509CertChainValidatorExt certChainValidator)
+    public GsiDssContext(ExtendedGSSContext context, CertificateFactory cf)
             throws GSSException, IOException
     {
         super(context);
-        this.vomsTrustStore = vomsTrustStore;
-        this.certChainValidator = certChainValidator;
+        this.cf = cf;
     }
 
     @Override
     protected Subject createSubject() throws GSSException
     {
-        X509Certificate[] chain = (X509Certificate[]) ((ExtendedGSSContext) context).inquireByOid(GSSConstants.X509_CERT_CHAIN);
-
-        Set<Principal> principals = new HashSet<>();
-        principals.add(new GlobusPrincipal(context.getSrcName().toString()));
-
-        VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
-        boolean primary = true;
-        for (VOMSAttribute attr : validator.validate(chain)) {
-            for (String fqan : attr.getFQANs()) {
-                principals.add(new FQANPrincipal(fqan, primary));
-                primary = false;
-            }
+        try {
+            X509Certificate[] chain =
+                    (X509Certificate[]) ((ExtendedGSSContext) context).inquireByOid(GSSConstants.X509_CERT_CHAIN);
+            CertPath certPath = cf.generateCertPath(asList(chain));
+            return new Subject(false, emptySet(), singleton(certPath), emptySet());
+        } catch (CertificateException e) {
+            throw new GSSException(GSSException.DEFECTIVE_CREDENTIAL, 0,
+                                   "Failed to build certificate path: " + e.getMessage());
         }
-
-        return new Subject(false, principals, Collections.singleton(chain), Collections.emptySet());
     }
 }

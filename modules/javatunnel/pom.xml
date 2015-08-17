@@ -20,16 +20,8 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.italiangrid</groupId>
-      <artifactId>voms-api-java</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.italiangrid</groupId>
-        <artifactId>voms-api-java</artifactId>
     </dependency>
   </dependencies>
 </project>

@@ -17,7 +17,6 @@
  */
 package javatunnel.dss;
 
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -28,18 +27,15 @@ import org.gridforum.jgss.ExtendedGSSManager;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
-import org.italiangrid.voms.store.VOMSTrustStore;
-import org.italiangrid.voms.store.VOMSTrustStores;
-import org.italiangrid.voms.util.CertificateValidatorBuilder;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.cert.CertificateFactory;
 
 import org.dcache.util.Args;
+import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
 
-import static java.util.Collections.singletonList;
-import static org.dcache.util.Files.checkDirectory;
 import static org.dcache.util.Files.checkFile;
 
 public class GsiDssContextFactory implements DssContextFactory
@@ -47,14 +43,12 @@ public class GsiDssContextFactory implements DssContextFactory
     private static final String SERVICE_KEY = "service_key";
     private static final String SERVICE_CERT = "service_cert";
     private static final String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
-    private static final String SERVICE_VOMS_DIR = "service_voms_dir";
     private static final String CIPHER_FLAGS = "ciphers";
 
-    private final VOMSTrustStore vomsTrustStore;
-    private final X509CertChainValidatorExt certChainValidator;
     private final GlobusGSSCredentialImpl cred;
     private final GSSManager manager;
     private final String[] bannedCiphers;
+    private final CertificateFactory cf;
 
     public GsiDssContextFactory(String args) throws GSSException, IOException
     {
@@ -64,10 +58,11 @@ public class GsiDssContextFactory implements DssContextFactory
 
         String service_key = arguments.getOption(SERVICE_KEY);
         String service_cert = arguments.getOption(SERVICE_CERT);
+
+        /* FIXME: The ca directory is not configurable for a JGlobus GSSContext. */
         String caDir = arguments.getOption(SERVICE_TRUSTED_CERTS);
-        String vomsDir = arguments.getOption(SERVICE_VOMS_DIR);
-        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsDir));
-        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+
+        cf = CertificateFactories.newX509CertificateFactory();
 
         /* Unfortunately, we can't rely on GlobusCredential to provide
          * meaningful error messages so we catch some obvious problems
@@ -75,7 +70,6 @@ public class GsiDssContextFactory implements DssContextFactory
          */
         checkFile(service_key);
         checkFile(service_cert);
-        checkDirectory(caDir);
 
         X509Credential serviceCredential;
         try {
@@ -97,7 +91,7 @@ public class GsiDssContextFactory implements DssContextFactory
             ExtendedGSSContext context = (ExtendedGSSContext) manager.createContext(cred);
             context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
             context.setBannedCiphers(bannedCiphers);
-            return new GsiDssContext(context, vomsTrustStore, certChainValidator);
+            return new GsiDssContext(context, cf);
         } catch (GSSException e) {
             throw new IOException(e);
         }
