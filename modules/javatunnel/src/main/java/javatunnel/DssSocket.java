@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -124,7 +125,8 @@ public class DssSocket extends Socket implements TunnelSocket
     private synchronized void acceptSecurityContext() throws IOException
     {
         try {
-            context = factory.create(this);
+            context = factory.create((InetSocketAddress) getRemoteSocketAddress(),
+                                     (InetSocketAddress) getLocalSocketAddress());
 
             TokenWriter writer = new Base64TokenWriter(super.getOutputStream());
             TokenReader reader = new Base64TokenReader(super.getInputStream());
@@ -155,7 +157,8 @@ public class DssSocket extends Socket implements TunnelSocket
     private synchronized void initSecurityContext() throws IOException
     {
         try {
-            context = factory.create(this);
+            context = factory.create((InetSocketAddress) getRemoteSocketAddress(),
+                                     (InetSocketAddress) getLocalSocketAddress());
 
             TokenWriter writer = new Base64TokenWriter(super.getOutputStream());
             TokenReader reader = new Base64TokenReader(super.getInputStream());

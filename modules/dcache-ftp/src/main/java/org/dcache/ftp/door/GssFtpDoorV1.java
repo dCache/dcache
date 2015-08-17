@@ -1,21 +1,25 @@
 package org.dcache.ftp.door;
 
 import com.google.common.base.Throwables;
-import org.ietf.jgss.ChannelBinding;
-import org.ietf.jgss.GSSContext;
+import javatunnel.dss.DssContext;
+import javatunnel.dss.DssContextFactory;
 import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.MessageProp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import javax.security.auth.Subject;
+
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.cert.CertPathValidatorException;
 import java.util.Base64;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
+
 import dmg.util.CommandExitException;
+
+import org.dcache.auth.LoginNamePrincipal;
 
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getFirst;
@@ -25,37 +29,38 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     private static final Logger LOGGER = LoggerFactory.getLogger(GssFtpDoorV1.class);
 
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
-        ":globus-mapping:";
+            ":globus-mapping:";
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
-    protected GSSName _gssIdentity;
+    protected Subject subject;
     // GSS general
-    protected String _gssFlavor;
+    protected String gssFlavor;
 
-    // GSS GSI context and others
-    protected GSSContext _serviceContext;
+    protected DssContext context;
+    private DssContextFactory factory;
 
-    public GssFtpDoorV1(String ftpDoorName, String tlogName)
+    public GssFtpDoorV1(String ftpDoorName, String tlogName, String gssFlavor)
     {
         super(ftpDoorName, tlogName);
+        this.gssFlavor = gssFlavor;
     }
 
     @Override
-    public void init() throws UnknownHostException
+    public void init() throws Exception
     {
         super.init();
-        _gssFlavor = "unknown";
+        factory = createFactory();
     }
 
     @Override
-    protected void secure_reply(String answer, String code) {
-        answer = answer+"\r\n";
+    protected void secure_reply(String answer, String code)
+    {
+        answer = answer + "\r\n";
         byte[] data = answer.getBytes(UTF8);
-        MessageProp prop = new MessageProp(0, false);
-        try{
-            data = _serviceContext.wrap(data, 0, data.length, prop);
-        } catch ( GSSException e ) {
+        try {
+            data = context.wrap(data, 0, data.length);
+        } catch (IOException e) {
             reply("500 Reply encryption error: " + e);
             return;
         }
@@ -63,20 +68,21 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Help("AUTH <SP> <arg> - Initiate secure context negotiation.")
-    public void ftp_auth(String arg) {
-        LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", _gssFlavor);
-        if ( !arg.equals("GSSAPI") ) {
+    public void ftp_auth(String arg)
+    {
+        LOGGER.info("GssFtpDoorV1::secure_reply: going to authorize using {}", gssFlavor);
+        if (!arg.equals("GSSAPI")) {
             reply("504 Authenticating method not supported");
             return;
         }
-        if (_serviceContext != null && _serviceContext.isEstablished()) {
+        if (context != null && context.isEstablished()) {
             reply("234 Already authenticated");
             return;
         }
 
         try {
-            _serviceContext = getServiceContext();
-        } catch( Exception e ) {
+            context = factory.create(_remoteSocketAddress, _localSocketAddress);
+        } catch (IOException e) {
             LOGGER.error(e.toString());
             reply("500 Error: " + e.toString());
             return;
@@ -85,60 +91,51 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Help("ADAT <SP> <arg> - Supply context negotation data.")
-    public void ftp_adat(String arg) {
-        if ( arg == null || arg.length() <= 0 ) {
+    public void ftp_adat(String arg)
+    {
+        if (arg == null || arg.length() <= 0) {
             reply("501 ADAT must have data");
             return;
         }
 
-        if ( _serviceContext == null ) {
+        if (context == null) {
             reply("503 Send AUTH first");
             return;
         }
         byte[] token = Base64.getDecoder().decode(arg);
-        try {
-            ChannelBinding cb = new ChannelBinding(_remoteSocketAddress.getAddress(),
-            InetAddress.getLocalHost(), null);
-        } catch( UnknownHostException e ) {
-            reply("500 Can not determine address of local host: " + e);
-            return;
-        }
 
         try {
             //_serviceContext.setChannelBinding(cb);
             //debug("GssFtpDoorV1::ftp_adat: CB set");
-            token = _serviceContext.acceptSecContext(token, 0, token.length);
+            token = context.accept(token);
             //debug("GssFtpDoorV1::ftp_adat: Token created");
-            _gssIdentity = _serviceContext.getSrcName();
+            subject = context.getSubject();
             //debug("GssFtpDoorV1::ftp_adat: User principal: " + UserPrincipal);
-        } catch (GSSException e) {
+        } catch (IOException e) {
             CertPathValidatorException cpve =
                     getFirst(filter(Throwables.getCausalChain(e), CertPathValidatorException.class), null);
             if (cpve != null && cpve.getCertPath() != null && LOGGER.isDebugEnabled()) {
                 LOGGER.error("Authentication failed: {} in #{} of {}",
-                        e.getMessage(), cpve.getIndex() + 1, cpve.getCertPath());
+                             e.getMessage(), cpve.getIndex() + 1, cpve.getCertPath());
             } else {
                 LOGGER.error("Authentication failed: {}", e.getMessage());
             }
-	    LOGGER.trace("Authentication failed", e);
+            LOGGER.trace("Authentication failed", e);
             reply("535 Authentication failed: " + e.getMessage());
             return;
         }
         if (token != null) {
-            if (!_serviceContext.isEstablished()) {
-                reply("335 ADAT="+Base64.getEncoder().encodeToString(token));
+            if (!context.isEstablished()) {
+                reply("335 ADAT=" + Base64.getEncoder().encodeToString(token));
+            } else {
+                reply("235 ADAT=" + Base64.getEncoder().encodeToString(token));
             }
-            else {
-                reply("235 ADAT="+Base64.getEncoder().encodeToString(token));
-            }
-        }
-        else {
-            if (!_serviceContext.isEstablished()) {
+        } else {
+            if (!context.isEstablished()) {
                 reply("335 ADAT=");
-            }
-            else {
+            } else {
                 LOGGER.info("GssFtpDoorV1::ftp_adat: security context established " +
-                        "with {}", _gssIdentity);
+                            "with {}", subject);
                 reply("235 OK");
             }
         }
@@ -154,46 +151,46 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     @Help("MIC <SP> <arg> - Integrity protected command.")
     public void ftp_mic(String arg)
-        throws CommandExitException
+            throws CommandExitException
     {
         secure_command(arg, "mic");
     }
 
     @Help("ENC <SP> <arg> - Privacy protected command.")
     public void ftp_enc(String arg)
-        throws CommandExitException
+            throws CommandExitException
     {
         secure_command(arg, "enc");
     }
 
     @Help("CONF <SP> <arg> - Confidentiality protection command.")
     public void ftp_conf(String arg)
-        throws CommandExitException
+            throws CommandExitException
     {
         secure_command(arg, "conf");
     }
 
     public void secure_command(String answer, String sectype)
-    throws CommandExitException {
-        if ( answer == null || answer.length() <= 0 ) {
-            reply("500 Wrong syntax of "+sectype+" command");
+            throws CommandExitException
+    {
+        if (answer == null || answer.length() <= 0) {
+            reply("500 Wrong syntax of " + sectype + " command");
             return;
         }
 
-        if ( _serviceContext == null || !_serviceContext.isEstablished()) {
+        if (context == null || !context.isEstablished()) {
             reply("503 Security context is not established");
             return;
         }
 
 
         byte[] data = Base64.getDecoder().decode(answer);
-        MessageProp prop = new MessageProp(0, false);
         try {
-            data = _serviceContext.unwrap(data, 0, data.length, prop);
-        } catch( GSSException e ) {
+            data = context.unwrap(data);
+        } catch (IOException e) {
             reply("500 Can not decrypt command: " + e);
             LOGGER.error("GssFtpDoorV1::secure_command: got GSSException: {}",
-                    e.getMessage());
+                         e.getMessage());
             return;
         }
 
@@ -201,7 +198,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         // of a secured command. Truncate trailing zeros.
         // Search from the right end of the string for a non-null character.
         int i;
-        for(i = data.length;i > 0 && data[i-1] == 0 ;i--) {
+        for (i = data.length; i > 0 && data[i - 1] == 0; i--) {
             //do nothing, just decrement i
         }
         String msg = new String(data, 0, i, UTF8);
@@ -213,11 +210,10 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             _commandLine = sectype.toUpperCase() + "{" + msg + "}";
         }
 
-        if ( msg.equalsIgnoreCase("CCC") ) {
+        if (msg.equalsIgnoreCase("CCC")) {
             _gReplyType = "clear";
             reply("200 OK");
-        }
-        else {
+        } else {
             _gReplyType = sectype;
             ftpcommand(msg);
         }
@@ -225,9 +221,34 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     @Override
-    protected String getUser()
+    public void ftp_user(String arg)
     {
-        return (_gssIdentity == null) ? null : _gssIdentity.toString();
+        if (arg.equals("")) {
+            reply(err("USER", arg));
+            return;
+        }
+
+        if (context == null || !context.isEstablished()) {
+            reply("530 Authentication required");
+            return;
+        }
+
+        Subject subject = context.getSubject();
+        subject.getPrincipals().add(_origin);
+        if (!arg.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+            subject.getPrincipals().add(new LoginNamePrincipal(arg));
+        }
+
+        try {
+            login(subject);
+            reply("200 User " + arg + " logged in", this.subject);
+        } catch (PermissionDeniedCacheException e) {
+            LOGGER.warn("Login denied for {}: {}", context.getPeerName(), e.getMessage());
+            println("530 Login denied");
+        } catch (CacheException e) {
+            LOGGER.error("Login failed for {}: {}", context.getPeerName(), e.getMessage());
+            println("530 Login failed: " + e.getMessage());
+        }
     }
 
     // Some clients, even though the user is already logged in via GSS and ADAT,
@@ -236,20 +257,16 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     // since nothing is actually done for this command.
     // Example = ubftp client
     @Override
-    public void ftp_pass(String arg) {
+    public void ftp_pass(String arg)
+    {
         LOGGER.debug("GssFtpDoorV1::ftp_pass: PASS is a no-op with " +
-                "GSSAPI authentication.");
-        if (_subject != null) {
+                     "GSSAPI authentication.");
+        if (subject != null) {
             reply(ok("PASS"));
         } else {
             reply("500 Send USER first");
         }
     }
 
-
-    /**
-     * The concrete implementation of this method returns the GSSContext
-     * specific to the particular security mechanism.
-     */
-    protected abstract GSSContext getServiceContext() throws GSSException;
+    protected abstract DssContextFactory createFactory() throws IOException, GSSException;
 }

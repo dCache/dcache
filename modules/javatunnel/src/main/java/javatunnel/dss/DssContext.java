@@ -58,4 +58,9 @@ public interface DssContext
      * context has been established.
      */
     boolean isEstablished();
+
+    /**
+     * Returns the name of the peer.
+     */
+    String getPeerName();
 }

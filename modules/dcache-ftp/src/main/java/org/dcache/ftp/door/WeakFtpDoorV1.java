@@ -1,17 +1,16 @@
 package org.dcache.ftp.door;
 
-import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 
-import diskCacheV111.doors.FTPTransactionLog;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.Subjects;
+import org.dcache.util.NetLoggerBuilder;
 
 /**
  *
@@ -21,16 +20,22 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(WeakFtpDoorV1.class);
 
+    private String _user;
+
     public WeakFtpDoorV1()
     {
         super("Weak FTP", "weakftp");
     }
 
     @Override
-    protected void secure_reply(String answer, String code) {
+    protected void logSubject(NetLoggerBuilder log, Subject subject)
+    {
+        log.add("user.name", Subjects.getDisplayName(subject));
     }
 
-    private String _user;
+    @Override
+    protected void secure_reply(String answer, String code) {
+    }
 
     @Override
     public void ftp_user(String arg)
@@ -51,8 +56,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1
         subject.getPrivateCredentials().add(new PasswordCredential(_user, arg));
         try {
             login(subject);
-            reply("230 User " + _user + " logged in", ImmutableMap.of(
-                            "user.name", Subjects.getDisplayName(_subject)));
+            reply("230 User " + _user + " logged in", _subject);
         } catch (PermissionDeniedCacheException e) {
             LOGGER.warn("Login denied for {}", subject);
             reply("530 Login denied");

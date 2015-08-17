@@ -29,7 +29,7 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.security.cert.CertificateFactory;
 
 import org.dcache.util.Args;
@@ -52,16 +52,21 @@ public class GsiDssContextFactory implements DssContextFactory
 
     public GsiDssContextFactory(String args) throws GSSException, IOException
     {
-        Args arguments = new Args(args);
+        this(new Args(args));
+    }
 
-        bannedCiphers = Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS));
+    public GsiDssContextFactory(Args arguments) throws IOException, GSSException
+    {
+        this(arguments.getOption(SERVICE_KEY),
+             arguments.getOption(SERVICE_CERT),
+             arguments.getOption(SERVICE_TRUSTED_CERTS),
+             Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS)));
+    }
 
-        String service_key = arguments.getOption(SERVICE_KEY);
-        String service_cert = arguments.getOption(SERVICE_CERT);
-
-        /* FIXME: The ca directory is not configurable for a JGlobus GSSContext. */
-        String caDir = arguments.getOption(SERVICE_TRUSTED_CERTS);
-
+    public GsiDssContextFactory(String service_key, String service_cert, String caDir, String[] bannedCiphers)
+            throws IOException, GSSException
+    {
+        this.bannedCiphers = bannedCiphers;
         cf = CertificateFactories.newX509CertificateFactory();
 
         /* Unfortunately, we can't rely on GlobusCredential to provide
@@ -85,7 +90,8 @@ public class GsiDssContextFactory implements DssContextFactory
     }
 
     @Override
-    public DssContext create(Socket socket) throws IOException
+    public DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress)
+            throws IOException
     {
         try {
             ExtendedGSSContext context = (ExtendedGSSContext) manager.createContext(cred);

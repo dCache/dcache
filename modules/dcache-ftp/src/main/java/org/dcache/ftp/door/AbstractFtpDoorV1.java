@@ -76,6 +76,7 @@ import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.Ints;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +113,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1333,7 +1333,7 @@ public abstract class AbstractFtpDoorV1
     }
 
     @Override
-    public void init() throws UnknownHostException
+    public void init() throws Exception
     {
         _clientDataAddress =
             new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
@@ -1512,7 +1512,7 @@ public abstract class AbstractFtpDoorV1
 
         if (!_methodDict.containsKey(cmd)) {
             _skipBytes = 0;
-            reply(err(cmd,arg));
+            reply(err(cmd, arg));
             return;
         }
 
@@ -1680,18 +1680,17 @@ public abstract class AbstractFtpDoorV1
     //
     protected void reply(String answer, boolean resetReply)
     {
-        reply(_commandLine, answer, resetReply, Collections.emptyMap());
+        reply(_commandLine, answer, resetReply, null);
     }
 
     protected void reply(String commandLine, String answer, boolean resetReply)
     {
-        reply(commandLine, answer, resetReply, Collections.emptyMap());
+        reply(commandLine, answer, resetReply, null);
     }
 
-    protected void reply(String commandLine, String answer, boolean resetReply,
-            Map<String,Object> loginAttributes)
+    protected void reply(String commandLine, String answer, boolean resetReply, Subject subject)
     {
-        logReply(commandLine, answer, loginAttributes);
+        logReply(commandLine, answer, subject);
         switch (_gReplyType) {
         case "clear":
             println(answer);
@@ -1711,8 +1710,7 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void logReply(String commandLine, String response,
-            Map<String,Object> loginAttributes)
+    private void logReply(String commandLine, String response, Subject subject)
     {
         if (ACCESS_LOGGER.isInfoEnabled()) {
             String event = _isHello ? "org.dcache.ftp.hello" :
@@ -1740,10 +1738,8 @@ public abstract class AbstractFtpDoorV1
             if (_isHello) {
                 log.add("socket.remote", _remoteSocketAddress);
             }
-            if (!loginAttributes.isEmpty()) {
-                for (Map.Entry<String,Object> e : loginAttributes.entrySet()) {
-                    log.add(e.getKey(), e.getValue());
-                }
+            if (subject != null) {
+                logSubject(log, subject);
                 log.add("user.mapped", _subject);
             }
             log.addInQuotes("command", commandLine);
@@ -1754,14 +1750,16 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    protected abstract void logSubject(NetLoggerBuilder log, Subject subject);
+
     protected void reply(String answer)
     {
         reply(answer, true);
     }
 
-    protected void reply(String answer, Map<String,Object> loginAttributes)
+    protected void reply(String answer, Subject subject)
     {
-        reply(_commandLine, answer, true, loginAttributes);
+        reply(_commandLine, answer, true, subject);
     }
 
     protected void reply(String commandLine, String answer)

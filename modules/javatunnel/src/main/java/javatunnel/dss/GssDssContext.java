@@ -19,11 +19,13 @@ package javatunnel.dss;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 
 import javax.security.auth.Subject;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -36,6 +38,7 @@ public abstract class GssDssContext implements DssContext
     protected final MessageProp prop =  new MessageProp(true);
 
     private Subject subject;
+    private GSSName principal;
     private boolean isUninitialized = true;
 
     public GssDssContext(GSSContext context) throws GSSException
@@ -54,6 +57,7 @@ public abstract class GssDssContext implements DssContext
             }
             byte[] outToken = context.initSecContext(token, 0, token.length);
             if (isEstablished()) {
+                principal = context.getSrcName();
                 subject = createSubject();
             }
             return outToken;
@@ -70,6 +74,7 @@ public abstract class GssDssContext implements DssContext
             isUninitialized = false;
             byte[] outToken = context.acceptSecContext(token, 0, token.length);
             if (isEstablished()) {
+                principal = context.getSrcName();
                 subject = createSubject();
             }
             return outToken;
@@ -104,6 +109,12 @@ public abstract class GssDssContext implements DssContext
     public Subject getSubject()
     {
         return subject;
+    }
+
+    @Override
+    public String getPeerName()
+    {
+        return Objects.toString(principal, null);
     }
 
     @Override

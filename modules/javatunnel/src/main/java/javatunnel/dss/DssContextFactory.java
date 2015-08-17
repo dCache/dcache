@@ -18,12 +18,12 @@
 package javatunnel.dss;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 
 /**
  * Factory of DssContext implementations.
  */
 public interface DssContextFactory
 {
-    DssContext create(Socket socket) throws IOException;
+    DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress) throws IOException;
 }

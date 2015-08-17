@@ -26,7 +26,7 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.util.Optional;
 
 public class KerberosDssContextFactory implements DssContextFactory
@@ -43,7 +43,7 @@ public class KerberosDssContextFactory implements DssContextFactory
             krb5Mechanism = new Oid("1.2.840.113554.1.2.2");
             manager = GSSManager.getInstance();
             credential = manager.createCredential(createName(principal),
-                                                  GSSCredential.INDEFINITE_LIFETIME,
+                                                  GSSCredential.DEFAULT_LIFETIME,
                                                   krb5Mechanism,
                                                   GSSCredential.ACCEPT_ONLY);
             peer = peerName.map(this::createName);
@@ -63,11 +63,12 @@ public class KerberosDssContextFactory implements DssContextFactory
     }
 
     @Override
-    public DssContext create(Socket socket) throws IOException
+    public DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress)
+            throws IOException
     {
         try {
             GSSContext context = peer.map(this::createInitiatingContext).orElseGet(this::createAcceptingContext);
-            ChannelBinding cb = new ChannelBinding(socket.getInetAddress(), socket.getLocalAddress(), null);
+            ChannelBinding cb = new ChannelBinding(remoteSocketAddress.getAddress(), localSocketAddress.getAddress(), null);
             context.setChannelBinding(cb);
             return new KerberosDssContext(context);
         } catch (WrappedGssException e) {

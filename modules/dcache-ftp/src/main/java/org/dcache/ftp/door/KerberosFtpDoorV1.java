@@ -1,150 +1,61 @@
 package org.dcache.ftp.door;
 
-import com.google.common.collect.ImmutableMap;
-import org.ietf.jgss.ChannelBinding;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
+import javatunnel.dss.DssContextFactory;
+import javatunnel.dss.KerberosDssContextFactory;
 import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosPrincipal;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Properties;
+import java.io.IOException;
 
-import diskCacheV111.doors.FTPTransactionLog;
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.PermissionDeniedCacheException;
-
-import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
 import org.dcache.util.NetLoggerBuilder;
 
-/**
- *
- * @author  timur
- */
 public class KerberosFtpDoorV1 extends GssFtpDoorV1
 {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(KerberosFtpDoorV1.class);
-
 
     @Option(name = "svc-principal",
             required = true)
-    private String _myPrincipalStr;
+    private String servicePrincipal;
 
     @Option(name = "kdc-list")
-    private String _kdcListOption;
-
-    private String[] _kdcList;
+    private String kdcList;
 
     public KerberosFtpDoorV1()
     {
-        super("Kerberos FTP", "krbftp");
+        super("Kerberos FTP", "krbftp", "k5");
     }
 
-
     @Override
-    public void init() throws UnknownHostException
+    protected void logSubject(NetLoggerBuilder log, Subject subject)
     {
-        super.init();
-        _gssFlavor = "k5";
-        if (_kdcListOption != null) {
-            _kdcList = _kdcListOption.split(",");
-        }
+        log.add("user.kerberos", Subjects.getKerberosName(subject));
     }
 
     @Override
-    protected GSSContext getServiceContext() throws GSSException {
-        Oid krb5Mechanism = new Oid("1.2.840.113554.1.2.2");
-        Oid krb5PrincipalNameType = new Oid("1.2.840.113554.1.2.2.1");
+    protected DssContextFactory createFactory() throws IOException, GSSException
+    {
         int nretry = 10;
-        GSSException error = null;
-        Properties sysp = System.getProperties();
-        GSSCredential myCredential = null;
-
-        GSSManager _GManager = GSSManager.getInstance();
-        LOGGER.debug("KerberosFTPDoorV1::getServiceContext: calling " +
-             "_GManager.createName(\"{}\", null)", _myPrincipalStr);
-        GSSName myPrincipal = _GManager.createName(_myPrincipalStr, null);
-        LOGGER.info("KerberosFTPDoorV1::getServiceContext: principal=\"{}\"", myPrincipal);
-
-        while( myCredential == null && nretry-- > 0 ) {
-            if( _kdcList != null && _kdcList.length > 0 ) {
-                String kdc = _kdcList[nretry % _kdcList.length];
-                sysp.put("java.security.krb5.kdc", kdc);
+        String[] kdcList = (this.kdcList != null) ? this.kdcList.split(",") : new String[0];
+        GSSException error;
+        do {
+            if (kdcList.length > 0) {
+                String kdc = kdcList[nretry % kdcList.length];
+                System.getProperties().put("java.security.krb5.kdc", kdc);
             }
-
             try {
-                myCredential = _GManager.createCredential(myPrincipal,
-                GSSCredential.DEFAULT_LIFETIME,
-                krb5Mechanism,
-                GSSCredential.ACCEPT_ONLY);
-            }
-            catch( GSSException e ) {
+                return new KerberosDssContextFactory(servicePrincipal);
+            } catch (GSSException e) {
                 LOGGER.debug("KerberosFTPDoorV1::getServiceContext: got exception " +
-                      " while looking up credential: {}", e.getMessage());
+                             " while looking up credential: {}", e.getMessage());
                 error = e;
             }
-        }
-        if( myCredential == null ) {
-            throw error;
-        }
-        LOGGER.info("KerberosFTPDoorV1::getServiceContext: credential=\"{}\"", myCredential);
-        GSSContext context = _GManager.createContext(myCredential);
-
-        try {
-            ChannelBinding cb = new ChannelBinding(_remoteSocketAddress.getAddress(),
-                                                   InetAddress.getLocalHost(),
-                                                   null);
-            context.setChannelBinding(cb);
-        }
-        catch( UnknownHostException e ) {
-            String errmsg = "KerberosFTPDoorV1::getServiceContext: can't " +
-                            "bind channel to localhost:" + e.getMessage();
-            LOGGER.error(errmsg);
-            throw new GSSException(GSSException.NO_CRED, 0, errmsg);
-        }
-
-        return context;
-    }
-
-    @Override
-    public void ftp_user(String arg)
-    {
-        if (arg.equals("")) {
-            reply(err("USER",arg));
-            return;
-        }
-
-        if (_serviceContext == null || !_serviceContext.isEstablished()) {
-            reply("530 Authentication required");
-            return;
-        }
-
-        Subject subject = new Subject();
-        subject.getPrincipals().add(new LoginNamePrincipal(arg));
-        subject.getPrincipals().add(new KerberosPrincipal(_gssIdentity.toString()));
-        subject.getPrincipals().add(_origin);
-
-        try {
-            login(subject);
-            reply("200 User " + arg + " logged in", ImmutableMap.of(
-                            "user.kerberos", Subjects.getKerberosName(_subject)));
-        } catch (PermissionDeniedCacheException e) {
-            LOGGER.warn("Login denied for {}", subject);
-            reply("530 Login denied");
-        } catch (CacheException e) {
-            LOGGER.error("Login failed for {}: {}", subject, e.getMessage());
-            reply("530 Login failed: " + e.getMessage());
-        }
-    }
+            --nretry;
+        } while (nretry > 0);
+        throw error;
+   }
 }
