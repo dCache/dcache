@@ -1,0 +1,4 @@
+org.dcache.srm.scheduler.strategy.ThroughputFairShareSchedulingStrategyProvider
+org.dcache.srm.scheduler.strategy.InProgressFairShareSchedulingStrategyProvider
+org.dcache.srm.scheduler.strategy.FifoSchedulingStrategyProvider
+org.dcache.srm.scheduler.strategy.LifoSchedulingStrategyProvider
