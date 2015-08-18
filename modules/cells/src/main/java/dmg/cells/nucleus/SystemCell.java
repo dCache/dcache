@@ -124,7 +124,7 @@ public class      SystemCell
     public class GetHostnameCommand implements Callable<String>
     {
         @Override
-        public String call() throws UnknownHostException
+        public String call()
         {
             try {
                 return InetAddress.getLocalHost().getCanonicalHostName();
