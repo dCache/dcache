@@ -1,6 +1,7 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
+import dmg.util.command.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import dmg.util.AuthorizedString;
 import dmg.util.DomainInterruptHandler;
@@ -113,14 +115,22 @@ public class      SystemCell
       return 0 ;
    }
 
-    public static final String hh_get_hostname = "# returns the hostname of the " +
-            "computer this domain is running at";
-
-    public String ac_get_hostname_$_0(Args args) {
-        try {
-            return InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException ex) {
-            return "localhost";
+    @Command(name = "get hostname", hint = "show this dCache-domain hostname",
+            description = "Returns the hostname of the computer this (dCache) " +
+                    "domain is running at. The hostname returned can be either " +
+                    "the fully qualified domain name for this IP address " +
+                    "or just 'localhost', if the local host name could not" +
+                    " be resolved into an address.")
+    public class GetHostnameCommand implements Callable<String>
+    {
+        @Override
+        public String call() throws UnknownHostException
+        {
+            try {
+                return InetAddress.getLocalHost().getCanonicalHostName();
+            } catch (UnknownHostException ex) {
+                return "localhost";
+            }
         }
     }
 
