@@ -17,6 +17,8 @@
  */
 package org.dcache.util.jetty;
 
+import com.google.common.io.ByteSource;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.X509Credential;
@@ -36,11 +38,14 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
@@ -60,12 +65,15 @@ public class GsiEngine extends InterceptingSSLEngine
     private static final KeyPairCache KEY_PAIR_CACHE = KeyPairCache.getKeyPairCache();
     private static final BouncyCastleCertProcessingFactory CERT_FACTORY = BouncyCastleCertProcessingFactory.getDefault();
 
+    private final CertificateFactory cf;
+
     private boolean isUsingLegacyClose;
     private KeyPair keyPair;
 
-    public GsiEngine(SSLEngine delegate)
+    public GsiEngine(SSLEngine delegate, CertificateFactory cf)
     {
         super(delegate);
+        this.cf = cf;
         receive(new GotDelegationCharacter());
     }
 
@@ -126,22 +134,16 @@ public class GsiEngine extends InterceptingSSLEngine
         }
     }
 
-    private void readDelegatedCredentials(ByteBuffer buffer) throws GeneralSecurityException, GSSException, IOException
+    private void readDelegatedCredentials(ByteSource source) throws GeneralSecurityException, GSSException, IOException
     {
-        checkArgument(buffer.hasArray(), "Buffer must have backing array");
-
         SSLSession session = getSession();
 
         /* Parse the delegated certificate.
          */
-        buffer.flip();
-        byte[] buf = buffer.array();
-        int len = buffer.remaining();
-        int off = buffer.arrayOffset();
-        ByteArrayInputStream inStream = new ByteArrayInputStream(buf, off, len);
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate = (X509Certificate) cf.generateCertificate(inStream);
-        inStream.close();
+        X509Certificate certificate;
+        try (InputStream in = source.openStream()) {
+            certificate = (X509Certificate) cf.generateCertificate(in);
+        }
         LOGGER.trace("Received delegated cert: {}", certificate);
 
         /* Verify that it matches our certificate request.
@@ -186,12 +188,43 @@ public class GsiEngine extends InterceptingSSLEngine
 
     private class GotDelegatedCredentials implements Callback
     {
+        private int len = 0;
+        private ByteSource data;
+
         @Override
         public void call(ByteBuffer buffer) throws SSLException
         {
+            checkArgument(buffer.hasArray(), "Buffer must have backing array");
+
+            len += buffer.position();
+            ByteSource chunk = ByteSource.wrap(buffer.array()).slice(buffer.arrayOffset(), buffer.position());
+            ByteSource source = (data == null) ? chunk : ByteSource.concat(data, chunk);
             try {
-                readDelegatedCredentials(buffer);
+                readDelegatedCredentials(source);
             } catch (GeneralSecurityException | GSSException | IOException e) {
+                /* Check if we got the entire BER encoded object. We rely on the fact that the delegated
+                 * credential is transferred in its own SSL frames - i.e. buffer doesn't contain any
+                 * application data.
+                 *
+                 * Relying on an EofException isn't the most elegant solution, but the alternative would
+                 * be to implement a custom BER parser (REVISIT: check sun.security.provider.X509Factory
+                 * for a possibly cheaper way to read the entire certificate - we would have to copy the code
+                 * to get access to the relevant bits).
+                 */
+                try {
+                    try (ASN1InputStream in = new ASN1InputStream(source.openStream(), len, true)) {
+                        in.readObject();
+                    } catch (EOFException f) {
+                        /* Incomplete - read another frame. */
+                        ByteSource copy = ByteSource.wrap(chunk.read());
+                        data = (data == null) ? copy : ByteSource.concat(data, copy);
+                        receive(this);
+                        return;
+                    }
+                } catch (IOException f) {
+                    e.addSuppressed(f);
+                }
+
                 throw new SSLException("GSI delegation failed: " + e.toString(), e);
             }
         }

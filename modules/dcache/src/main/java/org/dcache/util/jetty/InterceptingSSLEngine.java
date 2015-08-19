@@ -61,9 +61,7 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
     }
 
     /**
-     * Receives one SSL frame worth of data in the buffer and calls the callback when done.
-     * If the buffer is not large enough to receive the payload in the frame, the connection
-     * is closed.
+     * Receives one SSL frame worth of data and calls the callback when done.
      */
     public void receive(Callback callback)
     {
@@ -75,9 +73,8 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
     }
 
     /**
-     * Sends the data {@code out} and then receives one SSL frame worth of data into the {@code in}
-     * buffer and calls the callback. If the buffer is not large enough to receive the payload in the
-     * frame, the connection is closed.
+     * Sends the data {@code out} and then receives one SSL frame worth of data and calls
+     * the callback.
      */
     public void sendThenReceive(ByteBuffer out, Callback callback)
     {
@@ -180,9 +177,8 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
                 return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NEED_UNWRAP,
                                            result.bytesConsumed(), 0);
             default:
-                SSLEngineResult result2 = delegate().unwrap(src, dsts, offset, length);
-                return new SSLEngineResult(result2.getStatus(), result2.getHandshakeStatus(),
-                                           result.bytesConsumed() + result2.bytesConsumed(), result.bytesProduced());
+                return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.FINISHED,
+                                           result.bytesConsumed(), 0);
             }
 
         default:
