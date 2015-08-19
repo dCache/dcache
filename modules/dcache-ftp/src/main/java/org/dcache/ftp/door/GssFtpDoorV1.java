@@ -268,5 +268,5 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    protected abstract DssContextFactory createFactory() throws IOException, GSSException;
+    protected abstract DssContextFactory createFactory() throws Exception;
 }

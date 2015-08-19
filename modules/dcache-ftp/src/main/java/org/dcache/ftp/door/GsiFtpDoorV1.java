@@ -1,16 +1,13 @@
 package org.dcache.ftp.door;
 
 import javatunnel.dss.DssContextFactory;
-import javatunnel.dss.GsiDssContextFactory;
-import org.ietf.jgss.GSSException;
 
 import javax.security.auth.Subject;
-
-import java.io.IOException;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
 import org.dcache.util.Crypto;
+import org.dcache.util.GsiEngineDssContextFactory;
 import org.dcache.util.NetLoggerBuilder;
 
 public class GsiFtpDoorV1 extends GssFtpDoorV1
@@ -51,10 +48,10 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1
     }
 
     @Override
-    protected DssContextFactory createFactory() throws IOException, GSSException
+    protected DssContextFactory createFactory() throws Exception
     {
-        return new GsiDssContextFactory(service_key, service_cert, service_trusted_certs,
-                                        Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
+        return new GsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
+                                              Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
     }
 
 }
