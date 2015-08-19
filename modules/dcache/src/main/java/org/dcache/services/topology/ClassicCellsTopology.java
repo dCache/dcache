@@ -1,11 +1,12 @@
 package org.dcache.services.topology;
 
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 import dmg.cells.network.CellDomainNode;
 import dmg.cells.nucleus.CellCommandListener;
 
-import org.dcache.util.Args;
+import dmg.util.command.Command;
 
 /**
  * CellsTopology for dCache installation with classic cells
@@ -32,20 +33,21 @@ public class ClassicCellsTopology
         return _infoMap;
     }
 
-    public static final String hh_update = "# initiates background update";
-    public String ac_update(Args args)
+    @Command(name = "update", hint = "initiates background update",
+            description = "Starts background thread to retrieve " +
+                    "and update the current domain map topology.")
+    public class UpdateCommand implements Callable<String>
     {
-        Thread thread = new Thread() {
-                @Override
-                public void run()
-                {
-                    try {
-                        update();
-                    } catch (InterruptedException e) {
-                    }
+        @Override
+        public String call()
+        {
+            new Thread(() -> {
+                try {
+                    update();
+                } catch (InterruptedException e) {
                 }
-            };
-        thread.start();
-        return "Background update started";
+            }).start();
+            return "Background update started";
+        }
     }
 }
