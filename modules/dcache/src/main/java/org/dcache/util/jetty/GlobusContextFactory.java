@@ -43,6 +43,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CRL;
 import java.security.cert.CertStore;
+import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,6 +64,7 @@ public class GlobusContextFactory extends SslContextFactory
     private Map<String, ProxyPolicyHandler> proxyPolicyHandlers;
     private boolean isGsiEnabled;
     private boolean isUsingLegacyClose;
+    private CertificateFactory cf;
 
     public GlobusContextFactory()
     {
@@ -155,6 +157,8 @@ public class GlobusContextFactory extends SslContextFactory
         }
         setSslContext(sslContext);
 
+        cf = CertificateFactory.getInstance("X.509");
+
         if (LOGGER.isDebugEnabled())
         {
             SSLEngine engine = newSSLEngine();
@@ -224,7 +228,7 @@ public class GlobusContextFactory extends SslContextFactory
     private SSLEngine wrapEngine(SSLEngine engine)
     {
         if (isGsiEnabled) {
-            GsiEngine gsiEngine = new GsiEngine(engine);
+            GsiEngine gsiEngine = new GsiEngine(engine, cf);
             gsiEngine.setUsingLegacyClose(isUsingLegacyClose);
             return new GsiFrameEngine(gsiEngine);
         } else {
