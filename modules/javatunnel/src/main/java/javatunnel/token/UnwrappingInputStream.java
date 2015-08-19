@@ -17,7 +17,7 @@
  */
 package javatunnel.token;
 
-import javatunnel.dss.DssContext;
+import org.dcache.dss.DssContext;
 
 import java.io.IOException;
 import java.io.InputStream;

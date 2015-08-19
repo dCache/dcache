@@ -4,7 +4,7 @@
 
 package javatunnel;
 
-import javatunnel.dss.KerberosDssContextFactory;
+import org.dcache.dss.KerberosDssContextFactory;
 
 import javax.net.ServerSocketFactory;
 

@@ -1,9 +1,9 @@
 package org.dcache.ftp.door;
 
 import com.google.common.base.Throwables;
-import javatunnel.dss.DssContext;
-import javatunnel.dss.DssContextFactory;
-import org.ietf.jgss.GSSException;
+import org.dcache.dss.DssContext;
+import org.dcache.dss.DssContextFactory;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -17,7 +17,7 @@
  */
 package javatunnel;
 
-import javatunnel.dss.DssContextFactory;
+import org.dcache.dss.DssContextFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;

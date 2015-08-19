@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.util.jetty;
+package org.dcache.gsi;
 
 import org.globus.gsi.gssapi.SSLUtil;
 
@@ -26,6 +26,9 @@ import javax.net.ssl.SSLSession;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import org.dcache.gsi.ForwardingSSLEngine;
+import org.dcache.gsi.GsiEngine;
 
 /**
  * SSLEngine decorator that implements legacy GSI framing.

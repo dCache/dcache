@@ -15,17 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.util;
-
-import javatunnel.dss.DssContext;
-import javatunnel.dss.DssContextFactory;
-import javatunnel.dss.SslEngineDssContext;
+package org.dcache.dss;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateFactory;
 
-import org.dcache.util.jetty.GlobusContextFactory;
+import org.dcache.gsi.GlobusContextFactory;
+import org.dcache.util.Args;
+import org.dcache.util.CertificateFactories;
+import org.dcache.util.Crypto;
 
 public class GsiEngineDssContextFactory implements DssContextFactory
 {

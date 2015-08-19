@@ -1,13 +1,13 @@
 package org.dcache.ftp.door;
 
-import javatunnel.dss.DssContextFactory;
+import org.dcache.dss.DssContextFactory;
 
 import javax.security.auth.Subject;
 
 import org.dcache.auth.Subjects;
 import org.dcache.cells.Option;
 import org.dcache.util.Crypto;
-import org.dcache.util.GsiEngineDssContextFactory;
+import org.dcache.dss.GsiEngineDssContextFactory;
 import org.dcache.util.NetLoggerBuilder;
 
 public class GsiFtpDoorV1 extends GssFtpDoorV1

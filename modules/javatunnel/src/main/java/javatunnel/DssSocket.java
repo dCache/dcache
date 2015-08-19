@@ -19,8 +19,8 @@ package javatunnel;
 
 import javatunnel.token.Base64TokenReader;
 import javatunnel.token.Base64TokenWriter;
-import javatunnel.dss.DssContext;
-import javatunnel.dss.DssContextFactory;
+import org.dcache.dss.DssContext;
+import org.dcache.dss.DssContextFactory;
 import javatunnel.token.UnwrappingInputStream;
 import javatunnel.token.WrappingOutputStream;
 import javatunnel.token.TokenReader;

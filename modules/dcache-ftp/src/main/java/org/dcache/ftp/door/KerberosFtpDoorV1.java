@@ -1,7 +1,7 @@
 package org.dcache.ftp.door;
 
-import javatunnel.dss.DssContextFactory;
-import javatunnel.dss.KerberosDssContextFactory;
+import org.dcache.dss.DssContextFactory;
+import org.dcache.dss.KerberosDssContextFactory;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.util.jetty;
+package org.dcache.gsi;
 
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.globus.gsi.X509Credential;

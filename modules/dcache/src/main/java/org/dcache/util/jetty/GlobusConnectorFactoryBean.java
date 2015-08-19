@@ -20,6 +20,9 @@ package org.dcache.util.jetty;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
+import org.dcache.gsi.GlobusContextFactory;
+import org.dcache.gsi.SupplierForwardingSslContextFactory;
+
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;

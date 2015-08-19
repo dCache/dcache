@@ -17,7 +17,7 @@
  */
 package javatunnel;
 
-import javatunnel.dss.DssContextFactory;
+import org.dcache.dss.DssContextFactory;
 
 import javax.net.ServerSocketFactory;
 

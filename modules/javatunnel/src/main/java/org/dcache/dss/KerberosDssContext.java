@@ -15,15 +15,28 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package javatunnel.dss;
+package org.dcache.dss;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
 
-/**
- * Factory of DssContext implementations.
- */
-public interface DssContextFactory
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+
+import java.security.Principal;
+import java.util.Collections;
+import java.util.Set;
+
+public class KerberosDssContext extends GssDssContext
 {
-    DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress) throws IOException;
+    public KerberosDssContext(GSSContext context) throws GSSException
+    {
+        super(context);
+    }
+
+    protected Subject createSubject() throws GSSException
+    {
+        Set<Principal> principals = Collections.singleton(new KerberosPrincipal(context.getSrcName().toString()));
+        return new Subject(false, principals, Collections.emptySet(), Collections.emptySet());
+    }
 }
