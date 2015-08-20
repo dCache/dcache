@@ -52,6 +52,9 @@ check ftp.authz.upload-directory
 
 exec file:${dcache.paths.share}/cells/stage.fragment ftp doors
 
+set env brokerWritePaths-when-readonly-is-false "/"
+set env brokerWritePaths-when-readonly-is-true ""
+
 create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
   "${ftp.net.port} ${ftp.implementation} \
    -listen=${ftp.net.listen} \
@@ -68,7 +71,8 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -brokerUpdateOffset=${ftp.loginbroker.update-threshold} \
    -brokerTopic=\"${ftp.loginbroker.update-topic}\" \
    -brokerTags=\"${ftp.loginbroker.tags}\" \
-   -brokerReadOnly=${ftp.authz.readonly} \
+   -brokerReadPaths=/ \
+   -brokerWritePaths=${brokerWritePaths-when-readonly-is-${ftp.authz.readonly}} \
    -gplazma=\"${ftp.service.gplazma}\" \
    -billing=\"${ftp.service.billing}\" \
    -pnfsManager=\"${ftp.service.pnfsmanager}\" \

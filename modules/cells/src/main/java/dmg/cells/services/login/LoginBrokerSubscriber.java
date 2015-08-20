@@ -81,7 +81,7 @@ public class LoginBrokerSubscriber
      * Queue of entries in expiration order. There is O(log n) time overhead for every entry due
      * to maintaining this queue. Entries are not removed until expired even if an updated entry
      * has been inserted. Removing old entries upon update would be O(n) time, so we treat a
-     * typical 2.5 time increase in memory for less reduced time complexity.
+     * typical 2.5 time increase in memory for lower time complexity.
      */
     private final DelayQueue<Entry> queue = new DelayQueue<>();
 
@@ -255,14 +255,14 @@ public class LoginBrokerSubscriber
     public Map<String, Collection<LoginBrokerInfo>> readDoorsByProtocol()
     {
         expire();
-        return readDoors.getUnmodifable();
+        return readDoors.getUnmodifiable();
     }
 
     @Override
     public Map<String, Collection<LoginBrokerInfo>> writeDoorsByProtocol()
     {
         expire();
-        return writeDoors.getUnmodifable();
+        return writeDoors.getUnmodifiable();
     }
 
     @Override
@@ -385,7 +385,7 @@ public class LoginBrokerSubscriber
             return doors.computeIfAbsent(protocol, key -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
         }
 
-        public Map<String, Collection<LoginBrokerInfo>> getUnmodifable()
+        public Map<String, Collection<LoginBrokerInfo>> getUnmodifiable()
         {
             return unmodifiableView;
         }

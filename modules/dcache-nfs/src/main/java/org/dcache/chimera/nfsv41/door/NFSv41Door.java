@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -286,7 +287,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V3:
                     NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
                     _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
-                    _loginBrokerPublisher.setTags();
+                    _loginBrokerPublisher.setTags(Collections.emptyList());
                     break;
                 case V41:
                     final NFSv41DeviceManager _dm = this;
