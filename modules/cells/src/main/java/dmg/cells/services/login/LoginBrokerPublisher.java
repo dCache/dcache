@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellAddressCore;
@@ -48,6 +49,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Utility class to periodically publish login broker information.
@@ -450,21 +452,38 @@ public class LoginBrokerPublisher
         _root = root;
     }
 
-    public synchronized void setReadPaths(String... paths)
+    public synchronized void setReadPaths(String[] paths)
     {
-        _readPaths = asList(paths);
+        setReadPaths(asList(paths));
+    }
+
+    public synchronized void setWritePaths(String[] paths)
+    {
+        setWritePaths(asList(paths));
+    }
+
+    public synchronized void setTags(String[] tags)
+    {
+        setTags(asList(tags));
+    }
+
+    public synchronized void setReadPaths(List<String> paths)
+    {
+        checkArgument(!paths.stream().anyMatch(String::isEmpty));
+        _readPaths = paths;
         rescheduleTask();
     }
 
-    public synchronized void setWritePaths(String... paths)
+    public synchronized void setWritePaths(List<String> paths)
     {
-        _writePaths = asList(paths);
+        checkArgument(!paths.stream().anyMatch(String::isEmpty));
+        _writePaths = paths;
         rescheduleTask();
     }
 
-    public synchronized void setTags(String... tags)
+    public synchronized void setTags(List<String> tags)
     {
-        _tags = asList(tags);
+        _tags = tags;
         rescheduleTask();
     }
 
