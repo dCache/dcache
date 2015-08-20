@@ -14,6 +14,13 @@ Packager: Rob Kennedy <kennedy AT fnal DOT gov> and  Timur Perelmutov <timur AT 
 BuildRoot: %{_topdir}/BUILD/%{name}-%{version}
 Prefix: /opt/%{name}-%{version}
 
+#  The following four definitions are to enforce RHEL/CentOS/SL-5
+#  compatibility when building on SL-6 machines.
+%define _source_payload w9.gzdio
+%define _binary_payload w9.gzdio
+%define _source_filedigest_algorithm 1
+%define _binary_filedigest_algorithm 1
+
 #
 # M. Ernst's dcache.org spec file has this commented out.
 # May be difficult to enforce as not all java REs are installed via RPMs.
