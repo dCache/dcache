@@ -150,9 +150,9 @@
     <property name="port" value="${xrootd.net.port}"/>
     <property name="address" value="#{ '${xrootd.net.listen}'.equals('any') ? null : '${xrootd.net.listen}' }"/>
     <property name="topic" value="${xrootd.loginbroker.update-topic}"/>
-    <property name="tags" value="${xrootd.loginbroker.tags}"/>
+    <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${xrootd.loginbroker.tags}') }"/>
     <property name="root" value="${xrootd.root}"/>
-    <property name="readPaths" value="${xrootd.authz.read-paths}"/>
-    <property name="writePaths" value="${xrootd.authz.write-paths}"/>
+    <property name="readPaths" value="#{ T(com.google.common.base.Splitter).on(':').omitEmptyStrings().splitToList('${xrootd.authz.read-paths}') }"/>
+    <property name="writePaths" value="#{ T(com.google.common.base.Splitter).on(':').omitEmptyStrings().splitToList('${xrootd.authz.write-paths}') }"/>
   </bean>
 </beans>
