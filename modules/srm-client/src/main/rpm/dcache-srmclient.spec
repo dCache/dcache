@@ -9,6 +9,14 @@ AutoReqProv: no
 
 License: Free
 Group: Applications/System
+
+#  The following four definitions are to enforce RHEL/CentOS/SL-5
+#  compatibility when building on SL-6 machines.
+%define _source_payload w9.gzdio
+%define _binary_payload w9.gzdio
+%define _source_filedigest_algorithm 1
+%define _binary_filedigest_algorithm 1
+
 %description
 dCache is a distributed mass storage system.
 
