@@ -151,10 +151,8 @@
         <property name="protocolFamily" value="${nfs.loginbroker.family}"/>
         <property name="port" value="${nfs.net.port}"/>
         <property name="topic" value="${nfs.loginbroker.update-topic}"/>
-        <property name="tags" value="${nfs.loginbroker.tags}"/>
+        <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${nfs.loginbroker.tags}') }"/>
         <property name="root" value="/"/>
-        <property name="writePaths" value="/"/>
-        <property name="readPaths" value="/"/>
     </bean>
 
     <bean id="door" class="org.dcache.chimera.nfsv41.door.NFSv41Door"

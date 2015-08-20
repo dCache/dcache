@@ -50,6 +50,7 @@ import dmg.util.command.Option;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.PermissionDeniedCacheException;
 
@@ -115,6 +116,7 @@ import org.dcache.xdr.OncRpcSvcBuilder;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.gss.GssSessionManager;
 
+import static java.util.stream.Collectors.toList;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -904,7 +906,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             List<IoDoorEntry> entries = _ioMessages.values()
                     .stream()
                     .map(Transfer::getIoDoorEntry)
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
             IoDoorInfo doorInfo = new IoDoorInfo(NFSv41Door.this.getCellName(), NFSv41Door.this.getCellDomainName());
             doorInfo.setProtocol("NFSV4.1", "0");
@@ -1007,7 +1009,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     private void updateLbPaths() {
-        String[] exportPaths = Iterables.toArray( Sets.newHashSet(Iterables.transform(_exportFile.getExports(), FsExport::getPath)), String.class);
+        List<String> exportPaths = Sets.newHashSet(_exportFile.getExports()).stream().map(FsExport::getPath).collect(toList());
         _loginBrokerPublisher.setReadPaths(exportPaths);
         _loginBrokerPublisher.setWritePaths(exportPaths);
     }
