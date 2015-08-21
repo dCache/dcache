@@ -696,6 +696,11 @@ public class Transfer implements Comparable<Transfer>
      */
     public ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite)
     {
+        return readNameSpaceEntryAsync(allowWrite, _pnfs.getPnfsTimeout());
+    }
+
+    private ListenableFuture<Void> readNameSpaceEntryAsync(boolean allowWrite, long timeout)
+    {
         Set<FileAttribute> attr = EnumSet.of(PNFSID, TYPE, STORAGEINFO, SIZE);
         attr.addAll(_additionalAttributes);
         attr.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
@@ -714,7 +719,7 @@ public class Transfer implements Comparable<Transfer>
         }
         request.setAccessMask(mask);
         request.setUpdateAtime(true);
-        ListenableFuture<PnfsGetFileAttributes> reply = _pnfs.requestAsync(request);
+        ListenableFuture<PnfsGetFileAttributes> reply = _pnfs.requestAsync(request, timeout);
 
         setStatusUntil("PnfsManager: Fetching storage info", reply);
 
@@ -1123,6 +1128,11 @@ public class Transfer implements Comparable<Transfer>
         return Math.min(subWithInfinity(deadline, System.currentTimeMillis()), stub.getTimeoutInMillis());
     }
 
+    private static long getTimeoutFor(PnfsHandler pnfs, long deadline)
+    {
+        return Math.min(subWithInfinity(deadline, System.currentTimeMillis()), pnfs.getPnfsTimeout());
+    }
+
     /**
      * Select a pool and start a mover. Failed attempts are handled
      * according to the {@link TransferRetryPolicy}. Note, that there
@@ -1148,7 +1158,7 @@ public class Transfer implements Comparable<Transfer>
         AsyncFunction<Void, Void> startMover =
                 ignored -> startMoverAsync(queue, getTimeoutFor(_pool, deadLine));
         AsyncFunction<Void, Void> readNameSpaceEntry =
-                ignored -> readNameSpaceEntryAsync(false);
+                ignored -> readNameSpaceEntryAsync(false, getTimeoutFor(_pnfs, deadLine));
 
         FutureFallback<Void> retry =
                 new FutureFallback<Void>()
