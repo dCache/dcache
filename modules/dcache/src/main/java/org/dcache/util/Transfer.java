@@ -551,9 +551,9 @@ public class Transfer implements Comparable<Transfer>
     public synchronized boolean waitForMover(long millis)
         throws CacheException, InterruptedException
     {
-        long deadline = System.currentTimeMillis() + millis;
+        long deadline = addWithInfinity(System.currentTimeMillis(), millis);
         while (!_hasMoverFinished && System.currentTimeMillis() < deadline) {
-            wait(deadline - System.currentTimeMillis());
+            wait(subWithInfinity(deadline, System.currentTimeMillis()));
         }
 
         if (_error != null) {
