@@ -9,6 +9,9 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
 
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
+
 /**
  * A transfer where the mover can send a redirect message to the door.
  */
@@ -63,10 +66,10 @@ public class RedirectedTransfer<T> extends Transfer
         try {
             setStatus("Mover " + getPool() + "/" +
                       getMoverId() + ": Waiting for redirect");
-            long deadline = System.currentTimeMillis() + millis;
+            long deadline = addWithInfinity(System.currentTimeMillis(), millis);
             while (hasMover() && !_isRedirected &&
                    System.currentTimeMillis() < deadline) {
-                wait(deadline - System.currentTimeMillis());
+                wait(subWithInfinity(deadline, System.currentTimeMillis()));
             }
 
             if (waitForMover(0)) {
