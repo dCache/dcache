@@ -1,20 +1,20 @@
 package org.dcache.util;
 
-public class MathUtils {
-
+public class MathUtils
+{
     /**
      * Return the absolute value of an integer, modulo some other integer.
      * This is similar to the naive {@code Math.abs(value) % modulo} except it handles
      * the case when value is Integer.MIN_VALUE correctly.
      */
-    static public int absModulo(int value, int modulo)
+    public static int absModulo(int value, int modulo)
     {
         return Math.abs(value % modulo);
     }
 
     /**
      * Implements long addition, treating MAX_VALUE and MIN_VALUE as positive
-     * and negative infinity respecitvely. Semantics are similar to Double
+     * and negative infinity respectively. Semantics are similar to Double
      * arithmetic. Overflow results in positive infinity, underflow in
      * negative infinity.
      *
@@ -48,7 +48,7 @@ public class MathUtils {
 
     /**
      * Implements long subtraction, treating MAX_VALUE and MIN_VALUE as
-     * positive and negative infinity respecitvely. Semantics are similar
+     * positive and negative infinity respectively. Semantics are similar
      * to Double arithmetic. Overflow results in positive infinity, underflow
      * in negative infinity.
      *
