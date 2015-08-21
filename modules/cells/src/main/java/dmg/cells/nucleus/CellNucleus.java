@@ -47,6 +47,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
 
 /**
  *
@@ -706,10 +708,10 @@ public class CellNucleus implements ThreadFactory
     private boolean joinThreads(Collection<Thread> threads, long timeout)
         throws InterruptedException
     {
-        long deadline = System.currentTimeMillis() + timeout;
+        long deadline = addWithInfinity(System.currentTimeMillis(), timeout);
         for (Thread thread: threads) {
             if (thread.isAlive()) {
-                long wait = deadline - System.currentTimeMillis();
+                long wait = subWithInfinity(deadline, System.currentTimeMillis());
                 if (wait <= 0) {
                     return false;
                 }

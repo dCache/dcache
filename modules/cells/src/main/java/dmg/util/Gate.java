@@ -1,5 +1,8 @@
 package dmg.util ;
 
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
+
 public class Gate {
    private boolean _isOpen = true ;
    public Gate(){}
@@ -9,9 +12,9 @@ public class Gate {
 
    public synchronized boolean await(long millis) throws InterruptedException
    {
-       long deadline = System.currentTimeMillis() + millis;
+       long deadline = addWithInfinity(System.currentTimeMillis(), millis);
        while (!_isOpen && deadline > System.currentTimeMillis()) {
-           wait(deadline - System.currentTimeMillis());
+           wait(subWithInfinity(deadline, System.currentTimeMillis()));
        }
        return _isOpen;
    }
