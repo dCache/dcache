@@ -1,5 +1,6 @@
 package org.dcache.pool.classic;
 
+import dmg.util.command.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
@@ -185,41 +187,57 @@ public class SpaceSweeper2
         }
     }
 
-    public static final String hh_sweeper_purge = "# Purges all removable files from pool";
-    public synchronized String ac_sweeper_purge(Args args)
+    @Command(name = "sweeper purge", hint = "Purges all removable files from pool",
+            description = "Initiate a sweeper thread (in this pool) to delete " +
+                    "all marked removable files from the pool. Note that, if a " +
+                    "file is currently in used, this file will not be deleted " +
+                    "even if it has been marked for removal.")
+    public class SweeperPurgeCommand implements Callable<String>
     {
-        new Thread("sweeper-purge") {
-            @Override
-            public void run()
-            {
-                try {
-                    long bytes = reclaim(Long.MAX_VALUE);
-                    _log.info("'sweeper purge' reclaimed {} bytes.", bytes);
-                } catch (InterruptedException e) {
+        @Override
+        public String call()
+        {
+            new Thread("sweeper-purge") {
+                @Override
+                public void run()
+                {
+                    try {
+                        long bytes = reclaim(Long.MAX_VALUE);
+                        _log.info("'sweeper purge' reclaimed {} bytes.", bytes);
+                    } catch (InterruptedException e) {
+                    }
                 }
-            }
-        }.start();
-        return "Purging all removable files from pool.";
+            }.start();
+            return "Purging all removable files from pool.";
+        }
     }
 
-    public static final String hh_sweeper_free = "<bytesToFree>";
-    public synchronized String ac_sweeper_free_$_1(Args args)
-        throws NumberFormatException
+    @Command(name = "sweeper free", hint = "reclaim space",
+            description = "A sweeper thread is created to reclaim the specified " +
+                    "number of bytes by deleting removable files.")
+    public class sweeperFreeCommand implements Callable<String>
     {
-        final long toFree = Long.parseLong(args.argv(0));
-        new Thread("sweeper-free") {
-            @Override
-            public void run()
-            {
-                try {
-                    long bytes = reclaim(toFree);
-                    _log.info("'sweeper free {}' reclaimed {} bytes.", toFree, bytes);
-                } catch (InterruptedException e) {
-                }
-            }
-        }.start();
+        @Argument(usage = "Specify amount of space in bytes.")
+        String bytesToFree;
 
-        return String.format("Reclaiming %d bytes", toFree);
+        @Override
+        public String call()
+        {
+            final long toFree = Long.parseLong(bytesToFree);
+            new Thread("sweeper-free") {
+                @Override
+                public void run()
+                {
+                    try {
+                        long bytes = reclaim(toFree);
+                        _log.info("'sweeper free {}' reclaimed {} bytes.", toFree, bytes);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }.start();
+
+            return String.format("Reclaiming %d bytes", toFree);
+        }
     }
 
     @Command(name = "sweeper ls", hint = "list sweeper queue")
@@ -293,12 +311,20 @@ public class SpaceSweeper2
         return sb.toString() ;
     }
 
-    public static final String hh_sweeper_get_lru = "[-f] # return lru in seconds [-f means formatted]";
-    public String ac_sweeper_get_lru( Args args )
+    @Command(name = "sweeper get lru", hint = "get lru file time",
+            description = "Return last access time (in seconds) of the least recently " +
+                    "used (lsu) file on the pool.")
+    public class SweeperGetLruCommand implements Callable<String>
     {
-        long lru = (System.currentTimeMillis() - getLru()) / 1000L;
-        boolean f = args.hasOption("f");
-        return f ? getTimeString(lru) : ("" + lru);
+        @Option(name = "f", usage = "Show a returned time in this format: day hour:minutes:seconds")
+        boolean f;
+
+        @Override
+        public String call()
+        {
+            long lru = (System.currentTimeMillis() - getLru()) / 1000L;
+            return f ? getTimeString(lru) : ("" + lru);
+        }
     }
 
     private long reclaim(long amount)
