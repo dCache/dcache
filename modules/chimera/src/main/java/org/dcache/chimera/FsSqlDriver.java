@@ -83,7 +83,7 @@ class FsSqlDriver {
     private static final int IOMODE_ENABLE = 1;
     private static final int IOMODE_DISABLE = 0;
 
-    private final int _ioMode;
+    protected final int _ioMode;
 
     final JdbcTemplate _jdbc;
 
@@ -153,10 +153,7 @@ class FsSqlDriver {
      * @return
      */
     FsInode createFileWithId(FsInode parent, FsInode inode, String name, int owner, int group, int mode, int type) {
-        inode = createInode(inode, type, owner, group, mode, 1);
-        createEntryInParent(parent, name, inode);
-        incNlink(parent);
-        return inode;
+        return createInodeInParent(parent, name, inode, owner, group, mode, type, 1, 0);
     }
 
     /**
@@ -335,14 +332,8 @@ class FsSqlDriver {
      * @return
      */
     FsInode mkdir(FsInode parent, String name, int owner, int group, int mode) {
-        // as soon as directory is created nlink == 2
-        FsInode inode = createInode(new FsInode(parent.getFs()), UnixPermission.S_IFDIR, owner, group, mode, 2);
-        createEntryInParent(parent, name, inode);
-
-        // increase parent nlink only
-        incNlink(parent);
-
-        return inode;
+        return createInodeInParent(parent, name, new FsInode(parent.getFs()), owner, group, mode,
+                                   UnixPermission.S_IFDIR, 2, 512);
     }
 
     /**
@@ -441,6 +432,15 @@ class FsSqlDriver {
         }
     }
 
+    FsInode createInodeInParent(FsInode parent, String name, FsInode inode, int owner, int group, int mode,
+                                int type, int nlink, long size)
+    {
+        inode = createInode(inode, type, owner, group, mode, nlink, size);
+        createEntryInParent(parent, name, inode);
+        incNlink(parent);
+        return inode;
+    }
+
     /**
      *
      * creates an entry in t_inodes table with initial values.
@@ -453,9 +453,8 @@ class FsSqlDriver {
      * @param mode
      * @param nlink
      */
-    FsInode createInode(FsInode inode, int type, int uid, int gid, int mode, int nlink) {
+    FsInode createInode(FsInode inode, int type, int uid, int gid, int mode, int nlink, long size) {
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        long size = (type == UnixPermission.S_IFDIR) ? 512 : 0;
         _jdbc.update("INSERT INTO t_inodes (ipnfsid,itype,imode,inlink,iuid,igid,isize,iio," +
                      "ictime,iatime,imtime,icrtime,igeneration) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      ps -> {

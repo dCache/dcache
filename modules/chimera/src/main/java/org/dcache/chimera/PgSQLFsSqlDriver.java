@@ -18,11 +18,15 @@ package org.dcache.chimera;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.CallableStatementCallback;
 
 import javax.sql.DataSource;
 
 import java.io.File;
+import java.sql.CallableStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +56,47 @@ class PgSQLFsSqlDriver extends FsSqlDriver {
     protected PgSQLFsSqlDriver(DataSource dataSource) {
         super(dataSource);
         _log.info("Running PostgreSQL specific Driver");
+    }
+
+    @Override
+    FsInode createInodeInParent(FsInode parent, String name, FsInode inode, int owner, int group, int mode, int type,
+                                int nlink, long size)
+    {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+
+        _jdbc.execute("{ call f_create_inode(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }",
+                      (CallableStatement cs) -> {
+                          cs.setString(1, parent.toString());
+                          cs.setString(2, name);
+                          cs.setString(3, inode.toString());
+                          cs.setInt(4, type);
+                          cs.setInt(5, mode & UnixPermission.S_PERMS);
+                          cs.setInt(6, nlink);
+                          cs.setInt(7, owner);
+                          cs.setInt(8, group);
+                          cs.setLong(9, size);
+                          cs.setInt(10, _ioMode);
+                          cs.setTimestamp(11, now);
+                          cs.execute();
+                          return null;
+                      });
+
+        Stat stat = new Stat();
+        stat.setCrTime(now.getTime());
+        stat.setGeneration(0);
+        stat.setSize(size);
+        stat.setATime(now.getTime());
+        stat.setCTime(now.getTime());
+        stat.setMTime(now.getTime());
+        stat.setUid(owner);
+        stat.setGid(group);
+        stat.setMode(mode & UnixPermission.S_PERMS | type);
+        stat.setNlink(nlink);
+        stat.setIno((int) inode.id());
+        stat.setDev(17);
+        stat.setRdev(13);
+
+        return new FsInode(inode.getFs(), inode.toString(), inode.type(), inode.getLevel(), stat);
     }
 
     /**
