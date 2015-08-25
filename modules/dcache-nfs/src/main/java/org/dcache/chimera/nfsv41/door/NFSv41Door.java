@@ -1,7 +1,6 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.glassfish.grizzly.Buffer;
@@ -50,7 +49,6 @@ import dmg.util.command.Option;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import diskCacheV111.util.PermissionDeniedCacheException;
 
@@ -100,7 +98,6 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.nfsv4_1_file_layout_ds_addr4;
 import org.dcache.nfs.v4.xdr.stateid4;
-import org.dcache.nfs.vfs.ChimeraVfs;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VfsCache;
 import org.dcache.nfs.vfs.VfsCacheConfig;
