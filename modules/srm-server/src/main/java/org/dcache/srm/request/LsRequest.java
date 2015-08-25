@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
+import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
@@ -199,7 +200,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
          * SrmLsResponse for this LsRequest.
          */
         public final SrmLsResponse getSrmLsResponse(long timeout)
-                throws InterruptedException
+                throws InterruptedException, SRMInvalidRequestException
         {
                 /* To avoid a race condition between us querying the
                  * current response and us waiting for a state change
@@ -222,7 +223,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 return response;
         }
 
-        public final SrmLsResponse getSrmLsResponse()
+        public final SrmLsResponse getSrmLsResponse() throws SRMInvalidRequestException
         {
                 SrmLsResponse response = new SrmLsResponse();
                 response.setReturnStatus(getTReturnStatus());
@@ -236,6 +237,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public final SrmStatusOfLsRequestResponse getSrmStatusOfLsRequestResponse()
+                throws SRMInvalidRequestException
         {
                 return new SrmStatusOfLsRequestResponse(
                         getTReturnStatus(), new ArrayOfTMetaDataPathDetail(getPathDetailArray()));
@@ -246,6 +248,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
         }
 
         public TMetaDataPathDetail[] getPathDetailArray()
+                throws SRMInvalidRequestException
         {
                 int len = getFileRequests().size();
                 TMetaDataPathDetail detail[] = new TMetaDataPathDetail[len];

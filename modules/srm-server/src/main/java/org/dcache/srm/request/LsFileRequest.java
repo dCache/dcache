@@ -280,11 +280,23 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                 return requestLifetime;
         }
 
-        public TMetaDataPathDetail getMetaDataPathDetail() {
+        public TMetaDataPathDetail getMetaDataPathDetail()
+                throws SRMInvalidRequestException
+        {
             rlock();
             try {
                 if (metaDataPathDetail != null) {
                     return metaDataPathDetail;
+                }
+                if (getState() == State.DONE) {
+                    /* If the request has been processed yet metaDataPathDetail
+                     * is null then the information is no longer known.  This
+                     * can happen if the information has been delivered to the
+                     * client, this Request has been garbage collected, and the
+                     * request was fetched back from the database to process a
+                     * StatusOfLsRequest request.
+                     */
+                    throw new SRMInvalidRequestException("Response no longer available.");
                 }
                 TMetaDataPathDetail detail =  new TMetaDataPathDetail();
                 detail.setPath(getPath(surl));
