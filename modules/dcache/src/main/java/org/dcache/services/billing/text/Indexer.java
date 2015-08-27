@@ -5,8 +5,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
@@ -71,6 +69,7 @@ import org.dcache.util.ConfigurationProperties;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.Files.isFile;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 public class Indexer
 {
@@ -567,8 +566,9 @@ public class Indexer
 
     private static Predicate<File> isBillingFileAndMightContain(Collection<String> terms)
     {
-        final List<String> searchTerms =
-                Lists.newArrayList(Iterables.transform(terms, new TrimTrailingSlash()));
+        final List<String> searchTerms = terms.stream()
+                .map(str -> str.endsWith("/") ? str.substring(0, str.length() - 1) : str)
+                .collect(toList());
         return new Predicate<File>()
         {
             @Override
@@ -689,18 +689,6 @@ public class Indexer
         } catch (IOException | URISyntaxException | ClassNotFoundException e) {
             System.err.println(e);
             System.exit(2);
-        }
-    }
-
-    private static class TrimTrailingSlash implements Function<String, String>
-    {
-        @Override
-        public String apply(String str)
-        {
-            if (str.endsWith("/")) {
-                str = str.substring(0, str.length() - 1);
-            }
-            return str;
         }
     }
 

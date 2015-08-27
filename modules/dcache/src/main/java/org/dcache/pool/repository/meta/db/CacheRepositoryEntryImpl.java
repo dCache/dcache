@@ -2,7 +2,6 @@ package org.dcache.pool.repository.meta.db;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;

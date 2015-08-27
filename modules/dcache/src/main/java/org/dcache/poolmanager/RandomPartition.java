@@ -1,8 +1,5 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -13,7 +10,7 @@ import diskCacheV111.util.CacheException;
 
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.filter;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Partition that selects pools randomly.
@@ -50,14 +47,12 @@ public class RandomPartition extends Partition
         return TYPE;
     }
 
-    private Predicate<PoolInfo> canHoldFile(final long size)
+    private boolean canHoldFile(PoolInfo pool, long size)
     {
-        return pool -> {
-            PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
-            long available =
-                space.getFreeSpace() + space.getRemovableSpace();
-            return available - size > space.getGap();
-        };
+        PoolSpaceInfo space = pool.getCostInfo().getSpaceInfo();
+        long available =
+            space.getFreeSpace() + space.getRemovableSpace();
+        return available - size > space.getGap();
     }
 
     private PoolInfo select(List<PoolInfo> pools)
@@ -73,7 +68,7 @@ public class RandomPartition extends Partition
         throws CacheException
     {
         List<PoolInfo> freePools =
-            Lists.newArrayList(filter(pools, canHoldFile(preallocated)));
+                pools.stream().filter(pool -> canHoldFile(pool, preallocated)).collect(toList());
         if (freePools.isEmpty()) {
             throw new CacheException(21, "All pools are full");
         }

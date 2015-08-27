@@ -185,7 +185,7 @@ public final class Strings {
         StringBuilder sb = new StringBuilder();
         sb.append(m.getName());
         sb.append("(");
-        sb.append(Joiner.on(c).join(transform(asList(m.getParameterTypes()), GET_SIMPLE_NAME)));
+        Joiner.on(c).appendTo(sb, transform(asList(m.getParameterTypes()), GET_SIMPLE_NAME));
         sb.append(')');
         return sb.toString();
     }

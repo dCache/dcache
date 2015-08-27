@@ -6,7 +6,7 @@ import java.util.Random;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
-import static com.google.common.collect.Iterables.*;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Implements a pool selection strategy in which the pool is selected
@@ -21,12 +21,12 @@ public class RandomPoolSelectionStrategy
     public PoolManagerPoolInformation
         select(List<PoolManagerPoolInformation> pools)
     {
-        Iterable<PoolManagerPoolInformation> nonFullPools =
-                filter(pools, RandomPoolSelectionStrategy::hasAvailableSpace);
-        if (isEmpty(nonFullPools)) {
+        List<PoolManagerPoolInformation> nonFullPools =
+                pools.stream().filter(RandomPoolSelectionStrategy::hasAvailableSpace).collect(toList());
+        if (nonFullPools.isEmpty()) {
             return null;
         }
-        return get(nonFullPools, _random.nextInt(size(nonFullPools)));
+        return nonFullPools.get(_random.nextInt(nonFullPools.size()));
     }
 
     private static boolean hasAvailableSpace(PoolManagerPoolInformation pool)

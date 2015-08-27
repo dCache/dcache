@@ -1,7 +1,5 @@
 package org.dcache.boot;
 
-import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -12,17 +10,14 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 
-import diskCacheV111.util.FileNotFoundCacheException;
-
 import org.dcache.util.ConfigurationProperties;
 import org.dcache.util.Version;
 
-import static com.google.common.collect.Iterables.transform;
+import static java.util.stream.Collectors.joining;
 import static org.dcache.boot.Properties.*;
 
 public class LayoutBuilder
@@ -169,11 +164,14 @@ public class LayoutBuilder
                 layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_CACHE, "false");
             }
         }
-        layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_FILES,
-                Joiner.on(" ").join(transform(_sourceFiles, file -> '"' + file.getPath() + '"')));
-        layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_DIRS,
-                Joiner.on(" ").join(transform(_sourceDirectories, file -> '"' + file.getPath() + '"')));
+        layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_FILES, joinPaths(_sourceFiles));
+        layout.properties().setProperty(PROPERTY_DCACHE_CONFIG_DIRS, joinPaths(_sourceDirectories));
         return layout;
+    }
+
+    private static String joinPaths(Set<File> sourceFiles)
+    {
+        return sourceFiles.stream().map(f -> '"' + f.getPath() + '"').collect(joining(" "));
     }
 
     /**

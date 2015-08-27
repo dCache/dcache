@@ -16,7 +16,6 @@ import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.filter;
 
 /**
@@ -30,8 +29,8 @@ public class MutatorPlugin implements GPlazmaMappingPlugin {
     private final ClassLoader classLoader = ClassLoader.getSystemClassLoader();
     final static String IN_OPTION = "gplazma.mutator.accept";
     final static String OUT_OPTION = "gplazma.mutator.produce";
-    private final Class<?> inPrincipal;
-    private final Class<?> outPrincipal;
+    private final Class<? extends Principal> inPrincipal;
+    private final Class<? extends Principal> outPrincipal;
     private Constructor<? extends Principal> outConstructor;
 
     public MutatorPlugin(Properties properties) throws ClassNotFoundException, NoSuchMethodException {
@@ -41,22 +40,23 @@ public class MutatorPlugin implements GPlazmaMappingPlugin {
         checkArgument(inClass != null, "Undefined property: " + IN_OPTION);
         checkArgument(outClass != null, "Undefined property: " + OUT_OPTION);
 
-        inPrincipal = classLoader.loadClass(inClass);
-        checkArgument(Principal.class.isAssignableFrom(inPrincipal), inClass + " is not a Principal");
+        Class<?> principal = classLoader.loadClass(inClass);
+        checkArgument(Principal.class.isAssignableFrom(principal), inClass + " is not a Principal");
+        inPrincipal = (Class<? extends Principal>) principal;
 
         outPrincipal = classOf(outClass);
-        outConstructor = (Constructor<? extends Principal>) outPrincipal.getConstructor(String.class);
+        outConstructor = outPrincipal.getConstructor(String.class);
     }
 
     @Override
     public void map(Set<Principal> principals) {
         Set<Principal> mutated = new HashSet<>();
-        for (Principal p : filter(principals, instanceOf(inPrincipal))) {
+        for (Principal p : filter(principals, inPrincipal)) {
             try {
                 Principal out = outConstructor.newInstance(p.getName());
                 mutated.add(out);
             } catch (IllegalAccessException | IllegalArgumentException |
-                    InstantiationException | InvocationTargetException e) {
+                    InstantiationException | InvocationTargetException ignored) {
             }
         }
         principals.addAll(mutated);

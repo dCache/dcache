@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
@@ -628,7 +630,7 @@ public class CostModuleV1
         return costInfos;
     }
 
-    @Override
+    @Override @Nullable
     public synchronized PoolCostInfo getPoolCostInfo(String poolName)
     {
         Entry entry = _hash.get(poolName);
@@ -638,18 +640,14 @@ public class CostModuleV1
         return null;
     }
 
-    @Override
-    public synchronized
-        List<PoolInfo> getPoolInfo(Iterable<String> pools)
+    @Override @Nullable
+    public synchronized PoolInfo getPoolInfo(String pool)
     {
-        List<PoolInfo> infos = new ArrayList<>();
-        for (String pool: pools) {
-            Entry entry = _hash.get(pool);
-            if (entry != null && (entry.isValid() || !_update)) {
-                infos.add(entry.getPoolInfo());
-            }
+        Entry entry = _hash.get(pool);
+        if (entry != null && (entry.isValid() || !_update)) {
+            return entry.getPoolInfo();
         }
-        return infos;
+        return null;
     }
 
     @Override

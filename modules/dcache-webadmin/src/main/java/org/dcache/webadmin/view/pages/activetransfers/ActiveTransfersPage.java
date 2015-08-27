@@ -1,9 +1,6 @@
 package org.dcache.webadmin.view.pages.activetransfers;
 
-import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Longs;
 import org.apache.wicket.authroles.authorization.strategies.role.Roles;
@@ -41,6 +38,8 @@ import org.dcache.webadmin.view.beans.ActiveTransfersBean;
 import org.dcache.webadmin.view.pages.basepage.BasePage;
 import org.dcache.webadmin.view.util.CheckBoxColumn;
 import org.dcache.webadmin.view.util.Role;
+
+import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings("serial")
 public class ActiveTransfersPage extends BasePage
@@ -138,27 +137,19 @@ public class ActiveTransfersPage extends BasePage
                 transfers = new ArrayList<>(getActiveTransfersService().getTransfers());
             }
             if (!Strings.isNullOrEmpty(filter)) {
-                return Lists.newArrayList(Iterables.filter(
-                        transfers,
-                        new Predicate<ActiveTransfersBean>()
-                        {
-                            final String s = filter.toLowerCase();
-
-                            @Override
-                            public boolean apply(ActiveTransfersBean transfer)
-                            {
-                                return transfer.getCellName().toLowerCase().contains(s) ||
-                                        transfer.getCellDomainName().toLowerCase().contains(s) ||
-                                        transfer.getOwner().toLowerCase().contains(s) ||
-                                        transfer.getPnfsId().toLowerCase().contains(s) ||
-                                        transfer.getPool().toLowerCase().contains(s) ||
-                                        transfer.getProcess().toLowerCase().contains(s) ||
-                                        transfer.getProtocolFamily().toLowerCase().contains(s) ||
-                                        isAdmin && transfer.getReplyHost().toLowerCase().contains(s) ||
-                                        transfer.getState().toLowerCase().contains(s) ||
-                                        transfer.getStatus().toLowerCase().contains(s);
-                            }
-                        }));
+                String s = filter.toLowerCase();
+                return transfers.stream()
+                        .filter(transfer -> transfer.getCellName().toLowerCase().contains(s) ||
+                                            transfer.getCellDomainName().toLowerCase().contains(s) ||
+                                            transfer.getOwner().toLowerCase().contains(s) ||
+                                            transfer.getPnfsId().toLowerCase().contains(s) ||
+                                            transfer.getPool().toLowerCase().contains(s) ||
+                                            transfer.getProcess().toLowerCase().contains(s) ||
+                                            transfer.getProtocolFamily().toLowerCase().contains(s) ||
+                                            isAdmin && transfer.getReplyHost().toLowerCase().contains(s) ||
+                                            transfer.getState().toLowerCase().contains(s) ||
+                                            transfer.getStatus().toLowerCase().contains(s))
+                        .collect(toList());
             }
             return transfers;
         }

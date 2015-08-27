@@ -5,6 +5,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -26,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -51,7 +53,7 @@ public abstract class NetworkUtils {
 
     private static final List<InetAddress> FAKED_ADDRESSES;
 
-    private static final Supplier<Iterable<InetAddress>> LOCAL_ADDRESS_SUPPLIER =
+    private static final Supplier<List<InetAddress>> LOCAL_ADDRESS_SUPPLIER =
             Suppliers.memoizeWithExpiration(new LocalAddressSupplier(), 5, TimeUnit.SECONDS);
 
     static {
@@ -74,11 +76,11 @@ public abstract class NetworkUtils {
      * @return
      * @throws SocketException
      */
-    public static Iterable<InetAddress> getLocalAddresses() {
+    public static Collection<InetAddress> getLocalAddresses() {
         if (!FAKED_ADDRESSES.isEmpty()) {
             return FAKED_ADDRESSES;
         }
-        return filter(LOCAL_ADDRESS_SUPPLIER.get(), isNotMulticast());
+        return Collections2.filter(LOCAL_ADDRESS_SUPPLIER.get(), isNotMulticast());
     }
 
     /**
@@ -373,10 +375,10 @@ public abstract class NetworkUtils {
     /**
      *  A supplier that returns all internet addresses of network interfaces that are up.
      */
-    private static class LocalAddressSupplier implements Supplier<Iterable<InetAddress>>
+    private static class LocalAddressSupplier implements Supplier<List<InetAddress>>
     {
         @Override
-        public Iterable<InetAddress> get()
+        public List<InetAddress> get()
         {
             try {
                 return Lists.newArrayList(

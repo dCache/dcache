@@ -1,11 +1,9 @@
 package org.dcache.poolmanager;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Lists;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.util.CacheException;
@@ -17,9 +15,6 @@ import diskCacheV111.util.SourceCostException;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.*;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Iterables.transform;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -146,9 +141,7 @@ public class WassPartition extends ClassicPartition
                 if (source.host == null) {
                     destinations = dst;
                 } else {
-                    Predicate<PoolInfo> notSameHost =
-                        compose(not(equalTo(source.host)), PoolInfo::getHostName);
-                    destinations = Lists.newArrayList(filter(dst, notSameHost));
+                    destinations = dst.stream().filter(d -> !d.getHostName().equals(source.host)).collect(toList());
                 }
 
                 PoolInfo destination =
@@ -177,15 +170,11 @@ public class WassPartition extends ClassicPartition
                                       String previousHost,
                                       FileAttributes attributes)
     {
-        Predicate<PoolInfo> notSamePool =
-            compose(not(equalTo(previousPool)), PoolInfo::getName);
         if (previousHost != null && _allowSameHostRetry != SameHost.NOTCHECKED) {
-            Predicate<PoolInfo> notSameHost =
-                compose(not(equalTo(previousHost)), PoolInfo::getHostName);
-            List<PoolInfo> filteredPools =
-                Lists.newArrayList(filter(pools, and(notSamePool, notSameHost)));
-            PoolInfo pool = wass
-                    .selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
+            List<PoolInfo> filteredPools = pools.stream()
+                    .filter(p -> !Objects.equals(p.getHostName(), previousHost) && !Objects.equals(p.getName(), previousPool))
+                    .collect(toList());
+            PoolInfo pool = wass.selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
             if (pool != null) {
                 return pool;
             }
@@ -195,8 +184,9 @@ public class WassPartition extends ClassicPartition
         }
 
         if (previousPool != null) {
-            List<PoolInfo> filteredPools =
-                Lists.newArrayList(filter(pools, notSamePool));
+            List<PoolInfo> filteredPools = pools.stream()
+                    .filter(p -> !Objects.equals(p.getName(), previousPool))
+                    .collect(toList());
             PoolInfo pool = wass.selectByAvailableSpace(filteredPools, attributes.getSize(), PoolInfo::getCostInfo);
             if (pool != null) {
                 return pool;

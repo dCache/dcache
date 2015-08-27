@@ -2,8 +2,6 @@
 
 package diskCacheV111.poolManager;
 
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
@@ -17,7 +15,10 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolCostInfo;
@@ -41,9 +42,8 @@ import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Predicates.*;
 import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.Iterables.*;
+import static java.util.stream.Collectors.toList;
 import static org.dcache.namespace.FileAttribute.*;
 
 public class PoolMonitorV5
@@ -145,22 +145,12 @@ public class PoolMonitorV5
         @Override
         public List<List<PoolInfo>> getReadPools()
         {
-            Map<String,PoolInfo> onlineLocations =
-                _costModule.getPoolInfoAsMap(_fileAttributes.getLocations());
-            Function<String,PoolInfo> toPoolInfo =
-                Functions.forMap(onlineLocations, null);
-
-            List<List<PoolInfo>> result = Lists.newArrayList();
-            for (PoolPreferenceLevel level: match(DirectionType.READ)) {
-                List<PoolInfo> pools =
-                    Lists.newArrayList(filter(transform(level.getPoolList(),
-                                                        toPoolInfo),
-                                              notNull()));
-                if (!pools.isEmpty()) {
-                    result.add(pools);
-                }
-            }
-            return result;
+            Map<String,PoolInfo> onlineLocations = _costModule.getPoolInfoAsMap(_fileAttributes.getLocations());
+            return Stream
+                    .of(match(DirectionType.READ))
+                    .map(level -> level.getPoolList().stream().map(onlineLocations::get).filter(Objects::nonNull).collect(toList()))
+                    .filter(levels -> !levels.isEmpty())
+                    .collect(toList());
         }
 
         @Override
@@ -187,10 +177,12 @@ public class PoolMonitorV5
 
             for (PoolPreferenceLevel level: levels) {
                 List<PoolInfo> pools =
-                    _costModule.getPoolInfo(level.getPoolList());
+                        level.getPoolList().stream()
+                                .map(_costModule::getPoolInfo)
+                                .filter(Objects::nonNull)
+                                .collect(toList());
                 if (!pools.isEmpty()) {
-                    Partition partition =
-                        _partitionManager.getPartition(level.getTag());
+                    Partition partition = _partitionManager.getPartition(level.getTag());
                     return partition.selectWritePool(_costModule, pools, _fileAttributes, preallocated);
                 }
             }
@@ -332,8 +324,11 @@ public class PoolMonitorV5
             PoolPreferenceLevel[] levels = match(DirectionType.P2P);
             for (PoolPreferenceLevel level: levels) {
                 List<PoolInfo> pools =
-                    _costModule.getPoolInfo(filter(level.getPoolList(),
-                                                   not(in(sources.keySet()))));
+                        level.getPoolList().stream()
+                                .filter(pool -> !sources.containsKey(pool))
+                                .map(_costModule::getPoolInfo)
+                                .filter(Objects::nonNull)
+                                .collect(toList());
                 if (!pools.isEmpty()) {
                     _log.debug("[p2p] Online destination candidates: {}", pools);
                     Partition partition =
@@ -361,8 +356,11 @@ public class PoolMonitorV5
             for (PoolPreferenceLevel level: match(DirectionType.CACHE)) {
                 try {
                     List<PoolInfo> pools =
-                        _costModule.getPoolInfo(filter(level.getPoolList(),
-                                                       not(in(locations))));
+                            level.getPoolList().stream()
+                                    .filter(pool -> !locations.contains(pool))
+                                    .map(_costModule::getPoolInfo)
+                                    .filter(Objects::nonNull)
+                                    .collect(toList());
                     if (!pools.isEmpty()) {
                         _log.debug("[stage] Online stage candidates: {}", pools);
                         Partition partition =
@@ -435,10 +433,11 @@ public class PoolMonitorV5
                      * any of these pools have the file.
                      */
                     isRequestSatisfiable = true;
-                    Iterable<String> pinnablePools =
-                        filter(pools, in(onlinePools.keySet()));
-                    if (!isEmpty(pinnablePools)) {
-                        return onlinePools.get(ordering.min(pinnablePools));
+
+                    Optional<PoolInfo> pool =
+                            pools.stream().filter(onlinePools::containsKey).min(ordering).map(onlinePools::get);
+                    if (pool.isPresent()) {
+                        return pool.get();
                     }
                 }
             }
@@ -467,24 +466,16 @@ public class PoolMonitorV5
     }
 
     @Override
-    public Collection<PoolCostInfo>
-        queryPoolsByLinkName(String linkName)
+    public Collection<PoolCostInfo> queryPoolsByLinkName(String linkName)
     {
-        PoolSelectionUnit.SelectionLink link =
-            _selectionUnit.getLinkByName(linkName);
-        return queryPoolsForCost(transform(link.getPools(), PoolSelectionUnit.SelectionEntity::getName));
-    }
-
-    private List<PoolCostInfo> queryPoolsForCost(Iterable<String> pools)
-    {
-        List<PoolCostInfo> list = new ArrayList<>();
-        for( String poolName: pools ){
-            PoolCostInfo cost = _costModule.getPoolCostInfo(poolName);
-            if (cost != null) {
-               list.add(cost);
-            }
-        }
-        return list ;
+        return _selectionUnit
+                .getLinkByName(linkName)
+                .getPools()
+                .stream()
+                .map(PoolSelectionUnit.SelectionEntity::getName)
+                .map(_costModule::getPoolCostInfo)
+                .filter(Objects::nonNull)
+                .collect(toList());
     }
 
     public static Set<FileAttribute> getRequiredAttributesForFileLocality()

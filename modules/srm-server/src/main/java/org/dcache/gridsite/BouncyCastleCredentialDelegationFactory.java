@@ -25,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Collection;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 
@@ -45,7 +46,7 @@ public class BouncyCastleCredentialDelegationFactory implements CredentialDelega
 
     @Override
     public CredentialDelegation newDelegation(DelegationIdentity id,
-            Iterable<X509Certificate> certificates) throws DelegationException
+            Collection<X509Certificate> certificates) throws DelegationException
     {
         X509Certificate first = certificates.iterator().next();
 

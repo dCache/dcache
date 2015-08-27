@@ -1,6 +1,5 @@
 package org.dcache.pool.classic;
 
-import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,10 +14,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CDC;
 
@@ -30,8 +31,7 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.LifoPriorityComparator;
 
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.transform;
-import java.util.stream.Collectors;
+import static java.util.stream.Collectors.joining;
 import static org.dcache.pool.classic.IoRequestState.*;
 
 /**
@@ -265,11 +265,13 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
             if (!_semaphore.tryAcquire(_semaphore.getMaxPermits(), 2000L, TimeUnit.MILLISECONDS)) {
                 // This is often due to a mover not reacting to interrupt or the transfer
                 // doing a lengthy checksum calculation during post processing.
-                Iterable<String> versions =
-                        transform(_jobs.values(),
-                                  request -> request.getMover().getProtocolInfo().getVersionString());
-                _log.warn("Failed to terminate some movers prior to shutdown: {}",
-                          Joiner.on(",").join(versions));
+                String versions =
+                        _jobs.values().stream()
+                                .map(PrioritizedRequest::getMover)
+                                .map(Mover::getProtocolInfo)
+                                .map(ProtocolInfo::getVersionString)
+                                .collect(joining(","));
+                _log.warn("Failed to terminate some movers prior to shutdown: {}", versions);
             }
         }
     }

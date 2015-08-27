@@ -1,6 +1,5 @@
 package diskCacheV111.services.space;
 
-import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -23,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.PnfsId;
@@ -31,8 +31,8 @@ import diskCacheV111.util.VOInfo;
 
 import org.dcache.util.Glob;
 
-import static com.google.common.collect.Iterables.transform;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
 
 @Repository
 public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceManagerDatabase
@@ -659,7 +659,10 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public SpaceCriterion whereStateIsIn(SpaceState... states)
         {
-            addClause("state IN (" + Joiner.on(",").join(transform(asList(states), SpaceState::getStateId)) + ')');
+            addClause(Stream.of(states)
+                              .mapToInt(SpaceState::getStateId)
+                              .mapToObj(String::valueOf)
+                              .collect(joining(",", "state IN (", ")")));
             return this;
         }
 
@@ -781,7 +784,10 @@ public class JdbcSpaceManagerDatabase extends JdbcDaoSupport implements SpaceMan
         @Override
         public FileCriterion whereStateIsIn(FileState... states)
         {
-            addClause("state in (" + Joiner.on(",").join(transform(asList(states), FileState::getStateId)) + ')');
+            addClause(Stream.of(states)
+                              .mapToInt(FileState::getStateId)
+                              .mapToObj(String::valueOf)
+                              .collect(joining(",", "state IN (", ")")));
             return this;
         }
 

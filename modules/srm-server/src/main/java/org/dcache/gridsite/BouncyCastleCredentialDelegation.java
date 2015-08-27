@@ -17,8 +17,6 @@
  */
 package org.dcache.gridsite;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
@@ -55,14 +53,13 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 
-import static com.google.common.collect.Iterables.concat;
-import static com.google.common.collect.Iterables.transform;
-import static java.util.Collections.singleton;
 import static org.ietf.jgss.GSSCredential.INITIATE_AND_ACCEPT;
 
 /**
@@ -72,32 +69,16 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
 {
     private static final Logger LOG = LoggerFactory.getLogger(BouncyCastleCredentialDelegation.class);
 
-    private static final Function<X509Certificate,X509Certificate> AS_BC_CERTIFICATE =
-            certificate -> {
-                if(certificate instanceof X509CertificateObject) {
-                    return certificate;
-                } else {
-                    try {
-                        ByteArrayInputStream in =
-                                new ByteArrayInputStream(certificate.getEncoded());
-                        return loadCertificate(in);
-                    } catch (GeneralSecurityException | IOException e) {
-                        throw new RuntimeException("failed to convert" +
-                                " certificate: " + e.getMessage());
-                    }
-                }
-            };
-
     private final DelegationIdentity _id;
-    private final Iterable<X509Certificate> _certificates;
+    private final Collection<X509Certificate> _certificates;
     private final X509Certificate _first;
     private final String _pemRequest;
 
     protected final KeyPair _keyPair;
 
 
-    BouncyCastleCredentialDelegation(KeyPair keypair, DelegationIdentity id,
-            Iterable<X509Certificate> certificates) throws DelegationException
+    BouncyCastleCredentialDelegation(KeyPair keypair, DelegationIdentity id, Collection<X509Certificate> certificates)
+            throws DelegationException
     {
         _id = id;
         _certificates = certificates;
@@ -199,8 +180,9 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
         }
 
         X509Certificate[] newCertificates =
-                Iterables.toArray(transform(concat(singleton(certificate),
-                _certificates), AS_BC_CERTIFICATE), X509Certificate.class);
+                Stream.concat(Stream.of(certificate), _certificates.stream())
+                        .map(BouncyCastleCredentialDelegation::asBcCertificate)
+                        .toArray(X509Certificate[]::new);
 
         X509Credential proxy = new X509Credential(_keyPair.getPrivate(),
                 newCertificates);
@@ -208,10 +190,22 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
         try {
             return new GlobusGSSCredentialImpl(proxy, INITIATE_AND_ACCEPT);
         } catch (GSSException e) {
-            LOG.error("Failed to create delegated credential: {}",
-                    e.getMessage());
+            LOG.error("Failed to create delegated credential: {}", e.getMessage());
             throw new DelegationException("Unable to create delegated" +
                     " credential: " + e.getMessage());
+        }
+    }
+
+    private static X509Certificate asBcCertificate(X509Certificate c)
+    {
+        if (c instanceof X509CertificateObject) {
+            return c;
+        } else {
+            try (ByteArrayInputStream in = new ByteArrayInputStream(c.getEncoded())) {
+                return loadCertificate(in);
+            } catch (GeneralSecurityException | IOException e) {
+                throw new RuntimeException("failed to convert certificate: " + e.getMessage());
+            }
         }
     }
 

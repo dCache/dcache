@@ -19,9 +19,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Collections2.transform;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Maps.transformEntries;
-import static org.dcache.util.ChecksumType.ADLER32;
-import static org.dcache.util.ChecksumType.MD4_TYPE;
-import static org.dcache.util.ChecksumType.MD5_TYPE;
+import static org.dcache.util.ChecksumType.*;
 
 /**
  * Class containing utility methods for operating on checksum values

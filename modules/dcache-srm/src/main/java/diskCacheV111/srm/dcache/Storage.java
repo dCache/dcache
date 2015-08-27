@@ -226,9 +226,8 @@ import org.dcache.util.list.NullListPrinter;
 import org.dcache.vehicles.FileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.util.concurrent.Futures.immediateFailedCheckedFuture;
 import static java.util.Arrays.asList;
@@ -687,16 +686,18 @@ public final class Storage
     public String[] supportedGetProtocols()
             throws SRMInternalErrorException
     {
-        return toArray(filter(loginBrokerSource.readDoorsByProtocol().keySet(),
-                              not(in(asList(srmGetNotSupportedProtocols)))), String.class);
+        return loginBrokerSource.readDoorsByProtocol().keySet().stream()
+                .filter(door -> !asList(srmGetNotSupportedProtocols).contains(door))
+                .toArray(String[]::new);
     }
 
     @Override
     public String[] supportedPutProtocols()
             throws SRMInternalErrorException
     {
-        return toArray(filter(loginBrokerSource.writeDoorsByProtocol().keySet(),
-                              not(in(asList(srmPutNotSupportedProtocols)))), String.class);
+        return loginBrokerSource.writeDoorsByProtocol().keySet().stream()
+                .filter(door -> !asList(srmPutNotSupportedProtocols).contains(door))
+                .toArray(String[]::new);
     }
 
     @Override

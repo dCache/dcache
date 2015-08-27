@@ -2,8 +2,9 @@
 
 package diskCacheV111.poolManager ;
 
+import javax.annotation.Nullable;
+
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import diskCacheV111.pools.PoolCostInfo;
@@ -19,30 +20,27 @@ import org.dcache.poolmanager.PoolInfo;
  */
 public interface CostModule {
 
-   /**
-    * Used by PoolManager to send the replies PoolManager sends to doors.
-    */
-   public void messageArrived( CellMessage cellMessage ) ;
-
-   public boolean isActive() ;
-
     /**
-    * Obtain the PoolCostInfo associated with the named pool.  If the pool is unknown
-    * then null is returned.
-    * @param poolName the name of a pool
-    * @return PostCostInfo corresponding to the named pool.
-    */
-   public PoolCostInfo getPoolCostInfo(String poolName);
-
-    /**
-     * Obtain the PoolInfo associated with a named list of pools.
-     *
-     * Unknown or disabled pools are skipped.
-     *
-     * @param pools pool names
-     * @return List of PostInfo corresponding to the named pools
+     * Used by PoolManager to send the replies PoolManager sends to doors.
      */
-    List<PoolInfo> getPoolInfo(Iterable<String> pools);
+    void messageArrived( CellMessage cellMessage ) ;
+
+    boolean isActive() ;
+
+    /**
+     * Obtain the PoolCostInfo associated with the named pool.  If the pool is unknown
+     * then null is returned.
+     * @param poolName the name of a pool
+     * @return PostCostInfo corresponding to the named pool.
+     */
+    @Nullable
+    PoolCostInfo getPoolCostInfo(String poolName);
+
+    /**
+     * Obtain the PoolInfo associated with a named pool.
+     */
+    @Nullable
+    PoolInfo getPoolInfo(String pool);
 
     /**
      * Obtain the PoolInfo associated with a named list of pools.

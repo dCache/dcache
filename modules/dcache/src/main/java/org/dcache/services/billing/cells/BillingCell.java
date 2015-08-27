@@ -1,7 +1,6 @@
 package org.dcache.services.billing.cells;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
@@ -41,9 +40,6 @@ import dmg.util.Replaceable;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.Slf4jSTErrorListener;
-
-import static com.google.common.collect.Iterables.toArray;
-import static com.google.common.collect.Iterables.transform;
 
 /**
  * This class is responsible for the processing of messages from other
@@ -194,18 +190,10 @@ public final class BillingCell
         }
     }
 
-    private static final Function<Map.Entry<String,int[]>,Object[]> toPair =
-        new Function<Map.Entry<String,int[]>,Object[]>()
-        {
-            @Override
-            public Object[] apply(Map.Entry<String,int[]> entry) {
-                return new Object[] { entry.getKey(),
-                                      Arrays.copyOf(entry.getValue(), 2) };
-            }
-        };
-
     public Object[][] ac_get_billing_info(Args args) {
-        return toArray(transform(_map.entrySet(), toPair), Object[].class);
+        return _map.entrySet().stream()
+                .map(e -> new Object[]{e.getKey(), Arrays.copyOf(e.getValue(), 2)})
+                .toArray(Object[][]::new);
     }
 
     public static final String hh_get_pool_statistics = "[<poolName>]";

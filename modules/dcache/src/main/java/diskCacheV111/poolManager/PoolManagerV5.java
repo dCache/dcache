@@ -2,6 +2,7 @@ package diskCacheV111.poolManager ;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,13 +12,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.CostCalculationV5;
@@ -28,7 +29,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import org.dcache.poolmanager.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolMonitor;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
@@ -59,16 +59,16 @@ import org.dcache.alarms.PredefinedAlarm;
 import org.dcache.cells.CellStub;
 import org.dcache.poolmanager.Partition;
 import org.dcache.poolmanager.PoolInfo;
+import org.dcache.poolmanager.PoolLinkGroupInfo;
 import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.poolmanager.PoolSelector;
 import org.dcache.poolmanager.Utils;
 import org.dcache.util.Args;
-import org.dcache.util.Version;
 import org.dcache.util.CDCExecutorServiceDecorator;
+import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.collect.Iterables.transform;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import static java.util.stream.Collectors.toList;
 
 public class PoolManagerV5
     extends AbstractCellComponent
@@ -438,7 +438,12 @@ public class PoolManagerV5
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
         List<PoolInfo> pools =
-            _costModule.getPoolInfo(transform(link.getPools(), PoolSelectionUnit.SelectionEntity::getName));
+                link.getPools().stream()
+                        .map(PoolSelectionUnit.SelectionEntity::getName)
+                        .map(_costModule::getPoolInfo)
+                        .filter(Objects::nonNull)
+                        .collect(toList());
+
         if (pools.isEmpty()) {
             throw new CacheException(57, "No appropriate pools found for link: " + linkName);
         }

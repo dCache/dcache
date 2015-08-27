@@ -1,6 +1,5 @@
 package org.dcache.util;
 
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ForwardingListenableFuture;
 import com.google.common.util.concurrent.ForwardingListeningExecutorService;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 
 import dmg.cells.nucleus.CDC;
 
-import static com.google.common.collect.Iterables.transform;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Decorates a ListeningExecutorService and makes tasks and futures CDC aware.
@@ -126,14 +125,9 @@ public class CDCListeningExecutorServiceDecorator extends ForwardingListeningExe
     private Runnable wrap(final Runnable task)
     {
         final CDC cdc = new CDC();
-        return new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try (CDC ignored = cdc.restore()) {
-                    task.run();
-                }
+        return () -> {
+            try (CDC ignored = cdc.restore()) {
+                task.run();
             }
         };
     }
@@ -141,25 +135,20 @@ public class CDCListeningExecutorServiceDecorator extends ForwardingListeningExe
     private <T> Callable<T> wrap(final Callable<T> task)
     {
         final CDC cdc = new CDC();
-        return new Callable<T>() {
-            @Override
-            public T call() throws Exception
-            {
-                try (CDC ignored = cdc.restore()) {
-                    return task.call();
-                }
+        return () -> {
+            try (CDC ignored = cdc.restore()) {
+                return task.call();
             }
         };
     }
 
     private <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks)
     {
-        return Lists.newArrayList(transform(tasks, task -> wrap(task)));
+        return tasks.stream().map(this::wrap).collect(toList());
     }
 
     private <T> List<Future<T>> wrap(List<Future<T>> futures)
     {
-        return Lists.newArrayList(transform(futures,
-                                            future -> wrap((ListenableFuture<T>) future)));
+        return futures.stream().map(future -> wrap((ListenableFuture<T>) future)).collect(toList());
     }
 }

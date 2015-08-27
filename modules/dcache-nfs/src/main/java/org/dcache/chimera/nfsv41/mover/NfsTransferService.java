@@ -16,6 +16,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -48,9 +49,6 @@ import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
-
-import static com.google.common.collect.Iterables.toArray;
-import static com.google.common.collect.Iterables.transform;
 
 /**
  * Factory and transfer service for NFS movers.
@@ -234,8 +232,8 @@ public class NfsTransferService extends AbstractCellComponent
         _withGss = withGss;
     }
 
-    private InetSocketAddress[] localSocketAddresses(Iterable<InetAddress> addresses, int port) {
-        return toArray(transform(addresses, address -> new InetSocketAddress(address, port)), InetSocketAddress.class);
+    private InetSocketAddress[] localSocketAddresses(Collection<InetAddress> addresses, int port) {
+        return addresses.stream().map(address -> new InetSocketAddress(address, port)).toArray(InetSocketAddress[]::new);
     }
 
     private InetSocketAddress[] localSocketAddresses(NfsMover mover) throws SocketException {

@@ -1,13 +1,11 @@
 package org.dcache.pool.migration;
 
-import com.google.common.collect.ImmutableList;
 import statemap.TransitionUndefinedException;
 
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.Message;
@@ -34,11 +33,8 @@ import org.dcache.util.FireAndForgetTask;
 import org.dcache.util.ReflectionUtils;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Predicates.*;
-import static com.google.common.collect.Collections2.transform;
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Queues.newArrayDeque;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Encapsulates the migration of a single replica of a migration job.
@@ -165,8 +161,9 @@ public class Task
         throws NoSuchElementException
     {
         List<PoolManagerPoolInformation> pools =
-                newArrayList(filter(_parameters.poolList.getPools(),
-                                    compose(not(in(_replicas)), PoolManagerPoolInformation::getName)));
+                _parameters.poolList.getPools().stream()
+                        .filter(pool -> !_replicas.contains(pool.getName()))
+                        .collect(toList());
         PoolManagerPoolInformation pool = _parameters.selectionStrategy.select(pools);
         if (pool == null) {
             if (pools.isEmpty()) {
@@ -226,14 +223,11 @@ public class Task
      */
     private synchronized void setLocations(List<String> locations)
     {
-        Collection<String> onlinePools =
-                transform(_parameters.poolList.getPools(), PoolManagerPoolInformation::getName);
-        if (_parameters.isEager) {
-            _locations = newArrayDeque(filter(locations, in(onlinePools)));
-        } else {
-            ImmutableList<String> offlinePools = _parameters.poolList.getOfflinePools();
-            _locations = newArrayDeque(filter(locations, or(in(onlinePools), in(offlinePools))));
+        Stream<String> pools = _parameters.poolList.getPools().stream().map(PoolManagerPoolInformation::getName);
+        if (!_parameters.isEager) {
+            pools = Stream.concat(pools, _parameters.poolList.getOfflinePools().stream());
         }
+        _locations = pools.filter(locations::contains).collect(toCollection(ArrayDeque::new));
     }
 
     /**
@@ -269,14 +263,9 @@ public class Task
             initiateCopy(selectPool());
         } catch (NoSuchElementException e) {
             _target = null;
-            _parameters.executor.execute(new FireAndForgetTask(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    synchronized (Task.this) {
-                        _fsm.copy_nopools();
-                    }
+            _parameters.executor.execute(new FireAndForgetTask(() -> {
+                synchronized (Task.this) {
+                    _fsm.copy_nopools();
                 }
             }));
         }
