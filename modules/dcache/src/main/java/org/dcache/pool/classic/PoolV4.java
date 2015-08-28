@@ -162,8 +162,6 @@ public class PoolV4
     private IoQueueManager _ioQueue ;
     private HsmSet _hsmSet;
     private NearlineStorageHandler _storageHandler;
-    private boolean _crashEnabled;
-    private String _crashType = "exception";
     private int _p2pFileMode = P2P_CACHED;
     private int _dupRequest = DUP_REQ_IGNORE;
     private P2PClient _p2pClient;
@@ -1846,28 +1844,6 @@ public class PoolV4
             throw new CommandSyntaxException("Invalid value : " + onoff);
         }
         return "";
-    }
-
-    public static final String hh_crash = "disabled|shutdown|exception";
-    public String ac_crash_$_0_1(Args args) throws IllegalArgumentException
-    {
-        if (args.argc() < 1) {
-            return "Crash is " + (_crashEnabled ? _crashType : "disabled");
-
-        } else if (args.argv(0).equals("shutdown")) {
-            _crashEnabled = true;
-            _crashType = "shutdown";
-        } else if (args.argv(0).equals("exception")) {
-            _crashEnabled = true;
-            _crashType = "exception";
-        } else if (args.argv(0).equals("disabled")) {
-            _crashEnabled = false;
-        } else {
-            throw new IllegalArgumentException("crash disabled|shutdown|exception");
-        }
-
-        return "Crash is " + (_crashEnabled ? _crashType : "disabled");
-
     }
 
     public static final String hh_set_sticky = "# Deprecated";
