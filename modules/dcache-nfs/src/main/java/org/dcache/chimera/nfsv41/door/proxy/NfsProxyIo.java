@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.dcache.util.NetworkUtils;
 
@@ -174,8 +175,7 @@ public class NfsProxyIo implements ProxyIoAdapter {
 
         try {
             client.call(nfs4_prot.NFSPROC4_COMPOUND_4, arg, result, IO_TIMEOUT);
-        } catch (IOException e) {
-            // unfortunately RPC library maps timeout to IOException
+        } catch (TimeoutException e) {
             throw new DelayException(e.getMessage(), e);
         }
 

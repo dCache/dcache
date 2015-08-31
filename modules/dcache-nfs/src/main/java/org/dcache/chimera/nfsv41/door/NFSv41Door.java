@@ -114,6 +114,7 @@ import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.gss.GssSessionManager;
 
 import static java.util.stream.Collectors.toList;
+import java.util.stream.Stream;
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -121,6 +122,12 @@ public class NFSv41Door extends AbstractCellComponent implements
         CellMessageReceiver, CellInfoProvider {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSv41Door.class);
+
+    /**
+     * Array if layout types supported by the door. For now, dCache supports only
+     * NFS4.1 file layout type.
+     */
+    private static final int[] SUPPORTED_LAYOUT_TYPES = new int[]{layouttype4.LAYOUT4_NFSV4_1_FILES};
 
     /**
      * A mapping between pool name, nfs device id and pool's ip addresses.
@@ -610,6 +617,16 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.dcache.nfsv4.NFSv41DeviceManager#getLayoutTypes()
+     */
+    @Override
+    public int[] getLayoutTypes() {
+        return SUPPORTED_LAYOUT_TYPES;
+    }
+
     public void setBillingStub(CellStub stub) {
         _billingStub = stub;
     }
@@ -672,12 +689,16 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() throws IOException {
+            Stream<FsExport> exports;
             if (host != null) {
                 InetAddress address = InetAddress.getByName(host);
-                return Joiner.on('\n').join(_exportFile.exportsFor(address));
+                exports = _exportFile.exportsFor(address);
             } else {
-                return Joiner.on('\n').join(_exportFile.getExports());
+                exports = _exportFile.getExports();
             }
+            return exports
+                    .map(Object::toString)
+                    .collect(Collectors.joining("\n"));
         }
     }
 
@@ -1006,7 +1027,7 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     private void updateLbPaths() {
-        List<String> exportPaths = Sets.newHashSet(_exportFile.getExports()).stream().map(FsExport::getPath).collect(toList());
+        List<String> exportPaths = _exportFile.getExports().map(FsExport::getPath).distinct().collect(toList());
         _loginBrokerPublisher.setReadPaths(exportPaths);
         _loginBrokerPublisher.setWritePaths(exportPaths);
     }
