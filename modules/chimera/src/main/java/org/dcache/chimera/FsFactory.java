@@ -19,7 +19,7 @@ package org.dcache.chimera;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import javax.sql.DataSource;
+import java.io.IOException;
 
 import org.dcache.db.AlarmEnabledDataSource;
 
@@ -27,8 +27,14 @@ public class FsFactory
 {
     public static FileSystemProvider createFileSystem(String url, String user, String password, String dialect)
     {
-        DataSource dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
-        return new JdbcFs(dataSource, dialect);
+        AlarmEnabledDataSource  dataSource = new AlarmEnabledDataSource(url, FsFactory.class.getSimpleName(), getDataSource(url, user, password));
+        return new JdbcFs(dataSource, dialect) {
+            @Override
+            public void close() throws IOException
+            {
+                dataSource.close();
+            }
+        };
     }
 
     public static HikariDataSource getDataSource(String url, String user, String pass)
