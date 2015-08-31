@@ -1019,10 +1019,13 @@ class FsSqlDriver {
              * For now we decide to ignore the race: It seems unlikely to run into
              * and even if one does, the consequence is merely an orphaned inode.
              */
-            _jdbc.batchUpdate("DELETE FROM t_tags_inodes i WHERE itagid = ? " +
-                              "AND NOT EXISTS (SELECT 1 FROM t_tags t WHERE t.itagid=i.itagid)",
+            _jdbc.batchUpdate("DELETE FROM t_tags_inodes i WHERE itagid=? " +
+                              "AND NOT EXISTS (SELECT 1 FROM t_tags WHERE itagid=?)",
                               ids, ids.size(),
-                              (ps, tagid) -> ps.setString(1, tagid));
+                              (ps, tagid) -> {
+                                  ps.setString(1, tagid);
+                                  ps.setString(2, tagid);
+                              });
         }
     }
 
