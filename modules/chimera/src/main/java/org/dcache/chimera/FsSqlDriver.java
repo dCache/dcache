@@ -27,6 +27,8 @@ import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException
 import org.springframework.jdbc.LobRetrievalFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 
 import javax.sql.DataSource;
@@ -39,6 +41,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -884,7 +887,7 @@ class FsSqlDriver {
      * @param mode
      */
     void createTag(FsInode inode, String name, int uid, int gid, int mode) {
-        String id = createTagInode(uid, gid, mode);
+        long id = createTagInode(uid, gid, mode);
         assignTagToDir(id, name, inode, false, true);
     }
 
@@ -895,38 +898,82 @@ class FsSqlDriver {
      * @param tag
      * @return
      */
-    String getTagId(FsInode dir, String tag) {
+    Long getTagId(FsInode dir, String tag) {
         return _jdbc.query("SELECT itagid FROM t_tags WHERE ipnfsid=? AND itagname=?",
                            ps -> {
                                ps.setString(1, dir.toString());
                                ps.setString(2, tag);
                            },
-                           rs -> rs.next() ? rs.getString("itagid") : null);
+                           rs -> rs.next() ? rs.getLong("itagid") : null);
     }
 
     /**
      *
-     *  creates a new id for a tag and sores it into t_tags_inodes table.
+     *  creates a new id for a tag and stores it into t_tags_inodes table.
      *
      * @param uid
      * @param gid
      * @param mode
      * @return
      */
-    String createTagInode(int uid, int gid, int mode) {
+    long createTagInode(int uid, int gid, int mode) {
+        final String CREATE_TAG_INODE_WITHOUT_VALUE = "INSERT INTO t_tags_inodes (imode, inlink, iuid, igid, isize, " +
+                                                      "ictime, iatime, imtime, ivalue) VALUES (?,1,?,?,0,?,?,?,NULL)";
+
         Timestamp now = new Timestamp(System.currentTimeMillis());
-        String id = UUID.randomUUID().toString().toUpperCase();
-        _jdbc.update("INSERT INTO t_tags_inodes VALUES(?,?,1,?,?,0,?,?,?,NULL)",
-                     ps -> {
-                         ps.setString(1, id);
-                         ps.setInt(2, mode | UnixPermission.S_IFREG);
-                         ps.setInt(3, uid);
-                         ps.setInt(4, gid);
-                         ps.setTimestamp(5, now);
-                         ps.setTimestamp(6, now);
-                         ps.setTimestamp(7, now);
-                     });
-        return id;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        int rc = _jdbc.update(
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(
+                            CREATE_TAG_INODE_WITHOUT_VALUE, Statement.RETURN_GENERATED_KEYS);
+                    ps.setInt(1, mode | UnixPermission.S_IFREG);
+                    ps.setInt(2, uid);
+                    ps.setInt(3, gid);
+                    ps.setTimestamp(4, now);
+                    ps.setTimestamp(5, now);
+                    ps.setTimestamp(6, now);
+                    return ps;
+                }, keyHolder);
+        if (rc != 1) {
+            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(CREATE_TAG_INODE_WITHOUT_VALUE, 1, rc);
+        }
+        return (Long) keyHolder.getKey();
+    }
+
+    /**
+     *
+     *  creates a new id for a tag and stores it into t_tags_inodes table.
+     *
+     * @param uid
+     * @param gid
+     * @param mode
+     * @param value
+     * @return
+     */
+    long createTagInode(int uid, int gid, int mode, byte[] value) {
+        final String CREATE_TAG_INODE_WITH_VALUE = "INSERT INTO t_tags_inodes (imode, inlink, iuid, igid, isize, " +
+                                                   "ictime, iatime, imtime, ivalue) VALUES (?,1,?,?,?,?,?,?,?)";
+
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        int rc = _jdbc.update(
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(
+                            CREATE_TAG_INODE_WITH_VALUE, Statement.RETURN_GENERATED_KEYS);
+                    ps.setInt(1, mode | UnixPermission.S_IFREG);
+                    ps.setInt(2, uid);
+                    ps.setInt(3, gid);
+                    ps.setLong(4, value.length);
+                    ps.setTimestamp(5, now);
+                    ps.setTimestamp(6, now);
+                    ps.setTimestamp(7, now);
+                    ps.setBinaryStream(8, new ByteArrayInputStream(value), value.length);
+                    return ps;
+                }, keyHolder);
+        if (rc != 1) {
+            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(CREATE_TAG_INODE_WITH_VALUE, 1, rc);
+        }
+        return (Long) keyHolder.getKey();
     }
 
     /**
@@ -939,11 +986,11 @@ class FsSqlDriver {
      * @param isUpdate
      * @param isOrign
      */
-    void assignTagToDir(String tagId, String tagName, FsInode dir, boolean isUpdate, boolean isOrign) {
+    void assignTagToDir(long tagId, String tagName, FsInode dir, boolean isUpdate, boolean isOrign) {
         if (isUpdate) {
             _jdbc.update("UPDATE t_tags SET itagid=?,isorign=? WHERE ipnfsid=? AND itagname=?",
                          ps -> {
-                             ps.setString(1, tagId);
+                             ps.setLong(1, tagId);
                              ps.setInt(2, isOrign ? 1 : 0);
                              ps.setString(3, dir.toString());
                              ps.setString(4, tagName);
@@ -953,13 +1000,13 @@ class FsSqlDriver {
                          ps -> {
                              ps.setString(1, dir.toString());
                              ps.setString(2, tagName);
-                             ps.setString(3, tagId);
+                             ps.setLong(3, tagId);
                          });
         }
     }
 
     int setTag(FsInode inode, String tagName, byte[] data, int offset, int len) throws ChimeraFsException {
-        String tagId;
+        long tagId;
 
         if (!isTagOwner(inode, tagName)) {
             // tag bunching
@@ -975,7 +1022,7 @@ class FsSqlDriver {
                          ps.setBinaryStream(1, new ByteArrayInputStream(data, offset, len), len);
                          ps.setLong(2, len);
                          ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                         ps.setString(4, tagId);
+                         ps.setLong(4, tagId);
                      });
         return len;
 
@@ -988,7 +1035,7 @@ class FsSqlDriver {
     void removeTag(FsInode dir) {
         /* Get the tag IDs of the tag links to be removed.
          */
-        List<String> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE ipnfsid=?", String.class, dir.toString());
+        List<Long> ids = _jdbc.queryForList("SELECT itagid FROM t_tags WHERE ipnfsid=?", Long.class, dir.toString());
         if (!ids.isEmpty()) {
             /* Remove the links.
              */
@@ -1023,8 +1070,8 @@ class FsSqlDriver {
                               "AND NOT EXISTS (SELECT 1 FROM t_tags WHERE itagid=?)",
                               ids, ids.size(),
                               (ps, tagid) -> {
-                                  ps.setString(1, tagid);
-                                  ps.setString(2, tagid);
+                                  ps.setLong(1, tagid);
+                                  ps.setLong(2, tagid);
                               });
         }
     }
@@ -1062,10 +1109,10 @@ class FsSqlDriver {
     }
 
     Stat statTag(FsInode dir, String name) throws ChimeraFsException {
-        String tagId = getTagId(dir, name);
+        Long tagId = getTagId(dir, name);
 
         if (tagId == null) {
-            throw new FileNotFoundHimeraFsException("tag do not exist");
+            throw new FileNotFoundHimeraFsException("tag does not exist");
         }
 
         try {
@@ -1112,33 +1159,15 @@ class FsSqlDriver {
     void createTags(FsInode inode, int uid, int gid, int mode, Map<String, byte[]> tags)
     {
         if (!tags.isEmpty()) {
-            Map<String, String> ids = new HashMap<>();
-            Timestamp now = new Timestamp(System.currentTimeMillis());
-            _jdbc.batchUpdate("INSERT INTO t_tags_inodes VALUES(?,?,1,?,?,?,?,?,?,?)",
-                              tags.entrySet(),
-                              tags.size(),
-                              (ps, tag) -> {
-                                  String id = UUID.randomUUID().toString().toUpperCase();
-                                  ids.put(tag.getKey(), id);
-                                  byte[] value = tag.getValue();
-                                  int len = value.length;
-                                  ps.setString(1, id);
-                                  ps.setInt(2, mode | UnixPermission.S_IFREG);
-                                  ps.setInt(3, uid);
-                                  ps.setInt(4, gid);
-                                  ps.setLong(5, len);
-                                  ps.setTimestamp(6, now);
-                                  ps.setTimestamp(7, now);
-                                  ps.setTimestamp(8, now);
-                                  ps.setBinaryStream(9, new ByteArrayInputStream(value), len);
-                              });
+            Map<String, Long> ids = new HashMap<>();
+            tags.forEach((key, value) -> ids.put(key, createTagInode(uid, gid, mode, value)));
             _jdbc.batchUpdate("INSERT INTO t_tags VALUES(?,?,?,1)",
                               ids.entrySet(),
                               ids.size(),
                               (ps, tag) -> {
                                   ps.setString(1, inode.toString()); // ipnfsid
                                   ps.setString(2, tag.getKey());     // itagname
-                                  ps.setString(3, tag.getValue());   // itagid
+                                  ps.setLong(3, tag.getValue());     // itagid
                               });
         }
     }
@@ -1154,33 +1183,42 @@ class FsSqlDriver {
                      destination.toString(), orign.toString());
     }
 
-    void setTagOwner(FsInode_TAG tagInode, int newOwner) {
-        String tagId = getTagId(tagInode, tagInode.tagName());
+    void setTagOwner(FsInode_TAG tagInode, int newOwner) throws FileNotFoundHimeraFsException {
+        Long tagId = getTagId(tagInode, tagInode.tagName());
+        if (tagId == null) {
+            throw new FileNotFoundHimeraFsException("tag does not exist");
+        }
         _jdbc.update("UPDATE t_tags_inodes SET iuid=?, ictime=? WHERE itagid=?",
                      ps -> {
                          ps.setInt(1, newOwner);
                          ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-                         ps.setString(3, tagId);
+                         ps.setLong(3, tagId);
                      });
     }
 
-    void setTagOwnerGroup(FsInode_TAG tagInode, int newOwner) {
-        String tagId = getTagId(tagInode, tagInode.tagName());
+    void setTagOwnerGroup(FsInode_TAG tagInode, int newOwner) throws FileNotFoundHimeraFsException {
+        Long tagId = getTagId(tagInode, tagInode.tagName());
+        if (tagId == null) {
+            throw new FileNotFoundHimeraFsException("tag does not exist");
+        }
         _jdbc.update("UPDATE t_tags_inodes SET igid=?, ictime=? WHERE itagid=?",
                      ps -> {
                          ps.setInt(1, newOwner);
                          ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-                         ps.setString(3, tagId);
+                         ps.setLong(3, tagId);
                      });
     }
 
-    void setTagMode(FsInode_TAG tagInode, int mode) {
-        String tagId = getTagId(tagInode, tagInode.tagName());
+    void setTagMode(FsInode_TAG tagInode, int mode) throws FileNotFoundHimeraFsException {
+        Long tagId = getTagId(tagInode, tagInode.tagName());
+        if (tagId == null) {
+            throw new FileNotFoundHimeraFsException("tag does not exist");
+        }
         _jdbc.update("UPDATE t_tags_inodes SET imode=?, ictime=? WHERE itagid=?",
                      ps -> {
                          ps.setInt(1, mode & UnixPermission.S_PERMS);
                          ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-                         ps.setString(3, tagId);
+                         ps.setLong(3, tagId);
                      });
     }
 

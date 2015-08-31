@@ -479,4 +479,217 @@
             </sql>
         </rollback>
     </changeSet>
+
+
+
+    <changeSet author="behrmann" id="8">
+        <comment>Change type of itagid to auto incrementing bigint</comment>
+
+        <createTable tableName="t_tags2">
+            <column name="ipnfsid" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isorign" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="t_tags_inodes2">
+            <column name="itagid" type="bigint" autoIncrement="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="itagid_old" type="varchar(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imode" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="inlink" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iuid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="igid" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="isize" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ictime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="iatime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imtime" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ivalue" type="BLOB"/>
+        </createTable>
+
+        <sql>
+            INSERT INTO t_tags_inodes2 (itagid_old, imode, inlink, iuid, igid, isize, ictime, iatime, imtime, ivalue)
+                   SELECT itagid, imode, inlink, iuid, igid, isize, ictime, iatime, imtime, ivalue FROM t_tags_inodes
+        </sql>
+
+        <sql dbms="postgresql">
+            ANALYZE t_tags_inodes2
+        </sql>
+
+        <sql>
+            INSERT INTO t_tags2 (ipnfsid, itagname, itagid, isorign)
+                   SELECT ipnfsid, itagname, i.itagid, isorign FROM t_tags t JOIN t_tags_inodes2 i ON t.itagid = i.itagid_old
+        </sql>
+
+        <sql dbms="postgresql">
+            ANALYZE t_tags2
+        </sql>
+
+        <dropColumn tableName="t_tags_inodes2" columnName="itagid_old"/>
+
+        <dropTable tableName="t_tags"/>
+        <dropTable tableName="t_tags_inodes"/>
+
+        <renameTable oldTableName="t_tags2" newTableName="t_tags"/>
+        <renameTable oldTableName="t_tags_inodes2" newTableName="t_tags_inodes"/>
+
+        <addPrimaryKey columnNames="itagid" constraintName="t_tags_inodes_pkey" tableName="t_tags_inodes"/>
+        <addPrimaryKey columnNames="ipnfsid, itagname" constraintName="t_tags_pkey" tableName="t_tags"/>
+
+        <createIndex tableName="t_tags" indexName="i_tags_itagid">
+            <column name="itagid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="itagid" baseTableName="t_tags"
+                                 constraintName="t_tags_itagid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="CASCADE"
+                                 referencedColumnNames="itagid"
+                                 referencedTableName="t_tags_inodes"
+                />
+
+        <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_tags"
+                                 constraintName="t_tags_ipnfsid_fkey"
+                                 deferrable="false"
+                                 initiallyDeferred="false"
+                                 onDelete="NO ACTION"
+                                 onUpdate="NO ACTION"
+                                 referencedColumnNames="ipnfsid"
+                                 referencedTableName="t_inodes"
+                />
+
+        <rollback>
+            <createTable tableName="t_tags2">
+                <column name="ipnfsid" type="VARCHAR(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itagname" type="VARCHAR(255)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itagid" type="VARCHAR(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isorign" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+
+            <createTable tableName="t_tags_inodes2">
+                <column name="itagid" type="VARCHAR(36)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="itagid_old" type="bigint">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imode" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="inlink" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iuid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="igid" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="isize" type="INT">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ictime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="iatime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="imtime" type="DATETIME">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="ivalue" type="BLOB"/>
+            </createTable>
+
+            <sql>
+                INSERT INTO t_tags_inodes2 (itagid, itagid_old, imode, inlink, iuid, igid, isize, ictime, iatime, imtime, ivalue)
+                       SELECT CAST (itagid AS VARCHAR(36)), itagid, imode, inlink, iuid, igid, isize, ictime, iatime, imtime, ivalue FROM t_tags_inodes
+            </sql>
+
+            <sql dbms="postgresql">
+                ANALYZE t_tags_inodes2
+            </sql>
+
+            <sql>
+                INSERT INTO t_tags2 (ipnfsid, itagname, itagid, isorign)
+                       SELECT ipnfsid, itagname, i.itagid, isorign FROM t_tags t JOIN t_tags_inodes2 i ON t.itagid = i.itagid_old
+            </sql>
+
+            <sql dbms="postgresql">
+                ANALYZE t_tags2
+            </sql>
+
+
+            <dropColumn tableName="t_tags_inodes2" columnName="itagid_old"/>
+
+            <dropTable tableName="t_tags"/>
+            <dropTable tableName="t_tags_inodes"/>
+
+            <renameTable oldTableName="t_tags2" newTableName="t_tags"/>
+            <renameTable oldTableName="t_tags_inodes2" newTableName="t_tags_inodes"/>
+
+            <addPrimaryKey columnNames="itagid" constraintName="t_tags_inodes_pkey" tableName="t_tags_inodes"/>
+            <addPrimaryKey columnNames="ipnfsid, itagname" constraintName="t_tags_pkey" tableName="t_tags"/>
+
+            <createIndex tableName="t_tags" indexName="i_tags_itagid">
+                <column name="itagid"/>
+            </createIndex>
+
+            <addForeignKeyConstraint baseColumnNames="itagid" baseTableName="t_tags"
+                                     constraintName="t_tags_itagid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="NO ACTION"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="itagid"
+                                     referencedTableName="t_tags_inodes"
+                    />
+
+            <addForeignKeyConstraint baseColumnNames="ipnfsid" baseTableName="t_tags"
+                                     constraintName="t_tags_ipnfsid_fkey"
+                                     deferrable="false"
+                                     initiallyDeferred="false"
+                                     onDelete="NO ACTION"
+                                     onUpdate="NO ACTION"
+                                     referencedColumnNames="ipnfsid"
+                                     referencedTableName="t_inodes"
+                    />
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
