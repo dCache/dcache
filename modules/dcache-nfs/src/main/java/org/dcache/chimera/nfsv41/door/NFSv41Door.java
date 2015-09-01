@@ -312,8 +312,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         _rpcService.stop();
         if (_nfs4 != null) {
             _nfs4.getStateHandler().shutdown();
-        }
-        if (_proxyIoFactory != null) {
             _proxyIoFactory.shutdown();
         }
     }
@@ -633,11 +631,7 @@ public class NFSv41Door extends AbstractCellComponent implements
             pw.printf("  Number of NFSv4 clients : %d\n", _nfs4.getStateHandler().getClients().size());
             pw.printf("  Total pools (DS) used   : %d\n", _poolDeviceMap.getEntries().stream().count());
             pw.printf("  Active transfers        : %d\n", _ioMessages.values().size());
-
-            if (_proxyIoFactory != null) {
-                pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
-            }
-
+            pw.printf("  Known proxy adapters    : %d\n", _proxyIoFactory.getCount());
         }
     }
 
@@ -799,8 +793,8 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         @Override
         public String call() throws IOException {
-            if (_proxyIoFactory == null) {
-                return "";
+            if (_nfs4 == null) {
+                return "NFSv4 server not running.";
             }
 
             StringBuilder sb = new StringBuilder();
