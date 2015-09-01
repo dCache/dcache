@@ -40,15 +40,15 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
 
     private static final String QUERY =
             "SELECT i.ipnfsid, d.iname, i.isize, i.inlink, i.imode, i.itype, " +
-            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.igeneration " +
+            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.icrtime, i.igeneration " +
             "FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.ipnfsid WHERE iparent=? " +
             "UNION ALL " +
             "SELECT i.ipnfsid, '.', i.isize, i.inlink, i.imode, i.itype, " +
-            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.igeneration " +
+            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.icrtime, i.igeneration " +
             "FROM t_inodes i WHERE i.ipnfsid=? " +
             "UNION ALL " +
             "SELECT i.ipnfsid, '..', i.isize, i.inlink, i.imode, i.itype, " +
-            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.igeneration " +
+            "i.iuid, i.igid, i.iatime, i.ictime, i.imtime, i.icrtime, i.igeneration " +
             "FROM t_inodes i JOIN t_dirs d ON i.ipnfsid = d.iparent WHERE d.ipnfsid=?";
 
     private final ResultSet _resultSet;
@@ -134,6 +134,7 @@ public class DirectoryStreamImpl implements DirectoryStreamB<HimeraDirectoryEntr
             stat.setATime(_resultSet.getTimestamp("iatime").getTime());
             stat.setCTime(_resultSet.getTimestamp("ictime").getTime());
             stat.setMTime(_resultSet.getTimestamp("imtime").getTime());
+            stat.setCrTime(_resultSet.getTimestamp("icrtime").getTime());
             stat.setUid(_resultSet.getInt("iuid"));
             stat.setGid(_resultSet.getInt("igid"));
             stat.setMode(_resultSet.getInt("imode") | _resultSet.getInt("itype"));
