@@ -216,7 +216,7 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
     @Override
     public Inode parentOf(Inode inode) throws IOException {
         try {
-            FsInode parent = toFsInode(inode).inodeOf("..");
+            FsInode parent = toFsInode(inode).getParent();
             return toInode(parent);
         } catch (FileNotFoundHimeraFsException e) {
             throw new NoEntException("no parent");
