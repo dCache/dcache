@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -50,8 +49,6 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import diskCacheV111.util.PermissionDeniedCacheException;
-
 import org.dcache.auth.Subjects;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.FsInode;
@@ -71,7 +68,6 @@ import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.status.BadStateidException;
-import org.dcache.nfs.status.PermException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -555,12 +551,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             );
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
-        } catch (FileInCacheException e) {
-	    cleanStateAndKillMover(stateid);
-            throw new NfsIoException(e.getMessage(), e);
-        } catch (PermissionDeniedCacheException e) {
-            cleanStateAndKillMover(stateid);
-            throw new PermException(e.getMessage(), e);
         } catch (CacheException e) {
 	    cleanStateAndKillMover(stateid);
             throw asNfsException(e, LayoutTryLaterException.class);

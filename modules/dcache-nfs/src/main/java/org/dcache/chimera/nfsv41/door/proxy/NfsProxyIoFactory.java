@@ -4,7 +4,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
-import diskCacheV111.util.CacheException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -14,8 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.nfs.status.DelayException;
+import org.dcache.chimera.nfsv41.door.ExceptionUtils;
 import org.dcache.nfs.status.NfsIoException;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.Layout;
@@ -39,6 +37,8 @@ import org.dcache.util.backoff.IBackoffAlgorithm;
 import org.dcache.utils.net.InetSocketAddresses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NfsProxyIoFactory implements ProxyIoFactory {
 
@@ -100,14 +100,7 @@ public class NfsProxyIoFactory implements ProxyIoFactory {
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             _log.error("failed to create IO adapter: {}", t.getMessage());
-            if (t instanceof ChimeraNFSException) {
-                throw (ChimeraNFSException) t;
-            }
-
-            if ((t instanceof CacheException) && ((CacheException) t).getRc() != CacheException.BROKEN_ON_TAPE) {
-                throw new DelayException();
-            }
-            throw new NfsIoException();
+            throw asNfsException(t, NfsIoException.class);
         }
     }
 
