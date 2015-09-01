@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014 - 2016 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -101,6 +101,7 @@ import org.dcache.vehicles.FileAttributes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static org.dcache.namespace.FileAttribute.*;
 
@@ -128,6 +129,11 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     private long flushTimeout = TimeUnit.HOURS.toMillis(4);
     private long removeTimeout = TimeUnit.HOURS.toMillis(4);
     private ScheduledFuture<?> timeoutFuture;
+
+    /**
+     * Set of flush script error codes which have to be silently ignored.
+     */
+    private final Set<Integer> suppressedStoreErrors = Collections.synchronizedSet(newHashSet());
 
     @Required
     public void setScheduledExecutor(ScheduledExecutorService executor)
@@ -240,6 +246,9 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         pw.append("rh set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(stageTimeout));
         pw.append("st set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(flushTimeout));
         pw.append("rm set timeout ").println(TimeUnit.MILLISECONDS.toSeconds(removeTimeout));
+        synchronized(suppressedStoreErrors) {
+            suppressedStoreErrors.forEach( rc -> {pw.append("st suppress rc ").println(rc);} );
+        }
     }
 
     /**
@@ -872,20 +881,25 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 if (cause instanceof InterruptedException || cause instanceof CancellationException) {
                     cause = new TimeoutCacheException("Flush was cancelled.", cause);
                 }
-                LOGGER.warn("Flush of {} failed with: {}.",
-                            pnfsId, cause);
+
+                if (cause instanceof CacheException) {
+                    infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
+                } else {
+                    infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.getMessage());
+                }
             }
+
             infoMsg.setTransferTime(System.currentTimeMillis() - activatedAt);
             infoMsg.setFileSize(getFileAttributes().getSize());
             infoMsg.setTimeQueued(activatedAt - createdAt);
 
-            if (cause instanceof CacheException) {
-                infoMsg.setResult(((CacheException) cause).getRc(), cause.getMessage());
-            } else if (cause != null) {
-                infoMsg.setResult(CacheException.DEFAULT_ERROR_CODE, cause.getMessage());
+            if (!suppressedStoreErrors.contains(infoMsg.getResultCode())) {
+                if (infoMsg.getResultCode() != 0) {
+                    LOGGER.warn("Flush of {} failed with: {}.", pnfsId, cause.toString());
+                }
+                billingStub.notify(infoMsg);
             }
 
-            billingStub.notify(infoMsg);
             flushRequests.removeAndCallback(pnfsId, cause);
         }
 
@@ -1296,6 +1310,41 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
                 }
             });
             return block ? this : "Fetch request queued.";
+        }
+    }
+
+    @Deprecated
+    @Command(name = "st suppress rc",
+             hint = "suppress hsm error",
+             description = "The errors from HSM frush operation will be silently " +
+                    " ignored. No errors in billing or log file will be reported. " +
+                     "On success list of currently supresses error codes will be printed")
+    class BillingMaskRc implements Callable<String> {
+
+        @Argument
+        int rc;
+
+        @Override
+        public String call() throws Exception {
+            suppressedStoreErrors.add(rc);
+            return "suppressed error codes: " + suppressedStoreErrors;
+        }
+    }
+
+    @Deprecated
+    @Command(name = "st unsuppress rc",
+             hint = "remove rc from suppression list",
+             description = "Remove rc from the list of suppressed error codes." +
+                     "On success list of remaining supresseed error codes will be printed.")
+    class BillingUnmaskRc implements Callable<String> {
+
+        @Argument
+        int rc;
+
+        @Override
+        public String call() throws Exception {
+            suppressedStoreErrors.remove(rc);
+            return "suppressed error codes: " + suppressedStoreErrors;
         }
     }
 
