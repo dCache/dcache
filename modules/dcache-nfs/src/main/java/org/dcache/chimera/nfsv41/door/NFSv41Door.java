@@ -89,7 +89,6 @@ import org.dcache.nfs.v3.xdr.nfs3_prot;
 import org.dcache.nfs.v4.CompoundContext;
 import org.dcache.nfs.v4.FlexFileLayoutDriver;
 import org.dcache.nfs.v4.Layout;
-import org.dcache.nfs.v4.MDSOperationFactory;
 import org.dcache.nfs.v4.NFS4Client;
 import org.dcache.nfs.v4.NFS4State;
 import org.dcache.nfs.v4.NFSServerV41;
@@ -189,6 +188,11 @@ public class NFSv41Door extends AbstractCellComponent implements
      * One week (7 days) is good enough to cover most of the public holidays.
      */
     private static final long STAGE_REQUEST_TIMEOUT = TimeUnit.DAYS.toMillis(7);
+
+    /**
+     * Amount of information logged by access logger.
+     */
+    private AccessLogMode _accessLogMode;
 
     /**
      * Cell communication helper.
@@ -328,6 +332,11 @@ public class NFSv41Door extends AbstractCellComponent implements
         supportedlayoutTypes = Arrays.copyOf(maxPossible, configured);
     }
 
+    @Required
+    public void setAccessLogMode(AccessLogMode accessLogMode) {
+        _accessLogMode = accessLogMode;
+    }
+
     public void init() throws Exception {
 
         _chimeraVfs = new ChimeraVfs(_fileFileSystemProvider, _idMapper);
@@ -355,7 +364,8 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V41:
                     final NFSv41DeviceManager _dm = this;
                     _proxyIoFactory = new NfsProxyIoFactory(_dm);
-                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
+                    _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory,
+                            new AccessLogAwareOperationFactory(_chimeraVfs, _fileFileSystemProvider, _accessLogMode)),
                             _dm, _vfs, _exportFile);
                     oncRpcSvcBuilder.withRpcService(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
                     updateLbPaths();
