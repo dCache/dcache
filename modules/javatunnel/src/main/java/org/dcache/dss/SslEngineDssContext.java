@@ -248,7 +248,7 @@ public class SslEngineDssContext implements DssContext
     }
 
     @Override
-    public String getPrincipal()
+    public String getPeerName()
     {
         try {
             return engine.getSession().getPeerPrincipal().getName();
