@@ -2,7 +2,7 @@ dCache
 ======
 
 __dCache__ is a system for storing and retrieving huge amounts of data,
-distributed among a large number of heterogenous server nodes, under
+distributed among a large number of heterogeneous server nodes, under
 a single virtual filesystem tree with a variety of standard access
 methods. Depending on the Persistency Model, dCache provides methods
 for exchanging data with backend (tertiary) Storage Systems as well
@@ -28,3 +28,13 @@ The project is licensed under __AGPL v3__. Some parts licensed under __BSD__ and
 
 ####For more info, check official [dCache.ORG] (http://www.dcache.org) web page.####
 
+Getting Started
+===============
+
+The file [BUILDING.md](BUILDING.md) describes how to compile dCache
+code and build various packages.
+
+The file also describes how to create the __system-test__ deployment,
+which provides a quick and easy way to get a working dCache.  Running
+system-test requires no special privileges and all the generated files
+reside within the code-base.
