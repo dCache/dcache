@@ -350,7 +350,7 @@ public class JdbcFs implements FileSystemProvider {
         }
 
         checkNameLength(name);
-        checkArgument((type & UnixPermission.S_IFDIR) == 0);
+        checkArgument(UnixPermission.getType(type) != UnixPermission.S_IFDIR);
 
         return inTransaction(status -> {
             try {

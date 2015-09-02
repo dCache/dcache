@@ -1144,4 +1144,35 @@ public class BasicTest extends ChimeraTestCaseHelper {
         assertThat(len, is(8));
         assertArrayEquals(buffer, new byte[]{32, -20, -104, -92, -20, -105, -68, 46, 0, 0, 0, 0});
     }
+
+    @Test
+    public void testCreateBlockDev() throws ChimeraFsException {
+        _fs.createFile(_rootInode, "aBlockDev", 0, 0, 0644 |  UnixPermission.S_IFBLK,  UnixPermission.S_IFBLK);
+    }
+
+    @Test
+    public void testCreateCharDev() throws ChimeraFsException {
+        _fs.createFile(_rootInode, "aCharDev", 0, 0, 0644 | UnixPermission.S_IFCHR, UnixPermission.S_IFCHR);
+    }
+
+    @Test
+    public void testCreateSocketDev() throws ChimeraFsException {
+        _fs.createFile(_rootInode, "aSocket", 0, 0, 0644 | UnixPermission.S_IFSOCK, UnixPermission.S_IFSOCK);
+    }
+
+    @Test
+    public void testCreateFifoDev() throws ChimeraFsException {
+        _fs.createFile(_rootInode, "aFifo", 0, 0, 0644 | UnixPermission.S_IFIFO, UnixPermission.S_IFIFO);
+    }
+
+    @Test
+    public void testCreateSymLink() throws ChimeraFsException {
+        _fs.createFile(_rootInode, "aSymlink", 0, 0, 0644 | UnixPermission.S_IFLNK, UnixPermission.S_IFLNK);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateDir() throws ChimeraFsException {
+        _fs.createFile(_rootInode, "aDir", 0, 0, 0755 | UnixPermission.S_IFDIR, UnixPermission.S_IFDIR);
+    }
+
 }
