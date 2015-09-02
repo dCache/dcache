@@ -650,124 +650,137 @@ public class CellShell extends CommandInterpreter
    //
    //   ps -af <cellname>
    //
-   public static final String hh_ps = "[-f] [<cellName> ...]" ;
-   public static final String fh_ps =
-          " Syntax : ps [-f] [<cellName> ...]\n" +
-          "          ps displays various attibutes of active cells\n"+
-          "          or the full attributes of a particular cell\n" +
-          "          Options :  -f   displays a one line comment if\n"+
-          "                          <cellName> is specified, otherwise\n"+
-          "                          all available informations (theads,...\n"+
-          "                          will be shown\n" ;
-   public String ac_ps_$_0_99( Args args ){
-      StringBuilder sb = new StringBuilder() ;
-      if( args.argc() == 0 ){
-         List<String> list = _nucleus.getCellNames();
-         if (args.optc() > 0) {
-             for (String name: list) {
-                 CellInfo info = _nucleus.getCellInfo(name);
-                 if (info == null){
-                     sb.append(name).append(" (defunc)\n" ) ;
-                 } else {
-                     sb.append(info).append( "\n" ) ;
-                 }
-             }
-         } else {
-             for (String name: list) {
-                 sb.append(name).append("\n");
-             }
-         }
-       }else{
-         boolean full = ( args.optc() > 0 ) &&
-                        ( args.optv(0).indexOf('f') > -1 ) ;
+   @Command(name = "ps", hint = "list cells in the domain",
+           description = "List all cells within the current domain. " +
+                   "The option \'-f\' provides information about the " +
+                   "cells in the domain. This information comprises " +
+                   "of the cell name, the cell current state (a cell " +
+                   "can be in one of these following states: Initial, " +
+                   "Active, Removing, Dead and Unknown state which " +
+                   "are denoted by I, A, R, D and U respectively), " +
+                   "the number of message queues, the thread count, " +
+                   "the class name of the cell and lastly, a short " +
+                   "description of the cell itself." +
+                   "\n\n" +
+                   "When a particular cell is specify, a summarised " +
+                   "information on the cell is returned. With the option " +
+                   "'-f', all information about the cell will be return in a " +
+                   "comprehensive and detailed manner.")
+   public class PsCommand implements Callable<String>
+   {
+       @Argument(usage = "specify a cell or list of cell names", required = false)
+       String[] cellName;
 
-         for( int i = 0 ; i < args.argc() ; i++ ){
-             String cellName = args.argv(i) ;
-             CellInfo info   = _nucleus.getCellInfo( cellName ) ;
-             if( info == null ){
-                sb.append(cellName).append(" Not found\n");
-                continue ;
-             }
-             if( full ){
-                sb.append("  -- Short Info about Cell ").append(cellName)
-                        .append(" --\n");
-                sb.append(info.toString()).append("\n");
-                CellVersion version = info.getCellVersion() ;
-                if( version != null ) {
-                    sb.append("  -- Version : ").append(version.toString())
-                            .append("\n");
-                }
-                sb.append( "  -- Threads --\n" ) ;
-                Thread [] threads = _nucleus.getThreads(cellName) ;
-                for( int j = 0 ;
-                     ( j < threads.length ) && ( threads[j] != null ) ; j++ ){
-                    boolean isAlive = threads[j].isAlive() ;
-                    sb.append(CellInfo.f(threads[j].getName(), 20))
-                            .append(CellInfo
-                                    .f("" + threads[j].getPriority(), 2))
-                            .append(isAlive ? "  Alive" : "  Dead")
-                            .append("\n");
-                }
-                sb.append( "  -- Private Infos --\n" ) ;
-             }
-             sb.append(info.getPrivatInfo()).append("\n");
-          }
+       @Option(name="f",
+               usage = "display with the full attributes" )
+       boolean full;
+
+       @Override
+       public String call()
+       {
+           StringBuilder sb = new StringBuilder() ;
+           if( cellName == null ){
+               List<String> list = _nucleus.getCellNames();
+               if (full) {
+                   for (String name: list) {
+                       CellInfo info = _nucleus.getCellInfo(name);
+                       if (info == null){
+                           sb.append(name).append(" (defunc)\n" ) ;
+                       } else {
+                           sb.append(info).append( "\n" ) ;
+                       }
+                   }
+               } else {
+                   for (String name: list) {
+                       sb.append(name).append("\n");
+                   }
+               }
+           } else {
+               for (String aCellName : cellName) {
+                   CellInfo info = _nucleus.getCellInfo(aCellName);
+                   if (info == null) {
+                       sb.append(aCellName).append(" Not found\n");
+                       continue;
+                   }
+                   if (full) {
+                       sb.append("  -- Short Info about Cell ").append(aCellName)
+                               .append(" --\n");
+                       sb.append(info.toString()).append("\n");
+                       CellVersion version = info.getCellVersion();
+                       if (version != null) {
+                           sb.append("  -- Version : ").append(version.toString())
+                                   .append("\n");
+                       }
+                       sb.append("  -- Threads --\n");
+                       Thread[] threads = _nucleus.getThreads(aCellName);
+                       for (int j = 0;
+                            (j < threads.length) && (threads[j] != null); j++) {
+                           boolean isAlive = threads[j].isAlive();
+                           sb.append(CellInfo.f(threads[j].getName(), 20))
+                                   .append(CellInfo
+                                           .f("" + threads[j].getPriority(), 2))
+                                   .append(isAlive ? "  Alive" : "  Dead")
+                                   .append("\n");
+                       }
+                       sb.append("  -- Private Infos --\n");
+                   }
+                   sb.append(info.getPrivatInfo()).append("\n");
+               }
+           }
+           return sb.toString() ;
        }
-       return sb.toString() ;
-
    }
+
    ////////////////////////////////////////////////////////////
    //
    //   kill
    //
-   public static final String hh_kill= "<cellName>  # kill the named cell" ;
-   public static final String fh_kill =
-            "NAME\n"+
-            "\tkill\n\n"+
-            "SYNOPSIS\n"+
-            "\tkill CELL\n\n"+
-            "DESCRIPTION\n"+
-            "\tKills the cell CELL.  If CELL is 'System' then, in addition to killing\n" +
-            "\tthe System cell, the domain shutdown sequence is triggered.  This will\n" +
-            "\tresult in the JVM process ending.\n\n" +
-            "OPTIONS\n"+
-            "\tnone\n";
-   public Reply ac_kill_$_1( Args args )
-         throws IllegalArgumentException, InterruptedException
+   @Command(name = "kill", hint = "kill a cell",
+           description = "Kills the named CELL.  If CELL is 'System' then, " +
+                   "in addition to killing the System cell, the domain " +
+                   "shutdown sequence is triggered.  This will result " +
+                   "in the JVM process ending.")
+   public class KillCommand implements Callable<Reply>
    {
-       // The killing of a cell requires deliver of a message to the targeted
-       // cell.  If CellShell is running in the targeted shell then the call
-       // to _nucleus.join will never return unless we free up the
-       // message-processing thread by returning from this method.  We return a
-       // delayed reply to achieve this while also not delivering the reply
-       // until after the cell has terminated.
-       final DelayedReply future = new DelayedReply();
-       final String cell = args.argv(0);
+       @Argument(index = 0, usage = "specify the cell name")
+       String cellName;
 
-       Thread thread = new Thread("kill "+cell+" command") {
-            @Override
-            public void run()
-            {
-                Serializable response = "";
-                try {
-                    try {
-                        _nucleus.kill(cell);
-                        _nucleus.join(cell, 0);
-                    } catch (IllegalArgumentException e) {
-                        response = e;
-                    }
+       @Override
+       public Reply call() throws IllegalArgumentException, InterruptedException
+       {
+           // The killing of a cell requires deliver of a message to the targeted
+           // cell.  If CellShell is running in the targeted shell then the call
+           // to _nucleus.join will never return unless we free up the
+           // message-processing thread by returning from this method.  We return a
+           // delayed reply to achieve this while also not delivering the reply
+           // until after the cell has terminated.
+           final DelayedReply future = new DelayedReply();
 
-                    future.reply(response);
-                } catch (InterruptedException e) {
-                    // Do nothing, dCache is shutting down.
-                }
-            }
-       };
+           Thread thread = new Thread("kill "+cellName+" command") {
+               @Override
+               public void run()
+               {
+                   Serializable response = "";
+                   try {
+                       try {
+                           _nucleus.kill(cellName);
+                           _nucleus.join(cellName, 0);
+                       } catch (IllegalArgumentException e) {
+                           response = e;
+                       }
 
-       thread.setDaemon(true);
-       thread.start();
+                       future.reply(response);
+                   } catch (InterruptedException e) {
+                       // Do nothing, dCache is shutting down.
+                   }
+               }
+           };
 
-       return future;
+           thread.setDaemon(true);
+           thread.start();
+
+           return future;
+       }
    }
 
    @Command(name = "send", hint = "send message to cell",
@@ -898,66 +911,126 @@ public class CellShell extends CommandInterpreter
    //
    //   create
    //
-    public static final String hh_create = "<cellClass> <cellName> [<Arguments>]";
-    public String ac_create_$_2_3(Args args)
-            throws ClassNotFoundException, NoSuchMethodException, InstantiationException,
-                   IllegalAccessException, CommandThrowableException
-    {
-        try {
-            Cell cell;
-            if( ( args.optc() > 0 ) && ( args.optv(0).equals("-c") ) ){
-                String [] argClasses = new String[1] ;
-                Object [] argObjects = new Object[1] ;
+   @Command(name = "create", hint = "create a cell",
+           description = "Create a cell within the current dCache domain. " +
+                   "To create a cell requires, the cell name and the class " +
+                   "it belongs. Depending on the class type of the cell, " +
+                   "some necessary configuration might be required in other " +
+                   "to instantiate the cell. This can be supply through the " +
+                   "cellArg argument. If the configuration is more than one, " +
+                   "since cellArg is a single argument, the configuration " +
+                   "settings must be inside a quotation mark.\n\n" +
+                   "If the option '-c' is indicated, the customised class " +
+                   "loader will be used instead of the system class loader. " +
+                   "This is particularly useful when a class is set up using " +
+                   "the `set classloader` command.")
+   public class CreateCommand implements Callable<String>
+   {
+       @Argument(index = 0, usage = "Specify the fully qualified name of the " +
+               "desired class. For example, creating a topo cell requires " +
+               "specifying the following className: dmg.cells.network.TopoCell")
+       String className;
 
-                argClasses[0] = "java.lang.String" ;
-                argObjects[0] = args.argc()>2?args.argv(2):"" ;
+       @Argument(index = 1, usage = "specify the name of the cell to be created")
+       String cellName;
 
-                cell = _nucleus.createNewCell(args.argv(0),
-                                              args.argv(1),
-                                              argClasses,
-                                              argObjects);
-            } else {
-                cell = _nucleus.createNewCell(args.argv(0),
-                                              args.argv(1),
-                                              args.argc()>2?args.argv(2):"",
-                                              true);
-            }
+       @Argument(index = 2, required = false, usage = "cell configuration arguments")
+       String cellArg;
 
-            if (cell instanceof EnvironmentAware) {
-                ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
-            }
+       @Option(name="c", usage = "load class through the customised class loader")
+       boolean c;
 
-            return "created : " + cell;
-        } catch (InvocationTargetException e) {
-            throw new CommandThrowableException(e.getTargetException().getMessage(), e.getTargetException());
-        }
-    }
+       @Override
+       public String call() throws ClassNotFoundException, NoSuchMethodException,
+               InstantiationException, IllegalAccessException, InvocationTargetException,
+               ClassCastException, CommandThrowableException
+       {
+           try {
+               Cell cell;
+               if( c ) {
+                   String[] argClasses = new String[1] ;
+                   Object[] argObjects = new Object[1] ;
+
+                   argClasses[0] = "java.lang.String" ;
+                   argObjects[0] = (cellArg != null)?cellArg:"" ;
+
+                   cell = _nucleus.createNewCell(className,
+                           cellName,
+                           argClasses,
+                           argObjects);
+               } else {
+                   cell = _nucleus.createNewCell(className,
+                           cellName,
+                           (cellArg != null)?cellArg:"",
+                           true);
+               }
+
+               if (cell instanceof EnvironmentAware) {
+                   ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
+               }
+
+               return "created : " + cell;
+           } catch (InvocationTargetException e) {
+               throw new CommandThrowableException(e.getTargetException().getMessage(), e.getTargetException());
+           }
+       }
+   }
+
    ////////////////////////////////////////////////////////////
    //
    //   domain class loader routines
    //
-   public static final String fh_set_classloader =
-      "  set classloader <packageSelection> <provider>\n"+
-      "     <packageSelection> : e.g. java.lang.*\n"+
-      "     <provider>         :   \n"+
-      "          cell:class@domain \n"+
-      "          dir:/../.../../   \n"+
-      "          system, none\n" ;
+   @Command(name = "set classloader", hint = "add a package",
+           description = "Add and set the specified package name " +
+                   "to the classloader data provider (CDP) list. " +
+                   "This requires specifying the name of the " +
+                   "package and the \'provider\'. The provider " +
+                   "which is basically the address or path or " +
+                   "location of the package. There are four types " +
+                   "of provider types, which are cell, directory, " +
+                   "system and none (see usage in the provider " +
+                   "argument below).")
+   public class SetClassloaderCommand implements Callable<String>
+   {
+       @Argument(index =0, usage = "specify package name e.g. java.lang.*")
+       String packageName;
 
-   public static final String hh_set_classloader = "<packageSelection> <provider>" ;
-   public String ac_set_classloader_$_2( Args args ){
-      _nucleus.setClassProvider( args.argv(0) , args.argv(1) ) ;
-      return "" ;
-   }
-   public String ac_show_classloader( Args args ){
-       StringBuilder sb = new StringBuilder() ;
-       for (String[] classProvider : _nucleus.getClassProviders()) {
-           sb.append(Formats.field(classProvider[0], 20, Formats.LEFT)).
-                   append(classProvider[1]).
-                   append("\n");
+       @Argument(index =1, usage = "specify the provider, for:\n" +
+               "cell\n" +
+               "\t\'cell:cellName@domainName\' or \'cellName@domainName.\'\n" +
+               "directory\n" +
+               "\t\'dir:/../.../../\' or \'/../.../../\'\n" +
+               "system or none\n" +
+               "\t\'system\'|\'none\'\n" +
+               "NOTE: pass the argument without the quotation marks.")
+       String provider;
+
+       @Override
+       public String call() throws IllegalArgumentException
+       {
+           _nucleus.setClassProvider(packageName, provider) ;
+           return "" ;
        }
-      return sb.toString() ;
    }
+
+    @Command(name = "show classloader", hint = "display the packages in CDP",
+            description = "Shows list of package and their provider in the " +
+                    "classloader data provider (CDP).")
+    public class ShowClassloaderCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            StringBuilder sb = new StringBuilder() ;
+            for (String[] classProvider : _nucleus.getClassProviders()) {
+                sb.append(Formats.field(classProvider[0], 20, Formats.LEFT)).
+                        append(classProvider[1]).
+                        append("\n");
+            }
+            return sb.toString() ;
+        }
+    }
+
    ////////////////////////////////////////////////////////////
    //
    //   private class loader routines
