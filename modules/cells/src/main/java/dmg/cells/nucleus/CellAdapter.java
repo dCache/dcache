@@ -604,7 +604,13 @@ public class CellAdapter
     @Override
     public void routeDeleted(CellEvent ce) {}
 
-    @Command(name = "xgetcellinfo")
+    @Command(name = "xgetcellinfo", hint = "get this cell information",
+            description = "Returns CellInfo object of this cell. This contains " +
+                    "the name of the cell, the current state (where, I: " +
+                    "Initial, A: Active, R: Removing, D: Dead and U: " +
+                    "Unknown), the number of messages queued for this " +
+                    "cell, thread count, the class name and a short " +
+                    "description of the cell itself.")
     public class GetCellInfoCommand implements Callable<CellInfo>
     {
         @Override
@@ -614,7 +620,11 @@ public class CellAdapter
         }
     }
 
-    @Command(name = "info")
+    @Command(name = "info", hint = "get detailed cell information",
+            description = "Shows detailed information about this cell. " +
+                    "The returned information can contain the performance " +
+                    "statistics, past and current activities of the cell. " +
+                    "This usually depends on the type of cell.")
     public class InfoCommand implements Callable<String>
     {
         @Option(name = "a", usage = "Display content of unanswered message requests.")
