@@ -1,4 +1,4 @@
-package org.dcache.chimera.namespace;
+package diskCacheV111.namespace;
 
 import com.google.common.io.Resources;
 import junit.framework.JUnit4TestAdapter;
@@ -22,27 +22,33 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsCancelUpload;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsCreateUploadPath;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.auth.Subjects;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
 import org.dcache.chimera.FsFactory;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.UnixPermission;
+import org.dcache.chimera.namespace.ChimeraNameSpaceProvider;
+import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.PosixPermissionHandler;
 import org.dcache.vehicles.FileAttributes;
@@ -102,12 +108,14 @@ public class PnfsManagerTest
                 dbProperties.getProperty("chimera.db.dialect"));
 
         ChimeraNameSpaceProvider chimera = new ChimeraNameSpaceProvider();
-        chimera.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY, StorageInfo.DEFAULT_RETENTION_POLICY));
+        chimera.setExtractor(new ChimeraOsmStorageInfoExtractor(StorageInfo.DEFAULT_ACCESS_LATENCY,
+                                                                StorageInfo.DEFAULT_RETENTION_POLICY));
         chimera.setInheritFileOwnership(true);
         chimera.setVerifyAllLookups(true);
         chimera.setPermissionHandler(new PosixPermissionHandler());
         chimera.setAclEnabled(false);
         chimera.setFileSystem(_fs);
+        chimera.setUploadDirectory("/upload/%d");
 
 
         _pnfsManager = new PnfsManagerV3();
@@ -175,7 +183,7 @@ public class PnfsManagerTest
          */
 
         Stat stat = _fs.stat(new FsInode(_fs, pnfsCreateDirectoryMessage.getPnfsId().toString()));
-        assertEquals("new mode do not equal to specified one", (stat.getMode() & 0777) , 0750 );
+        assertEquals("new mode do not equal to specified one", (stat.getMode() & 0777), 0750);
     }
 
     /**
@@ -277,7 +285,7 @@ public class PnfsManagerTest
 
         StorageInfo storageInfo = pnfsCreateEntryMessage.getFileAttributes().getStorageInfo();
 
-        assertEquals("Invalid entry in storageInfo map", writeToken, storageInfo.getMap().get("writeToken") );
+        assertEquals("Invalid entry in storageInfo map", writeToken, storageInfo.getMap().get("writeToken"));
 
     }
 
@@ -331,13 +339,7 @@ public class PnfsManagerTest
         PnfsDeleteEntryMessage deleteEntryMessage = new PnfsDeleteEntryMessage("/pnfs/testRoot/testRemoveByPath");
         _pnfsManager.deleteEntry(deleteEntryMessage);
 
-        try {
-
-            _fs.path2inode("/pnfs/testRoot/testRemoveByPath");
-            fail("remove by path did not removed file from filesystem");
-        }catch(FileNotFoundHimeraFsException fnf) {
-            // OK
-        }
+        assertNotExists("/pnfs/testRoot/testRemoveByPath");
     }
 
 
@@ -404,7 +406,8 @@ public class PnfsManagerTest
         PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId("000000000000000000000000000000000001"), "aPool");
 
         _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
-        assertTrue("add cache location of non existing file should return FILE_NOT_FOUND", pnfsAddCacheLocationMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+        assertTrue("add cache location of non existing file should return FILE_NOT_FOUND",
+                   pnfsAddCacheLocationMessage.getReturnCode() == CacheException.FILE_NOT_FOUND);
     }
 
     @Test
@@ -529,7 +532,7 @@ public class PnfsManagerTest
 	Stat beforeUpdateStat  = _fs.stat(inode);
         Stat stat = new Stat();
 	stat.setCTime( beforeUpdateStat.getCTime() + 1000 );
-        _fs.setInodeAttributes(inode, 0 , stat);
+        _fs.setInodeAttributes(inode, 0, stat);
 
         PnfsGetFileAttributes pnfsGetFileAttributes
                 = new PnfsGetFileAttributes(new PnfsId(inode.toString()),
@@ -538,7 +541,61 @@ public class PnfsManagerTest
 
         assertEquals(beforeUpdateStat.getCrTime(), pnfsGetFileAttributes.getFileAttributes().getCreationTime());
         assertTrue("Creation time can't be in the past", pnfsGetFileAttributes.getFileAttributes().getCreationTime()
-                < pnfsGetFileAttributes.getFileAttributes().getChangeTime());
+                                                         < pnfsGetFileAttributes.getFileAttributes().getChangeTime());
+    }
+
+    @Test
+    public void testCancelUpload() throws ChimeraFsException
+    {
+        FsPath root = new FsPath("/");
+        FsPath path = new FsPath("/test");
+
+        PnfsCreateUploadPath create =
+                new PnfsCreateUploadPath(Subjects.ROOT, path, root, null,
+                                         null, null, null, EnumSet.noneOf(CreateOption.class));
+        _pnfsManager.createUploadPath(create);
+        assertThat(create.getReturnCode(), is(0));
+
+        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, create.getUploadPath(), path);
+        _pnfsManager.cancelUpload(cancel);
+        assertThat(cancel.getReturnCode(), is(0));
+
+        assertNotExists(create.getUploadPath().toString());
+        assertNotExists("/test");
+    }
+
+    @Test
+    public void testCancelUploadRecursively() throws ChimeraFsException
+    {
+        FsPath root = new FsPath("/");
+        FsPath path = new FsPath("/test");
+
+        PnfsCreateUploadPath create =
+                new PnfsCreateUploadPath(Subjects.ROOT, path, root, null,
+                                         null, null, null, EnumSet.noneOf(CreateOption.class));
+        _pnfsManager.createUploadPath(create);
+        assertThat(create.getReturnCode(), is(0));
+
+        _fs.createFile(create.getUploadPath().toString());
+        _fs.mkdir(create.getUploadPath().getParent() + "/bar");
+        _fs.mkdir(create.getUploadPath().getParent() + "/baz");
+        _fs.createFile(create.getUploadPath().getParent() + "/baz/baz");
+
+        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, create.getUploadPath(), path);
+        _pnfsManager.cancelUpload(cancel);
+        assertThat(cancel.getReturnCode(), is(0));
+
+        assertNotExists(create.getUploadPath().toString());
+        assertNotExists("/test");
+    }
+
+    private void assertNotExists(String path) throws ChimeraFsException
+    {
+        try {
+            _fs.path2inode(path);
+            fail(path + " exists when it was expected not to");
+        } catch (FileNotFoundHimeraFsException ignored) {
+        }
     }
 
     @After

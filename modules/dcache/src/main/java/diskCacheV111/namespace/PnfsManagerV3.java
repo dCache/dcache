@@ -1101,7 +1101,7 @@ public class PnfsManagerV3
         }
     }
 
-    private void createUploadPath(PnfsCreateUploadPath message)
+    void createUploadPath(PnfsCreateUploadPath message)
     {
         try {
             FsPath uploadPath = _nameSpaceProvider.createUploadPath(message.getSubject(),
@@ -1122,7 +1122,7 @@ public class PnfsManagerV3
         }
     }
 
-    private void commitUpload(PnfsCommitUpload message)
+    void commitUpload(PnfsCommitUpload message)
     {
         try {
             PnfsId pnfsId = _nameSpaceProvider.commitUpload(message.getSubject(),
@@ -1144,7 +1144,7 @@ public class PnfsManagerV3
         }
     }
 
-    private void cancelUpload(PnfsCancelUpload message)
+    void cancelUpload(PnfsCancelUpload message)
     {
         try {
             _nameSpaceProvider.cancelUpload(message.getSubject(), message.getUploadPath(), message.getPath());

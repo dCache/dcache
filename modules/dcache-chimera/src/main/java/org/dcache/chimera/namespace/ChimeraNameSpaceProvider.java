@@ -1327,7 +1327,7 @@ public class ChimeraNameSpaceProvider
 
             /* Delete temporary upload directory and any files in it.
              */
-            removeRecursively(uploadDirInode, temporaryDir.getName());
+            removeRecursively(uploadDirInode, temporaryDir.getName(), temporaryDirInode);
 
             return new PnfsId(inodeOfFile.toString());
         } catch (ChimeraFsException e) {
@@ -1353,28 +1353,31 @@ public class ChimeraNameSpaceProvider
 
             /* Delete temporary upload directory and any files in it.
              */
-            removeRecursively(uploadDirInode, temporaryPath.getParent().getName());
+            String name = temporaryPath.getParent().getName();
+            removeRecursively(uploadDirInode, name, uploadDirInode.inodeOf(name));
         } catch (ChimeraFsException e) {
-            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                                     e.getMessage());
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
 
-    private void removeRecursively(FsInode parent, String name) throws ChimeraFsException
+    private void removeRecursively(FsInode parent, String name, FsInode inode) throws ChimeraFsException
     {
         try {
-            FsInode inode = parent.inodeOf(name);
-            try {
-                _fs.remove(parent, name, inode);
-            } catch (DirNotEmptyHimeraFsException e) {
-                for (String entry : _fs.listDir(inode)) {
-                    if (!entry.equals(".") && !entry.equals("..")) {
-                        removeRecursively(inode, entry);
+            if (inode.isDirectory() && inode.stat().getNlink() > 2) {
+                try (DirectoryStreamB<HimeraDirectoryEntry> list = _fs.newDirectoryStream(inode)) {
+                    for (HimeraDirectoryEntry entry : list) {
+                        String child = entry.getName();
+                        if (!child.equals(".") && !child.equals("..")) {
+                            removeRecursively(inode, child, entry.getInode());
+                        }
                     }
                 }
-                _fs.remove(parent, name, inode);
             }
-        } catch (FileNotFoundHimeraFsException ignored) {
+            _fs.remove(parent, name, inode);
+        } catch (ChimeraFsException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ChimeraFsException("Failed to delete directory recursively: " + e);
         }
     }
 
