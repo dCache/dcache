@@ -27,8 +27,11 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.NonTransientDataAccessResourceException;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import javax.sql.DataSource;
 
@@ -55,9 +58,7 @@ import org.dcache.chimera.store.InodeStorageInformation;
 import org.dcache.util.Checksum;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.dcache.acl.enums.AceFlags.DIRECTORY_INHERIT_ACE;
-import static org.dcache.acl.enums.AceFlags.FILE_INHERIT_ACE;
-import static org.dcache.acl.enums.AceFlags.INHERIT_ONLY_ACE;
+import static org.dcache.acl.enums.AceFlags.*;
 import static org.dcache.commons.util.SqlHelper.tryToClose;
 
 /**
@@ -104,7 +105,9 @@ public class JdbcFs implements FileSystemProvider {
      */
     private final DataSource _dbConnectionsPool;
 
-    private final TransactionTemplate _tx;
+    private final PlatformTransactionManager _tx;
+
+    private final TransactionDefinition _txDefinition = new DefaultTransactionDefinition();
 
     /*
      * A dummy constant key force bay cache interface. the value doesn't
@@ -160,7 +163,7 @@ public class JdbcFs implements FileSystemProvider {
         _dbConnectionsPool = dataSource;
         _fsId = id;
 
-        _tx = new TransactionTemplate(txManager);
+        _tx = txManager;
 
         // try to get database dialect specific query engine
         _sqlDriver = FsSqlDriver.getDriverInstance(dialect, dataSource);
@@ -180,26 +183,50 @@ public class JdbcFs implements FileSystemProvider {
         return this.path2inode("/admin/etc/config");
     }
 
-    @SuppressWarnings("unchecked")
-    private <T, E extends ChimeraFsException> T inTransaction(FallibleTransactionCallback<T, E> callback)
-            throws E, IOHimeraFsException
+    private <T> T inTransaction(FallibleTransactionCallback<T> callback)
+            throws ChimeraFsException
     {
+        TransactionStatus status = _tx.getTransaction(_txDefinition);
+        T result;
         try {
-            return _tx.execute(status -> {
-                try {
-                    return callback.doInTransaction(status);
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new ExceptionHoldingException(e);
-                }
-            });
-        } catch (ExceptionHoldingException e) {
-            throw (E) e.getCause();
+            result = callback.doInTransaction(status);
+            _tx.commit(status);
+        } catch (ChimeraFsException e) {
+            rollbackOnException(status, e);
+            throw e;
         } catch (NonTransientDataAccessResourceException e) {
+            rollbackOnException(status, e);
             throw new BackEndErrorHimeraFsException(e.getMessage(), e);
         } catch (DataAccessException e) {
+            rollbackOnException(status, e);
             throw new IOHimeraFsException(e.getMessage(), e);
+        } catch (Exception e) {
+            rollbackOnException(status, e);
+            throw e;
+        }
+        return result;
+    }
+
+    /**
+     * Perform a rollback, handling rollback exceptions properly.
+     * @param status object representing the transaction
+     * @param ex the thrown application exception or error
+     * @throws TransactionException in case of a rollback error
+     */
+    private void rollbackOnException(TransactionStatus status, Throwable ex) throws TransactionException {
+        _log.debug("Initiating transaction rollback on application exception", ex);
+        try {
+            _tx.rollback(status);
+        } catch (TransactionSystemException e) {
+            _log.error("Application exception overridden by rollback exception", ex);
+            e.initApplicationException(ex);
+            throw e;
+        } catch (RuntimeException e) {
+            _log.error("Application exception overridden by rollback exception", ex);
+            throw e;
+        } catch (Error err) {
+            _log.error("Application exception overridden by rollback error", ex);
+            throw err;
         }
     }
 
@@ -1544,18 +1571,8 @@ public class JdbcFs implements FileSystemProvider {
        throw new ChimeraFsException(NOT_IMPL);
     }
 
-    private static class ExceptionHoldingException extends RuntimeException
+    private interface FallibleTransactionCallback<T>
     {
-        private static final long serialVersionUID = 3351856775204954996L;
-
-        public ExceptionHoldingException(Exception e)
-        {
-            super(e);
-        }
-    }
-
-    private interface FallibleTransactionCallback<T, E extends Exception>
-    {
-        T doInTransaction(TransactionStatus status) throws E;
+        T doInTransaction(TransactionStatus status) throws ChimeraFsException;
     }
 }
