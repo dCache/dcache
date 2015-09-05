@@ -62,7 +62,7 @@
         <constructor-arg value="${nfs.db.url}"/>
         <constructor-arg value="DCacheAwareJdbcFs"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariDataSource" destroy-method="shutdown">
+            <bean class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
                 <description>Database connection pool</description>
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">

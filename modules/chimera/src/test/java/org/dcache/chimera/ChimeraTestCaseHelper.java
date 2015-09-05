@@ -58,7 +58,7 @@ public abstract class ChimeraTestCaseHelper {
     public void tearDown() throws Exception {
         Connection conn = _dataSource.getConnection();
         conn.createStatement().execute("SHUTDOWN;");
-        _dataSource.shutdown();
+        _dataSource.close();
     }
 
 }

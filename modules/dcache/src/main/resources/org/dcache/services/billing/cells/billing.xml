@@ -46,7 +46,7 @@
   <!-- Set of beans instantiated if database is enabled -->
   <beans profile="db-true">
       <bean id="data-source" class="com.zaxxer.hikari.HikariDataSource"
-            destroy-method="shutdown">
+            destroy-method="close">
           <constructor-arg>
               <bean class="com.zaxxer.hikari.HikariConfig">
                   <property name="jdbcUrl" value="${billing.db.url}"/>

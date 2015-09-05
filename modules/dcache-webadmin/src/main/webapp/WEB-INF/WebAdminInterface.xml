@@ -342,7 +342,7 @@
              alarms
           -->
         <bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource"
-              destroy-method="shutdown">
+              destroy-method="close">
             <description>Database connection pool</description>
             <constructor-arg>
                 <bean class="com.zaxxer.hikari.HikariConfig">

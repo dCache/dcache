@@ -67,7 +67,7 @@ public class RepositoryHealerTestChimeraHelper implements FileStore {
     {
         try {
             _dataSource.getConnection().createStatement().execute("SHUTDOWN;");
-            _dataSource.shutdown();
+            _dataSource.close();
         } catch (SQLException ignored) {
         }
     }
