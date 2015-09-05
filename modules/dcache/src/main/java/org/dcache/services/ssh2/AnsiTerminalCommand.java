@@ -33,7 +33,6 @@ import dmg.util.CommandExitException;
 import dmg.util.CommandPanicException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.CommandThrowableException;
-import dmg.util.command.HelpFormat;
 
 import org.dcache.commons.util.Strings;
 
@@ -119,7 +118,14 @@ public class AnsiTerminalCommand implements Command, Runnable {
         _pipedOut = new PipedOutputStream();
         _pipedIn = new PipedInputStream(_pipedOut);
         _userAdminShell.setUser(env.getEnv().get(Environment.ENV_USER));
-        _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env));
+        _console = new ConsoleReader(_pipedIn, _out, new ConsoleReaderTerminal(env)) {
+            @Override
+            public void print(CharSequence s) throws IOException
+            {
+            /* See https://github.com/jline/jline2/issues/205 */
+                getOutput().append(s);
+            }
+        };
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
         _pipeThread = new Thread(new Pipe());

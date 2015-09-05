@@ -43,7 +43,15 @@ import static org.fusesource.jansi.Ansi.Color.RED;
  */
 public abstract class ShellApplication implements Closeable
 {
-    protected final ConsoleReader console = new ConsoleReader();
+    protected final ConsoleReader console = new ConsoleReader() {
+        @Override
+        public void print(CharSequence s) throws IOException
+        {
+            /* See https://github.com/jline/jline2/issues/205 */
+            getOutput().append(s);
+        }
+    };
+
     private final CommandInterpreter commandInterpreter;
     private final boolean isAnsiSupported;
     private final boolean hasConsole;

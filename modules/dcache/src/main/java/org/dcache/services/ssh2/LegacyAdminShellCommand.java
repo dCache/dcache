@@ -102,7 +102,14 @@ public class LegacyAdminShellCommand implements Command, Runnable
     public void start(Environment env) throws IOException {
         String user = env.getEnv().get(Environment.ENV_USER);
         _shell = new LegacyAdminShell(user, _endpoint, _prompt);
-        _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env));
+        _console = new ConsoleReader(_in, _out, new ConsoleReaderTerminal(env)) {
+            @Override
+            public void print(CharSequence s) throws IOException
+            {
+            /* See https://github.com/jline/jline2/issues/205 */
+                getOutput().append(s);
+            }
+        };
         _adminShellThread = new Thread(this);
         _adminShellThread.start();
     }
