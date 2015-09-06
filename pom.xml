@@ -68,7 +68,7 @@
         <version.smc>6.3.0</version.smc>
         <version.xerces>2.11.0</version.xerces>
         <version.jetty>9.3.3.v20150827</version.jetty>
-        <version.wicket>6.20.0</version.wicket>
+        <version.wicket>7.0.0</version.wicket>
         <version.xrootd4j>2.1.2</version.xrootd4j>
         <version.jglobus>2.0.6-rc9.d</version.jglobus>
 

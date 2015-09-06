@@ -20,11 +20,11 @@ public abstract class EvenOddListView<T> extends ListView<T> {
         super(id);
     }
 
-    public EvenOddListView(String id, List<? extends T> items) {
+    public EvenOddListView(String id, List<T> items) {
         super(id, items);
     }
 
-    public EvenOddListView(String id, IModel<? extends List<? extends T>> model) {
+    public EvenOddListView(String id, IModel<? extends List<T>> model) {
         super(id, model);
     }
 
