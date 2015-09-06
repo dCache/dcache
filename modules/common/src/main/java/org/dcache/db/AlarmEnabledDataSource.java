@@ -59,6 +59,7 @@ documents or software obtained from this server.
  */
 package org.dcache.db;
 
+import com.google.common.collect.ForwardingObject;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
@@ -83,8 +84,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author arossi
  */
-public class AlarmEnabledDataSource implements DataSource, Closeable {
-
+public class AlarmEnabledDataSource extends ForwardingObject implements DataSource, Closeable
+{
     private static final org.slf4j.Logger LOGGER =
                     LoggerFactory.getLogger(DataSource.class);
 
@@ -105,37 +106,49 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
         this.delegate = checkNotNull(delegate);
     }
 
+    /** Accessor for admin shell. */
+    public DataSource getDelegate()
+    {
+        return delegate();
+    }
+
+    @Override
+    protected DataSource delegate()
+    {
+        return delegate;
+    }
+
     @Override
     public PrintWriter getLogWriter() throws SQLException {
-        return delegate.getLogWriter();
+        return delegate().getLogWriter();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        if (iface.isInstance(delegate)) {
-            return (T) delegate;
+        if (iface.isInstance(delegate())) {
+            return (T) delegate();
         }
-        return delegate.unwrap(iface);
+        return delegate().unwrap(iface);
     }
 
     @Override
     public void setLogWriter(PrintWriter out) throws SQLException {
-        delegate.setLogWriter(out);
+        delegate().setLogWriter(out);
     }
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-        if (iface.isInstance(delegate)) {
+        if (iface.isInstance(delegate())) {
             return true;
         }
-        return delegate.isWrapperFor(iface);
+        return delegate().isWrapperFor(iface);
     }
 
     @Override
     public Connection getConnection() throws SQLException {
         try {
-            return delegate.getConnection();
+            return delegate().getConnection();
         } catch (SQLException sql) {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DB_CONNECTION_FAILURE,
                                                       url,
@@ -148,7 +161,7 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
 
     @Override
     public void setLoginTimeout(int seconds) throws SQLException {
-        delegate.setLoginTimeout(seconds);
+        delegate().setLoginTimeout(seconds);
     }
 
     @Override
@@ -156,7 +169,7 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
                     throws SQLException {
 
         try {
-            return delegate.getConnection(username, password);
+            return delegate().getConnection(username, password);
         } catch (SQLException sql) {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.DB_CONNECTION_FAILURE,
                                                       url,
@@ -169,18 +182,18 @@ public class AlarmEnabledDataSource implements DataSource, Closeable {
 
     @Override
     public int getLoginTimeout() throws SQLException {
-        return delegate.getLoginTimeout();
+        return delegate().getLoginTimeout();
     }
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return delegate.getParentLogger();
+        return delegate().getParentLogger();
     }
 
     @Override
     public void close() throws IOException {
-        if (delegate instanceof Closeable) {
-            ((Closeable) delegate).close();
+        if (delegate() instanceof Closeable) {
+            ((Closeable) delegate()).close();
         }
     }
 }

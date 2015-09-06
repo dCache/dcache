@@ -19,6 +19,7 @@
     </bean>
 
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <description>Undeliverable message logger</description>
         <property name="excludedDestinations" value="${pnfsmanager.destination.cache-notification}"/>
     </bean>
 
@@ -38,13 +39,12 @@
       <property name="flushNotificationTarget" value="${pnfsmanager.destination.flush-notification}"/>
   </bean>
 
-    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource">
-        <description>Connection pool decorator</description>
+    <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Database connection pool</description>
         <constructor-arg value="${pnfsmanager.db.url}"/>
         <constructor-arg value="JdbcFs"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-                <description>Database connection pool</description>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
                         <property name="jdbcUrl" value="${pnfsmanager.db.url}"/>
@@ -65,7 +65,8 @@
         <property name="dataSource" ref="data-source"/>
     </bean>
 
-    <bean class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+    <bean id="tx-annotation-processor" class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+        <description>Annotated transaction demarcation processor</description>
         <property name="transactionManager" ref="tx-manager"/>
     </bean>
 
@@ -77,6 +78,7 @@
   </bean>
 
   <bean id="file-system" class="org.dcache.chimera.JdbcFs" depends-on="liquibase">
+      <description>Chimera</description>
       <constructor-arg ref="data-source"/>
       <constructor-arg ref="tx-manager"/>
       <constructor-arg value="${pnfsmanager.db.dialect}"/>
@@ -101,7 +103,7 @@
   </bean>
 
   <bean id="acl-admin" class="org.dcache.acl.AclAdmin">
-      <description>Provides commands for manipulating ACLs</description>
+      <description>ACL command line</description>
       <property name="nameSpaceProvider" ref="name-space-provider"/>
   </bean>
 

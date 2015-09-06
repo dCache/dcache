@@ -20,7 +20,9 @@
 
   <context:property-placeholder/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+    <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="poolmanager-stub" class="org.dcache.cells.CellStub">
     <description>Pool manager communication stub</description>

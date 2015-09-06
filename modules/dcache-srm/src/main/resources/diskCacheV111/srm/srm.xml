@@ -31,6 +31,7 @@
     -->
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
       <property name="excludedDestinations"
                 value="${srm.loginbroker.update-topic},${srm.credential-service.topic}"/>
   </bean>
@@ -641,12 +642,11 @@
     -->
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-        <description>Connection pool decorator</description>
+        <description>Database connection pool</description>
         <constructor-arg value="${srm.db.url}"/>
         <constructor-arg value="Srm"/>
         <constructor-arg>
             <bean class="com.zaxxer.hikari.HikariDataSource">
-                <description>Database connection pool</description>
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
                         <property name="jdbcUrl" value="${srm.db.url}"/>

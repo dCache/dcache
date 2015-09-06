@@ -7,7 +7,9 @@
 
   <context:property-placeholder/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+    <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="message-thread-pool"
 	class="java.util.concurrent.Executors"

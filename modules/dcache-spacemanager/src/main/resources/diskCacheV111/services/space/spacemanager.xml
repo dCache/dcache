@@ -10,7 +10,9 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="executor"
         class="java.util.concurrent.Executors"
@@ -46,7 +48,7 @@
 
 
     <bean id="data-source" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-        <description>Connection pool decorator</description>
+        <description>Database connection pool</description>
         <constructor-arg value="${spacemanager.db.url}"/>
         <constructor-arg value="SpaceManager"/>
         <constructor-arg>
@@ -78,8 +80,9 @@
         <property name="dataSource" ref="data-source"/>
   </bean>
 
-  <bean class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
-    <property name="transactionManager" ref="tx-manager"/>
+  <bean id="tx-annotation-processor" class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+      <description>Annotated transaction demarcation processor</description>
+      <property name="transactionManager" ref="tx-manager"/>
   </bean>
 
   <bean id="authz-policy" class="diskCacheV111.services.space.SimpleSpaceManagerAuthorizationPolicy"/>

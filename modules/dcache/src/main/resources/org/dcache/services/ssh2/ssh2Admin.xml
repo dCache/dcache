@@ -11,6 +11,7 @@
     <context:property-placeholder/>
 
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <description>Undeliverable message logger</description>
         <property name="excludedDestinations" value="${admin.loginbroker.request-topic}"/>
     </bean>
 

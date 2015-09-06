@@ -10,7 +10,9 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+    <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="info" class="org.dcache.services.info.InfoProvider">
       <description>support for CLI</description>

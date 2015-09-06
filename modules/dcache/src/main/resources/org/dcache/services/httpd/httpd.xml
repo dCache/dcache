@@ -15,6 +15,7 @@
     <context:annotation-config/>
 
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <description>Undeliverable message logger</description>
         <property name="excludedDestinations" value="${httpd.loginbroker.request-topic}"/>
     </bean>
 

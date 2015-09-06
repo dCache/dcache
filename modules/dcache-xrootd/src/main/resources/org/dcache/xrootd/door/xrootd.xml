@@ -23,7 +23,8 @@
   </bean>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
-    <property name="excludedDestinations" value="${xrootd.loginbroker.update-topic}"/>
+      <description>Undeliverable message logger</description>
+      <property name="excludedDestinations" value="${xrootd.loginbroker.update-topic}"/>
   </bean>
 
   <bean id="pool-stub" class="org.dcache.cells.CellStub">

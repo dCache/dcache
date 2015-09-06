@@ -11,6 +11,7 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.AbstractNestablePropertyAccessor;
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -55,7 +56,6 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import diskCacheV111.util.CacheException;
 
@@ -673,7 +673,7 @@ public class UniversalSpringCell
         String name;
 
         @Override
-        public String call()
+        public String call() throws InvalidPropertyException
         {
             Object o = getBeanProperty(name);
             if (o != null) {
@@ -682,10 +682,14 @@ public class UniversalSpringCell
                 for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
                     String property = p.getName();
                     if (bean.isReadableProperty(property)) {
-                        Object value = bean.getPropertyValue(property);
-                        s.append(property).append('=').append(org.dcache.commons.util.Strings.toString(value));
-                        if (!bean.isWritableProperty(property)) {
-                            s.append(" [read-only]");
+                        s.append(property).append('=');
+                        try {
+                            s.append(org.dcache.commons.util.Strings.toString(bean.getPropertyValue(property)));
+                            if (!bean.isWritableProperty(property)) {
+                                s.append(" [read-only]");
+                            }
+                        } catch (InvalidPropertyException e) {
+                            s.append(" [invalid]");
                         }
                         s.append('\n');
                     }
@@ -703,7 +707,7 @@ public class UniversalSpringCell
         String name;
 
         @Override
-        public String call()
+        public String call() throws InvalidPropertyException
         {
             Object o = getBeanProperty(name);
             return (o != null) ? org.dcache.commons.util.Strings.toMultilineString(o) : ("No such property: " + name);
@@ -1095,7 +1099,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        protected BeanWrapperImpl getBeanWrapperForPropertyPath(String propertyPath)
+        protected AbstractNestablePropertyAccessor getPropertyAccessorForPropertyPath(String propertyPath)
         {
             int pos = PropertyAccessorUtils.getFirstNestedPropertySeparatorIndex(propertyPath);
             if (pos > -1) {
@@ -1104,15 +1108,19 @@ public class UniversalSpringCell
                     throw new NotReadablePropertyException(getRootClass(), nestedProperty);
                 }
             }
-            return super.getBeanWrapperForPropertyPath(propertyPath);
+            return super.getPropertyAccessorForPropertyPath(propertyPath);
         }
 
         @Override
         public boolean isReadableProperty(String propertyName)
         {
             if (isAllowedName(propertyName)) {
-                PropertyDescriptor pd = getPropertyDescriptorInternal(propertyName);
-                if (pd == null || pd.getReadMethod() != null && !pd.isHidden() && isAllowedType(pd.getPropertyType())) {
+                try {
+                    PropertyDescriptor pd = getPropertyDescriptor(propertyName);
+                    if (pd.getReadMethod() != null && !pd.isHidden() && isAllowedType(pd.getPropertyType())) {
+                        return true;
+                    }
+                } catch (InvalidPropertyException e) {
                     try {
                         Object value = super.getPropertyValue(propertyName);
                         if (value == null || isAllowedType(value.getClass())) {
@@ -1146,7 +1154,7 @@ public class UniversalSpringCell
         }
 
         @Override
-        protected BeanWrapperImpl newNestedBeanWrapper(Object object, String nestedPath) {
+        protected BeanWrapperImpl newNestedPropertyAccessor(Object object, String nestedPath) {
             return new RestrictedBeanWrapper(object, nestedPath, this);
         }
     }

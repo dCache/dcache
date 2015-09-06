@@ -13,7 +13,9 @@
 
   <context:property-placeholder/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="billing" class="org.dcache.cells.CellStub">
         <property name="destination" value="${transfermanagers.service.billing}"/>
@@ -56,21 +58,22 @@
   </beans>
 
   <beans profile="db.enabled-true">
-     <bean id="hikariDataSource" class="com.zaxxer.hikari.HikariDataSource">
-        <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariConfig">
-                <property name="jdbcUrl" value="${transfermanagers.db.url}"/>
-                <property name="username" value="${transfermanagers.db.user}"/>
-                <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
-            </bean>
-        </constructor-arg>
-    </bean>
 
-    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource"
-            destroy-method="close">
+    <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
+        <description>Database connection pool</description>
         <constructor-arg value="${transfermanagers.db.url}"/>
         <constructor-arg value="TransferManager"/>
-        <constructor-arg ref="hikariDataSource"/>
+        <constructor-arg>
+            <bean id="hikariDataSource" class="com.zaxxer.hikari.HikariDataSource">
+                <constructor-arg>
+                    <bean class="com.zaxxer.hikari.HikariConfig">
+                        <property name="jdbcUrl" value="${transfermanagers.db.url}"/>
+                        <property name="username" value="${transfermanagers.db.user}"/>
+                        <property name="password" value="#{ T(diskCacheV111.util.Pgpass).getPassword('${transfermanagers.db.password.file}', '${transfermanagers.db.url}', '${transfermanagers.db.user}', '${transfermanagers.db.password}') }"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="pmf" class="org.datanucleus.api.jdo.JDOPersistenceManagerFactory"

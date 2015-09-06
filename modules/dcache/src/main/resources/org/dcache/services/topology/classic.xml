@@ -10,7 +10,9 @@
 
   <context:property-placeholder/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="topology" class="org.dcache.services.topology.ClassicCellsTopology">
     <property name="cellStub" ref="stub"/>

@@ -9,7 +9,9 @@
   <context:property-placeholder/>
   <context:annotation-config/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="message-thread-pool"
         class="java.util.concurrent.ThreadPoolExecutor"
@@ -185,7 +187,8 @@
     <property name="persistenceManagerFactory" ref="pmf-proxy"/>
   </bean>
 
-  <bean class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+  <bean id="tx-annotation-processor" class="org.dcache.util.aspects.PerInstanceAnnotationTransactionBeanPostProcessor">
+      <description>Annotated transaction demarcation processor</description>
       <property name="transactionManager" ref="tx-manager"/>
   </bean>
 </beans>

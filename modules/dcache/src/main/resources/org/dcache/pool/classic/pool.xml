@@ -27,6 +27,7 @@
     </bean>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
       <property name="excludedDestinations" value="${pool.destination.heartbeat}"/>
   </bean>
 

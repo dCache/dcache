@@ -7,7 +7,9 @@
 
   <context:property-placeholder/>
 
-  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver"/>
+  <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
+  </bean>
 
   <bean id="message-handler" class="org.dcache.missingfiles.MissingFileHandler">
     <description>handles incoming notification of missing files</description>

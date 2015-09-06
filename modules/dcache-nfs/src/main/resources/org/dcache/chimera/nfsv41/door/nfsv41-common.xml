@@ -9,6 +9,7 @@
     <context:property-placeholder/>
 
     <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+        <description>Undeliverable message logger</description>
         <property name="excludedDestinations" value="${nfs.loginbroker.update-topic}"/>
     </bean>
 
@@ -58,12 +59,11 @@
     </bean>
 
     <bean id="dataSource" class="org.dcache.db.AlarmEnabledDataSource" destroy-method="close">
-        <description>Connection pool decorator</description>
+        <description>Database connection pool</description>
         <constructor-arg value="${nfs.db.url}"/>
         <constructor-arg value="DCacheAwareJdbcFs"/>
         <constructor-arg>
-            <bean class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-                <description>Database connection pool</description>
+            <bean class="com.zaxxer.hikari.HikariDataSource">
                 <constructor-arg>
                     <bean class="com.zaxxer.hikari.HikariConfig">
                         <property name="jdbcUrl" value="${nfs.db.url}"/>

@@ -24,6 +24,7 @@
   </bean>
 
   <bean id="noroutetocell" class="org.dcache.cells.LogNoRouteToCellExceptionReceiver">
+      <description>Undeliverable message logger</description>
       <property name="excludedDestinations" value="${webdav.loginbroker.update-topic},${webdav.credential-service.topic}"/>
   </bean>
 
