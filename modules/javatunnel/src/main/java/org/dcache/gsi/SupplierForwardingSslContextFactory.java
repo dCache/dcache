@@ -129,7 +129,12 @@ public class SupplierForwardingSslContextFactory extends SslContextFactory
     @Override
     public void setKeyStorePath(String keyStorePath)
     {
-        throw new UnsupportedOperationException();
+        /* The constructor of the super class calls this method, so we silently
+         * ignore the call if null is passed.
+         */
+        if (keyStorePath != null) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Override
@@ -169,7 +174,7 @@ public class SupplierForwardingSslContextFactory extends SslContextFactory
     }
 
     @Override
-    public String getTrustStore()
+    public KeyStore getTrustStore()
     {
         return getDelegate().getTrustStore();
     }
@@ -397,21 +402,9 @@ public class SupplierForwardingSslContextFactory extends SslContextFactory
     }
 
     @Override
-    public void checkKeyStore()
+    public void selectProtocols(String[] enabledProtocols, String[] supportedProtocols)
     {
-        getDelegate().checkKeyStore();
-    }
-
-    @Override
-    public String[] selectProtocols(String[] enabledProtocols, String[] supportedProtocols)
-    {
-        return getDelegate().selectProtocols(enabledProtocols, supportedProtocols);
-    }
-
-    @Override
-    public String[] selectCipherSuites(String[] enabledCipherSuites, String[] supportedCipherSuites)
-    {
-        return getDelegate().selectCipherSuites(enabledCipherSuites, supportedCipherSuites);
+        getDelegate().selectProtocols(enabledProtocols, supportedProtocols);
     }
 
     @Override

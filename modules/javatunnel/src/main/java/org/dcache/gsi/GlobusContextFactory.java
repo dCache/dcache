@@ -65,6 +65,7 @@ public class GlobusContextFactory extends SslContextFactory
     private boolean isGsiEnabled;
     private boolean isUsingLegacyClose;
     private CertificateFactory cf;
+    private String trustStorePath;
 
     public GlobusContextFactory()
     {
@@ -94,6 +95,13 @@ public class GlobusContextFactory extends SslContextFactory
     {
         checkNotStarted();
         this.serverKeyPath = serverKeyPath;
+    }
+
+    @Override
+    public void setTrustStorePath(String trustStorePath)
+    {
+        /* https://bugs.eclipse.org/bugs/show_bug.cgi?id=476720 */
+        this.trustStorePath = trustStorePath;
     }
 
     public boolean isRejectLimitProxy()
@@ -159,6 +167,8 @@ public class GlobusContextFactory extends SslContextFactory
 
         cf = CertificateFactory.getInstance("X.509");
 
+        _factory = new Factory(keyStore, trustStore, sslContext);
+
         if (LOGGER.isDebugEnabled())
         {
             SSLEngine engine = newSSLEngine();
@@ -167,16 +177,14 @@ public class GlobusContextFactory extends SslContextFactory
         }
     }
 
-    @Override
     protected KeyStore loadTrustStore() throws Exception
     {
-        final String caCertsPattern = getTrustStore() + "/*.0";
+        final String caCertsPattern = trustStorePath + "/*.0";
         final KeyStore keyStore = KeyStore.getInstance(getTrustStoreType(), getTrustStoreProvider());
         keyStore.load(KeyStoreParametersFactory.createTrustStoreParameters(caCertsPattern));
         return keyStore;
     }
 
-    @Override
     protected KeyStore loadKeyStore() throws Exception
     {
         X509Credential cred = new X509Credential(getServerCertificatePath(), getServerKeyPath());
@@ -188,13 +196,13 @@ public class GlobusContextFactory extends SslContextFactory
 
     protected CertStore loadCrlStore() throws Exception
     {
-        String crlPattern = getTrustStore() + "/*.r*";
+        String crlPattern = trustStorePath + "/*.r*";
         return CertStore.getInstance(GlobusProvider.CERTSTORE_TYPE, new ResourceCertStoreParameters(null, crlPattern));
     }
 
     protected ResourceSigningPolicyStore loadSigningPolicyStore() throws Exception
     {
-        String sigPolPattern = getTrustStore() + "/*.signing_policy";
+        String sigPolPattern = trustStorePath + "/*.signing_policy";
         return new ResourceSigningPolicyStore(new ResourceSigningPolicyStoreParameters(sigPolPattern));
     }
 
