@@ -3,7 +3,7 @@ package diskCacheV111.vehicles;
 import java.util.Collection;
 import java.util.Collections;
 
-public class PoolManagerGetPoolsMessage
+public abstract class PoolManagerGetPoolsMessage
     extends Message
 {
     private static final long serialVersionUID = 4793574345114253473L;

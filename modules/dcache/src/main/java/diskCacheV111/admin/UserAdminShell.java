@@ -3,6 +3,8 @@ package diskCacheV111.admin;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
@@ -27,24 +29,26 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.cells.nucleus.SerializationException;
 import dmg.cells.services.GetAllDomainsReply;
 import dmg.cells.services.GetAllDomainsRequest;
 import dmg.util.AclException;
@@ -64,7 +68,6 @@ import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.util.Args;
-import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Glob;
 import org.dcache.util.Version;
 import org.dcache.util.list.DirectoryEntry;
@@ -80,6 +83,8 @@ import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.util.concurrent.Futures.*;
 import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static org.dcache.util.Glob.parseGlobToPattern;
@@ -230,42 +235,120 @@ public class UserAdminShell
         return withFallback(future,
                             t -> {
                                 _log.debug("Failed to query the System cell of domain {}: {}", domain, t);
-                                return immediateFuture(Collections.emptyList());
+                                return immediateFuture(emptyList());
                             });
+    }
+
+    /**
+     * Asynchronously fetch the list of pools matching the given predicate.
+     */
+    private ListenableFuture<List<String>> getPools(Predicate<String> predicate)
+    {
+        return transform(
+                _poolManager.send("psu ls pool", String.class),
+                (String s) -> Stream.of(s.split("\n"))
+                                .filter(predicate)
+                                .collect(toList()));
+    }
+
+    /**
+     * Asynchronously fetch the list of pools of a pool group.
+     */
+    private ListenableFuture<Stream<String>> getPools(String poolGroup)
+    {
+        return transform(
+                _poolManager.send(new PoolManagerGetPoolsByPoolGroupMessage(singletonList(poolGroup))),
+                (PoolManagerGetPoolsByPoolGroupMessage m) ->
+                        m.getPools().stream().map(PoolManagerPoolInformation::getName));
+    }
+
+    /**
+     * Asynchronously fetch the list of pool groups.
+     */
+    private ListenableFuture<List<String>> getPoolGroups()
+    {
+        return transform(
+                _poolManager.send("psu ls pgroup", String.class),
+                (String s) -> asList(s.split("\n")));
+    }
+
+    private ListenableFuture<List<String>> getPoolsInGroups(Predicate<String> predicate)
+    {
+        ListenableFuture<List<String>> poolGroups = getPoolGroups();
+
+        /* Query the pools of each pool group so we have a list of list of pools. */
+        ListenableFuture<List<Stream<String>>> pools = transform(
+                poolGroups,
+                (List<String> groups) ->
+                        allAsList(groups.stream().filter(predicate).map(this::getPools).collect(toList())));
+
+        /* Flatten these to form a list of pools. */
+        return transform(pools,
+                         (List<Stream<String>> l) -> l.stream().flatMap(s -> s).distinct().collect(toList()));
     }
 
     private List<String> expandCellPatterns(List<String> patterns)
             throws CacheException, InterruptedException, ExecutionException
     {
-        Map<String, Collection<String>> domains =
-                _cellStub
-                        .sendAndWait(new CellPath("RoutingMgr"), new GetAllDomainsRequest(),
-                                     GetAllDomainsReply.class)
-                        .getDomains();
+        /* Query domains and well-known cells on demand. */
+        Supplier<Future<Map<String, Collection<String>>>> domains =
+                Suppliers.memoize(() -> transform(_cellStub.send(new CellPath("RoutingMgr"),
+                                                                 new GetAllDomainsRequest(), GetAllDomainsReply.class),
+                                                  GetAllDomainsReply::getDomains));
 
         List<ListenableFuture<List<String>>> futures = new ArrayList<>();
         for (String pattern : patterns) {
-            String[] s = pattern.split("@", 2);
-            Predicate<String> matchesCellName = toGlobPredicate(s[0]);
-            if (s.length == 1) {
-                /* Add matching well-known cells. */
-                domains.values().stream()
-                        .flatMap(Collection::stream)
-                        .filter(matchesCellName)
-                        .sorted(CASE_INSENSITIVE_ORDER)
-                        .map(Collections::singletonList)
-                        .map(Futures::immediateFuture)
-                        .forEach(futures::add);
-            } else {
-                /* Query the cells of each matching domain.
+            int i = pattern.indexOf('@');
+            if (i >= 0) {
+                /* Find the cells of each matching domain.
                  */
-                Predicate<String> matchesDomainName = toGlobPredicate(s[1]);
-                domains.keySet().stream()
+                Predicate<String> matchesCellName = toGlobPredicate(pattern.substring(0, i));
+                Predicate<String> matchesDomainName = toGlobPredicate(pattern.substring(i + 1));
+                CellStub.get(domains.get()).keySet().stream()
                         .filter(matchesDomainName)
                         .sorted(CASE_INSENSITIVE_ORDER)
                         .map(domain -> getCells(domain, matchesCellName))
                         .forEach(futures::add);
+                continue;
             }
+
+            i = pattern.indexOf('/');
+            if (i >= 0) {
+                Predicate<String> matchesPool = toGlobPredicate(pattern.substring(0, i));
+
+                if (i + 1 == pattern.length()) {
+                    /* Special case when no pool group is specified - matches over all pools, even those
+                     * not in a pool group.
+                     */
+                    futures.add(transform(getPools(matchesPool),
+                                          (List<String> pools) ->
+                                                  pools.stream()
+                                                          .sorted(CASE_INSENSITIVE_ORDER)
+                                                          .collect(toList())));
+                } else {
+                    /* Find the pools of each matching pool group.
+                     */
+                    Predicate<String> matchesPoolGroup = toGlobPredicate(pattern.substring(i + 1));
+                    futures.add(
+                            transform(getPoolsInGroups(matchesPoolGroup),
+                                      (List<String> pools) ->
+                                              pools.stream()
+                                                      .filter(matchesPool)
+                                                      .sorted(CASE_INSENSITIVE_ORDER)
+                                                      .collect(toList())));
+                }
+                continue;
+            }
+
+            Predicate<String> matchesCellName = toGlobPredicate(pattern);
+            /* Add matching well-known cells. */
+            CellStub.get(domains.get()).values().stream()
+                    .flatMap(Collection::stream)
+                    .filter(matchesCellName)
+                    .sorted(CASE_INSENSITIVE_ORDER)
+                    .map(Collections::singletonList)
+                    .map(Futures::immediateFuture)
+                    .forEach(futures::add);
         }
 
         /* Collect and flatten the result. */
@@ -324,32 +407,6 @@ public class UserAdminShell
             }
             return "Timeout is " + (_timeout / 1000) + " seconds.";
         }
-    }
-
-    private FileAttributes getFileLocations(String fileIdentifier)
-            throws CacheException, SerializationException, NoRouteToCellException, InterruptedException, CommandException
-    {
-        Set<FileAttribute> request = EnumSet.of(FileAttribute.LOCATIONS, FileAttribute.PNFSID);
-        PnfsGetFileAttributes msg;
-
-        if (PnfsId.isValid(fileIdentifier)) {
-            PnfsId pnfsId = new PnfsId(fileIdentifier);
-            msg = new PnfsGetFileAttributes(pnfsId, request);
-        } else {
-            msg = new PnfsGetFileAttributes(fileIdentifier, request);
-        }
-
-        PnfsGetFileAttributes replyFileLocations = (PnfsGetFileAttributes) sendObject("PnfsManager", msg);
-
-        if (replyFileLocations == null) {
-            throw new CacheException("Request to the PnfsManager timed out");
-        }
-
-        if (replyFileLocations.getReturnCode() != 0) {
-            throw CacheExceptionFactory.exceptionOf(replyFileLocations);
-        }
-
-        return replyFileLocations.getFileAttributes();
     }
 
     @Command(name = "\\l", hint = "list cells",
@@ -681,10 +738,10 @@ public class UserAdminShell
     private int completeConnectCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
         try {
-            if (CharMatcher.WHITESPACE.matchesAnyOf(buffer)) {
+            if (CharMatcher.WHITESPACE.or(CharMatcher.is('/')).matchesAnyOf(buffer)) {
                 return -1;
             }
-            candidates.addAll(expandCellPatterns(Collections.singletonList(buffer + "*")));
+            candidates.addAll(expandCellPatterns(singletonList(buffer + "*")));
             if (!buffer.contains("@") && _currentPosition != null) {
                 /* Add local cells in the connected domain too. */
                 candidates.addAll(
@@ -716,16 +773,22 @@ public class UserAdminShell
                         .map(s -> s.substring(s.indexOf("@") + 1))
                         .forEach(candidates::add);
                 return i + 1;
-            } else {
-                /* Complete on well-known and cells local to current domain. */
-                candidates.addAll(expandCellPatterns(asList(buffer + "*")));
-                if (_currentPosition != null) {
-                    candidates.addAll(
-                            getCells(_currentPosition.remote.getDestinationAddress().getCellDomainName(),
-                                     toGlobPredicate(buffer + "*")).get());
-                }
-                return 0;
             }
+
+            i = buffer.indexOf('/');
+            if (i  > -1) {
+                Predicate<String> predicate = toGlobPredicate(buffer.substring(i + 1) + "*");
+                getPoolGroups().get().stream().filter(predicate).forEach(candidates::add);
+                return i + 1;
+            }
+
+            candidates.addAll(expandCellPatterns(singletonList(buffer + "*")));
+            if (_currentPosition != null) {
+                candidates.addAll(
+                        getCells(_currentPosition.remote.getDestinationAddress().getCellDomainName(),
+                                 toGlobPredicate(buffer + "*")).get());
+            }
+            return 0;
         } catch (CacheException | ExecutionException e) {
             _log.info("Completion failed: {}", e.toString());
             return -1;
@@ -1019,7 +1082,7 @@ public class UserAdminShell
 
     private static boolean isExpandable(String s)
     {
-        return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s));
+        return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s) || s.indexOf('/') > -1);
     }
 
     /**
