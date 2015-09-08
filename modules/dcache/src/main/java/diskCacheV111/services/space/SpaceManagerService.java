@@ -27,6 +27,7 @@
 //______________________________________________________________________________
 package diskCacheV111.services.space;
 
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -110,6 +112,8 @@ public final class SpaceManagerService
                    Runnable
 {
         private static final Logger LOGGER = LoggerFactory.getLogger(SpaceManagerService.class);
+
+        private final Set<PnfsId> failedTransfers = Sets.newConcurrentHashSet();
 
         private long expireSpaceReservationsPeriod;
 
@@ -256,6 +260,50 @@ public final class SpaceManagerService
         private void expireSpaceReservations() throws DataAccessException
         {
                 LOGGER.trace("expireSpaceReservations()...");
+
+                /* Recover from transfer failures. If the pool returns an error code on upload, we cannot
+                 * know for certain whether the file is registered in the name space and thus whether we
+                 * would get a notification on delete. Thus to be on the safe side, we query the name space
+                 * entry during this recovery procedure.
+                 */
+                Iterator<PnfsId> iterator = failedTransfers.iterator();
+                while (iterator.hasNext()) {
+                    PnfsId pnfsId = iterator.next();
+                    try {
+                        EnumSet<FileAttribute> attributes =
+                                EnumSet.of(FileAttribute.SIZE,
+                                           FileAttribute.LOCATIONS,
+                                           FileAttribute.STORAGEINFO,
+                                           FileAttribute.ACCESS_LATENCY);
+                        FileAttributes fileAttributes = pnfs.getFileAttributes(pnfsId, attributes);
+                        if (fileAttributes.getStorageInfo().isStored()) {
+                            boolean isRemovable = !fileAttributes.getAccessLatency().equals(AccessLatency.ONLINE);
+                            fileFlushed(pnfsId, fileAttributes.getSize(), isRemovable);
+                        } else if (!fileAttributes.getLocations().isEmpty()) {
+                            transferFinished(pnfsId, fileAttributes.getSize());
+                        } else {
+                                /* Name space entry exists, but no tape or pool location is known. We leave
+                                 * the file in transferring and the recovery code below will eventually
+                                 * kick in.
+                                 */
+                        }
+                        iterator.remove();
+                    } catch (FileNotFoundCacheException e) {
+                        db.remove(db.files().wherePnfsIdIs(pnfsId));
+                    } catch (TransientDataAccessException e) {
+                        LOGGER.warn("Transient data access failure while processing failed transfer of {}: {}",
+                                    pnfsId, e.getMessage());
+                    } catch (DataAccessException e) {
+                        LOGGER.error("Data access failure while processing failed transfer of {}: {}",
+                                     pnfsId, e.getMessage());
+                        break;
+                    } catch (TimeoutCacheException e) {
+                        LOGGER.error("Failed to lookup file {} in name space: {}", pnfsId, e.getMessage());
+                        break;
+                    } catch (CacheException e) {
+                        LOGGER.error("Failed to lookup file {} in name space: {}", pnfsId, e.getMessage());
+                    }
+                }
 
                 /* Recover files from lost notifications. Space manager receives notifications
                  * on file transfer finishing (DoorTransferFinished), name space deletion
@@ -700,14 +748,20 @@ public final class SpaceManagerService
         private void transferFinished(DoorTransferFinishedMessage finished)
                 throws DataAccessException
         {
-        if (finished.getReturnCode() == CacheException.FILE_NOT_FOUND) {
-            /* File is gone from name space, but we may never receive a notification
-             * from cleaner if the file location didn't get registered first.
-             */
-            fileRemoved(finished.getPnfsId());
-        } else {
-            transferFinished(finished.getPnfsId(), finished.getFileAttributes().getSize());
-        }
+            switch (finished.getReturnCode()) {
+            case CacheException.FILE_NOT_FOUND:
+                /* File is gone from name space, but we may never receive a notification
+                 * from cleaner if the file location didn't get registered first.
+                 */
+                fileRemoved(finished.getPnfsId());
+                break;
+            case 0:
+                transferFinished(finished.getPnfsId(), finished.getFileAttributes().getSize());
+                break;
+            default:
+                failedTransfers.add(finished.getPnfsId());
+                break;
+            }
         }
 
         @Transactional
@@ -1015,6 +1069,7 @@ public final class SpaceManagerService
         private void namespaceEntryDeleted(PnfsDeleteEntryNotificationMessage msg) throws DataAccessException
         {
             db.remove(db.files().wherePnfsIdIs(msg.getPnfsId()).whereStateIsIn(FileState.FLUSHED, FileState.TRANSFERRING));
+            failedTransfers.remove(msg.getPnfsId());
         }
 
         private void getSpaceMetaData(GetSpaceMetaData gsmd) throws IllegalArgumentException {
