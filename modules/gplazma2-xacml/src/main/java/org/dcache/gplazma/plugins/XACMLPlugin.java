@@ -19,6 +19,8 @@ import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.security.auth.x500.X500Principal;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -34,13 +36,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.x500.X500Principal;
 
 import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
-import org.dcache.auth.util.X509Utils;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.util.X509Utils;
 import org.dcache.util.CertPaths;
 import org.dcache.util.NetworkUtils;
 

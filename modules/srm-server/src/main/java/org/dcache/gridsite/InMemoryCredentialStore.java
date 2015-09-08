@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.dcache.auth.util.GSSUtils;
 import org.dcache.delegation.gridsite2.DelegationException;
+import org.dcache.gplazma.util.GSSUtils;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.gridsite.Utilities.assertThat;

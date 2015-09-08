@@ -65,8 +65,6 @@ exporting documents or software obtained from this server.
 package org.dcache.srm.server;
 
 import com.google.common.collect.Iterables;
-import com.google.common.net.InetAddresses;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -74,7 +72,7 @@ import org.slf4j.LoggerFactory;
 
 import java.security.cert.X509Certificate;
 
-import org.dcache.auth.util.GSSUtils;
+import org.dcache.gplazma.util.GSSUtils;
 import org.dcache.srm.SRMAuthenticationException;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;

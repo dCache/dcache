@@ -1,6 +1,7 @@
-package org.dcache.auth.util;
+package org.dcache.gplazma.util;
 
 
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.globus.gsi.gssapi.GSSConstants;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -16,6 +17,11 @@ import java.util.Set;
 
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
+
+import static java.util.Arrays.asList;
 
 /**
  * Extraction and conversion methods useful when dealing with GSS/VOMS
@@ -29,8 +35,6 @@ import org.italiangrid.voms.VOMSValidators;
  */
 public class GSSUtils {
 
-    static final String SYS_VOMSDIR = "VOMSDIR";
-    static final String SYS_CADIR = "CADIR";
     static final String CAPNULL = "/Capability=NULL";
     static final String ROLENULL = "/Role=NULL";
 
@@ -77,7 +81,9 @@ public class GSSUtils {
 
     public static Iterable<String> extractFQANs(String vomsDir, String caDir, X509Certificate[] chain)
     {
-        VOMSACValidator validator = VOMSValidators.newValidator();
+        VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
+        X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+        VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
         List<VOMSAttribute> listOfAttributes = validator.validate(chain);
         return getFQANSfromVOMSAttributes(listOfAttributes);
     }
