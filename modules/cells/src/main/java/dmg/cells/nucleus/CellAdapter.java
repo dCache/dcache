@@ -41,6 +41,9 @@ import dmg.util.logback.FilterShell;
 import org.dcache.util.Args;
 import org.dcache.util.Version;
 
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
+
 /**
  *
  *
@@ -634,7 +637,7 @@ public class CellAdapter
                     Object    key   = entry.getKey();
                     CellLock  lock  = entry.getValue();
                     sb.append(key.toString()).append(" r=");
-                    long res = lock.getTimeout() - System.currentTimeMillis();
+                    long res = subWithInfinity(lock.getTimeout(), System.currentTimeMillis());
                     sb.append(res/1000).append(" sec;");
                     CellMessage msg = lock.getMessage();
                     if (msg == null) {
@@ -993,7 +996,7 @@ public class CellAdapter
             this.callback = callback;
             this.msg = msg;
             this.executor = executor;
-            deadline = System.currentTimeMillis() + timeout;
+            deadline = addWithInfinity(System.currentTimeMillis(), timeout);
         }
 
         @Override
@@ -1022,7 +1025,7 @@ public class CellAdapter
 
         @Override
         public void run() {
-            long timeout = deadline - System.currentTimeMillis();
+            long timeout = subWithInfinity(deadline, System.currentTimeMillis());
             if (timeout > 0) {
                 sendMessage(msg, this, executor, timeout);
             } else {

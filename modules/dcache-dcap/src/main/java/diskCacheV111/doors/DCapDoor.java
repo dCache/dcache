@@ -24,6 +24,9 @@ import org.dcache.auth.Subjects;
 import org.dcache.util.Args;
 import org.dcache.util.Transfer;
 
+import static org.dcache.util.MathUtils.addWithInfinity;
+import static org.dcache.util.MathUtils.subWithInfinity;
+
 /**
   * @author Patrick Fuhrmann
   * @version 1.0, Aug 04 2001
@@ -259,9 +262,9 @@ public class      DCapDoor
     }
     private synchronized void waitForFinish( long timeout )
             throws InterruptedException {
-       long end = System.currentTimeMillis() + timeout ;
+       long end = addWithInfinity(System.currentTimeMillis(), timeout);
        while( _state != __WeAreFinished ){
-           long rest = end - System.currentTimeMillis() ;
+           long rest = subWithInfinity(end, System.currentTimeMillis());
            _log.info( "waitForFinish : waiting for "+rest+" seconds" ) ;
            if( rest <=0  ) {
                break;
