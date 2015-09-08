@@ -52,6 +52,7 @@ import org.dcache.commons.util.NDC;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
+import org.dcache.vehicles.PnfsGetFileAttributes;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.*;
@@ -647,8 +648,12 @@ public class Transfer implements Comparable<Transfer>
      *
      * @throws CacheException if reading the entry failed
      */
-    public void readNameSpaceEntry()
-        throws CacheException
+    public void readNameSpaceEntry() throws CacheException
+    {
+        readNameSpaceEntry(_pnfs.getPnfsTimeout());
+    }
+
+    private void readNameSpaceEntry(long timeout) throws CacheException
     {
         setStatus("PnfsManager: Fetching storage info");
         try {
@@ -658,12 +663,11 @@ public class Transfer implements Comparable<Transfer>
             request.addAll(PoolMgrSelectReadPoolMsg.getRequiredAttributes());
             Set<AccessMask> mask = EnumSet.of(AccessMask.READ_DATA);
             PnfsId pnfsId = getPnfsId();
-            FileAttributes attributes;
-            if (pnfsId != null) {
-                attributes = _pnfs.getFileAttributes(pnfsId, request, mask);
-            } else {
-                attributes = _pnfs.getFileAttributes(_path.toString(), request, mask);
-            }
+            PnfsGetFileAttributes msg = (pnfsId != null)
+                                        ? new PnfsGetFileAttributes(pnfsId, request)
+                                        : new PnfsGetFileAttributes(_path.toString(), request);
+            msg.setAccessMask(mask);
+            FileAttributes attributes = _pnfs.pnfsRequest(msg, timeout).getFileAttributes();
 
             /* We can only read regular files.
              */
@@ -757,7 +761,7 @@ public class Transfer implements Comparable<Transfer>
      * Selects a pool suitable for the transfer.
      */
     public void selectPool()
-        throws CacheException, InterruptedException
+            throws CacheException, InterruptedException
     {
         selectPool(_poolManager.getTimeoutInMillis());
     }
@@ -1039,11 +1043,11 @@ public class Transfer implements Comparable<Transfer>
             long start = System.currentTimeMillis();
             CacheException lastFailure;
             try {
-                selectPool(subWithInfinity(deadLine, System.currentTimeMillis()));
+                selectPool(Math.min(_poolManager.getTimeoutInMillis(),
+                                    subWithInfinity(deadLine, System.currentTimeMillis())));
                 gotPool = true;
-                startMover(queue,
-                        Math.min(subWithInfinity(deadLine, System.currentTimeMillis()),
-                                policy.getMoverStartTimeout()));
+                startMover(queue, Math.min(policy.getMoverStartTimeout(),
+                                           subWithInfinity(deadLine, System.currentTimeMillis())));
                 return;
             } catch (TimeoutCacheException e) {
                 _log.warn(e.getMessage());
@@ -1102,7 +1106,8 @@ public class Transfer implements Comparable<Transfer>
             }
 
             if (!isWrite()) {
-                readNameSpaceEntry();
+                readNameSpaceEntry( Math.min(_pnfs.getPnfsTimeout(),
+                                             subWithInfinity(deadLine, System.currentTimeMillis())));
             }
         }
     }

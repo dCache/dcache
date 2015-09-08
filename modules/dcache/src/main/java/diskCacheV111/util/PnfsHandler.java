@@ -44,6 +44,8 @@ import org.dcache.vehicles.PnfsGetFileAttributes;
 import org.dcache.vehicles.PnfsRemoveChecksumMessage;
 import org.dcache.vehicles.PnfsSetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class PnfsHandler
     implements CellMessageSender
 {
@@ -190,7 +192,7 @@ public class PnfsHandler
 
    public void addCacheLocation(PnfsId id, String pool) throws CacheException
    {
-       pnfsRequest( new PnfsAddCacheLocationMessage(id, pool));
+       pnfsRequest(new PnfsAddCacheLocationMessage(id, pool));
    }
 
    public List<String> getCacheLocations( PnfsId pnfsId )throws CacheException {
@@ -225,22 +227,32 @@ public class PnfsHandler
      * to the PnfsManager are reported as a timeout CacheException.
      */
    public <T extends PnfsMessage> T pnfsRequest( T msg )
-           throws CacheException {
+           throws CacheException
+   {
+       checkState(_cellStub != null);
+       return pnfsRequest(msg, _cellStub.getTimeoutInMillis());
+   }
 
-       if (_cellStub == null) {
-           throw new IllegalStateException("Missing endpoint");
+    /**
+     * Sends a message to the request manager and blocks until a reply
+     * is received. In case of errors in the reply, those are thrown
+     * as a CacheException. Timeouts and failure to send the message
+     * to the PnfsManager are reported as a timeout CacheException.
+     */
+   public <T extends PnfsMessage> T pnfsRequest(T msg, long timeout)
+           throws CacheException
+   {
+       checkState(_cellStub != null);
+       try {
+           msg.setReplyRequired(true);
+           if (_subject != null) {
+               msg.setSubject(_subject);
+           }
+           return _cellStub.sendAndWait(msg, timeout);
+       } catch (InterruptedException e) {
+           throw  new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                     "Sending message to " + _cellStub.getDestinationPath() + " interrupted");
        }
-
-        try {
-            msg.setReplyRequired(true);
-            if (_subject != null) {
-                msg.setSubject(_subject);
-            }
-            return _cellStub.sendAndWait(msg);
-        } catch (InterruptedException e) {
-            throw  new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
-                    "Sending message to PnafsManager intterupted");
-        }
    }
 
     public PnfsCreateEntryMessage createPnfsDirectory(String path)
