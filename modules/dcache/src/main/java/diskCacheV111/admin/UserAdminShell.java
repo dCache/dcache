@@ -98,26 +98,104 @@ public class UserAdminShell
     private static final Logger _log =
             LoggerFactory.getLogger(UserAdminShell.class);
 
-    private static final String ADMIN_COMMAND_NOOP = "xyzzy";
-    private static final int CD_PROBE_MESSAGE_TIMEOUT_MS = 1000;
-    public static final StringsCompleter SHELL_COMMAND_COMPLETER =
+    /**
+     * The {@literal xyzzy} is a command sent to cells when connecting to them. It has no effect
+     * and its only purpose is to verify that the cell is present.
+     */
+    private static final String CONNECT_PROBE_MESSAGE = "xyzzy";
+
+    /**
+     * Timeout is milliseconds for the {@literal xyzzy} message sent to cells when connecting
+     * to them.
+     */
+    private static final int CONNECT_PROBE_MESSAGE_TIMEOUT_MS = 1000;
+
+    /**
+     * jline completer for shell backslash commands.
+     */
+    private static final StringsCompleter SHELL_COMMAND_COMPLETER =
             new StringsCompleter("\\c", "\\exception", "\\l", "\\s", "\\sl", "\\sn",
                                  "\\sp", "\\timeout", "\\q", "\\h", "\\?");
+
+    /**
+     * jline completer for pool manager cell commands.
+     */
     private final Completer POOL_MANAGER_COMPLETER = createRemoteCompleter("PoolManager");
+
+    /**
+     * jline completer for pnfs manager cell commands.
+     */
     private final Completer PNFS_MANAGER_COMPLETER = createRemoteCompleter("PnfsManager");
 
+    /**
+     * Communication endpoint of the admin cell.
+     */
     private CellEndpoint _cellEndpoint;
+
+    /**
+     * Communication stub for the ACL cell that controls admin command permissions.
+     */
     private CellStub _acmStub;
+
+    /**
+     * Communication stub for pool manager.
+     */
     private CellStub _poolManager;
+
+    /**
+     * Communication stub for pnfs manager.
+     */
     private CellStub _pnfsManager;
+
+    /**
+     * Generic communication stub not bound to a particular cell.
+     */
     private CellStub _cellStub;
+
+    /**
+     * Client handler for listing directories in the dCache name space.
+     */
     private ListDirectoryHandler _list;
+
+    /**
+     * Current effective user identity. May be different from _authUser as
+     * a user may request a different identity when connecting to a cell.
+     */
     private String _user;
+
+    /**
+     * User identity as reported by the transport (typically SSH).
+     */
     private String _authUser;
+
+    /**
+     * Timeout of cell commands. Carbon units may interrupt the current command
+     * by pressing Ctrl-C, but currently in cells we don't have any means of
+     * actually cancel the callback and hence a timeout is needed (Ctrl-C merely
+     * causes the shell to stop waiting).
+     */
     private long _timeout = TimeUnit.MINUTES.toMillis(5);
+
+    /**
+     * Whether to provide a full stack trace when cell commands result in an
+     * exception. This is a debugging feature and can be enabled using the
+     * {@literal \exception} command.
+     */
     private boolean _fullException;
+
+    /**
+     * Identifier of this admin door. This will be shown in the command prompt.
+     */
     private final String _instance;
+
+    /**
+     * The Position of the cell the shell is currently connected to.
+     */
     private Position _currentPosition = null;
+
+    /**
+     * jline completer for the cell the shell is currently connected to.
+     */
     private Completer _completer;
 
     public UserAdminShell(String prompt)
@@ -128,6 +206,11 @@ public class UserAdminShell
     public void setUser(String user)
     {
         _user = _authUser = user;
+    }
+
+    protected String getUser()
+    {
+        return _user;
     }
 
     public void setCellEndpoint(CellEndpoint endpoint)
@@ -168,11 +251,10 @@ public class UserAdminShell
         }
     }
 
-    protected String getUser()
-    {
-        return _user;
-    }
-
+    /**
+     * Checks that the current effective user has any of the given ACLs.
+     * @throws AclException if the current user does not have any of the {@code acls}
+     */
     protected void checkPermission(String[] acls) throws AclException
     {
         if (acls.length > 0) {
@@ -189,6 +271,10 @@ public class UserAdminShell
         }
     }
 
+    /**
+     * Checks that the current effective user has the given acl.
+     * @throws AclException if the current user does not have the given {@code aclName}
+     */
     public void checkPermission(String aclName)
             throws AclException
     {
@@ -216,7 +302,7 @@ public class UserAdminShell
     }
 
     /**
-     * Asynchronously queries the cells of {@code domain} matching {@code cellPredicate}.
+     * Asynchronously fetch the list of cells of {@code domain} matching {@code cellPredicate}.
      * <p>
      * The resulting list is sorted and fully qualified. Errors are logged and otherwise ignored.
      */
@@ -247,8 +333,8 @@ public class UserAdminShell
         return transform(
                 _poolManager.send("psu ls pool", String.class),
                 (String s) -> Stream.of(s.split("\n"))
-                                .filter(predicate)
-                                .collect(toList()));
+                        .filter(predicate)
+                        .collect(toList()));
     }
 
     /**
@@ -272,6 +358,9 @@ public class UserAdminShell
                 (String s) -> asList(s.split("\n")));
     }
 
+    /**
+     * Asynchronously fetch the list of pools in pool groups matching the given predicate.
+     */
     private ListenableFuture<List<String>> getPoolsInGroups(Predicate<String> predicate)
     {
         ListenableFuture<List<String>> poolGroups = getPoolGroups();
@@ -287,6 +376,16 @@ public class UserAdminShell
                          (List<Stream<String>> l) -> l.stream().flatMap(s -> s).distinct().collect(toList()));
     }
 
+    /**
+     * Expands a list of cell address globs into a list of cell addresses.
+     *
+     * Processes globs on both the left and right side of the '@' separator of a cell address. Also
+     * processes the special '/' pool group separator, interpreting the left side as a pool name
+     * pattern and the right side as a pool group pattern.
+     *
+     * The result is sorted lexicographically and case insensitive, but the order of the input patterns
+     * is preserved (ie. the output contains matching cells in the same order).
+     */
     private List<String> expandCellPatterns(List<String> patterns)
             throws CacheException, InterruptedException, ExecutionException
     {
@@ -355,22 +454,51 @@ public class UserAdminShell
         return allAsList(futures).get().stream().flatMap(Collection::stream).collect(toList());
     }
 
-    private Predicate<String> toGlobPredicate(String s)
+    /**
+     * Returns true iff the given string is a cell address pattern that should be expanded using
+     * expandCellPatterns.
+     */
+    private static boolean isExpandable(String s)
     {
-        return s.isEmpty() ? (String) -> true : parseGlobToPattern(s).asPredicate();
+        return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s) || s.indexOf('/') > -1);
     }
 
+    /**
+     * Returns a Predicate that evaluates to true when the input matches the given glob pattern.
+     *
+     * As a special case, an empty glob matches all strings.
+     */
+    private static Predicate<String> toGlobPredicate(String glob)
+    {
+        return glob.isEmpty() ? (String) -> true : parseGlobToPattern(glob).asPredicate();
+    }
 
+    /**
+     * Returns the welcome string printed to the user's console when connecting.
+     */
     public String getHello()
     {
         return "dCache (" + Version.of(UserAdminShell.class).getVersion() + ")\n" + "Type \"\\?\" for help.\n";
     }
 
+    /**
+     * Returns the command prompt that should be displayed on the user's console.
+     */
     public String getPrompt()
     {
         return (_instance == null ? "" : ("[" + _instance + "] ")) +
                (_currentPosition == null ? "(local) " : ("(" + _currentPosition.remoteName + ") ")) +
                getUser() + " > ";
+    }
+
+    /**
+     * Returns the preferred help format.
+     *
+     * For carbon units, this will be typically ANSI, while silicon units will get PLAIN.
+     */
+    private HelpFormat getPreferredHelpFormat()
+    {
+        return Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
     }
 
     @Command(name = "\\exception", hint = "controls display of stack traces",
@@ -468,7 +596,7 @@ public class UserAdminShell
             CellPath address = new CellPath(cell);
             try {
                 SettableFuture<CellPath> future = SettableFuture.create();
-                _cellEndpoint.sendMessage(new CellMessage(address, ADMIN_COMMAND_NOOP),
+                _cellEndpoint.sendMessage(new CellMessage(address, CONNECT_PROBE_MESSAGE),
                                           new CellMessageAnswerable()
                                           {
                                               @Override
@@ -488,7 +616,7 @@ public class UserAdminShell
                                               {
                                                   future.setException(new NoRouteToCellException(request, "No reply"));
                                               }
-                                          }, MoreExecutors.directExecutor(), CD_PROBE_MESSAGE_TIMEOUT_MS);
+                                          }, MoreExecutors.directExecutor(), CONNECT_PROBE_MESSAGE_TIMEOUT_MS);
                 CellPath returnPath = future.get();
                 if (address.hops() == 1 && address.getCellDomainName().equals("local")) {
                     return new Position(returnPath.getSourceAddress().toString(), returnPath.revert());
@@ -534,11 +662,6 @@ public class UserAdminShell
         {
             return getHelp(getPreferredHelpFormat(), command);
         }
-    }
-
-    private HelpFormat getPreferredHelpFormat()
-    {
-        return Ansi.isEnabled() ? HelpFormat.ANSI : HelpFormat.PLAIN;
     }
 
     @Command(name = "\\h", hint = "display help for cell commands",
@@ -815,19 +938,23 @@ public class UserAdminShell
      */
     private int completeSendCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
-        Completable destination = new Completable(buffer, cursor, candidates);
+        Completable arguments = new Completable(buffer, cursor, candidates);
 
-        if (!destination.hasArguments()) {
-            int lastDestinationStart = destination.value.lastIndexOf(',') + 1;
-            String lastDestination = destination.value.substring(lastDestinationStart);
+        if (!arguments.hasTail()) {
+            int lastDestinationStart = arguments.head.lastIndexOf(',') + 1;
+            String lastDestination = arguments.head.substring(lastDestinationStart);
             int i = completeCellWildcard(lastDestination, lastDestination.length(), candidates);
             return (i == -1) ? -1 : lastDestinationStart + i;
-        } else if (!destination.value.contains(",") && !isExpandable(destination.value)) {
-            return destination.completeArguments(createRemoteCompleter(destination.value));
+        } else if (!arguments.head.contains(",") && !isExpandable(arguments.head)) {
+            return arguments.completeTail(createRemoteCompleter(arguments.head));
         }
         return -1;
     }
 
+    /**
+     * Completes a name space path. This will query pnfs manager to obtain a directory
+     * listing with possible candidates.
+     */
     private int completePath(String buffer, int cursor, List<CharSequence> candidates)
     {
         if (buffer.isEmpty()) {
@@ -857,18 +984,21 @@ public class UserAdminShell
         return -1;
     }
 
+    /**
+     * Completes the {@literal \sl} command.
+     */
     private int completeSendLocationsCommand(String buffer, int cursor, List<CharSequence> candidates)
     {
-        Completable path = new Completable(buffer, cursor, candidates);
+        Completable arguments = new Completable(buffer, cursor, candidates);
 
-        if (!path.hasArguments()) {
-            return path.complete(this::completePath);
+        if (!arguments.hasTail()) {
+            return arguments.complete(this::completePath);
         } else {
             try {
-                Collection<String> locations = getFileAttributes(path.value).getLocations();
+                Collection<String> locations = getFileAttributes(arguments.head).getLocations();
                 if (!locations.isEmpty()) {
                     /* Assume all pools have the same commands. */
-                    return path.completeArguments(createRemoteCompleter(Iterables.get(locations, 0)));
+                    return arguments.completeTail(createRemoteCompleter(Iterables.get(locations, 0)));
                 }
             } catch (CacheException e) {
                 _log.info("Completion failed: {}", e.toString());
@@ -880,12 +1010,19 @@ public class UserAdminShell
         return -1;
     }
 
+    /**
+     * Utility method to initiate a directory listing returning entries matching the given
+     * glob string.
+     */
     private DirectoryStream list(String dir, String pattern) throws InterruptedException, CacheException
     {
         return _list.list(Subjects.ROOT, new FsPath(dir), new Glob(pattern), Range.<Integer>all(), EnumSet.of(
                 FileAttribute.TYPE));
     }
 
+    /**
+     * Queries the pnfs id and file locations of a file. Used by the {@literal \sl} command.
+     */
     private FileAttributes getFileAttributes(String file) throws CacheException, InterruptedException
     {
         /* Lookup file in name space */
@@ -905,34 +1042,37 @@ public class UserAdminShell
     private int completeShell(String buffer, int cursor, List<CharSequence> candidates)
     {
         Completable command = new Completable(buffer, cursor, candidates);
-        if (!command.hasArguments()) {
+        if (!command.hasTail()) {
             return command.complete(SHELL_COMMAND_COMPLETER);
         }
 
-        switch (command.value) {
+        switch (command.head) {
         case "\\?":
-            return command.completeArguments(SHELL_COMMAND_COMPLETER);
+            return command.completeTail(SHELL_COMMAND_COMPLETER);
         case "\\h":
             if (_currentPosition != null) {
-                return command.completeArguments(this::completeRemote);
+                return command.completeTail(this::completeRemote);
             }
             break;
         case "\\c":
-            return command.completeArguments(this::completeConnectCommand);
+            return command.completeTail(this::completeConnectCommand);
         case "\\l":
-            return command.completeArguments(this::completeListCommand);
+            return command.completeTail(this::completeListCommand);
         case "\\s":
-            return command.completeArguments(this::completeSendCommand);
+            return command.completeTail(this::completeSendCommand);
         case "\\sl":
-            return command.completeArguments(this::completeSendLocationsCommand);
+            return command.completeTail(this::completeSendLocationsCommand);
         case "\\sp":
-            return command.completeArguments(POOL_MANAGER_COMPLETER);
+            return command.completeTail(POOL_MANAGER_COMPLETER);
         case "\\sn":
-            return command.completeArguments(PNFS_MANAGER_COMPLETER);
+            return command.completeTail(PNFS_MANAGER_COMPLETER);
         }
         return -1;
     }
 
+    /**
+     * Factory method to constructor a jline completer for commands of the given cell.
+     */
     private Completer createRemoteCompleter(String cell)
     {
         return (buffer, cursor, candidates) -> completeRemote(cell, buffer, cursor, candidates);
@@ -991,8 +1131,6 @@ public class UserAdminShell
         } else {
             return r + "\n";
         }
-
-
     }
 
     private Serializable sendObject(String cellPath, Serializable object)
@@ -1018,6 +1156,9 @@ public class UserAdminShell
         }
     }
 
+    /**
+     * Concurrently sends a command to several cells and collects the result from each.
+     */
     private String sendToMany(Iterable<String> destinations, Serializable object) throws AclException
     {
         /* Check permissions */
@@ -1080,20 +1221,19 @@ public class UserAdminShell
         return ca.toString();
     }
 
-    private static boolean isExpandable(String s)
-    {
-        return !s.contains(":") && (s.startsWith("@") || s.endsWith("@") || Glob.isGlob(s) || s.indexOf('/') > -1);
-    }
-
     /**
      * Utility class for completing an input buffer.
+     *
+     * An instance wraps the editing buffer (a string and a cursor position) and splits the input
+     * into a head (anything up to the first whitespace) and a tail (anything after the first
+     * whitespace, excluding the leading whitespace).
      */
     private static class Completable
     {
         final String buffer;
-        final String value;
-        final String arguments;
-        final int argumentPosition;
+        final String head;
+        final String tail;
+        final int position;
         final int cursor;
         final List<CharSequence> candidates;
 
@@ -1101,23 +1241,23 @@ public class UserAdminShell
         {
             int offset = CharMatcher.WHITESPACE.indexIn(buffer);
             if (offset > -1) {
-                value = buffer.substring(0, offset);
+                head = buffer.substring(0, offset);
                 int i = CharMatcher.WHITESPACE.negate().indexIn(buffer, offset);
                 offset = (i > -1) ? i : buffer.length();
-                arguments = buffer.substring(offset);
+                tail = buffer.substring(offset);
             } else {
-                value = buffer;
-                arguments = null;
+                head = buffer;
+                tail = null;
             }
             this.buffer = buffer;
-            this.argumentPosition = offset;
+            this.position = offset;
             this.cursor = cursor;
             this.candidates = candidates;
         }
 
-        boolean hasArguments()
+        boolean hasTail()
         {
-            return arguments != null;
+            return tail != null;
         }
 
         int complete(Completer completer)
@@ -1125,16 +1265,26 @@ public class UserAdminShell
             return completer.complete(buffer, cursor, candidates);
         }
 
-        int completeArguments(Completer completer)
+        int completeTail(Completer completer)
         {
-            int i = completer.complete(arguments, cursor - argumentPosition, candidates);
-            return (i == -1) ? -1 : i + argumentPosition;
+            int i = completer.complete(tail, cursor - position, candidates);
+            return (i == -1) ? -1 : i + position;
         }
     }
 
+    /**
+     * A Position tracks the address of a cell and a human readable version of that address.
+     */
     private static class Position
     {
+        /**
+         * User readable form of the position. Is typically displayed in the prompt.
+         */
         final String remoteName;
+
+        /**
+         * CellPath address of the cell identified by the position.
+         */
         final CellPath remote;
 
         Position(String name, CellPath path)
