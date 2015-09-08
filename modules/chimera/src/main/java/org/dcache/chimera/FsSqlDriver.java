@@ -1608,7 +1608,7 @@ class FsSqlDriver {
 
     private static final String srmGetTagsIdsOfPnfsid = "SELECT itagid FROM t_tags WHERE ipnfsid=?";
     private static final String sqlRemoveTag = "DELETE FROM t_tags WHERE ipnfsid=?";
-    private static final String sqlRemoveTagInodes = "DELETE FROM t_tags_inodes i WHERE itagid = ? AND NOT EXISTS (SELECT 1 FROM t_tags t WHERE t.itagid=i.itagid)";
+    private static final String sqlRemoveTagInodes = "DELETE FROM t_tags_inodes i WHERE itagid=? AND NOT EXISTS (SELECT 1 FROM t_tags WHERE itagid=?)";
 
     void removeTag(Connection dbConnection, FsInode dir) throws SQLException {
 
@@ -1654,7 +1654,9 @@ class FsSqlDriver {
             ps3 = dbConnection.prepareStatement(sqlRemoveTagInodes);
             if (rs.next()) {
                 do {
-                    ps3.setString(1, rs.getString(1));
+                    String tagid = rs.getString(1);
+                    ps3.setString(1, tagid);
+                    ps3.setString(2, tagid);
                     ps3.addBatch();
                 } while (rs.next());
                 ps3.executeBatch();
