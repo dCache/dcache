@@ -218,12 +218,21 @@ public class PnfsHandler
     public <T extends PnfsMessage> ListenableFuture<T> requestAsync(T msg)
     {
         checkState(_cellStub != null, "Missing endpoint");
+        return requestAsync(msg, _cellStub.getTimeoutInMillis());
+    }
+
+    /**
+     * Sends a message to the pnfs manager and returns a promise of a future reply.
+     */
+    public <T extends PnfsMessage> ListenableFuture<T> requestAsync(T msg, long timeout)
+    {
+        checkState(_cellStub != null, "Missing endpoint");
 
         msg.setReplyRequired(true);
         if (_subject != null) {
             msg.setSubject(_subject);
         }
-        return _cellStub.send(msg);
+        return _cellStub.send(msg, timeout);
     }
 
     public PnfsCreateEntryMessage createPnfsDirectory(String path)
