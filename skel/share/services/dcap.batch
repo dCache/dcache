@@ -45,10 +45,17 @@ test -i ${dcap.cell.name.dir}
 exec env startDir.exe -ifnotok
 onerror shutdown
 
-set env arguments-plain "-localOk"
-set env arguments-auth "-pswdfile=${dcap.authn.passwd} -authorization=required"
-set env arguments-gsi "-localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.authn.ciphers}'\\\""
-set env arguments-kerberos "-localOk -authorization=strong -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,'${dcap.authn.kerberos.service-principle-name}'"
+set env plain-paths-when-anonymous-access-is-NONE "-brokerReadPaths= -brokerWritePaths="
+set env plain-paths-when-anonymous-access-is-READONLY "-brokerReadPaths=/ -brokerWritePaths="
+set env plain-paths-when-anonymous-access-is-FULL "${paths-when-readonly-is-$dcap.authz.readonly}}"
+
+set env paths-when-readonly-is-true "-brokerReadPaths=/ -brokerWritePaths="
+set env paths-when-readonly-is-false "-brokerReadPaths=/ -brokerWritePaths=/"
+
+set env arguments-plain "${plain-paths-when-anonymous-access-is-${dcap.authz.anonymous-operations}} -localOk"
+set env arguments-auth "${paths-when-readonly-is-$dcap.authz.readonly}} -pswdfile=${dcap.authn.passwd} -authorization=required"
+set env arguments-gsi "${paths-when-readonly-is-$dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.authn.ciphers}'\\\""
+set env arguments-kerberos "{paths-when-readonly-is-$dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,'${dcap.authn.kerberos.service-principle-name}'"
 
 create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \
@@ -70,7 +77,6 @@ create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
              -brokerUpdateTime=${dcap.loginbroker.update-period} \
              -brokerUpdateTimeUnit=${dcap.loginbroker.update-period.unit} \
              -brokerUpdateOffset=${dcap.loginbroker.update-threshold} \
-             -brokerReadOnly=${dcap.authz.readonly} \
              -protocolFamily=${dcap.loginbroker.family} \
              -protocolVersion=${dcap.loginbroker.version} \
              -loginBroker=${dcap.service.loginbroker}  \

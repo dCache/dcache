@@ -137,10 +137,10 @@
     <property name="address" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
     <property name="port" value="${srm.net.port}"/>
     <property name="topic" value="${srm.loginbroker.update-topic}"/>
-    <property name="tags" value="${srm.loginbroker.tags}"/>
+    <property name="tags" value="#{ T(com.google.common.base.Splitter).on(',').omitEmptyStrings().splitToList('${srm.loginbroker.tags}') }"/>
     <property name="root" value="${srm.root}"/>
-    <property name="readPaths" value="/"/>
-    <property name="writePaths" value="/"/>
+    <property name="readPaths" value="#{ T(java.util.Arrays).asList('/') }"/>
+    <property name="writePaths" value="#{ T(java.util.Arrays).asList('/') }"/>
     <property name="loadProvider">
         <bean class="diskCacheV111.srm.dcache.SrmLoadProvider">
             <property name="srm" ref="srm"/>

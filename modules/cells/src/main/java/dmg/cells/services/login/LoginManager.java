@@ -187,15 +187,14 @@ public class LoginManager
 
             String topic = _args.getOpt("brokerTopic");
             if (topic != null) {
-                String[] tags = Iterables.toArray(
-                        Splitter.on(",").omitEmptyStrings().split(_args.getOption("brokerTags")),
-                        String.class);
+                Splitter byComma = Splitter.on(",").omitEmptyStrings();
+                Splitter byColon = Splitter.on(":").omitEmptyStrings();
                 _loginBrokerPublisher = new LoginBrokerPublisher();
                 _loginBrokerPublisher.beforeSetup();
                 _loginBrokerPublisher.setExecutor(_scheduledExecutor);
                 _loginBrokerPublisher.setTopic(topic);
                 _loginBrokerPublisher.setCellEndpoint(this);
-                _loginBrokerPublisher.setTags(tags);
+                _loginBrokerPublisher.setTags(byComma.splitToList(_args.getOption("brokerTags")));
                 _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
                 _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
                 _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
@@ -203,10 +202,8 @@ public class LoginManager
                 _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
                 _loginBrokerPublisher.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
                 _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("root")));
-                _loginBrokerPublisher.setReadPaths("/");
-                if (!_args.getBooleanOption("brokerReadOnly", false)) {
-                    _loginBrokerPublisher.setWritePaths("/");
-                }
+                _loginBrokerPublisher.setReadPaths(byColon.splitToList(_args.getOption("brokerReadPaths", "/")));
+                _loginBrokerPublisher.setWritePaths(byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
                 addCommandListener(_loginBrokerPublisher);
                 addCellEventListener(_loginBrokerPublisher);
                 _loginBrokerPublisher.afterSetup();

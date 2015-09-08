@@ -138,7 +138,7 @@ public class LoginBrokerPublisher
         @Override
         public String call() throws Exception
         {
-            setTags(tags);
+            setTags(asList(tags));
             return "";
         }
     }
@@ -450,21 +450,23 @@ public class LoginBrokerPublisher
         _root = root;
     }
 
-    public synchronized void setReadPaths(String... paths)
+    public synchronized void setReadPaths(List<String> paths)
     {
-        _readPaths = asList(paths);
+        checkArgument(!paths.stream().anyMatch(String::isEmpty));
+        _readPaths = paths;
         rescheduleTask();
     }
 
-    public synchronized void setWritePaths(String... paths)
+    public synchronized void setWritePaths(List<String> paths)
     {
-        _writePaths = asList(paths);
+        checkArgument(!paths.stream().anyMatch(String::isEmpty));
+        _writePaths = paths;
         rescheduleTask();
     }
 
-    public synchronized void setTags(String... tags)
+    public synchronized void setTags(List<String> tags)
     {
-        _tags = asList(tags);
+        _tags = tags;
         rescheduleTask();
     }
 
