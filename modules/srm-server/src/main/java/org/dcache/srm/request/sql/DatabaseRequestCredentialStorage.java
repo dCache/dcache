@@ -76,14 +76,9 @@ import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 
-import javax.sql.RowSet;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,7 +88,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.dcache.srm.request.RequestCredential;

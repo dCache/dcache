@@ -17,20 +17,30 @@
  */
 package org.dcache.gridsite;
 
-import com.google.common.collect.Iterables;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.gridforum.jgss.ExtendedGSSCredential;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
-import org.dcache.gplazma.util.GSSUtils;
 
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.gridsite.Utilities.assertThat;
 
@@ -44,19 +54,19 @@ public class InMemoryCredentialStore implements CredentialStore
 {
     private final Map<DelegationIdentity,GSSCredential> _storage = new HashMap<>();
 
-    private String vomsDir;
-    private String caDir;
+    private VOMSTrustStore vomsTrustStore;
+    private X509CertChainValidatorExt certChainValidator;
 
     @Required
     public void setCaCertificatePath(String caDir)
     {
-        this.caDir = caDir;
+        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
     }
 
     @Required
     public void setVomsdir(String vomsDir)
     {
-        this.vomsDir = vomsDir;
+        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsDir));
     }
 
     @Override
@@ -155,7 +165,7 @@ public class InMemoryCredentialStore implements CredentialStore
 
     private interface DnFqanMatcher
     {
-        public boolean matches(String dn, String fqan);
+        boolean matches(String dn, String fqan);
     }
 
     private GSSCredential bestCredentialMatching(DnFqanMatcher predicate)
@@ -166,10 +176,17 @@ public class InMemoryCredentialStore implements CredentialStore
         for (Map.Entry<DelegationIdentity,GSSCredential> entry : _storage.entrySet()) {
             try {
                 GSSCredential credential = entry.getValue();
-                Iterable<String> fqans = GSSUtils.getFQANsFromGSSCredential(vomsDir, caDir, credential);
-                String primaryFqan = Iterables.getFirst(fqans, null);
 
-                if (!predicate.matches(entry.getKey().getDn(), primaryFqan)) {
+                FQAN primaryFqan;
+                if (credential instanceof ExtendedGSSCredential) {
+                    X509Certificate[] chain = (X509Certificate[]) ((ExtendedGSSCredential) credential).inquireByOid(GSSConstants.X509_CERT_CHAIN);
+                    VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+                    primaryFqan = getPrimary(validator.validate(chain));
+                } else {
+                    primaryFqan = null;
+                }
+
+                if (!predicate.matches(entry.getKey().getDn(), Objects.toString(primaryFqan, null))) {
                     continue;
                 }
 
@@ -179,11 +196,16 @@ public class InMemoryCredentialStore implements CredentialStore
                     bestRemainingLifetime = remainingLifetime;
                     bestCredential = credential;
                 }
-            } catch (GSSException | AuthorizationException ignored) {
+            } catch (GSSException ignored) {
                 // Treat problematic credentials as having expired
             }
         }
 
         return bestCredential;
+    }
+
+    private static FQAN getPrimary(List<VOMSAttribute> attributes)
+    {
+        return attributes.stream().flatMap(a -> a.getFQANs().stream()).findFirst().map(FQAN::new).orElse(null);
     }
 }

@@ -33,5 +33,10 @@
       <artifactId>cells</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.dcache</groupId>
+      <artifactId>gplazma2</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>
