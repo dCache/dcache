@@ -543,8 +543,8 @@ public class UserAdminShell
                           "all matching cells in all matching domains are listed.")
     class ListCommand implements Callable<String>
     {
-        @Argument(required = false, valueSpec = "CELL[@DOMAIN]",
-                usage = "A glob pattern. An empty CELL or DOMAIN string matches any name.")
+        @Argument(required = false, valueSpec = "CELL[@DOMAIN]|POOL/POOLGROUP",
+                usage = "A glob pattern. An empty CELL, DOMAIN, POOL or POOLGROUP string matches any name.")
         String[] pattern = {"*"};
 
         @Override
@@ -735,11 +735,12 @@ public class UserAdminShell
             description = "Sends COMMAND to one or more cells.")
     class SendCommand implements Callable<Serializable>
     {
-        @Argument(index = 0, valueSpec = "CELL[@DOMAIN][,CELL[@DOMAIN]]...",
-                usage = "List of cell addresses. Wildcards are expanded. An empty CELL or DOMAIN string matches any name.")
+        @Argument(index = 0, valueSpec = "(CELL[@DOMAIN]|POOL/POOLGROUP)[,(CELL[@DOMAIN]|POOL/POOLGROUP)]...",
+                usage = "List of cell addresses. Wildcards are expanded. An empty CELL, DOMAIN, " +
+                        "POOL or POOLGROUP string matches any name.")
         String destination;
 
-        @Argument(index = 1, usage = "A cell command")
+        @Argument(index = 1, usage = "A cell command.")
         String[] command;
 
         @CommandLine
