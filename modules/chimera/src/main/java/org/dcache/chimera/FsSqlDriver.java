@@ -41,7 +41,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +48,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -925,7 +923,7 @@ class FsSqlDriver {
         int rc = _jdbc.update(
                 con -> {
                     PreparedStatement ps = con.prepareStatement(
-                            CREATE_TAG_INODE_WITHOUT_VALUE, Statement.RETURN_GENERATED_KEYS);
+                            CREATE_TAG_INODE_WITHOUT_VALUE, new int[]{ 1 });
                     ps.setInt(1, mode | UnixPermission.S_IFREG);
                     ps.setInt(2, uid);
                     ps.setInt(3, gid);
@@ -959,7 +957,7 @@ class FsSqlDriver {
         int rc = _jdbc.update(
                 con -> {
                     PreparedStatement ps = con.prepareStatement(
-                            CREATE_TAG_INODE_WITH_VALUE, Statement.RETURN_GENERATED_KEYS);
+                            CREATE_TAG_INODE_WITH_VALUE, new int[]{ 1 });
                     ps.setInt(1, mode | UnixPermission.S_IFREG);
                     ps.setInt(2, uid);
                     ps.setInt(3, gid);
