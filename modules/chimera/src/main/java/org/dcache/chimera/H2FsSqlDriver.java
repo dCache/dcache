@@ -16,9 +16,17 @@
  */
 package org.dcache.chimera;
 
+import org.springframework.jdbc.JdbcUpdateAffectedIncorrectNumberOfRowsException;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+
 import javax.sql.DataSource;
 
+import java.io.ByteArrayInputStream;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.EnumSet;
 
 import org.dcache.acl.enums.AceFlags;
@@ -33,6 +41,66 @@ public class H2FsSqlDriver extends FsSqlDriver {
     protected H2FsSqlDriver(DataSource dataSource)
     {
         super(dataSource);
+    }
+
+    @Override
+    long createTagInode(int uid, int gid, int mode)
+    {
+        final String CREATE_TAG_INODE_WITHOUT_VALUE = "INSERT INTO t_tags_inodes (imode, inlink, iuid, igid, isize, " +
+                                                      "ictime, iatime, imtime, ivalue) VALUES (?,1,?,?,0,?,?,?,NULL)";
+
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        int rc = _jdbc.update(
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(
+                            CREATE_TAG_INODE_WITHOUT_VALUE, Statement.RETURN_GENERATED_KEYS);
+                    ps.setInt(1, mode | UnixPermission.S_IFREG);
+                    ps.setInt(2, uid);
+                    ps.setInt(3, gid);
+                    ps.setTimestamp(4, now);
+                    ps.setTimestamp(5, now);
+                    ps.setTimestamp(6, now);
+                    return ps;
+                }, keyHolder);
+        if (rc != 1) {
+            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(CREATE_TAG_INODE_WITHOUT_VALUE, 1, rc);
+        }
+        /* H2 uses weird names for the column with the auto-generated key, so we cannot use the code
+         * in the base class.
+         */
+        return (Long) keyHolder.getKey();
+    }
+
+    @Override
+    long createTagInode(int uid, int gid, int mode, byte[] value)
+    {
+        final String CREATE_TAG_INODE_WITH_VALUE = "INSERT INTO t_tags_inodes (imode, inlink, iuid, igid, isize, " +
+                                                   "ictime, iatime, imtime, ivalue) VALUES (?,1,?,?,?,?,?,?,?)";
+
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        int rc = _jdbc.update(
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(
+                            CREATE_TAG_INODE_WITH_VALUE, Statement.RETURN_GENERATED_KEYS);
+                    ps.setInt(1, mode | UnixPermission.S_IFREG);
+                    ps.setInt(2, uid);
+                    ps.setInt(3, gid);
+                    ps.setLong(4, value.length);
+                    ps.setTimestamp(5, now);
+                    ps.setTimestamp(6, now);
+                    ps.setTimestamp(7, now);
+                    ps.setBinaryStream(8, new ByteArrayInputStream(value), value.length);
+                    return ps;
+                }, keyHolder);
+        if (rc != 1) {
+            throw new JdbcUpdateAffectedIncorrectNumberOfRowsException(CREATE_TAG_INODE_WITH_VALUE, 1, rc);
+        }
+        /* H2 uses weird names for the column with the auto-generated key, so we cannot use the code
+         * in the base class.
+         */
+        return (Long) keyHolder.getKey();
     }
 
     /**
