@@ -8,6 +8,7 @@
         <include within="org.dcache.util.aspects.*"/>
         <include within="org.eclipse.jetty.server.HttpConnection"/>
         <include within="org.apache.axis.description.JavaServiceDesc"/>
+        <include within="org.dcache.ftp.door.*"/>
     </weaver>
 
     <aspects>

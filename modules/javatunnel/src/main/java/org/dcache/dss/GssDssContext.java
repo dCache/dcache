@@ -62,7 +62,7 @@ public abstract class GssDssContext implements DssContext
             }
             return outToken;
         } catch (GSSException e) {
-            throw new IOException(e);
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -79,7 +79,7 @@ public abstract class GssDssContext implements DssContext
             }
             return outToken;
         } catch (GSSException e) {
-            throw new IOException(e);
+            throw new IOException(e.getMessage(), e);
         }
     }
 
