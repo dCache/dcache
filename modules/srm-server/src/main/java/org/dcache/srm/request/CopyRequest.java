@@ -803,14 +803,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         return "Copy";
     }
 
-    //we want to stop handler if the
-    //the request is ready (all file reqs are ready), since all copy transfers are
-    // competed by now
-    public boolean shouldStopHandlerIfReady()
-    {
-        return true;
-    }
-
     @Override
     public void run() throws NonFatalJobFailure, FatalJobFailure
     {
@@ -1029,16 +1021,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
     }
 
-    public void setStorageType(TFileStorageType storageType)
-    {
-        wlock();
-        try {
-            this.storageType = storageType;
-        } finally {
-            wunlock();
-        }
-    }
-
     public TRetentionPolicy getTargetRetentionPolicy()
     {
         return targetRetentionPolicy;
@@ -1239,14 +1221,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         } finally {
             wunlock();
         }
-    }
-
-    /**
-     * @return the remoteSrmGet
-     */
-    private boolean isRemoteSrmGet()
-    {
-        return isSourceSrm() && !isSourceLocal();
     }
 
     /**

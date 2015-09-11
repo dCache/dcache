@@ -204,22 +204,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
         this.fileRequests = new ArrayList<>(Arrays.asList(fileRequests));
     }
 
-
-    public R getFileRequest(int fileRequestId){
-        rlock();
-        try {
-            for (R fileRequest: fileRequests) {
-                if(fileRequest.getId() == fileRequestId) {
-                    return fileRequest;
-                }
-            }
-            throw new IllegalArgumentException("FileRequest fileRequestId ="+fileRequestId+"does not belong to this Request" );
-        } finally {
-            runlock();
-        }
-
-    }
-
     public final R getFileRequest(long fileRequestId){
         for (R fileRequest: fileRequests) {
             if (fileRequest.getId() == fileRequestId) {

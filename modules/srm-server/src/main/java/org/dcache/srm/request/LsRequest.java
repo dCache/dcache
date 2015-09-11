@@ -162,10 +162,6 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 return "Ls";
         }
 
-        public boolean shouldStopHandlerIfReady() {
-                return true;
-        }
-
         public String kill() {
                 return "request was ready, set all ready file statuses to done";
         }

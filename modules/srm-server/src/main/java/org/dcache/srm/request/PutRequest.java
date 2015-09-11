@@ -306,15 +306,6 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         }
     }
 
-    //we do not want to stop handler if the
-    //the request is ready (all file reqs are ready), since the actual transfer migth
-    // happen any time after that
-    // the handler, by staing in running state will prevent other queued
-    // req from being executed
-    public boolean shouldStopHandlerIfReady() {
-        return false;
-    }
-
     @Override
     public void run() throws NonFatalJobFailure, FatalJobFailure {
     }
