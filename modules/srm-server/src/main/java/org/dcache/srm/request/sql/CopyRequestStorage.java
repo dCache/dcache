@@ -6,6 +6,7 @@
 
 package org.dcache.srm.request.sql;
 
+import com.google.common.collect.ImmutableList;
 import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
@@ -188,7 +189,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
             String DESCRIPTION,
             String CLIENTHOST,
             String STATUSCODE,
-            CopyFileRequest[] fileRequests,
+            ImmutableList<CopyFileRequest> fileRequests,
             ResultSet set,
             int next_index) throws SQLException {
 

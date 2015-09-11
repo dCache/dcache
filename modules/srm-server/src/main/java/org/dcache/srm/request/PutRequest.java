@@ -72,7 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +105,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.dcache.srm.handler.ReturnStatuses.getSummaryReturnStatus;
 
 /**
@@ -133,21 +134,17 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
         @Nullable String description)
     {
 
-        super(user, max_update_period, lifetime, description, client_host);
+        super(user, max_update_period, lifetime, description, client_host,
+              id -> {
+                  checkArgument(surls.length == sizes.length);
+                  ImmutableList.Builder<PutFileRequest> requests = ImmutableList.builder();
+                  for(int i = 0; i < surls.length; ++i) {
+                      requests.add(new PutFileRequest(id, surls[i], sizes[i], lifetime, spaceToken,
+                                                      retentionPolicy, accessLatency));
+                  }
+                  return requests.build();
+              });
         this.protocols = Arrays.copyOf(protocols, protocols.length);
-
-        int len = surls.length;
-        if (len != sizes.length || len != wantPermanent.length) {
-            throw new IllegalArgumentException(
-            "surls, sizes, wantPermanent arrays sizes mismatch");
-        }
-        List<PutFileRequest> requests = Lists.newArrayListWithCapacity(len);
-        for(int i = 0; i < len; ++i) {
-            PutFileRequest request = new PutFileRequest(getId(), surls[i],
-                    sizes[i], lifetime, spaceToken, retentionPolicy, accessLatency);
-            requests.add(request);
-        }
-        setFileRequests(requests);
     }
 
     public  PutRequest(
@@ -163,7 +160,7 @@ public final class PutRequest extends ContainerRequest<PutFileRequest> {
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    PutFileRequest[] fileRequests,
+    ImmutableList<PutFileRequest> fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,

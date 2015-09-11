@@ -72,6 +72,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,8 +83,10 @@ import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.function.LongFunction;
 
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.RequestStatus;
@@ -100,6 +103,7 @@ import org.dcache.srm.v2_2.TRequestType;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.dcache.srm.handler.ReturnStatuses.*;
 
 import static org.dcache.util.TimeUtils.relativeTimestamp;
@@ -124,7 +128,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     // therefore we need to synchronize the recept of dcap turls
     private URI previousTurl;
 
-    private final List<R> fileRequests;
+    private final ImmutableList<R> fileRequests;
 
     /**
      * Counter used for notification between file requests and the
@@ -148,14 +152,15 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
                             long max_update_period,
                             long lifetime,
                             @Nullable String description,
-                            String client_host)
+                            String client_host,
+                            LongFunction<ImmutableList<R>> factory)
     {
          super(user ,
          max_update_period,
          lifetime,
          description,
          client_host);
-         fileRequests = Lists.newArrayList();
+         fileRequests = factory.apply(getId());
     }
 
 
@@ -178,7 +183,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    R[] fileRequests,
+    ImmutableList<R> fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
@@ -201,7 +206,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      description,
      client_host,
      statusCodeString);
-        this.fileRequests = new ArrayList<>(Arrays.asList(fileRequests));
+        this.fileRequests = fileRequests;
     }
 
     public final R getFileRequest(long fileRequestId){
@@ -211,16 +216,6 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
             }
         }
         return null;
-    }
-
-    public void setFileRequests(List<R> requests) {
-        wlock();
-        try {
-            fileRequests.clear();
-            fileRequests.addAll(requests);
-        } finally {
-            wunlock();
-        }
     }
 
     /*
@@ -234,12 +229,7 @@ public abstract class ContainerRequest<R extends FileRequest<?>> extends Request
      */
     public int getNumOfFileRequest()
     {
-        rlock();
-        try {
-            return fileRequests.size();
-        } finally {
-            runlock();
-        }
+        return fileRequests.size();
     }
 
     public URI getPreviousTurl() {

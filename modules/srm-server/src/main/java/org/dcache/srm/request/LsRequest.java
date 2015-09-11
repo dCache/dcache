@@ -1,6 +1,6 @@
 package org.dcache.srm.request;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,7 +8,7 @@ import javax.annotation.Nonnull;
 
 import java.net.URI;
 import java.util.Date;
-import java.util.List;
+import java.util.stream.Stream;
 
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidRequestException;
@@ -52,19 +52,19 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                          boolean longFormat,
                          int maxNumOfResults )
         {
-                super(user, max_update_period, lifetime, "Ls request", client_host);
+                super(user, max_update_period, lifetime, "Ls request", client_host,
+                      id -> {
+                          ImmutableList.Builder<LsFileRequest> requests = ImmutableList.builder();
+                          Stream.of(surls)
+                                  .map(surl -> new LsFileRequest(id, surl, lifetime))
+                                  .forEachOrdered(requests::add);
+                          return requests.build();
+                      });
                 this.count = count;
                 this.offset = offset;
                 this.numOfLevels = numOfLevels;
                 this.longFormat = longFormat;
                 this.maxNumOfResults = maxNumOfResults;
-                List<LsFileRequest> requests = Lists.newArrayListWithCapacity(surls.length);
-                for (URI surl: surls) {
-                    LsFileRequest fileRequest = new LsFileRequest(getId(),
-                            surl, lifetime);
-                    requests.add(fileRequest);
-                }
-                setFileRequests(requests);
         }
 
         public  LsRequest(
@@ -80,7 +80,7 @@ public final class LsRequest extends ContainerRequest<LsFileRequest> {
                 int numberOfRetries,
                 long lastStateTransitionTime,
                 JobHistory[] jobHistoryArray,
-                LsFileRequest[] fileRequests,
+                ImmutableList<LsFileRequest> fileRequests,
                 int retryDeltaTime,
                 boolean should_updateretryDeltaTime,
                 String description,

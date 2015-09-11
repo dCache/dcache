@@ -73,7 +73,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,8 +103,6 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.stream.Collectors.toList;
-
 /*
  * @author  timur
  */
@@ -122,14 +120,15 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
                       String description,
                       String client_host)
     {
-        super(user, max_update_period, lifetime, description, client_host);
+        super(user, max_update_period, lifetime, description, client_host,
+              id -> {
+                  ImmutableList.Builder<GetFileRequest> requests = ImmutableList.builder();
+                  Stream.of(surls).distinct()
+                          .map(surl -> new GetFileRequest(id, surl, lifetime))
+                          .forEachOrdered(requests::add);
+                  return requests.build();
+              });
         this.protocols = Arrays.copyOf(protocols, protocols.length);
-
-        List<GetFileRequest> requests =
-                Stream.of(surls).distinct()
-                        .map(surl -> new GetFileRequest(getId(), surl, lifetime))
-                        .collect(toList());
-        setFileRequests(requests);
     }
 
     /**
@@ -148,7 +147,7 @@ public final class GetRequest extends ContainerRequest<GetFileRequest> {
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    GetFileRequest[] fileRequests,
+    ImmutableList<GetFileRequest> fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,

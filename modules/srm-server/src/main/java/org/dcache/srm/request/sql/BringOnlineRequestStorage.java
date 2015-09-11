@@ -14,6 +14,7 @@
 
 package org.dcache.srm.request.sql;
 
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -187,7 +188,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     String DESCRIPTION,
     String CLIENTHOST,
     String STATUSCODE,
-    BringOnlineFileRequest[] fileRequests,
+    ImmutableList<BringOnlineFileRequest> fileRequests,
     ResultSet set,
     int next_index)throws SQLException {
 

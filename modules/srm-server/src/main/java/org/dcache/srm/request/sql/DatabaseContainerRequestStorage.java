@@ -1,6 +1,6 @@
 package org.dcache.srm.request.sql;
 
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
     String DESCRIPTION,
     String CLIENTHOST,
     String STATUSCODE,
-    F[] fileRequests,
+    ImmutableList<F> fileRequests,
     ResultSet set,
     int next_index)throws SQLException;
 
@@ -102,7 +102,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         fileIdsSet.close();
         sqlStatement.close();
 
-        List<F> fileRequests = new ArrayList<>(fileIds.size());
+        ImmutableList.Builder<F> fileRequests = ImmutableList.builder();
         for (Long fileId : fileIds) {
             F job = getFileRequest(fileId, _con);
             if (job != null) {
@@ -129,7 +129,7 @@ public abstract class DatabaseContainerRequestStorage<C extends ContainerRequest
         DESCRIPTION,
         CLIENTHOST,
         STATUSCODE,
-        Iterables.toArray(fileRequests, fileRequestType),
+        fileRequests.build(),
         set,
         next_index );
     }

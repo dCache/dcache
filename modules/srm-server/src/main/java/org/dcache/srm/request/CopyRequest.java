@@ -67,6 +67,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm.request;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -85,6 +86,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.LongFunction;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -185,10 +187,19 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             TOverwriteMode overwriteMode,
             ImmutableMap<String,String> extraInfo)
     {
-        super(user, maxUpdatePeriod, lifetime, description, clientHost);
+        super(user, maxUpdatePeriod, lifetime, description, clientHost,
+              id -> {
+                  checkArgument(sourceUrl.length == destinationUrl.length,
+                                "unequal number of elements in url arrays");
+                  ImmutableList.Builder<CopyFileRequest> requests = ImmutableList.builder();
+                  for (int i = 0; i < sourceUrl.length; ++i) {
+                      requests.add(new CopyFileRequest(id, requestCredentialId, sourceUrl[i], destinationUrl[i],
+                                                       spaceToken, lifetime, extraInfo));
+                  }
+                  return requests.build();
+              });
 
         ArrayList<String> allowedProtocols = new ArrayList<>(4);
-
         if (getConfiguration().isUseGsiftpForSrmCopy()) {
             allowedProtocols.add("gsiftp");
         }
@@ -203,19 +214,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
 
         clientTransport = getConfiguration().getClientTransport();
-
         protocols = allowedProtocols.toArray(new String[allowedProtocols.size()]);
-        int requestCount = sourceUrl.length;
-        checkArgument(requestCount == destinationUrl.length,
-                "unequal number of elements in url arrays");
-        List<CopyFileRequest> requests = Lists.newArrayListWithCapacity(requestCount);
-        for (int i = 0; i < requestCount; ++i) {
-            CopyFileRequest request = new CopyFileRequest(getId(),
-                    requestCredentialId, sourceUrl[i], destinationUrl[i], spaceToken,
-                    lifetime, extraInfo);
-            requests.add(request);
-        }
-        setFileRequests(requests);
         this.callerSrmProtocol = checkNotNull(callerProtocolVersion);
         if (getConfiguration().getQosPluginClass() != null) {
             this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
@@ -245,7 +244,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             long lastStateTransitionTime,
             JobHistory[] jobHistoryArray,
             Long credentialId,
-            CopyFileRequest[] fileRequest,
+            ImmutableList<CopyFileRequest> fileRequest,
             int retryDeltaTime,
             boolean should_updateretryDeltaTime,
             String description,

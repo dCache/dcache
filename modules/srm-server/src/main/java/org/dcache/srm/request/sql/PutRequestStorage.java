@@ -6,10 +6,10 @@
 
 package org.dcache.srm.request.sql;
 
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.ConnectionCallback;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -217,7 +217,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
             String DESCRIPTION,
             String CLIENTHOST,
             String STATUSCODE,
-            PutFileRequest[] fileRequests,
+            ImmutableList<PutFileRequest> fileRequests,
             ResultSet set,
             int next_index)throws SQLException {
         String sqlStatementString = "SELECT PROTOCOL FROM " + getProtocolsTableName() +

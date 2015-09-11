@@ -1,5 +1,6 @@
 package org.dcache.srm.request.sql;
 
+import com.google.common.collect.ImmutableList;
 import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
@@ -159,7 +160,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                                        String DESCRIPTION,
                                                        String CLIENTHOST,
                                                        String STATUSCODE,
-                                                       LsFileRequest[] fileRequests,
+                                                       ImmutableList<LsFileRequest> fileRequests,
                                                        ResultSet set,
                                                        int next_index) throws SQLException {
                 Job.JobHistory[] jobHistoryArray = getJobHistory(ID,connection);

@@ -73,7 +73,7 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,8 +102,6 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static java.util.stream.Collectors.toList;
-
 /*
  * @author  timur
  */
@@ -124,10 +122,17 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
                               String client_host)
     {
         super(user,
-            max_update_period,
-            lifetime,
-            description,
-            client_host);
+              max_update_period,
+              lifetime,
+              description,
+              client_host,
+              id -> {
+                  ImmutableList.Builder<BringOnlineFileRequest> requests = ImmutableList.builder();
+                  Stream.of(surls).distinct()
+                          .map(surl -> new BringOnlineFileRequest(id, surl, lifetime))
+                          .forEachOrdered(requests::add);
+                  return requests.build();
+              });
         logger.debug("constructor");
         logger.debug("user = {}", user);
         if(protocols != null) {
@@ -138,12 +143,6 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
             this.protocols = null;
         }
         this.desiredOnlineLifetimeInSeconds = desiredOnlineLifetimeInSeconds;
-
-        List<BringOnlineFileRequest> requests =
-                Stream.of(surls).distinct()
-                        .map(surl -> new BringOnlineFileRequest(getId(), surl, lifetime))
-                        .collect(toList());
-        setFileRequests(requests);
     }
 
     /**
@@ -162,7 +161,7 @@ public final class BringOnlineRequest extends ContainerRequest<BringOnlineFileRe
     int numberOfRetries,
     long lastStateTransitionTime,
     JobHistory[] jobHistoryArray,
-    BringOnlineFileRequest[] fileRequests,
+    ImmutableList<BringOnlineFileRequest> fileRequests,
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
