@@ -141,18 +141,17 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     private boolean isDestinationLocal;
 
     private final String[] protocols;
-    private TFileStorageType storageType;
+    private final TFileStorageType storageType;
     private final TRetentionPolicy targetRetentionPolicy;
     private final TAccessLatency targetAccessLatency;
     private final TOverwriteMode overwriteMode;
-    private String targetSpaceToken;
 
-    private final Transport clientTransport;
+    private final transient String targetSpaceToken;
+    private final transient Transport clientTransport;
 
-    private transient final Multimap<String,Long> remoteSurlToFileReqIds =
-            HashMultimap.create();
+    private final transient Multimap<String,Long> remoteSurlToFileReqIds = HashMultimap.create();
     private transient TurlGetterPutter remoteTurlClient;
-    private transient QOSPlugin qosPlugin;
+    private final transient QOSPlugin qosPlugin;
 
     private volatile boolean processingDone;
 
@@ -199,9 +198,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
         clientTransport = getConfiguration().getClientTransport();
         protocols = allowedProtocols.toArray(new String[allowedProtocols.size()]);
-        if (getConfiguration().getQosPluginClass() != null) {
-            this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
-        }
+        this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
@@ -261,14 +258,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         clientTransport = getConfiguration().getClientTransport();
 
         protocols = allowedProtocols.toArray(new String[allowedProtocols.size()]);
-        if (getConfiguration().getQosPluginClass() != null) {
-            this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
-        }
+        this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = null;
         this.credentialId = credentialId;
+        targetSpaceToken = null;
      }
 
     @Override
