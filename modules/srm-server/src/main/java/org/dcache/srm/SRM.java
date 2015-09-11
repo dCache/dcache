@@ -594,7 +594,6 @@ public class SRM {
                     null, // no space reservation in v1
                     lifetime,
                     configuration.getCopyMaxPollPeriod(),
-                    SRMProtocol.V1_1,
                     TFileStorageType.PERMANENT,
                     null,
                     null, null,

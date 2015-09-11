@@ -12,7 +12,6 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNotSupportedException;
-import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.RequestCredential;
@@ -116,7 +115,6 @@ public class SrmCopy implements CredentialAwareHandler
                 spaceToken,
                 lifetime,
                 configuration.getCopyMaxPollPeriod(),
-                SRMProtocol.V2_1,  // Revisit: v2.1?
                 request.getTargetFileStorageType(),
                 targetRetentionPolicy,
                 targetAccessLatency,

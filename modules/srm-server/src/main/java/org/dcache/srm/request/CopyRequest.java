@@ -91,19 +91,15 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.SRMProtocol;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.client.RemoteTurlGetterV1;
 import org.dcache.srm.client.RemoteTurlGetterV2;
-import org.dcache.srm.client.RemoteTurlPutterV1;
 import org.dcache.srm.client.RemoteTurlPutterV2;
 import org.dcache.srm.client.RequestFailedEvent;
 import org.dcache.srm.client.TURLsArrivedEvent;
 import org.dcache.srm.client.TURLsGetFailedEvent;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.client.TurlGetterPutter;
-import org.dcache.srm.client.TurlGetterPutterV1;
 import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSPluginFactory;
 import org.dcache.srm.qos.QOSTicket;
@@ -126,7 +122,6 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
@@ -146,8 +141,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     private boolean isDestinationLocal;
 
     private final String[] protocols;
-    private SRMProtocol callerSrmProtocol;
-    private SRMProtocol remoteSrmProtocol;
     private TFileStorageType storageType;
     private final TRetentionPolicy targetRetentionPolicy;
     private final TAccessLatency targetAccessLatency;
@@ -170,7 +163,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             String spaceToken,
             long lifetime,
             long maxUpdatePeriod,
-            SRMProtocol callerProtocolVersion,
             TFileStorageType storageType,
             TRetentionPolicy targetRetentionPolicy,
             TAccessLatency targetAccessLatency,
@@ -207,7 +199,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
         clientTransport = getConfiguration().getClientTransport();
         protocols = allowedProtocols.toArray(new String[allowedProtocols.size()]);
-        this.callerSrmProtocol = checkNotNull(callerProtocolVersion);
         if (getConfiguration().getQosPluginClass() != null) {
             this.qosPlugin = QOSPluginFactory.createInstance(SRM.getSRM());
         }
@@ -435,44 +426,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 }
             }
             // need to fetch files from remote SRM system
-
-            if (getCallerSrmProtocol() == null || getCallerSrmProtocol() == SRMProtocol.V1_1) {
-                try {
-                    setRemoteTurlClient(new RemoteTurlGetterV1(getStorage(),
-                            credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
-                            clientTransport));
-                    getRemoteTurlClient().getInitialRequest();
-                    setRemoteSrmProtocol(SRMProtocol.V1_1);
-                 } catch (SRMException e) {
-                    LOG.error("connecting to server using version 1.1 protocol failed, trying version 2.1.1");
-                    setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
-                            credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
-                            this.getRemainingLifetime(), clientTransport));
-                    getRemoteTurlClient().getInitialRequest();
-                    setRemoteSrmProtocol(SRMProtocol.V2_1);
-                 }
-            } else if (getCallerSrmProtocol() == SRMProtocol.V2_1) {
-                try {
-                    setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
-                            credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
-                            this.getRemainingLifetime(), clientTransport));
-                    getRemoteTurlClient().getInitialRequest();
-                    setRemoteSrmProtocol(SRMProtocol.V2_1);
-                } catch (SRMException e) {
-                    LOG.error("connecting to server using version 2.1.1 protocol failed, trying version 1.1");
-                    setRemoteTurlClient(new RemoteTurlGetterV1(getStorage(),
-                            credential, remoteSurlsUniqueArray, getProtocols(),
-                            this, getConfiguration().getCopyMaxPollPeriod(), 2,
-                            clientTransport));
-                    getRemoteTurlClient().getInitialRequest();
-                    setRemoteSrmProtocol(SRMProtocol.V1_1);
-                }
-            } else {
-                throw new FatalJobFailure("unsupported SRM protocol");
-            }
+            setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
+                    credential, remoteSurlsUniqueArray, getProtocols(),
+                    this, getConfiguration().getCopyMaxPollPeriod(), 2,
+                    this.getRemainingLifetime(), clientTransport));
+            getRemoteTurlClient().getInitialRequest();
             getRemoteTurlClient().run();
             return;
         }
@@ -567,51 +525,16 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         // Now create an SRM client to fetch a TURL for each SURL.
 
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
-        if (getCallerSrmProtocol() == null || getCallerSrmProtocol() == SRMProtocol.V1_1) {
-            try {
-                setRemoteTurlClient(new RemoteTurlPutterV1(getStorage(),
-                        credential, destinationSurls, sizes, getProtocols(), this,
-                        getConfiguration().getCopyMaxPollPeriod(), 2,
-                        clientTransport));
-                getRemoteTurlClient().getInitialRequest();
-                setRemoteSrmProtocol(SRMProtocol.V1_1);
-             } catch (SRMException srme) {
-                 LOG.error("connecting with SRM v1.1 failed, trying with v2.2");
-                 setRemoteTurlClient(new RemoteTurlPutterV2(getStorage(),
-                         credential, destinationSurls, sizes, getProtocols(), this,
-                         getConfiguration().getCopyMaxPollPeriod(), 2,
-                         this.getRemainingLifetime(), getStorageType(),
-                         getTargetRetentionPolicy(), getTargetAccessLatency(),
-                         getOverwriteMode(), getTargetSpaceToken(),
-                         clientTransport));
-                 getRemoteTurlClient().getInitialRequest();
-                 setRemoteSrmProtocol(SRMProtocol.V2_1);
-             }
-        } else if (getCallerSrmProtocol() == SRMProtocol.V2_1) {
-            try {
-                setRemoteTurlClient(new RemoteTurlPutterV2(getStorage(),
-                        credential, destinationSurls, sizes, getProtocols(), this,
-                        getConfiguration().getCopyMaxPollPeriod(), 2,
-                        this.getRemainingLifetime(), getStorageType(),
-                        getTargetRetentionPolicy(), getTargetAccessLatency(),
-                        getOverwriteMode(), getTargetSpaceToken(),
-                        clientTransport));
-                getRemoteTurlClient().getInitialRequest();
-                setRemoteSrmProtocol(SRMProtocol.V2_1);
-             } catch (SRMException srme) {
-                 LOG.error("connecting with SRM v2.2 failed, trying with SRM v1.1");
-                setRemoteTurlClient(new RemoteTurlPutterV1(getStorage(),
-                        credential, destinationSurls, sizes, getProtocols(), this,
-                        getConfiguration().getCopyMaxPollPeriod(), 2,
-                        clientTransport));
-                getRemoteTurlClient().getInitialRequest();
-                setRemoteSrmProtocol(SRMProtocol.V1_1);
-             }
-         } else {
-             throw new FatalJobFailure("usupported SRM protocol: " + getCallerSrmProtocol());
-         }
+        setRemoteTurlClient(new RemoteTurlPutterV2(getStorage(),
+                                                   credential, destinationSurls, sizes, getProtocols(), this,
+                                                   getConfiguration().getCopyMaxPollPeriod(), 2,
+                                                   this.getRemainingLifetime(), getStorageType(),
+                                                   getTargetRetentionPolicy(), getTargetAccessLatency(),
+                                                   getOverwriteMode(), getTargetSpaceToken(),
+                                                   clientTransport));
+        getRemoteTurlClient().getInitialRequest();
 
-         getRemoteTurlClient().run();
+        getRemoteTurlClient().run();
     }
 
     public void turlArrived(String surl, String turl, String remoteRequestId,
@@ -722,29 +645,18 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             try {
                 Scheduler<?> scheduler = Scheduler.getScheduler(schedulerId);
                 RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
-                if (getRemoteSrmProtocol() == SRMProtocol.V1_1) {
-                    TurlGetterPutterV1.staticSetFileStatus(credential, surl,
-                            Integer.parseInt(requestId), Integer.parseInt(fileId),
-                            "Done",
-                            scheduler.getRetryTimeout(),
-                            scheduler.getMaxNumberOfRetries(),
-                            clientTransport);
-                } else if (getRemoteSrmProtocol() == SRMProtocol.V2_1) {
-                    if (isSourceSrm() && !isSourceLocal()) {
-                       RemoteTurlGetterV2.staticReleaseFile(credential,
-                               surl, requestId,
-                               scheduler.getRetryTimeout(),
-                               scheduler.getMaxNumberOfRetries(),
-                               clientTransport);
-                    } else {
-                        RemoteTurlPutterV2.staticPutDone(credential,
-                               surl, requestId,
-                               scheduler.getRetryTimeout(),
-                               scheduler.getMaxNumberOfRetries(),
-                               clientTransport);
-                    }
+                if (isSourceSrm() && !isSourceLocal()) {
+                   RemoteTurlGetterV2.staticReleaseFile(credential,
+                                                        surl, requestId,
+                                                        scheduler.getRetryTimeout(),
+                                                        scheduler.getMaxNumberOfRetries(),
+                                                        clientTransport);
                 } else {
-                    LOG.error("unknown or null callerSrmProtocol");
+                    RemoteTurlPutterV2.staticPutDone(credential,
+                           surl, requestId,
+                           scheduler.getRetryTimeout(),
+                           scheduler.getMaxNumberOfRetries(),
+                           clientTransport);
                 }
             } catch (Exception e) {
                 LOG.error("set remote file status to done failed, surl={}, " +
@@ -1096,45 +1008,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             return protocols;
         } finally {
             runlock();
-        }
-    }
-
-    /**
-     * @return the callerSrmProtocol
-     */
-    private SRMProtocol getCallerSrmProtocol()
-    {
-        rlock();
-        try {
-            return callerSrmProtocol;
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @return the remoteSrmProtocol
-     */
-    private SRMProtocol getRemoteSrmProtocol()
-    {
-        rlock();
-        try {
-            return remoteSrmProtocol;
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @param remoteSrmProtocol the remoteSrmProtocol to set
-     */
-    private void setRemoteSrmProtocol(SRMProtocol remoteSrmProtocol)
-    {
-        wlock();
-        try {
-            this.remoteSrmProtocol = remoteSrmProtocol;
-        } finally {
-            wunlock();
         }
     }
 
