@@ -70,7 +70,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +85,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.LongFunction;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -114,7 +112,6 @@ import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.util.Tools;
 import org.dcache.srm.v2_2.ArrayOfTCopyRequestFileStatus;
 import org.dcache.srm.v2_2.SrmCopyResponse;
@@ -145,13 +142,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     private final Long credentialId;
     private boolean isSourceSrm;
     private boolean isDestinationSrm;
-    private boolean isSourceGsiftp;
-    private boolean isDestinationGsiftp;
     private boolean isSourceLocal;
     private boolean isDestinationLocal;
-    private SrmUrl sourceUrl[];
-    private SrmUrl destinationUrls[];
-    private int fileCount;
 
     private final String[] protocols;
     private SRMProtocol callerSrmProtocol;
@@ -298,7 +290,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             SRMException, InterruptedException, IllegalStateTransition,
             FatalJobFailure
     {
-        LOG.debug("Proccessing request");
         if (getNumOfFileRequest() == 0) {
             try {
                 setState(State.FAILED, "Request contains zero file requests.");
@@ -308,29 +299,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             }
 
         }
-        setFileCount(getNumOfFileRequest());
-        LOG.debug("file count = {}", getFileCount());
-        wlock();
-        try {
-            List<CopyFileRequest> requests = getFileRequests();
-            sourceUrl = new SrmUrl[getFileCount()];
-            destinationUrls = new SrmUrl[getFileCount()];
-            for (int i = 0; i < getFileCount(); ++i) {
-                CopyFileRequest cfr = requests.get(i);
-                sourceUrl[i] = new SrmUrl(cfr.getSourceSurl());
-                destinationUrls[i] = new SrmUrl(cfr.getDestinationSurl());
-            }
-        } catch (MalformedURLException murle) {
-            LOG.error(murle.toString());
-            try {
-                setState(State.FAILED, murle.toString());
-            } catch (IllegalStateTransition ist) {
-                LOG.error("Illegal State Transition : {}", ist.getMessage());
-            }
-            return;
-        } finally {
-            wunlock();
-        }
+        LOG.debug("Processing request");
         identify();
         getTURLs();
     }
@@ -339,29 +308,32 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     {
         wlock();
         try {
-            String sourceProtocol = sourceUrl[0].getProtocol();
-            String sourceHost = sourceUrl[0].getHost();
-            int sourcePort = sourceUrl[0].getPort();
+            URI source = getFileRequests().get(0).getSourceSurl();
+            String sourceProtocol = source.getScheme();
+            String sourceHost = source.getHost();
+            int sourcePort = source.getPort();
 
-            String destinationProtocol = destinationUrls[0].getProtocol();
-            String destinationHost = destinationUrls[0].getHost();
-            int destinationPort = destinationUrls[0].getPort();
+            URI destination = getFileRequests().get(0).getDestinationSurl();
+            String destinationProtocol = destination.getScheme();
+            String destinationHost = destination.getHost();
+            int destinationPort = destination.getPort();
 
-            for (int i = 1; i < getFileCount(); ++i) {
-                if (!sourceUrl[i].getProtocol().equals(sourceProtocol) ||
-                        !sourceUrl[i].getHost().equals(sourceHost) ||
-                        sourceUrl[i].getPort() != sourcePort) {
-                    String err = "Source URL " + sourceUrl[i].getURL() +
-                            " is inconsistent with first source URL";
+            for (CopyFileRequest cfr : getFileRequests().subList(1, getNumOfFileRequest())) {
+                URI sourceSurl = cfr.getSourceSurl();
+                URI destinationSurl = cfr.getDestinationSurl();
+                if (!sourceSurl.getScheme().equals(sourceProtocol) ||
+                    !sourceSurl.getHost().equals(sourceHost) ||
+                    sourceSurl.getPort() != sourcePort) {
+                    String err = "Source URL " + sourceSurl + " is inconsistent with first source URL";
                     LOG.error(err);
                     throw new IOException(err);
                 }
 
-                if (!destinationUrls[i].getProtocol().equals(destinationProtocol) ||
-                        !destinationUrls[i].getHost().equals(destinationHost) ||
-                        destinationUrls[i].getPort() != destinationPort) {
-                    String err = "Destination URL " + destinationUrls[i].getURL() +
-                            " is inconsistent with first destination URL";
+                if (!destinationSurl.getScheme().equals(destinationProtocol) ||
+                    !destinationSurl.getHost().equals(destinationHost) ||
+                    destinationSurl.getPort() != destinationPort) {
+                    String err = "Destination URL " + destinationSurl +
+                                 " is inconsistent with first destination URL";
                     LOG.error(err);
                     throw new IOException(err);
                 }
@@ -369,22 +341,21 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
             isSourceSrm = sourceProtocol.equals("srm");
             isDestinationSrm = destinationProtocol.equals("srm");
-            isSourceGsiftp = sourceProtocol.equals("gsiftp");
-            isDestinationGsiftp = sourceProtocol.equals("gsiftp");
+            boolean isSourceGsiftp = sourceProtocol.equals("gsiftp");
+            boolean isDestinationGsiftp = sourceProtocol.equals("gsiftp");
 
             if (isSourceSrm) {
                 isSourceLocal = sourcePort == getConfiguration().getPort() &&
                         Tools.sameHost(getConfiguration().getSrmHosts(), sourceHost);
             } else {
-                isSourceLocal = getStorage().isLocalTransferUrl(sourceUrl[0].getURI());
+                isSourceLocal = getStorage().isLocalTransferUrl(source);
             }
 
             if (isDestinationSrm) {
                 isDestinationLocal = destinationPort == getConfiguration().getPort() &&
                         Tools.sameHost(getConfiguration().getSrmHosts(), destinationHost);
             } else {
-                isDestinationLocal = getStorage().isLocalTransferUrl(
-                            destinationUrls[0].getURI());
+                isDestinationLocal = getStorage().isLocalTransferUrl(destination);
             }
 
             LOG.debug("src (srm={}, gsiftp={}, local={}), " +
@@ -410,14 +381,14 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             QOSTicket qosTicket = getQosPlugin().createTicket(
                     credential.getCredentialName(),
                     getStorage().getFileMetaData(getUser(), cfr.getSourceSurl(), false).size,
-                    getSourceUrl(fileIndex).getURL(),
-                    getSourceUrl(fileIndex).getPort(),
-                    getSourceUrl(fileIndex).getPort(),
-                    getSourceUrl(fileIndex).getProtocol(),
-                    getDestinationUrl(fileIndex).getURL(),
-                    getDestinationUrl(fileIndex).getPort(),
-                    getDestinationUrl(fileIndex).getPort(),
-                    getDestinationUrl(fileIndex).getProtocol());
+                    cfr.getSourceSurl().toASCIIString(),
+                    cfr.getSourceSurl().getPort(),
+                    cfr.getSourceSurl().getPort(),
+                    cfr.getSourceSurl().getScheme(),
+                    cfr.getDestinationSurl().toASCIIString(),
+                    cfr.getDestinationSurl().getPort(),
+                    cfr.getDestinationSurl().getPort(),
+                    cfr.getDestinationSurl().getScheme());
             getQosPlugin().addTicket(qosTicket);
             if (getQosPlugin().submit()) {
                 cfr.setQOSTicket(qosTicket);
@@ -440,14 +411,14 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             LOG.debug("obtained credential={} id={}", credential, credential.getId());
 
-            for (int i = 0; i < getFileCount(); ++i) {
+            for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
                 if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
                     if (cfr.getSourceTurl() != null) {
                         cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                     } else {
                         // Since source SURLs are local, we can just set the path
-                        remoteSurlToFileReqIds.put(getSourceUrl(i).getURL(), cfr.getId());
+                        remoteSurlToFileReqIds.put(cfr.getSourceSurl().toASCIIString(), cfr.getId());
                         String path = localPathFromSurl(cfr.getDestinationSurl());
                         LOG.debug("setting destination path to {}", path);
                         cfr.setLocalDestinationPath(path);
@@ -507,7 +478,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         }
 
         if (isSourceSrm()) { // source is this storage system
-            for (int i = 0; i < this.getFileCount(); ++i) {
+            for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
 
                 if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null &&
@@ -519,14 +490,13 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 }
             }
         } else { // source is not SRM, so supplied values are the TURL(s)
-            for (int i = 0; i < this.getFileCount(); ++i) {
+            for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
 
                 if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null &&
                         cfr.getSourceTurl() == null) {
-                    LOG.debug("getTurlsArrived, setting \"from\" turl to {}",
-                            getSourceUrl(i).getURL());
-                    cfr.setSourceTurl(getSourceUrl(i).getURI());
+                    LOG.debug("getTurlsArrived, setting \"from\" turl to {}", cfr.getSourceSurl());
+                    cfr.setSourceTurl(cfr.getSourceSurl());
                     cfr.saveJob();
                 }
             }
@@ -537,7 +507,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         if (isDestinationSrm() && isDestinationLocal()) { // destination is this system
             // As we have a source (either a path or a TURL) for all files and
             // the destination is local, we have all the information needed.
-            for (int i = 0; i < this.getFileCount(); ++i) {
+            for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
                 if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
                     String path = localPathFromSurl(cfr.getDestinationSurl());
@@ -552,11 +522,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         if (!isDestinationSrm()) { // destination is some TURL
             // As we have a source (either a path or a TURL) for all files and
             // the destination is a TURL, we have all the information needed.
-            for (int i = 0; i < this.getFileCount(); ++i) {
+            for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
                 if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
-                    LOG.debug("setting destination to {}", getDestinationUrl(i).getURL());
-                    cfr.setDestinationTurl(getDestinationUrl(i).getURI());
+                    LOG.debug("setting destination to {}", cfr.getDestinationSurl());
+                    cfr.setDestinationTurl(cfr.getDestinationSurl());
                     cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                 }
             }
@@ -566,7 +536,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
         // The only possibility left is a remote destination SURLs, for which
         // we need to discover a TURLs.
 
-        for (int i = 0; i < getFileCount(); ++i) {
+        for (int i = 0; i < getNumOfFileRequest(); ++i) {
             CopyFileRequest cfr = getFileRequests().get(i);
             if (cfr.getState() != State.PENDING || cfr.getSchedulerId() != null) {
                 // copy file request has being canceled,failed or scheduled before
@@ -574,7 +544,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 //destination TURL has arrived, but request has not been scheduled
                 cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
             } else {
-                remoteSurlToFileReqIds.put(getDestinationUrl(i).getURL(), cfr.getId());
+                remoteSurlToFileReqIds.put(cfr.getDestinationSurl().toASCIIString(), cfr.getId());
             }
         }
 
@@ -1113,60 +1083,6 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             return isDestinationLocal;
         } finally {
             runlock();
-        }
-    }
-
-    /**
-     * @param i indext of the "from" url in the array
-     * @return the from_urls
-     */
-    private SrmUrl getSourceUrl(int i)
-    {
-        rlock();
-        try {
-            return sourceUrl[i];
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @param i indext of the "to" url in the array
-     * @return the to_urls
-     */
-    private SrmUrl getDestinationUrl(int i)
-    {
-        rlock();
-        try {
-            return destinationUrls[i];
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @return the number of files to be transfered in this request
-     */
-    private int getFileCount()
-    {
-        rlock();
-        try {
-            return fileCount;
-        } finally {
-            runlock();
-        }
-    }
-
-    /**
-     * @param files the number of files to be transferred in this request.
-     */
-    private void setFileCount(int files)
-    {
-        wlock();
-        try {
-            this.fileCount = files;
-        } finally {
-            wunlock();
         }
     }
 

@@ -92,7 +92,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Map;
 import java.util.Objects;
 
 import diskCacheV111.srm.RequestFileStatus;
@@ -112,7 +111,6 @@ import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 public final class CopyFileRequest extends FileRequest<CopyRequest> implements DelegatedCredentialAware
