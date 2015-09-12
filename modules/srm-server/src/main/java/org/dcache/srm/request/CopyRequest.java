@@ -89,8 +89,10 @@ import java.util.List;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
+import org.dcache.srm.SRMNotSupportedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.client.RemoteTurlGetterV2;
@@ -103,9 +105,7 @@ import org.dcache.srm.client.TurlGetterPutter;
 import org.dcache.srm.qos.QOSPlugin;
 import org.dcache.srm.qos.QOSPluginFactory;
 import org.dcache.srm.qos.QOSTicket;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Tools;
@@ -274,8 +274,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     public void proccessRequest() throws DataAccessException, IOException,
-            SRMException, InterruptedException, IllegalStateTransition,
-            FatalJobFailure
+            SRMException, InterruptedException, IllegalStateTransition
     {
         if (getNumOfFileRequest() == 0) {
             try {
@@ -387,13 +386,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     private void getTURLs() throws SRMException, IOException,
-            InterruptedException,IllegalStateTransition, DataAccessException,
-            FatalJobFailure
+            InterruptedException, IllegalStateTransition, DataAccessException
     {
         if (isSourceSrm() && !isSourceLocal()) { // implying destination is local
             if (getStorageType() != null && !storageType.equals(TFileStorageType.PERMANENT)) {
-                  throw new FatalJobFailure("TargetFileStorageType " +
-                          getStorageType() + " is not supported");
+                  throw new SRMNotSupportedException("TargetFileStorageType " + getStorageType() + " is not supported");
             }
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             LOG.debug("obtained credential={} id={}", credential, credential.getId());
@@ -681,7 +678,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     }
 
     @Override
-    public void run() throws NonFatalJobFailure, FatalJobFailure
+    public void run() throws SRMException, IllegalStateTransition
     {
         if (isProcessingDone()) {
             return;
@@ -702,15 +699,10 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             } else {
                 setState(State.ASYNCWAIT, "Waiting for transfers to complete.");
             }
-        } catch (SRMException | IllegalStateTransition | DataAccessException e) {
-            // FIXME some SRMException failures are temporary and others are
-            // permanent.  Code currently doesn't distinguish between them and
-            // always retries, even if problem isn't transitory.
-            throw new NonFatalJobFailure(e.getMessage());
         } catch (IOException e) {
-            throw new FatalJobFailure(e.getMessage(), e);
+            throw new SRMException(e.getMessage(), e);
         } catch (InterruptedException e) {
-            throw new FatalJobFailure("shutting down.");
+            throw new SRMException("shutting down.", e);
         }
     }
 

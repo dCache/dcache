@@ -72,7 +72,6 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
@@ -89,19 +88,17 @@ import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileBusyException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-
-import static java.util.Arrays.asList;
 
 /**
  *
@@ -365,57 +362,28 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     }
 
     @Override
-    public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
+    public synchronized void run()
+            throws SRMException, IllegalStateTransition
+    {
         logger.trace("run()");
-        try {
-            if(getPinId() == null) {
-                // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
-                // if srmPrepareToGet requests for files which there is an active srmPrepareToPut
-                // (no srmPutDone is yet called) request for.
-                //
-                // [ SRM 2.2, 5.1.3] SRM_FILE_BUSY: client requests for a file which there is an
-                // active srmPrepareToPut (no srmPutDone is yet called) request for.
-                if (SRM.getSRM().isFileBusy(surl)) {
-                    setStateAndStatusCode(State.FAILED, "The requested SURL is locked by an upload.",
-                            TStatusCode.SRM_FILE_BUSY);
-                    return;
-                }
-
-                GetRequest request = getContainerRequest();
-                setState(State.ASYNCWAIT, "Pinning file.");
-                pinFile(request);
-                return;
+        if(getPinId() == null) {
+            // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
+            // if srmPrepareToGet requests for files which there is an active srmPrepareToPut
+            // (no srmPutDone is yet called) request for.
+            //
+            // [ SRM 2.2, 5.1.3] SRM_FILE_BUSY: client requests for a file which there is an
+            // active srmPrepareToPut (no srmPutDone is yet called) request for.
+            if (SRM.getSRM().isFileBusy(surl)) {
+                throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
 
-            try {
-                computeTurl();
-            } catch (SRMAuthorizationException e) {
-                String error = e.getMessage();
-                logger.error(error);
-                try {
-                    setStateAndStatusCode(
-                            State.FAILED,
-                            error,
-                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                } catch (IllegalStateTransition ist) {
-                    logger.error(ist.getMessage());
-                }
-                return;
-            } catch (SRMException e) {
-                String error = "Cannot obtain TURL for file: " + e.getMessage();
-                try {
-                    setState(State.FAILED,error);
-                } catch (IllegalStateTransition ist) {
-                    logger.error(ist.getMessage());
-                }
-                return;
-            }
-        } catch (IllegalStateTransition | DataAccessException | SRMException e) {
-            // FIXME some SRMException failures are temporary and others are
-            // permanent.  Code currently doesn't distinguish between them and
-            // always retries, even if problem isn't transitory.
-            throw new NonFatalJobFailure(e.getMessage(), e);
+            GetRequest request = getContainerRequest();
+            setState(State.ASYNCWAIT, "Pinning file.");
+            pinFile(request);
+            return;
         }
+
+        computeTurl();
         logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
 
     }
@@ -438,7 +406,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from "+oldState+" to "+getState());
+        logger.debug("State changed from " + oldState + " to " + getState());
         if(state == State.READY) {
             try {
                 getContainerRequest().resetRetryDeltaTime();

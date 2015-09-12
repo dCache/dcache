@@ -74,6 +74,7 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
 
 import java.util.Collection;
 import java.util.Formatter;
@@ -86,6 +87,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.srm.SRMAuthorizationException;
+import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
 import org.dcache.srm.scheduler.spi.TransferStrategy;
@@ -93,6 +97,7 @@ import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.base.Strings.*;
@@ -457,9 +462,17 @@ public class Scheduler <T extends Job>
                     LOGGER.trace("Scheduler(id={}) exited sync block", getId());
                     try {
                         LOGGER.trace("Scheduler(id={}) calling job.run()", getId());
-                        job.run();
+                        try {
+                            job.run();
+                        } catch (SRMAuthorizationException e) {
+                            LOGGER.warn(e.toString());
+                            throw e;
+                        } catch (DataAccessException e) {
+                            LOGGER.error(e.toString());
+                            throw new SRMInternalErrorException("Database access error.", e);
+                        }
                         LOGGER.trace("Scheduler(id={}) job.run() returned", getId());
-                    } catch (NonFatalJobFailure e) {
+                    } catch (SRMInternalErrorException e) {
                         job.wlock();
                         try {
                             if (!job.getState().isFinal()) {
@@ -467,37 +480,30 @@ public class Scheduler <T extends Job>
                                     job.setState(State.RETRYWAIT, e.getMessage());
                                     startRetryTimer(job);
                                 } else {
-                                    job.setState(State.FAILED,
-                                                 "Too many retries; most recent failure was " + e.getMessage());
+                                    job.setStateAndStatusCode(State.FAILED, e.getMessage(), e.getStatusCode());
                                 }
                             }
-                        } catch (IllegalStateTransition ist) {
-                            LOGGER.error("Illegal State Transition : " + ist.getMessage());
                         } finally {
                             job.wunlock();
                         }
                         return;
-                    } catch (FatalJobFailure e) {
+                    } catch (SRMException e) {
                         job.wlock();
                         try {
                             if (!job.getState().isFinal()) {
-                                job.setState(State.FAILED, e.getMessage());
+                                job.setStateAndStatusCode(State.FAILED, e.getMessage(), e.getStatusCode());
                             }
-                        } catch (IllegalStateTransition ist) {
-                            LOGGER.error("Illegal State Transition : " + ist.getMessage());
                         } finally {
                             job.wunlock();
                         }
                         return;
-                    } catch (RuntimeException e) {
+                    } catch (RuntimeException | IllegalStateTransition e) {
                         LOGGER.error("Bug detected by SRM Scheduler", e);
                         job.wlock();
                         try {
                             if (!job.getState().isFinal()) {
-                                job.setState(State.FAILED, "Internal error: " + e.toString());
+                                job.setStateAndStatusCode(State.FAILED, "Internal error: " + e.toString(), TStatusCode.SRM_INTERNAL_ERROR);
                             }
-                        } catch (IllegalStateTransition ist) {
-                            LOGGER.error("Illegal State Transition : {}", ist.getMessage());
                         } finally {
                             job.wunlock();
                         }
@@ -509,17 +515,17 @@ public class Scheduler <T extends Job>
                         if (job.getState() == State.RUNNING) {
                             job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
                         }
-                    } catch (IllegalStateTransition e) {
-                        LOGGER.error("Illegal State Transition : " + e.getMessage());
                     } finally {
                         job.wunlock();
                     }
+                } catch (IllegalStateTransition e) {
+                    LOGGER.error("Bug detected by SRM Scheduler", e);
                 } catch (Throwable t) {
                     Thread thread = Thread.currentThread();
                     thread.getUncaughtExceptionHandler().uncaughtException(thread, t);
-                } finally {
-                    workSupplyService.distributeWork();
                 }
+            } finally {
+                workSupplyService.distributeWork();
             }
         }
     }

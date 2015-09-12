@@ -76,15 +76,12 @@ import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SrmReserveSpaceCallback;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
 import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
@@ -97,11 +94,6 @@ import org.dcache.util.TimeUtils.TimeUnitFormat;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.dcache.util.TimeUtils.*;
-
-import org.dcache.util.TimeUtils;
-import org.dcache.util.TimeUtils.TimeUnitFormat;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * File request is an abstract "SRM file request"
@@ -248,22 +240,18 @@ public final class ReserveSpaceRequest extends Request {
 
 
     @Override
-    public void run() throws NonFatalJobFailure, FatalJobFailure {
-        try{
-            SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
-            getStorage().srmReserveSpace(
-            getUser(),
-            sizeInBytes,
-            spaceReservationLifetime,
-            retentionPolicy == null ? null:retentionPolicy.getValue(),
-            accessLatency == null ? null:accessLatency.getValue(),
-            getDescription(),
-            callbacks
-            );
-            setState(State.ASYNCWAIT, "Reserving space.");
-        } catch(IllegalStateTransition e) {
-            throw new FatalJobFailure("cannot reserve space: " + e.getMessage());
-        }
+    public void run() throws IllegalStateTransition
+    {
+        SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
+        getStorage().srmReserveSpace(
+                getUser(),
+                sizeInBytes,
+                spaceReservationLifetime,
+                retentionPolicy == null ? null:retentionPolicy.getValue(),
+                accessLatency == null ? null:accessLatency.getValue(),
+                getDescription(),
+                callbacks);
+        setState(State.ASYNCWAIT, "Reserving space.");
     }
 
     public SrmStatusOfReserveSpaceRequestResponse getSrmStatusOfReserveSpaceRequestResponse() {

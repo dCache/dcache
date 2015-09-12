@@ -84,12 +84,12 @@ import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileBusyException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -331,75 +331,42 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public void run() throws NonFatalJobFailure, FatalJobFailure
+    public void run() throws SRMException, IllegalStateTransition
     {
         addDebugHistoryEvent("run method is executed");
-        try {
-            if (getFileId() == null) {
-                // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
-                // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
-                // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
-                // the same SURL, SRM_FILE_BUSY must be returned if the SURL can be overwritten, otherwise
-                // SRM_DUPLICATION_ERROR must be returned at the file level.
-                for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
-                    if (request != this) {
-                        if (!getContainerRequest().isOverwrite()) {
-                            setStateAndStatusCode(
-                                    State.FAILED,
-                                    "The requested SURL is locked by another upload.",
-                                    TStatusCode.SRM_DUPLICATION_ERROR);
-                        } else {
-                            setStateAndStatusCode(
-                                    State.FAILED,
-                                    "The requested SURL is locked by another upload.",
-                                    TStatusCode.SRM_FILE_BUSY);
-                        }
-                        return;
+        if (getFileId() == null) {
+            // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
+            // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
+            // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
+            // the same SURL, SRM_FILE_BUSY must be returned if the SURL can be overwritten, otherwise
+            // SRM_DUPLICATION_ERROR must be returned at the file level.
+            for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
+                if (request != this) {
+                    if (!getContainerRequest().isOverwrite()) {
+                        throw new SRMDuplicationException("The requested SURL is locked by another upload.");
+                    } else {
+                        throw new SRMFileBusyException("The requested SURL is locked by another upload.");
                     }
                 }
-
-                setState(State.ASYNCWAIT, "Doing name space lookup.");
-                CheckedFuture<String, ? extends SRMException> future =
-                        getStorage().prepareToPut(
-                                getUser(),
-                                getSurl(),
-                                getSize(),
-                                Objects.toString(getAccessLatency(), null),
-                                Objects.toString(getRetentionPolicy(), null),
-                                getSpaceReservationId(),
-                                getContainerRequest().isOverwrite());
-                future.addListener(new PutCallbacks(getId(), future), MoreExecutors.directExecutor());
-                return;
             }
 
-            try {
-                computeTurl();
-            } catch (SRMAuthorizationException e) {
-                String error = e.getMessage();
-                logger.error(error);
-                try {
-                    setStateAndStatusCode(State.FAILED,
-                            error,
-                            TStatusCode.SRM_AUTHORIZATION_FAILURE);
-                } catch (IllegalStateTransition ist) {
-                    logger.error(ist.getMessage());
-                }
-                return;
-            } catch (SRMException e) {
-                String error = "Cannot obtain TURL for file: " + e.getMessage();
-                try {
-                    setState(State.FAILED, error);
-                } catch (IllegalStateTransition ist) {
-                    logger.error(ist.getMessage());
-                }
-                return;
-            }
+            setState(State.ASYNCWAIT, "Doing name space lookup.");
+            CheckedFuture<String, ? extends SRMException> future =
+                    getStorage().prepareToPut(
+                            getUser(),
+                            getSurl(),
+                            getSize(),
+                            Objects.toString(getAccessLatency(), null),
+                            Objects.toString(getRetentionPolicy(), null),
+                            getSpaceReservationId(),
+                            getContainerRequest().isOverwrite());
+            future.addListener(new PutCallbacks(getId(), future), MoreExecutors.directExecutor());
+            return;
+        }
 
-            logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
-        }
-        catch(SRMException | DataAccessException | IllegalStateTransition e) {
-            throw new FatalJobFailure("cannot prepare to put: " + e.getMessage());
-        }
+        computeTurl();
+
+        logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
     }
 
 

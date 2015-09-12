@@ -72,13 +72,11 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request;
 
-import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
@@ -91,13 +89,12 @@ import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileBusyException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
@@ -332,28 +329,21 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     }
 
     @Override
-    public final void run() throws NonFatalJobFailure, FatalJobFailure {
+    public final void run() throws SRMFileBusyException, IllegalStateTransition, SRMInvalidRequestException
+    {
         logger.debug("run()");
-        try {
-            if(getPinId() == null) {
-                // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
-                // active srmPrepareToPut (no srmPutDone is yet called) request for.
-                if (SRM.getSRM().isFileBusy(surl)) {
-                    setStateAndStatusCode(State.FAILED, "The requested SURL is locked by an upload.",
-                            TStatusCode.SRM_FILE_BUSY);
-                }
-
-                logger.debug("pinId is null, asking to pin ");
-                BringOnlineRequest request = getContainerRequest();
-                setState(State.ASYNCWAIT, "Pinning file.");
-                pinFile(request);
-                return;
+        if(getPinId() == null) {
+            // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
+            // active srmPrepareToPut (no srmPutDone is yet called) request for.
+            if (SRM.getSRM().isFileBusy(surl)) {
+                throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
-        } catch(SRMException | DataAccessException | IllegalStateTransition e) {
-            // FIXME some SRMExceptions are permanent failures while others
-            // are temporary.  Code currently doesn't distinguish, so will
-            // always retry internally even if problem isn't transitory.
-            throw new NonFatalJobFailure(e.getMessage());
+
+            logger.debug("pinId is null, asking to pin ");
+            BringOnlineRequest request = getContainerRequest();
+            setState(State.ASYNCWAIT, "Pinning file.");
+            pinFile(request);
+            return;
         }
         logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
             " state to \"Ready\"");

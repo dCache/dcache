@@ -146,23 +146,21 @@ public abstract class Request extends Job {
     String client_host,
     String statusCodeString) {
         super(id,
-        nextJobId,
-        creationTime,
-        lifetime,
-        stateId,
-        errorMessage,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray);
+              nextJobId,
+              creationTime,
+              lifetime,
+              stateId,
+              errorMessage,
+              scheduelerId,
+              schedulerTimeStamp,
+              numberOfRetries,
+              lastStateTransitionTime,
+              jobHistoryArray,
+              statusCodeString);
         this.retryDeltaTime = retryDeltaTime;
         this.should_updateretryDeltaTime = should_updateretryDeltaTime;
         this.description = description;
         this.client_host = client_host;
-        this.statusCode = statusCodeString==null
-                ?null
-                :TStatusCode.fromString(statusCodeString);
         this.user = user;
         logger.debug("restored");
     }
@@ -189,13 +187,6 @@ public abstract class Request extends Job {
      * underlying storage system
      */
     private transient AbstractStorageElement storage;
-    /**
-     * Status code from version 2.2
-     * provides a better description of
-     * reasons for failure, etc
-     * need this to comply with the spec
-     */
-    private TStatusCode statusCode;
 
     public abstract String getMethod();
 
@@ -329,46 +320,6 @@ public abstract class Request extends Job {
         wlock();
         try {
             this.description = description;
-        } finally {
-            wunlock();
-        }
-    }
-
-    public TStatusCode getStatusCode() {
-        rlock();
-        try {
-            return statusCode;
-        } finally {
-            runlock();
-        }
-    }
-
-    public String getStatusCodeString() {
-        rlock();
-        try {
-            return statusCode==null ? null:statusCode.getValue() ;
-        } finally {
-            runlock();
-        }
-    }
-
-    public final void setStateAndStatusCode(
-            State state,
-            String description,
-            TStatusCode statusCode)  throws IllegalStateTransition  {
-        wlock();
-        try {
-            setState(state, description);
-            setStatusCode(statusCode);
-        } finally {
-            wunlock();
-        }
-    }
-
-    public void setStatusCode(TStatusCode statusCode) {
-        wlock();
-        try {
-            this.statusCode = statusCode;
         } finally {
             wunlock();
         }

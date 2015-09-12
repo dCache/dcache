@@ -129,15 +129,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     private transient QOSTicket qosTicket;
 
-    /**
-     * Status code from version 2.2
-     * provides a better description of
-     * reasons for failure, etc
-     * need this to comply with the spec
-     */
-    private TStatusCode statusCode;
-
-   /** Creates new FileRequest */
+    /** Creates new FileRequest */
     protected FileRequest(long requestId,
                           long lifetime)
     {
@@ -171,11 +163,8 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
         schedulerTimeStamp,
         numberOfRetries,
         lastStateTransitionTime,
-        jobHistoryArray);
+        jobHistoryArray, statusCodeString);
         this.requestId = requestId;
-        this.statusCode = statusCodeString==null
-                ?null
-                :TStatusCode.fromString(statusCodeString);
         logger.debug("restored");
 
     }
@@ -324,46 +313,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
      */
 
     public abstract long extendLifetime(long newLifetime) throws SRMException ;
-
-    public TStatusCode getStatusCode() {
-        rlock();
-        try {
-            return statusCode;
-        } finally {
-            runlock();
-        }
-    }
-
-     public String getStatusCodeString() {
-         rlock();
-         try {
-            return statusCode==null ? null:statusCode.getValue() ;
-         } finally {
-             runlock();
-         }
-    }
-
-    public final void setStateAndStatusCode(
-            State state,
-            String description,
-            TStatusCode statusCode)  throws IllegalStateTransition  {
-        wlock();
-        try {
-            setState(state, description);
-            setStatusCode(statusCode);
-        } finally {
-            wunlock();
-        }
-    }
-
-    public void setStatusCode(TStatusCode statusCode) {
-        wlock();
-        try {
-            this.statusCode = statusCode;
-        } finally {
-            wunlock();
-        }
-    }
 
     /**
      *

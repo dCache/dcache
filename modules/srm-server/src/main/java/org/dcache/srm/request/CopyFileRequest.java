@@ -100,10 +100,8 @@ import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.ShellCommandExecuter;
@@ -130,7 +128,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     private String remoteRequestId;
     private String remoteFileId;
     private String transferId;
-    private Exception transferError;
+    private SRMException transferError;
     //these are used if the transfer is performed in the pull mode for
     // storage of the space reservation related info
     private final String spaceReservationId;
@@ -563,7 +561,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     }
 
     private void runRemoteToLocalCopy() throws IllegalStateTransition,
-            SRMException, NonFatalJobFailure
+            SRMException
     {
         LOG.debug("copying from remote to local");
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
@@ -608,12 +606,11 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             // there was some kind of error during the transfer
 
             getStorage().killRemoteTransfer(getTransferId());
-            Exception transferError = getTransferError();
-            getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(),
-                                  (transferError == null) ? null : transferError.getMessage());
+            SRMException transferError = getTransferError();
+            getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(), transferError.getMessage());
             setDestinationFileId(null);
             setTransferId(null);
-            throw new NonFatalJobFailure(transferError.getMessage(), transferError);
+            throw transferError;
         }
     }
 
@@ -653,8 +650,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    private void runLocalToRemoteCopy() throws SRMException, NonFatalJobFailure,
-            IllegalStateTransition
+    private void runLocalToRemoteCopy() throws SRMException, IllegalStateTransition
     {
         if (getTransferId() == null) {
             LOG.debug("copying using storage.putToRemoteTURL");
@@ -668,13 +664,12 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             // there was some kind of error durign the transfer
             getStorage().killRemoteTransfer(getTransferId());
             setTransferId(null);
-            Exception e = getTransferError();
-            throw new NonFatalJobFailure(e.getMessage(), e);
+            throw getTransferError();
         }
     }
 
     @Override
-    public void run() throws NonFatalJobFailure, FatalJobFailure
+    public void run() throws SRMException, IllegalStateTransition
     {
         LOG.debug("copying");
         try {
@@ -705,8 +700,8 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 LOG.error("Unknown combination of to/from ursl");
                 setStateToFailed("Unknown combination of to/from ursl");
             }
-        } catch (IllegalStateTransition | IOException | SRMException | DataAccessException e) {
-            throw new NonFatalJobFailure(e.getMessage(), e);
+        } catch (IOException e) {
+            throw new SRMException(e.getMessage(), e);
         }
     }
 
@@ -995,7 +990,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * @return the transferError
      */
-    private Exception getTransferError()
+    private SRMException getTransferError()
     {
         rlock();
         try {
@@ -1008,7 +1003,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     /**
      * @param transferError the transferError to set
      */
-    private void setTransferError(Exception transferError)
+    private void setTransferError(SRMException transferError)
     {
         wlock();
         try {

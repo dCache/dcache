@@ -85,16 +85,15 @@ import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.JobStorageFactory;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.JDC;
+import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.util.TimeUtils;
 import org.dcache.util.TimeUtils.TimeUnitFormat;
 
@@ -116,6 +115,14 @@ public abstract class Job  {
     protected Long nextJobId;
 
     protected final long id;
+
+    /**
+     * Status code from version 2.2
+     * provides a better description of
+     * reasons for failure, etc
+     * need this to comply with the spec
+     */
+    private TStatusCode statusCode;
 
     private volatile State state = State.PENDING;
 
@@ -149,13 +156,13 @@ public abstract class Job  {
     // we can not call it from the constructor, since this may lead to recursive job restoration
     // leading to the exhaust of the pool of database connections
     protected Job(long id, Long nextJobId, long creationTime,
-    long lifetime,int stateId,String errorMessage,
-    String schedulerId,
-    long schedulerTimestamp,
-    int numberOfRetries,
-    long lastStateTransitionTime,
-    JobHistory[] jobHistoryArray
-    ) {
+                  long lifetime, int stateId, String errorMessage,
+                  String schedulerId,
+                  long schedulerTimestamp,
+                  int numberOfRetries,
+                  long lastStateTransitionTime,
+                  JobHistory[] jobHistoryArray,
+                  String statusCodeString) {
         this.id = id;
         this.nextJobId = nextJobId;
         this.creationTime = creationTime;
@@ -174,6 +181,9 @@ public abstract class Job  {
         } else {
             jobHistory.add(new JobHistory(nextLong(), state, "Request restored from database", System.currentTimeMillis()));
         }
+        this.statusCode = statusCodeString==null
+                ?null
+                :TStatusCode.fromString(statusCodeString);
     }
 
     /** Creates a new instance of Job */
@@ -408,7 +418,7 @@ public abstract class Job  {
     public void addHistoryEvent(String description){
         wlock();
         try {
-            jobHistory.add( new JobHistory(nextLong(),state,description, System.currentTimeMillis()));
+            jobHistory.add(new JobHistory(nextLong(), state, description, System.currentTimeMillis()));
         } finally {
             wunlock();
         }
@@ -481,7 +491,7 @@ public abstract class Job  {
         }
     }
 
-    public abstract void run() throws NonFatalJobFailure, FatalJobFailure;
+    public abstract void run() throws SRMException, IllegalStateTransition;
 
     //implementation should not block in this method
     // this method should make sure that the job is saved in the
@@ -523,6 +533,46 @@ public abstract class Job  {
         return retryTimer;
     }
 
+
+    public TStatusCode getStatusCode() {
+        rlock();
+        try {
+            return statusCode;
+        } finally {
+            runlock();
+        }
+    }
+
+    public void setStatusCode(TStatusCode statusCode) {
+        wlock();
+        try {
+            this.statusCode = statusCode;
+        } finally {
+            wunlock();
+        }
+    }
+
+    public String getStatusCodeString() {
+         rlock();
+         try {
+            return statusCode==null ? null:statusCode.getValue() ;
+         } finally {
+             runlock();
+         }
+    }
+
+    public void setStateAndStatusCode(
+            State state,
+            String description,
+            TStatusCode statusCode)  throws IllegalStateTransition  {
+        wlock();
+        try {
+            setState(state, description);
+            setStatusCode(statusCode);
+        } finally {
+            wunlock();
+        }
+    }
 
     /** Getter for property creator.
      * @return Value of property creator.

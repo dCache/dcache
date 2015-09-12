@@ -21,14 +21,11 @@ import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMTooManyResultsException;
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.IllegalStateTransition;
-import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.v2_2.ArrayOfString;
@@ -146,7 +143,7 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
 
         @Override
-        public synchronized void run() throws NonFatalJobFailure, FatalJobFailure {
+        public synchronized void run() {
             try {
                 LsRequest parent = getContainerRequest();
                 long t0 = 0;
