@@ -75,23 +75,11 @@ package org.dcache.srm.request;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.CheckedFuture;
 import org.apache.axis.types.UnsignedLong;
-import org.globus.util.GlobusURL;
-import org.gridforum.jgss.ExtendedGSSCredential;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Objects;
 
 import diskCacheV111.srm.RequestFileStatus;
@@ -106,7 +94,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
-import org.dcache.srm.util.ShellCommandExecuter;
 import org.dcache.srm.v2_2.TCopyRequestFileStatus;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
@@ -116,8 +103,6 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 public final class CopyFileRequest extends FileRequest<CopyRequest> implements DelegatedCredentialAware
 {
     private static final Logger LOG = LoggerFactory.getLogger(CopyFileRequest.class);
-
-    private static long lastTime;
 
     private final URI sourceSurl;
     private final URI destinationSurl;
@@ -465,56 +450,6 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         }
     }
 
-    private void runScriptCopy() throws SRMException, IOException,
-            GSSException, DataAccessException
-    {
-        URI from = getSourceTurl();
-        URI to = getDestinationTurl();
-        if (from == null && getLocalSourcePath() != null) {
-            if (to.getScheme().equalsIgnoreCase("gsiftp") ||
-                    to.getScheme().equalsIgnoreCase("http") ||
-                    to.getScheme().equalsIgnoreCase("ftp") ||
-                    to.getScheme().equalsIgnoreCase("dcap")) {
-                //need to add support for getting
-                from = getStorage().getGetTurl(getUser(), getSourceSurl(),
-                        new String[] {"gsiftp","http","ftp"}, null);
-            }
-        }
-        String fileId = null;
-        if (to == null && getLocalDestinationPath() != null) {
-            if (from.getScheme().equalsIgnoreCase("gsiftp") ||
-                    from.getScheme().equalsIgnoreCase("http") ||
-                    from.getScheme().equalsIgnoreCase("ftp") ||
-                    from.getScheme().equalsIgnoreCase("dcap")) {
-                fileId = getStorage().prepareToPut(getUser(),
-                                              getDestinationSurl(),
-                                              null,
-                                              Objects.toString(getContainerRequest().getTargetAccessLatency(), null),
-                                              Objects.toString(getContainerRequest().getTargetRetentionPolicy(), null),
-                                              getSpaceReservationId(),
-                                              getContainerRequest().isOverwrite())
-                                .checkedGet();
-                to = getStorage().getPutTurl(getUser(), fileId,
-                        new String[] {"gsiftp","http","ftp"}, null);
-            }
-        }
-        if (from == null || to == null) {
-            String error = "could not resolve either source or destination"+
-                    " from = "+from+" to = "+to;
-            LOG.error(error);
-            throw new SRMException(error);
-        }
-        LOG.debug("calling scriptCopy({},{})", from, to);
-        RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
-        scriptCopy(new GlobusURL(from.toString()),
-                   new GlobusURL(to.toString()),
-                   credential.getDelegatedCredential());
-        if (fileId != null) {
-            getStorage().putDone(getUser(), fileId, getDestinationSurl(), getConfiguration().isOverwrite());
-        }
-        setStateToDone();
-    }
-
     private void runLocalToLocalCopy() throws IllegalStateTransition, SRMException
     {
         LOG.debug("copying from local to local");
@@ -678,177 +613,18 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     {
         LOG.debug("copying");
         try {
-            if (getSourceTurl() != null && getSourceTurl().getScheme().equalsIgnoreCase("dcap")  ||
-                    getDestinationTurl() != null && getDestinationTurl().getScheme().equalsIgnoreCase("dcap") ||
-                    getConfiguration().isUseUrlcopyScript()) {
-                try {
-                    runScriptCopy();
-                    return;
-                } catch (SRMException | IOException | GSSException e) {
-                    LOG.warn("script failed: {}",
-                                e.toString());
-                    // fall-through to try other methods
-                }
-            }
             if (getLocalDestinationPath() != null && getLocalSourcePath() != null) {
                 runLocalToLocalCopy();
             } else if (getLocalDestinationPath() != null && getSourceTurl() != null) {
                 runRemoteToLocalCopy();
             } else if (getDestinationTurl() != null && getLocalSourcePath() != null) {
                 runLocalToRemoteCopy();
-            } else if (getSourceTurl() != null && getDestinationTurl() != null) {
-                javaUrlCopy(getSourceTurl().toURL(),
-                            getDestinationTurl().toURL());
-                LOG.debug("copy succeeded");
-                setStateToDone();
             } else {
-                LOG.error("Unknown combination of to/from ursl");
-                setStateToFailed("Unknown combination of to/from ursl");
+                LOG.error("Unknown combination of to/from URLs");
+                setStateToFailed("Unknown combination of to/from URLs");
             }
-        } catch (IllegalStateTransition | IOException | SRMException | DataAccessException e) {
+        } catch (IllegalStateTransition | SRMException | DataAccessException e) {
             throw new NonFatalJobFailure(e.getMessage(), e);
-        }
-    }
-
-    public synchronized static long uniqueCurrentTime()
-    {
-        long time = System.currentTimeMillis();
-        lastTime = lastTime < time ? time : lastTime + 1;
-        return lastTime;
-    }
-
-    public void scriptCopy(GlobusURL source, GlobusURL destination,
-            GSSCredential credential) throws IOException, GSSException
-    {
-        String proxyFile = null;
-        try {
-            String command = getConfiguration().getTimeout_script();
-            command = command + " " + getConfiguration().getTimeout();
-            command = command + " " + getConfiguration().getUrlcopy();
-            command = command + " -debug " + getConfiguration().isDebug();
-            if (credential != null) {
-                try {
-                    byte [] data = ((ExtendedGSSCredential)(credential)).export(
-                            ExtendedGSSCredential.IMPEXP_OPAQUE);
-                    proxyFile = getConfiguration().getProxies_directory()+
-                            "/proxy_"+credential.hashCode()+"_at_"+uniqueCurrentTime();
-                    LOG.debug("saving credential {} in proxy_file {}",
-                            credential.getName(), proxyFile);
-                    FileOutputStream out = new FileOutputStream(proxyFile);
-                    out.write(data);
-                    out.close();
-                    LOG.debug("save succeeded ");
-                } catch (IOException ioe) {
-                    LOG.error("saving credentials to "+proxyFile+" failed");
-                    LOG.error(ioe.toString());
-                    proxyFile = null;
-                }
-            }
-            if (proxyFile != null) {
-                command = command+" -x509_user_proxy " + proxyFile;
-                command = command+" -x509_user_key " + proxyFile;
-                command = command+" -x509_user_cert " + proxyFile;
-            }
-            int tcpBufferSize = getConfiguration().getTcp_buffer_size();
-            if (tcpBufferSize > 0) {
-                command = command + " -tcp_buffer_size " + tcpBufferSize;
-            }
-            int bufferSize = getConfiguration().getBuffer_size();
-            if (bufferSize > 0) {
-                command = command + " -buffer_size " + bufferSize;
-            }
-            int parallelStreams = getConfiguration().getParallel_streams();
-            if (parallelStreams > 0) {
-                command = command + " -parallel_streams " + parallelStreams;
-            }
-            command = command + " -src-protocol " + source.getProtocol();
-            if (source.getProtocol().equals("file")) {
-                command = command + " -src-host-port localhost";
-            } else {
-                command = command + " -src-host-port " + source.getHost() + ":"
-                        + source.getPort();
-            }
-            command = command + " -src-path " + source.getPath() +
-                    " -dst-protocol " + destination.getProtocol();
-            if (destination.getProtocol().equals("file")) {
-                command = command + " -dst-host-port localhost";
-            } else {
-                command = command + " -dst-host-port " + destination.getHost() +
-                        ":" + destination.getPort();
-            }
-            command = command + " -dst-path " + destination.getPath();
-            String sourceUsername = source.getUser();
-            if (sourceUsername != null) {
-                command = command + " -src_username " + sourceUsername;
-            }
-            String sourcePassword = source.getPwd();
-            if (sourcePassword != null) {
-                command = command + " -src_userpasswd " + sourcePassword;
-            }
-            String destinationUser = destination.getUser();
-            if (destinationUser != null) {
-                command = command + " -dst_username " + destinationUser;
-            }
-            String destinationPassword = destination.getPwd();
-            if (destinationPassword != null) {
-                command = command + " -dst_userpasswd " + destinationPassword;
-            }
-            String gsiftpclient = getConfiguration().getGsiftpclinet();
-            if (gsiftpclient != null) {
-                command = command + " -use-kftp " +
-                        (gsiftpclient.toLowerCase().contains("kftp"));
-            }
-            int rc = ShellCommandExecuter.execute(command);
-            LOG.debug("return code = {}", rc);
-            if (rc != 0) {
-                throw new IOException("return code = "+rc+", failure");
-            }
-        } finally {
-            if (proxyFile != null) {
-                try {
-                    LOG.debug("deleting proxy file {}", proxyFile);
-                    File f = new File(proxyFile);
-                    if (!f.delete()) {
-                        LOG.error("error deleting proxy cache {}", proxyFile);
-                    }
-                } catch (Exception e) {
-                    LOG.error("error deleting proxy cache {}: {}", proxyFile,
-                            e.toString());
-                }
-            }
-        }
-    }
-
-    public void javaUrlCopy(URL source, URL destination) throws IOException
-    {
-        InputStream in;
-        if (source.getProtocol().equals("file")) {
-            in = new FileInputStream(source.getPath());
-        } else {
-            in = source.openConnection().getInputStream();
-        }
-        OutputStream out;
-        if (destination.getProtocol().equals("file")) {
-            out = new FileOutputStream(destination.getPath());
-        } else {
-            URLConnection to_connect = destination.openConnection();
-            to_connect.setDoInput(false);
-            to_connect.setDoOutput(true);
-            out = to_connect.getOutputStream();
-        }
-        try {
-            int bufferSize = 4096;
-            byte[] bytes = new byte[bufferSize];
-            long total = 0;
-            int l;
-            while ((l = in.read(bytes)) != -1) {
-                total += l;
-                out.write(bytes, 0, l);
-            }
-            LOG.debug("done, copied {} bytes", total);
-        } finally {
-            in.close();
-            out.close();
         }
     }
 

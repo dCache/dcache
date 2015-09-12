@@ -16,13 +16,18 @@ package org.dcache.srm.unixfs;
 
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+import org.globus.util.GlobusURL;
+import org.gridforum.jgss.ExtendedGSSCredential;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nonnull;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringWriter;
@@ -34,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
@@ -83,6 +89,7 @@ public class Storage
   private final String[] putProtocols = {"gsiftp","enstore"};
   private final String[] getProtocols = {"gsiftp","enstore"};
 
+  private static long lastTime;
 
   private InetAddress myInetAddr;
   private final Configuration config; //srm configuration
@@ -1057,4 +1064,113 @@ public class Storage
         }
     }
 
+    public synchronized static long uniqueCurrentTime()
+    {
+        long time = System.currentTimeMillis();
+        lastTime = lastTime < time ? time : lastTime + 1;
+        return lastTime;
+    }
+
+    /* Currently unused - may be useful to implement third party copy */
+    public void scriptCopy(GlobusURL source, GlobusURL destination,
+                           GSSCredential credential) throws IOException, GSSException
+    {
+        String proxyFile = null;
+        try {
+            String command = config.getTimeout_script();
+            command = command + " " + config.getTimeout();
+            command = command + " " + config.getUrlcopy();
+            command = command + " -debug " + config.isDebug();
+            if (credential != null) {
+                try {
+                    byte [] data = ((ExtendedGSSCredential)(credential)).export(
+                            ExtendedGSSCredential.IMPEXP_OPAQUE);
+                    proxyFile = config.getProxies_directory()+
+                                "/proxy_"+credential.hashCode()+"_at_"+uniqueCurrentTime();
+                    logger.debug("saving credential {} in proxy_file {}",
+                              credential.getName(), proxyFile);
+                    FileOutputStream out = new FileOutputStream(proxyFile);
+                    out.write(data);
+                    out.close();
+                    logger.debug("save succeeded ");
+                } catch (IOException ioe) {
+                    logger.error("saving credentials to "+proxyFile+" failed");
+                    logger.error(ioe.toString());
+                    proxyFile = null;
+                }
+            }
+            if (proxyFile != null) {
+                command = command+" -x509_user_proxy " + proxyFile;
+                command = command+" -x509_user_key " + proxyFile;
+                command = command+" -x509_user_cert " + proxyFile;
+            }
+            int tcpBufferSize = config.getTcp_buffer_size();
+            if (tcpBufferSize > 0) {
+                command = command + " -tcp_buffer_size " + tcpBufferSize;
+            }
+            int bufferSize = config.getBuffer_size();
+            if (bufferSize > 0) {
+                command = command + " -buffer_size " + bufferSize;
+            }
+            int parallelStreams = config.getParallel_streams();
+            if (parallelStreams > 0) {
+                command = command + " -parallel_streams " + parallelStreams;
+            }
+            command = command + " -src-protocol " + source.getProtocol();
+            if (source.getProtocol().equals("file")) {
+                command = command + " -src-host-port localhost";
+            } else {
+                command = command + " -src-host-port " + source.getHost() + ":"
+                          + source.getPort();
+            }
+            command = command + " -src-path " + source.getPath() +
+                      " -dst-protocol " + destination.getProtocol();
+            if (destination.getProtocol().equals("file")) {
+                command = command + " -dst-host-port localhost";
+            } else {
+                command = command + " -dst-host-port " + destination.getHost() +
+                          ":" + destination.getPort();
+            }
+            command = command + " -dst-path " + destination.getPath();
+            String sourceUsername = source.getUser();
+            if (sourceUsername != null) {
+                command = command + " -src_username " + sourceUsername;
+            }
+            String sourcePassword = source.getPwd();
+            if (sourcePassword != null) {
+                command = command + " -src_userpasswd " + sourcePassword;
+            }
+            String destinationUser = destination.getUser();
+            if (destinationUser != null) {
+                command = command + " -dst_username " + destinationUser;
+            }
+            String destinationPassword = destination.getPwd();
+            if (destinationPassword != null) {
+                command = command + " -dst_userpasswd " + destinationPassword;
+            }
+            String gsiftpclient = config.getGsiftpclinet();
+            if (gsiftpclient != null) {
+                command = command + " -use-kftp " +
+                          (gsiftpclient.toLowerCase().contains("kftp"));
+            }
+            int rc = ShellCommandExecuter.execute(command);
+            logger.debug("return code = {}", rc);
+            if (rc != 0) {
+                throw new IOException("return code = "+rc+", failure");
+            }
+        } finally {
+            if (proxyFile != null) {
+                try {
+                    logger.debug("deleting proxy file {}", proxyFile);
+                    File f = new File(proxyFile);
+                    if (!f.delete()) {
+                        logger.error("error deleting proxy cache {}", proxyFile);
+                    }
+                } catch (Exception e) {
+                    logger.error("error deleting proxy cache {}: {}", proxyFile,
+                              e.toString());
+                }
+            }
+        }
+    }
 }
