@@ -339,7 +339,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
 
-            addDebugHistoryEvent("Pinning file.");
+            addHistoryEvent("Pinning file.");
             pinFile(getContainerRequest());
         }
     }

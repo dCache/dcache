@@ -374,7 +374,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
 
-            addDebugHistoryEvent("Pinning file.");
+            addHistoryEvent("Pinning file.");
             pinFile(getContainerRequest());
             return;
         }

@@ -696,7 +696,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             if (hasOnlyFinalFileRequests) {
                 setState(State.DONE, "All transfers completed.");
             } else {
-                addDebugHistoryEvent("Waiting for transfers to complete.");
+                addHistoryEvent("Waiting for transfers to complete.");
             }
         } catch (IOException e) {
             throw new SRMException(e.getMessage(), e);

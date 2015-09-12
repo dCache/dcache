@@ -167,12 +167,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     }
 
-    public void addDebugHistoryEvent(String description) {
-        if(getJobStorage().isJdbcLogRequestHistoryInDBEnabled()) {
-            addHistoryEvent( description);
-        }
-    }
-
     /**
      * @return the configuration
      */

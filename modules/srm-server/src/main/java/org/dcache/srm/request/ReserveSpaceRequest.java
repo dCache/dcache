@@ -243,7 +243,7 @@ public final class ReserveSpaceRequest extends Request {
     public void run() throws IllegalStateTransition
     {
         logger.trace("run");
-        addDebugHistoryEvent("Reserving space.");
+        addHistoryEvent("Reserving space.");
         SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
         getStorage().srmReserveSpace(
                 getUser(),

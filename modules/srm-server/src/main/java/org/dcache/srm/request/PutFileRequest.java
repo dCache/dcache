@@ -348,7 +348,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
             }
 
-            addDebugHistoryEvent("Doing name space lookup.");
+            addHistoryEvent("Doing name space lookup.");
             CheckedFuture<String, ? extends SRMException> future =
                     getStorage().prepareToPut(
                             getUser(),

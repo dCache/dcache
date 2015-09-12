@@ -532,7 +532,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         size = fmd.size;
 
         if (getDestinationFileId() == null) {
-            addDebugHistoryEvent("Doing name space lookup.");
+            addHistoryEvent("Doing name space lookup.");
             LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
@@ -566,7 +566,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         LOG.debug("copying from remote to local");
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         if (getDestinationFileId() == null) {
-            addDebugHistoryEvent("Doing name space lookup.");
+            addHistoryEvent("Doing name space lookup.");
             LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
@@ -582,7 +582,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         LOG.debug("known source size is {}", size);
 
         if (getTransferId() == null) {
-            addDebugHistoryEvent("started remote transfer, waiting completion");
+            addHistoryEvent("started remote transfer, waiting completion");
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId()) {
                 @Override
                 public void copyComplete()
@@ -657,7 +657,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
             setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
-            addDebugHistoryEvent("Transferring file.");
+            addHistoryEvent("Transferring file.");
             saveJob(true);
         } else {
             // transfer id is not null and we are scheduled
