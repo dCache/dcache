@@ -124,7 +124,7 @@ public abstract class Job  {
      */
     private TStatusCode statusCode;
 
-    private volatile State state = State.PENDING;
+    private volatile State state = State.UNSCHEDULED;
 
     protected int priority;
     protected String schedulerId;
@@ -315,42 +315,29 @@ public abstract class Job  {
             throws IllegalStateTransition
     {
         switch (currentState) {
-        case PENDING:
+        case UNSCHEDULED:
+        case RESTORED:
             return newState == State.DONE
                     || newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.TQUEUED;
-        case TQUEUED:
+                    || newState == State.QUEUED;
+        case QUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.PRIORITYTQUEUED
-                    || newState == State.PENDING;
-        case PRIORITYTQUEUED:
-            return newState == State.CANCELED
-                    || newState == State.FAILED
-                    || newState == State.RUNNING
-                    || newState == State.RESTORED;
-        case RUNNING:
+                    || newState == State.INPROGRESS
+                    || newState == State.UNSCHEDULED;
+        case INPROGRESS:
             return newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.RETRYWAIT
-                    || newState == State.ASYNCWAIT
                     || newState == State.RQUEUED
                     || newState == State.READY
                     || newState == State.DONE
-                    || newState == State.RUNNINGWITHOUTTHREAD
                     || newState == State.RESTORED;
-        case ASYNCWAIT:
-            return newState == State.CANCELED
-                    || newState == State.FAILED
-                    || newState == State.RUNNING
-                    || newState == State.PRIORITYTQUEUED
-                    || newState == State.DONE
-                    || newState == State.RETRYWAIT;
         case RETRYWAIT:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.TQUEUED;
+                    || newState == State.QUEUED;
         case RQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
@@ -364,8 +351,6 @@ public abstract class Job  {
             return newState == State.CANCELED
                     || newState == State.FAILED
                     || newState == State.DONE;
-        case RESTORED:
-            return newState == State.PRIORITYTQUEUED;
         case FAILED:
         case DONE:
         case CANCELED:
@@ -432,7 +417,7 @@ public abstract class Job  {
      public CharSequence getHistory(String padding) {
         StringBuilder historyStringBuillder = new StringBuilder();
         long previousTransitionTime = 0;
-        State previousTransitionState = State.PENDING;
+        State previousTransitionState = State.UNSCHEDULED;
         rlock();
         try {
             SimpleDateFormat format = new SimpleDateFormat(TimeUtils.TIMESTAMP_FORMAT);
@@ -967,10 +952,10 @@ public abstract class Job  {
     {
         wlock();
         try{
-            if(state != State.PENDING) {
+            if(state != State.UNSCHEDULED) {
                 throw new IllegalStateException("Job " +
                         getClass().getSimpleName() + " [" + this.getId() +
-                        "] has state " + state + "(not PENDING)");
+                        "] has state " + state + "(not UNSCHEDULED)");
             }
             setScheduler(scheduler.getId(), scheduler.getTimestamp());
             scheduler.schedule(this);
@@ -1058,12 +1043,12 @@ public abstract class Job  {
             switch (state) {
             // Pending jobs were never worked on before the SRM restart; we
             // simply schedule them now.
-            case TQUEUED:
-                setState(State.PENDING, "Restarting request.");
+            case QUEUED:
+                setState(State.UNSCHEDULED, "Restarting request.");
                 scheduler.schedule(this);
                 break;
 
-            case PENDING:
+            case UNSCHEDULED:
                 scheduler.schedule(this);
                 break;
 

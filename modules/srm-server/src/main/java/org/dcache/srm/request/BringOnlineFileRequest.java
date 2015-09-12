@@ -331,22 +331,17 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     @Override
     public final void run() throws SRMFileBusyException, IllegalStateTransition, SRMInvalidRequestException
     {
-        logger.debug("run()");
-        if(getPinId() == null) {
+        logger.trace("run");
+        if (getPinId() == null) {
             // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
             // active srmPrepareToPut (no srmPutDone is yet called) request for.
             if (SRM.getSRM().isFileBusy(surl)) {
                 throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
 
-            logger.debug("pinId is null, asking to pin ");
-            BringOnlineRequest request = getContainerRequest();
-            setState(State.ASYNCWAIT, "Pinning file.");
-            pinFile(request);
-            return;
+            addDebugHistoryEvent("Pinning file.");
+            pinFile(getContainerRequest());
         }
-        logger.info("PinId is "+getPinId()+" returning, scheduler should change" +
-            " state to \"Ready\"");
     }
 
 
@@ -357,15 +352,13 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         State state = getState();
 
         switch (state) {
-        case ASYNCWAIT:
+        case UNSCHEDULED:
         case RETRYWAIT:
-            // FIXME: we should log the SRM restart in the job's history.
-            scheduler.schedule(this);
-            break;
-
-        case PRIORITYTQUEUED:
-        case RUNNING:
+        case QUEUED:
+        case INPROGRESS:
             setState(State.RESTORED, "Rescheduled after SRM service restart");
+            // Fall through
+        case RESTORED:
             scheduler.schedule(this);
             break;
 
@@ -507,8 +500,8 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         }
 
         switch (getState()) {
-        case PENDING:
-        case TQUEUED:
+        case UNSCHEDULED:
+        case QUEUED:
         case RETRYWAIT:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:
@@ -597,7 +590,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     logger.debug("File pinned (pinId={}).", pin.pinId);
 
                     State state = fr.getState();
-                    if (state == State.ASYNCWAIT) {
+                    if (state == State.INPROGRESS) {
                         fr.setFileId(pin.fileMetaData.fileId);
                         fr.fileMetaData = pin.fileMetaData;
                         fr.setPinId(pin.pinId);

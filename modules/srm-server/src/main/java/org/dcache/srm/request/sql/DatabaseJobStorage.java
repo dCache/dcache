@@ -514,7 +514,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                    IllegalStateTransition
     {
         String sql = "SELECT ID FROM " + getTableName() +
-                " WHERE SCHEDULERID is NULL and State=" + State.PENDING.getStateId();
+                " WHERE SCHEDULERID is NULL and State=" + State.UNSCHEDULED.getStateId();
         for (Long ID : jdbcTemplate.queryForList(sql, Long.class)) {
             try {
                 scheduler.schedule(Job.getJob(ID, jobType));

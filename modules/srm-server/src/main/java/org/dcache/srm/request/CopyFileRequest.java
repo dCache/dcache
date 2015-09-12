@@ -532,7 +532,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         size = fmd.size;
 
         if (getDestinationFileId() == null) {
-            setState(State.ASYNCWAIT, "Doing name space lookup.");
+            addDebugHistoryEvent("Doing name space lookup.");
             LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
@@ -566,7 +566,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         LOG.debug("copying from remote to local");
         RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
         if (getDestinationFileId() == null) {
-            setState(State.ASYNCWAIT, "Doing name space lookup.");
+            addDebugHistoryEvent("Doing name space lookup.");
             LOG.debug("calling storage.prepareToPut({})", getLocalDestinationPath());
             CheckedFuture<String,? extends SRMException> future =
                     getStorage().prepareToPut(
@@ -582,7 +582,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
         LOG.debug("known source size is {}", size);
 
         if (getTransferId() == null) {
-            setState(State.RUNNINGWITHOUTTHREAD, "started remote transfer, waiting completion");
+            addDebugHistoryEvent("started remote transfer, waiting completion");
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId()) {
                 @Override
                 public void copyComplete()
@@ -657,7 +657,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             TheCopyCallbacks copycallbacks = new TheCopyCallbacks(getId());
             setTransferId(getStorage().putToRemoteTURL(getUser(), getSourceSurl(), getDestinationTurl(), getUser(), credential.getId(), extraInfo, copycallbacks));
-            setState(State.RUNNINGWITHOUTTHREAD, "Transferring file.");
+            addDebugHistoryEvent("Transferring file.");
             saveJob(true);
         } else {
             // transfer id is not null and we are scheduled
@@ -671,17 +671,17 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     @Override
     public void run() throws SRMException, IllegalStateTransition
     {
-        LOG.debug("copying");
+        LOG.trace("run");
         try {
-            if (getSourceTurl() != null && getSourceTurl().getScheme().equalsIgnoreCase("dcap")  ||
-                    getDestinationTurl() != null && getDestinationTurl().getScheme().equalsIgnoreCase("dcap") ||
-                    getConfiguration().isUseUrlcopyScript()) {
+            if (getSourceTurl() != null && getSourceTurl().getScheme().equalsIgnoreCase("dcap") ||
+                getDestinationTurl() != null && getDestinationTurl().getScheme().equalsIgnoreCase("dcap") ||
+                getConfiguration().isUseUrlcopyScript()) {
                 try {
                     runScriptCopy();
                     return;
                 } catch (SRMException | IOException | GSSException e) {
                     LOG.warn("script failed: {}",
-                                e.toString());
+                             e.toString());
                     // fall-through to try other methods
                 }
             }
@@ -1032,7 +1032,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 try {
                     String fileId = future.checkedGet();
                     State state = fr.getState();
-                    if (state == State.ASYNCWAIT) {
+                    if (state == State.INPROGRESS) {
                         LOG.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
                         fr.setDestinationFileId(fileId);
                         fr.saveJob(true);
@@ -1157,12 +1157,10 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
         case CANCELED:
             return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
-        case TQUEUED:
+        case QUEUED:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
-        case RUNNING:
+        case INPROGRESS:
         case RQUEUED:
-        case ASYNCWAIT:
-        case PRIORITYTQUEUED:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
         default:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);

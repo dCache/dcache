@@ -72,28 +72,24 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
+import java.util.Arrays;
+
 /**
  *
  * @author  timur
  */
 public enum State {
     /** Initial state: no processing has happened for job. */
-    PENDING        ("Pending",        0),
-
-    /** Job requires further activity and is waiting in scheduler. */
-    PRIORITYTQUEUED("PriorityTQueued",1),
+    UNSCHEDULED    ("Unscheduled",    0, new String[] { "Pending" }, new int[] { }),
 
     /** Job is waiting in scheduler for initial activity. */
-    TQUEUED        ("TQueued"        ,2),
+    QUEUED         ("Queued"         ,2, new String[] { "TQueued" }, new int[] { }),
 
     /** Job is being processed. */
-    RUNNING        ("Running"        ,3),
+    INPROGRESS     ("InProgress"     ,3, new String[] { "PriorityTQueued", "Running", "AsyncWait", "RunningWithoutThread" }, new int[] { 1, 5, 13 }),
 
     /** Job in timed wait. */
     RETRYWAIT      ("RetryWait"      ,4),
-
-    /** Job waiting for backend activity to complete. */
-    ASYNCWAIT      ("AsyncWait"      ,5),
 
     /** Job is successful and waits client requesting its status when the Ready queue isn't full. */
     RQUEUED        ("RQueued"        ,6),
@@ -112,29 +108,34 @@ public enum State {
 
     /** A resource limitation or some failure prevented job from completing successfully. */
     FAILED         ("Failed"         ,11, true),
-    RESTORED       ("Restored"       ,12),
-
-    /** Job has triggered a third-party copy. */
-    RUNNINGWITHOUTTHREAD("RunningWithoutThread"       ,13);
+    RESTORED       ("Restored"       ,12);
 
     private final String name;
     private final int stateId;
     private final boolean isFinal;
-
-
+    private final String[] fallbackName;
+    private final int[] fallbackId;
 
     private static final long serialVersionUID = 4561665427863772427L;
 
-    /** Creates a new instance of non final State  */
-    private State(String name,int stateId) {
+    State(String name, int stateId) {
         this(name, stateId, false);
     }
 
-    /** Creates a new instance of State */
-    private State(String name,int stateId, boolean isFinal) {
+    State(String name, int stateId, String[] fallbackName, int[] fallbackId) {
+        this(name, stateId, false, fallbackName, fallbackId);
+    }
+
+    State(String name, int stateId, boolean isFinal) {
+        this(name, stateId, isFinal, new String[0], new int[0]);
+    }
+
+    State(String name, int stateId, boolean isFinal, String[] fallbackName, int[] fallbackId) {
         this.name = name;
         this.stateId = stateId;
         this.isFinal = isFinal;
+        this.fallbackName = fallbackName;
+        this.fallbackId = fallbackId;
     }
 
     public String toString() {
@@ -144,37 +145,40 @@ public enum State {
     public int getStateId() {
         return stateId;
     }
-    /** this package visible method is used to restore the State from
-     * the database
-     */
-    public static State getState(String state) throws IllegalArgumentException {
-        if(state == null || state.equalsIgnoreCase("null")) {
-            throw new NullPointerException(" null state ");
-        }
-        for(State aState: values()) {
-            if(aState.name.equalsIgnoreCase(state)) {
-                return aState;
-            }
-        }
-        try{
-            int stateId = Integer.parseInt(state);
-            return getState(stateId);
-        } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Unknown State:"+state);
-        }
-        }
 
-    public static State getState(int stateId) throws IllegalArgumentException {
-
-      for(State aState: values()) {
-            if(aState.stateId == stateId) {
-                return aState;
+    public boolean hasName(String name) {
+        return this.name.equalsIgnoreCase(name) || Arrays.stream(fallbackName).anyMatch(name::equalsIgnoreCase);
     }
-        }
-        throw new IllegalArgumentException("Unknown State Id:"+stateId);
+
+    public boolean hasId(int id) {
+        return this.stateId == id || Arrays.stream(fallbackId).anyMatch(f -> f == id);
     }
 
     public boolean isFinal() {
         return isFinal;
+    }
+
+    /** this package visible method is used to restore the State from
+     * the database
+     */
+    public static State getState(String state) throws IllegalArgumentException {
+        if (state == null || state.equalsIgnoreCase("null")) {
+            throw new NullPointerException(" null state ");
+        }
+        try {
+            return Arrays.stream(values())
+                    .filter(s -> s.hasName(state))
+                    .findFirst()
+                    .orElseGet(() -> getState(Integer.parseInt(state)));
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Unknown State:"+state);
+        }
+    }
+
+    public static State getState(int stateId) throws IllegalArgumentException {
+        return Arrays.stream(values())
+                .filter(s -> s.hasId(stateId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown State Id:"+stateId));
     }
 }

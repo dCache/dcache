@@ -165,22 +165,22 @@ public final class ReserveSpaceRequest extends Request {
             String clienthost,
             String statusCodeString) {
                 super(id,
-                nextJobId,
-                creationTime,
-                lifetime,
-                stateId,
-                errorMessage,
-                user,
-                scheduelerId,
-                schedulerTimeStamp,
-                numberOfRetries,
-                lastStateTransitionTime,
-                jobHistoryArray,//VVV
-                retryDeltaTime,
-                false,
-                description,
-                clienthost,
-                statusCodeString);
+                      nextJobId,
+                      creationTime,
+                      lifetime,
+                      stateId,
+                      errorMessage,
+                      user,
+                      scheduelerId,
+                      schedulerTimeStamp,
+                      numberOfRetries,
+                      lastStateTransitionTime,
+                      jobHistoryArray,//VVV
+                      retryDeltaTime,
+                      false,
+                      description,
+                      clienthost,
+                      statusCodeString);
         this.sizeInBytes = sizeInBytes;
         this.spaceToken = spaceToken;
 
@@ -242,16 +242,17 @@ public final class ReserveSpaceRequest extends Request {
     @Override
     public void run() throws IllegalStateTransition
     {
+        logger.trace("run");
+        addDebugHistoryEvent("Reserving space.");
         SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
         getStorage().srmReserveSpace(
                 getUser(),
                 sizeInBytes,
                 spaceReservationLifetime,
-                retentionPolicy == null ? null:retentionPolicy.getValue(),
-                accessLatency == null ? null:accessLatency.getValue(),
+                retentionPolicy == null ? null : retentionPolicy.getValue(),
+                accessLatency == null ? null : accessLatency.getValue(),
                 getDescription(),
                 callbacks);
-        setState(State.ASYNCWAIT, "Reserving space.");
     }
 
     public SrmStatusOfReserveSpaceRequestResponse getSrmStatusOfReserveSpaceRequestResponse() {

@@ -89,7 +89,6 @@ import java.util.List;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileRequestNotFoundException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMNotSupportedException;
@@ -397,7 +396,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
-                if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
+                if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null) {
                     if (cfr.getSourceTurl() != null) {
                         cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
                     } else {
@@ -432,7 +431,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
 
-                if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null &&
+                if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null &&
                         cfr.getLocalSourcePath() == null) {
                     String path = localPathFromSurl(cfr.getSourceSurl());
                     LOG.debug("setting source path to {}", path);
@@ -444,7 +443,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
 
-                if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null &&
+                if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null &&
                         cfr.getSourceTurl() == null) {
                     LOG.debug("getTurlsArrived, setting \"from\" turl to {}", cfr.getSourceSurl());
                     cfr.setSourceTurl(cfr.getSourceSurl());
@@ -460,7 +459,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             // the destination is local, we have all the information needed.
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
-                if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
+                if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null) {
                     String path = localPathFromSurl(cfr.getDestinationSurl());
                     LOG.debug("setting local destination path to {}", path);
                     cfr.setLocalDestinationPath(path);
@@ -475,7 +474,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             // the destination is a TURL, we have all the information needed.
             for (int i = 0; i < getNumOfFileRequest(); ++i) {
                 CopyFileRequest cfr = getFileRequests().get(i);
-                if (cfr.getState() == State.PENDING && cfr.getSchedulerId() == null) {
+                if (cfr.getState() == State.UNSCHEDULED && cfr.getSchedulerId() == null) {
                     LOG.debug("setting destination to {}", cfr.getDestinationSurl());
                     cfr.setDestinationTurl(cfr.getDestinationSurl());
                     cfr.scheduleWith(Scheduler.getScheduler(schedulerId));
@@ -489,7 +488,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
         for (int i = 0; i < getNumOfFileRequest(); ++i) {
             CopyFileRequest cfr = getFileRequests().get(i);
-            if (cfr.getState() != State.PENDING || cfr.getSchedulerId() != null) {
+            if (cfr.getState() != State.UNSCHEDULED || cfr.getSchedulerId() != null) {
                 // copy file request has being canceled,failed or scheduled before
             } else if (cfr.getDestinationTurl() != null) {
                 //destination TURL has arrived, but request has not been scheduled
@@ -697,7 +696,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             if (hasOnlyFinalFileRequests) {
                 setState(State.DONE, "All transfers completed.");
             } else {
-                setState(State.ASYNCWAIT, "Waiting for transfers to complete.");
+                addDebugHistoryEvent("Waiting for transfers to complete.");
             }
         } catch (IOException e) {
             throw new SRMException(e.getMessage(), e);

@@ -71,7 +71,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nullable;
 
@@ -85,7 +84,6 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMDuplicationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileBusyException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
@@ -244,7 +242,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
             rfs.state = "Pending";
         }
 
-        logger.debug(" returning requestFileStatus for "+this.toString());
+        logger.debug(" returning requestFileStatus for " + this.toString());
         return rfs;
     }
 
@@ -333,7 +331,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     @Override
     public void run() throws SRMException, IllegalStateTransition
     {
-        addDebugHistoryEvent("run method is executed");
+        logger.trace("run");
         if (getFileId() == null) {
             // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
             // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
@@ -350,7 +348,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
             }
 
-            setState(State.ASYNCWAIT, "Doing name space lookup.");
+            addDebugHistoryEvent("Doing name space lookup.");
             CheckedFuture<String, ? extends SRMException> future =
                     getStorage().prepareToPut(
                             getUser(),
@@ -366,7 +364,14 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
         computeTurl();
 
-        logger.debug("run() returns, scheduler should bring file request into the ready state eventually");
+        wlock();
+        try {
+            if (getState() == State.INPROGRESS) {
+                setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+            }
+        } finally {
+            wunlock();
+        }
     }
 
 
@@ -525,8 +530,8 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
         }
 
         switch (getState()) {
-        case PENDING:
-        case TQUEUED:
+        case UNSCHEDULED:
+        case QUEUED:
         case RETRYWAIT:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:
@@ -590,7 +595,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
 
                     State state = fr.getState();
                     switch (state) {
-                    case ASYNCWAIT:
+                    case INPROGRESS:
                         logger.trace("Storage info arrived for file {}.", fr.getSurlString());
                         fr.setFileId(fileId);
                         fr.saveJob(true);

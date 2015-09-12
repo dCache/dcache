@@ -38,7 +38,7 @@ import static org.dcache.srm.scheduler.State.*;
 public class InProgressFairShareSchedulingStrategy extends DiscriminatingSchedulingStrategy implements SchedulingStrategy, StateChangeListener
 {
     private static final EnumSet<State> RUNNING_STATES =
-            EnumSet.of(PRIORITYTQUEUED, RUNNING, RQUEUED, READY, TRANSFERRING, ASYNCWAIT, RUNNINGWITHOUTTHREAD);
+            EnumSet.of(INPROGRESS, RQUEUED, READY, TRANSFERRING);
 
     private final Map<String,Queue<Long>> jobs = new HashMap<>();
     private final Multiset<String> counters = ConcurrentHashMultiset.create();

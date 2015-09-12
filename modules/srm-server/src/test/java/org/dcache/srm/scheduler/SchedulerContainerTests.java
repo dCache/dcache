@@ -24,8 +24,8 @@ import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.ReserveSpaceRequest;
 
-import static org.dcache.srm.scheduler.State.ASYNCWAIT;
-import static org.dcache.srm.scheduler.State.PENDING;
+import static org.dcache.srm.scheduler.State.INPROGRESS;
+import static org.dcache.srm.scheduler.State.UNSCHEDULED;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.*;
@@ -55,7 +55,7 @@ public class SchedulerContainerTests
 
     private <T extends Job> T mockJob(Class<T> type)
     {
-        return mockJob(type, PENDING, null);
+        return mockJob(type, UNSCHEDULED, null);
     }
 
     private <T extends Job> T mockJob(Class<T> type, State state, String schedulerId)
@@ -229,7 +229,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredLsFileRequests() throws Exception
     {
-        LsFileRequest job = mockJob(LsFileRequest.class, ASYNCWAIT, "ls_localhost");
+        LsFileRequest job = mockJob(LsFileRequest.class, INPROGRESS, "ls_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -242,7 +242,7 @@ public class SchedulerContainerTests
     public void shouldScheduleRestoredBringOnlineFileRequests() throws Exception
     {
         BringOnlineFileRequest job = mockJob(BringOnlineFileRequest.class,
-                ASYNCWAIT, "bring_online_localhost");
+                INPROGRESS, "bring_online_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -254,7 +254,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredGetFileRequests() throws Exception
     {
-        GetFileRequest job = mockJob(GetFileRequest.class, ASYNCWAIT,
+        GetFileRequest job = mockJob(GetFileRequest.class, INPROGRESS,
                 "get_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
@@ -267,7 +267,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredCopyRequests() throws Exception
     {
-        CopyRequest job = mockJob(CopyRequest.class, ASYNCWAIT, "copy_localhost");
+        CopyRequest job = mockJob(CopyRequest.class, INPROGRESS, "copy_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
 
@@ -279,7 +279,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredCopyFileRequests() throws Exception
     {
-        CopyFileRequest job = mockJob(CopyFileRequest.class, ASYNCWAIT,
+        CopyFileRequest job = mockJob(CopyFileRequest.class, INPROGRESS,
                 "copy_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
@@ -292,7 +292,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredPutFileRequests() throws Exception
     {
-        PutFileRequest job = mockJob(PutFileRequest.class, ASYNCWAIT,
+        PutFileRequest job = mockJob(PutFileRequest.class, INPROGRESS,
                 "put_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);
@@ -305,7 +305,7 @@ public class SchedulerContainerTests
     @Test
     public void shouldScheduleRestoredReserveSpaceRequests() throws Exception
     {
-        ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class, ASYNCWAIT,
+        ReserveSpaceRequest job = mockJob(ReserveSpaceRequest.class, INPROGRESS,
                 "reserve_space_localhost");
 
         container.restoreJobsOnSrmStart(Lists.newArrayList(job), false);

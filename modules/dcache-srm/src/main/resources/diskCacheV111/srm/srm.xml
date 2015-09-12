@@ -483,7 +483,6 @@
 
       <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
-      <property name="threadPoolSize" value="${srm.request.get.threads}"/>
       <property name="maxRequests" value="${srm.request.get.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.get.max-inprogress}"/>
       <property name="maxReadyJobs" value="${srm.request.get.max-transfers}"/>
@@ -503,7 +502,6 @@
 
       <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
-      <property name="threadPoolSize" value="${srm.request.ls.threads}"/>
       <property name="maxRequests" value="${srm.request.ls.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.ls.max-inprogress}"/>
       <property name="maxNumberOfRetries" value="${srm.request.ls.retries}"/>
@@ -522,7 +520,6 @@
 
       <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
-      <property name="threadPoolSize" value="${srm.request.bring-online.threads}"/>
       <property name="maxRequests" value="${srm.request.bring-online.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.bring-online.max-inprogress}"/>
       <property name="maxNumberOfRetries" value="${srm.request.bring-online.retries}"/>
@@ -541,7 +538,6 @@
 
       <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
-      <property name="threadPoolSize" value="${srm.request.put.threads}"/>
       <property name="maxRequests" value="${srm.request.put.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.put.max-inprogress}"/>
       <property name="maxReadyJobs" value="${srm.request.put.max-transfers}"/>
@@ -560,7 +556,6 @@
 
       <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
-      <property name="threadPoolSize" value="${srm.request.copy.threads}"/>
       <property name="maxRequests" value="${srm.request.copy.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.copy.max-inprogress}"/>
       <property name="maxNumberOfRetries" value="${srm.request.copy.retries}"/>
@@ -578,7 +573,6 @@
 
       <property name="schedulingStrategyProvider" ref="scheduling-strategy-provider"/>
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
-      <property name="threadPoolSize" value="${srm.request.reserve-space.threads}"/>
       <property name="maxRequests" value="${srm.request.reserve-space.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.reserve-space.max-inprogress}"/>
       <property name="maxNumberOfRetries" value="${srm.request.reserve-space.retries}"/>

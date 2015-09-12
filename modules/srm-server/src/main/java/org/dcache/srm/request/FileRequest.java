@@ -76,7 +76,6 @@ package org.dcache.srm.request;
 import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 
@@ -94,7 +93,6 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.TReturnStatus;
-import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Predicates.in;
 import static com.google.common.collect.Iterables.any;
@@ -209,7 +207,7 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
                     if( !state.isFinal()) {
                         if(state == State.READY ||
                            state == State.TRANSFERRING ||
-                           state == State.RUNNING) {
+                           state == State.INPROGRESS) {
                             setState(State.DONE, "SRM client set state to Done.");
                         }
                         else {

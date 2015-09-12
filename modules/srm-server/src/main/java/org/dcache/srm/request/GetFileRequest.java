@@ -77,7 +77,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 
@@ -86,10 +85,8 @@ import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileBusyException;
-import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -155,18 +152,18 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     String pinId
     ) {
         super(id,
-        nextJobId,
-        creationTime,
-        lifetime,
-        stateId,
-        errorMessage,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray,
-        requestId,
-        statusCodeString);
+              nextJobId,
+              creationTime,
+              lifetime,
+              stateId,
+              errorMessage,
+              scheduelerId,
+              schedulerTimeStamp,
+              numberOfRetries,
+              lastStateTransitionTime,
+              jobHistoryArray,
+              requestId,
+              statusCodeString);
 
         this.surl = URI.create(SURL);
         if(TURL != null && !TURL.equalsIgnoreCase("null")) {
@@ -365,8 +362,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     public synchronized void run()
             throws SRMException, IllegalStateTransition
     {
-        logger.trace("run()");
-        if(getPinId() == null) {
+        logger.trace("run");
+        if (getPinId() == null) {
             // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
             // if srmPrepareToGet requests for files which there is an active srmPrepareToPut
             // (no srmPutDone is yet called) request for.
@@ -377,15 +374,21 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                 throw new SRMFileBusyException("The requested SURL is locked by an upload.");
             }
 
-            GetRequest request = getContainerRequest();
-            setState(State.ASYNCWAIT, "Pinning file.");
-            pinFile(request);
+            addDebugHistoryEvent("Pinning file.");
+            pinFile(getContainerRequest());
             return;
         }
 
         computeTurl();
-        logger.info("PinId is "+getPinId()+" returning, scheduler should change state to \"Ready\"");
 
+        wlock();
+        try {
+            if (getState() == State.INPROGRESS) {
+                setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+            }
+        } finally {
+            wunlock();
+        }
     }
 
     public void pinFile(ContainerRequest request)
@@ -469,8 +472,8 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
         }
 
         switch (getState()) {
-        case PENDING:
-        case TQUEUED:
+        case UNSCHEDULED:
+        case QUEUED:
         case RETRYWAIT:
             return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);
         case READY:
@@ -622,7 +625,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                     AbstractStorageElement.Pin pin = future.checkedGet();
                     logger.debug("File pinned (pinId={}).", pin.pinId);
                     State state = fr.getState();
-                    if (state == State.ASYNCWAIT) {
+                    if (state == State.INPROGRESS) {
                         fr.setFileId(pin.fileMetaData.fileId);
                         fr.setFileMetaData(pin.fileMetaData);
                         fr.setPinId(pin.pinId);

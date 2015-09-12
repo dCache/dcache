@@ -82,20 +82,19 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.request.Job;
-import org.dcache.srm.scheduler.spi.TransferStrategy;
-import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 import org.dcache.srm.scheduler.spi.SchedulingStrategy;
 import org.dcache.srm.scheduler.spi.SchedulingStrategyProvider;
+import org.dcache.srm.scheduler.spi.TransferStrategy;
+import org.dcache.srm.scheduler.spi.TransferStrategyProvider;
 import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.TStatusCode;
 
@@ -111,7 +110,7 @@ public class Scheduler <T extends Job>
     private int maxRequests;
 
     // thread pool related variables
-    private final ThreadPoolExecutor pooledExecutor;
+    private final ExecutorService pooledExecutor;
 
     // ready state related variables
     private int maxReadyJobs;
@@ -167,7 +166,7 @@ public class Scheduler <T extends Job>
 
         workSupplyService = new WorkSupplyService();
         retryTimer = new Timer();
-        pooledExecutor = new ThreadPoolExecutor(30, 30, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        pooledExecutor = Executors.newCachedThreadPool();
 
         addScheduler(id, this);
     }
@@ -219,21 +218,21 @@ public class Scheduler <T extends Job>
         job.wlock();
         try {
             switch (job.getState()) {
-            case PENDING:
+            case UNSCHEDULED:
             case RETRYWAIT:
+            case RESTORED:
                 if (threadQueue(job)) {
-                    job.setState(State.TQUEUED, "Request enqueued.");
+                    job.setState(State.QUEUED, "Queued.");
                 } else {
                     LOGGER.warn("Maximum request limit reached.");
                     job.setState(State.FAILED, "Site busy: Too many queued requests.");
                 }
                 break;
-            case RESTORED:
-            case ASYNCWAIT:
-            case RUNNINGWITHOUTTHREAD:
-            case TQUEUED:
+            case QUEUED:
+                job.setState(State.INPROGRESS, "In progress.");
+                // fall through
+            case INPROGRESS:
                 LOGGER.trace("putting job in a thread queue, job#{}", job.getId());
-                job.setState(State.PRIORITYTQUEUED, "Waiting for thread.");
                 try {
                     pooledExecutor.execute(new JobWrapper(job));
                 } catch (RejectedExecutionException e) {
@@ -248,24 +247,14 @@ public class Scheduler <T extends Job>
         }
     }
 
-    public synchronized int getTotalRunningState()
+    public synchronized int getTotalQueued()
     {
-        return jobs.get(State.RUNNING).size();
+        return jobs.get(State.QUEUED).size();
     }
 
-    public synchronized int getTotalRunningWithoutThreadState()
+    private int getTotalInprogress()
     {
-        return jobs.get(State.RUNNINGWITHOUTTHREAD).size();
-    }
-
-    public synchronized int getTotalTQueued()
-    {
-        return jobs.get(State.TQUEUED).size();
-    }
-
-    public synchronized int getTotalPriorityTQueued()
-    {
-        return jobs.get(State.PRIORITYTQUEUED).size();
+        return jobs.get(State.INPROGRESS).size();
     }
 
     public synchronized int getTotalRQueued()
@@ -276,11 +265,6 @@ public class Scheduler <T extends Job>
     public synchronized int getTotalReady()
     {
         return jobs.get(State.READY).size();
-    }
-
-    public synchronized int getTotalAsyncWait()
-    {
-        return jobs.get(State.ASYNCWAIT).size();
     }
 
     public synchronized int getTotalRetryWait()
@@ -315,14 +299,9 @@ public class Scheduler <T extends Job>
         return jobs.size();
     }
 
-    private int getTotalInprogress()
-    {
-        return getTotalAsyncWait() + getTotalPriorityTQueued() + getTotalRunningState() + getTotalRunningWithoutThreadState();
-    }
-
     public double getLoad()
     {
-        return (getTotalTQueued() + getTotalInprogress()) / (double) getMaxInProgress();
+        return (getTotalQueued() + getTotalInprogress()) / (double) getMaxInProgress();
     }
 
     public long getTimestamp()
@@ -394,7 +373,7 @@ public class Scheduler <T extends Job>
                 Job job = Job.getJob(id, type);
                 job.wlock();
                 try {
-                    if (job.getState() == org.dcache.srm.scheduler.State.TQUEUED) {
+                    if (job.getState() == org.dcache.srm.scheduler.State.QUEUED) {
                         try {
                             schedule(job);
                         } catch (IllegalStateTransition e) {
@@ -426,44 +405,11 @@ public class Scheduler <T extends Job>
         {
             try (JDC ignored = job.applyJdc()) {
                 try {
-                    LOGGER.trace("Scheduler(id={}) entering sync(job) block", getId());
-                    job.wlock();
                     try {
-                        LOGGER.trace("Scheduler(id={}) entered sync(job) block", getId());
-                        State state = job.getState();
-                        LOGGER.trace("Scheduler(id={}) JobWrapper run() running job in state={}", getId(), state);
-
-                        switch (state) {
-                        case CANCELED:
-                        case FAILED:
-                            LOGGER.trace("Scheduler(id={}) returning", getId());
-                            return;
-                        case PENDING:
-                        case TQUEUED:
-                        case PRIORITYTQUEUED:
-                        case ASYNCWAIT:
-                        case RETRYWAIT:
-                            try {
-                                LOGGER.debug("Scheduler(id={}) changing job state to running", getId());
-                                job.setState(State.RUNNING, "Processing request");
-                            } catch (IllegalStateTransition ist) {
-                                LOGGER.error("Illegal State Transition : " + ist.getMessage());
-                                return;
-                            }
-                            break;
-                        default:
-                            LOGGER.error("Scheduler(id={}) job is in state {}; can not execute, returning", getId(), state);
-                            return;
-                        }
-                    } finally {
-                        job.wunlock();
-                    }
-
-                    LOGGER.trace("Scheduler(id={}) exited sync block", getId());
-                    try {
-                        LOGGER.trace("Scheduler(id={}) calling job.run()", getId());
                         try {
-                            job.run();
+                            if (!job.getState().isFinal()) {
+                                job.run();
+                            }
                         } catch (SRMAuthorizationException e) {
                             LOGGER.warn(e.toString());
                             throw e;
@@ -471,7 +417,6 @@ public class Scheduler <T extends Job>
                             LOGGER.error(e.toString());
                             throw new SRMInternalErrorException("Database access error.", e);
                         }
-                        LOGGER.trace("Scheduler(id={}) job.run() returned", getId());
                     } catch (SRMInternalErrorException e) {
                         job.wlock();
                         try {
@@ -486,7 +431,6 @@ public class Scheduler <T extends Job>
                         } finally {
                             job.wunlock();
                         }
-                        return;
                     } catch (SRMException e) {
                         job.wlock();
                         try {
@@ -496,7 +440,6 @@ public class Scheduler <T extends Job>
                         } finally {
                             job.wunlock();
                         }
-                        return;
                     } catch (RuntimeException | IllegalStateTransition e) {
                         LOGGER.error("Bug detected by SRM Scheduler", e);
                         job.wlock();
@@ -507,16 +450,6 @@ public class Scheduler <T extends Job>
                         } finally {
                             job.wunlock();
                         }
-                        return;
-                    }
-
-                    job.wlock();
-                    try {
-                        if (job.getState() == State.RUNNING) {
-                            job.setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
-                        }
-                    } finally {
-                        job.wunlock();
                     }
                 } catch (IllegalStateTransition e) {
                     LOGGER.error("Bug detected by SRM Scheduler", e);
@@ -593,27 +526,6 @@ public class Scheduler <T extends Job>
     public String getId()
     {
         return id;
-    }
-
-    /**
-     * Getter for property threadPoolSize.
-     *
-     * @return Value of property threadPoolSize.
-     */
-    public synchronized int getThreadPoolSize()
-    {
-        return pooledExecutor.getMaximumPoolSize();
-    }
-
-    /**
-     * Setter for property threadPoolSize.
-     *
-     * @param threadPoolSize New value of property threadPoolSize.
-     */
-    public synchronized void setThreadPoolSize(int threadPoolSize)
-    {
-        pooledExecutor.setCorePoolSize(threadPoolSize);
-        pooledExecutor.setMaximumPoolSize(threadPoolSize);
     }
 
     /**
@@ -696,7 +608,6 @@ public class Scheduler <T extends Job>
         private final Formatter formatter;
         private final int fieldWidth;
         private final int baseWidth;
-        private final String field1;
         private final String field2;
         private final String field2NoState;
 
@@ -706,29 +617,18 @@ public class Scheduler <T extends Job>
             this.fieldWidth = fieldWidth;
             this.baseWidth = Ints.max(width1, width2 - fieldWidth - 4) + 1;
 
-            this.field1 = String.format("    %%-%ds %%%dd%s     [%%s]\n", baseWidth, fieldWidth, repeat(" ", 4 + fieldWidth));
             this.field2 = String.format("    %%-%ds %%%dd     [%%s]\n", baseWidth + fieldWidth + 4, fieldWidth);
             this.field2NoState = String.format("    %%-%ds %%%dd\n", baseWidth + fieldWidth + 4, fieldWidth);
         }
 
-        public void column1(String description, int count, State state)
-        {
-            format(field1, padEnd(description + " ", baseWidth, '.'), count, state);
-        }
-
-        public void column2(String description, int count, State state)
+        public void field(String description, int count, State state)
         {
             format(field2, padEnd(description + " ", baseWidth + fieldWidth + 4, '.'), count, state);
         }
 
-        public void column2(String description, int count)
+        public void field(String description, int count)
         {
             format(field2NoState, padEnd(description + " ", baseWidth + fieldWidth + 4, '.'), count);
-        }
-
-        public void sum(String description, int count)
-        {
-            format(field2NoState, padEnd(description + " ", baseWidth, '.') + padStart("SUM >>", fieldWidth + 4, ' '), count);
         }
 
         public void line()
@@ -749,19 +649,15 @@ public class Scheduler <T extends Job>
                 new InfoFormatter(appendable, fieldWidth,
                                   Ints.max(24, 20 + fieldWidth),
                                   28 + fieldWidth);
-        formatter.column2("Queued", getTotalTQueued(), State.TQUEUED);
-        formatter.column1("Waiting for CPU", getTotalPriorityTQueued(), State.PRIORITYTQUEUED);
-        formatter.column1("Running (max " + getThreadPoolSize() + ")", getTotalRunningState(), State.RUNNING);
-        formatter.column1("Running without thread", getTotalRunningWithoutThreadState(), State.RUNNINGWITHOUTTHREAD);
-        formatter.column1("Waiting for callback", getTotalAsyncWait(), State.ASYNCWAIT);
-        formatter.sum("In progress (max " + getMaxInProgress() + ")", getTotalInprogress());
-        formatter.column2("Queued for retry", getTotalRetryWait(), State.RETRYWAIT);
+        formatter.field("Queued", getTotalQueued(), State.QUEUED);
+        formatter.field("In progress (max " + getMaxInProgress() + ")", getTotalInprogress(), State.INPROGRESS);
+        formatter.field("Queued for retry", getTotalRetryWait(), State.RETRYWAIT);
         if (getTotalRQueued() + getMaxReadyJobs() + getTotalReady() > 0) {
-            formatter.column2("Queued for transfer", getTotalRQueued(), State.RQUEUED);
-            formatter.column2("Waiting for transfer (max " + getMaxReadyJobs() + ")", getTotalReady(), State.READY);
+            formatter.field("Queued for transfer", getTotalRQueued(), State.RQUEUED);
+            formatter.field("Waiting for transfer (max " + getMaxReadyJobs() + ")", getTotalReady(), State.READY);
         }
         formatter.line();
-        formatter.column2("Total requests (max " + getMaxRequests() + ")", getTotalRequests());
+        formatter.field("Total requests (max " + getMaxRequests() + ")", getTotalRequests());
         formatter.format("\n");
         formatter.format("    Maximum number of retries       : %d\n", maxNumberOfRetries);
         formatter.format("    Retry timeout                   : %d ms\n", retryTimeout);
@@ -786,7 +682,7 @@ public class Scheduler <T extends Job>
     public synchronized void printThreadQueue(StringBuilder sb)
     {
         sb.append("ThreadQueue :\n");
-        printQueue(sb, jobs.get(State.TQUEUED));
+        printQueue(sb, jobs.get(State.QUEUED));
     }
 
     public synchronized void printReadyQueue(StringBuilder sb)

@@ -143,7 +143,9 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
 
 
         @Override
-        public synchronized void run() {
+        public synchronized void run() throws IllegalStateTransition
+        {
+            logger.trace("run");
             try {
                 LsRequest parent = getContainerRequest();
                 long t0 = 0;
@@ -179,11 +181,11 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                                                        "The requested SURL is locked by an upload."));
                 } else {
                     detail = getMetaDataPathDetail(surl,
-                                                  0,
-                                                  parent.getOffset(),
-                                                  parent.getCount(),
-                                                  parent.getNumOfLevels(),
-                                                  parent.getLongFormat());
+                                                   0,
+                                                   parent.getOffset(),
+                                                   parent.getCount(),
+                                                   parent.getNumOfLevels(),
+                                                   parent.getLongFormat());
                 }
                 if (logger.isDebugEnabled()) {
                     logger.debug("LsFileRequest.run(), TOOK " + (System.currentTimeMillis() - t0));
@@ -257,10 +259,8 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
                     return new TReturnStatus(TStatusCode.SRM_FAILURE, description);
                 case CANCELED:
                     return new TReturnStatus(TStatusCode.SRM_ABORTED, description);
-                case RUNNING:
+                case INPROGRESS:
                 case RQUEUED:
-                case ASYNCWAIT:
-                case PRIORITYTQUEUED:
                     return new TReturnStatus(TStatusCode.SRM_REQUEST_INPROGRESS, description);
                 default:
                     return new TReturnStatus(TStatusCode.SRM_REQUEST_QUEUED, description);

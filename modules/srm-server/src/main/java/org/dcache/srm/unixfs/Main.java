@@ -104,7 +104,6 @@ public class Main extends CommandInterpreter implements  Runnable {
         Scheduler scheduler = new Scheduler(name, type);
 
         scheduler.setMaxRequests(getIntConfigValue(configPrefix, "ReqTQueueSize"));
-        scheduler.setThreadPoolSize(getIntConfigValue(configPrefix, "ThreadPoolSize"));
         scheduler.setMaxInprogress(getIntConfigValue(configPrefix, "MaxWaitingRequests"));
         scheduler.setMaxNumberOfRetries(getIntConfigValue(configPrefix, "MaxNumOfRetries"));
         scheduler.setRetryTimeout(getLongConfigValue(configPrefix, "RetryTimeout"));
