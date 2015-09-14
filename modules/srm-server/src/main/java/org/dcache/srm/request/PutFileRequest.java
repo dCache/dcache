@@ -329,7 +329,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     }
 
     @Override
-    public void run() throws SRMException, IllegalStateTransition
+    public void run() throws IllegalStateTransition, SRMException
     {
         logger.trace("run");
         if (!getState().isFinal()) {
@@ -350,16 +350,17 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                 }
 
                 addHistoryEvent("Doing name space lookup.");
+                SRMUser user = getUser();
                 CheckedFuture<String, ? extends SRMException> future =
                         getStorage().prepareToPut(
-                                getUser(),
+                                user,
                                 getSurl(),
                                 getSize(),
                                 Objects.toString(getAccessLatency(), null),
                                 Objects.toString(getRetentionPolicy(), null),
                                 getSpaceReservationId(),
                                 getContainerRequest().isOverwrite());
-                future.addListener(new PutCallbacks(getId(), future), MoreExecutors.directExecutor());
+                future.addListener(new PutCallbacks(user, getId(), surl, future), MoreExecutors.directExecutor());
                 return;
             }
 
@@ -579,10 +580,15 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     {
         private final CheckedFuture<String, ? extends SRMException> future;
         private final long fileRequestJobId;
+        private final SRMUser user;
+        private final URI surl;
 
-        public PutCallbacks(long fileRequestJobId, CheckedFuture<String, ? extends SRMException> future)
+        public PutCallbacks(SRMUser user, long fileRequestJobId, URI surl,
+                            CheckedFuture<String, ? extends SRMException> future)
         {
+            this.user = user;
             this.fileRequestJobId = fileRequestJobId;
+            this.surl = surl;
             this.future = future;
         }
 
@@ -623,7 +629,11 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                     logger.error(ist.getMessage());
                 }
             } catch (SRMInvalidRequestException e) {
-                logger.warn(e.getMessage());
+                try {
+                    String fileId = future.checkedGet();
+                    SRM.getSRM().getStorage().abortPut(user, fileId, surl, "Request was aborted while being prepared.");
+                } catch (SRMException ignored) {
+                }
             }
         }
     }
