@@ -153,18 +153,18 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     String pinId
     ) {
         super(id,
-        nextJobId,
-        creationTime,
-        lifetime,
-        stateId,
-        errorMessage,
-        scheduelerId,
-        schedulerTimeStamp,
-        numberOfRetries,
-        lastStateTransitionTime,
-        jobHistoryArray,
-        requestId,
-        statusCodeString);
+              nextJobId,
+              creationTime,
+              lifetime,
+              stateId,
+              errorMessage,
+              scheduelerId,
+              schedulerTimeStamp,
+              numberOfRetries,
+              lastStateTransitionTime,
+              jobHistoryArray,
+              requestId,
+              statusCodeString);
 
         this.surl = URI.create(SURL);
 
@@ -405,12 +405,10 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 AbstractStorageElement storage = getStorage();
                 if (fileId != null && pinId != null) {
                     logger.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
-                    final CheckedFuture<String, ? extends SRMException> future =
-                            storage.unPinFile(user, fileId, pinId);
+                    CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(user, fileId, pinId);
                     future.addListener(() -> {
                         try {
-                            String pinId1 = future.checkedGet();
-                            logger.debug("File unpinned (pinId={}).", pinId1);
+                            logger.debug("File unpinned (pinId={}).", future.checkedGet());
                         } catch (SRMException e) {
                             logger.error("Unpinning failed: {}", e.getMessage());
                         }
@@ -421,7 +419,6 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 }
             } catch (SRMInternalErrorException | SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
-                return;
             }
             break;
         }

@@ -87,6 +87,7 @@ import org.dcache.srm.FileMetaData;
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMFileBusyException;
+import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -409,35 +410,39 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
     @Override
     protected void stateChanged(State oldState) {
         State state = getState();
-        logger.debug("State changed from " + oldState + " to " + getState());
-        if(state == State.READY) {
+        logger.debug("State changed from {} to {}", oldState, getState());
+        switch (state) {
+        case READY:
             try {
                 getContainerRequest().resetRetryDeltaTime();
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }
-        }
+            break;
 
-        if(state.isFinal()) {
-            if(getFileId() != null && getPinId() != null) {
-                logger.info("state changed to final state, unpinning fileId= "+ getFileId()+" pinId = "+getPinId());
-                SRMUser user;
-                try {
-                    user = getUser();
-                } catch (SRMInvalidRequestException ire) {
-                    logger.error(ire.toString()) ;
-                    return;
+        case DONE:
+        case FAILED:
+        case CANCELED:
+            AbstractStorageElement storage = getStorage();
+            try {
+                SRMUser user = getUser();
+                String fileId = getFileId();
+                String pinId = getPinId();
+                if (fileId != null && pinId != null) {
+                    logger.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
+                    CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(user, fileId, pinId);
+                    future.addListener(() -> {
+                        try {
+                            logger.debug("Unpinned (pinId={}).", future.checkedGet());
+                        } catch (SRMException e) {
+                            logger.error("Unpinning failed: {}", e.getMessage());
+                        }
+                    }, MoreExecutors.directExecutor());
+                } else {
+                    BringOnlineFileRequest.unpinBySURLandRequestToken(storage, user, String.valueOf(getRequestId()), getSurl());
                 }
-                final CheckedFuture<String, ? extends SRMException> future =
-                        getStorage().unPinFile(user, getFileId(), getPinId());
-                future.addListener(() -> {
-                    try {
-                        String pinId1 = future.checkedGet();
-                        logger.debug("Unpinned (pinId={}).", pinId1);
-                    } catch (SRMException e) {
-                        logger.error("Unpinning failed: {}", e.getMessage());
-                    }
-                }, MoreExecutors.directExecutor());
+            } catch (SRMInternalErrorException | SRMInvalidRequestException e) {
+                logger.error(e.toString()) ;
             }
         }
 
