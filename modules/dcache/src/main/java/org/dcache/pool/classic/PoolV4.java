@@ -4,12 +4,16 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Throwables;
 import com.google.common.net.InetAddresses;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -26,6 +30,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -104,6 +109,7 @@ import org.dcache.util.IoPriority;
 import org.dcache.util.Version;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 public class PoolV4
@@ -1873,71 +1879,111 @@ public class PoolV4
         return "";
     }
 
-    public static final String hh_mover_set_max_active = "<maxActiveIoMovers> -queue=<queueName>";
-    public static final String hh_mover_queue_ls = "";
     public static final String hh_mover_ls = "[-binary [jobId] ]";
     public static final String hh_mover_remove = "<jobId>";
     public static final String hh_mover_kill = "<jobId> [-force]" ;
-    public static final String hh_p2p_set_max_active = "<maxActiveIoMovers>";
     public static final String hh_p2p_ls = "[-binary [jobId] ]";
     public static final String hh_p2p_remove = "<jobId>; OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
     public static final String hh_p2p_kill = "<jobId> [-force]; OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
 
-    public String ac_mover_set_max_active_$_1(Args args)
-        throws NumberFormatException, IllegalArgumentException
+    @Command(name = "mover set max active",
+            hint = "set the maximum number of active client transfers",
+            description = "Set the maximum number of allowed concurrent transfers. " +
+                    "If any further requests are send after the set maximum value is " +
+                    "reach, these requests will be queued. A classic usage will be " +
+                    "to set the maximum number of client concurrent transfer request " +
+                    "allowed.\n\n" +
+                    "Note that, this set maximum value will also be used by the cost " +
+                    "module for calculating the performance cost.")
+    public class MoverSetMaxActiveCommand implements Callable<String>
     {
-        String queueName = args.getOpt("queue");
+        @Argument(metaVar = "maxActiveMovers",
+                usage = "Specify the maximum number of active client transfers.")
+        int maxActiveIoMovers;
 
-        if (queueName == null) {
-            return mover_set_max_active(_ioQueue.getDefaultQueue(), args);
+        @Option(name = "queue", metaVar = "queueName",
+                usage = "Specify the mover queue name to operate on. If unspecified, " +
+                        "the default mover queue is assumed.")
+        String queueName;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            if (queueName == null) {
+                return mover_set_max_active(_ioQueue.getDefaultQueue(), maxActiveIoMovers);
+            }
+
+            IoScheduler js = _ioQueue.getQueue(queueName);
+
+            if (js == null) {
+                return "Not found : " + queueName;
+            }
+
+            return mover_set_max_active(js, maxActiveIoMovers);
         }
-
-        IoScheduler js = _ioQueue.getQueue(queueName);
-
-        if (js == null) {
-            return "Not found : " + queueName;
-        }
-
-        return mover_set_max_active(js, args);
-
     }
 
-    public String ac_p2p_set_max_active_$_1(Args args)
-        throws NumberFormatException, IllegalArgumentException
+    @Command(name = "p2p set max active",
+            hint = "set the maximum number of active pool-to-pool server transfers",
+            description = "Set the maximum number of active pool-to-pool " +
+                    "(server-side) concurrent transfers allowed. Any further " +
+                    "requests will be queued. This value will also be used by " +
+                    "the cost module for calculating the performance cost.")
+    public class P2pSetMaxActiveCommand implements Callable<String>
     {
-        IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
-        return mover_set_max_active(p2pQueue, args);
+        @Argument(usage = "The maximum number of active pool-to-pool server transfers")
+        int maxActiveP2PTransfers;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
+            return mover_set_max_active(p2pQueue, maxActiveP2PTransfers);
+        }
     }
 
-    private String mover_set_max_active(IoScheduler js, Args args)
-        throws NumberFormatException, IllegalArgumentException
+    private String mover_set_max_active(IoScheduler js, int active)
+            throws IllegalArgumentException
     {
-        int active = Integer.parseInt(args.argv(0));
-        if (active < 0) {
-            throw new IllegalArgumentException("<maxActiveMovers> must be >= 0");
-        }
+        checkArgument(active > 0, "<maxActiveMovers> must be >= 0");
         js.setMaxActiveJobs(active);
 
         return "Max Active Io Movers set to " + active;
     }
 
-    public Object ac_mover_queue_ls_$_0_1(Args args)
+    @Command(name = "mover queue ls",
+            hint = "list all mover queues in this pool",
+            description = "List information about the mover queues in this pool. " +
+                    "Only the names of the mover queues are listed if the option '-l' " +
+                    "is not specified.")
+    public class MoverQueueLsCommand implements Callable<Serializable>
     {
-        StringBuilder sb = new StringBuilder();
+        @Option(name = "l",
+                usage = "Get additional information on the mover queues. " +
+                        "The returned information comprises of: the name of the " +
+                        "mover queue, number of active transfer, maximum number " +
+                        "of allowed transfer and the length of the queued transfer.")
+        boolean l;
 
-        if (args.hasOption("l")) {
-            for (IoScheduler js : _ioQueue.getQueues()) {
-                sb.append(js.getName())
-                    .append(" ").append(js.getActiveJobs())
-                    .append(" ").append(js.getMaxActiveJobs())
-                    .append(" ").append(js.getQueueSize()).append("\n");
+        @Override
+        public Serializable call()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (l) {
+                for (IoScheduler js : _ioQueue.getQueues()) {
+                    sb.append(js.getName())
+                            .append(" ").append(js.getActiveJobs())
+                            .append(" ").append(js.getMaxActiveJobs())
+                            .append(" ").append(js.getQueueSize()).append("\n");
+                }
+            } else {
+                for (IoScheduler js : _ioQueue.getQueues()) {
+                    sb.append(js.getName()).append("\n");
+                }
             }
-        } else {
-            for (IoScheduler js : _ioQueue.getQueues()) {
-                sb.append(js.getName()).append("\n");
-            }
+            return sb.toString();
         }
-        return sb.toString();
     }
 
     public Object ac_mover_ls_$_0_1(Args args)
