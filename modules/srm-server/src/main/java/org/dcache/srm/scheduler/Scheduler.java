@@ -84,7 +84,6 @@ import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
@@ -99,7 +98,8 @@ import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.TStatusCode;
 
 import static com.google.common.base.Preconditions.*;
-import static com.google.common.base.Strings.*;
+import static com.google.common.base.Strings.padEnd;
+import static com.google.common.base.Strings.repeat;
 
 public class Scheduler <T extends Job>
 {
@@ -206,45 +206,45 @@ public class Scheduler <T extends Job>
         pooledExecutor.shutdownNow();
     }
 
-
-    public void schedule(Job job)
-            throws IllegalStateException, IllegalArgumentException,
-                   IllegalStateTransition
+    /**
+     * Places a job in the queue.
+     *
+     * The job is moved to the QUEUED state. The job will be moved to the INPROGRESS state
+     * in accordance with the scheduling strategy of this scheduler.
+     *
+     * This action is subject to request limits and may cause the job to be failed
+     * immediately if the limits are exceeded.
+     */
+    public void queue(Job job) throws IllegalStateTransition
     {
-        checkState(running, "scheduler is not running");
+        checkState(running, "Scheduler is not running");
         checkOwnership(job);
-        LOGGER.trace("schedule is called for job with id={} in state={}", job.getId(), job.getState());
+        LOGGER.trace("queue is called for job with id={} in state={}", job.getId(), job.getState());
 
         job.wlock();
         try {
-            switch (job.getState()) {
-            case UNSCHEDULED:
-            case RETRYWAIT:
-            case RESTORED:
-                if (threadQueue(job)) {
-                    job.setState(State.QUEUED, "Queued.");
-                } else {
-                    LOGGER.warn("Maximum request limit reached.");
-                    job.setState(State.FAILED, "Site busy: Too many queued requests.");
-                }
-                break;
-            case QUEUED:
-                job.setState(State.INPROGRESS, "In progress.");
-                // fall through
-            case INPROGRESS:
-                LOGGER.trace("putting job in a thread queue, job#{}", job.getId());
-                try {
-                    pooledExecutor.execute(new JobWrapper(job));
-                } catch (RejectedExecutionException e) {
-                    job.setState(State.FAILED, "Site busy: Too many queued requests.");
-                }
-                break;
-            default:
-                throw new IllegalStateException("cannot schedule job in state =" + job.getState());
+            if (job.getState().isFinal()) {
+                throw new IllegalStateException("Cannot queue job in state " + job.getState());
+            } else if (threadQueue(job)) {
+                job.setState(State.QUEUED, "Queued.");
+            } else {
+                LOGGER.warn("Maximum request limit reached.");
+                job.setState(State.FAILED, "Site busy: Too many queued requests.");
             }
         } finally {
             job.wunlock();
         }
+    }
+
+    /**
+     * Requests the job's run method to be called from this scheduler's thread pool.
+     */
+    public void execute(Job job)
+    {
+        checkState(running, "Scheduler is not running");
+        checkOwnership(job);
+        LOGGER.trace("execute is called for job with id={} in state={}", job.getId(), job.getState());
+        pooledExecutor.execute(new JobWrapper(job));
     }
 
     public synchronized int getTotalQueued()
@@ -375,7 +375,8 @@ public class Scheduler <T extends Job>
                 try {
                     if (job.getState() == org.dcache.srm.scheduler.State.QUEUED) {
                         try {
-                            schedule(job);
+                            job.setState(org.dcache.srm.scheduler.State.INPROGRESS, "In progress.");
+                            execute(job);
                         } catch (IllegalStateTransition e) {
                             LOGGER.error("Bug detected.", e);
                             try {
@@ -473,7 +474,7 @@ public class Scheduler <T extends Job>
                 job.wlock();
                 try {
                     if (job.getState() == State.RETRYWAIT) {
-                        schedule(job);
+                        queue(job);
                     }
                 } catch (IllegalStateTransition e) {
                     LOGGER.error("Bug detected.", e);
@@ -689,26 +690,6 @@ public class Scheduler <T extends Job>
     {
         sb.append("ReadyQueue :\n");
         printQueue(sb, jobs.get(State.RQUEUED));
-    }
-
-    /**
-     * Getter for property queuesUpdateMaxWait.
-     *
-     * @return Value of property queuesUpdateMaxWait.
-     */
-    public synchronized long getQueuesUpdateMaxWait()
-    {
-        return queuesUpdateMaxWait;
-    }
-
-    /**
-     * Setter for property queuesUpdateMaxWait.
-     *
-     * @param queuesUpdateMaxWait New value of property queuesUpdateMaxWait.
-     */
-    public synchronized void setQueuesUpdateMaxWait(long queuesUpdateMaxWait)
-    {
-        this.queuesUpdateMaxWait = queuesUpdateMaxWait;
     }
 
     public Class<T> getType()

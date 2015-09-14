@@ -629,7 +629,7 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
                         fr.setFileId(pin.fileMetaData.fileId);
                         fr.setFileMetaData(pin.fileMetaData);
                         fr.setPinId(pin.pinId);
-                        Scheduler.getScheduler(fr.getSchedulerId()).schedule(fr);
+                        Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(State.FAILED,

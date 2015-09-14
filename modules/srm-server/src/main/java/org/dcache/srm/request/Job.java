@@ -332,8 +332,7 @@ public abstract class Job  {
                     || newState == State.RETRYWAIT
                     || newState == State.RQUEUED
                     || newState == State.READY
-                    || newState == State.DONE
-                    || newState == State.RESTORED;
+                    || newState == State.DONE;
         case RETRYWAIT:
             return newState == State.CANCELED
                     || newState == State.FAILED
@@ -958,7 +957,7 @@ public abstract class Job  {
                         "] has state " + state + "(not UNSCHEDULED)");
             }
             setScheduler(scheduler.getId(), scheduler.getTimestamp());
-            scheduler.schedule(this);
+            scheduler.queue(this);
         } finally {
             wunlock();
         }
@@ -1041,22 +1040,21 @@ public abstract class Job  {
             }
 
             switch (state) {
-            // Pending jobs were never worked on before the SRM restart; we
-            // simply schedule them now.
-            case QUEUED:
-                setState(State.UNSCHEDULED, "Restarting request.");
-                scheduler.schedule(this);
-                break;
-
+            // Unscheduled or queued jobs were never worked on before the SRM restart; we
+            // simply queue them now.
             case UNSCHEDULED:
-                scheduler.schedule(this);
+            case QUEUED:
+            case RETRYWAIT:
+                addHistoryEvent("Restored from database.");
+                scheduler.queue(this);
                 break;
 
-            // Jobs in RQUEUED or READY states require no further processing.
-            // We can leave them for the client to discover the TURL or place
-            // the job into the DONE state, respectively.
-            case READY:
+            // Jobs in RQUEUED, READY or TRANSFERRING states require no further
+            // processing. We can leave them for the client to discover the TURL
+            // or place the job into the DONE state, respectively.
             case RQUEUED:
+            case READY:
+            case TRANSFERRING:
                 break;
 
             // Other job states need request-specific recovery process.
@@ -1073,10 +1071,7 @@ public abstract class Job  {
 
     /**
      * Provide request-specific recovery for jobs that were being processed
-     * when SRM was restarted.  This corresponds to jobs in states:
-     *
-     *     PRIORITYTQUEUED, TQUEUED, RUNNING, RETRYWAIT, ASYNCWAIT,
-     *     TRANSFERRING, RESTORED, RUNNINGWITHOUTTHREAD.
+     * when SRM was restarted.  This corresponds to jobs in state INPROGRESS.
      *
      * In general, such jobs require some request-specific procedure.
      * Subclasses are expected to override this method to provide this

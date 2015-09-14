@@ -599,12 +599,7 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
                         logger.trace("Storage info arrived for file {}.", fr.getSurlString());
                         fr.setFileId(fileId);
                         fr.saveJob(true);
-                        Scheduler<?> scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                        try {
-                            scheduler.schedule(fr);
-                        } catch (Exception ie) {
-                            logger.error(ie.toString());
-                        }
+                        Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
                         break;
                     case CANCELED:
                     case FAILED:

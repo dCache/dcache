@@ -1036,12 +1036,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                         LOG.debug("PutCallbacks success for file {}", fr.getDestinationSurl());
                         fr.setDestinationFileId(fileId);
                         fr.saveJob(true);
-                        Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                        try {
-                            scheduler.schedule(fr);
-                        } catch (Exception ie) {
-                            LOG.error(ie.toString());
-                        }
+                        Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
@@ -1099,11 +1094,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             State state = copyFileRequest.getState();
             Scheduler scheduler = Scheduler.getScheduler(copyFileRequest.getSchedulerId());
             if (!state.isFinal() && scheduler != null) {
-                try {
-                    scheduler.schedule(copyFileRequest);
-                } catch (IllegalStateTransition ie) {
-                    LOG.error(ie.toString());
-                }
+                scheduler.execute(copyFileRequest);
             }
         }
     }

@@ -517,7 +517,7 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
                 " WHERE SCHEDULERID is NULL and State=" + State.UNSCHEDULED.getStateId();
         for (Long ID : jdbcTemplate.queryForList(sql, Long.class)) {
             try {
-                scheduler.schedule(Job.getJob(ID, jobType));
+                scheduler.queue(Job.getJob(ID, jobType));
             } catch (SRMInvalidRequestException ire) {
                 logger.error(ire.toString());
             }

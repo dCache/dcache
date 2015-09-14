@@ -352,14 +352,9 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
         State state = getState();
 
         switch (state) {
-        case UNSCHEDULED:
-        case RETRYWAIT:
-        case QUEUED:
         case INPROGRESS:
-            setState(State.RESTORED, "Rescheduled after SRM service restart");
-            // Fall through
-        case RESTORED:
-            scheduler.schedule(this);
+            addHistoryEvent("Rescheduled after SRM service restart.");
+            scheduler.queue(this);
             break;
 
         // All other states are invalid.
@@ -598,9 +593,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                     }
                 } catch (SRMInternalErrorException e) {
                     if (!fr.getState().isFinal()) {
-                        Scheduler<?> scheduler =
-                                Scheduler.getScheduler(fr.getSchedulerId());
-                        scheduler.schedule(fr);
+                        Scheduler.getScheduler(fr.getSchedulerId()).execute(fr);
                     }
                 } catch (SRMException e) {
                     fr.setStateAndStatusCode(
