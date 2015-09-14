@@ -408,9 +408,7 @@ public class Scheduler <T extends Job>
                 try {
                     try {
                         try {
-                            if (!job.getState().isFinal()) {
-                                job.run();
-                            }
+                            job.run();
                         } catch (SRMAuthorizationException e) {
                             LOGGER.warn(e.toString());
                             throw e;

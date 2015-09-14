@@ -679,29 +679,28 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     @Override
     public void run() throws SRMException, IllegalStateTransition
     {
-        if (isProcessingDone()) {
-            return;
-        }
-        try {
-            proccessRequest();
-            boolean hasOnlyFinalFileRequests = true;
-            for (CopyFileRequest request : getFileRequests()) {
-                State state = request.getState();
-                if (!state.isFinal()) {
-                    hasOnlyFinalFileRequests = false;
+        if (!getState().isFinal() && !isProcessingDone()) {
+            try {
+                proccessRequest();
+                boolean hasOnlyFinalFileRequests = true;
+                for (CopyFileRequest request : getFileRequests()) {
+                    State state = request.getState();
+                    if (!state.isFinal()) {
+                        hasOnlyFinalFileRequests = false;
+                    }
                 }
-            }
 
-            setProcessingDone(true);
-            if (hasOnlyFinalFileRequests) {
-                setState(State.DONE, "All transfers completed.");
-            } else {
-                addHistoryEvent("Waiting for transfers to complete.");
+                setProcessingDone(true);
+                if (hasOnlyFinalFileRequests) {
+                    setState(State.DONE, "All transfers completed.");
+                } else {
+                    addHistoryEvent("Waiting for transfers to complete.");
+                }
+            } catch (IOException e) {
+                throw new SRMException(e.getMessage(), e);
+            } catch (InterruptedException e) {
+                throw new SRMException("shutting down.", e);
             }
-        } catch (IOException e) {
-            throw new SRMException(e.getMessage(), e);
-        } catch (InterruptedException e) {
-            throw new SRMException("shutting down.", e);
         }
     }
 

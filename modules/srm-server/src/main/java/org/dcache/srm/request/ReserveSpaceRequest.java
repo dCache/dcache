@@ -243,16 +243,18 @@ public final class ReserveSpaceRequest extends Request {
     public void run() throws IllegalStateTransition
     {
         logger.trace("run");
-        addHistoryEvent("Reserving space.");
-        SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
-        getStorage().srmReserveSpace(
-                getUser(),
-                sizeInBytes,
-                spaceReservationLifetime,
-                retentionPolicy == null ? null : retentionPolicy.getValue(),
-                accessLatency == null ? null : accessLatency.getValue(),
-                getDescription(),
-                callbacks);
+        if (!getState().isFinal()) {
+            addHistoryEvent("Reserving space.");
+            SrmReserveSpaceCallbacks callbacks = new SrmReserveSpaceCallbacks(this.getId());
+            getStorage().srmReserveSpace(
+                    getUser(),
+                    sizeInBytes,
+                    spaceReservationLifetime,
+                    retentionPolicy == null ? null : retentionPolicy.getValue(),
+                    accessLatency == null ? null : accessLatency.getValue(),
+                    getDescription(),
+                    callbacks);
+        }
     }
 
     public SrmStatusOfReserveSpaceRequestResponse getSrmStatusOfReserveSpaceRequestResponse() {

@@ -332,7 +332,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
     public final void run() throws SRMFileBusyException, IllegalStateTransition, SRMInvalidRequestException
     {
         logger.trace("run");
-        if (getPinId() == null) {
+        if (!getState().isFinal() && getPinId() == null) {
             // [ SRM 2.2, 5.4.3] SRM_FILE_BUSY: client requests for a file which there is an
             // active srmPrepareToPut (no srmPutDone is yet called) request for.
             if (SRM.getSRM().isFileBusy(surl)) {

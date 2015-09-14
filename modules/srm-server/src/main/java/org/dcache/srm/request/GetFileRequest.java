@@ -364,31 +364,33 @@ public final class GetFileRequest extends FileRequest<GetRequest> {
             throws SRMException, IllegalStateTransition
     {
         logger.trace("run");
-        if (getPinId() == null) {
-            // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
-            // if srmPrepareToGet requests for files which there is an active srmPrepareToPut
-            // (no srmPutDone is yet called) request for.
-            //
-            // [ SRM 2.2, 5.1.3] SRM_FILE_BUSY: client requests for a file which there is an
-            // active srmPrepareToPut (no srmPutDone is yet called) request for.
-            if (SRM.getSRM().isFileBusy(surl)) {
-                throw new SRMFileBusyException("The requested SURL is locked by an upload.");
+        if (!getState().isFinal()) {
+            if (getPinId() == null) {
+                // [ SRM 2.2, 5.2.2, g)] The file request must fail with an error SRM_FILE_BUSY
+                // if srmPrepareToGet requests for files which there is an active srmPrepareToPut
+                // (no srmPutDone is yet called) request for.
+                //
+                // [ SRM 2.2, 5.1.3] SRM_FILE_BUSY: client requests for a file which there is an
+                // active srmPrepareToPut (no srmPutDone is yet called) request for.
+                if (SRM.getSRM().isFileBusy(surl)) {
+                    throw new SRMFileBusyException("The requested SURL is locked by an upload.");
+                }
+
+                addHistoryEvent("Pinning file.");
+                pinFile(getContainerRequest());
+                return;
             }
 
-            addHistoryEvent("Pinning file.");
-            pinFile(getContainerRequest());
-            return;
-        }
+            computeTurl();
 
-        computeTurl();
-
-        wlock();
-        try {
-            if (getState() == State.INPROGRESS) {
-                setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+            wlock();
+            try {
+                if (getState() == State.INPROGRESS) {
+                    setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+                }
+            } finally {
+                wunlock();
             }
-        } finally {
-            wunlock();
         }
     }
 

@@ -672,36 +672,38 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     public void run() throws SRMException, IllegalStateTransition
     {
         LOG.trace("run");
-        try {
-            if (getSourceTurl() != null && getSourceTurl().getScheme().equalsIgnoreCase("dcap") ||
-                getDestinationTurl() != null && getDestinationTurl().getScheme().equalsIgnoreCase("dcap") ||
-                getConfiguration().isUseUrlcopyScript()) {
-                try {
-                    runScriptCopy();
-                    return;
-                } catch (SRMException | IOException | GSSException e) {
-                    LOG.warn("script failed: {}",
-                             e.toString());
-                    // fall-through to try other methods
+        if (!getState().isFinal()) {
+            try {
+                if (getSourceTurl() != null && getSourceTurl().getScheme().equalsIgnoreCase("dcap") ||
+                    getDestinationTurl() != null && getDestinationTurl().getScheme().equalsIgnoreCase("dcap") ||
+                    getConfiguration().isUseUrlcopyScript()) {
+                    try {
+                        runScriptCopy();
+                        return;
+                    } catch (SRMException | IOException | GSSException e) {
+                        LOG.warn("script failed: {}",
+                                 e.toString());
+                        // fall-through to try other methods
+                    }
                 }
+                if (getLocalDestinationPath() != null && getLocalSourcePath() != null) {
+                    runLocalToLocalCopy();
+                } else if (getLocalDestinationPath() != null && getSourceTurl() != null) {
+                    runRemoteToLocalCopy();
+                } else if (getDestinationTurl() != null && getLocalSourcePath() != null) {
+                    runLocalToRemoteCopy();
+                } else if (getSourceTurl() != null && getDestinationTurl() != null) {
+                    javaUrlCopy(getSourceTurl().toURL(),
+                                getDestinationTurl().toURL());
+                    LOG.debug("copy succeeded");
+                    setStateToDone();
+                } else {
+                    LOG.error("Unknown combination of to/from ursl");
+                    setStateToFailed("Unknown combination of to/from ursl");
+                }
+            } catch (IOException e) {
+                throw new SRMException(e.getMessage(), e);
             }
-            if (getLocalDestinationPath() != null && getLocalSourcePath() != null) {
-                runLocalToLocalCopy();
-            } else if (getLocalDestinationPath() != null && getSourceTurl() != null) {
-                runRemoteToLocalCopy();
-            } else if (getDestinationTurl() != null && getLocalSourcePath() != null) {
-                runLocalToRemoteCopy();
-            } else if (getSourceTurl() != null && getDestinationTurl() != null) {
-                javaUrlCopy(getSourceTurl().toURL(),
-                            getDestinationTurl().toURL());
-                LOG.debug("copy succeeded");
-                setStateToDone();
-            } else {
-                LOG.error("Unknown combination of to/from ursl");
-                setStateToFailed("Unknown combination of to/from ursl");
-            }
-        } catch (IOException e) {
-            throw new SRMException(e.getMessage(), e);
         }
     }
 

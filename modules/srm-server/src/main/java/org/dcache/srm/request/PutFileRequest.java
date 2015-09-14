@@ -332,45 +332,47 @@ public final class PutFileRequest extends FileRequest<PutRequest> {
     public void run() throws SRMException, IllegalStateTransition
     {
         logger.trace("run");
-        if (getFileId() == null) {
-            // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
-            // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
-            // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
-            // the same SURL, SRM_FILE_BUSY must be returned if the SURL can be overwritten, otherwise
-            // SRM_DUPLICATION_ERROR must be returned at the file level.
-            for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
-                if (request != this) {
-                    if (!getContainerRequest().isOverwrite()) {
-                        throw new SRMDuplicationException("The requested SURL is locked by another upload.");
-                    } else {
-                        throw new SRMFileBusyException("The requested SURL is locked by another upload.");
+        if (!getState().isFinal()) {
+            if (getFileId() == null) {
+                // [SRM 2.2, 5.5.2, t)] Upon srmPrepareToPut, SURL entry is inserted to the name space, and any
+                // methods that access the SURL such as srmLs, srmBringOnline and srmPrepareToGet must return
+                // SRM_FILE_BUSY at the file level. If another srmPrepareToPut or srmCopy is requested on
+                // the same SURL, SRM_FILE_BUSY must be returned if the SURL can be overwritten, otherwise
+                // SRM_DUPLICATION_ERROR must be returned at the file level.
+                for (PutFileRequest request : SRM.getSRM().getActiveFileRequests(PutFileRequest.class, getSurl())) {
+                    if (request != this) {
+                        if (!getContainerRequest().isOverwrite()) {
+                            throw new SRMDuplicationException("The requested SURL is locked by another upload.");
+                        } else {
+                            throw new SRMFileBusyException("The requested SURL is locked by another upload.");
+                        }
                     }
                 }
+
+                addHistoryEvent("Doing name space lookup.");
+                CheckedFuture<String, ? extends SRMException> future =
+                        getStorage().prepareToPut(
+                                getUser(),
+                                getSurl(),
+                                getSize(),
+                                Objects.toString(getAccessLatency(), null),
+                                Objects.toString(getRetentionPolicy(), null),
+                                getSpaceReservationId(),
+                                getContainerRequest().isOverwrite());
+                future.addListener(new PutCallbacks(getId(), future), MoreExecutors.directExecutor());
+                return;
             }
 
-            addHistoryEvent("Doing name space lookup.");
-            CheckedFuture<String, ? extends SRMException> future =
-                    getStorage().prepareToPut(
-                            getUser(),
-                            getSurl(),
-                            getSize(),
-                            Objects.toString(getAccessLatency(), null),
-                            Objects.toString(getRetentionPolicy(), null),
-                            getSpaceReservationId(),
-                            getContainerRequest().isOverwrite());
-            future.addListener(new PutCallbacks(getId(), future), MoreExecutors.directExecutor());
-            return;
-        }
+            computeTurl();
 
-        computeTurl();
-
-        wlock();
-        try {
-            if (getState() == State.INPROGRESS) {
-                setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+            wlock();
+            try {
+                if (getState() == State.INPROGRESS) {
+                    setState(State.RQUEUED, "Putting on a \"Ready\" Queue.");
+                }
+            } finally {
+                wunlock();
             }
-        } finally {
-            wunlock();
         }
     }
 

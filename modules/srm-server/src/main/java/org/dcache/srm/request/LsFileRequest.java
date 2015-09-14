@@ -146,71 +146,73 @@ public final class LsFileRequest extends FileRequest<LsRequest> {
         public synchronized void run() throws IllegalStateTransition
         {
             logger.trace("run");
-            try {
-                LsRequest parent = getContainerRequest();
-                long t0 = 0;
-                if (logger.isDebugEnabled()) {
-                    t0 = System.currentTimeMillis();
-                }
+            if (!getState().isFinal()) {
+                try {
+                    LsRequest parent = getContainerRequest();
+                    long t0 = 0;
+                    if (logger.isDebugEnabled()) {
+                        t0 = System.currentTimeMillis();
+                    }
 
-                PutFileRequest request =
-                        Iterables.getFirst(SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl), null);
+                    PutFileRequest request =
+                            Iterables.getFirst(SRM.getSRM().getActiveFileRequests(PutFileRequest.class, surl), null);
 
-                TMetaDataPathDetail detail;
+                    TMetaDataPathDetail detail;
 
-                if (request != null) {
-                    // [SRM 2.2, 4.4.3]
-                    //
-                    // SRM_FILE_BUSY
-                    //
-                    //     client requests for a file which there is an active
-                    //     srmPrepareToPut (no srmPutDone is yet called) request for.
+                    if (request != null) {
+                        // [SRM 2.2, 4.4.3]
+                        //
+                        // SRM_FILE_BUSY
+                        //
+                        //     client requests for a file which there is an active
+                        //     srmPrepareToPut (no srmPutDone is yet called) request for.
+                        try {
+                            FileMetaData fmd = getStorage().getFileMetaData(getUser(),
+                                                                            surl,
+                                                                            request.getFileId());
+                            detail = convertFileMetaDataToTMetaDataPathDetail(surl,
+                                                                              fmd,
+                                                                              parent.getLongFormat());
+                        } catch (SRMInvalidPathException e) {
+                            detail = new TMetaDataPathDetail();
+                            detail.setType(TFileType.FILE);
+                        }
+                        detail.setPath(getPath(surl));
+                        detail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
+                                                           "The requested SURL is locked by an upload."));
+                    } else {
+                        detail = getMetaDataPathDetail(surl,
+                                                       0,
+                                                       parent.getOffset(),
+                                                       parent.getCount(),
+                                                       parent.getNumOfLevels(),
+                                                       parent.getLongFormat());
+                    }
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("LsFileRequest.run(), TOOK " + (System.currentTimeMillis() - t0));
+                    }
                     try {
-                        FileMetaData fmd = getStorage().getFileMetaData(getUser(),
-                                                                        surl,
-                                                                        request.getFileId());
-                        detail = convertFileMetaDataToTMetaDataPathDetail(surl,
-                                                                          fmd,
-                                                                          parent.getLongFormat());
-                    } catch (SRMInvalidPathException e) {
-                        detail = new TMetaDataPathDetail();
-                        detail.setType(TFileType.FILE);
+                        getContainerRequest().resetRetryDeltaTime();
+                    } catch (SRMInvalidRequestException ire) {
+                        logger.error(ire.toString());
                     }
-                    detail.setPath(getPath(surl));
-                    detail.setStatus(new TReturnStatus(TStatusCode.SRM_FILE_BUSY,
-                                                       "The requested SURL is locked by an upload."));
-                } else {
-                    detail = getMetaDataPathDetail(surl,
-                                                   0,
-                                                   parent.getOffset(),
-                                                   parent.getCount(),
-                                                   parent.getNumOfLevels(),
-                                                   parent.getLongFormat());
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("LsFileRequest.run(), TOOK " + (System.currentTimeMillis() - t0));
-                }
-                try {
-                    getContainerRequest().resetRetryDeltaTime();
-                } catch (SRMInvalidRequestException ire) {
-                    logger.error(ire.toString());
-                }
-                wlock();
-                try {
-                    metaDataPathDetail = detail;
-                    if (!getState().isFinal()) {
-                        setState(State.DONE, State.DONE.toString());
+                    wlock();
+                    try {
+                        metaDataPathDetail = detail;
+                        if (!getState().isFinal()) {
+                            setState(State.DONE, State.DONE.toString());
+                        }
+                    } finally {
+                        wunlock();
                     }
-                } finally {
-                    wunlock();
+                } catch (SRMException e) {
+                    fail(e.getStatusCode(), e.getMessage());
+                } catch (URISyntaxException e) {
+                    fail(TStatusCode.SRM_FAILURE, e.getMessage());
+                } catch (DataAccessException | IllegalStateTransition e) {
+                    logger.error(e.toString(), e);
+                    fail(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
                 }
-            } catch (SRMException e) {
-                fail(e.getStatusCode(), e.getMessage());
-            } catch (URISyntaxException e) {
-                fail(TStatusCode.SRM_FAILURE, e.getMessage());
-            } catch (DataAccessException | IllegalStateTransition e) {
-                logger.error(e.toString(), e);
-                fail(TStatusCode.SRM_INTERNAL_ERROR, e.getMessage());
             }
         }
 
