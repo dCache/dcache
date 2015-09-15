@@ -1053,81 +1053,74 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        protected synchronized void onRedirect(GFtpTransferStartedMessage redirect)
+        protected synchronized void onRedirect(GFtpTransferStartedMessage redirect) throws FTPCommandException
         {
-            try {
-                if (redirect != null) {
-                    if (_version != 2) {
-                        LOGGER.error("Received unexpected GFtpTransferStartedMessage for {}", redirect.getPnfsId());
-                        return;
-                    }
-
-                    if (!redirect.getPnfsId().equals(getPnfsId().getId())) {
-                        LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), redirect.getPnfsId());
-                        throw new FTPCommandException(451, "Transient internal failure");
-                    }
-
-                    if (redirect.getPassive() && _delayedPassive == DelayedPassiveReply.NONE) {
-                        LOGGER.error("Pool unexpectedly volunteered to be passive");
-                        throw new FTPCommandException(451, "Transient internal failure");
-                    }
-
-                    /* If passive X mode was requested, but the pool rejected
-                     * it, then we have to fail for now. REVISIT: We should
-                     * use the other adapter in this case.
-                     */
-                    if (_mode == Mode.PASSIVE && !redirect.getPassive() && _xferMode.equals("X")) {
-                        throw new FTPCommandException(504, "Cannot use passive X mode");
-                    }
-
-                    /* Determine the 127 response address to send back to the
-                     * client. When the pool is passive, this is the address of
-                     * the pool (and in this case we no longer need the
-                     * adapter). Otherwise this is the address of the adapter.
-                     */
-                    if (redirect.getPassive()) {
-                        assert _delayedPassive != DelayedPassiveReply.NONE;
-                        assert _mode == Mode.PASSIVE;
-                        assert _adapter != null;
-
-                        replyDelayedPassive(_commandLine, _delayedPassive,
-                                            redirect.getPoolAddress());
-
-                        LOGGER.info("Closing adapter");
-                        _adapter.close();
-                        _adapter = null;
-                    } else if (_mode == Mode.PASSIVE) {
-                        replyDelayedPassive(_commandLine, _delayedPassive,
-                                            (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress());
-                    }
+            if (redirect != null) {
+                if (_version != 2) {
+                    LOGGER.error("Received unexpected GFtpTransferStartedMessage for {}", redirect.getPnfsId());
+                    return;
                 }
 
-                if (_adapter != null) {
-                    _adapter.start();
+                if (!redirect.getPnfsId().equals(getPnfsId().getId())) {
+                    LOGGER.error("GFtpTransferStartedMessage has wrong ID, expected {} but got {}", getPnfsId(), redirect.getPnfsId());
+                    throw new FTPCommandException(451, "Transient internal failure");
                 }
 
-                setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
-                          (isWrite() ? "Receiving" : "Sending"));
-
-                reply(_commandLine, "150 Opening BINARY data connection for " + _path, false);
-
-                if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
-                    long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
-                    long timeout = period / 2;
-                    _perfMarkerTask =
-                        new PerfMarkerTask(_commandLine, getPoolAddress(), getMoverId(), timeout);
-                    TIMER.schedule(_perfMarkerTask, period, period);
+                if (redirect.getPassive() && _delayedPassive == DelayedPassiveReply.NONE) {
+                    LOGGER.error("Pool unexpectedly volunteered to be passive");
+                    throw new FTPCommandException(451, "Transient internal failure");
                 }
-            } catch (FTPCommandException e) {
-                abort(e);
-            } catch (RuntimeException e) {
-                _log.error("Possible bug detected.", e);
-                abort(451, "Transient internal error", e);
+
+                /* If passive X mode was requested, but the pool rejected
+                 * it, then we have to fail for now. REVISIT: We should
+                 * use the other adapter in this case.
+                 */
+                if (_mode == Mode.PASSIVE && !redirect.getPassive() && _xferMode.equals("X")) {
+                    throw new FTPCommandException(504, "Cannot use passive X mode");
+                }
+
+                /* Determine the 127 response address to send back to the
+                 * client. When the pool is passive, this is the address of
+                 * the pool (and in this case we no longer need the
+                 * adapter). Otherwise this is the address of the adapter.
+                 */
+                if (redirect.getPassive()) {
+                    assert _delayedPassive != DelayedPassiveReply.NONE;
+                    assert _mode == Mode.PASSIVE;
+                    assert _adapter != null;
+
+                    replyDelayedPassive(_commandLine, _delayedPassive,
+                                        redirect.getPoolAddress());
+
+                    LOGGER.info("Closing adapter");
+                    _adapter.close();
+                    _adapter = null;
+                } else if (_mode == Mode.PASSIVE) {
+                    replyDelayedPassive(_commandLine, _delayedPassive,
+                                        (InetSocketAddress) _passiveModeServerSocket.socket().getLocalSocketAddress());
+                }
+            }
+
+            if (_adapter != null) {
+                _adapter.start();
+            }
+
+            setStatus("Mover " + getPool() + "/" + getMoverId() + ": " +
+                      (isWrite() ? "Receiving" : "Sending"));
+
+            reply(_commandLine, "150 Opening BINARY data connection for " + _path, false);
+
+            if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
+                long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
+                long timeout = period / 2;
+                _perfMarkerTask =
+                    new PerfMarkerTask(_commandLine, getPoolAddress(), getMoverId(), timeout);
+                TIMER.schedule(_perfMarkerTask, period, period);
             }
         }
 
         @Override
-        protected synchronized void onFinish()
+        protected synchronized void onFinish() throws FTPCommandException
         {
             try {
                 /* Wait for adapter to shut down.
@@ -1159,13 +1152,8 @@ public abstract class AbstractFtpDoorV1
                 notifyBilling(0, "");
                 setTransfer(null);
                 reply(_commandLine, "226 Transfer complete.");
-            } catch (FTPCommandException e) {
-                abort(e);
             } catch (InterruptedException e) {
-                abort(451, "FTP proxy was interrupted", e);
-            } catch (RuntimeException e) {
-                _log.error("Possible bug detected.", e);
-                abort(451, "Transient internal error", e);
+                throw new FTPCommandException(451, "FTP proxy was interrupted", e);
             }
         }
 
@@ -1216,6 +1204,10 @@ public abstract class AbstractFtpDoorV1
             if (t instanceof FTPCommandException) {
                 replyCode = ((FTPCommandException) t).getCode();
                 replyMsg = ((FTPCommandException) t).getReply();
+            } else if (t instanceof RuntimeException) {
+                _log.error("Possible bug detected.", t);
+                replyCode = 451;
+                replyMsg = "Transient internal error";
             } else {
                 replyCode = 451;
                 replyMsg = t.getMessage();

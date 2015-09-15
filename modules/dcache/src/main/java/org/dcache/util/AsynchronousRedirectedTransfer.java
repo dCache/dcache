@@ -94,11 +94,11 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
         executor.execute(() -> monitor.finished(error));
     }
 
-    protected abstract void onQueued();
+    protected abstract void onQueued() throws Exception;
 
-    protected abstract void onRedirect(T object);
+    protected abstract void onRedirect(T object) throws Exception;
 
-    protected abstract void onFinish();
+    protected abstract void onFinish() throws Exception;
 
     protected abstract void onFailure(Throwable t);
 
@@ -139,28 +139,40 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
 
         private synchronized void doQueued()
         {
-            isQueued = true;
-            if (isDone) {
-                doKill();
-            } else {
-                onQueued();
-                doRedirect();
+            try {
+                isQueued = true;
+                if (isDone) {
+                    doKill();
+                } else {
+                    onQueued();
+                    doRedirect();
+                }
+            } catch (Exception e) {
+                doAbort(e);
             }
         }
 
         private synchronized void doRedirect()
         {
-            if (!isDone && isQueued && isRedirected) {
-                onRedirect(redirectObject);
-                doFinish();
+            try {
+                if (!isDone && isQueued && isRedirected) {
+                    onRedirect(redirectObject);
+                    doFinish();
+                }
+            } catch (Exception e) {
+                doAbort(e);
             }
         }
 
         private synchronized void doFinish()
         {
-            if (!isDone && getMoverId() != null  && isRedirected && isFinished) {
-                onFinish();
-                isDone = true;
+            try {
+                if (!isDone && getMoverId() != null  && isRedirected && isFinished) {
+                    onFinish();
+                    isDone = true;
+                }
+            } catch (Exception e) {
+                doAbort(e);
             }
         }
 
