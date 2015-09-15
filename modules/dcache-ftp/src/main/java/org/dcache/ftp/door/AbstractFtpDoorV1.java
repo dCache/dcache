@@ -75,8 +75,6 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Range;
 import com.google.common.collect.Sets;
 import com.google.common.net.InetAddresses;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,7 +200,7 @@ import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsListDirectoryMessage;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.find;
 import static java.lang.Math.min;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -1120,33 +1118,37 @@ public abstract class AbstractFtpDoorV1
         }
 
         @Override
-        protected synchronized void onFinish() throws FTPCommandException
+        protected void onFinish() throws FTPCommandException
         {
             try {
-                /* Wait for adapter to shut down.
-                 */
-                if (_adapter != null) {
+                ProxyAdapter adapter;
+                synchronized (this) {
+                    adapter = _adapter;
+                }
+
+                if (adapter != null) {
                     LOGGER.info("Waiting for adapter to finish.");
-                    _adapter.join(300000); // 5 minutes
-                    if (_adapter.isAlive()) {
+                    adapter.join(300000); // 5 minutes
+                    if (adapter.isAlive()) {
                         throw new FTPCommandException(451, "FTP proxy did not shut down");
                     } else if (_adapter.hasError()) {
                         throw new FTPCommandException(451, "FTP proxy failed: " + _adapter.getError());
                     }
 
                     LOGGER.debug("Closing adapter");
-                    _adapter.close();
+                    adapter.close();
+                }
+
+                synchronized (this) {
                     _adapter = null;
-                }
-
-                if (_perfMarkerTask != null) {
-                    _perfMarkerTask.stop((GFtpProtocolInfo) getProtocolInfo());
-                }
-
-                if (_tLog != null) {
-                    _tLog.middle(getFileAttributes().getSize());
-                    _tLog.success();
-                    _tLog = null;
+                    if (_perfMarkerTask != null) {
+                        _perfMarkerTask.stop((GFtpProtocolInfo) getProtocolInfo());
+                    }
+                    if (_tLog != null) {
+                        _tLog.middle(getFileAttributes().getSize());
+                        _tLog.success();
+                        _tLog = null;
+                    }
                 }
 
                 notifyBilling(0, "");
