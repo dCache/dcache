@@ -83,13 +83,10 @@ public enum State {
     UNSCHEDULED    ("Unscheduled",    0, new String[] { "Pending" }, new int[] { }),
 
     /** Job is waiting in scheduler for initial activity. */
-    QUEUED         ("Queued"         ,2, new String[] { "TQueued" }, new int[] { }),
+    QUEUED         ("Queued"         ,2, new String[] { "TQueued", "RetryWait" }, new int[] { 4 }),
 
     /** Job is being processed. */
     INPROGRESS     ("InProgress"     ,3, new String[] { "PriorityTQueued", "Running", "AsyncWait", "RunningWithoutThread" }, new int[] { 1, 5, 13 }),
-
-    /** Job in timed wait. */
-    RETRYWAIT      ("RetryWait"      ,4),
 
     /** Job is successful and waits client requesting its status when the Ready queue isn't full. */
     RQUEUED        ("RQueued"        ,6),

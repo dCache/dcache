@@ -83,7 +83,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getErrorMessage(),
                                   pr.getSchedulerId(),
                                   pr.getSchedulerTimeStamp(),
-                                  pr.getNumberOfRetries(),
+                                  0, // num of retries
                                   pr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   pr.getRetryDeltaTime(),
@@ -117,7 +117,7 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
                                   pr.getErrorMessage(),//5
                                   pr.getSchedulerId(),
                                   pr.getSchedulerTimeStamp(),
-                                  pr.getNumberOfRetries(),
+                                  0, // num of retries
                                   pr.getLastStateTransitionTime(),
                                   //Database Request Storage
                                   pr.getRetryDeltaTime(), // 10

@@ -125,7 +125,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                   gfr.getErrorMessage(),//5
                                   gfr.getSchedulerId(),
                                   gfr.getSchedulerTimeStamp(),
-                                  gfr.getNumberOfRetries(),
+                                  0, // num of retries
                                   gfr.getLastStateTransitionTime(),
                                   gfr.getRequestId(),//10
                                   gfr.getStatusCodeString(),
@@ -185,7 +185,7 @@ public class BringOnlineFileRequestStorage extends DatabaseFileRequestStorage<Br
                                   gfr.getErrorMessage(),
                                   gfr.getSchedulerId(),
                                   gfr.getSchedulerTimeStamp(),
-                                  gfr.getNumberOfRetries(),
+                                  0, // num of retries
                                   gfr.getLastStateTransitionTime(),
                                  //DATABSE FILE REQUEST STORAGE
                                   gfr.getRequestId(),

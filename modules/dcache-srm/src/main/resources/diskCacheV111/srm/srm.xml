@@ -486,10 +486,6 @@
       <property name="maxRequests" value="${srm.request.get.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.get.max-inprogress}"/>
       <property name="maxReadyJobs" value="${srm.request.get.max-transfers}"/>
-      <property name="maxNumberOfRetries" value="${srm.request.get.retries}"/>
-      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.get.retry-timeout},
-                     '${srm.request.get.retry-timeout.unit}')}" />
   </bean>
 
 
@@ -504,10 +500,6 @@
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="maxRequests" value="${srm.request.ls.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.ls.max-inprogress}"/>
-      <property name="maxNumberOfRetries" value="${srm.request.ls.retries}"/>
-      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.ls.retry-timeout},
-                     '${srm.request.ls.retry-timeout.unit}')}" />
   </bean>
 
 
@@ -522,10 +514,6 @@
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="maxRequests" value="${srm.request.bring-online.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.bring-online.max-inprogress}"/>
-      <property name="maxNumberOfRetries" value="${srm.request.bring-online.retries}"/>
-      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.bring-online.retry-timeout},
-                     '${srm.request.bring-online.retry-timeout.unit}')}" />
   </bean>
 
 
@@ -541,10 +529,6 @@
       <property name="maxRequests" value="${srm.request.put.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.put.max-inprogress}"/>
       <property name="maxReadyJobs" value="${srm.request.put.max-transfers}"/>
-      <property name="maxNumberOfRetries" value="${srm.request.put.retries}"/>
-      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.put.retry-timeout},
-                     '${srm.request.put.retry-timeout.unit}')}" />
   </bean>
 
   <bean id="scheduler-copy" class="diskCacheV111.srm.dcache.Scheduler"
@@ -558,10 +542,6 @@
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="maxRequests" value="${srm.request.copy.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.copy.max-inprogress}"/>
-      <property name="maxNumberOfRetries" value="${srm.request.copy.retries}"/>
-      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.copy.retry-timeout},
-                     '${srm.request.copy.retry-timeout.unit}')}" />
   </bean>
 
   <bean id="scheduler-reserve-space" class="diskCacheV111.srm.dcache.Scheduler"
@@ -575,10 +555,6 @@
       <property name="transferStrategyProvider" ref="transfer-strategy-provider"/>
       <property name="maxRequests" value="${srm.request.reserve-space.max-requests}"/>
       <property name="maxInprogress" value="${srm.request.reserve-space.max-inprogress}"/>
-      <property name="maxNumberOfRetries" value="${srm.request.reserve-space.retries}"/>
-      <property name="retryTimeout" value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
-                     ${srm.request.reserve-space.retry-timeout},
-                     '${srm.request.reserve-space.retry-timeout.unit}')}" />
   </bean>
 
 

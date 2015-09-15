@@ -91,7 +91,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                                   cr.getErrorMessage(),
                                   cr.getSchedulerId(),
                                   cr.getSchedulerTimeStamp(),
-                                  cr.getNumberOfRetries(),
+                                  0, // num of retries
                                   cr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   cr.getCredentialId(),
@@ -145,7 +145,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
                                   cr.getErrorMessage(),//5
                                   cr.getSchedulerId(),
                                   cr.getSchedulerTimeStamp(),
-                                  cr.getNumberOfRetries(),
+                                  0, // num of retries
                                   cr.getLastStateTransitionTime(),
                                   //Database Request Storage
                                   cr.getCredentialId(), // 10

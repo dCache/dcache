@@ -78,7 +78,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimerTask;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.dcache.srm.SRMAbortedException;
@@ -135,13 +134,10 @@ public abstract class Job  {
 
     protected long lifetime;
 
-    protected int numberOfRetries;
     private long lastStateTransitionTime = System.currentTimeMillis();
 
     private final List<JobHistory> jobHistory = new ArrayList<>();
     private transient JobIdGenerator generator;
-
-    private transient TimerTask retryTimer;
 
     private transient boolean savedInFinalState;
 
@@ -173,7 +169,6 @@ public abstract class Job  {
         this.state = State.getState(stateId);
         this.schedulerId = schedulerId;
         this.schedulerTimeStamp = schedulerTimestamp;
-        this.numberOfRetries = numberOfRetries;
         this.lastStateTransitionTime = lastStateTransitionTime;
         this.jdc = new JDC();
         if(jobHistoryArray != null) {
@@ -295,10 +290,6 @@ public abstract class Job  {
 
             jobHistory.add( new JobHistory(nextLong(),newState,description,lastStateTransitionTime));
 
-            if(newState == State.RETRYWAIT) {
-                inclreaseNumberOfRetries();
-            }
-
             notifySchedulerOfStateChange(oldState, newState);
 
             if (!newState.isFinal() && schedulerId == null) {
@@ -329,14 +320,9 @@ public abstract class Job  {
         case INPROGRESS:
             return newState == State.CANCELED
                     || newState == State.FAILED
-                    || newState == State.RETRYWAIT
                     || newState == State.RQUEUED
                     || newState == State.READY
                     || newState == State.DONE;
-        case RETRYWAIT:
-            return newState == State.CANCELED
-                    || newState == State.FAILED
-                    || newState == State.QUEUED;
         case RQUEUED:
             return newState == State.CANCELED
                     || newState == State.FAILED
@@ -481,42 +467,6 @@ public abstract class Job  {
     // this method should make sure that the job is saved in the
     // job's storage (instance of Jon.JobStorage (possibly in a database )
     protected abstract void stateChanged(State oldState);
-
-
-
-    /** Getter for property numberOfRetries.
-     * @return Value of property numberOfRetries.
-     *
-     */
-    public final int getNumberOfRetries() {
-        rlock();
-        try {
-            return numberOfRetries;
-        } finally {
-            runlock();
-        }
-    }
-
-    /** Setter for property numberOfRetries.
-     *
-     */
-    private void inclreaseNumberOfRetries() {
-        wlock();
-        try {
-            numberOfRetries++;
-        } finally {
-            wunlock();
-        }
-    }
-
-    /** Getter for property retry_timer.
-     * @return Value of property retry_timer.
-     *
-     */
-    public TimerTask getRetryTimer() {
-        return retryTimer;
-    }
-
 
     public TStatusCode getStatusCode() {
         rlock();
@@ -821,15 +771,6 @@ public abstract class Job  {
         }
     }
 
-    public void cancelRetryTimer()
-    {
-        TimerTask task = getRetryTimer();
-        if (task != null) {
-            task.cancel();
-            setRetryTimer(null);
-        }
-    }
-
     public static class JobHistory implements Comparable<JobHistory> {
         private final long id;
         private final State state;
@@ -925,10 +866,6 @@ public abstract class Job  {
             this.saved = true;
         }
 
-    }
-
-    public void setRetryTimer(TimerTask retryTimer) {
-        this.retryTimer = retryTimer;
     }
 
     public JDC applyJdc()
@@ -1044,7 +981,6 @@ public abstract class Job  {
             // simply queue them now.
             case UNSCHEDULED:
             case QUEUED:
-            case RETRYWAIT:
                 addHistoryEvent("Restored from database.");
                 scheduler.queue(this);
                 break;

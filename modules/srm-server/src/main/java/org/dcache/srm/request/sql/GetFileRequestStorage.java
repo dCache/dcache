@@ -49,7 +49,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                                       request.getErrorMessage(),
                                                       request.getSchedulerId(),
                                                       request.getSchedulerTimeStamp(),
-                                                      request.getNumberOfRetries(),
+                                                      0, // num of retries
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
                                                       request.getStatusCodeString(),
@@ -119,7 +119,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
                                                       request.getErrorMessage(),
                                                       request.getSchedulerId(),
                                                       request.getSchedulerTimeStamp(),
-                                                      request.getNumberOfRetries(),
+                                                      0, // num of retries
                                                       request.getLastStateTransitionTime(),
                                                       request.getRequestId(),
                                                       request.getStatusCodeString(),

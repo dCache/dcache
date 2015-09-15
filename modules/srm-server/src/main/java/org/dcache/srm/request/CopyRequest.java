@@ -640,15 +640,15 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                 if (isSourceSrm() && !isSourceLocal()) {
                    RemoteTurlGetterV2.staticReleaseFile(credential,
                                                         surl, requestId,
-                                                        scheduler.getRetryTimeout(),
-                                                        scheduler.getMaxNumberOfRetries(),
+                                                        0,
+                                                        0,
                                                         clientTransport);
                 } else {
                     RemoteTurlPutterV2.staticPutDone(credential,
-                           surl, requestId,
-                           scheduler.getRetryTimeout(),
-                           scheduler.getMaxNumberOfRetries(),
-                           clientTransport);
+                                                     surl, requestId,
+                                                     0,
+                                                     0,
+                                                     clientTransport);
                 }
             } catch (Exception e) {
                 LOG.error("set remote file status to done failed, surl={}, " +

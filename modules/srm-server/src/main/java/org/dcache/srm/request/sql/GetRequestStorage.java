@@ -82,7 +82,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                   gr.getErrorMessage(),
                                   gr.getSchedulerId(),
                                   gr.getSchedulerTimeStamp(),
-                                  gr.getNumberOfRetries(),
+                                  0, // num of retries
                                   gr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   gr.getRetryDeltaTime(),
@@ -115,7 +115,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage<GetReques
                                   gr.getErrorMessage(),//5
                                   gr.getSchedulerId(),
                                   gr.getSchedulerTimeStamp(),
-                                  gr.getNumberOfRetries(),
+                                  0, // num of retries
                                   gr.getLastStateTransitionTime(),
                                   //Database Request Storage
                                   gr.getRetryDeltaTime(), // 10

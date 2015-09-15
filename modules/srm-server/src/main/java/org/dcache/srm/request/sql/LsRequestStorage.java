@@ -69,7 +69,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getErrorMessage(),
                                   lr.getSchedulerId(),
                                   lr.getSchedulerTimeStamp(),
-                                  lr.getNumberOfRetries(),
+                                  0, // num of retries
                                   lr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   lr.getRetryDeltaTime(),
@@ -114,7 +114,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                   lr.getErrorMessage(),//5
                                   lr.getSchedulerId(),
                                   lr.getSchedulerTimeStamp(),
-                                  lr.getNumberOfRetries(),
+                                  0, // num of retries
                                   lr.getLastStateTransitionTime(),
                                   //Database Request Storage
                                   lr.getRetryDeltaTime(), // 10

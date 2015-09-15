@@ -87,7 +87,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                   rsr.getErrorMessage(),
                                   rsr.getSchedulerId(),
                                   rsr.getSchedulerTimeStamp(),
-                                  rsr.getNumberOfRetries(),
+                                  0, // num of retries
                                   rsr.getLastStateTransitionTime(), // 10
                                   //Database Request Storage
                                   rsr.getRetryDeltaTime(),
@@ -139,7 +139,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
                                   rsr.getErrorMessage(),//5
                                   rsr.getSchedulerId(),
                                   rsr.getSchedulerTimeStamp(),
-                                  rsr.getNumberOfRetries(),
+                                  0, // num of retries
                                   rsr.getLastStateTransitionTime(),
                                   //Database Request Storage
                                   rsr.getRetryDeltaTime(), // 10

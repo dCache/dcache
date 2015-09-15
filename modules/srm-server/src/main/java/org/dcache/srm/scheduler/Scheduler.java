@@ -118,10 +118,6 @@ public class Scheduler <T extends Job>
     // async wait state related variables
     private int maxInProgress;
 
-    // retry wait state related variables
-    private int maxNumberOfRetries;
-    private long retryTimeout;
-
     private final String id;
     private volatile boolean running;
 
@@ -265,11 +261,6 @@ public class Scheduler <T extends Job>
     public synchronized int getTotalReady()
     {
         return jobs.get(State.READY).size();
-    }
-
-    public synchronized int getTotalRetryWait()
-    {
-        return jobs.get(State.RETRYWAIT).size();
     }
 
     public void tryToReadyJob(Job job)
@@ -416,20 +407,6 @@ public class Scheduler <T extends Job>
                             LOGGER.error(e.toString());
                             throw new SRMInternalErrorException("Database access error.", e);
                         }
-                    } catch (SRMInternalErrorException e) {
-                        job.wlock();
-                        try {
-                            if (!job.getState().isFinal()) {
-                                if (job.getNumberOfRetries() < getMaxNumberOfRetries()) {
-                                    job.setState(State.RETRYWAIT, e.getMessage());
-                                    startRetryTimer(job);
-                                } else {
-                                    job.setStateAndStatusCode(State.FAILED, e.getMessage(), e.getStatusCode());
-                                }
-                            }
-                        } finally {
-                            job.wunlock();
-                        }
                     } catch (SRMException e) {
                         job.wlock();
                         try {
@@ -462,30 +439,6 @@ public class Scheduler <T extends Job>
         }
     }
 
-    private void startRetryTimer(final Job job)
-    {
-        TimerTask task = new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                job.wlock();
-                try {
-                    if (job.getState() == State.RETRYWAIT) {
-                        queue(job);
-                    }
-                } catch (IllegalStateTransition e) {
-                    LOGGER.error("Bug detected.", e);
-                } finally {
-                    job.wunlock();
-                }
-
-            }
-        };
-        job.setRetryTimer(task);
-        retryTimer.schedule(task, retryTimeout);
-    }
-
     public void addStateChangeListener(StateChangeListener listener)
     {
         listeners.add(listener);
@@ -508,9 +461,6 @@ public class Scheduler <T extends Job>
         }
 
         LOGGER.debug("state changed for job id {} from {} to {}", job.getId(), oldState, newState);
-        if (oldState == State.RETRYWAIT && newState.isFinal()) {
-            job.cancelRetryTimer();
-        }
 
         for (StateChangeListener listener : listeners) {
             listener.stateChanged(job, oldState, newState);
@@ -572,26 +522,6 @@ public class Scheduler <T extends Job>
         this.maxInProgress = maxAsyncWaitJobs;
     }
 
-    public synchronized int getMaxNumberOfRetries()
-    {
-        return maxNumberOfRetries;
-    }
-
-    public synchronized void setMaxNumberOfRetries(int maxNumberOfRetries)
-    {
-        this.maxNumberOfRetries = maxNumberOfRetries;
-    }
-
-    public synchronized long getRetryTimeout()
-    {
-        return retryTimeout;
-    }
-
-    public synchronized void setRetryTimeout(long retryTimeout)
-    {
-        this.retryTimeout = retryTimeout;
-    }
-
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
@@ -650,7 +580,6 @@ public class Scheduler <T extends Job>
                                   28 + fieldWidth);
         formatter.field("Queued", getTotalQueued(), State.QUEUED);
         formatter.field("In progress (max " + getMaxInProgress() + ")", getTotalInprogress(), State.INPROGRESS);
-        formatter.field("Queued for retry", getTotalRetryWait(), State.RETRYWAIT);
         if (getTotalRQueued() + getMaxReadyJobs() + getTotalReady() > 0) {
             formatter.field("Queued for transfer", getTotalRQueued(), State.RQUEUED);
             formatter.field("Waiting for transfer (max " + getMaxReadyJobs() + ")", getTotalReady(), State.READY);
@@ -658,9 +587,6 @@ public class Scheduler <T extends Job>
         formatter.line();
         formatter.field("Total requests (max " + getMaxRequests() + ")", getTotalRequests());
         formatter.format("\n");
-        formatter.format("    Maximum number of retries       : %d\n", maxNumberOfRetries);
-        formatter.format("    Retry timeout                   : %d ms\n", retryTimeout);
-        formatter.format("    Retry limit                     : %d retries\n", maxNumberOfRetries);
         formatter.format("    Scheduling strategy             : %s\n", schedulingStrategyName);
         formatter.format("    Transfer strategy               : %s\n", transferStrategyName);
     }

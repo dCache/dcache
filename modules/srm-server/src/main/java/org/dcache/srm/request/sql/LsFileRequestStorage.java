@@ -94,7 +94,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getErrorMessage(),
                                           gfr.getSchedulerId(),
                                           gfr.getSchedulerTimeStamp(),
-                                          gfr.getNumberOfRetries(),
+                                          0, // num of retries
                                           gfr.getLastStateTransitionTime(),
                                           gfr.getRequestId(),
                                           gfr.getStatusCodeString(),
@@ -153,7 +153,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getErrorMessage(),
                                           gfr.getSchedulerId(),
                                           gfr.getSchedulerTimeStamp(),
-                                          gfr.getNumberOfRetries(),
+                                          0, // num of retries
                                           gfr.getLastStateTransitionTime(),
                                           gfr.getRequestId(),
                                           gfr.getStatusCodeString(),

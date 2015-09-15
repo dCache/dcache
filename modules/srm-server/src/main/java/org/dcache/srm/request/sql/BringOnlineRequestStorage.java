@@ -88,7 +88,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                                       bor.getErrorMessage(),
                                                       bor.getSchedulerId(),
                                                       bor.getSchedulerTimeStamp(),
-                                                      bor.getNumberOfRetries(),
+                                                      0, // num of retries
                                                       bor.getLastStateTransitionTime(), // 10
                                                       //Database Request Storage
                                                       bor.getRetryDeltaTime(),
@@ -121,7 +121,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
                                   bor.getErrorMessage(),//5
                                   bor.getSchedulerId(),
                                   bor.getSchedulerTimeStamp(),
-                                  bor.getNumberOfRetries(),
+                                  0, // num of retries
                                   bor.getLastStateTransitionTime(),//10
                                   //Database Request Storage
                                   bor.getRetryDeltaTime(),
