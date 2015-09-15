@@ -1,5 +1,3 @@
-// $Id$
-
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -66,12 +64,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * Configuration.java
- *
- * Created on April 23, 2003, 10:19 AM
- */
-
 package org.dcache.srm.util;
 
 import com.google.common.base.Strings;
@@ -91,13 +83,6 @@ import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.client.Transport;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-
-/**
- *
- * @author  timur
- */
 public class Configuration {
 
     private static final String INFINITY = "infinity";
@@ -184,11 +169,6 @@ public class Configuration {
     protected long storage_info_update_period = TimeUnit.SECONDS.toMillis(30);
     protected String qosPluginClass = null;
     protected String qosConfigFile = null;
-    private String getPriorityPolicyPlugin="DefaultJobAppraiser";
-    private String bringOnlinePriorityPolicyPlugin="DefaultJobAppraiser";
-    private String putPriorityPolicyPlugin="DefaultJobAppraiser";
-    private String lsPriorityPolicyPlugin="DefaultJobAppraiser";
-    private String reserveSpacePriorityPolicyPlugin="DefaultJobAppraiser";
     private Integer maxQueuedJdbcTasksNum ; //null by default
     private Integer jdbcExecutionThreadNum;//null by default
     private String credentialsDirectory="/opt/d-cache/credentials";
@@ -850,39 +830,7 @@ public class Configuration {
         this.defaultSpaceLifetime = defaultSpaceLifetime;
     }
 
-    public void setGetPriorityPolicyPlugin(String txt) {
-        getPriorityPolicyPlugin=txt;
-    }
-
-    public String getGetPriorityPolicyPlugin() {
-        return getPriorityPolicyPlugin;
-    }
-
-    public void setPutPriorityPolicyPlugin(String txt) {
-        putPriorityPolicyPlugin=txt;
-    }
-
-    public String getPutPriorityPolicyPlugin() {
-        return putPriorityPolicyPlugin;
-    }
-
-    public void setCopyPriorityPolicyPlugin(String txt) {
-        putPriorityPolicyPlugin=txt;
-    }
-
-    public String getCopyPriorityPolicyPlugin() {
-        return putPriorityPolicyPlugin;
-    }
-
-    public void setReserveSpacePriorityPolicyPlugin(String txt) {
-        putPriorityPolicyPlugin=txt;
-    }
-
-    public String getReserveSpacePriorityPolicyPlugin() {
-        return putPriorityPolicyPlugin;
-    }
-
-     public Integer getJdbcExecutionThreadNum() {
+    public Integer getJdbcExecutionThreadNum() {
         return jdbcExecutionThreadNum;
     }
 
@@ -1011,28 +959,12 @@ public class Configuration {
         this.bringOnlineLifetime = bringOnlineLifetime;
     }
 
-    public String getBringOnlinePriorityPolicyPlugin() {
-        return bringOnlinePriorityPolicyPlugin;
-    }
-
-    public void setBringOnlinePriorityPolicyPlugin(String bringOnlinePriorityPolicyPlugin) {
-        this.bringOnlinePriorityPolicyPlugin = bringOnlinePriorityPolicyPlugin;
-    }
-
     public long getLsMaxPollPeriod() {
         return lsMaxPollPeriod;
     }
 
     public void setLsMaxPollPeriod(long lsMaxPollPeriod) {
         this.lsMaxPollPeriod = lsMaxPollPeriod;
-    }
-
-    public String getLsPriorityPolicyPlugin() {
-        return lsPriorityPolicyPlugin;
-    }
-
-    public void setLsPriorityPolicyPlugin(String lsPriorityPolicyPlugin) {
-        this.lsPriorityPolicyPlugin = lsPriorityPolicyPlugin;
     }
 
     /**
