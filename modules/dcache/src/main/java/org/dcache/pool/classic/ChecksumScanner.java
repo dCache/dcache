@@ -2,6 +2,8 @@ package org.dcache.pool.classic;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -568,36 +571,70 @@ public class ChecksumScanner
         }
     }
 
-    public final static String hh_csm_check = " [ * | <pnfsId> ]";
-    public String ac_csm_check_$_1(Args args)
+    @Command(name = "csm check",
+            hint = "verify checksum of files on this pool",
+            description = "Do a checksum verification on a file or all files in " +
+                    "this pool. The result of the check can be view using the " +
+                    "'csm status' command.")
+    public class CsmCheckCommand implements Callable<String>
     {
-        if (args.argv(0).equals("*")) {
-            _fullScan.start();
-        } else {
-            _singleScan.go(new PnfsId(args.argv(0)));
+        @Argument(valueSpec = "PNFSID|*",
+                usage = "Specify the pnfsID of the file to scan. If all " +
+                        "files in this pool are to be scan, simply use '*'.")
+        String pnfsID;
+
+        @Override
+        public String call() throws
+                CacheException, InterruptedException,
+                IOException, NoSuchAlgorithmException
+        {
+            if (pnfsID.equals("*")) {
+                _fullScan.start();
+            } else {
+                _singleScan.go(new PnfsId(pnfsID));
+            }
+            return "Started ...; check 'csm status' for status";
         }
-        return "Started ...; check 'csm status' for status";
     }
 
-    public String ac_csm_status(Args args)
+    @Command(name = "csm status",
+            hint = "get checksum verification result",
+            description = "Display the detailed result of the checksum check " +
+                    "performed by scanning all or a single file in this pool. " +
+                    "This status report will contain the full scan, single scan " +
+                    "and the scrubber result.")
+    public class CsmStatusCommand implements Callable<String>
     {
-        return _fullScan.toString() + "\n" + _singleScan.toString() + "\n" +
-            _scrubber.toString();
+        @Override
+        public String call()
+        {
+            return _fullScan.toString() + "\n" + _singleScan.toString() + "\n" +
+                    _scrubber.toString();
+        }
     }
 
-    public final static String hh_csm_show_errors =
-        "# show errors found with 'csm check'";
-    public String ac_csm_show_errors(Args args)
+    @Command(name = "csm show errors",
+            hint = "show errors found during checksum verification",
+            description = "Display the list of all errors found while running " +
+                    "the 'csm check' command. The shown information (based on " +
+                    "these errors) will contain the pnfsID and the actual " +
+                    "checksum value of the (corrupted) file. Nothing is returned " +
+                    "when no error is found.")
+    public class CsmShowErrorsCommand implements Callable<String>
     {
-        StringBuilder builder = new StringBuilder();
-        for (Map.Entry<PnfsId,Iterable<Checksum>> e: _bad.entrySet()) {
-            builder
-                .append(e.getKey())
-                .append(" -> ")
-                .append(e.getValue())
-                .append('\n');
+        @Override
+        public String call()
+        {
+            StringBuilder builder = new StringBuilder();
+            for (Map.Entry<PnfsId,Iterable<Checksum>> e: _bad.entrySet()) {
+                builder
+                        .append(e.getKey())
+                        .append(" -> ")
+                        .append(e.getValue())
+                        .append('\n');
+            }
+            return builder.toString();
         }
-        return builder.toString();
     }
 
     @Override
