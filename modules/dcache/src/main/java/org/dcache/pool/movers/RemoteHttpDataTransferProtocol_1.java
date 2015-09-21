@@ -4,7 +4,6 @@ import com.google.common.base.Optional;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
@@ -220,15 +219,12 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
             throws ThirdPartyTransferFailedCacheException
     {
         HttpGet get = new HttpGet(info.getUri());
-        get.setProtocolVersion(HttpVersion.HTTP_1_1);
         get.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
-            get.addHeader(header.getKey(), header.getValue());
-        }
-        get.setConfig(RequestConfig.custom().
-                setConnectTimeout(CONNECTION_TIMEOUT).
-                setSocketTimeout(SOCKET_TIMEOUT).
-                build());
+        info.getHeaders().forEach(get::addHeader);
+        get.setConfig(RequestConfig.custom()
+                              .setConnectTimeout(CONNECTION_TIMEOUT)
+                              .setSocketTimeout(SOCKET_TIMEOUT)
+                              .build());
 
         try (CloseableHttpResponse response = _client.execute(get)) {
             StatusLine statusLine = response.getStatusLine();
@@ -377,16 +373,12 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     private HttpPut buildPutRequest(URI location, Map<String,String> extraHeaders, long length)
     {
         HttpPut request = new HttpPut(location);
-        request.setProtocolVersion(HttpVersion.HTTP_1_1);
-        request.setConfig(RequestConfig.custom().
-                setConnectTimeout(CONNECTION_TIMEOUT).
-                setExpectContinueEnabled(true).
-                setSocketTimeout(0).
-                build());
-        for (Map.Entry<String,String> header : extraHeaders.entrySet()) {
-            request.addHeader(header.getKey(), header.getValue());
-        }
-
+        request.setConfig(RequestConfig.custom()
+                                  .setConnectTimeout(CONNECTION_TIMEOUT)
+                                  .setExpectContinueEnabled(true)
+                                  .setSocketTimeout(0)
+                                  .build());
+        extraHeaders.forEach(request::addHeader);
         request.setEntity(new InputStreamEntity(Channels.newInputStream(_channel), length));
 
         // FIXME add SO_KEEPALIVE setting
@@ -465,15 +457,11 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     {
         HttpHead request = new HttpHead(location);
         request.addHeader("Want-Digest", WANT_DIGEST_VALUE);
-        request.setProtocolVersion(HttpVersion.HTTP_1_1);
-        request.setConfig(RequestConfig.custom().
-                setConnectTimeout(CONNECTION_TIMEOUT).
-                setSocketTimeout(SOCKET_TIMEOUT).
-                build());
-        for (Map.Entry<String,String> header : extraHeaders.entrySet()) {
-            request.addHeader(header.getKey(), header.getValue());
-        }
-
+        request.setConfig(RequestConfig.custom()
+                                  .setConnectTimeout(CONNECTION_TIMEOUT)
+                                  .setSocketTimeout(SOCKET_TIMEOUT)
+                                  .build());
+        extraHeaders.forEach(request::addHeader);
         return request;
     }
 
@@ -543,14 +531,11 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
             throws ThirdPartyTransferFailedCacheException
     {
         HttpDelete delete = new HttpDelete(info.getUri());
-        delete.setProtocolVersion(HttpVersion.HTTP_1_1);
-        delete.setConfig(RequestConfig.custom().
-                setConnectTimeout(CONNECTION_TIMEOUT).
-                setSocketTimeout(SOCKET_TIMEOUT).
-                build());
-        for (Map.Entry<String,String> header : info.getHeaders().entrySet()) {
-            delete.addHeader(header.getKey(), header.getValue());
-        }
+        delete.setConfig(RequestConfig.custom()
+                                 .setConnectTimeout(CONNECTION_TIMEOUT)
+                                 .setSocketTimeout(SOCKET_TIMEOUT)
+                                 .build());
+        info.getHeaders().forEach(delete::addHeader);
 
         try (CloseableHttpResponse response = _client.execute(delete)) {
             StatusLine status = response.getStatusLine();
