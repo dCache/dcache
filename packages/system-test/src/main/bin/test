@@ -73,19 +73,25 @@ def srmcp(source, dest, *args)
   run(@srmcp, args,
       "http://#{@options.host}:2880/#{@options.dir}/#{tmp}/c",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/d")
-  run(@srmcp, args, '-pushmode=false',
-      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/d",
+  run(@srmcp, args,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp}/d",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/e")
-  run(@srmcp, args, '-pushmode=true',
+  run(@srmcp, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/e",
-      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f")
-  run(@srmmv, args,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp}/f")
+  run(@srmcp, args, '-pushmode=false',
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
-  run(@srmbringonline, args,
-      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
-  run(@srmcp, args, '-streams_num=1',
+  run(@srmcp, args, '-pushmode=true',
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/h")
+  run(@srmmv, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/h",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/i")
+  run(@srmbringonline, args,
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/i")
+  run(@srmcp, args, '-streams_num=1',
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/i",
       "file:///#{dest}")
   run(@srmls, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/a")
@@ -97,7 +103,9 @@ def srmcp(source, dest, *args)
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/c",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/d",
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/e",
-      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g")
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/f",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/g",
+      "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/i")
   run(@srmmkdir, args,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}/dir1")
   run(@srmmkdir, args,
@@ -108,7 +116,7 @@ def srmcp(source, dest, *args)
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp}")
 end
 
-def arc(source, dest, *args)
+def arcSrm(source, dest, *args)
   tmp1 = makeTempName
   tmp2 = makeTempName
   tmp3 = makeTempName
@@ -133,6 +141,21 @@ def arc(source, dest, *args)
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
   run(@arcrm,
       "srm://#{@options.host}:8443/#{@options.dir}/#{tmp1}")
+end
+
+def arcHttps(source, dest, *args)
+  tmp1 = makeTempName
+
+  run(@arccp, args,
+      "#{source}",
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  run(@arccp, args,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}",
+      "#{dest}")
+  run(@arcls,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  run(@arcrm,
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
 end
 
 def xrootd(source, dest, *args)
@@ -170,9 +193,19 @@ end
 
 def http(source, dest, *args)
   tmp1 = makeTempName
-  run(@curl, args, "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
-  run(@curl, args, "-s", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
-  run(@curl, args, "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T", source, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-s", "-L", "-o", dest, "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "-f", "-u", "#{Etc.getlogin}:password", "-X", "DELETE", "http://#{@options.host}:2880/#{@options.dir}/#{tmp1}")
+end
+
+def https(source, dest, *args)
+  tmp1 = makeTempName
+  run(@curl, args, "--capath /etc/grid-security/certificates", "-s", "-u", "#{Etc.getlogin}:password", "-L", "-T",
+      source, "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "--capath /etc/grid-security/certificates", "-s", "-L", "-o",
+      dest, "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
+  run(@curl, args, "--capath /etc/grid-security/certificates", "-u", "#{Etc.getlogin}:password", "-X", "DELETE",
+      "https://#{@options.host}:2881/#{@options.dir}/#{tmp1}")
 end
 
 def test(transfer, *args)
@@ -192,7 +225,7 @@ def test(transfer, *args)
     puts red { error }
   ensure
     puts
-    tmp.close
+    tmp.close(false)
   end
 end
 
@@ -234,8 +267,9 @@ def OptionParser.parse(args)
     :srmcp => [ [ :srmcp, '-1' ],
                 [ :srmcp, '-2' ]
               ],
-    :arc => [ [ :arc ] ],
-    :http => [ [ :http ] ]
+    :arc => [ [ :arcSrm ],
+              [ :arcHttps ] ],
+    :http => [ [ :http ], [ :https ] ]
   }
 
   parser = OptionParser.new do |opts|

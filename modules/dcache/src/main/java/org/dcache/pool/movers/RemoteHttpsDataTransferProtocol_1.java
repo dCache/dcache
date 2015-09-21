@@ -4,7 +4,7 @@ import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import org.apache.http.conn.ssl.SSLContexts;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.globus.gsi.provider.GlobusProvider;
@@ -149,10 +149,10 @@ public class RemoteHttpsDataTransferProtocol_1 extends RemoteHttpDataTransferPro
         try {
             SSLContext context = SSLContexts.custom().
                     loadKeyMaterial(buildKeyStore(password), password).
-                    loadTrustMaterial(getTrustStore()).
+                    loadTrustMaterial(getTrustStore(), null).
                     build();
 
-            return HttpClients.custom().setUserAgent(USER_AGENT).setSslcontext(context).build();
+            return HttpClients.custom().setUserAgent(USER_AGENT).setSSLContext(context).build();
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException
                 | UnrecoverableKeyException | CertificateException | IOException e) {
             throw new CacheException("failed to build http client: " +
