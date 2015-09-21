@@ -1,10 +1,13 @@
 package org.dcache.pool.classic;
 
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import diskCacheV111.vehicles.IoJobInfo;
@@ -13,7 +16,7 @@ import diskCacheV111.vehicles.JobInfo;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 
-import org.dcache.util.Args;
+import static com.google.common.base.Preconditions.checkArgument;
 
 class SchedulerEntry
 {
@@ -44,6 +47,8 @@ class SchedulerEntry
 
     synchronized void setLastAccessed(long lastAccessed)
     {
+        checkArgument(lastAccessed >= 0L, "The lastAccess timeout must be " +
+                "greater than or equal to 0.");
         _lastAccessed = lastAccessed;
     }
 
@@ -54,6 +59,8 @@ class SchedulerEntry
 
     synchronized void setTotal(long total)
     {
+        checkArgument(total >= 0L, "The total timeout must be " +
+                "greater than or equal to 0.");
         _total = total;
     }
 
@@ -136,21 +143,21 @@ public class JobTimeoutManager
         }
     }
 
-    public static final String hh_jtm_go = "trigger the worker thread";
-    public synchronized String ac_jtm_go(Args args)
+    @Command(name = "jtm go",
+            hint = "kill transfers that have exceeded time limits",
+            description = "Immediately kills all transfers that have exceeded the inactivity " +
+                    "limits defined for the corresponding queue. Usually the job timeout manager " +
+                    "does this automatically every second minute, but with this command such " +
+                    "transfers can be killed immediately.")
+    public class JtmGoCommand implements Callable<String>
     {
-        notifyAll();
-        return "";
-    }
-
-    public static final String hh_jtm_ls = "list queues";
-    public String ac_jtm_ls(Args args)
-    {
-        StringBuilder sb = new StringBuilder();
-        for (SchedulerEntry entry : _schedulers) {
-            sb.append(entry.getName()).append(" ");
+        @Override
+        public synchronized String call()
+                throws IllegalMonitorStateException
+        {
+            notifyAll();
+            return "";
         }
-        return sb.toString();
     }
 
     private SchedulerEntry find(String name)
@@ -177,36 +184,48 @@ public class JobTimeoutManager
         return entry;
     }
 
-    public static final String hh_jtm_set_timeout =
-        "[-total=<timeout/sec>] [-lastAccess=<timeout/sec>] [-queue=<queueName>]" ;
-    public String ac_jtm_set_timeout(Args args)
+    @Command(name = "jtm set timeout",
+            hint = "set transfer inactivity limits",
+            description = "Set the transfer timeout for a specified queue or all queues in " +
+                    "this pool. The timeout is a time limit after which a job is considered " +
+                    "expired and it will be terminated by the job timeout manager. There are " +
+                    "two timeout values needed to be set:\n" +
+                    "\t1. The last access timeout is the time durations after which a job is " +
+                    "deemed expired based on the time since the last block was transferred.\n" +
+                    "\t2. The total timeout is the time duration after which a job is deemed " +
+                    "expired based on the start time of the job.\n\n" +
+                    "One of these two or both timeout duration must be surpassed before a job " +
+                    "is terminated.")
+    public class JtmSetTimeoutCommand implements Callable<String>
     {
-        String  queue         = args.getOpt("queue");
-        String  lastAccessStr = args.getOpt("lastAccess");
-        String  totalStr      = args.getOpt("total");
+        @Option(name = "queue", valueSpec = "NAME",
+                usage = "Specify the queue name. If no queue is specified, " +
+                        "the setting will be applied to all queues.")
+        String  queueName;
 
-        long lastAccess = lastAccessStr == null ? -1 : (Long.parseLong(lastAccessStr)*1000L) ;
-        long total      = totalStr      == null ? -1 : (Long.parseLong(totalStr)*1000L) ;
+        @Option(name = "lastAccess", valueSpec = "TIMEOUT",
+                usage = "Set the lassAccessed timeout limit in seconds.")
+        long  lastAccessed;
 
-        if (queue == null) {
-            for (SchedulerEntry entry: _schedulers) {
-                if (lastAccess >= 0L) {
-                    entry.setLastAccessed(lastAccess);
+        @Option(name = "total", valueSpec = "TIMEOUT",
+                usage = "Set the total timeout limit in seconds.")
+        long  total;
+
+        @Override
+        public synchronized String call() throws IllegalArgumentException
+        {
+            if (queueName == null) {
+                for (SchedulerEntry entry: _schedulers) {
+                    entry.setLastAccessed(lastAccessed * 1000L);
+                    entry.setTotal(total * 1000L);
                 }
-                if (total >= 0L) {
-                    entry.setTotal(total);
-                }
+            } else {
+                SchedulerEntry entry = findOrCreate(queueName);
+                entry.setLastAccessed(lastAccessed * 1000L);
+                entry.setTotal(total * 1000L);
             }
-        } else {
-            SchedulerEntry entry = findOrCreate(queue);
-            if (lastAccess >= 0L) {
-                entry.setLastAccessed(lastAccess);
-            }
-            if (total >= 0L) {
-                entry.setTotal(total);
-            }
+            return "";
         }
-        return "";
     }
 
     private void say(String str)
