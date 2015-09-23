@@ -100,4 +100,5 @@ create org.dcache.cells.UniversalSpringCell ${frontend.cell.name} \
    "classpath:org/dcache/webdav/frontend.xml \
     -consume=${frontend.cell.consume} \
     -subscribe=${frontend.cell.subscribe} \
+    -profiles=macaroons-${frontend.enable.macaroons} \
     -cellClass=FrontendDoor"

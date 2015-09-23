@@ -102,18 +102,6 @@
       <constructor-arg value="2"/>
   </bean>
 
-  <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
-      <description>Processes login requests</description>
-      <property name="loginStrategies">
-          <list>
-          <bean class="org.dcache.services.login.RemoteLoginStrategy">
-              <property name="cellStub" ref="login-stub"/>
-          </bean>
-          </list>
-      </property>
-      <property name="anonymousAccess" value="${webdav.authz.anonymous-operations}"/>
-  </bean>
-
   <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
       <description>Processes mapping requests</description>
       <constructor-arg index="0" ref="union-login-strategy" />
@@ -352,19 +340,7 @@
     </bean>
 
     <bean id="authhandler" class="org.dcache.http.AuthenticationHandler">
-        <property name="handler">
-            <bean class="org.eclipse.jetty.server.handler.HandlerList">
-                <property name="handlers">
-                    <list>
-                        <bean class="org.dcache.webdav.MiltonHandler">
-                            <property name="httpManager" ref="http-manager"/>
-                            <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
-                        </bean>
-                        <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
-                    </list>
-                </property>
-            </bean>
-        </property>
+        <property name="handler" ref="authorised-handlers"/>
         <property name="loginStrategy" ref="cache-login-strategy"/>
         <property name="readOnly" value="${webdav.authz.readonly}"/>
         <property name="enableBasicAuthentication" value="${webdav.authn.basic}"/>
@@ -504,13 +480,96 @@
         <property name="proxyConnectionEnabled" value="${webdav.enable.proxy-protocol}"/>
     </bean>
 
+    <beans profile="macaroons-true">
+        <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">
+            <description>Facade for handling macaroon creation and verification</description>
+            <property name="secretHandler">
+                <bean id="macaroon-secret-handler" class="org.dcache.macaroons.ZookeeperSecretHandler">
+                    <property name="executor" ref="scheduled-thread-pool"/>
+                    <property name="zookeeperSecretStorage">
+                        <bean class="org.dcache.macaroons.ZookeeperSecretStorage"/>
+                    </property>
+                    <property name="expirationPeriod"
+                              value="${webdav.macaroons.expired-removal-period}"/>
+                    <property name="expirationPeriodUnit"
+                              value="${webdav.macaroons.expired-removal-period.unit}"/>
+                </bean>
+            </property>
+        </bean>
+
+        <bean id="authorised-handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+            <property name="handlers">
+                <list>
+                    <bean class="org.dcache.webdav.macaroons.MacaroonRequestHandler">
+                        <property name="macaroonProcessor" ref="macaroon-processor"/>
+			<property name="maximumLifetime"
+				  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+					 ${webdav.macaroons.max-lifetime},
+					 '${webdav.macaroons.max-lifetime.unit}')}" />
+			<property name="defaultLifetime"
+				  value="#{T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(
+					 ${webdav.macaroons.default-lifetime},
+					 '${webdav.macaroons.default-lifetime.unit}')}" />
+			<property name="pathMapper" ref="path-mapper"/>
+                    </bean>
+
+                    <bean class="org.dcache.webdav.MiltonHandler">
+                        <property name="httpManager" ref="http-manager"/>
+                        <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
+                    </bean>
+                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                </list>
+            </property>
+        </bean>
+
+        <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+            <description>Processes login requests</description>
+            <property name="loginStrategies">
+                <list>
+                    <bean class="org.dcache.auth.MacaroonLoginStrategy">
+                        <constructor-arg index="0" ref="macaroon-processor"/>
+                    </bean>
+                    <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                        <property name="cellStub" ref="login-stub"/>
+                    </bean>
+                </list>
+            </property>
+            <property name="anonymousAccess" value="${webdav.authz.anonymous-operations}"/>
+        </bean>
+    </beans>
+
+    <beans profile="macaroons-false">
+        <bean id="authorised-handlers" class="org.eclipse.jetty.server.handler.HandlerList">
+            <property name="handlers">
+                <list>
+                    <bean class="org.dcache.webdav.MiltonHandler">
+                        <property name="httpManager" ref="http-manager"/>
+                        <property name="allowedClientOrigins" value="${webdav.allowed.client.origins}"/>
+                    </bean>
+                    <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                </list>
+            </property>
+        </bean>
+
+        <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+            <description>Processes login requests</description>
+            <property name="loginStrategies">
+                <list>
+                    <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                        <property name="cellStub" ref="login-stub"/>
+                    </bean>
+                </list>
+            </property>
+            <property name="anonymousAccess" value="${webdav.authz.anonymous-operations}"/>
+        </bean>
+    </beans>
+
     <beans profile="missing-files-false">
         <bean id="missing-file-strategy"
              class="org.dcache.missingfiles.AlwaysFailMissingFileStrategy">
             <description>configured behaviour to always fail missing-files</description>
         </bean>
     </beans>
-
 
     <beans profile="missing-files-true">
         <bean id="missing-files-stub" class="org.dcache.cells.CellStub">

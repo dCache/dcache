@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -296,4 +297,16 @@ public final class Strings {
         }
     }
 
+    public static Optional<String> combine(Optional<String> first, String seperator, Optional<String> second)
+    {
+        if (first.isPresent()) {
+            if (second.isPresent()) {
+                return Optional.of(first.get() + seperator + second.get());
+            } else {
+                return first;
+            }
+        } else {
+            return second;
+        }
+    }
 }

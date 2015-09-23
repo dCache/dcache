@@ -2,6 +2,8 @@ package org.dcache.auth.attributes;
 
 import java.io.Serializable;
 
+import diskCacheV111.util.FsPath;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -18,6 +20,11 @@ public class RootDirectory implements LoginAttribute, Serializable
     {
         checkNotNull(root);
         _root = root;
+    }
+
+    public RootDirectory(FsPath root)
+    {
+        this(root.toString());
     }
 
     public String getRoot()

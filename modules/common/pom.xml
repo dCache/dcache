@@ -52,5 +52,9 @@
       <artifactId>gson</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.nitram509</groupId>
+      <artifactId>jmacaroons</artifactId>
+    </dependency>
   </dependencies>
 </project>

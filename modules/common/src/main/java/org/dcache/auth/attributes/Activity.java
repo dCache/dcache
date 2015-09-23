@@ -17,6 +17,8 @@
  */
 package org.dcache.auth.attributes;
 
+import java.util.EnumSet;
+
 /**
  * The Activity class provides a very course-grain set of actions that
  * a user may attempt.  It is intended to be used when making course-grain

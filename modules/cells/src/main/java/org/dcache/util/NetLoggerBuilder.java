@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 
 import org.dcache.auth.GidPrincipal;
+import org.dcache.auth.MacaroonPrincipal;
 import org.dcache.auth.UidPrincipal;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -60,30 +61,36 @@ public class NetLoggerBuilder
 
         Long uid = null;
         Long gid = null;
+        String macaroon = null;
         for (Principal principal : subject.getPrincipals()) {
             if (principal instanceof UidPrincipal) {
-                if (((UidPrincipal) principal).getUid() == 0) {
-                    return sb.append("root");
-                }
                 uid = ((UidPrincipal) principal).getUid();
             } else if (principal instanceof GidPrincipal) {
                 if (((GidPrincipal) principal).isPrimaryGroup()) {
                     gid = ((GidPrincipal) principal).getGid();
                 }
+            } else if (principal instanceof MacaroonPrincipal) {
+                macaroon = principal.getName();
             }
         }
         if (uid == null) {
-            return sb.append("nobody");
-        }
-        sb.append(uid).append(':');
-        if (gid != null) {
-            sb.append(gid);
-        }
-        for (Principal principal : subject.getPrincipals()) {
-            if (principal instanceof GidPrincipal &&
-                    !((GidPrincipal) principal).isPrimaryGroup()) {
-                sb.append(',').append(((GidPrincipal) principal).getGid());
+            sb.append("nobody");
+        } else if (uid == 0) {
+            sb.append("root");
+        } else {
+            sb.append(uid).append(':');
+            if (gid != null) {
+                sb.append(gid);
             }
+            for (Principal principal : subject.getPrincipals()) {
+                if (principal instanceof GidPrincipal &&
+                        !((GidPrincipal) principal).isPrimaryGroup()) {
+                    sb.append(',').append(((GidPrincipal) principal).getGid());
+                }
+            }
+        }
+        if (macaroon != null) {
+            sb.append('[').append(macaroon).append(']');
         }
         return sb;
     }

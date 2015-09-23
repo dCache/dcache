@@ -51,9 +51,14 @@ public class DenyActivityRestriction implements Restriction
                       : EnumSet.noneOf(Activity.class);
     }
 
-    private DenyActivityRestriction(EnumSet<Activity> denied)
+    public DenyActivityRestriction(EnumSet<Activity> denied)
     {
         this.denied = denied;
+    }
+
+    public EnumSet<Activity> getDenied()
+    {
+        return EnumSet.copyOf(denied);
     }
 
     @Override

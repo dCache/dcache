@@ -18,6 +18,7 @@
  */
 package org.dcache.auth.attributes;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
 import java.io.IOException;
@@ -39,11 +40,19 @@ public class PrefixRestriction implements Restriction
         this.prefixes = ImmutableSet.copyOf(prefixes);
     }
 
+    public ImmutableSet<FsPath> getPrefixes()
+    {
+        return prefixes;
+    }
+
     @Override
     public boolean isRestricted(Activity activity, FsPath path)
     {
         for (FsPath prefix : prefixes) {
-            if (path.hasPrefix(prefix) || activity == Activity.READ_METADATA && prefix.hasPrefix(path)) {
+            if (path.hasPrefix(prefix)) {
+                return false;
+            }
+            if (prefix.hasPrefix(path) && (activity == Activity.READ_METADATA || activity == Activity.LIST)) {
                 return false;
             }
         }
@@ -97,9 +106,9 @@ public class PrefixRestriction implements Restriction
     private void readObject(java.io.ObjectInputStream stream)
             throws IOException, ClassNotFoundException
     {
-        int count = stream.readInt();
+        int countPrefixes = stream.readInt();
         ImmutableSet.Builder<FsPath> builder = ImmutableSet.builder();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < countPrefixes; i++) {
             builder.add(FsPath.create(stream.readObject().toString()));
         }
         prefixes = builder.build();
@@ -112,5 +121,18 @@ public class PrefixRestriction implements Restriction
         for (FsPath prefix : prefixes) {
             stream.writeObject(prefix.toString());
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder("PrefixRestrict[");
+
+        if (prefixes.size() == 1) {
+            sb.append("prefix=").append(prefixes.iterator().next().toString());
+        } else {
+            sb.append("prefixes={").append(Joiner.on(',').join(prefixes)).append('}');
+        }
+        return sb.append(']').toString();
     }
 }

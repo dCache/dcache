@@ -76,23 +76,13 @@
         <property name="rootPath" value="${frontend.root}"/>
     </bean>
 
+
+
   <bean id="login-strategy" class="org.dcache.webdav.AnonymousUserLoginStrategy">
       <description>Processes login for user 'anonymous'</description>
       <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
       <property name="username" value="anonymous"/>
-      <property name="nonAnonymousStrategy">
-          <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
-              <description>Process anonymous login requests</description>
-              <property name="loginStrategies">
-                  <list>
-                      <bean class="org.dcache.services.login.RemoteLoginStrategy">
-                          <property name="cellStub" ref="login-stub"/>
-                      </bean>
-                  </list>
-              </property>
-              <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
-          </bean>
-      </property>
+      <property name="nonAnonymousStrategy" ref="union-login-strategy"/>
   </bean>
 
   <bean id="cache-login-strategy" class="org.dcache.auth.CachingLoginStrategy">
@@ -396,4 +386,53 @@
 
         <property name="proxyConnectionEnabled" value="${frontend.enable.proxy-protocol}"/>
     </bean>
+
+
+    <beans profile="macaroons-true">
+        <bean id="macaroon-processor" class="org.dcache.macaroons.MacaroonProcessor">
+            <description>Facade for handling macaroon creation and verification</description>
+            <property name="secretHandler">
+                <bean class="org.dcache.macaroons.ZookeeperSecretHandler">
+                    <description>Handle creation, distribution and disposal of secrets using zookeeper</description>
+                    <property name="executor" ref="scheduling-service"/>
+                    <property name="zookeeperSecretStorage">
+                        <bean class="org.dcache.macaroons.ZookeeperSecretStorage"/>
+                    </property>
+                    <property name="expirationPeriod"
+                              value="${frontend.macaroons.expired-removal-period}"/>
+                    <property name="expirationPeriodUnit"
+                              value="${frontend.macaroons.expired-removal-period.unit}"/>
+                </bean>
+            </property>
+        </bean>
+
+        <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+            <description>Process anonymous login requests</description>
+            <property name="loginStrategies">
+                <list>
+                    <bean class="org.dcache.auth.MacaroonLoginStrategy">
+                        <constructor-arg index="0" ref="macaroon-processor"/>
+                    </bean>
+                    <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                        <property name="cellStub" ref="login-stub"/>
+                    </bean>
+                </list>
+            </property>
+            <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
+        </bean>
+    </beans>
+
+    <beans profile="macaroons-false">
+        <bean id="union-login-strategy" class="org.dcache.auth.UnionLoginStrategy">
+            <description>Process anonymous login requests</description>
+            <property name="loginStrategies">
+                <list>
+                    <bean class="org.dcache.services.login.RemoteLoginStrategy">
+                        <property name="cellStub" ref="login-stub"/>
+                    </bean>
+                </list>
+            </property>
+            <property name="anonymousAccess" value="${frontend.authz.anonymous-operations}"/>
+        </bean>
+    </beans>
 </beans>
