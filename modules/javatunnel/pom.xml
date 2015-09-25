@@ -16,7 +16,7 @@
   <dependencies>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>cells</artifactId>
+      <artifactId>dcache-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

@@ -42,8 +42,6 @@ import java.net.SocketException;
 import java.net.SocketImpl;
 import java.net.UnknownHostException;
 
-import dmg.protocols.telnet.TunnelSocket;
-
 public class DssSocket extends Socket implements TunnelSocket
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(DssSocket.class);

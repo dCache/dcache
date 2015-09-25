@@ -13,9 +13,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.security.Principal;
 
-import dmg.protocols.telnet.TunnelSocket;
-import dmg.util.UserValidatable;
-
 import org.dcache.auth.UserNamePrincipal;
 
 public class SSLTunnelSocket extends Socket implements TunnelSocket

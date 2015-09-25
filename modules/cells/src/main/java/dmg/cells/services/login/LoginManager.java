@@ -3,8 +3,8 @@ package dmg.cells.services.login;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.MoreExecutors;
+import javatunnel.UserValidatable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,6 @@ import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
-import dmg.util.UserValidatable;
 
 import org.dcache.auth.Subjects;
 import org.dcache.util.Args;

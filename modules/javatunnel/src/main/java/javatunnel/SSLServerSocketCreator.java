@@ -17,8 +17,6 @@ import java.net.ServerSocket;
 import java.security.KeyStore;
 import java.util.Map;
 
-import dmg.util.UserValidatable;
-
 import org.dcache.util.Args;
 
 public class SSLServerSocketCreator extends ServerSocketFactory {

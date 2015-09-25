@@ -1,5 +1,6 @@
 package dmg.util;
 
+import javatunnel.TunnelSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +20,6 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-
-import dmg.protocols.telnet.TunnelSocket;
 
 public class DummyStreamEngine implements StreamEngine
 {

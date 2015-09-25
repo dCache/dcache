@@ -14,8 +14,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-import dmg.util.UserValidatable;
-
 public class SSLTunnelServerSocket extends ServerSocket {
 
 

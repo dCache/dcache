@@ -16,8 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import dmg.protocols.telnet.TunnelSocket;
-
 class SelfTest {
 
     public static void main(String[] args)
