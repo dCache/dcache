@@ -18,6 +18,7 @@
 package javatunnel;
 
 import org.dcache.dss.DssContextFactory;
+import org.dcache.util.Args;
 
 import javax.net.ServerSocketFactory;
 
@@ -31,12 +32,14 @@ public class DssServerSocketCreator extends ServerSocketFactory
 {
     private final DssContextFactory factory;
 
-    public DssServerSocketCreator(String[] args) throws Throwable
+    public DssServerSocketCreator(String arguments) throws Throwable
     {
-        Class<? extends DssContextFactory> factory = Class.forName(args[0]).asSubclass(DssContextFactory.class);
+        Args args = new Args(arguments);
+        Class<? extends DssContextFactory> factory = Class.forName(args.argv(0)).asSubclass(DssContextFactory.class);
+        args.shift();
         Constructor<? extends DssContextFactory> cc = factory.getConstructor(String.class);
         try {
-            this.factory = cc.newInstance(args[1]);
+            this.factory = cc.newInstance(args.toString());
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }
