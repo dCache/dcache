@@ -30,8 +30,8 @@ exec file:${dcache.paths.share}/cells/stage.fragment dcap doors
 
 set env arguments-plain "-localOk"
 set env arguments-auth "-pswdfile=${dcap.authn.passwd} -authorization=required"
-set env arguments-gsi "-localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,-service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.authn.ciphers}'\\\""
-set env arguments-kerberos "-localOk -authorization=strong -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GssTunnel,'${dcap.authn.kerberos.service-principle-name}'"
+set env arguments-gsi "-localOk -authorization=strong -socketfactory=\\\"javatunnel.TunnelServerSocketCreator javatunnel.GsiTunnel -service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -service_voms_dir='${dcap.authn.vomsdir}' -ciphers='${dcap.authn.ciphers}'\\\""
+set env arguments-kerberos "-localOk -authorization=strong -socketfactory=javatunnel.TunnelServerSocketCreator javatunnel.GssTunnel '${dcap.authn.kerberos.service-principle-name}'"
 
 create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \

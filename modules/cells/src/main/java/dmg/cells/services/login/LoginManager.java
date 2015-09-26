@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -535,7 +534,7 @@ public class LoginManager
 
         private final InetSocketAddress _socketAddress;
         private final Constructor<?> _ssfConstructor;
-        private final String[] _farctoryArgs;
+        private final String _factoryArgs;
         private final long _acceptErrorTimeout;
         private final boolean _isDedicated;
 
@@ -564,35 +563,27 @@ public class LoginManager
 
             String ssf = _args.getOpt("socketfactory");
             if (ssf != null) {
-                StringTokenizer st = new StringTokenizer(ssf, ",");
+                Args args = new Args(ssf);
+                checkArgument(args.argc() >= 1 , "Invalid Arguments for 'socketfactory'");
+                String tunnelFactoryClass = args.argv(0);
 
                 /*
-                 * socket factory initialization has following format:
-                 *   <classname>[<arg1>,...]
+                 * the rest is passed to factory constructor
                  */
-                checkArgument(st.countTokens() >= 2, "Invalid Arguments for 'socketfactory'");
-
-                String tunnelFactoryClass = st.nextToken();
-
-                /*
-                 * the rest is passed to factory constructor as String[]
-                 */
-                _farctoryArgs = new String[st.countTokens()];
-                for (int i = 0; st.hasMoreTokens(); i++) {
-                    _farctoryArgs[i] = st.nextToken();
-                }
+                args.shift();
+                _factoryArgs = args.toString();
 
                 Class<?> ssfClass = Class.forName(tunnelFactoryClass);
                 Constructor<?> constructor;
                 try {
-                    constructor = ssfClass.getConstructor(String[].class, Map.class);
+                    constructor = ssfClass.getConstructor(String.class, Map.class);
                 } catch (Exception ee) {
-                    constructor = ssfClass.getConstructor(String[].class);
+                    constructor = ssfClass.getConstructor(String.class);
                 }
                 _ssfConstructor = constructor;
             } else {
                 _ssfConstructor = null;
-                _farctoryArgs = null;
+                _factoryArgs = null;
             }
 
             openPort();
@@ -608,9 +599,9 @@ public class LoginManager
                     if (_ssfConstructor.getParameterTypes().length == 2) {
                         Map<String, Object> map = newHashMap(getDomainContext());
                         map.put("UserValidatable", LoginManager.this);
-                        obj = _ssfConstructor.newInstance(_farctoryArgs, map);
+                        obj = _ssfConstructor.newInstance(_factoryArgs, map);
                     } else {
-                        obj = _ssfConstructor.newInstance(new Object[] { _farctoryArgs });
+                        obj = _ssfConstructor.newInstance(_factoryArgs);
                     }
                 } catch (InvocationTargetException e) {
                     Throwables.propagateIfPossible(e.getCause(), Exception.class);
