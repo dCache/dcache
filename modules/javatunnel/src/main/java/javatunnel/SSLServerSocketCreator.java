@@ -19,52 +19,56 @@ import java.util.Map;
 
 import dmg.util.UserValidatable;
 
+import org.dcache.util.Args;
+
 public class SSLServerSocketCreator extends ServerSocketFactory {
 
 
-	private SSLServerSocketFactory ssf;
-	private UserValidatable uv;
+    private SSLServerSocketFactory ssf;
+    private UserValidatable uv;
+
+    public  SSLServerSocketCreator(String args, Map<?,UserValidatable> map) throws IOException {
+        this(args);
+        uv = map.get("UserValidatable");
+    }
+
+    public SSLServerSocketCreator(String args) throws IOException {
+        this(new Args(args));
+    }
+
+    public SSLServerSocketCreator(Args args) throws IOException {
+
+            // args[0] : keystore
+            // args[1] : passphrase
 
 
-	public  SSLServerSocketCreator(String[] args, Map<?,UserValidatable> map) throws IOException {
-		this(args);
-		uv = map.get("UserValidatable");
-	}
+            try {
+                // set up key manager to do server authentication
+                SSLContext ctx;
+                KeyManagerFactory kmf;
+                KeyStore ks;
+                char[] passphrase = null;
 
+                if (args.argv(1) != null) {
+                    passphrase = args.argv(1).toCharArray();
+                }
 
-	public SSLServerSocketCreator(String[] args) throws IOException {
+                ctx = SSLContext.getInstance("TLS");
+                kmf = KeyManagerFactory.getInstance("SunX509");
+                ks = KeyStore.getInstance("JKS");
 
-		// args[0] : keystore
-		// args[1] : passphrase
+                ks.load(new FileInputStream(args.argv(0)), passphrase);
+                kmf.init(ks, passphrase);
+                ctx.init(kmf.getKeyManagers(), null, null);
 
+                ssf = ctx.getServerSocketFactory();
 
-			try {
-				// set up key manager to do server authentication
-				SSLContext ctx;
-				KeyManagerFactory kmf;
- 				KeyStore ks;
- 				char[] passphrase = null;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new IOException("ssl failed");
+            }
 
-				if( (args.length > 1 ) && (args[1] != null) ){
-					passphrase = args[1].toCharArray();
-				}
-
-				ctx = SSLContext.getInstance("TLS");
-				kmf = KeyManagerFactory.getInstance("SunX509");
-				ks = KeyStore.getInstance("JKS");
-
-				ks.load(new FileInputStream(args[0]), passphrase);
-				kmf.init(ks, passphrase);
-				ctx.init(kmf.getKeyManagers(), null, null);
-
-				ssf = ctx.getServerSocketFactory();
-
-			} catch (Exception e) {
-				e.printStackTrace();
-				throw new IOException("ssl failed");
-			}
-
-	}
+    }
 
 
     @Override
@@ -92,14 +96,14 @@ public class SSLServerSocketCreator extends ServerSocketFactory {
     }
 
 
-	static public void main(String[] args) {
-		try{
-			SSLServerSocketCreator sc = new SSLServerSocketCreator(args);
-			ServerSocket ss = sc.createServerSocket(1717);
-			ss.accept();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    static public void main(String[] args) {
+        try{
+            SSLServerSocketCreator sc = new SSLServerSocketCreator(new Args(args));
+            ServerSocket ss = sc.createServerSocket(1717);
+            ss.accept();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

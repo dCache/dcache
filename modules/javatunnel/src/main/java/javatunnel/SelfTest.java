@@ -99,7 +99,7 @@ class SelfTest {
             DataInputStream is;
             try {
 
-                String[] initArgs = {"javatunnel.GssTunnel", "nfs/anahit.desy.de@DESY.DE"};
+                String initArgs = "javatunnel.GssTunnel nfs/anahit.desy.de@DESY.DE";
 
                 ServerSocketFactory factory = new TunnelServerSocketCreator(initArgs);
 

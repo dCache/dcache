@@ -12,24 +12,22 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 
+import org.dcache.util.Args;
+
 public class TunnelServerSocketCreator extends ServerSocketFactory {
 
 
     Convertable _tunnel;
 
-    public TunnelServerSocketCreator(String[] args)
-            throws Throwable {
-
-        super();
-
-        Class<? extends Convertable> c  = Class.forName(args[0]).asSubclass(Convertable.class);
-        Class<?> [] classArgs = { String.class } ;
-        Constructor<? extends Convertable> cc = c.getConstructor(classArgs);
-        Object[] a = new Object[1];
-        a[0] = args[1];
-
+    public TunnelServerSocketCreator(String arguments)
+            throws Throwable
+    {
+        Args args = new Args(arguments);
+        Class<? extends Convertable> c  = Class.forName(args.argv(0)).asSubclass(Convertable.class);
+        args.shift();
+        Constructor<? extends Convertable> cc = c.getConstructor(String.class);
         try {
-            _tunnel = cc.newInstance(a);
+            _tunnel = cc.newInstance(args.toString());
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }
