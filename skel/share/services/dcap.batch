@@ -22,11 +22,18 @@ check -strong dcap.loginbroker.update-period
 check -strong dcap.loginbroker.update-period.unit
 check -strong dcap.loginbroker.update-threshold
 check -strong dcap.authn.protocol
+check dcap.authn.capath
+check dcap.authn.hostcert.cert
+check dcap.authn.hostcert.key
+check dcap.authn.namespace-mode
+check dcap.authn.crl-mode
+check dcap.authn.ocsp-mode
+check dcap.authn.passwd
+check dcap.authn.ciphers
 check -strong dcap.authz.truncate
 check -strong dcap.authz.readonly
 check -strong dcap.authz.anonymous-operations
 check -strong dcap.authz.mover-queue-overwrite
-check dcap.authn.passwd
 check dcap.mover.queue
 check dcap.net.listen
 check -strong dcache.paths.share
@@ -54,8 +61,19 @@ set env paths-when-readonly-is-false "-brokerReadPaths=/ -brokerWritePaths=/"
 
 set env arguments-plain    "${plain-paths-when-anonymous-access-is-${dcap.authz.anonymous-operations}} -localOk"
 set env arguments-auth     "${paths-when-readonly-is-${dcap.authz.readonly}} -pswdfile=${dcap.authn.passwd} -authorization=required"
-set env arguments-gsi      "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.GsiEngineDssContextFactory -service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -ciphers='${dcap.authn.ciphers}'\\\""
-set env arguments-kerberos "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.KerberosDssContextFactory '${dcap.authn.kerberos.service-principle-name}'\\\""
+set env arguments-gsi      "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong \
+                             -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.GsiEngineDssContextFactory \
+                                                -service_key='${dcap.authn.hostcert.key}' \
+                                                -service_cert='${dcap.authn.hostcert.cert}' \
+                                                -service_trusted_certs='${dcap.authn.capath}' \
+                                                -ciphers='${dcap.authn.ciphers}' \
+                                                -namespace-mode='${dcap.authn.namespace-mode}' \
+                                                -crl-mode='${dcap.authn.crl-mode}' \
+                                                -ocsp-mode='${dcap.authn.ocsp-mode}' \
+                                            \\\""
+set env arguments-kerberos "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong \
+                             -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.KerberosDssContextFactory \
+                                            '${dcap.authn.kerberos.service-principle-name}'\\\""
 
 create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \

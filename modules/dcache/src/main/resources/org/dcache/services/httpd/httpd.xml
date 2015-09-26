@@ -81,7 +81,7 @@
             <ref bean="ssl-connector"/>
         </util:list>
 
-        <bean id="ssl-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
+        <bean id="ssl-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
             <property name="server" ref="jetty"/>
 
             <property name="host" value="#{ '${httpd.net.listen}'.equals('any') ? null : '${httpd.net.listen}' }"/>
@@ -96,13 +96,17 @@
             <property name="cipherFlags" value="${httpd.authn.ciphers}"/>
 
             <property name="caPath" value="${httpd.authn.capath}"/>
-            <property name="caPathTimeout" value="${httpd.authn.hostcert.refresh}"/>
-            <property name="caPathTimeoutUnit" value="${httpd.authn.hostcert.refresh.unit}"/>
+            <property name="caPathTimeout" value="${httpd.authn.capath.refresh}"/>
+            <property name="caPathTimeoutUnit" value="${httpd.authn.capath.refresh.unit}"/>
 
             <property name="serverCertificatePath" value="${httpd.authn.hostcert.cert}"/>
             <property name="serverKeyPath" value="${httpd.authn.hostcert.key}"/>
-            <property name="serverCertificateTimeout" value="${httpd.authn.capath.refresh}"/>
-            <property name="serverCertificateTimeoutUnit" value="${httpd.authn.capath.refresh.unit}"/>
+            <property name="serverCertificateTimeout" value="${httpd.authn.hostcert.refresh}"/>
+            <property name="serverCertificateTimeoutUnit" value="${httpd.authn.hostcert.refresh.unit}"/>
+
+            <property name="namespaceMode" value="${httpd.authn.namespace-mode}"/>
+            <property name="crlCheckingMode" value="${httpd.authn.crl-mode}"/>
+            <property name="ocspCheckingMode" value="${httpd.authn.ocsp-mode}"/>
         </bean>
     </beans>
 </beans>

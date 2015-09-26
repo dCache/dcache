@@ -17,6 +17,12 @@
  */
 package org.dcache.ftp.door;
 
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
+
+import java.io.File;
+
 import diskCacheV111.util.ConfigurationException;
 
 import org.dcache.dss.GsiEngineDssContextFactory;
@@ -26,21 +32,26 @@ import org.dcache.util.Option;
 
 public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
 {
-    @Option(name="service-key",
-            required=true)
-    protected String service_key;
+    @Option(name="service-key", required=true)
+    protected File service_key;
 
-    @Option(name="service-cert",
-            required=true)
-    protected String service_cert;
+    @Option(name="service-cert", required=true)
+    protected File service_cert;
 
-    @Option(name="service-trusted-certs",
-            required=true)
-    protected String service_trusted_certs;
+    @Option(name="service-trusted-certs", required=true)
+    protected File service_trusted_certs;
 
-    @Option(name="gridftp.security.ciphers",
-            required=true)
+    @Option(name="cipher-flags", required=true)
     protected String cipherFlags;
+
+    @Option(name="namespace-mode", required=true)
+    protected NamespaceCheckingMode namespaceMode;
+
+    @Option(name="crl-mode", required=true)
+    protected CrlCheckingMode crlMode;
+
+    @Option(name="ocsp-mode", required=true)
+    protected OCSPCheckingMode ocspMode;
 
     private GsiEngineDssContextFactory dssContextFactory;
 
@@ -64,6 +75,7 @@ public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
     protected GsiEngineDssContextFactory getDssContextFactory() throws Exception
     {
         return new GsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
-                                              Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
+                                              Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags),
+                                              namespaceMode, crlMode, ocspMode);
     }
 }

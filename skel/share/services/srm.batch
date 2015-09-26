@@ -27,6 +27,10 @@ check -strong srm.authn.hostcert.cert
 check -strong srm.authn.hostcert.refresh
 check -strong srm.authn.hostcert.refresh.unit
 
+check -strong srm.authn.namespace-mode
+check -strong srm.authn.crl-mode
+check -strong srm.authn.ocsp-mode
+
 check -strong srm.client-transport
 
 check -strong srm.db.connections.idle

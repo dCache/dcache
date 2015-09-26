@@ -697,7 +697,7 @@
         =====================================================================================
     -->
 
-    <bean abstract="true" id="globus-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
+    <bean abstract="true" id="globus-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
         <property name="server" ref="server"/>
 
         <property name="host" value="#{ '${srm.net.listen}'.equals('any') ? null : '${srm.net.listen}' }"/>
@@ -718,6 +718,10 @@
         <property name="serverKeyPath" value="${srm.authn.hostcert.key}"/>
         <property name="serverCertificateTimeout" value="${srm.authn.hostcert.refresh}"/>
         <property name="serverCertificateTimeoutUnit" value="${srm.authn.hostcert.refresh.unit}"/>
+
+        <property name="namespaceMode" value="${srm.authn.namespace-mode}"/>
+        <property name="crlCheckingMode" value="${srm.authn.crl-mode}"/>
+        <property name="ocspCheckingMode" value="${srm.authn.ocsp-mode}"/>
     </bean>
 
     <bean id="server" class="org.eclipse.jetty.server.Server"

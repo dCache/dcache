@@ -37,11 +37,14 @@ check -strong ftp.enable.overwrite
 check -strong ftp.proxy.on-passive
 check -strong ftp.proxy.on-active
 check -strong ftp.authz.readonly
-check -strong ftp.authn.hostcert.key
-check -strong ftp.authn.hostcert.cert
-check -strong ftp.authn.capath
-check -strong ftp.authn.kerberos.key-distribution-center-list
-check -strong ftp.authn.kerberos.service-principle-name
+check ftp.authn.hostcert.key
+check ftp.authn.hostcert.cert
+check ftp.authn.capath
+check ftp.authn.kerberos.key-distribution-center-list
+check ftp.authn.kerberos.service-principle-name
+check ftp.authn.namespace-mode
+check ftp.authn.crl-mode
+check ftp.authn.ocsp-mode
 check ftp.authn.ciphers
 check ftp.transaction-log
 check ftp.net.listen
@@ -103,5 +106,8 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -service-key=${ftp.authn.hostcert.key} \
    -service-cert=${ftp.authn.hostcert.cert} \
    -service-trusted-certs=${ftp.authn.capath} \
-   -gridftp.security.ciphers=\"${ftp.authn.ciphers}\" \
+   -namespace-mode=${ftp.authn.namespace-mode} \
+   -crl-mode=${ftp.authn.crl-mode} \
+   -ocsp-mode=${ftp.authn.ocsp-mode} \
+   -cipher-flags=\"${ftp.authn.ciphers}\" \
    "

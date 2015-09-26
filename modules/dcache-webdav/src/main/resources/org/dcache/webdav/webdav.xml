@@ -363,7 +363,7 @@
     </beans>
 
     <beans profile="connector-https">
-        <bean id="server-connector" class="org.dcache.util.jetty.GlobusConnectorFactoryBean">
+        <bean id="server-connector" class="org.dcache.util.jetty.CanlConnectorFactoryBean">
             <description>HTTPS connector supporting grid certificates</description>
 
             <property name="server" ref="jetty"/>
@@ -387,6 +387,10 @@
             <property name="serverKeyPath" value="${webdav.authn.hostcert.key}"/>
             <property name="serverCertificateTimeout" value="${webdav.authn.hostcert.refresh}"/>
             <property name="serverCertificateTimeoutUnit" value="${webdav.authn.hostcert.refresh.unit}"/>
+
+            <property name="namespaceMode" value="${webdav.authn.namespace-mode}"/>
+            <property name="crlCheckingMode" value="${webdav.authn.crl-mode}"/>
+            <property name="ocspCheckingMode" value="${webdav.authn.ocsp-mode}"/>
         </bean>
     </beans>
 

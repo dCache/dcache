@@ -17,11 +17,16 @@
  */
 package org.dcache.dss;
 
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateFactory;
 
-import org.dcache.gsi.GlobusContextFactory;
+import org.dcache.gsi.CanlContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
@@ -32,8 +37,11 @@ public class GsiEngineDssContextFactory implements DssContextFactory
     private static final String SERVICE_CERT = "service_cert";
     private static final String SERVICE_TRUSTED_CERTS = "service_trusted_certs";
     private static final String CIPHER_FLAGS = "ciphers";
+    private static final String NAMESPACE_MODE = "namespace-mode";
+    private static final String CRL_MODE = "crl-mode";
+    private static final String OCSP_MODE = "ocsp-mode";
 
-    private final GlobusContextFactory factory;
+    private final CanlContextFactory factory;
     private final CertificateFactory cf;
 
     public GsiEngineDssContextFactory(String args) throws Exception
@@ -43,25 +51,33 @@ public class GsiEngineDssContextFactory implements DssContextFactory
 
     public GsiEngineDssContextFactory(Args arguments) throws Exception
     {
-        this(arguments.getOption(SERVICE_KEY),
-             arguments.getOption(SERVICE_CERT),
-             arguments.getOption(SERVICE_TRUSTED_CERTS),
-             Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS)));
+        this(new File(arguments.getOption(SERVICE_KEY)),
+             new File(arguments.getOption(SERVICE_CERT)),
+             new File(arguments.getOption(SERVICE_TRUSTED_CERTS)),
+             Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS)),
+             NamespaceCheckingMode.valueOf(arguments.getOption(NAMESPACE_MODE)),
+             CrlCheckingMode.valueOf(arguments.getOption(CRL_MODE)),
+             OCSPCheckingMode.valueOf(arguments.getOption(OCSP_MODE)));
     }
 
-    public GsiEngineDssContextFactory(String serverKeyPath, String serverCertificatePath,
-                                      String certificateAuthorityPath, String[] bannedCiphers) throws Exception
+    public GsiEngineDssContextFactory(File serverKeyPath, File serverCertificatePath,
+                                      File certificateAuthorityPath, String[] bannedCiphers,
+                                      NamespaceCheckingMode namespaceMode, CrlCheckingMode crlMode,
+                                      OCSPCheckingMode ocspMode) throws Exception
     {
         cf = CertificateFactories.newX509CertificateFactory();
 
-        factory = new GlobusContextFactory();
-        factory.setServerCertificatePath(serverCertificatePath);
-        factory.setServerKeyPath(serverKeyPath);
-        factory.setTrustStorePath(certificateAuthorityPath);
+        factory = new CanlContextFactory();
+        factory.setCertificatePath(serverCertificatePath);
+        factory.setKeyPath(serverKeyPath);
+        factory.setCertificateAuthorityPath(certificateAuthorityPath);
         factory.setNeedClientAuth(true);
         factory.setWantClientAuth(true);
         factory.setExcludeCipherSuites(bannedCiphers);
-        factory.setEnableGsi(true);
+        factory.setGsiEnabled(true);
+        factory.setNamespaceMode(namespaceMode);
+        factory.setCrlCheckingMode(crlMode);
+        factory.setOcspCheckingMode(ocspMode);
         factory.start();
     }
 

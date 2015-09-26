@@ -29,17 +29,7 @@
 
     <dependency>
       <groupId>org.jglobus</groupId>
-      <artifactId>axisg</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jglobus</groupId>
       <artifactId>ssl-proxies</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>gridftp</artifactId>
     </dependency>
 
     <dependency>

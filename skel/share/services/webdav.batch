@@ -45,6 +45,9 @@ check -strong webdav.authn.accept-client-cert
 check -strong webdav.authn.require-client-cert
 check -strong webdav.authn.basic
 check -strong webdav.authn.profile
+check -strong webdav.authn.namespace-mode
+check -strong webdav.authn.crl-mode
+check -strong webdav.authn.ocsp-mode
 check -strong webdav.static-content.dir.local
 check -strong webdav.static-content.dir.default
 check -strong webdav.static-content.location

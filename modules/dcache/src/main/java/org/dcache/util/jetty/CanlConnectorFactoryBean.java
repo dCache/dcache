@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,12 +17,9 @@
  */
 package org.dcache.util.jetty;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
-import com.google.common.base.Throwables;
-import org.dcache.gsi.GlobusContextFactory;
-import org.dcache.gsi.SupplierForwardingSslContextFactory;
-
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
@@ -32,27 +29,15 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.dcache.util.Crypto.*;
+import org.dcache.gsi.CanlContextFactory;
 
-public class GlobusConnectorFactoryBean implements FactoryBean<ServerConnector>
+import static org.dcache.util.Crypto.getBannedCipherSuitesFromConfigurationValue;
+
+public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
 {
-    private final Supplier<SslContextFactory> contextFactorySupplier =
-            new Supplier<SslContextFactory>()
-            {
-                @Override
-                public SslContextFactory get()
-                {
-                    try {
-                        return createContextFactory();
-                    } catch (Exception e) {
-                        throw Throwables.propagate(e);
-                    }
-                }
-            };
-
     private int acceptors = -1;
     private int port;
     private String host;
@@ -64,14 +49,17 @@ public class GlobusConnectorFactoryBean implements FactoryBean<ServerConnector>
     private TimeUnit hostCertificateTimeoutUnit;
     private long caCertificateTimeout;
     private TimeUnit caCertificateTimeoutUnit;
-    private String serverCertificatePath;
-    private String serverKeyPath;
-    private String certificateAuthorityPath;
+    private File serverCertificatePath;
+    private File serverKeyPath;
+    private File certificateAuthorityPath;
     private boolean needClientAuth;
     private boolean wantClientAuth;
     private String[] excludedCipherSuites = {};
     private boolean enableGsi;
     private boolean isUsingLegacyClose;
+    private CrlCheckingMode crlCheckingMode = CrlCheckingMode.IF_VALID;
+    private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
+    private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;;
 
     public int getAcceptors()
     {
@@ -190,35 +178,35 @@ public class GlobusConnectorFactoryBean implements FactoryBean<ServerConnector>
         this.caCertificateTimeoutUnit = caPathTimeoutUnit;
     }
 
-    public String getServerCertificatePath()
+    public File getServerCertificatePath()
     {
         return serverCertificatePath;
     }
 
     @Required
-    public void setServerCertificatePath(String serverCertificatePath)
+    public void setServerCertificatePath(File serverCertificatePath)
     {
         this.serverCertificatePath = serverCertificatePath;
     }
 
-    public String getServerKeyPath()
+    public File getServerKeyPath()
     {
         return serverKeyPath;
     }
 
     @Required
-    public void setServerKeyPath(String serverKeyPath)
+    public void setServerKeyPath(File serverKeyPath)
     {
         this.serverKeyPath = serverKeyPath;
     }
 
-    public String getCaPath()
+    public File getCaPath()
     {
         return certificateAuthorityPath;
     }
 
     @Required
-    public void setCaPath(String caPath)
+    public void setCaPath(File caPath)
     {
         this.certificateAuthorityPath = caPath;
     }
@@ -278,17 +266,52 @@ public class GlobusConnectorFactoryBean implements FactoryBean<ServerConnector>
         this.isUsingLegacyClose = isUsingLegacyClose;
     }
 
+    public CrlCheckingMode getCrlCheckingMode()
+    {
+        return crlCheckingMode;
+    }
+
+    public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
+    {
+        this.crlCheckingMode = crlCheckingMode;
+    }
+
+    public OCSPCheckingMode getOcspCheckingMode()
+    {
+        return ocspCheckingMode;
+    }
+
+    public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
+    {
+        this.ocspCheckingMode = ocspCheckingMode;
+    }
+
+    public NamespaceCheckingMode getNamespaceMode()
+    {
+        return namespaceMode;
+    }
+
+    public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
+    {
+        this.namespaceMode = namespaceMode;
+    }
+
     private SslContextFactory createContextFactory() throws Exception
     {
-        GlobusContextFactory factory = new GlobusContextFactory();
-        factory.setServerCertificatePath(serverCertificatePath);
-        factory.setServerKeyPath(serverKeyPath);
-        factory.setTrustStorePath(certificateAuthorityPath);
+        CanlContextFactory factory = new CanlContextFactory();
+        factory.setCertificatePath(serverCertificatePath);
+        factory.setKeyPath(serverKeyPath);
+        factory.setCertificateAuthorityPath(certificateAuthorityPath);
         factory.setNeedClientAuth(needClientAuth);
         factory.setWantClientAuth(wantClientAuth);
         factory.setExcludeCipherSuites(excludedCipherSuites);
-        factory.setEnableGsi(enableGsi);
+        factory.setGsiEnabled(enableGsi);
         factory.setUsingLegacyClose(isUsingLegacyClose);
+        factory.setCertificateAuthorityUpdateInterval(caCertificateTimeoutUnit.toMillis(caCertificateTimeout));
+        factory.setCredentialUpdateInterval(hostCertificateTimeoutUnit.toMillis(hostCertificateTimeout));
+        factory.setNamespaceMode(namespaceMode);
+        factory.setCrlCheckingMode(crlCheckingMode);
+        factory.setOcspCheckingMode(ocspCheckingMode);
         factory.start();
         return factory;
     }
@@ -296,15 +319,6 @@ public class GlobusConnectorFactoryBean implements FactoryBean<ServerConnector>
     @Override
     public ServerConnector getObject() throws Exception
     {
-        long timeout = Math.min(hostCertificateTimeoutUnit.toMillis(hostCertificateTimeout),
-                                caCertificateTimeoutUnit.toMillis(caCertificateTimeout));
-        Supplier<SslContextFactory> supplier =
-                Suppliers.memoizeWithExpiration(contextFactorySupplier, timeout, MILLISECONDS);
-        supplier.get(); // Trigger early instantiation to uncover configuration errors
-
-        SupplierForwardingSslContextFactory sslContextFactory = new SupplierForwardingSslContextFactory();
-        sslContextFactory.setSupplier(supplier);
-
         HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory();
         httpConnectionFactory.getHttpConfiguration().addCustomizer(new SecureRequestCustomizer());
         if (enableGsi) {
@@ -312,7 +326,7 @@ public class GlobusConnectorFactoryBean implements FactoryBean<ServerConnector>
         }
 
         SslConnectionFactory sslConnectionFactory =
-                new SslConnectionFactory(sslContextFactory,
+                new SslConnectionFactory(createContextFactory(),
                                          httpConnectionFactory.getProtocol());
 
         ServerConnector serverConnector =

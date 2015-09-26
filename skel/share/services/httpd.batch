@@ -75,6 +75,9 @@ define env checkSecurityProperties end
      check -strong httpd.authn.capath
      check -strong httpd.authn.capath.refresh
      check -strong httpd.authn.capath.refresh.unit
+     check -strong httpd.authn.namespace-mode
+     check -strong httpd.authn.crl-mode
+     check -strong httpd.authn.ocsp-mode
 end
 
 define env checkAlarmProperties end
