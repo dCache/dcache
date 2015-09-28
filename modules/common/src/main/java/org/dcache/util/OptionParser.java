@@ -217,7 +217,7 @@ public class OptionParser
      * <p>
      * Values are logger at the INFO level.
      */
-    public void inject(Object obj)
+    public <T> T inject(T obj)
     {
         for (Class<?> c = obj.getClass(); c != null; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
@@ -260,5 +260,6 @@ public class OptionParser
                 }
             }
         }
+        return obj;
     }
 }

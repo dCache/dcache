@@ -7,8 +7,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
-
 import dmg.cells.nucleus.Cell;
 import dmg.cells.services.login.LoginCellFactory;
 import dmg.util.StreamEngine;
@@ -17,14 +15,14 @@ import org.dcache.util.Args;
 
 public class LineBasedDoorFactory extends AbstractService implements LoginCellFactory
 {
-    private final Class<? extends LineBasedInterpreter> interpreter;
     private final String parentCellName;
     private final Args args;
+    private final LineBasedInterpreterFactory factory;
     private ExecutorService executor;
 
-    public LineBasedDoorFactory(Class<? extends LineBasedInterpreter> interpreter, Args args, String parentCellName)
+    public LineBasedDoorFactory(LineBasedInterpreterFactory factory, Args args, String parentCellName)
     {
-        this.interpreter = interpreter;
+        this.factory = factory;
         this.parentCellName = parentCellName;
         this.args = args;
     }
@@ -32,13 +30,13 @@ public class LineBasedDoorFactory extends AbstractService implements LoginCellFa
     @Override
     public String getName()
     {
-        return interpreter.getSimpleName();
+        return factory.getClass().getSimpleName();
     }
 
     @Override
     public Cell newCell(StreamEngine engine, String userName) throws InvocationTargetException
     {
-        return new LineBasedDoor(parentCellName + "*", args, interpreter, engine, executor);
+        return new LineBasedDoor(parentCellName + "*", args, factory, engine, executor);
     }
 
     @Override

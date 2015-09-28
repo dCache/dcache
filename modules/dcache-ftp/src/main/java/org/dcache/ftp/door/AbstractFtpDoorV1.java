@@ -129,7 +129,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import diskCacheV111.doors.FTPTransactionLog;
-import diskCacheV111.doors.LineBasedDoor.LineBasedInterpreter;
+import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.ChecksumFactory;
@@ -1306,25 +1306,21 @@ public abstract class AbstractFtpDoorV1
         _cellAddress = new CellAddressCore(cellInfo.getCellName(), cellInfo.getDomainName());
     }
 
-    @Override
     public void setWriter(Writer writer)
     {
         _out = new PrintWriter(writer);
     }
 
-    @Override
     public void setRemoteSocketAddress(InetSocketAddress remoteAddress)
     {
         _remoteSocketAddress = remoteAddress;
     }
 
-    @Override
     public void setLocalSocketAddress(InetSocketAddress localAddress)
     {
         _localSocketAddress = localAddress;
     }
 
-    @Override
     public void setExecutor(Executor executor)
     {
         _executor = executor;

@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
@@ -43,8 +42,6 @@ public class LineBasedDoor
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LineBasedDoor.class);
 
-    private final Class<? extends LineBasedInterpreter> interpreterClass;
-
     /**
      * Door instances are created by the LoginManager. This is the
      * stream engine passed to us from the LoginManager upon
@@ -52,7 +49,7 @@ public class LineBasedDoor
      */
     private final StreamEngine engine;
 
-    private LineBasedInterpreter interpreter;
+    private final LineBasedInterpreterFactory factory;
 
     private final CountDownLatch shutdownGate = new CountDownLatch(1);
 
@@ -61,13 +58,15 @@ public class LineBasedDoor
      */
     private final Executor executor;
 
-    public LineBasedDoor(String cellName, Args args, Class<? extends LineBasedInterpreter> interpreterClass,
+    private LineBasedInterpreter interpreter;
+
+    public LineBasedDoor(String cellName, Args args, LineBasedInterpreterFactory factory,
                          StreamEngine engine, ExecutorService executor)
     {
         super(cellName, args);
 
         getNucleus().setMessageExecutor(new SequentialExecutor(executor));
-        this.interpreterClass = interpreterClass;
+        this.factory = factory;
         this.engine = engine;
         this.executor = new CDCExecutorServiceDecorator<>(executor);
 
@@ -91,16 +90,7 @@ public class LineBasedDoor
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
-        interpreter = interpreterClass.newInstance();
-        parseOptions(interpreter);
-        interpreter.setWriter(engine.getWriter());
-        interpreter.setRemoteSocketAddress((InetSocketAddress) engine.getSocket().getRemoteSocketAddress());
-        interpreter.setLocalSocketAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
-        interpreter.setExecutor(executor);
-        if (interpreter instanceof CellMessageSender) {
-            ((CellMessageSender) interpreter).setCellEndpoint(this);
-        }
-        interpreter.init();
+        interpreter = factory.create(this, engine, executor);
         if (interpreter instanceof CellCommandListener) {
             addCommandListener(interpreter);
         }
@@ -248,17 +238,6 @@ public class LineBasedDoor
         if (interpreter instanceof CellInfoProvider) {
             ((CellInfoProvider) interpreter).getInfo(pw);
         }
-    }
-
-    public interface LineBasedInterpreter
-    {
-        void setWriter(Writer out);
-        void execute(String cmd) throws CommandExitException;
-        void init() throws Exception;
-        void shutdown();
-        void setRemoteSocketAddress(InetSocketAddress remoteAddress);
-        void setLocalSocketAddress(InetSocketAddress localAddress);
-        void setExecutor(Executor executor);
     }
 
     private class Command implements Runnable

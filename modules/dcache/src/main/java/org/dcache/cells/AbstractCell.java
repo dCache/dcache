@@ -354,19 +354,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
     }
 
     /**
-     * Parses options for this cell.
-     *
-     * Option parsing is based on <code>Option</code> annotation of
-     * fields. This fields must not be class private.
-     *
-     * Values are logger at the INFO level.
-     */
-    protected void parseOptions(Object obj)
-    {
-        _optionParser.inject(obj);
-    }
-
-    /**
      * Adds a listener for dCache messages.
      *
      * @see CellMessageDispatcher#addMessageListener

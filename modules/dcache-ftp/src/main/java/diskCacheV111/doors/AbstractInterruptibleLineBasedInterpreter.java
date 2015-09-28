@@ -1,6 +1,6 @@
 package diskCacheV111.doors;
 
-public abstract class AbstractInterruptibleLineBasedInterpreter implements LineBasedDoor.LineBasedInterpreter
+public abstract class AbstractInterruptibleLineBasedInterpreter implements LineBasedInterpreter
 {
     private boolean isStopped;
 
