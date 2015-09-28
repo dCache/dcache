@@ -29,7 +29,7 @@ import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCell;
-import org.dcache.cells.Option;
+import org.dcache.util.Option;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.movers.DCapConstants;
 import org.dcache.pool.movers.DCapDataOutputStream;

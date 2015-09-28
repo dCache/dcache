@@ -1,4 +1,4 @@
-package org.dcache.cells;
+package org.dcache.util;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

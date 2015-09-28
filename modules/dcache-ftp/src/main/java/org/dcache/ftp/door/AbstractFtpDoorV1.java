@@ -177,7 +177,7 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.Option;
+import org.dcache.util.Option;
 import org.dcache.ftp.proxy.ActiveAdapter;
 import org.dcache.ftp.proxy.ProxyAdapter;
 import org.dcache.ftp.proxy.SocketAdapter;

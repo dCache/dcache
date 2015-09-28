@@ -30,7 +30,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -43,7 +42,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.Option;
+import org.dcache.util.Option;
 import org.dcache.db.AlarmEnabledDataSource;
 import org.dcache.services.hsmcleaner.PoolInformationBase;
 import org.dcache.services.hsmcleaner.RequestTracker;

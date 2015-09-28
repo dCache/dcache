@@ -11,7 +11,7 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 
 import org.dcache.auth.Subjects;
-import org.dcache.cells.Option;
+import org.dcache.util.Option;
 import org.dcache.util.NetLoggerBuilder;
 
 public class KerberosFtpDoorV1 extends GssFtpDoorV1

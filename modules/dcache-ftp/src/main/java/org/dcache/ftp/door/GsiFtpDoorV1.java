@@ -5,7 +5,7 @@ import org.dcache.dss.DssContextFactory;
 import javax.security.auth.Subject;
 
 import org.dcache.auth.Subjects;
-import org.dcache.cells.Option;
+import org.dcache.util.Option;
 import org.dcache.util.Crypto;
 import org.dcache.dss.GsiEngineDssContextFactory;
 import org.dcache.util.NetLoggerBuilder;

@@ -21,7 +21,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.CellStub;
-import org.dcache.cells.Option;
+import org.dcache.util.Option;
 import org.dcache.util.Args;
 
 public class PoolInfoObserverV3 extends AbstractCell
