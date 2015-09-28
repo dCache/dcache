@@ -103,12 +103,6 @@ public class PortRangeTest
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void invalidFormat3()
-    {
-        PortRange.valueOf("2323");
-    }
-
-    @Test(expected=IllegalArgumentException.class)
     public void invalidFormat4()
     {
         PortRange.valueOf("1..10");
@@ -138,6 +132,8 @@ public class PortRangeTest
     @Test
     public void valueOf()
     {
+        assertPortRange(PortRange.valueOf("2323"), 2323, 2323);
+        assertPortRange(PortRange.valueOf("0"), 0, 0);
         assertPortRange(PortRange.valueOf("0:0"), 0, 0);
         assertPortRange(PortRange.valueOf("0:1"), 1, 1);
         assertPortRange(PortRange.valueOf("1:1000"), 1, 1000);

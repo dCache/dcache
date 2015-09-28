@@ -86,9 +86,10 @@ public class PortRange
                 throw new IllegalArgumentException("Invalid range: " + s);
             }
 
-            int low = Integer.parseInt(m.group(1));
-            int high =
-                (m.groupCount() == 1) ? low : Integer.parseInt(m.group(2));
+            String lowString = m.group(1);
+            String highString = m.group(2);
+            int low = Integer.parseInt(lowString);
+            int high = (highString == null) ? low : Integer.parseInt(highString);
 
             return new PortRange(low, high);
         } catch (NumberFormatException e) {
