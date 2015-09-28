@@ -17,11 +17,54 @@
  */
 package org.dcache.ftp.door;
 
+import diskCacheV111.util.ConfigurationException;
+
+import org.dcache.dss.GsiEngineDssContextFactory;
+import org.dcache.util.Args;
+import org.dcache.util.Crypto;
+import org.dcache.util.Option;
+
 public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
 {
+    @Option(name="service-key",
+            required=true)
+    protected String service_key;
+
+    @Option(name="service-cert",
+            required=true)
+    protected String service_cert;
+
+    @Option(name="service-trusted-certs",
+            required=true)
+    protected String service_trusted_certs;
+
+    @Option(name="gridftp.security.ciphers",
+            required=true)
+    protected String cipherFlags;
+
+    private GsiEngineDssContextFactory dssContextFactory;
+
+    @Override
+    public void configure(Args args) throws ConfigurationException
+    {
+        super.configure(args);
+        options.inject(this);
+        try {
+            dssContextFactory = getDssContextFactory();
+        } catch (Exception e) {
+            throw new ConfigurationException("Failed to create security context:" + e.getMessage(), e);
+        }
+    }
+
     @Override
     protected AbstractFtpDoorV1 createInterpreter()
     {
-        return new GsiFtpDoorV1();
+        return new GsiFtpDoorV1(dssContextFactory);
+    }
+
+    protected GsiEngineDssContextFactory getDssContextFactory() throws Exception
+    {
+        return new GsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
+                                              Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags));
     }
 }

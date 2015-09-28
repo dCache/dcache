@@ -1,7 +1,6 @@
 package diskCacheV111.doors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import diskCacheV111.util.ConfigurationException;
 
 import dmg.cells.services.login.LoginCellFactory;
 import dmg.cells.services.login.LoginCellProvider;
@@ -10,8 +9,6 @@ import org.dcache.util.Args;
 
 public class LineBasedDoorProvider implements LoginCellProvider
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LineBasedDoorProvider.class);
-
     @Override
     public int getPriority(String name)
     {
@@ -34,9 +31,9 @@ public class LineBasedDoorProvider implements LoginCellProvider
                 factory.configure(args);
                 return new LineBasedDoorFactory(factory, args, parentCellName);
             }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            LOGGER.error("Failed to instantiate interpreter factory: {}", e.toString());
+            throw new IllegalArgumentException("Not a LineBasedInterpreterFactory: " + interpreter);
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | ConfigurationException e) {
+            throw new IllegalArgumentException("Failed to instantiate interpreter factory: " + e.toString(), e);
         }
-        throw new IllegalArgumentException();
     }
 }

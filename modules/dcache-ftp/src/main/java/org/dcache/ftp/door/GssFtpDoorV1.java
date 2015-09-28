@@ -38,19 +38,13 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     protected String gssFlavor;
 
     protected DssContext context;
-    private DssContextFactory factory;
+    private DssContextFactory dssContextFactory;
 
-    public GssFtpDoorV1(String ftpDoorName, String tlogName, String gssFlavor)
+    public GssFtpDoorV1(String ftpDoorName, String tlogName, String gssFlavor, DssContextFactory dssContextFactory)
     {
         super(ftpDoorName, tlogName);
         this.gssFlavor = gssFlavor;
-    }
-
-    @Override
-    public void init() throws Exception
-    {
-        super.init();
-        factory = createFactory();
+        this.dssContextFactory = dssContextFactory;
     }
 
     @Override
@@ -81,7 +75,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         try {
-            context = factory.create(_remoteSocketAddress, _localSocketAddress);
+            context = dssContextFactory.create(_remoteSocketAddress, _localSocketAddress);
         } catch (IOException e) {
             LOGGER.error(e.toString());
             reply("500 Error: " + e.toString());
@@ -267,6 +261,4 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             reply("500 Send USER first");
         }
     }
-
-    protected abstract DssContextFactory createFactory() throws Exception;
 }

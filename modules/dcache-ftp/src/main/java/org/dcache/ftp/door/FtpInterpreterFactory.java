@@ -22,6 +22,7 @@ import java.util.concurrent.Executor;
 
 import diskCacheV111.doors.LineBasedInterpreter;
 import diskCacheV111.doors.LineBasedInterpreterFactory;
+import diskCacheV111.util.ConfigurationException;
 
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.util.StreamEngine;
@@ -31,12 +32,12 @@ import org.dcache.util.OptionParser;
 
 public abstract class FtpInterpreterFactory implements LineBasedInterpreterFactory
 {
-    private OptionParser options;
+    protected OptionParser options;
 
-    protected abstract AbstractFtpDoorV1 createInterpreter();
+    protected abstract AbstractFtpDoorV1 createInterpreter() throws Exception;
 
     @Override
-    public void configure(Args args)
+    public void configure(Args args) throws ConfigurationException
     {
         options = new OptionParser(args);
     }
