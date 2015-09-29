@@ -717,6 +717,8 @@ public abstract class AbstractFtpDoorV1
             description = "Upload directory")
     protected File _uploadPath;
 
+    protected InetAddress _internalInetAddress;
+
     protected FsPath _absoluteUploadPath;
 
     protected PortRange _passiveModePortRange;
@@ -907,14 +909,14 @@ public abstract class AbstractFtpDoorV1
             switch (_mode) {
             case PASSIVE:
                 _adapter =
-                    new SocketAdapter(_passiveModeServerSocket);
+                    new SocketAdapter(_passiveModeServerSocket, _internalInetAddress);
                 break;
 
             case ACTIVE:
                 if (_isProxyRequiredOnActive) {
                     LOGGER.info("Creating adapter for active mode");
                     _adapter =
-                        new ActiveAdapter(_passiveModePortRange,
+                        new ActiveAdapter(_internalInetAddress,
                                           _client.getAddress().getHostAddress(),
                                           _client.getPort());
                 }
@@ -993,7 +995,7 @@ public abstract class AbstractFtpDoorV1
                 protocolInfo =
                     new GFtpProtocolInfo("GFtp",
                                          _version, 0,
-                                         new InetSocketAddress(_internalAddress, _adapter.getPoolListenerPort()),
+                                         _adapter.getInternalAddress(),
                                          _parallel,
                                          _parallel,
                                          _parallel,
@@ -1334,9 +1336,10 @@ public abstract class AbstractFtpDoorV1
         _clientDataAddress =
             new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
 
-        if (_internalAddress == null) {
-            _internalAddress = InetAddress.getLocalHost().getHostAddress();
-        }
+        _internalInetAddress =
+                (_internalAddress == null)
+                ? InetAddress.getLocalHost()
+                : InetAddress.getByName(_internalAddress);
 
         _preferredProtocol = Protocol.fromAddress(_clientDataAddress.getAddress());
 
@@ -1626,7 +1629,7 @@ public abstract class AbstractFtpDoorV1
         if (user != null) {
             pw.println( "          User  : " + user);
         }
-        pw.println( "    Local Host  : " + _internalAddress);
+        pw.println( "    Local Host  : " + _internalInetAddress);
         pw.println( "  Last Command  : " + _lastCommand);
         pw.println( " Command Count  : " + _commandCounter);
         pw.println( "     I/O Queue  : " + _ioQueueName);

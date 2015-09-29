@@ -6,10 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import org.dcache.ftp.proxy.ActiveAdapter;
-
-import org.dcache.util.PortRange;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -20,7 +19,7 @@ public class ActiveAdapterTest {
 
     @Before
     public void setUp() throws IOException {
-        activeAdapter = new ActiveAdapter(new PortRange(0), null, 0);
+        activeAdapter = new ActiveAdapter(InetAddress.getLoopbackAddress(), null, 0);
     }
 
     @After
@@ -32,7 +31,7 @@ public class ActiveAdapterTest {
     @Test
     public void testListenPort() throws Exception {
 
-        assertTrue("Failed to create a listen port", activeAdapter.getPoolListenerPort() > 0 );
+        assertTrue("Failed to create a listen port", activeAdapter.getInternalAddress().getPort() > 0 );
 
     }
 

@@ -99,7 +99,6 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private String _tgtHost; // The remote host to connect
     private int _tgtPort; // The remote port to connect
     private String _laddr; // Local IP address
-    private int _lport; // Local port number
     private int _maxBlockSize = 32768; // Size of the buffers for transfers
     private int _expectedStreams = 1; // The number of streams expected
     private Selector _selector;
@@ -109,25 +108,18 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
     private boolean _closeForced;
     private int _streamsCreated;
 
-    /**
-     * @param range Port range for server socket
-     * @param host Host to connect to
-     * @param port Port to connect to
-     * @throws IOException
-     */
-    public ActiveAdapter(PortRange range, String host, int port)
-        throws IOException
+    public ActiveAdapter(InetAddress internalAddress, String host, int port)
+            throws IOException
     {
         _tgtHost = host;
         _tgtPort = port;
 
         _ssc = ServerSocketChannel.open();
         _ssc.configureBlocking(false);
-        range.bind(_ssc.socket());
+        _ssc.bind(new InetSocketAddress(internalAddress, 0));
         _laddr = InetAddress.getLocalHost().getHostAddress(); // Find the
-                                                                // address as a
-                                                                // string
-        _lport = _ssc.socket().getLocalPort(); // Find the port
+        // address as a
+        // string
         _t = new Thread(this);
         // Create a new Selector for selecting
         _selector = Selector.open();
@@ -207,14 +199,9 @@ public class ActiveAdapter implements Runnable, ProxyAdapter
         return _error;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see diskCacheV111.util.ProxyAdapter#getPoolListenerPort()
-     */
     @Override
-    public int getPoolListenerPort() {
-        return _lport;
+    public InetSocketAddress getInternalAddress() {
+        return (InetSocketAddress) _ssc.socket().getLocalSocketAddress();
     }
 
     /*

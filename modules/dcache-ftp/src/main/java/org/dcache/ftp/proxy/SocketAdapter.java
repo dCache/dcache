@@ -70,6 +70,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -336,12 +338,12 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         }
     }
 
-    public SocketAdapter(ServerSocketChannel clientListenerChannel)
+    public SocketAdapter(ServerSocketChannel clientListenerChannel, InetAddress internalAddress)
             throws IOException
     {
         _clientListenerChannel = clientListenerChannel;
         _poolListenerChannel = ServerSocketChannel.open();
-        _poolListenerChannel.socket().bind(null);
+        _poolListenerChannel.socket().bind(new InetSocketAddress(internalAddress, 0));
 
         _localAddress =
                 _clientListenerChannel.socket().getLocalSocketAddress().toString();
@@ -481,13 +483,10 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _eodc = (modeE ? Integer.MAX_VALUE : 1);
     }
 
-    /* (non-Javadoc)
-     * @see diskCacheV111.util.ProxyAdapter#getPoolListenerPort()
-     */
     @Override
-    public int getPoolListenerPort()
+    public InetSocketAddress getInternalAddress()
     {
-        return _poolListenerChannel.socket().getLocalPort();
+        return (InetSocketAddress) _poolListenerChannel.socket().getLocalSocketAddress();
     }
 
     /* (non-Javadoc)

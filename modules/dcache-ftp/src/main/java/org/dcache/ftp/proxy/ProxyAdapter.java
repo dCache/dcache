@@ -1,5 +1,7 @@
 package org.dcache.ftp.proxy;
 
+import java.net.InetSocketAddress;
+
 public interface ProxyAdapter {
 
     /**
@@ -25,12 +27,12 @@ public interface ProxyAdapter {
     public abstract void setModeE(boolean modeE);
 
     /**
-     * Returns the port that we use to listen for connections from the
+     * Returns the address that we use to listen for connections from the
      * pool.
      *
      * This is needed in order to tell the pool were to connect to.
      */
-    public abstract int getPoolListenerPort();
+    InetSocketAddress getInternalAddress();
 
     /**
      * Configures the adapter to transfer data from the client to the
