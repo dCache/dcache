@@ -83,7 +83,6 @@ import javax.security.auth.Subject;
 
 import java.io.BufferedOutputStream;
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -124,7 +123,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -161,7 +159,6 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellMessageSender;
-import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
 
@@ -177,7 +174,6 @@ import org.dcache.auth.attributes.LoginAttribute;
 import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.cells.CellStub;
-import org.dcache.util.Option;
 import org.dcache.ftp.proxy.ActiveAdapter;
 import org.dcache.ftp.proxy.ProxyAdapter;
 import org.dcache.ftp.proxy.SocketAdapter;
@@ -194,7 +190,6 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.util.NetLoggerBuilder;
-import org.dcache.util.PortRange;
 import org.dcache.util.TransferRetryPolicy;
 import org.dcache.util.list.DirectoryEntry;
 import org.dcache.util.list.DirectoryListPrinter;
@@ -281,6 +276,7 @@ public abstract class AbstractFtpDoorV1
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFtpDoorV1.class);
     private static final Timer TIMER = new Timer("Performance marker timer", true);
     private static final Logger ACCESS_LOGGER = LoggerFactory.getLogger("org.dcache.access.ftp");
+    protected FtpDoorSettings _settings;
 
     protected InetSocketAddress _localSocketAddress;
     protected InetSocketAddress _remoteSocketAddress;
@@ -495,233 +491,10 @@ public abstract class AbstractFtpDoorV1
      */
     protected Origin _origin;
 
-    @Option(
-        name = "poolManager",
-        description = "Well known name of the pool manager",
-        defaultValue = "PoolManager"
-    )
-    protected String _poolManager;
-
-    @Option(
-        name = "pnfsManager",
-        description = "Well known name of the PNFS manager",
-        defaultValue = "PnfsManager"
-    )
-    protected String _pnfsManager;
-
-    @Option(name = "gplazma",
-            description = "Cell path to gPlazma",
-            defaultValue = "gPlazma")
-    protected String _gPlazma;
-
-    @Option(name = "billing",
-            description = "Cell path to billing",
-            defaultValue = "billing")
-    protected String _billing;
-
-    @Option(
-        name = "clientDataPortRange"
-    )
-    protected String _portRange;
-
-    /**
-     * Name or IP address of the interface on which we listen for
-     * connections from the pool in case an adapter is used.
-     */
-    @Option(
-        name = "ftp-adapter-internal-interface",
-        description = "Interface to bind to"
-    )
-    protected String _internalAddress;
-
-    @Option(
-        name = "read-only",
-        description = "Whether to mark the FTP door read only",
-        defaultValue = "false"
-    )
-    protected boolean _readOnly;
-
-    @Option(
-        name = "maxRetries",
-        defaultValue = "3"
-    )
-    protected int _maxRetries;
-
-    @Option(
-        name = "poolManagerTimeout",
-        defaultValue = "1500"
-    )
-    protected int _poolManagerTimeout;
-
-    @Option(
-            name = "poolManagerTimeoutUnit",
-            defaultValue = "SECONDS"
-    )
-    protected TimeUnit _poolManagerTimeoutUnit;
-
-    @Option(
-        name = "pnfsTimeout",
-        defaultValue = "60"
-    )
-    protected int _pnfsTimeout;
-
-    @Option(
-            name = "pnfsTimeoutUnit",
-            defaultValue = "SECONDS"
-    )
-    protected TimeUnit _pnfsTimeoutUnit;
-
-    @Option(
-        name = "poolTimeout",
-        defaultValue = "300"
-    )
-    protected int _poolTimeout;
-
-    @Option(
-            name = "poolTimeoutUnit",
-            defaultValue = "SECONDS"
-    )
-    protected TimeUnit _poolTimeoutUnit;
-
-    @Option(
-        name = "retryWait",
-        defaultValue = "30",
-        unit = "seconds"
-    )
-    protected int _retryWait;
-
-    /**
-     * Size of the largest block used in the socket adapter in mode
-     * E. Blocks larger than this are divided into smaller blocks.
-     */
-    @Option(
-        name = "maxBlockSize",
-        defaultValue = "131072",
-        unit = "bytes"
-    )
-    protected int _maxBlockSize;
-
-    @Option(
-        name = "deleteOnConnectionClosed",
-        description = "Whether to remove files on incomplete transfers",
-        defaultValue = "false"
-    )
-    protected boolean _removeFileOnIncompleteTransfer;
-
-    /**
-     * True if passive transfers have to be relayed through the door,
-     * i.e., the client must not connect directly to the pool.
-     */
-    @Option(
-        name = "proxyPassive",
-        description = "Whether proxy is required for passive transfers",
-        required = true
-    )
-    protected boolean _isProxyRequiredOnPassive;
-
-    /**
-     * True if active transfers have to be relayed through the door.
-     */
-    @Option(
-        name = "proxyActive",
-        description = "Whether proxy is required for active transfers",
-        required = true
-    )
-    protected boolean _isProxyRequiredOnActive;
-
-     /**
-     * File (StageConfiguration.conf) containing DNs and FQANs whose owner are allowed to STAGE files
-     * (i.e. allowed to copy file from dCache in case file is stored on tape but not on disk).
-     * /opt/d-cache/config/StageConfiguration.conf
-     * By default, such file does not exist, so that tape protection feature is not in use.
-     */
-    @Option(
-        name = "stageConfigurationFilePath",
-        description = "File containing DNs and FQANs for which STAGING is allowed",
-        defaultValue = ""
-    )
-    protected String _stageConfigurationFilePath;
-
-    /**
-     * transferTimeout (in seconds)
-     *
-     * Is used for waiting for the end of transfer after the pool
-     * already notified us that the file transfer is finished. This is
-     * needed because we are using adapters.  If timeout is 0, there is
-     * no timeout.
-     */
-    @Option(
-        name = "transfer-timeout",
-        description = "Transfer timeout",
-        defaultValue = "0",
-        unit = "seconds"
-    )
-    protected int _transferTimeout;
-
-    @Option(
-        name = "tlog",
-        description = "Path to FTP transaction log"
-    )
-    protected String _tLogRoot;
-
-    /**
-     * wlcg demands that support for overwrite in srm and gridftp
-     * be off by default.
-     */
-    @Option(
-        name = "overwrite",
-        defaultValue = "false"
-    )
-    protected boolean _overwrite;
-
-    @Option(
-        name = "io-queue"
-    )
-    protected String _ioQueueName;
-
-    @Option(
-        name = "maxStreamsPerClient",
-        description = "Maximum allowed streams per client in mode E",
-        defaultValue = "-1",                   // -1 = unlimited
-        unit = "streams"
-    )
-    protected int _maxStreamsPerClient;
-
-    @Option(
-        name = "defaultStreamsPerClient",
-        description = "Default number of streams per client in mode E",
-        defaultValue = "1",
-        unit = "streams"
-    )
-    protected int _defaultStreamsPerClient;
-
-    @Option(
-        name = "perfMarkerPeriod",
-        description = "Performance marker period",
-        defaultValue = "90"
-    )
-    protected long _performanceMarkerPeriod;
-
-    @Option(
-            name = "perfMarkerPeriodUnit",
-            description = "Performance marker period unit",
-            defaultValue = "SECONDS"
-    )
-    protected TimeUnit _performanceMarkerPeriodUnit;
-
-    @Option(name = "root",
-            description = "Root path")
-    protected String _root;
-
-    @Option(name = "upload",
-            description = "Upload directory")
-    protected File _uploadPath;
-
     protected InetAddress _internalInetAddress;
 
     protected FsPath _absoluteUploadPath;
 
-    protected PortRange _passiveModePortRange;
     protected ServerSocketChannel _passiveModeServerSocket;
 
     private final Map<String,Method>  _methodDict =
@@ -872,7 +645,7 @@ public abstract class AbstractFtpDoorV1
             setCellName(_cellAddress.getCellName());
             setClientAddress(_remoteSocketAddress);
             setCheckStagePermission(_checkStagePermission);
-            setOverwriteAllowed(_overwrite);
+            setOverwriteAllowed(_settings.isOverwrite());
             setPoolManagerStub(_poolManagerStub);
             setPoolStub(_poolStub);
             setBillingStub(_billingStub);
@@ -913,7 +686,7 @@ public abstract class AbstractFtpDoorV1
                 break;
 
             case ACTIVE:
-                if (_isProxyRequiredOnActive) {
+                if (_settings.isProxyRequiredOnActive()) {
                     LOGGER.info("Creating adapter for active mode");
                     _adapter =
                         new ActiveAdapter(_internalInetAddress,
@@ -924,7 +697,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (_adapter != null) {
-                _adapter.setMaxBlockSize(_maxBlockSize);
+                _adapter.setMaxBlockSize(_settings.getMaxBlockSize());
                 _adapter.setModeE(_xferMode.equals("E"));
                 if (isWrite()) {
                     _adapter.setDirClientToPool();
@@ -984,7 +757,7 @@ public abstract class AbstractFtpDoorV1
              * enabled and if we can provide the address to the client
              * using a 127 response.
              */
-            boolean usePassivePool = !_isProxyRequiredOnPassive && _delayedPassive != DelayedPassiveReply.NONE;
+            boolean usePassivePool = !_settings.isProxyRequiredOnPassive() && _delayedPassive != DelayedPassiveReply.NONE;
 
             /* Construct protocol info. For backward compatibility, when
              * an adapter could be used we put the adapter address into
@@ -1035,9 +808,10 @@ public abstract class AbstractFtpDoorV1
 
         public void createTransactionLog()
         {
-            if (_tLogRoot != null) {
-                LOGGER.info("Door will log ftp transactions to {}", _tLogRoot);
-                _tLog = new FTPTransactionLog(_tLogRoot);
+            String tlogRoot = _settings.getTlogRoot();
+            if (tlogRoot != null) {
+                LOGGER.info("Door will log ftp transactions to {}", tlogRoot);
+                _tLog = new FTPTransactionLog(tlogRoot);
 
                 if (_subject != null) {
                     try {
@@ -1127,8 +901,9 @@ public abstract class AbstractFtpDoorV1
 
             reply(_commandLine, "150 Opening BINARY data connection for " + _path, false);
 
-            if (isWrite() && _xferMode.equals("E") && _performanceMarkerPeriod > 0) {
-                long period = _performanceMarkerPeriodUnit.toMillis(_performanceMarkerPeriod);
+            if (isWrite() && _xferMode.equals("E") && _settings.getPerformanceMarkerPeriod() > 0) {
+                long period = _settings.getPerformanceMarkerPeriodUnit().toMillis(
+                        _settings.getPerformanceMarkerPeriod());
                 long timeout = period / 2;
                 _perfMarkerTask =
                     new PerfMarkerTask(_commandLine, getPoolAddress(), getMoverId(), timeout);
@@ -1210,7 +985,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (isWrite()) {
-                if (_removeFileOnIncompleteTransfer) {
+                if (_settings.isRemoveFileOnIncompleteTransfer()) {
                     LOGGER.warn("Removing incomplete file {}: {}", getPnfsId(), _path);
                     deleteNameSpaceEntry();
                 } else {
@@ -1297,6 +1072,10 @@ public abstract class AbstractFtpDoorV1
         return Subjects.getUserName(_subject);
     }
 
+    public void setSettings(FtpDoorSettings settings)
+    {
+        _settings = settings;
+    }
 
     @Override
     public void setCellEndpoint(CellEndpoint endpoint)
@@ -1333,49 +1112,35 @@ public abstract class AbstractFtpDoorV1
             new InetSocketAddress(_remoteSocketAddress.getAddress(), DEFAULT_DATA_PORT);
 
         _internalInetAddress =
-                (_internalAddress == null)
+                (_settings.getInternalAddress() == null)
                 ? InetAddress.getLocalHost()
-                : InetAddress.getByName(_internalAddress);
+                : InetAddress.getByName(_settings.getInternalAddress());
 
         _preferredProtocol = Protocol.fromAddress(_clientDataAddress.getAddress());
 
-        _billingStub =
-                new CellStub(_cellEndpoint, new CellPath(_billing));
-        _poolManagerStub =
-                new CellStub(_cellEndpoint, new CellPath(_poolManager),
-                        _poolManagerTimeout, _poolManagerTimeoutUnit);
-        _poolStub =
-                new CellStub(_cellEndpoint, null, _poolTimeout, _poolTimeoutUnit);
-
-        _gPlazmaStub =
-                new CellStub(_cellEndpoint, new CellPath(_gPlazma), 30000);
+        _billingStub = _settings.createBillingStub(_cellEndpoint);
+        _poolManagerStub = _settings.createPoolManagerStub(_cellEndpoint);
+        _poolStub = _settings.createPoolStub(_cellEndpoint);
+        _gPlazmaStub = _settings.createGplazmaStub(_cellEndpoint);
 
         _loginStrategy = new RemoteLoginStrategy(_gPlazmaStub);
 
-        /* Data channel port range used when client issues PASV
-         * command.
-         */
-        if (_portRange != null) {
-            _passiveModePortRange = PortRange.valueOf(_portRange);
-        } else {
-            _passiveModePortRange = new PortRange(0);
-        }
 
         /* Parallelism for mode E transfers.
          */
-        _parallel = _defaultStreamsPerClient;
+        _parallel = _settings.getDefaultStreamsPerClient();
 
         _origin = new Origin(Origin.AuthType.ORIGIN_AUTHTYPE_STRONG, _remoteSocketAddress.getAddress());
 
         _readRetryPolicy =
-            new TransferRetryPolicy(_maxRetries, _retryWait * 1000, Long.MAX_VALUE);
+            new TransferRetryPolicy(_settings.getMaxRetries(), _settings.getRetryWait() * 1000, Long.MAX_VALUE);
         _writeRetryPolicy =
             new TransferRetryPolicy(MAX_RETRIES_WRITE, 0, Long.MAX_VALUE);
 
-        _checkStagePermission = new CheckStagePermission(_stageConfigurationFilePath);
+        _checkStagePermission = new CheckStagePermission(_settings.getStageConfigurationFilePath());
 
-        if (_uploadPath.isAbsolute()) {
-            _absoluteUploadPath = new FsPath(_uploadPath.getPath());
+        if (_settings.getUploadPath().isAbsolute()) {
+            _absoluteUploadPath = new FsPath(_settings.getUploadPath().getPath());
         }
 
         reply(_commandLine, "220 " + _ftpDoorName + " door ready");
@@ -1418,11 +1183,11 @@ public abstract class AbstractFtpDoorV1
         }
         FsPath doorRootPath;
         String cwd;
-        if (_root == null) {
+        if (_settings.getRoot() == null) {
             doorRootPath = userRootPath;
             cwd = userHomePath.toString();
         } else {
-            doorRootPath = new FsPath(_root);
+            doorRootPath = new FsPath(_settings.getRoot());
             if (userRootPath.startsWith(doorRootPath)) {
                 cwd = doorRootPath.relativize(new FsPath(userRootPath, userHomePath)).toString();
             } else if (_absoluteUploadPath != null && _absoluteUploadPath.startsWith(doorRootPath)) {
@@ -1432,7 +1197,7 @@ public abstract class AbstractFtpDoorV1
             }
         }
 
-        _pnfs = new PnfsHandler(new CellStub(_cellEndpoint, new CellPath(_pnfsManager), _pnfsTimeout, _pnfsTimeoutUnit));
+        _pnfs = _settings.createPnfsHandler(_cellEndpoint);
         _pnfs.setSubject(mappedSubject);
         _listSource = new ListDirectoryHandler(_pnfs);
 
@@ -1623,12 +1388,12 @@ public abstract class AbstractFtpDoorV1
     {
         String user = getUser();
         if (user != null) {
-            pw.println( "          User  : " + user);
+            pw.println("          User  : " + user);
         }
-        pw.println( "    Local Host  : " + _internalInetAddress);
-        pw.println( "  Last Command  : " + _lastCommand);
-        pw.println( " Command Count  : " + _commandCounter);
-        pw.println( "     I/O Queue  : " + _ioQueueName);
+        pw.println("    Local Host  : " + _internalInetAddress);
+        pw.println("  Last Command  : " + _lastCommand);
+        pw.println(" Command Count  : " + _commandCounter);
+        pw.println("     I/O Queue  : " + _settings.getIoQueueName());
         FtpTransfer transfer = _transfer;
         if (transfer != null) {
             transfer.getInfo(pw);
@@ -1775,7 +1540,7 @@ public abstract class AbstractFtpDoorV1
     protected void checkWritable()
         throws FTPCommandException
     {
-        if (_readOnly || _isUserReadOnly) {
+        if (_settings.isReadOnly() || _isUserReadOnly) {
             throw new FTPCommandException(500, "Command disabled");
         }
 
@@ -1823,8 +1588,8 @@ public abstract class AbstractFtpDoorV1
 
         st = real_value.split(",|;");
         _parallel = Integer.parseInt(st[0]);
-        if (_maxStreamsPerClient > 0) {
-            _parallel = Math.min(_parallel, _maxStreamsPerClient);
+        if (_settings.getMaxStreamsPerClient() > 0) {
+            _parallel = Math.min(_parallel, _settings.getMaxStreamsPerClient());
         }
 
         reply("200 Parallel streams set (" + opt + ")");
@@ -2334,7 +2099,7 @@ public abstract class AbstractFtpDoorV1
                     address = newAddress.getAddress();
                 }
                 _passiveModeServerSocket = ServerSocketChannel.open();
-                _passiveModePortRange.bind(_passiveModeServerSocket.socket(), address);
+                _settings.getPortRange().bind(_passiveModeServerSocket.socket(), address);
                 _mode = Mode.PASSIVE;
             }
             return (InetSocketAddress) _passiveModeServerSocket.getLocalAddress();
@@ -3280,7 +3045,7 @@ public abstract class AbstractFtpDoorV1
         if (xferMode.equals("E") && mode == Mode.PASSIVE) {
             throw new FTPCommandException(500, "Cannot do passive retrieve in E mode");
         }
-        if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
+        if (xferMode.equals("X") && mode == Mode.PASSIVE && _settings.isProxyRequiredOnPassive()) {
             throw new FTPCommandException(504, "Cannot use passive X mode");
         }
         if (mode == Mode.INVALID) {
@@ -3318,7 +3083,7 @@ public abstract class AbstractFtpDoorV1
              * transfer a few times.
              */
             transfer.createAdapter();
-            transfer.selectPoolAndStartMoverAsync(_ioQueueName, _readRetryPolicy);
+            transfer.selectPoolAndStartMoverAsync(_settings.getIoQueueName(), _readRetryPolicy);
         } catch (PermissionDeniedCacheException e) {
             transfer.abort(550, "Permission denied");
         } catch (CacheException e) {
@@ -3412,7 +3177,7 @@ public abstract class AbstractFtpDoorV1
         if (xferMode.equals("E") && mode == Mode.ACTIVE) {
             throw new FTPCommandException(504, "Cannot store in active E mode");
         }
-        if (xferMode.equals("X") && mode == Mode.PASSIVE && _isProxyRequiredOnPassive) {
+        if (xferMode.equals("X") && mode == Mode.PASSIVE && _settings.isProxyRequiredOnPassive()) {
             throw new FTPCommandException(504, "Cannot use passive X mode");
         }
         if (mode == Mode.INVALID) {
@@ -3443,7 +3208,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             transfer.createAdapter();
-            transfer.selectPoolAndStartMoverAsync(_ioQueueName, _writeRetryPolicy);
+            transfer.selectPoolAndStartMoverAsync(_settings.getIoQueueName(), _writeRetryPolicy);
         } catch (IOException e) {
             transfer.abort(451, "Operation failed: " + e.getMessage());
         } catch (PermissionDeniedCacheException e) {

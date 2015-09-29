@@ -3,9 +3,10 @@ package org.dcache.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 
 public class OptionParser
@@ -16,6 +17,33 @@ public class OptionParser
     public OptionParser(Args args)
     {
         this.args = args;
+    }
+
+    /**
+     * Injects the options of {@code args} and default values into {@code object} using the
+     * Option annotation of fields of {@code <T>}.
+     *
+     * @param args Arguments providing option values.
+     * @param object Target object to inject options into.
+     * @param <T> Type of the target object.
+     * @return Returns {@code object}.
+     */
+    public static <T> T inject(Args args, T object)
+    {
+        return new OptionParser(args).inject(object);
+    }
+
+    /**
+     * Injects the options default values for options into {@code object} using the
+     * Option annotation of fields of {@code <T>}.
+     *
+     * @param object Target object to inject options into.
+     * @param <T> Type of the target object.
+     * @return Returns {@code object}.
+     */
+    public static <T> T injectDefaults(T object)
+    {
+        return inject(new Args(new String[0]), object);
     }
 
     /**
@@ -55,33 +83,32 @@ public class OptionParser
     @SuppressWarnings("unchecked")
     public static <T> T toType(final Object object, final Class<T> type)
     {
-        T result = null;
-
         if (object == null) {
-            //initalize primitive types:
+            // initialize primitive types:
             if (type == Boolean.TYPE) {
-                result = ((Class<T>) Boolean.class).cast(false);
+                return ((Class<T>) Boolean.class).cast(false);
             } else if (type == Byte.TYPE) {
-                result = ((Class<T>) Byte.class).cast(0);
+                return ((Class<T>) Byte.class).cast(0);
             } else if (type == Character.TYPE) {
-                result = ((Class<T>) Character.class).cast(0);
+                return ((Class<T>) Character.class).cast(0);
             } else if (type == Double.TYPE) {
-                result = ((Class<T>) Double.class).cast(0.0);
+                return ((Class<T>) Double.class).cast(0.0);
             } else if (type == Float.TYPE) {
-                result = ((Class<T>) Float.class).cast(0.0);
+                return ((Class<T>) Float.class).cast(0.0);
             } else if (type == Integer.TYPE) {
-                result = ((Class<T>) Integer.class).cast(0);
+                return ((Class<T>) Integer.class).cast(0);
             } else if (type == Long.TYPE) {
-                result = ((Class<T>) Long.class).cast(0);
+                return ((Class<T>) Long.class).cast(0);
             } else if (type == Short.TYPE) {
-                result = ((Class<T>) Short.class).cast(0);
+                return ((Class<T>) Short.class).cast(0);
             }
+            return null;
         } else {
             final String so = object.toString();
 
-            //custom type conversions:
+            // custom type conversions:
             if (type == BigInteger.class) {
-                result = type.cast(new BigInteger(so));
+                return type.cast(new BigInteger(so));
             } else if (type == Boolean.class || type == Boolean.TYPE) {
                 Boolean r;
                 if ("1".equals(so) || "true".equalsIgnoreCase(so) || "yes".equalsIgnoreCase(
@@ -95,92 +122,82 @@ public class OptionParser
                 }
 
                 if (type == Boolean.TYPE) {
-                    result = ((Class<T>) Boolean.class).cast(r); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Boolean.class).cast(r); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(r);
+                    return type.cast(r);
                 }
             } else if (type == Byte.class || type == Byte.TYPE) {
                 Byte i = Byte.valueOf(so);
                 if (type == Byte.TYPE) {
-                    result = ((Class<T>) Byte.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Byte.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (type == Character.class || type == Character.TYPE) {
                 Character i = so.charAt(0);
                 if (type == Character.TYPE) {
-                    result = ((Class<T>) Character.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Character.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (type == Double.class || type == Double.TYPE) {
                 Double i = Double.valueOf(so);
                 if (type == Double.TYPE) {
-                    result = ((Class<T>) Double.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Double.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (type == Float.class || type == Float.TYPE) {
                 Float i = Float.valueOf(so);
                 if (type == Float.TYPE) {
-                    result = ((Class<T>) Float.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Float.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (type == Integer.class || type == Integer.TYPE) {
                 Integer i = Integer.valueOf(so);
                 if (type == Integer.TYPE) {
-                    result = ((Class<T>) Integer.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Integer.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (type == Long.class || type == Long.TYPE) {
                 Long i = Long.valueOf(so);
                 if (type == Long.TYPE) {
-                    result = ((Class<T>) Long.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Long.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (type == Short.class || type == Short.TYPE) {
                 Short i = Short.valueOf(so);
                 if (type == Short.TYPE) {
-                    result = ((Class<T>) Short.class).cast(i); //avoid ClassCastException through autoboxing
+                    return ((Class<T>) Short.class).cast(i); //avoid ClassCastException through autoboxing
                 } else {
-                    result = type.cast(i);
+                    return type.cast(i);
                 }
             } else if (Enum.class.isAssignableFrom(type)) {
-                result = (T) Enum.valueOf((Class<Enum>) type, so);
+                return (T) Enum.valueOf((Class<Enum>) type, so);
             } else if (Class.class.isAssignableFrom(type)) {
                 try {
-                    result = type.cast(Class.forName(so));
+                    return type.cast(Class.forName(so));
                 } catch (ClassNotFoundException e) {
-                    result = type.cast(object);
+                    return type.cast(object);
                 }
             } else {
                 try {
-                    Constructor<T> constructor =
-                            type.getConstructor(String.class);
-                    result = constructor.newInstance(object);
-                } catch (NoSuchMethodException e) {
-                    //hard cast:
-                    result = type.cast(object);
-                } catch (SecurityException e) {
-                    //hard cast:
-                    result = type.cast(object);
-                } catch (InstantiationException e) {
-                    //hard cast:
-                    result = type.cast(object);
-                } catch (IllegalAccessException e) {
-                    //hard cast:
-                    result = type.cast(object);
-                } catch (InvocationTargetException e) {
-                    //hard cast:
-                    result = type.cast(object);
+                    Method valueOf = type.getMethod("valueOf", object.getClass());
+                    if (Modifier.isStatic(valueOf.getModifiers()) && type.isAssignableFrom(valueOf.getReturnType())) {
+                        return type.cast(valueOf.invoke(null, object));
+                    }
+                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
                 }
+                try {
+                    return type.getConstructor(String.class).newInstance(object);
+                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | InstantiationException | InvocationTargetException ignored) {
+                }
+                return type.cast(object);
             }
         }
-
-        return result;
     }
 
     /**

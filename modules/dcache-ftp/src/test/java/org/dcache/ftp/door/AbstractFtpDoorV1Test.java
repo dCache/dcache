@@ -33,7 +33,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 
 import org.dcache.namespace.FileType;
-import org.dcache.util.PortRange;
+import org.dcache.util.OptionParser;
 
 import static com.google.common.net.InetAddresses.forString;
 import static org.hamcrest.Matchers.is;
@@ -60,6 +60,7 @@ public class AbstractFtpDoorV1Test {
     public void setUp()
     {
         MockitoAnnotations.initMocks(this);
+        door._settings = OptionParser.injectDefaults(new FtpDoorSettings());
         door._userRootPath = new FsPath("pathRoot");
         door._doorRootPath = new FsPath("pathRoot");
         door._cwd = "/cwd";
@@ -381,7 +382,6 @@ public class AbstractFtpDoorV1Test {
                 mockInterfaceAddress("::1"), mockInterfaceAddress("127.0.0.1"));
         when(door.getLocalAddressInterfaces()).thenReturn(addresses);
         door._localSocketAddress = new InetSocketAddress(forString("::1"), 21);
-        door._passiveModePortRange = new PortRange(0);
 
         door.ftp_epsv("1");
         door.ftp_epsv("");

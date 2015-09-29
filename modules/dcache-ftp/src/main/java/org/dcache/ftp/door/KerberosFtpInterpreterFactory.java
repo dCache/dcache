@@ -47,7 +47,6 @@ public class KerberosFtpInterpreterFactory extends FtpInterpreterFactory
     public void configure(Args args) throws ConfigurationException
     {
         super.configure(args);
-        options.inject(this);
         try {
             dssContextFactory = createDssContextFactory();
         } catch (IOException | GSSException e) {

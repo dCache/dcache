@@ -32,20 +32,23 @@ import org.dcache.util.OptionParser;
 
 public abstract class FtpInterpreterFactory implements LineBasedInterpreterFactory
 {
-    protected OptionParser options;
+    protected final FtpDoorSettings settings = new FtpDoorSettings();
 
     protected abstract AbstractFtpDoorV1 createInterpreter() throws Exception;
 
     @Override
     public void configure(Args args) throws ConfigurationException
     {
-        options = new OptionParser(args);
+        OptionParser options = new OptionParser(args);
+        options.inject(settings);
+        options.inject(this);
     }
 
     @Override
     public LineBasedInterpreter create(CellEndpoint endpoint, StreamEngine engine, Executor executor) throws Exception
     {
-        AbstractFtpDoorV1 interpreter = options.inject(createInterpreter());
+        AbstractFtpDoorV1 interpreter = createInterpreter();
+        interpreter.setSettings(settings);
         interpreter.setWriter(engine.getWriter());
         interpreter.setRemoteSocketAddress((InetSocketAddress) engine.getSocket().getRemoteSocketAddress());
         interpreter.setLocalSocketAddress((InetSocketAddress) engine.getSocket().getLocalSocketAddress());
