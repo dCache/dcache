@@ -1021,47 +1021,27 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>buildnumber-maven-plugin</artifactId>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.0</version>
                 <executions>
                     <execution>
-                        <phase>generate-resources</phase>
                         <goals>
-                            <goal>create</goal>
+                        <goal>revision</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
-                    <format>{0,date,yyyy-MM-dd_HH-mm}_{1}</format>
-                    <items>
-                        <item>timestamp</item>
-                        <item>${user.name}</item>
-                    </items>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <runOnlyOnce>true</runOnlyOnce>
+                    <skipPoms>false</skipPoms>
+                    <injectAllReactorProjects>true</injectAllReactorProjects>
+                    <useNativeGit>false</useNativeGit>
+                    <gitDescribe>
+                        <always>true</always>
+                        <dirty>-dirty-${user.name}</dirty>
+                    </gitDescribe>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>com.lukegb.mojo</groupId>
-                <artifactId>gitdescribe-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>git-describe</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>gitdescribe</goal>
-                        </goals>
-                        <configuration>
-                            <descriptionProperty>gitDescribe</descriptionProperty>
-                            <outputPrefix></outputPrefix>
-                            <extraArguments>
-                                <param>--dirty</param>
-                                <param>--all</param>
-                            </extraArguments>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -1075,9 +1055,8 @@
                         </manifest>
                         <manifestEntries>
                             <Build-Time>${maven.build.timestamp}</Build-Time>
-                            <Implementation-Build>${buildNumber}</Implementation-Build>
-                            <Implementation-Branch>${scmBranch}</Implementation-Branch>
-			    <Implementation-State>${gitDescribe}</Implementation-State>
+                            <Implementation-Build>${git.commit.id.describe}</Implementation-Build>
+                            <Implementation-Branch>${git.branch}</Implementation-Branch>
                         </manifestEntries>
                     </archive>
                 </configuration>

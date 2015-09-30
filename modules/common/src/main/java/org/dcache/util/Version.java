@@ -17,17 +17,14 @@ public class Version
     private final Optional<String> _buildTime;
     private final Optional<String> _buildNumber;
     private final Optional<String> _branch;
-    private final Optional<String> _state;
 
     public Version(Optional<String> buildTime, Optional<String> version,
-                   Optional<String> buildNumber, Optional<String> branch,
-                   Optional<String> gitDescribe)
+                   Optional<String> buildNumber, Optional<String> branch)
     {
         _buildTime = buildTime;
         _buildNumber = buildNumber;
         _version = version;
         _branch = branch;
-        _state = gitDescribe;
     }
 
     public static Version of(Class<?> clazz)
@@ -36,7 +33,6 @@ public class Version
         Optional<String> version = Optional.absent();
         Optional<String> buildNumber = Optional.absent();
         Optional<String> branch = Optional.absent();
-        Optional<String> state = Optional.absent();
 
         ProtectionDomain pd = clazz.getProtectionDomain();
         CodeSource cs = pd.getCodeSource();
@@ -51,12 +47,11 @@ public class Version
                 version = Optional.fromNullable(as.getValue("Implementation-Version"));
                 buildNumber = Optional.fromNullable(as.getValue("Implementation-Build"));
                 branch = Optional.fromNullable(as.getValue("Implementation-Branch"));
-                state = Optional.fromNullable(as.getValue("Implementation-State"));
             }
         } catch (IOException ignored) {
         }
 
-        return new Version(buildTime, version, buildNumber, branch, state);
+        return new Version(buildTime, version, buildNumber, branch);
     }
 
     public static Version of(Object object)
@@ -74,7 +69,7 @@ public class Version
         return _buildTime.or("undefined");
     }
 
-    public String getBuildNumber()
+    public String getBuild()
     {
         return _buildNumber.or("undefined");
     }
@@ -82,11 +77,6 @@ public class Version
     public String getBranch()
     {
         return _branch.or("undefined");
-    }
-
-    public String getState()
-    {
-        return _state.or("undefined");
     }
 
     public static void main(String[] args) throws IOException
