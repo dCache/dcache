@@ -48,7 +48,7 @@ public abstract class NetworkUtils {
 
     public static final String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
-    private static final String canonicalHostName;
+    private static String canonicalHostName;
     private static final int RANDOM_PORT = 23241;
 
     private static final List<InetAddress> FAKED_ADDRESSES;
@@ -63,10 +63,12 @@ public abstract class NetworkUtils {
             fakedAddresses.add(InetAddresses.forString(address));
         }
         FAKED_ADDRESSES = fakedAddresses.build();
-        canonicalHostName = getPreferredHostName();
     }
 
-    public static String getCanonicalHostName() {
+    public static synchronized String getCanonicalHostName() {
+        if (canonicalHostName == null) {
+            canonicalHostName = getPreferredHostName();
+        }
         return canonicalHostName;
     }
 
