@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.InetAddresses;
 import io.milton.http.HttpManager;
@@ -50,7 +51,9 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import diskCacheV111.poolManager.PoolMonitorV5;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileLocality;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PermissionDeniedCacheException;
@@ -81,6 +84,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
 import org.dcache.namespace.FileAttribute;
+import org.dcache.poolmanager.PoolMonitor;
 import org.dcache.util.Args;
 import org.dcache.util.PingMoversTask;
 import org.dcache.util.RedirectedTransfer;
@@ -120,8 +124,9 @@ public class DcacheResourceFactory
 
     // Additional attributes needed for PROPFIND requests; e.g., to supply
     // values for properties.
-    private static final Set<FileAttribute> PROPFIND_ATTRIBUTES =
-        EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY);
+    private static final Set<FileAttribute> PROPFIND_ATTRIBUTES = Sets.union(
+            EnumSet.of(CHECKSUM, ACCESS_LATENCY, RETENTION_POLICY),
+            PoolMonitorV5.getRequiredAttributesForFileLocality());
 
     private static final String PROTOCOL_INFO_NAME = "Http";
     private static final int PROTOCOL_INFO_MAJOR_VERSION = 1;
@@ -182,10 +187,18 @@ public class DcacheResourceFactory
     private MissingFileStrategy _missingFileStrategy =
         new AlwaysFailMissingFileStrategy();
 
+    private PoolMonitor _poolMonitor;
+
     public DcacheResourceFactory()
         throws UnknownHostException
     {
         _internalAddress = InetAddress.getLocalHost();
+    }
+
+    @Required
+    public void setPoolMonitor(PoolMonitor monitor)
+    {
+        _poolMonitor = monitor;
     }
 
     /**
@@ -1161,6 +1174,11 @@ public class DcacheResourceFactory
     private boolean isPropfindRequest()
     {
         return HttpManager.request().getMethod() == Request.Method.PROPFIND;
+    }
+
+    FileLocality calculateLocality(FileAttributes attributes, String clientIP)
+    {
+        return _poolMonitor.getFileLocality(attributes, clientIP);
     }
 
     /**

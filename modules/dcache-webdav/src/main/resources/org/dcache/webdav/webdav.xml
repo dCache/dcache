@@ -111,6 +111,10 @@
       <property name="anonymousAccess" value="${webdav.authz.anonymous-operations}"/>
   </bean>
 
+  <bean id="pool-monitor" class="org.dcache.poolmanager.RemotePoolMonitorFactoryBean">
+     <description>Maintains runtime information about all pools</description>
+     <property name="poolManagerStub" ref="pool-manager-stub"/>
+  </bean>
 
   <bean id="security-filter" class="org.dcache.webdav.SecurityFilter">
       <description>Handles authorization for the WebDAV door</description>
@@ -193,6 +197,7 @@
       <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
       <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
       <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
+      <property name="poolMonitor" ref="pool-monitor"/>
   </bean>
 
     <bean id="http-manager" class="org.dcache.webdav.HttpManagerFactory">

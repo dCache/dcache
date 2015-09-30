@@ -12,10 +12,10 @@ import io.milton.property.PropertySource.PropertySetException;
 import io.milton.resource.DeletableResource;
 import io.milton.resource.GetableResource;
 import io.milton.resource.MultiNamespaceCustomPropertyResource;
+import io.milton.servlet.ServletRequest;
 import io.milton.servlet.ServletResponse;
 import org.eclipse.jetty.io.EofException;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
@@ -71,6 +71,7 @@ public class DcacheFileResource
      */
     private static final String PROPERTY_ACCESS_LATENCY = "AccessLatency";
     private static final String PROPERTY_RETENTION_POLICY = "RetentionPolicy";
+    private static final String PROPERTY_FILE_LOCALITY = "FileLocality";
 
     private static final ImmutableMap<QName,PropertyMetaData> PROPERTY_METADATA =
             new ImmutableMap.Builder<QName,PropertyMetaData>()
@@ -79,6 +80,8 @@ public class DcacheFileResource
                     .put(new QName(SRM_NAMESPACE_URI, PROPERTY_RETENTION_POLICY),
                             new PropertyMetaData(READ_ONLY, RetentionPolicy.class))
                     .put(new QName(DCACHE_NAMESPACE_URI, PROPERTY_CHECKSUMS),
+                            new PropertyMetaData(READ_ONLY, String.class))
+                    .put(new QName(SRM_NAMESPACE_URI, PROPERTY_FILE_LOCALITY),
                             new PropertyMetaData(READ_ONLY, String.class))
                     .build();
 
@@ -230,6 +233,9 @@ public class DcacheFileResource
             return _attributes.getAccessLatencyIfPresent().orNull();
         case PROPERTY_RETENTION_POLICY:
             return _attributes.getRetentionPolicyIfPresent().orNull();
+        case PROPERTY_FILE_LOCALITY:
+            String clientIP = ServletRequest.getRequest().getRemoteAddr();
+            return _factory.calculateLocality(_attributes, clientIP).name();
         }
 
         throw new RuntimeException("unknown SRM property " + localPart);
