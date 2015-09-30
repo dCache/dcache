@@ -19,7 +19,7 @@ public class CellVersion implements Serializable
 
     public CellVersion(Version version)
     {
-        this(version.getVersion(), version.getBuildNumber());
+        this(version.getVersion(), version.getBuild());
     }
 
     public CellVersion(String release, String revision)

@@ -157,7 +157,7 @@
                                     <name>rpm.version</name>
                                     <value>${project.version}</value>
                                     <regex>-SNAPSHOT</regex>
-                                    <replacement>.\${timestamp}</replacement>
+                                    <replacement>.\${git.commit.id.describe}</replacement>
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
@@ -264,7 +264,7 @@
                                     <name>deb.version</name>
                                     <value>${project.version}</value>
                                     <regex>-SNAPSHOT</regex>
-                                    <replacement>~\${timestamp}</replacement>
+                                    <replacement>~\${git.commit.id.describe}</replacement>
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
