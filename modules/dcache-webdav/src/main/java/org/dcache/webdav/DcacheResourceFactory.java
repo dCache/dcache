@@ -808,6 +808,41 @@ public class DcacheResourceFactory
         return result;
     }
 
+    private class FileLocalityWrapper
+    {
+        private final FileLocality _inner;
+
+        FileLocalityWrapper(FileLocality inner)
+        {
+            _inner = inner;
+        }
+
+        public boolean isOnline()
+        {
+            return _inner == FileLocality.ONLINE;
+        }
+
+        public boolean isNearline()
+        {
+            return _inner == FileLocality.NEARLINE;
+        }
+
+        public boolean isOnlineAndNearline()
+        {
+            return _inner == FileLocality.ONLINE_AND_NEARLINE;
+        }
+
+        public boolean isLost()
+        {
+            return _inner == FileLocality.LOST;
+        }
+
+        public boolean isUnavailable()
+        {
+            return _inner == FileLocality.UNAVAILABLE;
+        }
+    }
+
     /**
      * Performs a directory listing, writing an HTML view to an output
      * stream.
@@ -845,7 +880,8 @@ public class DcacheResourceFactory
                 new DirectoryListPrinter() {
                     @Override
                     public Set<FileAttribute> getRequiredAttributes() {
-                        return EnumSet.of(MODIFICATION_TIME, TYPE, SIZE);
+                        return EnumSet.copyOf(Sets.union(PoolMonitorV5.getRequiredAttributesForFileLocality(),
+                                EnumSet.of(MODIFICATION_TIME, TYPE, SIZE)));
                     }
 
                     @Override
@@ -858,12 +894,14 @@ public class DcacheResourceFactory
                          * file's size before uploading.
                          */
                         boolean isUploading = !attr.isDefined(SIZE);
-                        t.addAggr("files.{name,isDirectory,mtime,size,isUploading}",
+                        FileLocality locality = _poolMonitor.getFileLocality(attr, request.getRemoteAddr());
+                        t.addAggr("files.{name,isDirectory,mtime,size,isUploading,locality}",
                                   name,
                                   attr.getFileType() == DIR,
                                   mtime,
                                   attr.getSizeIfPresent().transform(SizeWrapper::new).orNull(),
-                                  isUploading);
+                                  isUploading,
+                                  new FileLocalityWrapper(locality));
                     }
                 };
         _list.printDirectory(getSubject(), printer, path, null,

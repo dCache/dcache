@@ -61,7 +61,7 @@ file(f) ::= <<
     </td>
     $else$
     <td class="text-muted text-center">
-        <span class="glyphicon glyphicon-file"></span>
+        $localityIcon(f.locality)$
     </td>
     <td>
         <a href="/$[path:{item|$item.encoded$},f.name.encoded]; separator="/"$?action=show" title="Show $f.name.unencoded$">$f.name.unencoded$</a>
@@ -75,6 +75,29 @@ file(f) ::= <<
     </td>
     $endif$
   </tr>
+>>
+
+localityIcon(l) ::= <<
+    $if(l.online)$
+        <i title="This file's data is available with no delay." class="fa fa-file"></i>
+    $elseif(l.nearline)$
+        <i title="Reading this file's data may be delayed." class="fa fa-truck"></i>
+    $elseif(l.onlineAndNearline)$
+        <span class="text-muted"
+	title="This file's data is available with no delay now, but may be delayed in the future."><i
+	class="fa fa-file"></i><i class="other-locality fa fa-truck"></i></span>
+    $elseif(l.lost)$
+        <i title="This file's data has been lost." class="fa fa-exclamation-circle"></i>
+    $elseif(l.none)$
+        /* This is for non-file types; e.g., symbolic links. Note that directories
+           are handled separately. */
+        <i class="fa fa-file"></i>
+    $elseif(l.unavailable)$
+        <i title="This file's data is currently unavailable." class="fa fa-minus-circle"></i>
+    $else$
+        /* This branch should never happen. */
+        <i title="Status of this file's data is unknown." class="fa fa-exclamation-triangle"></i>
+    $endif$
 >>
 
 error(errorcode,errormessage) ::= <<
@@ -94,8 +117,10 @@ render(body) ::= <<
         <title>$config.head_title$</title>
 
         <link rel="stylesheet" href="$static$/bootstrap/css/bootstrap.min.css">
+        <link rel="stylesheet" href="$static$/css/custom.css">
         <link rel="stylesheet" href="$static$/css/tablesorter.custom.css">
         <link rel="stylesheet" href="$static$/css/bootstrap.custom.css">
+        <link rel="stylesheet" href="$static$/css/font-awesome.min.css">
 
         <script src="$static$/jquery/jquery.min.js"></script>
         <script src="$static$/bootstrap/js/bootstrap.min.js"></script>

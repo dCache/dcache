@@ -17,7 +17,7 @@ body {
 body > .container {
     padding: 60px 15px 0;
 }
-.container .text-muted {
+.container p.text-muted {
     margin: 20px 0;
 }
 #footer > .container {
