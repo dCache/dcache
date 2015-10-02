@@ -3,6 +3,8 @@
 package diskCacheV111.pools;
 
 import com.google.common.collect.Range;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
@@ -211,13 +214,31 @@ public class DirectoryLookUpPool extends AbstractCell
     }
 
     // commands
-    public final static String hh_ls = "ls <path>";
-    public DelayedReply ac_ls_$_1(Args args)
+    @Command(name = "ls",
+            hint = "list the contents of a directory",
+            description = "Get the list of all the contents in the specified directory path. " +
+                    "The directory listing is displayed in this format:\n" +
+                    "\t\t<Pnfs-ID>:<TYPE>:<SIZE>:<NAME>\n" +
+                    "where" +
+                    "\n\tPnfs-ID: is a unique identifier of the file;" +
+                    "\n\tTYPE: file type has two denotations, 'd' denotes directory and 'f' " +
+                    "for other file type (like regular, link or special);" +
+                    "\n\tSIZE: the size of the file in bytes; and" +
+                    "\n\tNAME: the name of the file.")
+    public class LsCommand implements Callable<DelayedReply>
     {
-        FsPath path = new FsPath(args.argv(0));
-        ListThread thread = new ListThread(path);
-        new Thread(thread, "list[" + path + "]").start();
-        return thread;
+        @Argument(metaVar = "directory",
+                usage = "An absolute directory path.")
+        FsPath path;
+
+        @Override
+        public DelayedReply call()
+                throws InterruptedException, CacheException
+        {
+            ListThread thread = new ListThread(path);
+            new Thread(thread, "list[" + path + "]").start();
+            return thread;
+        }
     }
 
     // //////////////////////////////////////////////////////////////
