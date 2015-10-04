@@ -18,13 +18,13 @@
 package org.dcache.webdav.transfer;
 
 import com.google.common.base.Joiner;
+import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Filter;
 import io.milton.http.FilterChain;
 import io.milton.http.Request;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import io.milton.servlet.ServletRequest;
-import org.globus.gsi.X509Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;

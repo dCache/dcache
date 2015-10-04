@@ -19,12 +19,11 @@ package org.dcache.webdav.transfer;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
+import eu.emi.security.authn.x509.X509Credential;
 import io.milton.http.Response;
 import io.milton.http.Response.Status;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.HttpConnection;
-import org.globus.gsi.CredentialException;
-import org.globus.gsi.X509Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -319,13 +318,7 @@ public class RemoteTransferHandler implements CellMessageReceiver
             _destination = destination;
             _type = TransferType.fromScheme(destination.getScheme());
             if (credential != null) {
-                try {
-                    _privateKey = credential.getPrivateKey();
-                } catch (CredentialException e) {
-                    LOG.warn("Client credential could not be extracted: {}", e.getMessage());
-                    throw new ErrorResponseException(Status.SC_BAD_REQUEST,
-                            "Failed to extract private key from delegated credential");
-                }
+                _privateKey = credential.getKey();
                 _certificateChain = credential.getCertificateChain();
             } else {
                 _privateKey = null;

@@ -19,7 +19,8 @@ package org.dcache.webdav.transfer;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.globus.gsi.X509Credential;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -27,11 +28,10 @@ import org.springframework.beans.factory.annotation.Required;
 import javax.annotation.PostConstruct;
 
 import java.net.URI;
+import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import diskCacheV111.srm.CredentialServiceAnnouncement;
 import diskCacheV111.srm.CredentialServiceRequest;
@@ -97,15 +97,16 @@ public class CredentialServiceClient
                 }
 
                 X509Certificate[] certificates = msg.getCertificateChain();
-
                 long lifetime = calculateRemainingLifetime(certificates);
-
                 if (lifetime > bestRemainingLifetime) {
-                    bestCredential = new X509Credential(msg.getPrivateKey(), certificates);
+                    bestCredential = new KeyAndCertCredential(msg.getPrivateKey(), certificates);
                     bestRemainingLifetime = lifetime;
                 }
             } catch (CacheException e) {
-                LOGGER.debug("failed to contact SRM {} querying for {}, {}: {}",
+                LOGGER.debug("failed to contact {} querying for {}, {}: {}",
+                             path, dn, primaryFqan, e.getMessage());
+            } catch (KeyStoreException e) {
+                LOGGER.warn("Received invalid key pair from {} for {}, {}: {}",
                              path, dn, primaryFqan, e.getMessage());
             }
         }
