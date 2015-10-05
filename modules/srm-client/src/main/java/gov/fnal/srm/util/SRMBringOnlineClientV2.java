@@ -73,7 +73,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -112,13 +111,13 @@ import org.dcache.srm.v2_2.TTransferParameters;
  */
 public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
     private String[] protocols;
-    GlobusURL from[];
+    java.net.URI from[];
     private HashMap<String,Integer>pendingSurlsToIndex = new HashMap<>();
     private String requestToken;
     private Thread hook;
     private ISRM srmv2;
     /** Creates a new instance of SRMBringOnlineClient */
-    public SRMBringOnlineClientV2(Configuration configuration, GlobusURL[] from) {
+    public SRMBringOnlineClientV2(Configuration configuration, java.net.URI[] from) {
         super(configuration);
         report = new Report(from,from,configuration.getReport());
         this.protocols = configuration.getProtocols();
@@ -127,7 +126,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = from[0];
+        java.net.URI srmUrl = from[0];
         srmv2 = new SRMClientV2(srmUrl,
                 getGssCredential(),
                 configuration.getRetry_timeout(),
@@ -150,7 +149,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             String SURLS[] = new String[len];
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
-                SURLS[i] = from[i].getURL();
+                SURLS[i] = from[i].toASCIIString();
                 URI uri =
                     new URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
@@ -280,7 +279,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportSucceeded(from[indx], from[indx]);
                         System.out.println(
-                                from[indx].getURL() + " brought online, use request id " + requestToken + " to release");
+                                from[indx] + " brought online, use request id " + requestToken + " to release");
                         continue;
                     }
                     Integer estimatedWaitTime = bringOnlineRequestFileStatus.getEstimatedWaitTime();

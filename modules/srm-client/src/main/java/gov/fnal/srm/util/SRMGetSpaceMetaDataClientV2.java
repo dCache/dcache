@@ -82,7 +82,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -100,12 +99,12 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 
 public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
-    private GlobusURL srmURL;
+    private java.net.URI srmURL;
     private GSSCredential credential;
     private ISRM srmv2;
 
     public SRMGetSpaceMetaDataClientV2(Configuration configuration,
-                                       GlobusURL url) {
+                                       java.net.URI url) {
         super(configuration);
         srmURL=url;
         try {

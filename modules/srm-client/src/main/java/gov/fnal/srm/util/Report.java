@@ -6,12 +6,11 @@
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URI;
 
 /**
  *
@@ -28,9 +27,9 @@ public class Report {
     public static final String INITIAL_ERROR=
         "copy did not complete or status unknown";
     // source urls
-    GlobusURL from[];
+    URI from[];
     //destination urls
-    GlobusURL to[];
+    URI to[];
     //return codes
     int rc[];
     //errors
@@ -41,7 +40,7 @@ public class Report {
     private File reportFile;
 
     /** Creates a new instance of Report */
-    public Report(GlobusURL from[],GlobusURL to[], String reportFileName)  {
+    public Report(URI from[], URI to[], String reportFileName)  {
         if(from == null || to == null) {
             throw new NullPointerException(
             "from url array and to url array should not be null");
@@ -85,9 +84,9 @@ public class Report {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i <length; ++i) {
-            sb.append(from[i].getURL());
+            sb.append(from[i].toASCIIString());
             sb.append(' ');
-            sb.append(to[i].getURL());
+            sb.append(to[i].toASCIIString());
             sb.append(' ');
             sb.append(rc[i]);
             if(rc[i] != 0) {
@@ -99,14 +98,12 @@ public class Report {
         return sb.toString();
     }
 
-    public void setStatusBySourceUrl(GlobusURL srcURL,int returnCode,String errorDscr){
+    public void setStatusBySourceUrl(URI srcURL,int returnCode,String errorDscr){
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
         }
         for(int i = 0; i <length; ++i) {
-            if(srcURL.getURL().equals(from[i].getURL())&&
-                    srcURL.getHost().equals(from[i].getHost()) &&
-                    srcURL.getProtocol().equals(from[i].getProtocol())){
+            if(srcURL.equals(from[i])) {
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -115,14 +112,12 @@ public class Report {
         }
     }
 
-    public void setStatusByDestinationUrl(GlobusURL dstURL,int returnCode,String errorDscr){
+    public void setStatusByDestinationUrl(URI dstURL,int returnCode,String errorDscr){
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
         }
         for(int i = 0; i <length; ++i) {
-            if(dstURL.getURL().equals(to[i].getURL())&&
-                    dstURL.getHost().equals(to[i].getHost())&&
-                    dstURL.getProtocol().equals(to[i].getProtocol())){
+            if(dstURL.equals(to[i])){
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -130,21 +125,15 @@ public class Report {
                 return;
             }
         }
-        throw new IllegalArgumentException("record for dest="+
-                dstURL.getURL()+" not found");
+        throw new IllegalArgumentException("record for dest=" + dstURL + " not found");
     }
 
-    public void setStatusBySourceDestinationUrl(GlobusURL srcURL,GlobusURL dstURL,int returnCode,String errorDscr){
+    public void setStatusBySourceDestinationUrl(URI srcURL, URI dstURL,int returnCode,String errorDscr){
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
         }
         for(int i = 0; i <length; ++i) {
-            if((dstURL.getURL().equals(to[i].getURL())&&
-                    dstURL.getHost().equals(to[i].getHost())&&
-                    dstURL.getProtocol().equals(to[i].getProtocol()))&&
-                    (srcURL.getURL().equals(from[i].getURL())&&
-                            srcURL.getHost().equals(from[i].getHost())&&
-                            srcURL.getProtocol().equals(from[i].getProtocol()))) {
+            if(dstURL.equals(to[i]) && srcURL.equals(from[i])) {
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -153,7 +142,7 @@ public class Report {
             }
         }
         throw new IllegalArgumentException("record for source="+
-                srcURL.getURL()+" and dest="+dstURL.getURL()+" not found");
+                srcURL+" and dest="+dstURL+" not found");
     }
 
     public boolean isValidRC(int rc) {
@@ -173,10 +162,10 @@ public class Report {
     public void reportErrors(PrintStream out) {
         for (int i = 0; i < length; ++i) {
             if (rc [i] != 0) {
-                out.append(from[i].getURL());
+                out.append(from[i].toASCIIString());
                 if (to[i] != from[i]) {
                     out.append(" -> ");
-                    out.append(to[i].getURL());
+                    out.append(to[i].toASCIIString());
                 }
                 out.append(": ");
                 out.append(error[i].replace('\n', ' '));

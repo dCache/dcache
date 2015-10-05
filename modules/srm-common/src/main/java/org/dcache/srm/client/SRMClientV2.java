@@ -22,7 +22,6 @@ import org.apache.axis.transport.http.HTTPSender;
 import org.globus.axis.transport.GSIHTTPSender;
 import org.globus.axis.transport.GSIHTTPTransport;
 import org.globus.axis.util.Util;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
 
@@ -138,7 +138,7 @@ public class SRMClientV2 implements ISRM {
     private String host;
 
     /** Creates a new instance of SRMClientV2 */
-    public SRMClientV2(GlobusURL srmurl,
+    public SRMClientV2(URI srmurl,
                        GSSCredential user_cred,
                        long retrytimeout,
                        int numberofretries,
@@ -157,7 +157,7 @@ public class SRMClientV2 implements ISRM {
              transport);
     }
 
-    public SRMClientV2(GlobusURL srmurl,
+    public SRMClientV2(URI srmurl,
                        GSSCredential user_cred,
                        long retrytimeout,
                        int numberofretries,

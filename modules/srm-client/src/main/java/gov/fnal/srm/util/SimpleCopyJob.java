@@ -73,8 +73,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import org.dcache.srm.Logger;
 /**
  *
@@ -82,15 +80,15 @@ import org.dcache.srm.Logger;
  */
 
 public class SimpleCopyJob implements CopyJob {
-    private GlobusURL from;
-    private GlobusURL to;
+    private java.net.URI from;
+    private java.net.URI to;
     private boolean isDone;
 
     // added these to support generation of the report
     private SRMClient client;
 
 
-    public SimpleCopyJob(GlobusURL from, GlobusURL to, Logger logger, SRMClient client) {
+    public SimpleCopyJob(java.net.URI from, java.net.URI to, Logger logger, SRMClient client) {
         if(from == null || to == null) {
             throw new IllegalArgumentException("both source and destination"+
             "must be non-null");
@@ -101,12 +99,12 @@ public class SimpleCopyJob implements CopyJob {
     }
 
     @Override
-    public GlobusURL getSource() {
+    public java.net.URI getSource() {
         return from;
     }
 
     @Override
-    public GlobusURL getDestination() {
+    public java.net.URI getDestination() {
         return to;
     }
 
@@ -124,8 +122,7 @@ public class SimpleCopyJob implements CopyJob {
 
     @Override
     public String toString() {
-        return "CopyJob, source = "+from.getURL()+
-        " destination = "+to.getURL();
+        return "CopyJob, source = "+from+" destination = "+to;
     }
 
     @Override

@@ -73,7 +73,8 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
+import java.net.URI;
+
 /**
  *
  * @author  timur
@@ -81,8 +82,8 @@ import org.globus.util.GlobusURL;
 
 public interface CopyJob {
 
-    public GlobusURL getSource() ;
-    public GlobusURL getDestination();
+    URI getSource() ;
+    URI getDestination();
 
-    public void done(boolean success, String error);
+    void done(boolean success, String error);
 }

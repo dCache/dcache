@@ -72,8 +72,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -88,15 +86,15 @@ import diskCacheV111.srm.RequestStatus;
  */
 public class SRMGetClientV1 extends SRMClient implements Runnable {
     private String[] protocols;
-    GlobusURL from[];
-    GlobusURL to[];
+    java.net.URI from[];
+    java.net.URI to[];
     private HashSet<Integer> fileIDs = new HashSet<>();
     private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
     private Copier copier;
     private int requestID;
     private Thread hook;
     /** Creates a new instance of SRMGetClient */
-    public SRMGetClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMGetClientV1(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.protocols = configuration.getProtocols();
@@ -122,7 +120,7 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
             int len = from.length;
             String SURLS[] = new String[len];
             for(int i = 0; i < len; ++i) {
-                SURLS[i] = from[i].getURL();
+                SURLS[i] = from[i].toASCIIString();
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
@@ -166,8 +164,8 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                         }
                         if(frs.state.equals("Failed")) {
                             removeIDs.add(nextID);
-                            GlobusURL surl = new GlobusURL(frs.SURL);
-                            GlobusURL filedest = null;
+                            java.net.URI surl = new java.net.URI(frs.SURL);
+                            java.net.URI filedest = null;
                             if(len == 1) {
                                 // in case of  one file there could be no correspondence between source and destination
                                 filedest = to[0];
@@ -180,7 +178,7 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                                 }
                             }
                             setReportFailed(surl,filedest,  rs.errorMessage);
-                            esay( "copying from SURL "+frs.SURL+" to file "+filedest.getURL() +" failed: File Status is \"Failed\"");
+                            esay( "copying from SURL "+frs.SURL+" to file "+filedest +" failed: File Status is \"Failed\"");
                             continue;
                         }
 
@@ -190,9 +188,9 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                             }
                             say("FileRequestStatus with SURL="+frs.SURL+" is Ready");
                             say("       received TURL="+ frs.TURL);
-                            GlobusURL globusTURL = new GlobusURL(frs.TURL);
-                            GlobusURL filedest = null;
-                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            java.net.URI globusTURL = new java.net.URI(frs.TURL);
+                            java.net.URI filedest = null;
+                            java.net.URI surl = new java.net.URI(frs.SURL);
 
                             if(len == 1) {
                                 // in case of  one file there could be no correspondence between source and destination
@@ -207,7 +205,7 @@ public class SRMGetClientV1 extends SRMClient implements Runnable {
                             }
                             setReportFailed(surl,filedest,  "received TURL, but did not complete transfer");
                             if(filedest == null) {
-                                String error ="could not find file destination "+"for source SURL "+ surl.getURL();
+                                String error ="could not find file destination "+"for source SURL "+ surl;
                                 esay( error);
                                 throw new IOException(error);
                             }

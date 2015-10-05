@@ -72,17 +72,16 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 /**
  *
  * @author  timur
  */
 public class SRMSimpleCopyClient extends SRMClient {
-    GlobusURL from[];
-    GlobusURL to[];
+    java.net.URI from[];
+    java.net.URI to[];
     private Copier copier;
     /** Creates a new instance of SRMGetClient */
-    public SRMSimpleCopyClient(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMSimpleCopyClient(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.from = from;

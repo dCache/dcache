@@ -6,7 +6,7 @@
 
 package org.dcache.srm.util;
 
-import org.globus.util.GlobusURL;
+import java.net.URI;
 
 /**
  *
@@ -43,12 +43,11 @@ public class GridftpList {
             serverPassive = args[1].equalsIgnoreCase("true");
         }
 
-        GlobusURL directory_url = new GlobusURL(directory);
+        URI directory_url = new URI(directory);
 
-        if( ! directory_url.getProtocol().equals("gsiftp") &&
-              ! directory_url.getProtocol().equals("gridftp") ) {
-                  System.err.println("wrong protocol : "+
-                  directory_url.getProtocol());
+        if( ! directory_url.getScheme().equals("gsiftp") &&
+              ! directory_url.getScheme().equals("gridftp") ) {
+                  System.err.println("wrong protocol : " + directory_url.getScheme());
                  System.exit(1);
                     return;
         }

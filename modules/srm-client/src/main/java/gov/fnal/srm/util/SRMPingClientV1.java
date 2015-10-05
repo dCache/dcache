@@ -72,15 +72,14 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 /**
  *
  * @author  timur
  */
 public class SRMPingClientV1 extends SRMClient {
-    GlobusURL srmurl;
+    java.net.URI srmurl;
     /** Creates a new instance of SRMGetClient */
-    public SRMPingClientV1(Configuration configuration, GlobusURL srmurl) {
+    public SRMPingClientV1(Configuration configuration, java.net.URI srmurl) {
         super(configuration);
         this.srmurl = srmurl;
     }

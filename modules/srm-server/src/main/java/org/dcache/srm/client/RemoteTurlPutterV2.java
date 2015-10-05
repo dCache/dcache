@@ -85,6 +85,7 @@ import javax.xml.rpc.ServiceException;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 
@@ -200,7 +201,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             return;
         }
         try {
-            SrmUrl srmUrl = new SrmUrl(SURLs[0]);
+            java.net.URI srmUrl = SrmUrl.createWithDefaultPort(SURLs[0]);
             eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
             GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
                     new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
@@ -248,7 +249,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
-        catch(GSSException | IOException | InterruptedException | ServiceException e) {
+        catch(URISyntaxException | GSSException | IOException | InterruptedException | ServiceException e) {
             logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
@@ -462,7 +463,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                                      Transport transport) throws Exception
     {
 
-        SrmUrl srmUrl = new SrmUrl(surl);
+        java.net.URI srmUrl = SrmUrl.createWithDefaultPort(surl);
         eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
         GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
                 new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),

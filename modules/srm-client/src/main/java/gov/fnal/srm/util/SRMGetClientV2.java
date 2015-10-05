@@ -73,7 +73,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -112,15 +111,15 @@ import org.dcache.srm.v2_2.TTransferParameters;
  */
 public class SRMGetClientV2 extends SRMClient implements Runnable {
     private String[] protocols;
-    GlobusURL from[];
-    GlobusURL to[];
+    java.net.URI from[];
+    java.net.URI to[];
     private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     private Copier copier;
     private String requestToken;
     private Thread hook;
     private ISRM srmv2;
     /** Creates a new instance of SRMGetClient */
-    public SRMGetClientV2(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMGetClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.protocols = configuration.getProtocols();
@@ -130,7 +129,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = from[0];
+        java.net.URI srmUrl = from[0];
         srmv2 = new SRMClientV2(srmUrl,
                 getGssCredential(),
                 configuration.getRetry_timeout(),
@@ -156,7 +155,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             String SURLS[] = new String[len];
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
-                SURLS[i] = from[i].getURL();
+                SURLS[i] = from[i].toASCIIString();
                 URI uri =
                     new URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
@@ -284,7 +283,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                         continue;
                     }
                     if (getRequestFileStatus.getTransferURL() != null) {
-                        GlobusURL globusTURL = new GlobusURL(getRequestFileStatus.getTransferURL().toString());
+                        java.net.URI globusTURL = new java.net.URI(getRequestFileStatus.getTransferURL().toString());
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx], to[indx], "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(globusTURL,

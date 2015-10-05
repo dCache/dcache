@@ -82,7 +82,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -106,12 +105,12 @@ public class SRMSetPermissionClientV2 extends SRMClient {
     //
     private static final String DEFAULT_DUMMY_GROUP_ID = "-";
     private GSSCredential cred;
-    private GlobusURL surl;
+    private java.net.URI surl;
     private String surl_string;
     private ISRM isrm;
 
     public SRMSetPermissionClientV2(Configuration configuration,
-                                    GlobusURL surl, String surl_string) {
+                                    java.net.URI surl, String surl_string) {
         super(configuration);
         this.surl       = surl;
         this.surl_string = surl_string;
@@ -126,7 +125,7 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = surl;
+        java.net.URI srmUrl = surl;
         isrm = new SRMClientV2(srmUrl,
                 getGssCredential(),
                 configuration.getRetry_timeout(),

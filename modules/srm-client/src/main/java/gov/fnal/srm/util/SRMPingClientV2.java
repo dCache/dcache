@@ -72,8 +72,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import java.io.IOException;
 
 import org.dcache.srm.client.SRMClientV2;
@@ -88,9 +86,9 @@ import org.dcache.srm.v2_2.TExtraInfo;
  */
 public class SRMPingClientV2 extends SRMClient  {
     private ISRM srmv2;
-    GlobusURL srmurl;
+    java.net.URI srmurl;
     /** Creates a new instance of SRMGetClient */
-    public SRMPingClientV2(Configuration configuration, GlobusURL srmurl) {
+    public SRMPingClientV2(Configuration configuration, java.net.URI srmurl) {
         super(configuration);
         this.srmurl = srmurl;
     }

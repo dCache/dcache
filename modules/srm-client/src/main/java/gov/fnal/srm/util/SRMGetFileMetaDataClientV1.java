@@ -72,8 +72,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import diskCacheV111.srm.FileMetaData;
 
 
@@ -83,10 +81,10 @@ import diskCacheV111.srm.FileMetaData;
  */
 public class SRMGetFileMetaDataClientV1 extends SRMClient implements Runnable {
 
-    private GlobusURL surls[];
+    private java.net.URI surls[];
     private String surl_strings[];
     /** Creates a new instance of SRMGetClient */
-    public SRMGetFileMetaDataClientV1(Configuration configuration, GlobusURL[] surls, String[] surl_strings) {
+    public SRMGetFileMetaDataClientV1(Configuration configuration, java.net.URI[] surls, String[] surl_strings) {
         super(configuration);
         this.surls = surls;
         this.surl_strings=surl_strings;

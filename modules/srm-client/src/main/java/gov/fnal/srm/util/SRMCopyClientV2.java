@@ -101,7 +101,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -138,16 +137,16 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 
 public class SRMCopyClientV2 extends SRMClient implements Runnable {
-    private GlobusURL from[];
-    private GlobusURL to[];
+    private java.net.URI from[];
+    private java.net.URI to[];
     private SrmCopyRequest req = new SrmCopyRequest();
 
     private GSSCredential cred;
     private ISRM srmv2;
     private Thread hook;
-    private HashMap<String,Integer> pendingSurlsMap = new HashMap<>();
+    private HashMap<java.net.URI,Integer> pendingSurlsMap = new HashMap<>();
     private String requestToken;
-    public SRMCopyClientV2(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMCopyClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.from = from;
@@ -162,7 +161,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl;
+        java.net.URI srmUrl;
         if ( configuration.isPushmode()  ) {
             srmUrl = from[0];
         } else {
@@ -197,17 +196,17 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             TCopyFileRequest copyFileRequests[] = new TCopyFileRequest[len];
 
             for(int i = 0; i<from.length;++i) {
-                GlobusURL source = from[i];
-                GlobusURL dest   = to[i];
+                java.net.URI source = from[i];
+                java.net.URI dest   = to[i];
                 TCopyFileRequest copyFileRequest = new TCopyFileRequest();
-                copyFileRequest.setSourceSURL(new URI(source.getURL()));
-                copyFileRequest.setTargetSURL(new URI(dest.getURL()));
+                copyFileRequest.setSourceSURL(new URI(source.toASCIIString()));
+                copyFileRequest.setTargetSURL(new URI(dest.toASCIIString()));
                 TDirOption dirOption = new TDirOption();
                 dirOption.setIsSourceADirectory(false);
                 dirOption.setAllLevelRecursive(Boolean.TRUE);
                 copyFileRequest.setDirOption(dirOption);
                 copyFileRequests[i]=copyFileRequest;
-                pendingSurlsMap.put(from[i].getURL(), i);
+                pendingSurlsMap.put(from[i], i);
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
@@ -312,21 +311,21 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                     if (to_surl == null) {
                         throw new IOException("null to_surl");
                     }
-                    String from_surl_string = from_surl.toString();
-                    String to_surl_string = to_surl.toString();
+                    java.net.URI from_surl_uri = new java.net.URI(from_surl.toString());
+                    java.net.URI to_surl_uri = new java.net.URI(to_surl.toString());
                     if (RequestStatusTool
                             .isFailedFileRequestStatus(fileStatus)) {
-                        String error = "copy of " + from_surl_string + " into " + to_surl +
+                        String error = "copy of " + from_surl_uri + " into " + to_surl +
                                 " failed, status = " + fileStatusCode +
                                 " explanation=" + fileStatus.getExplanation();
                         esay(error);
-                        int indx = pendingSurlsMap.remove(from_surl_string);
+                        int indx = pendingSurlsMap.remove(from_surl_uri);
                         setReportFailed(from[indx], to[indx], error);
 
                     } else if (fileStatusCode == TStatusCode.SRM_SUCCESS ||
                             fileStatusCode == TStatusCode.SRM_DONE) {
-                        int indx = pendingSurlsMap.remove(from_surl_string);
-                        say(" copying of " + from_surl_string + " to " + to_surl_string + " succeeded");
+                        int indx = pendingSurlsMap.remove(from_surl_uri);
+                        say(" copying of " + from_surl_uri + " to " + to_surl_uri + " succeeded");
                         setReportSucceeded(from[indx], to[indx]);
                     }
                     if (copyRequestFileStatus.getEstimatedWaitTime() != null &&

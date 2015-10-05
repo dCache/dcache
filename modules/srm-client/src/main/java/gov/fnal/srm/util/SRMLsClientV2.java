@@ -74,7 +74,6 @@ package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -109,14 +108,14 @@ import org.dcache.srm.v2_2.TUserPermission;
 
 public class SRMLsClientV2 extends SRMClient implements Runnable {
     private GSSCredential cred;
-    private GlobusURL surls[];
+    private java.net.URI surls[];
     private String surl_strings[];
     private ISRM isrm;
     private String requestToken;
     private Thread hook;
 
     public SRMLsClientV2(Configuration configuration,
-                         GlobusURL[] surls,
+                         java.net.URI[] surls,
                          String[] surl_strings) {
         super(configuration);
         this.surls = surls;
@@ -132,7 +131,7 @@ public class SRMLsClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = surls[0];
+        java.net.URI srmUrl = surls[0];
         isrm = new SRMClientV2(srmUrl,
                 getGssCredential(),
                 configuration.getRetry_timeout(),

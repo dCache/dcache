@@ -67,10 +67,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Date;
 
 import diskCacheV111.srm.ISRM;
@@ -170,7 +170,7 @@ public abstract class SRMClient {
 
     public abstract void start() throws Exception;
 
-    protected void connect(GlobusURL srmUrl) throws Exception {
+    protected void connect(java.net.URI srmUrl) throws Exception {
         try {
 
             SRMClientV1 client;
@@ -225,7 +225,7 @@ public abstract class SRMClient {
         }
     }
 
-    private void setReportSuccessStatusBySource(GlobusURL url){
+    private void setReportSuccessStatusBySource(URI url){
         if(report == null) {
             return;
         }
@@ -233,15 +233,14 @@ public abstract class SRMClient {
 
     }
 
-    private void setReportSuccessStatusByDest(GlobusURL url){
+    private void setReportSuccessStatusByDest(URI url){
         if(report == null) {
             return;
         }
         report.setStatusByDestinationUrl(url, Report.OK_RC, null);
 
     }
-    private void setReportSuccessStatusBySrcAndDest(GlobusURL srcurl,
-                                                    GlobusURL dsturl){
+    private void setReportSuccessStatusBySrcAndDest(URI srcurl, URI dsturl){
         if(srcurl == null ) {
             setReportSuccessStatusByDest(dsturl);
             return;
@@ -257,10 +256,10 @@ public abstract class SRMClient {
 
 
 
-        report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.OK_RC, null);
+        report.setStatusBySourceDestinationUrl(srcurl, dsturl, Report.OK_RC, null);
     }
 
-    private void setReportFailedStatusBySource(GlobusURL url, String error){
+    private void setReportFailedStatusBySource(URI url, String error){
         if(report == null) {
             return;
         }
@@ -280,7 +279,7 @@ public abstract class SRMClient {
         report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
     }
 
-    private void setReportFailedStatusByDest(GlobusURL url, String error){
+    private void setReportFailedStatusByDest(URI url, String error){
         if(report == null) {
             return;
         }
@@ -301,7 +300,7 @@ public abstract class SRMClient {
         report.setStatusByDestinationUrl(url, Report.ERROR_RC, error);
     }
 
-    private void setReportFailedStatusBySrcAndDest(GlobusURL srcurl, GlobusURL dsturl, String error){
+    private void setReportFailedStatusBySrcAndDest(URI srcurl, URI dsturl, String error){
         if(srcurl == null ) {
             setReportFailedStatusByDest(dsturl,error);
             return;
@@ -333,7 +332,7 @@ public abstract class SRMClient {
         report.setStatusBySourceDestinationUrl(srcurl,dsturl, Report.ERROR_RC, error);
     }
 
-    protected void setReportFailed(GlobusURL srcurl,GlobusURL dsturl,String error ) {
+    protected void setReportFailed(URI srcurl, URI dsturl,String error ) {
         try {
             setReportFailedStatusBySrcAndDest(srcurl,dsturl, error);
         } catch(Exception e) {
@@ -345,8 +344,7 @@ public abstract class SRMClient {
         }
     }
 
-    protected void setReportSucceeded(GlobusURL srcurl,
-                                      GlobusURL dsturl) {
+    protected void setReportSucceeded(URI srcurl, URI dsturl) {
         try {
             setReportSuccessStatusBySrcAndDest(srcurl,dsturl);
         } catch(Exception e) {

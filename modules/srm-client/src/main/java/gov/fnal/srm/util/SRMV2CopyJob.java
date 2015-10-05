@@ -68,7 +68,6 @@ package gov.fnal.srm.util;
 
 import com.google.common.base.Strings;
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 
 import java.rmi.RemoteException;
 
@@ -88,20 +87,20 @@ import org.dcache.srm.v2_2.TStatusCode;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SRMV2CopyJob implements CopyJob {
-    private GlobusURL from;
-    private GlobusURL to;
+    private java.net.URI from;
+    private java.net.URI to;
     private ISRM srm;
     private boolean isDone;
     private Logger logger;
 
     // added these to support generation of the report
-    private GlobusURL surl;
+    private java.net.URI surl;
     private boolean isSrmPrepareToGet;
     private SRMClient client;
     private String requestToken;
 
 
-    public SRMV2CopyJob(GlobusURL from, GlobusURL to, ISRM srm, String requestToken, Logger logger, GlobusURL surl, boolean isSrmPrepareToGet, SRMClient client) {
+    public SRMV2CopyJob(java.net.URI from, java.net.URI to, ISRM srm, String requestToken, Logger logger, java.net.URI surl, boolean isSrmPrepareToGet, SRMClient client) {
         this.from = checkNotNull(from);
         this.to = checkNotNull(to);
         this.srm = checkNotNull(srm);
@@ -113,12 +112,12 @@ public class SRMV2CopyJob implements CopyJob {
     }
 
     @Override
-    public GlobusURL getSource() {
+    public java.net.URI getSource() {
         return from;
     }
 
     @Override
-    public GlobusURL getDestination() {
+    public java.net.URI getDestination() {
         return to;
     }
 
@@ -136,8 +135,7 @@ public class SRMV2CopyJob implements CopyJob {
 
     @Override
     public String toString() {
-        return "CopyJob, source = "+from.getURL()+
-        " destination = "+to.getURL();
+        return "CopyJob, source = "+from+" destination = "+to;
     }
 
     @Override
@@ -150,7 +148,7 @@ public class SRMV2CopyJob implements CopyJob {
         }
 
         try {
-            URI surlArray[] = new URI[]{ new URI(surl.getURL()) };
+            URI surlArray[] = new URI[]{ new URI(surl.toASCIIString()) };
             if (!success) {
                 SrmAbortFilesRequest srmAbortFilesRequest = new SrmAbortFilesRequest();
                 srmAbortFilesRequest.setRequestToken(requestToken);

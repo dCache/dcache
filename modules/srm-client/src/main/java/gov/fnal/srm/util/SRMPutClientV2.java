@@ -72,10 +72,8 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import com.google.common.base.Strings;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
-import org.globus.util.GlobusURL;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,8 +116,8 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  * @author  timur
  */
 public class SRMPutClientV2 extends SRMClient implements Runnable {
-    private GlobusURL from[];
-    private GlobusURL to[];
+    private java.net.URI from[];
+    private java.net.URI to[];
     private String protocols[];
     private HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     private Copier copier;
@@ -128,7 +126,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
     private String requestToken;
     private SrmPrepareToPutResponse response;
     /** Creates a new instance of SRMGetClient */
-    public SRMPutClientV2(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMPutClientV2(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.protocols = configuration.getProtocols();
@@ -143,7 +141,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = to[0];
+        java.net.URI srmUrl = to[0];
         srmv2 = new SRMClientV2(srmUrl,
                 getGssCredential(),
                 configuration.getRetry_timeout(),
@@ -165,20 +163,20 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
             String SURLS[] = new String[len];
             for(int i = 0; i < len; ++i) {
-                GlobusURL filesource = from[i];
+                java.net.URI filesource = from[i];
                 int filetype = SRMDispatcher.getUrlType(filesource);
                 if((filetype & SRMDispatcher.FILE_URL) == 0) {
-                    throw new IOException(" source is not file "+ filesource.getURL());
+                    throw new IOException(" source is not file "+ filesource);
                 }
                 if((filetype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
-                    throw new IOException(" source is directory "+ filesource.getURL());
+                    throw new IOException(" source is directory "+ filesource);
                 }
                 if((filetype & SRMDispatcher.CAN_READ_FILE_URL) == 0) {
-                    throw new IOException(" source is not readable "+ filesource.getURL());
+                    throw new IOException(" source is not readable "+ filesource);
                 }
                 File f = new File(filesource.getPath());
                 long filesize = f.length();
-                SURLS[i] = to[i].getURL();
+                SURLS[i] = to[i].toASCIIString();
                 URI uri = new URI(SURLS[i]);
                 fileRequests[i] = new TPutFileRequest();
                 fileRequests[i].setExpectedFileSize(
@@ -316,7 +314,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         continue;
                     }
                     if(putRequestFileStatus.getTransferURL() != null) {
-                        GlobusURL globusTURL = new GlobusURL(putRequestFileStatus.getTransferURL().toString());
+                        java.net.URI globusTURL = new java.net.URI(putRequestFileStatus.getTransferURL().toString());
                         int indx = pendingSurlsToIndex.remove(surl_string);
                         setReportFailed(from[indx],to[indx],  "received TURL, but did not complete transfer");
                         CopyJob job = new SRMV2CopyJob(from[indx],globusTURL,srmv2,requestToken,logger,to[indx],false,this);

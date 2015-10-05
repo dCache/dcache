@@ -73,7 +73,6 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -90,12 +89,12 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 public class SRMCheckPermissionClientV2 extends SRMClient {
     private GSSCredential cred;
-    private GlobusURL[] surls;
+    private java.net.URI[] surls;
     private String[] surl_string;
     private ISRM isrm;
 
     public SRMCheckPermissionClientV2(Configuration configuration,
-                                      GlobusURL[] surls, String[] surl_string) {
+                                      java.net.URI[] surls, String[] surl_string) {
         super(configuration);
         this.surls       = surls;
         this.surl_string = surl_string;
@@ -110,7 +109,7 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
 
     @Override
     public void connect() throws Exception {
-        GlobusURL srmUrl = surls[0];
+        java.net.URI srmUrl = surls[0];
         isrm = new SRMClientV2(srmUrl,
                 getGssCredential(),
                 configuration.getRetry_timeout(),

@@ -72,12 +72,13 @@ import org.globus.ftp.Buffer;
 import org.globus.ftp.exception.ClientException;
 import org.globus.ftp.exception.ServerException;
 import org.globus.gsi.CredentialException;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
@@ -115,6 +116,7 @@ public class RemoteGsiftpTransferProtocol_1
 
     private final static CellPath PNFS_MANAGER =
         new CellPath("PnfsManager");
+    public static final int DEFAULT_PORT = 2811;
 
     private final CellEndpoint _cell;
     private long _starttime;
@@ -148,14 +150,15 @@ public class RemoteGsiftpTransferProtocol_1
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo protocolInfo)
             throws ServerException, ClientException,
-            CredentialException, GSSException, IOException, KeyStoreException
+            CredentialException, GSSException, IOException, KeyStoreException, URISyntaxException
     {
         if (_client != null) {
             return;
         }
 
-        GlobusURL url = new GlobusURL(protocolInfo.getGsiftpUrl());
-        _client = new GridftpClient(url.getHost(), url.getPort(),
+        URI url = new URI(protocolInfo.getGsiftpUrl());
+        int port = (url.getPort() == -1) ? DEFAULT_PORT : url.getPort();
+        _client = new GridftpClient(url.getHost(), port,
                                     protocolInfo.getTcpBufferSize(),
                                     protocolInfo.getCredential());
         _client.setStreamsNum(protocolInfo.getNumberOfStreams());
@@ -170,7 +173,7 @@ public class RemoteGsiftpTransferProtocol_1
                       IoMode access)
             throws CacheException, IOException,
             ServerException, ClientException,
-            CredentialException, GSSException, KeyStoreException
+            CredentialException, GSSException, KeyStoreException, URISyntaxException
     {
         _pnfsId = fileAttributes.getPnfsId();
         if (_log.isDebugEnabled()) {
@@ -242,7 +245,7 @@ public class RemoteGsiftpTransferProtocol_1
         throws CacheException
     {
         try {
-            GlobusURL src_url = new GlobusURL(protocolInfo.getGsiftpUrl());
+            URI src_url = new URI(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
             long size = _client.getSize(src_url.getPath());
             _log.debug(" received a file size info: " + size +
@@ -283,7 +286,7 @@ public class RemoteGsiftpTransferProtocol_1
                 _log.debug("PnfsId "+_pnfsId+" does not have checksums");
             }
 
-            GlobusURL dst_url =  new GlobusURL(protocolInfo.getGsiftpUrl());
+            URI dst_url =  new URI(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
 
             try {
@@ -340,7 +343,7 @@ public class RemoteGsiftpTransferProtocol_1
     {
         try {
             createFtpClient(remoteGsiftpProtocolInfo);
-            GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
+            URI src_url =  new URI(remoteGsiftpProtocolInfo.getGsiftpUrl());
             _ftpCksm = _client.negotiateCksm(src_url.getPath());
             return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
         } catch (NoSuchAlgorithmException | IllegalArgumentException e) {

@@ -89,6 +89,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1846,7 +1847,7 @@ public class Configuration {
     }
 
 
-    private String srmUrl;
+    private URI srmUrl;
     private String surls[];
 
     /** Creates a new instance of Configuration */
@@ -2542,7 +2543,7 @@ public class Configuration {
         }
 
         surls = args.getArguments().toArray(new String[numberOfArguments]);
-        srmUrl=args.argv(0);
+        srmUrl = new URI(args.argv(0));
 
         //
         // take care of protocol version for srm v2.2 functions
@@ -2645,7 +2646,7 @@ public class Configuration {
             protocols = readListOfOptions(protocols_list,",");
         }
         else if(ping) {
-            srmUrl = args.argv(0);
+            srmUrl = new URI(args.argv(0));
         }
         else if (setPermission) {
             setPermissionSurl = args.argv(0);
@@ -3210,11 +3211,11 @@ public class Configuration {
         this.spaceTokensList = spaceTokensList;
     }
 
-    public String getSrmUrl() {
+    public URI getSrmUrl() {
         return srmUrl;
     }
 
-    public void setSrmUrl(String srmUrl) {
+    public void setSrmUrl(URI srmUrl) {
         this.srmUrl = srmUrl;
     }
 }

@@ -10,7 +10,6 @@
 package gov.fnal.srm.util;
 
 import org.apache.axis.types.URI;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -36,7 +35,7 @@ public class SRMReleaseFilesClientV2 extends SRMClient {
     @Override
     public void connect() throws Exception {
         credential=getGssCredential();
-        isrm = new SRMClientV2((new GlobusURL(configuration.getSrmUrl())),
+        isrm = new SRMClientV2(configuration.getSrmUrl(),
                 credential,
                 configuration.getRetry_timeout(),
                 configuration.getRetry_num(),
@@ -66,7 +65,7 @@ public class SRMReleaseFilesClientV2 extends SRMClient {
                 request.setRequestToken(requestToken);
                 ArrayOfAnyURI arrayOfSURLs = new ArrayOfAnyURI();
                 URI[] urlArray = new URI[1];
-                urlArray[0] =  new URI((new GlobusURL(configuration.getSrmUrl())).getURL());
+                urlArray[0] =  new URI(configuration.getSrmUrl().toASCIIString());
                 arrayOfSURLs.setUrlArray(urlArray);
                 request.setArrayOfSURLs(arrayOfSURLs);
                 request.setDoRemove(configuration.getDoRemove());
@@ -126,7 +125,7 @@ public class SRMReleaseFilesClientV2 extends SRMClient {
             ArrayOfAnyURI arrayOfSURLs = new ArrayOfAnyURI();
             URI[] urlArray = new URI[configuration.getSurls().length];
             for(int i=0; i<configuration.getSurls().length;i++) {
-                urlArray[i] = new URI((new GlobusURL(configuration.getSurls()[i])).getURL());
+                urlArray[i] = new URI((new java.net.URI(configuration.getSurls()[i])).toASCIIString());
             }
             arrayOfSURLs.setUrlArray(urlArray);
             request.setArrayOfSURLs(arrayOfSURLs);

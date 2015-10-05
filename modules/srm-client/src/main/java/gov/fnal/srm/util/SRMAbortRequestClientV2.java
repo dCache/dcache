@@ -9,11 +9,11 @@
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
 import java.io.IOException;
+import java.net.URI;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
@@ -25,11 +25,11 @@ import org.dcache.srm.v2_2.TReturnStatus;
 
 public class SRMAbortRequestClientV2 extends SRMClient {
     private ISRM isrm;
-    private GlobusURL srmURL;
+    private URI srmURL;
     private GSSCredential credential;
 
     public SRMAbortRequestClientV2(Configuration configuration,
-                                   GlobusURL url) {
+                                   URI url) {
         super(configuration);
         srmURL = url;
     }

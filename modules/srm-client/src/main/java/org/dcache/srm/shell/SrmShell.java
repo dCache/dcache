@@ -60,7 +60,6 @@ import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
 import org.dcache.srm.v2_2.SrmPingResponse;
-import org.dcache.srm.v2_2.SrmReserveSpaceResponse;
 import org.dcache.srm.v2_2.SrmRmResponse;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TExtraInfo;
@@ -133,10 +132,10 @@ public class SrmShell extends ShellApplication
 
         switch (uri.getScheme()) {
         case "srm":
-            configuration.setSrmUrl(uri.toString());
+            configuration.setSrmUrl(new java.net.URI(uri.toString()));
             break;
         case "httpg":
-            configuration.setSrmUrl("srm://" + uri.getHost() + (uri.getPort() > -1 ? ":" + uri.getPort() : "") + "/");
+            configuration.setSrmUrl(new java.net.URI("srm", null,  uri.getHost(), (uri.getPort() > -1 ? uri.getPort() : -1), "/", null, null));
             configuration.setWebservice_path(uri.getPath());
             break;
         }
@@ -156,7 +155,7 @@ public class SrmShell extends ShellApplication
         }
 
         fs = new AxisSrmFileSystem(
-                new SRMClientV2(new SrmUrl(configuration.getSrmUrl()),
+                new SRMClientV2(SrmUrl.withDefaultPort(configuration.getSrmUrl()),
                                 credential,
                                 configuration.getRetry_timeout(),
                                 configuration.getRetry_num(),
@@ -166,7 +165,7 @@ public class SrmShell extends ShellApplication
                                 configuration.getWebservice_path(),
                                 Transport.GSI));
 
-        cd(configuration.getSrmUrl());
+        cd(configuration.getSrmUrl().toASCIIString());
         home = pwd;
     }
 

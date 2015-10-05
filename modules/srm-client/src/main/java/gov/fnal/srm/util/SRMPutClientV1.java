@@ -72,8 +72,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -90,8 +88,8 @@ import diskCacheV111.srm.RequestStatus;
  * @author  timur
  */
 public class SRMPutClientV1 extends SRMClient implements Runnable {
-    private GlobusURL from[];
-    private GlobusURL to[];
+    private java.net.URI from[];
+    private java.net.URI to[];
     private String protocols[];
     private  HashSet<Integer> fileIDs = new HashSet<>();
     private  HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
@@ -99,7 +97,7 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
     private int requestID;
     private Thread hook;
     /** Creates a new instance of SRMPutClient */
-    public SRMPutClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMPutClientV1(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.protocols = configuration.getProtocols();
@@ -131,23 +129,23 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
             Arrays.fill(wantperm,true);
             String dests[] = new String[len];
             for(int i = 0; i<from.length;++i) {
-                GlobusURL filesource = from[i];
-                GlobusURL srmdest = to[i];
+                java.net.URI filesource = from[i];
+                java.net.URI srmdest = to[i];
                 int filetype = SRMDispatcher.getUrlType(filesource);
                 if((filetype & SRMDispatcher.FILE_URL) == 0) {
-                    throw new IOException(" source is not file "+ filesource.getURL());
+                    throw new IOException(" source is not file "+ filesource);
                 }
                 if((filetype & SRMDispatcher.DIRECTORY_URL) == SRMDispatcher.DIRECTORY_URL) {
-                    throw new IOException(" source is directory "+ filesource.getURL());
+                    throw new IOException(" source is directory "+ filesource);
                 }
                 if((filetype & SRMDispatcher.CAN_READ_FILE_URL) == 0) {
-                    throw new IOException(" source is not readable "+ filesource.getURL());
+                    throw new IOException(" source is not readable "+ filesource);
                 }
                 sources[i] = filesource.getPath();
                 dsay("source file#"+i+" : "+sources[i]);
                 File f = new File(sources[i]);
                 sizes[i] = f.length();
-                dests[i] = srmdest.getURL();
+                dests[i] = srmdest.toASCIIString();
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
@@ -193,8 +191,8 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
 
                         if(frs.state.equals("Failed")) {
                             removeIDs.add(nextID);
-                            GlobusURL surl = new GlobusURL(frs.SURL);
-                            GlobusURL filesource = null;
+                            java.net.URI surl = new java.net.URI(frs.SURL);
+                            java.net.URI filesource = null;
                             if(len == 1) {
                                 // in case of  one file there could be no correspondence between source and destination
                                 filesource = from[0];
@@ -207,7 +205,7 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                                 }
                             }
                             setReportFailed(filesource,surl, rs.errorMessage);
-                            esay( "copying from  file file "+filesource.getURL()+ " to SURL "+frs.SURL +" failed: File Status is \"Failed\"");
+                            esay( "copying from  file file "+filesource+ " to SURL "+frs.SURL +" failed: File Status is \"Failed\"");
                             continue;
                         }
                         if(frs.state.equals("Ready") ) {
@@ -216,9 +214,9 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                             }
                             say("FileRequestStatus with SURL="+frs.SURL+" is Ready");
                             say("       received TURL="+ frs.TURL);
-                            GlobusURL globusTURL = new GlobusURL(frs.TURL);
-                            GlobusURL filesource = null;
-                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            java.net.URI globusTURL = new java.net.URI(frs.TURL);
+                            java.net.URI filesource = null;
+                            java.net.URI surl = new java.net.URI(frs.SURL);
                             if(len == 1) {
                                 // in case of  one file there could be no correspondence between source and destination
                                 filesource = from[0];
@@ -233,9 +231,8 @@ public class SRMPutClientV1 extends SRMClient implements Runnable {
                             //why is setReportFailed Called Here ??
                             setReportFailed(filesource,surl, "received TURL, but did not complete transfer");
                             if(filesource == null) {
-                                esay("could not find file source "+
-                                        "for destination SURL "+ surl.getURL() );
-                                throw new IOException("could not find source "+"for destination SURL "+ surl );
+                                esay("could not find file source for destination SURL " + surl);
+                                throw new IOException("could not find source for destination SURL " + surl);
                             }
                             CopyJob job = new SRMV1CopyJob(filesource,globusTURL,srm,requestID, nextID,logger,surl,false,this);
                             copier.addCopyJob(job);

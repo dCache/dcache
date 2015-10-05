@@ -72,8 +72,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -88,14 +86,14 @@ import diskCacheV111.srm.RequestStatus;
  */
 public class SRMStageClientV1 extends SRMClient implements Runnable {
     private String[] protocols;
-    GlobusURL from[];
+    java.net.URI from[];
     private HashSet<Integer> fileIDs = new HashSet<>();
     private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
     private int requestID;
     private Thread hook;
 
     /** Creates a new instance of SRMStageClient */
-    public SRMStageClientV1(Configuration configuration, GlobusURL[] from) {
+    public SRMStageClientV1(Configuration configuration, java.net.URI[] from) {
         super(configuration);
         report = new Report(from,from,configuration.getReport());
         this.protocols = configuration.getProtocols();
@@ -117,7 +115,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
             int len = from.length;
             String SURLS[] = new String[len];
             for(int i = 0; i < len; ++i) {
-                SURLS[i] = from[i].getURL();
+                SURLS[i] = from[i].toASCIIString();
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
@@ -161,7 +159,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
                         }
                         if(frs.state.equals("Failed")) {
                             removeIDs.add(nextID);
-                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            java.net.URI surl = new java.net.URI(frs.SURL);
                             setReportFailed(surl,surl,  rs.errorMessage);
                             esay( "staging of SURL "+frs.SURL+" failed: File Status is \"Failed\"");
                             continue;
@@ -169,7 +167,7 @@ public class SRMStageClientV1 extends SRMClient implements Runnable {
 
                         if(frs.state.equals("Ready") ) {
                             say(frs.SURL+" is staged successfully ");
-                            GlobusURL surl = new GlobusURL(frs.SURL);
+                            java.net.URI surl = new java.net.URI(frs.SURL);
                             removeIDs.add(nextID);
                             srm.setFileStatus(rs.requestId, nextID,"Done");
                             setReportSucceeded(surl,surl);

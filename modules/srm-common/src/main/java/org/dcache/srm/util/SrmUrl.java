@@ -1,66 +1,60 @@
-/**
- * Trivial extension of GlobusURL class to handle default port
- *
- */
 package org.dcache.srm.util;
 
-import org.globus.util.GlobusURL;
-
-import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
-public class SrmUrl extends GlobusURL {
+public class SrmUrl
+{
+    public static final int DEFAULT_SRM_PORT = 8443;
 
-        private int defaultPort=8443;
+    private SrmUrl()
+    {
+    }
 
-        public SrmUrl(URI location) throws MalformedURLException {
-            super(location.toString());
+    public static URI withDefaultPort(URI location, int defaultSrmPort) throws URISyntaxException
+    {
+        return (location.getPort() == -1 && !location.getScheme().equals("file"))
+               ? new URI(location.getScheme(), location.getUserInfo(), location.getHost(),
+                         getDefaultPort(location.getScheme(), defaultSrmPort),
+                         location.getPath(), location.getQuery(), location.getFragment())
+               : location;
+    }
+
+    public static URI createWithDefaultPort(String location, int defaultSrmPort) throws URISyntaxException
+    {
+        return withDefaultPort(new URI(location), defaultSrmPort);
+    }
+
+    public static URI withDefaultPort(URI location) throws URISyntaxException
+    {
+        return withDefaultPort(location, DEFAULT_SRM_PORT);
+    }
+
+    public static URI createWithDefaultPort(String location) throws URISyntaxException
+    {
+        return withDefaultPort(new URI(location));
+    }
+
+    public static int getDefaultPort(String protocol, int defaultSrmPort)
+    {
+        switch (protocol) {
+        case "ftp":
+            return 21;
+        case "gsiftp":
+        case "gridftp":
+            return 2811;
+        case "http":
+            return 80;
+        case "https":
+            return 443;
+        case "ldap":
+            return 389;
+        case "ldaps":
+            return 636;
+        case "srm":
+            return defaultSrmPort;
+        default:
+            return -1;
         }
-
-        public SrmUrl(String url)
-                throws MalformedURLException {
-                super(url);
-                massagePath();
-        }
-
-        public  SrmUrl(String url,
-                       int defaultPortNumber)
-                throws MalformedURLException {
-                super(url);
-                if (!getProtocol().equals("file")) {
-                        if (super.getPort()==-1) {
-                                defaultPort=defaultPortNumber;
-                        }
-                }
-//                massagePath();
-        }
-
-        /**
-         * The purpose of this call is to handle "///"
-         */
-
-        private void massagePath() {
-                if (getProtocol().equals("file")) {
-                        if (!urlPath.startsWith("/")) {
-                                urlPath="/"+urlPath;
-                        }
-                }
-        }
-
-        public void setPort(int portNumber) {
-                port=portNumber;
-        }
-
-        @Override
-        public int getPort() {
-                int p= super.getPort();
-                if (p==-1&&super.getProtocol().equals("srm")) {
-                        return defaultPort;
-                }
-                return p;
-        }
-
-        public URI getURI() {
-            return URI.create(getURL());
-        }
+    }
 }

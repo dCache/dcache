@@ -20,7 +20,6 @@ import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.italiangrid.voms.credential.LoadCredentialsStrategy;
@@ -32,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -761,16 +761,16 @@ public class GridftpClient
         String chsmValue = sMap.get("checksumValue");
         String cksmPrint = sMap.get("checksumPrint");
 
-        GlobusURL src_url = new GlobusURL(source);
-        GlobusURL dst_url = new GlobusURL(dest);
+        URI src_url = new URI(source);
+        URI dst_url = new URI(dest);
 
         LoadCredentialsStrategy loadCredentialsStrategy = new DefaultLoadCredentialsStrategy();
         X509Credential x509Credential =
                 loadCredentialsStrategy.loadCredentials(new CharArrayPasswordFinder(null));
 
-        if( ( src_url.getProtocol().equals("gsiftp") ||
-              src_url.getProtocol().equals("gridftp") ) &&
-            dst_url.getProtocol().equals("file")) {
+        if( ( src_url.getScheme().equals("gsiftp") ||
+              src_url.getScheme().equals("gridftp") ) &&
+            dst_url.getScheme().equals("file")) {
             GridftpClient client;
 
             client = new GridftpClient(src_url.getHost(),
@@ -787,9 +787,9 @@ public class GridftpClient
             return;
         }
 
-        if(  src_url.getProtocol().equals("file") &&
-             ( dst_url.getProtocol().equals("gsiftp") ||
-               dst_url.getProtocol().equals("gridftp") )
+        if(  src_url.getScheme().equals("file") &&
+             ( dst_url.getScheme().equals("gsiftp") ||
+               dst_url.getScheme().equals("gridftp") )
              ) {
             GridftpClient client;
             client = new GridftpClient(dst_url.getHost(),

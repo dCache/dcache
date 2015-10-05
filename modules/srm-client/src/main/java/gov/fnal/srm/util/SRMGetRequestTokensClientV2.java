@@ -10,11 +10,11 @@
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Calendar;
 
 import org.dcache.srm.client.SRMClientV2;
@@ -27,12 +27,11 @@ import org.dcache.srm.v2_2.TRequestTokenReturn;
 import org.dcache.srm.v2_2.TReturnStatus;
 
 public class SRMGetRequestTokensClientV2 extends SRMClient  {
-    private GlobusURL srmURL;
+    private URI srmURL;
     private GSSCredential credential;
     private ISRM srmv2;
 
-    public SRMGetRequestTokensClientV2(Configuration configuration,
-                                       GlobusURL url) {
+    public SRMGetRequestTokensClientV2(Configuration configuration, URI url) {
         super(configuration);
         srmURL=url;
         try {

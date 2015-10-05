@@ -77,8 +77,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -98,14 +96,14 @@ import diskCacheV111.srm.RequestStatus;
 
 
 public class SRMCopyClientV1 extends SRMClient implements Runnable {
-    private GlobusURL from[];
-    private GlobusURL to[];
+    private java.net.URI from[];
+    private java.net.URI to[];
     private HashSet<Integer> fileIDs    = new HashSet<>();
     private HashMap<Integer,RequestFileStatus> fileIDsMap = new HashMap<>();
     private int requestID;
     private Thread hook;
 
-    public SRMCopyClientV1(Configuration configuration, GlobusURL[] from, GlobusURL[] to) {
+    public SRMCopyClientV1(Configuration configuration, java.net.URI[] from, java.net.URI[] to) {
         super(configuration);
         report = new Report(from,to,configuration.getReport());
         this.from = from;
@@ -134,10 +132,10 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
         // permanent writes at jlab
         Arrays.fill(wantPerm,false);
         for(int i = 0; i<from.length;++i) {
-            GlobusURL source = from[i];
-            GlobusURL dest = to[i];
-            srcSURLs[i] = source.getURL();
-            dstSURLs[i] = dest.getURL();
+            java.net.URI source = from[i];
+            java.net.URI dest = to[i];
+            srcSURLs[i] = source.toASCIIString();
+            dstSURLs[i] = dest.toASCIIString();
             dsay("copying "+srcSURLs[i]+" into "+dstSURLs[i]);
         }
         hook = new Thread(this);
@@ -190,21 +188,21 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                     if(frs.state.equals("Failed")) {
                         say("FileRequestStatus is Failed => copying of "+frs.SURL+
                         " has failed");
-                        setReportFailed(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL), "copy failed" +rs.errorMessage);
+                        setReportFailed(new java.net.URI(frs.SURL),new java.net.URI(frs.TURL), "copy failed" +rs.errorMessage);
                         removeIDs.add(nextID);
                     }
 
                     if(frs.state.equals("Ready") ) {
                         say("FileRequestStatus is Ready => copying of "+frs.SURL+
                         " is complete");
-                        setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
+                        setReportSucceeded(new java.net.URI(frs.SURL),new java.net.URI(frs.TURL));
                         removeIDs.add(nextID);
                         srm.setFileStatus(requestID, nextID,"Done");
                     }
                     if(frs.state.equals("Done")) {
                         say("FileRequestStatus fileID = "+nextID+" is Done => copying of "+frs.SURL+
                         " is complete");
-                        setReportSucceeded(new GlobusURL(frs.SURL),new GlobusURL(frs.TURL));
+                        setReportSucceeded(new java.net.URI(frs.SURL),new java.net.URI(frs.TURL));
                         removeIDs.add(nextID);
                     }
                 }
@@ -239,17 +237,17 @@ public class SRMCopyClientV1 extends SRMClient implements Runnable {
                         if (frs.state.equals("Failed")) {
                             say("FileRequestStatus is Failed => copying of " + frs.SURL +
                                     " has failed");
-                            setReportFailed(new GlobusURL(frs.SURL), new GlobusURL(frs.TURL), "copy failed" + rs.errorMessage);
+                            setReportFailed(new java.net.URI(frs.SURL), new java.net.URI(frs.TURL), "copy failed" + rs.errorMessage);
                         }
                         if (frs.state.equals("Ready")) {
                             say("FileRequestStatus fileID = " + nextID1 + " is Ready => copying of " + frs.SURL +
                                     " is complete");
-                            setReportSucceeded(new GlobusURL(frs.SURL), new GlobusURL(frs.TURL));
+                            setReportSucceeded(new java.net.URI(frs.SURL), new java.net.URI(frs.TURL));
                         }
                         if (frs.state.equals("Done")) {
                             say("FileRequestStatus fileID = " + nextID1 + " is Done => copying of " + frs.SURL +
                                     " is complete");
-                            setReportSucceeded(new GlobusURL(frs.SURL), new GlobusURL(frs.TURL));
+                            setReportSucceeded(new java.net.URI(frs.SURL), new java.net.URI(frs.TURL));
                         }
                     }
                     throw new IOException("Request with requestId ="+rs.requestId+

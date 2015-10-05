@@ -82,7 +82,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 
@@ -96,13 +95,13 @@ import org.dcache.srm.v2_2.SrmReleaseSpaceResponse;
 import org.dcache.srm.v2_2.TReturnStatus;
 
 public class SRMReleaseSpaceClientV2 extends SRMClient  {
-    private GlobusURL srmURL;
+    private java.net.URI srmURL;
     SrmReleaseSpaceRequest request = new SrmReleaseSpaceRequest();
     private GSSCredential credential;
     private ISRM srmv2;
 
     public SRMReleaseSpaceClientV2(Configuration configuration,
-                                   GlobusURL url) {
+                                   java.net.URI url) {
         super(configuration);
         srmURL=url;
         try {

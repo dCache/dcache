@@ -80,7 +80,6 @@ import eu.emi.security.authn.x509.impl.PEMCredential;
 import org.globus.ftp.exception.ServerException;
 import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
-import org.globus.util.GlobusURL;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -382,8 +381,8 @@ public class Copier implements Runnable {
     }
 
     public void copy(CopyJob job) throws Exception {
-        GlobusURL from =job.getSource();
-        GlobusURL to = job.getDestination();
+        java.net.URI from =job.getSource();
+        java.net.URI to = job.getDestination();
         int totype = SRMDispatcher.getUrlType(to);
 
         // handle directory
@@ -393,12 +392,12 @@ public class Copier implements Runnable {
             if(lastSlash != -1) {
                 filename = filename.substring(lastSlash);
             }
-            to = new GlobusURL(to.getURL().concat(filename));
+            to = to.resolve(filename);
         }
 
         dsay("copying " +job);
-        if(from.getProtocol().equals("dcap") ||
-                to.getProtocol().equals("dcap") ||
+        if(from.getScheme().equals("dcap") ||
+                to.getScheme().equals("dcap") ||
                 configuration.isUse_urlcopy_script() ) {
             try {
                 say("trying script copy");
@@ -417,11 +416,11 @@ public class Copier implements Runnable {
                 boolean to_protocol_supported=false;
                 if(script_protocols != null) {
                     for (String script_protocol : script_protocols) {
-                        if (script_protocol.equals(from.getProtocol())) {
+                        if (script_protocol.equals(from.getScheme())) {
                             from_protocol_supported = true;
                         }
 
-                        if (script_protocol.equals(to.getProtocol())) {
+                        if (script_protocol.equals(to.getScheme())) {
                             to_protocol_supported = true;
                         }
 
@@ -442,12 +441,12 @@ public class Copier implements Runnable {
             }
         }
 
-        if( (( from.getProtocol().equals("gsiftp") ||
-                from.getProtocol().equals("gridftp") ) &&
-                to.getProtocol().equals("file")) ||
-                (  from.getProtocol().equals("file") &&
-                        ( to.getProtocol().equals("gsiftp") ||
-                                to.getProtocol().equals("gridftp") ))
+        if( (( from.getScheme().equals("gsiftp") ||
+                from.getScheme().equals("gridftp") ) &&
+                to.getScheme().equals("file")) ||
+                (  from.getScheme().equals("file") &&
+                        ( to.getScheme().equals("gsiftp") ||
+                                to.getScheme().equals("gridftp") ))
         )
 
         {
@@ -459,13 +458,8 @@ public class Copier implements Runnable {
             }
             javaGridFtpCopy(from, to, credential, logger);
         } else {
-            URL fromURL;
-            URL toURL;
-            fromURL = new URL(from.getURL());
-            toURL = new URL(to.getURL());
-            javaUrlCopy(fromURL,toURL);
+            javaUrlCopy(from.toURL(), to.toURL());
         }
-
     }
 
     public String[] scriptCopyGetSupportedProtocols()
@@ -475,7 +469,7 @@ public class Copier implements Runnable {
         return ShellCommandExecuter.executeAndReturnOutput(command,logger);
     }
 
-    public void scriptCopy(GlobusURL from, GlobusURL to) throws Exception {
+    public void scriptCopy(java.net.URI from, java.net.URI to) throws Exception {
         String command = urlcopy;
         if(debug) {
             command = command+" -debug true";
@@ -513,8 +507,8 @@ public class Copier implements Runnable {
         }
 
         command = command+
-        " -src-protocol "+from.getProtocol();
-        if(from.getProtocol().equals("file")) {
+        " -src-protocol "+from.getScheme();
+        if(from.getScheme().equals("file")) {
             command = command+" -src-host-port localhost";
         }
         else {
@@ -523,8 +517,8 @@ public class Copier implements Runnable {
         }
         command = command+
         " -src-path "+from.getPath()+
-        " -dst-protocol "+to.getProtocol();
-        if(to.getProtocol().equals("file")) {
+        " -dst-protocol "+to.getScheme();
+        if(to.getScheme().equals("file")) {
             command = command+" -dst-host-port localhost";
         }
         else {
@@ -538,24 +532,24 @@ public class Copier implements Runnable {
             rc = ShellCommandExecuter.execute(command,logger);
         }
         if(rc == 0) {
-            say(" successfuly copied "+from.getURL()+" to "+to.getURL());
+            say(" successfuly copied "+from+" to "+to);
             num_completed_successfully++;
         }
         else {
-            esay(" failed to copy "+from.getURL()+" to "+to.getURL());
+            esay(" failed to copy "+from+" to "+to);
             esay(urlcopy+" return code = "+rc);
             throw new Exception(urlcopy+" return code = "+rc);
         }
     }
 
-    public void javaGridFtpCopy(GlobusURL src_url,
-                                GlobusURL dst_url,
+    public void javaGridFtpCopy(java.net.URI src_url,
+                                java.net.URI dst_url,
                                 X509Credential credential,
                                 Logger logger) throws Exception {
         String serverMode   = configuration.getServerMode();
         int numberOfStreams = configuration.getStreams_num();
-        if((src_url.getProtocol().equals("gsiftp")||src_url.getProtocol().equals("gridftp")) &&
-                dst_url.getProtocol().equals("file")) {
+        if((src_url.getScheme().equals("gsiftp")||src_url.getScheme().equals("gridftp")) &&
+                dst_url.getScheme().equals("file")) {
             //
             // case of read
             //
@@ -608,8 +602,8 @@ public class Copier implements Runnable {
             return;
         }
 
-        if(src_url.getProtocol().equals("file")&&
-                (dst_url.getProtocol().equals("gsiftp")||dst_url.getProtocol().equals("gridftp"))) {
+        if(src_url.getScheme().equals("file")&&
+                (dst_url.getScheme().equals("gsiftp")||dst_url.getScheme().equals("gridftp"))) {
             //
             // case of write
             //
