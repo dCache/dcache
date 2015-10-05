@@ -21,7 +21,7 @@
     </dependency>
     <dependency>
       <groupId>org.jglobus</groupId>
-      <artifactId>axisg</artifactId>
+      <artifactId>gss</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

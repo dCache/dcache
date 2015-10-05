@@ -2,6 +2,8 @@
 
 package org.dcache.srm.util;
 
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.helpers.CharArrayPasswordFinder;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.DataChannelAuthentication;
 import org.globus.ftp.DataSink;
@@ -17,11 +19,12 @@ import org.globus.ftp.exception.ServerException;
 import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
 import org.globus.gsi.CredentialException;
-import org.globus.gsi.X509Credential;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
+import org.italiangrid.voms.credential.LoadCredentialsStrategy;
+import org.italiangrid.voms.credential.impl.DefaultLoadCredentialsStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +78,7 @@ public class GridftpClient
 
     public GridftpClient(String host, int port,
                          int tcpBufferSize,
-                         GSSCredential cred)
+                         X509Credential cred)
         throws IOException, ServerException, ClientException,
                CredentialException, GSSException
     {
@@ -85,7 +88,7 @@ public class GridftpClient
     public GridftpClient(String host, int port,
                          int tcpBufferSize,
                          int bufferSize,
-                         GSSCredential cred)
+                         X509Credential cred)
         throws IOException, ServerException, ClientException,
                CredentialException, GSSException
     {
@@ -98,17 +101,16 @@ public class GridftpClient
                 _tcpBufferSize = tcpBufferSize;
                 logger.debug("tcp buffer size is set to "+tcpBufferSize);
             }
-        if(cred == null) {
-            X509Credential gcred = X509Credential.getDefaultCredential();
-            cred = new GlobusGSSCredentialImpl(gcred, GSSCredential.INITIATE_ONLY);
-        }
         _host = host;
         logger.debug("connecting to "+_host+" on port "+port);
 
         _client  = new GridFTPClient(_host, port);
         _client.setLocalTCPBufferSize(_tcpBufferSize);
         logger.debug("gridFTPClient tcp buffer size is set to "+_tcpBufferSize);
-        _client.authenticate(cred); /* use credentials */
+
+        _client.authenticate(new GlobusGSSCredentialImpl(
+                new org.globus.gsi.X509Credential(cred.getKey(), cred.getCertificateChain()),
+                GSSCredential.INITIATE_ONLY)); /* use credentials */
         _client.setType(GridFTPSession.TYPE_IMAGE);
     }
 
@@ -761,7 +763,10 @@ public class GridftpClient
 
         GlobusURL src_url = new GlobusURL(source);
         GlobusURL dst_url = new GlobusURL(dest);
-        GSSCredential credential = null;
+
+        LoadCredentialsStrategy loadCredentialsStrategy = new DefaultLoadCredentialsStrategy();
+        X509Credential x509Credential =
+                loadCredentialsStrategy.loadCredentials(new CharArrayPasswordFinder(null));
 
         if( ( src_url.getProtocol().equals("gsiftp") ||
               src_url.getProtocol().equals("gridftp") ) &&
@@ -769,7 +774,7 @@ public class GridftpClient
             GridftpClient client;
 
             client = new GridftpClient(src_url.getHost(),
-                                       src_url.getPort(), tcp_bs, bs,credential);
+                                       src_url.getPort(), tcp_bs, bs, x509Credential);
             client.setStreamsNum(streams);
             client.setChecksum(chsmType,chsmValue);
             try {
@@ -788,7 +793,7 @@ public class GridftpClient
              ) {
             GridftpClient client;
             client = new GridftpClient(dst_url.getHost(),
-                                       dst_url.getPort(), tcp_bs, bs,credential);
+                                       dst_url.getPort(), tcp_bs, bs, x509Credential);
             client.setStreamsNum(streams);
             try {
                 client.setChecksum(chsmType,chsmValue);

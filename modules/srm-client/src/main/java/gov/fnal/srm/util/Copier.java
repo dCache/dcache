@@ -75,11 +75,12 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
 import org.globus.ftp.exception.ServerException;
 import org.globus.ftp.exception.UnexpectedReplyCodeException;
 import org.globus.ftp.vanilla.Reply;
 import org.globus.util.GlobusURL;
-import org.ietf.jgss.GSSCredential;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -92,7 +93,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.srm.Logger;
-import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.util.GridftpClient;
 
 
@@ -451,29 +451,20 @@ public class Copier implements Runnable {
         )
 
         {
-            GSSCredential credential;
-            if(configuration.isUseproxy()) {
-                credential=
-                    SslGsiSocketFactory.createUserCredential(
-                            configuration.getX509_user_proxy());
+            X509Credential credential;
+            if (configuration.isUseproxy()) {
+                credential = new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
+            } else {
+                credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
             }
-            else {
-                credential =
-                    SslGsiSocketFactory.getServiceCredential(
-                            configuration.getX509_user_cert(), configuration.getX509_user_key(),
-                            GSSCredential.INITIATE_AND_ACCEPT);
-            }
-            javaGridFtpCopy(from,
-                    to,
-                    credential,
-                    logger);
-            return;
+            javaGridFtpCopy(from, to, credential, logger);
+        } else {
+            URL fromURL;
+            URL toURL;
+            fromURL = new URL(from.getURL());
+            toURL = new URL(to.getURL());
+            javaUrlCopy(fromURL,toURL);
         }
-        URL fromURL;
-        URL toURL;
-        fromURL = new URL(from.getURL());
-        toURL = new URL(to.getURL());
-        javaUrlCopy(fromURL,toURL);
 
     }
 
@@ -559,7 +550,7 @@ public class Copier implements Runnable {
 
     public void javaGridFtpCopy(GlobusURL src_url,
                                 GlobusURL dst_url,
-                                GSSCredential credential,
+                                X509Credential credential,
                                 Logger logger) throws Exception {
         String serverMode   = configuration.getServerMode();
         int numberOfStreams = configuration.getStreams_num();

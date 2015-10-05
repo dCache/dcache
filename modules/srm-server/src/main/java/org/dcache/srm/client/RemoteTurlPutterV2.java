@@ -74,6 +74,10 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.apache.axis.types.URI;
+import org.globus.gsi.X509Credential;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -197,8 +201,12 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         }
         try {
             SrmUrl srmUrl = new SrmUrl(SURLs[0]);
+            eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
+            GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
+                    new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
+                    GSSCredential.INITIATE_ONLY);
             srmv2 = new SRMClientV2(srmUrl,
-                    credential.getDelegatedCredential(),
+                    globusGSSCredential,
                     retry_timout,
                     retry_num,
                     true,
@@ -240,7 +248,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
-        catch(IOException | InterruptedException | ServiceException e) {
+        catch(GSSException | IOException | InterruptedException | ServiceException e) {
             logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
@@ -455,8 +463,12 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     {
 
         SrmUrl srmUrl = new SrmUrl(surl);
+        eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
+        GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
+                new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
+                GSSCredential.INITIATE_ONLY);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
-                credential.getDelegatedCredential(),
+                globusGSSCredential,
                 retry_timeout,
                 retry_num,
                 true,

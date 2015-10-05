@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,7 @@
  */
 package org.dcache.gridsite;
 
-import org.ietf.jgss.GSSCredential;
+import eu.emi.security.authn.x509.X509Credential;
 
 import org.dcache.delegation.gridsite2.DelegationException;
 
@@ -38,12 +38,12 @@ public interface CredentialDelegation
     /**
      * Obtain the certificate signing request to send to the delegator.
      */
-    public String getCertificateSigningRequest();
+    String getCertificateSigningRequest();
 
     /**
      * Provide the identity of the anticipated delegated credential.
      */
-    public DelegationIdentity getId();
+    DelegationIdentity getId();
 
     /**
      * Complete a in-progress CredentialDelegation with the supplied
@@ -51,6 +51,6 @@ public interface CredentialDelegation
      * DelegationException if the certificate is invalid or a certificate has
      * already been accepted.
      */
-    public GSSCredential acceptCertificate(String certificate)
+    X509Credential acceptCertificate(String certificate)
             throws DelegationException;
 }

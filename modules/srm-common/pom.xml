@@ -112,6 +112,11 @@
     </dependency>
 
     <dependency>
+      <groupId>org.italiangrid</groupId>
+      <artifactId>voms-api-java</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.jglobus</groupId>
       <artifactId>gridftp</artifactId>
     </dependency>
@@ -124,8 +129,8 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>${bouncycastle.bcprov}</artifactId>
-      <scope>runtime</scope>
     </dependency>
+
     <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-common</artifactId>

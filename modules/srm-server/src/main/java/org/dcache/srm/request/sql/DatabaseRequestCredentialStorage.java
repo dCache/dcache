@@ -66,22 +66,21 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.request.sql;
 
-import com.google.common.io.Files;
-import org.globus.gsi.CredentialException;
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.gridforum.jgss.ExtendedGSSCredential;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
+import org.italiangrid.voms.util.CredentialsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -171,7 +170,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        " VALUES ( ?,?,?,?,?,?,?) ";
 
     public void createRequestCredential(RequestCredential requestCredential) {
-        GSSCredential credential = requestCredential.getDelegatedCredential();
+        X509Credential credential = requestCredential.getDelegatedCredential();
         String credentialFileName = null;
         if (credential != null) {
             credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
@@ -235,7 +234,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        " numberofusers=?, delegatedcredentials=?, credentialexpiration=? where id=? ";
    @Override
    public void saveRequestCredential(RequestCredential requestCredential)  {
-       GSSCredential credential = requestCredential.getDelegatedCredential();
+       X509Credential credential = requestCredential.getDelegatedCredential();
        String credentialFileName = null;
        if (credential != null) {
            credentialFileName = credentialsDirectory + "/" + requestCredential.getId();
@@ -254,30 +253,23 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
        }
    }
 
-   private void write(GSSCredential credential, String credentialFileName) {
+   private void write(X509Credential credential, String credentialFileName) {
        try {
-           if (credential != null && credential instanceof ExtendedGSSCredential) {
-               byte [] data = ((ExtendedGSSCredential)(credential)).export(
-                       ExtendedGSSCredential.IMPEXP_OPAQUE);
-               Files.write(data, new File(credentialFileName));
+           if (credential != null) {
+               CredentialsUtils.saveProxyCredentials(credentialFileName, credential);
            }
-       } catch(IOException | GSSException e) {
+       } catch(IOException | UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException |
+               NoSuchProviderException | CertificateException e) {
            logger.error(e.toString());
        }
    }
 
-   private GSSCredential read(String fileName) {
+   private X509Credential read(String fileName) {
        if (fileName != null) {
-           try (InputStream in = new FileInputStream(fileName)) {
-               X509Credential gc = new X509Credential(in);
-               return new GlobusGSSCredentialImpl(gc, GSSCredential.INITIATE_ONLY);
-           } catch (GSSException | CredentialException e) {
+           try {
+               return new PEMCredential(fileName, (char[]) null);
+           } catch (IOException | KeyStoreException | CertificateException e) {
                logger.error("error reading the credentials from database: {}", e.toString());
-           } catch (IOException ioe) {
-               // this is not an error, as the file will
-               // written if it is not found
-               // so we just make a debug log
-               logger.debug("fileNameToGSSCredentilal(" + fileName + ") failed with " + ioe);
            }
        }
        return null;

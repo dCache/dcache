@@ -18,16 +18,15 @@
 package org.dcache.gsi;
 
 import com.google.common.io.ByteSource;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.globus.gsi.GSIConstants;
-import org.globus.gsi.X509Credential;
 import org.globus.gsi.bc.BouncyCastleCertProcessingFactory;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.GlobusGSSException;
 import org.globus.gsi.gssapi.KeyPairCache;
 import org.globus.gsi.util.CertificateLoadUtil;
-import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.globus.axis.gsi.GSIConstants.GSI_CREDENTIALS;
 
 /**
  * Wrapper for SSLEngine that implements GSI delegation. Only the server side of GSI is
@@ -60,6 +58,8 @@ import static org.globus.axis.gsi.GSIConstants.GSI_CREDENTIALS;
 public class GsiEngine extends InterceptingSSLEngine
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(GsiEngine.class);
+
+    public static final String X509_CREDENTIAL = "org.dcache.credential";
 
     private static final KeyPairCache KEY_PAIR_CACHE = KeyPairCache.getKeyPairCache();
     private static final BouncyCastleCertProcessingFactory CERT_FACTORY = BouncyCastleCertProcessingFactory.getDefault();
@@ -159,15 +159,11 @@ public class GsiEngine extends InterceptingSSLEngine
             newChain[i + 1] = bcConvert((X509Certificate) chain[i]);
         }
 
-        /* Store GSI attributes in the SSL session. Use GsiRequestCustomizer to copy these
+        /* Store GSI credentials in the SSL session. Use GsiRequestCustomizer to copy these
          * to the Request objects.
          */
-        X509Credential proxy =
-                new X509Credential(this.keyPair.getPrivate(), newChain);
-        GSSCredential delegCred =
-                new GlobusGSSCredentialImpl(proxy, GSSCredential.INITIATE_AND_ACCEPT);
-
-        session.putValue(GSI_CREDENTIALS, delegCred);
+        X509Credential proxy = new KeyAndCertCredential(keyPair.getPrivate(), newChain);
+        session.putValue(X509_CREDENTIAL, proxy);
     }
 
     private class GotDelegationCharacter implements Callback

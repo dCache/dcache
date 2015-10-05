@@ -79,6 +79,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
@@ -146,8 +147,8 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo protocolInfo)
-        throws ServerException, ClientException,
-               CredentialException, GSSException, IOException
+            throws ServerException, ClientException,
+            CredentialException, GSSException, IOException, KeyStoreException
     {
         if (_client != null) {
             return;
@@ -167,9 +168,9 @@ public class RemoteGsiftpTransferProtocol_1
                       ProtocolInfo protocol,
                       Allocator allocator,
                       IoMode access)
-        throws CacheException, IOException,
-               ServerException, ClientException,
-               CredentialException, GSSException
+            throws CacheException, IOException,
+            ServerException, ClientException,
+            CredentialException, GSSException, KeyStoreException
     {
         _pnfsId = fileAttributes.getPnfsId();
         if (_log.isDebugEnabled()) {

@@ -65,8 +65,7 @@ exporting documents or software obtained from this server.
 package org.dcache.srm.server;
 
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -165,19 +164,14 @@ public class SrmAuthorizer
         String dn = Axis.getDN().orElseThrow(() ->
                 new SRMAuthenticationException("Failed to resolve DN"));
 
-        GSSCredential credential = Axis.getDelegatedCredential().orElse(null);
+        X509Credential credential = Axis.getDelegatedCredential().orElse(null);
+        VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+        FQAN role = getPrimary(validator.validate(certificates));
 
-        try {
-            VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
-            FQAN role = getPrimary(validator.validate(certificates));
-
-            RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, Objects.toString(role, null), storage);
-            requestCredential.keepBestDelegatedCredential(credential);
-            requestCredential.saveCredential();
-            return requestCredential;
-        } catch (GSSException e) {
-            throw new SRMAuthenticationException("Problem getting request credential: " + e.getMessage(), e);
-        }
+        RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, Objects.toString(role, null), storage);
+        requestCredential.keepBestDelegatedCredential(credential);
+        requestCredential.saveCredential();
+        return requestCredential;
     }
 
     private FQAN getPrimary(List<VOMSAttribute> attributes)

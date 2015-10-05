@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,7 @@
  */
 package org.dcache.gridsite;
 
-import org.ietf.jgss.GSSCredential;
+import eu.emi.security.authn.x509.X509Credential;
 
 import java.util.Calendar;
 
@@ -34,41 +34,41 @@ public interface CredentialStore
      * Get the delegated credential for this DelegationIdentity.  Throws a
      * DegationException if there is no valid credential stored.
      */
-    public GSSCredential get(DelegationIdentity id) throws DelegationException;
+    X509Credential get(DelegationIdentity id) throws DelegationException;
 
     /**
      * Store a delegated credential against this DelegationIdentity.  Silently
      * replace any delegated credential already stored against this id.
      */
-    public void put(DelegationIdentity id, GSSCredential credential)
+    void put(DelegationIdentity id, X509Credential credential)
             throws DelegationException;
 
     /**
      * Remove the delegated credential stored against this id.  Throws a
      * DelegationException if there is no valid credential currently stored.
      */
-    public void remove(DelegationIdentity id) throws DelegationException;
+    void remove(DelegationIdentity id) throws DelegationException;
 
     /**
      * Check whether there is a delegated credential stored against this id.
      * @throws DelegationException if there's some problem with the underlying
      * storage
      */
-    public boolean has(DelegationIdentity id) throws DelegationException;
+    boolean has(DelegationIdentity id) throws DelegationException;
 
     /**
      * Provide the expiry date for the delegated credential stored against
      * this DelegatedIdentity.  Throws an exception if there is no credential
      * stored against this identity or if the credential never expires.
      */
-    public Calendar getExpiry(DelegationIdentity id) throws DelegationException;
+    Calendar getExpiry(DelegationIdentity id) throws DelegationException;
 
     /**
      * Find the credential with the longest remaining lifetime that has the
      * supplied DN.  The credential FQANs, if any, are ignored.
      * @return a valid credential for this DN, or null if none are available.
      */
-    public GSSCredential search(String dn);
+    X509Credential search(String dn);
 
     /**
      * Find the credential with the longest remaining lifetime that has the
@@ -76,6 +76,5 @@ public interface CredentialStore
      * credentials without any FQANs are selected.
      * @return a valid credential for this DN, or null if none are available.
      */
-    public GSSCredential search(String dn, String fqan);
-
+    X509Credential search(String dn, String fqan);
 }

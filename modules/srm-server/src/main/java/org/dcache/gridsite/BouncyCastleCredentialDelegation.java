@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,8 @@
  */
 package org.dcache.gridsite;
 
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
@@ -31,10 +33,6 @@ import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.bouncycastle.openssl.PEMWriter;
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +45,10 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -59,8 +56,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.dcache.delegation.gridsite2.DelegationException;
-
-import static org.ietf.jgss.GSSCredential.INITIATE_AND_ACCEPT;
 
 /**
  * An in-progress credential delegation that uses BouncyCastle.
@@ -166,13 +161,12 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
     }
 
     @Override
-    public GSSCredential acceptCertificate(String encodedCertificate) throws DelegationException
+    public X509Credential acceptCertificate(String encodedCertificate) throws DelegationException
     {
         X509Certificate certificate;
 
         try {
             certificate = pemDecodeCertificate(encodedCertificate);
-            verifyCertificate(certificate);
         } catch (CertificateException e) {
             LOG.debug("Bad certificate: {}", e.getMessage());
             throw new DelegationException("Supplied certificate is " +
@@ -183,16 +177,11 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
                 Stream.concat(Stream.of(certificate), _certificates.stream())
                         .map(BouncyCastleCredentialDelegation::asBcCertificate)
                         .toArray(X509Certificate[]::new);
-
-        X509Credential proxy = new X509Credential(_keyPair.getPrivate(),
-                newCertificates);
-
         try {
-            return new GlobusGSSCredentialImpl(proxy, INITIATE_AND_ACCEPT);
-        } catch (GSSException e) {
+            return new KeyAndCertCredential(_keyPair.getPrivate(), newCertificates);
+        } catch (KeyStoreException e) {
             LOG.error("Failed to create delegated credential: {}", e.getMessage());
-            throw new DelegationException("Unable to create delegated" +
-                    " credential: " + e.getMessage());
+            throw new DelegationException("Unable to create delegated credential: " + e.getMessage());
         }
     }
 
@@ -230,16 +219,5 @@ public class BouncyCastleCredentialDelegation implements CredentialDelegation
         }
 
         return (X509Certificate) cf.generateCertificate(in);
-    }
-
-    private void verifyCertificate(X509Certificate certificate)
-            throws CertificateException
-    {
-        RSAPublicKey pubKey = (RSAPublicKey)certificate.getPublicKey();
-        RSAPrivateKey privKey = (RSAPrivateKey)_keyPair.getPrivate();
-
-        if (!pubKey.getModulus().equals(privKey.getModulus())) {
-            throw new CertificateException("does not match signing request");
-        }
     }
 }

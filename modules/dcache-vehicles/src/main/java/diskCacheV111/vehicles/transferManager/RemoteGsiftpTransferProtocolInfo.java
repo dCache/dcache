@@ -1,18 +1,14 @@
 package diskCacheV111.vehicles.transferManager;
 
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 
-import java.io.Serializable;
 import java.net.InetSocketAddress;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 import diskCacheV111.vehicles.IpProtocolInfo;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
 {
@@ -45,8 +41,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             String gsiftpTranferManagerDomain,
                                             int bufferSize,
                                             int tcpBufferSize,
-                                            GlobusGSSCredentialImpl credential)
-            throws GSSException
+                                            X509Credential credential)
     {
         this(protocol,
              major,
@@ -70,8 +65,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
                                             String gsiftpTranferManagerDomain,
                                             int bufferSize,
                                             int tcpBufferSize,
-                                            GlobusGSSCredentialImpl credential,
-                                            String user) throws GSSException
+                                            X509Credential credential,
+                                            String user)
     {
         this(protocol,
              major,
@@ -82,7 +77,7 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
              gsiftpTranferManagerDomain,
              bufferSize,
              tcpBufferSize,
-             credential.getPrivateKey(),
+             credential.getKey(),
              credential.getCertificateChain(),
              user);
     }
@@ -227,9 +222,8 @@ public class RemoteGsiftpTransferProtocolInfo implements IpProtocolInfo
         return addr;
     }
 
-    public GlobusGSSCredentialImpl getCredential() throws GSSException
+    public X509Credential getCredential() throws KeyStoreException
     {
-        return new GlobusGSSCredentialImpl(new X509Credential(key, certChain),
-                GSSCredential.INITIATE_ONLY);
+        return new KeyAndCertCredential(key, certChain);
     }
 }

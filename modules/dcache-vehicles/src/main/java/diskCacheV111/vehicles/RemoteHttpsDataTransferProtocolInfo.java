@@ -1,8 +1,7 @@
 package diskCacheV111.vehicles;
 
 import com.google.common.collect.ImmutableMap;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 
 import java.net.InetSocketAddress;
 import java.security.PrivateKey;
@@ -19,12 +18,12 @@ public class RemoteHttpsDataTransferProtocolInfo extends RemoteHttpDataTransferP
     private final X509Certificate[] certChain;
 
     public RemoteHttpsDataTransferProtocolInfo(String protocol, int major,
-            int minor, InetSocketAddress addr, int buf_size, String url,
-            boolean isVerificationRequired, ImmutableMap<String,String> headers,
-            GlobusGSSCredentialImpl credential) throws GSSException
+                                               int minor, InetSocketAddress addr, int buf_size, String url,
+                                               boolean isVerificationRequired, ImmutableMap<String,String> headers,
+                                               X509Credential credential)
     {
         this(protocol, major, minor, addr, buf_size, url, isVerificationRequired,
-                headers, credential == null ? null : credential.getPrivateKey(),
+                headers, credential == null ? null : credential.getKey(),
                 credential == null ? null : credential.getCertificateChain());
     }
 

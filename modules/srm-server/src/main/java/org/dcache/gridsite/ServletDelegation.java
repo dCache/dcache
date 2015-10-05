@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,20 +18,16 @@
 package org.dcache.gridsite;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-
-import org.globus.gsi.bc.BouncyCastleUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
 
 import javax.xml.rpc.holders.StringHolder;
 
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +37,8 @@ import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.srm.util.Axis;
 import org.dcache.util.Version;
 
-import org.italiangrid.voms.VOMSValidators;
-import org.italiangrid.voms.ac.VOMSACValidator;
-import org.italiangrid.voms.VOMSAttribute;
-
+import static eu.emi.security.authn.x509.impl.OpensslNameUtils.convertFromRfc2253;
+import static eu.emi.security.authn.x509.proxy.ProxyUtils.getOriginalUserDN;
 import static java.util.Arrays.asList;
 import static org.dcache.gridsite.Utilities.assertThat;
 
@@ -56,9 +50,6 @@ import static org.dcache.gridsite.Utilities.assertThat;
  */
 public class ServletDelegation implements Delegation
 {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(ServletDelegation.class);
-
     private static final String INTERFACE_VERSION = "2.0.0";
     private static final String VERSION =
             Version.of(ServletDelegation.class).getVersion();
@@ -198,8 +189,8 @@ public class ServletDelegation implements Delegation
     {
         try {
             X509Certificate[] chain = getClientCertificates();
-            return BouncyCastleUtil.getIdentity(BouncyCastleUtil.getIdentityCertificate(chain));
-        } catch (IllegalStateException | CertificateException e) {
+            return convertFromRfc2253(getOriginalUserDN(chain).getName(), true);
+        } catch (IllegalStateException e) {
             throw new DelegationException("user's DN is not known: " + e.getMessage());
         }
     }

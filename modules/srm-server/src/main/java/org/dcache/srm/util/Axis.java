@@ -1,10 +1,10 @@
 package org.dcache.srm.util;
 
 import com.google.common.net.InetAddresses;
+import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
-import org.ietf.jgss.GSSCredential;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
@@ -15,12 +15,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
+import org.dcache.gsi.GsiEngine;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLET;
 import static org.apache.axis.transport.http.HTTPConstants.MC_HTTP_SERVLETREQUEST;
-import static org.globus.axis.gsi.GSIConstants.GSI_CREDENTIALS;
 
 
 /**
@@ -66,9 +66,9 @@ public class Axis
         });
     }
 
-    public static Optional<GSSCredential> getDelegatedCredential()
+    public static Optional<X509Credential> getDelegatedCredential()
     {
-        return Optional.ofNullable(Axis.getRequestAttribute(GSI_CREDENTIALS, GSSCredential.class));
+        return Optional.ofNullable(Axis.getRequestAttribute(GsiEngine.X509_CREDENTIAL, X509Credential.class));
     }
 
     /**

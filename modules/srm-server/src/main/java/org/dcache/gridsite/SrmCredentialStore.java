@@ -18,10 +18,7 @@
 package org.dcache.gridsite;
 
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.gridforum.jgss.ExtendedGSSCredential;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -36,6 +33,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
@@ -75,7 +73,7 @@ public class SrmCredentialStore implements CredentialStore
     }
 
     @Override
-    public GSSCredential get(DelegationIdentity id) throws DelegationException
+    public X509Credential get(DelegationIdentity id) throws DelegationException
     {
         RequestCredential credential =
                 _store.getRequestCredential(nameFromId(id), null);
@@ -84,25 +82,18 @@ public class SrmCredentialStore implements CredentialStore
     }
 
     @Override
-    public void put(DelegationIdentity id, GSSCredential credential)
+    public void put(DelegationIdentity id, X509Credential credential)
             throws DelegationException
     {
         try {
-            FQAN primaryFqan;
-            if (credential instanceof ExtendedGSSCredential) {
-                X509Certificate[] chain = (X509Certificate[]) ((ExtendedGSSCredential) credential).inquireByOid(GSSConstants.X509_CERT_CHAIN);
-                VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
-                primaryFqan = getPrimary(validator.validate(chain));
-            } else {
-                primaryFqan = null;
-            }
-
+            X509Certificate[] chain = credential.getCertificateChain();
+            VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+            FQAN primaryFqan = getPrimary(validator.validate(chain));
             RequestCredential srmCredential =
                     new RequestCredential(nameFromId(id), Objects.toString(primaryFqan, null), credential, _store);
             _store.saveRequestCredential(srmCredential);
-        } catch (GSSException | RuntimeException e) {
-            throw new DelegationException("failed to save credential: " +
-                    e.getMessage());
+        } catch (RuntimeException e) {
+            throw new DelegationException("failed to save credential: " + e.getMessage());
         }
     }
 
@@ -162,10 +153,10 @@ public class SrmCredentialStore implements CredentialStore
     }
 
     @Override
-    public GSSCredential search(String dn)
+    public X509Credential search(String dn)
     {
-        GSSCredential bestWithFqan = search(dn, new Glob("*"));
-        GSSCredential bestWithoutFqan = search(dn, (Glob)null);
+        X509Credential bestWithFqan = search(dn, new Glob("*"));
+        X509Credential bestWithoutFqan = search(dn, (Glob)null);
 
         if (bestWithFqan == null) {
             return bestWithoutFqan;
@@ -173,39 +164,28 @@ public class SrmCredentialStore implements CredentialStore
             return bestWithFqan;
         }
 
-        long bestWithFqanLifetime;
+        Date bestWithFqanLifetime = expiryDateFor(bestWithFqan);
+        Date bestWithoutFqanLifetime = expiryDateFor(bestWithoutFqan);
+        return bestWithoutFqanLifetime.after(bestWithFqanLifetime) ? bestWithoutFqan : bestWithFqan;
 
-        try {
-            bestWithFqanLifetime = bestWithFqan.getRemainingLifetime();
-        } catch (GSSException ignored) {
-            // treat as expired
-            bestWithFqanLifetime = 0;
-        }
+    }
 
-        long bestWithoutFqanLifetime;
-
-        try {
-            bestWithoutFqanLifetime = bestWithoutFqan.getRemainingLifetime();
-        } catch (GSSException ignored) {
-            // treat as expired
-            bestWithoutFqanLifetime = 0;
-        }
-
-        if (bestWithoutFqanLifetime > bestWithFqanLifetime) {
-            return bestWithoutFqan;
-        }
-
-        return (bestWithFqanLifetime > 0) ? bestWithFqan : null;
+    private static Date expiryDateFor(X509Credential credential)
+    {
+        return Stream.of(credential.getCertificateChain())
+                .map(X509Certificate::getNotAfter)
+                .min(Date::compareTo)
+                .orElseThrow(() -> new IllegalArgumentException("Certificate chain is empty."));
     }
 
     @Override
-    public GSSCredential search(String dn, String fqan)
+    public X509Credential search(String dn, String fqan)
     {
         return search(dn, fqan != null ? new Glob(fqan) : null);
     }
 
 
-    private GSSCredential search(String dn, Glob fqan)
+    private X509Credential search(String dn, Glob fqan)
     {
         long lifetime = 0;
         RequestCredential credential = null;

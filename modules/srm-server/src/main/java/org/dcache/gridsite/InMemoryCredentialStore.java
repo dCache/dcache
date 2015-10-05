@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,10 +18,7 @@
 package org.dcache.gridsite;
 
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.gridforum.jgss.ExtendedGSSCredential;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -32,16 +29,17 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
 
 import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 /**
@@ -52,7 +50,7 @@ import static org.dcache.gridsite.Utilities.assertThat;
  */
 public class InMemoryCredentialStore implements CredentialStore
 {
-    private final Map<DelegationIdentity,GSSCredential> _storage = new HashMap<>();
+    private final Map<DelegationIdentity, X509Credential> _storage = new HashMap<>();
 
     private VOMSTrustStore vomsTrustStore;
     private X509CertChainValidatorExt certChainValidator;
@@ -70,18 +68,18 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     @Override
-    public GSSCredential get(DelegationIdentity id) throws DelegationException
+    public X509Credential get(DelegationIdentity id) throws DelegationException
     {
-        GSSCredential credential = getAndCheckForExpired(id);
+        X509Credential credential = getAndCheckForExpired(id);
         assertThat(credential != null, "no credential", id);
 
         return credential;
     }
 
     // Simple wrapper that checks if the credential has expired
-    private GSSCredential getAndCheckForExpired(DelegationIdentity id)
+    private X509Credential getAndCheckForExpired(DelegationIdentity id) throws DelegationException
     {
-        GSSCredential credential = _storage.get(id);
+        X509Credential credential = _storage.get(id);
 
         if(credential != null && hasExpired(credential)) {
             _storage.remove(id);
@@ -92,7 +90,7 @@ public class InMemoryCredentialStore implements CredentialStore
     }
 
     @Override
-    public void put(DelegationIdentity id, GSSCredential credential)
+    public void put(DelegationIdentity id, X509Credential credential)
     {
         _storage.put(id, credential);
     }
@@ -100,7 +98,7 @@ public class InMemoryCredentialStore implements CredentialStore
     @Override
     public void remove(DelegationIdentity id) throws DelegationException
     {
-        GSSCredential credential = _storage.remove(id);
+        X509Credential credential = _storage.remove(id);
 
         if (credential != null && hasExpired(credential)) {
            _storage.remove(id);
@@ -113,52 +111,46 @@ public class InMemoryCredentialStore implements CredentialStore
     @Override
     public boolean has(DelegationIdentity id)
     {
-        return getAndCheckForExpired(id) != null;
+        try {
+            return getAndCheckForExpired(id) != null;
+        } catch (DelegationException e) {
+            return false;
+        }
     }
 
     @Override
     public Calendar getExpiry(DelegationIdentity id) throws DelegationException
     {
-        GSSCredential credential = getAndCheckForExpired(id);
+        X509Credential credential = getAndCheckForExpired(id);
         assertThat(credential != null, "no credential", id);
 
-        int remaining = remainingLifetimeOf(credential);
-
-        if (remaining == GSSCredential.INDEFINITE_LIFETIME) {
-            throw new DelegationException("credential has no expiry date");
-        }
-
+        Date expires = getExpiryOf(credential);
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis() + SECONDS.toMillis(remaining));
+        calendar.setTime(expires);
         return calendar;
     }
 
-    private static int remainingLifetimeOf(GSSCredential credential)
+    private static Date getExpiryOf(X509Credential credential) throws DelegationException
     {
-        int remaining;
-
-        try {
-            remaining = credential.getRemainingLifetime();
-        } catch (GSSException ignored) {
-            remaining = 0; // Treat problematic credentials as having expired
-        }
-
-        return remaining;
+        return Stream.of(credential.getCertificateChain())
+                .map(X509Certificate::getNotAfter)
+                .min(Date::compareTo)
+                .orElseThrow(() -> new DelegationException("Certificate chain is empty."));
     }
 
-    private static boolean hasExpired(GSSCredential credential)
+    private static boolean hasExpired(X509Credential credential) throws DelegationException
     {
-        return remainingLifetimeOf(credential) == 0;
+        return getExpiryOf(credential).getTime() <= System.currentTimeMillis();
     }
 
     @Override
-    public GSSCredential search(String targetDn)
+    public X509Credential search(String targetDn)
     {
         return bestCredentialMatching((dn, fqan) -> targetDn.equals(dn));
     }
 
     @Override
-    public GSSCredential search(String targetDn, String targetFqan)
+    public X509Credential search(String targetDn, String targetFqan)
     {
         return bestCredentialMatching((dn, fqan) -> targetDn.equals(dn) && Objects.equals(targetFqan, fqan));
     }
@@ -168,35 +160,30 @@ public class InMemoryCredentialStore implements CredentialStore
         boolean matches(String dn, String fqan);
     }
 
-    private GSSCredential bestCredentialMatching(DnFqanMatcher predicate)
+    private X509Credential bestCredentialMatching(DnFqanMatcher predicate)
     {
-        GSSCredential bestCredential = null;
-        long bestRemainingLifetime = 0;
+        X509Credential bestCredential = null;
+        Date bestExpirationTime = new Date(0);
 
-        for (Map.Entry<DelegationIdentity,GSSCredential> entry : _storage.entrySet()) {
+        for (Map.Entry<DelegationIdentity, X509Credential> entry : _storage.entrySet()) {
             try {
-                GSSCredential credential = entry.getValue();
+                X509Credential credential = entry.getValue();
 
-                FQAN primaryFqan;
-                if (credential instanceof ExtendedGSSCredential) {
-                    X509Certificate[] chain = (X509Certificate[]) ((ExtendedGSSCredential) credential).inquireByOid(GSSConstants.X509_CERT_CHAIN);
-                    VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
-                    primaryFqan = getPrimary(validator.validate(chain));
-                } else {
-                    primaryFqan = null;
-                }
+                X509Certificate[] chain = credential.getCertificateChain();
+                VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+                /* REVISIT: Do we really need to validate the AC every time? */
+                FQAN primaryFqan = getPrimary(validator.validate(chain));
 
                 if (!predicate.matches(entry.getKey().getDn(), Objects.toString(primaryFqan, null))) {
                     continue;
                 }
 
-                long remainingLifetime = credential.getRemainingLifetime();
-
-                if (remainingLifetime > bestRemainingLifetime) {
-                    bestRemainingLifetime = remainingLifetime;
+                Date expires = getExpiryOf(credential);
+                if (expires.after(bestExpirationTime)) {
+                    bestExpirationTime = expires;
                     bestCredential = credential;
                 }
-            } catch (GSSException ignored) {
+            } catch (DelegationException ignored) {
                 // Treat problematic credentials as having expired
             }
         }

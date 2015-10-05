@@ -81,10 +81,8 @@ import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.UnsignedLong;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -1882,14 +1880,10 @@ public final class Storage
                 new InetSocketAddress(remoteTURL.getHost(), portFor(remoteTURL));
 
 
-        GSSCredential credential = null;
+        X509Credential credential = null;
         RequestCredential result = RequestCredential.getRequestCredential(remoteCredentialId);
         if (result != null) {
             credential = result.getDelegatedCredential();
-
-            if (credential != null && !(credential instanceof GlobusGSSCredentialImpl)) {
-                throw new SRMException("Delegated credential is not compatible with Globus");
-            }
         }
 
         switch(remoteTURL.getScheme().toLowerCase()) {
@@ -1900,35 +1894,28 @@ public final class Storage
                         "delegation required.");
             }
 
-            try {
-                RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
-                        new RemoteGsiftpTransferProtocolInfo(
-                                "RemoteGsiftpTransfer",
-				1, 1, remoteAddr,
-				remoteTURL.toString(),
-				getCellName(),
-                                getCellDomainName(),
-                                config.getBuffer_size(),
-                                config.getTcp_buffer_size(),
-                                (GlobusGSSCredentialImpl) credential);
-                gsiftpProtocolInfo.setEmode(true);
-                gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
-                protocolInfo = gsiftpProtocolInfo;
-            } catch (GSSException e) {
-                throw new SRMException("Credential failure: " + e.getMessage(), e);
-            }
+            RemoteGsiftpTransferProtocolInfo gsiftpProtocolInfo =
+                    new RemoteGsiftpTransferProtocolInfo(
+                            "RemoteGsiftpTransfer",
+                            1, 1, remoteAddr,
+                            remoteTURL.toString(),
+                            getCellName(),
+                            getCellDomainName(),
+                            config.getBuffer_size(),
+                            config.getTcp_buffer_size(),
+                            credential);
+            gsiftpProtocolInfo.setEmode(true);
+            gsiftpProtocolInfo.setNumberOfStreams(config.getParallel_streams());
+            protocolInfo = gsiftpProtocolInfo;
             break;
 
         case "https":
-            try {
-                protocolInfo = new RemoteHttpsDataTransferProtocolInfo("RemoteHttpsDataTransfer",
-                        1, 1, remoteAddr, config.getBuffer_size(),
-                        remoteTURL.toString(), isVerifyRequired(extraInfo),
-                        httpHeaders(extraInfo),
-                        (GlobusGSSCredentialImpl) credential);
-            } catch (GSSException e) {
-                throw new SRMException("Failed to process credential: " + e.getMessage(), e);
-            }
+            protocolInfo = new RemoteHttpsDataTransferProtocolInfo(
+                    "RemoteHttpsDataTransfer",
+                    1, 1, remoteAddr, config.getBuffer_size(),
+                    remoteTURL.toString(), isVerifyRequired(extraInfo),
+                    httpHeaders(extraInfo),
+                    credential);
             break;
 
         case "http":

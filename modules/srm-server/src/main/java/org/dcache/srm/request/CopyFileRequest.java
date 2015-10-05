@@ -77,7 +77,6 @@ import com.google.common.util.concurrent.CheckedFuture;
 import org.apache.axis.types.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 
 import java.net.URI;
 import java.util.Objects;

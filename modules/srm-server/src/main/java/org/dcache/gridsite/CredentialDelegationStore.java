@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -33,7 +33,7 @@ public interface CredentialDelegationStore
      * Fetch the matching in-progress CredentialDelegation.  If there is
      * no matching CredentialDelegation then DelegationException is thrown.
      */
-    public CredentialDelegation get(DelegationIdentity id)
+    CredentialDelegation get(DelegationIdentity id)
             throws DelegationException;
 
     /**
@@ -41,22 +41,22 @@ public interface CredentialDelegationStore
      * there is already an incomplete delegation with the same
      * DelegationIdentity as that of delegation.
      */
-    public void add(CredentialDelegation delegation) throws DelegationException;
+    void add(CredentialDelegation delegation) throws DelegationException;
 
     /**
      * Remove the on-going delegation request with this id and returns it.
      * Throws an exception if there is no CredentialDelegation for this id.
      */
-    public CredentialDelegation remove(DelegationIdentity id) throws DelegationException;
+    CredentialDelegation remove(DelegationIdentity id) throws DelegationException;
 
     /**
      * Remove any on-going delegation request with this id.  Does nothing
      * if there is no CredentialDelegation for this id.
      */
-    public void removeIfPresent(DelegationIdentity id);
+    void removeIfPresent(DelegationIdentity id);
 
     /**
      * Establish whether there is any on-going delegation for this id.
      */
-    public boolean has(DelegationIdentity id);
+    boolean has(DelegationIdentity id);
 }

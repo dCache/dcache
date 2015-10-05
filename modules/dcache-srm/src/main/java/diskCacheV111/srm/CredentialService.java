@@ -18,9 +18,7 @@
 package diskCacheV111.srm;
 
 import com.google.common.base.Throwables;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -125,21 +123,12 @@ public class CredentialService
         String dn = message.getDn();
         FQAN fqan = message.getPrimaryFqan();
 
-        GSSCredential genericCredential =
+        X509Credential credential =
                 _credentialStore.search(dn, fqan != null ? fqan.toString() : null);
 
-        if (genericCredential != null) {
-            if (!(genericCredential instanceof GlobusGSSCredentialImpl)) {
-                throw new RuntimeException("Unable to work with unknown GSSCredential instance: " +
-                                           genericCredential.getClass().getCanonicalName());
-            }
-            GlobusGSSCredentialImpl credential = (GlobusGSSCredentialImpl) genericCredential;
-            try {
-                message.setPrivateKey(credential.getPrivateKey());
-                message.setCertificateChain(credential.getCertificateChain());
-            } catch (GSSException ex) {
-                LOGGER.warn("Unable to extract private key: {}", ex);
-            }
+        if (credential != null) {
+            message.setPrivateKey(credential.getKey());
+            message.setCertificateChain(credential.getCertificateChain());
         }
 
         return message;

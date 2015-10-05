@@ -64,25 +64,19 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * requestCredential.java
- *
- * Created on May 13, 2004, 11:04 AM
- */
-
 package org.dcache.srm.request;
 
 import com.google.common.collect.MapMaker;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import eu.emi.security.authn.x509.X509Credential;
 import org.springframework.dao.DataAccessException;
 
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
 
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
@@ -102,7 +96,7 @@ public class RequestCredential
     private final RequestCredentialStorage storage;
 
     private boolean saved; //false by default
-    private GSSCredential delegatedCredential;
+    private X509Credential delegatedCredential;
     private long delegatedCredentialExpiration;
 
     public static void registerRequestCredentialStorage(RequestCredentialStorage requestCredentialStorage)
@@ -134,7 +128,6 @@ public class RequestCredential
     }
 
     public static RequestCredential newRequestCredential(String credentialName, String role, RequestCredentialStorage storage)
-            throws GSSException
     {
         synchronized (weakRequestCredentialStorage) {
             for (RequestCredential credential : weakRequestCredentialStorage.values()) {
@@ -161,7 +154,6 @@ public class RequestCredential
     public RequestCredential(String credentialName,
                              String role,
                              RequestCredentialStorage storage)
-            throws GSSException
     {
         this.id = JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
         this.creationtime = System.currentTimeMillis();
@@ -175,7 +167,7 @@ public class RequestCredential
                              long creationtime,
                              String credentialName,
                              String role,
-                             GSSCredential delegatedCredential,
+                             X509Credential delegatedCredential,
                              long delegatedCredentialExpiration,
                              RequestCredentialStorage storage)
     {
@@ -194,26 +186,24 @@ public class RequestCredential
      */
     public RequestCredential(String credentialName,
                              String role,
-                             GSSCredential delegatedCredential,
-                             RequestCredentialStorage storage) throws GSSException
+                             X509Credential delegatedCredential,
+                             RequestCredentialStorage storage)
     {
         this.id = JobIdGeneratorFactory.getJobIdGeneratorFactory().getJobIdGenerator().getNextId();
         this.creationtime = System.currentTimeMillis();
         this.credentialName = credentialName;
         this.role = role;
         this.delegatedCredential = delegatedCredential;
-        this.delegatedCredentialExpiration = System.currentTimeMillis() +
-                    delegatedCredential.getRemainingLifetime() * 1000L;
+        this.delegatedCredentialExpiration = expiryDateFor(delegatedCredential);
         this.storage = storage;
     }
 
-    public synchronized GSSCredential getDelegatedCredential()
+    public synchronized X509Credential getDelegatedCredential()
     {
         return delegatedCredential;
     }
 
-    public synchronized void keepBestDelegatedCredential(GSSCredential credential)
-            throws GSSException
+    public synchronized void keepBestDelegatedCredential(X509Credential credential)
     {
         if (credential != null && (this.delegatedCredential == null ||
                 expiryDateFor(credential) > this.delegatedCredentialExpiration)) {
@@ -221,13 +211,16 @@ public class RequestCredential
         }
     }
 
-    private static long expiryDateFor(GSSCredential credential) throws GSSException
+    private static long expiryDateFor(X509Credential credential)
     {
-        return System.currentTimeMillis() +
-                credential.getRemainingLifetime() * 1000L;
+        return Stream.of(credential.getCertificateChain())
+                        .map(X509Certificate::getNotAfter)
+                        .min(Date::compareTo)
+                        .map(Date::getTime)
+                        .orElse(0L);
     }
 
-    private void updateCredential(GSSCredential credential) throws GSSException
+    private void updateCredential(X509Credential credential)
     {
         this.delegatedCredential = credential;
         this.delegatedCredentialExpiration = expiryDateFor(credential);
@@ -341,12 +334,7 @@ public class RequestCredential
                         " has expired");
             }
 
-            try {
-                updateCredential(credential.delegatedCredential);
-            } catch (GSSException e) {
-                throw new RuntimeException("Problem getting credential: " +
-                        e.getMessage(), e);
-            }
+            updateCredential(credential.delegatedCredential);
         } catch (NumberFormatException e) {
             throw new SRMInvalidRequestException("Badly formatted credential id: " + idLabel);
         }
