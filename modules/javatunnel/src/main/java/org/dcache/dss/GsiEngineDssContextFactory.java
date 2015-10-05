@@ -25,8 +25,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.gsi.CanlContextFactory;
+import org.dcache.gsi.KeyPairCache;
 import org.dcache.util.Args;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
@@ -40,6 +42,8 @@ public class GsiEngineDssContextFactory implements DssContextFactory
     private static final String NAMESPACE_MODE = "namespace-mode";
     private static final String CRL_MODE = "crl-mode";
     private static final String OCSP_MODE = "ocsp-mode";
+    private static final String KEY_CACHE_LIFETIME = "key-cache-lifetime";
+    private static final String KEY_CACHE_LIFETIME_UNIT = "key-cache-lifetime-unit";
 
     private final CanlContextFactory factory;
     private final CertificateFactory cf;
@@ -57,13 +61,15 @@ public class GsiEngineDssContextFactory implements DssContextFactory
              Crypto.getBannedCipherSuitesFromConfigurationValue(arguments.getOption(CIPHER_FLAGS)),
              NamespaceCheckingMode.valueOf(arguments.getOption(NAMESPACE_MODE)),
              CrlCheckingMode.valueOf(arguments.getOption(CRL_MODE)),
-             OCSPCheckingMode.valueOf(arguments.getOption(OCSP_MODE)));
+             OCSPCheckingMode.valueOf(arguments.getOption(OCSP_MODE)),
+             arguments.getLongOption(KEY_CACHE_LIFETIME),
+             TimeUnit.valueOf(arguments.getOption(KEY_CACHE_LIFETIME_UNIT)));
     }
 
     public GsiEngineDssContextFactory(File serverKeyPath, File serverCertificatePath,
                                       File certificateAuthorityPath, String[] bannedCiphers,
                                       NamespaceCheckingMode namespaceMode, CrlCheckingMode crlMode,
-                                      OCSPCheckingMode ocspMode) throws Exception
+                                      OCSPCheckingMode ocspMode, long keyCacheLifetime, TimeUnit keyCacheLifetimeUnit) throws Exception
     {
         cf = CertificateFactories.newX509CertificateFactory();
 
@@ -75,6 +81,7 @@ public class GsiEngineDssContextFactory implements DssContextFactory
         factory.setWantClientAuth(true);
         factory.setExcludeCipherSuites(bannedCiphers);
         factory.setGsiEnabled(true);
+        factory.setKeyPairCache(new KeyPairCache(keyCacheLifetime, keyCacheLifetimeUnit));
         factory.setNamespaceMode(namespaceMode);
         factory.setCrlCheckingMode(crlMode);
         factory.setOcspCheckingMode(ocspMode);

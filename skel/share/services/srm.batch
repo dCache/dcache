@@ -31,6 +31,9 @@ check -strong srm.authn.namespace-mode
 check -strong srm.authn.crl-mode
 check -strong srm.authn.ocsp-mode
 
+check -strong srm.authn.gsi.delegation.cache.lifetime
+check -strong srm.authn.gsi.delegation.cache.lifetime.unit
+
 check -strong srm.client-transport
 
 check -strong srm.db.connections.idle

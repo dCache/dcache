@@ -679,11 +679,10 @@
       <property name="topicStub" ref="credential-service-stub"/>
   </bean>
 
-  <bean id="keypair-cache"
-	class="org.dcache.gridsite.KeyPairCache">
+  <bean id="keypair-cache" class="org.dcache.gsi.KeyPairCache">
       <description>Cache of key-pairs to reduce delegation overhead</description>
-
-      <constructor-arg value="3600"/> <!-- key-pair regeneration, in seconds -->
+      <constructor-arg value="${srm.authn.gsi.delegation.cache.lifetime}"/>
+      <constructor-arg value="${srm.authn.gsi.delegation.cache.lifetime.unit}"/>
   </bean>
 
   <util:map id="gridsite-service-metadata">
@@ -722,6 +721,8 @@
         <property name="namespaceMode" value="${srm.authn.namespace-mode}"/>
         <property name="crlCheckingMode" value="${srm.authn.crl-mode}"/>
         <property name="ocspCheckingMode" value="${srm.authn.ocsp-mode}"/>
+
+        <property name="keyPairCache" ref="keypair-cache"/>
     </bean>
 
     <bean id="server" class="org.eclipse.jetty.server.Server"

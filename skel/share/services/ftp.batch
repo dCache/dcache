@@ -46,6 +46,8 @@ check ftp.authn.namespace-mode
 check ftp.authn.crl-mode
 check ftp.authn.ocsp-mode
 check ftp.authn.ciphers
+check ftp.authn.gsi.delegation.cache.lifetime
+check ftp.authn.gsi.delegation.cache.lifetime.unit
 check ftp.transaction-log
 check ftp.net.listen
 check ftp.net.internal
@@ -110,4 +112,6 @@ create dmg.cells.services.login.LoginManager ${ftp.cell.name} \
    -crl-mode=${ftp.authn.crl-mode} \
    -ocsp-mode=${ftp.authn.ocsp-mode} \
    -cipher-flags=\"${ftp.authn.ciphers}\" \
+   -key-cache-lifetime=\"${ftp.authn.gsi.delegation.cache.lifetime}\" \
+   -key-cache-lifetime-unit=\"${ftp.authn.gsi.delegation.cache.lifetime.unit}\" \
    "

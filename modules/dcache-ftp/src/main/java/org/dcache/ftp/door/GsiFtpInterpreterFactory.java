@@ -22,6 +22,7 @@ import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.ConfigurationException;
 
@@ -53,6 +54,12 @@ public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
     @Option(name="ocsp-mode", required=true)
     protected OCSPCheckingMode ocspMode;
 
+    @Option(name="key-cache-lifetime", required=true)
+    private long keyCacheLifetime;
+
+    @Option(name="key-cache-lifetime-unit", required=true)
+    private TimeUnit keyCacheLifetimeUnit;
+
     private GsiEngineDssContextFactory dssContextFactory;
 
     @Override
@@ -76,6 +83,6 @@ public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
     {
         return new GsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
                                               Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags),
-                                              namespaceMode, crlMode, ocspMode);
+                                              namespaceMode, crlMode, ocspMode, keyCacheLifetime, keyCacheLifetimeUnit);
     }
 }

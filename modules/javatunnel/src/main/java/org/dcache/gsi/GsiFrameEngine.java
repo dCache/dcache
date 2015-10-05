@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,8 +17,6 @@
  */
 package org.dcache.gsi;
 
-import org.globus.gsi.gssapi.SSLUtil;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
@@ -26,9 +24,6 @@ import javax.net.ssl.SSLSession;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import org.dcache.gsi.ForwardingSSLEngine;
-import org.dcache.gsi.GsiEngine;
 
 /**
  * SSLEngine decorator that implements legacy GSI framing.
@@ -48,6 +43,30 @@ public class GsiFrameEngine extends ForwardingSSLEngine
     {
         gsiEngine = delegate;
         currentDelegate = new FrameDetectingEngine();
+    }
+
+    /**
+     * Determines if a given header is a SSLv3 packet
+     * (has a SSL header) or a backward compatible version of TLS
+     * using the same header format.
+     *
+     * @return true if the header is a SSLv3 header. False, otherwise.
+     */
+    private static boolean isSSLv3Packet(byte[] header)
+    {
+        return header[0] >= 20 && header[0] <= 26 &&
+               (header[1] == 3 || (header[1] == 2 && header[2] == 0));
+    }
+
+    /**
+     * Determines if a given header is a SSLv2 client or server hello packet
+     *
+     * @return true if the header is such a SSLv2 client or server hello
+     *         packet. False, otherwise.
+     */
+    private static boolean isSSLv2HelloPacket(byte[] header)
+    {
+        return ((header[0] & 0x80) != 0 && (header[2] == 1 || header[2] == 4));
     }
 
     @Override
@@ -80,9 +99,9 @@ public class GsiFrameEngine extends ForwardingSSLEngine
             src.mark();
             try {
                 src.get(header);
-                if (SSLUtil.isSSLv3Packet(header)) {
+                if (isSSLv3Packet(header)) {
                     currentDelegate = gsiEngine;
-                } else if (SSLUtil.isSSLv2HelloPacket(header)) {
+                } else if (isSSLv2HelloPacket(header)) {
                     currentDelegate = gsiEngine;
                 } else {
                     currentDelegate = new FrameEngine();

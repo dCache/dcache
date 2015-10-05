@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.gridsite;
+package org.dcache.gsi;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -30,7 +30,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -52,20 +51,20 @@ public class KeyPairCache
     // Number of days of inactivity after which a cached entry is removed
     private static final int EXPIRE_AFTER = 1;
 
-    private final Executor _executor = Executors.newCachedThreadPool(
-            new ThreadFactoryBuilder().setNameFormat("KeyPair-generator-%d").build());
+    private static final Executor _executor = Executors.newCachedThreadPool(
+            new ThreadFactoryBuilder().setNameFormat("KeyPair-generator-%d").setDaemon(true).build());
 
     private final LoadingCache<Integer,KeyPair> _cache;
     private String algorithm = DEFAULT_ALGORITHM;
     private String provider = DEFAULT_PROVIDER;
 
-    public KeyPairCache(int lifetime)
+    public KeyPairCache(long lifetime, TimeUnit unit)
     {
         if(lifetime > 0) {
             _cache = CacheBuilder.newBuilder()
                     .maximumSize(1000)
                     .expireAfterWrite(EXPIRE_AFTER, TimeUnit.DAYS)
-                    .refreshAfterWrite(lifetime, TimeUnit.SECONDS)
+                    .refreshAfterWrite(lifetime, unit)
                     .build(
                         new CacheLoader<Integer,KeyPair>() {
                             @Override

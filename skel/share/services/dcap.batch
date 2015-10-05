@@ -30,6 +30,8 @@ check dcap.authn.crl-mode
 check dcap.authn.ocsp-mode
 check dcap.authn.passwd
 check dcap.authn.ciphers
+check dcap.authn.gsi.delegation.cache.lifetime
+check dcap.authn.gsi.delegation.cache.lifetime.unit
 check -strong dcap.authz.truncate
 check -strong dcap.authz.readonly
 check -strong dcap.authz.anonymous-operations
@@ -70,6 +72,8 @@ set env arguments-gsi      "${paths-when-readonly-is-${dcap.authz.readonly}} -lo
                                                 -namespace-mode='${dcap.authn.namespace-mode}' \
                                                 -crl-mode='${dcap.authn.crl-mode}' \
                                                 -ocsp-mode='${dcap.authn.ocsp-mode}' \
+                                                -key-cache-lifetime='${dcap.authn.gsi.delegation.cache.lifetime}' \
+                                                -key-cache-lifetime-unit='${dcap.authn.gsi.delegation.cache.lifetime.unit}' \
                                             \\\""
 set env arguments-kerberos "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong \
                              -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.KerberosDssContextFactory \

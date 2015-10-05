@@ -28,6 +28,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Collection;
 
 import org.dcache.delegation.gridsite2.DelegationException;
+import org.dcache.gsi.KeyPairCache;
 
 /**
  * The factory class for generating delegated credentials using Bouncy Castle.

@@ -73,6 +73,7 @@ public class CanlContextFactory extends SslContextFactory
     private FileTime lastCredentialModificationTime;
 
     private SslContextFactory delegate;
+    private KeyPairCache keyPairCache;
 
     public File getCertificatePath()
     {
@@ -172,6 +173,16 @@ public class CanlContextFactory extends SslContextFactory
     public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
     {
         this.namespaceMode = namespaceMode;
+    }
+
+    public KeyPairCache getKeyPairCache()
+    {
+        return keyPairCache;
+    }
+
+    public void setKeyPairCache(KeyPairCache keyPairCache)
+    {
+        this.keyPairCache = keyPairCache;
     }
 
     @Override
@@ -300,6 +311,7 @@ public class CanlContextFactory extends SslContextFactory
         if (isGsiEnabled) {
             GsiEngine gsiEngine = new GsiEngine(engine, cf);
             gsiEngine.setUsingLegacyClose(isUsingLegacyClose);
+            gsiEngine.setKeyPairCache(keyPairCache);
             return new GsiFrameEngine(gsiEngine);
         } else {
             return engine;

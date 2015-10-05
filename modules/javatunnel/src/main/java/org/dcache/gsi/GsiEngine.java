@@ -1,6 +1,6 @@
 /* dCache - http://www.dcache.org/
  *
- * Copyright (C) 2014 Deutsches Elektronen-Synchrotron
+ * Copyright (C) 2014-2015 Deutsches Elektronen-Synchrotron
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,14 +19,11 @@ package org.dcache.gsi;
 
 import com.google.common.io.ByteSource;
 import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.CertificateUtils;
 import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
+import eu.emi.security.authn.x509.proxy.ProxyCSRGenerator;
+import eu.emi.security.authn.x509.proxy.ProxyCertificateOptions;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.jce.provider.X509CertificateObject;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.bc.BouncyCastleCertProcessingFactory;
-import org.globus.gsi.gssapi.GlobusGSSException;
-import org.globus.gsi.gssapi.KeyPairCache;
-import org.globus.gsi.util.CertificateLoadUtil;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +33,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +44,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -61,8 +58,10 @@ public class GsiEngine extends InterceptingSSLEngine
 
     public static final String X509_CREDENTIAL = "org.dcache.credential";
 
-    private static final KeyPairCache KEY_PAIR_CACHE = KeyPairCache.getKeyPairCache();
-    private static final BouncyCastleCertProcessingFactory CERT_FACTORY = BouncyCastleCertProcessingFactory.getDefault();
+    /** The character sent on the wire to request delegation */
+    public static final char DELEGATION_CHAR = 'D';
+
+    private KeyPairCache keyPairCache = new KeyPairCache(30, TimeUnit.SECONDS);
 
     private final CertificateFactory cf;
 
@@ -88,7 +87,6 @@ public class GsiEngine extends InterceptingSSLEngine
         super.closeOutbound();
     }
 
-
     public boolean isUsingLegacyClose()
     {
         return isUsingLegacyClose;
@@ -99,13 +97,20 @@ public class GsiEngine extends InterceptingSSLEngine
         this.isUsingLegacyClose = usingLegacyClose;
     }
 
+    public void setKeyPairCache(KeyPairCache cache)
+    {
+        keyPairCache = cache;
+    }
+
     private ByteBuffer getCertRequest() throws SSLPeerUnverifiedException, GeneralSecurityException
     {
-        Certificate[] chain = getSession().getPeerCertificates();
-        X509Certificate cert = (X509Certificate) chain[0];
-        int bits = ((RSAPublicKey) cert.getPublicKey()).getModulus().bitLength();
-        keyPair = KEY_PAIR_CACHE.getKeyPair(bits);
-        byte[] req = CERT_FACTORY.createCertificateRequest(cert, keyPair);
+        X509Certificate[] chain = CertificateUtils.convertToX509Chain(getSession().getPeerCertificates());
+        int bits = ((RSAPublicKey) chain[0].getPublicKey()).getModulus().bitLength();
+        keyPair = keyPairCache.getKeyPair(bits);
+        ProxyCertificateOptions options = new ProxyCertificateOptions(chain);
+        options.setPublicKey(keyPair.getPublic());
+        options.setLimited(true);
+        byte[] req = ProxyCSRGenerator.generate(options, keyPair.getPrivate()).getCSR().getEncoded();
         return ByteBuffer.wrap(req, 0, req.length);
     }
 
@@ -116,20 +121,6 @@ public class GsiEngine extends InterceptingSSLEngine
         RSAPrivateKey privKey = (RSAPrivateKey) keyPair.getPrivate();
         if (!pubKey.getModulus().equals(privKey.getModulus())) {
             throw new GeneralSecurityException("Client delegated credentials do not match certificate request.");
-        }
-    }
-
-    private static X509Certificate bcConvert(X509Certificate cert)
-            throws GSSException
-    {
-        if (!(cert instanceof X509CertificateObject)) {
-            try {
-                return CertificateLoadUtil.loadCertificate(new ByteArrayInputStream(cert.getEncoded()));
-            } catch (Exception e) {
-                throw new GlobusGSSException(GSSException.FAILURE, e);
-            }
-        } else {
-            return cert;
         }
     }
 
@@ -154,9 +145,9 @@ public class GsiEngine extends InterceptingSSLEngine
         Certificate[] chain = session.getPeerCertificates();
         int chainLen = chain.length;
         X509Certificate[] newChain = new X509Certificate[chainLen + 1];
-        newChain[0] = bcConvert(certificate);
+        newChain[0] = certificate;
         for (int i = 0; i < chainLen; i++) {
-            newChain[i + 1] = bcConvert((X509Certificate) chain[i]);
+            newChain[i + 1] = (X509Certificate) chain[i];
         }
 
         /* Store GSI credentials in the SSL session. Use GsiRequestCustomizer to copy these
@@ -171,7 +162,7 @@ public class GsiEngine extends InterceptingSSLEngine
         @Override
         public void call(ByteBuffer buffer) throws SSLException
         {
-            if (buffer.get(0) == GSIConstants.DELEGATION_CHAR) {
+            if (buffer.get(0) == DELEGATION_CHAR) {
                 try {
                     sendThenReceive(getCertRequest(), new GotDelegatedCredentials());
                 } catch (GeneralSecurityException e) {

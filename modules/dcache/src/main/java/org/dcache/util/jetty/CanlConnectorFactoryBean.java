@@ -33,6 +33,7 @@ import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import org.dcache.gsi.CanlContextFactory;
+import org.dcache.gsi.KeyPairCache;
 
 import static org.dcache.util.Crypto.getBannedCipherSuitesFromConfigurationValue;
 
@@ -60,6 +61,7 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
     private CrlCheckingMode crlCheckingMode = CrlCheckingMode.IF_VALID;
     private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
     private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;;
+    private KeyPairCache keyPairCache;
 
     public int getAcceptors()
     {
@@ -271,6 +273,7 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return crlCheckingMode;
     }
 
+    @Required
     public void setCrlCheckingMode(CrlCheckingMode crlCheckingMode)
     {
         this.crlCheckingMode = crlCheckingMode;
@@ -281,6 +284,7 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return ocspCheckingMode;
     }
 
+    @Required
     public void setOcspCheckingMode(OCSPCheckingMode ocspCheckingMode)
     {
         this.ocspCheckingMode = ocspCheckingMode;
@@ -291,9 +295,20 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         return namespaceMode;
     }
 
+    @Required
     public void setNamespaceMode(NamespaceCheckingMode namespaceMode)
     {
         this.namespaceMode = namespaceMode;
+    }
+
+    public KeyPairCache getKeyPairCache()
+    {
+        return keyPairCache;
+    }
+
+    public void setKeyPairCache(KeyPairCache keyPairCache)
+    {
+        this.keyPairCache = keyPairCache;
     }
 
     private SslContextFactory createContextFactory() throws Exception
@@ -307,6 +322,7 @@ public class CanlConnectorFactoryBean implements FactoryBean<ServerConnector>
         factory.setExcludeCipherSuites(excludedCipherSuites);
         factory.setGsiEnabled(enableGsi);
         factory.setUsingLegacyClose(isUsingLegacyClose);
+        factory.setKeyPairCache(keyPairCache);
         factory.setCertificateAuthorityUpdateInterval(caCertificateTimeoutUnit.toMillis(caCertificateTimeout));
         factory.setCredentialUpdateInterval(hostCertificateTimeoutUnit.toMillis(hostCertificateTimeout));
         factory.setNamespaceMode(namespaceMode);
