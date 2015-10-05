@@ -322,7 +322,7 @@
     <constructor-arg value="p2p,${pool.queues}" />
   </bean>
 
-  <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverProtocolTransferService"
+  <bean id="default-transfer-service" class="org.dcache.pool.classic.MoverMapTransferService"
           destroy-method="shutdown" depends-on="rep">
       <description>Generic transfer service</description>
       <property name="faultListener" ref="pool"/>
@@ -397,6 +397,19 @@
       <property name="customHeaders" ref="custom-headers"/>
   </bean>
 
+  <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
+          depends-on="rep" init-method="init" destroy-method="shutdown">
+      <property name="faultListener" ref="pool"/>
+      <property name="checksumModule" ref="csm"/>
+      <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="certificateAuthorityPath" value="${pool.authn.capath}"/>
+      <property name="certificateAuthorityUpdateInterval" value="${pool.authn.capath.refresh}"/>
+      <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.authn.capath.refresh.unit}"/>
+      <property name="namespaceMode" value="${pool.authn.namespace-mode}"/>
+      <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
+      <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+  </bean>
+
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
         init-method="init" destroy-method="shutdown" depends-on="rep">
       <description>Post processing execution service</description>
@@ -414,6 +427,8 @@
             <entry key="NFS4-4" value-ref="nfs-transfer-service" />
             <entry key="Xrootd-2" value-ref="xrootd-transfer-service"/>
             <entry key="Http-1" value-ref="http-transfer-service"/>
+            <entry key="RemoteHttpDataTransfer-1" value-ref="remote-http-transfer-service"/>
+            <entry key="RemoteHttpsDataTransfer-1" value-ref="remote-http-transfer-service"/>
         </map>
       </property>
   </bean>

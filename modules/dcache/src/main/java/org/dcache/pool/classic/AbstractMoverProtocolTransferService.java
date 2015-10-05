@@ -1,19 +1,30 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.pool.classic;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.SyncFailedException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.CompletionHandler;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,12 +34,7 @@ import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
-import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.EnvironmentAware;
-import dmg.util.command.Argument;
-import dmg.util.command.Command;
 
 import org.dcache.pool.FaultAction;
 import org.dcache.pool.FaultEvent;
@@ -41,29 +47,19 @@ import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.util.CDCExecutorServiceDecorator;
 
-public class MoverProtocolTransferService extends AbstractCellComponent
-        implements TransferService<MoverProtocolMover>, MoverFactory, CellCommandListener, EnvironmentAware
+public abstract class AbstractMoverProtocolTransferService
+        extends AbstractCellComponent
+        implements TransferService<MoverProtocolMover>,MoverFactory
 {
-    private final static Logger LOGGER =
-        LoggerFactory.getLogger(MoverProtocolTransferService.class);
-    private final static String _name =
-        MoverProtocolTransferService.class.getSimpleName();
-
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(MoverMapTransferService.class);
     private final ExecutorService _executor =
             new CDCExecutorServiceDecorator<>(
                     Executors.newCachedThreadPool(
-                            new ThreadFactoryBuilder().setNameFormat(_name + "transfer-service-%d").build()));
-    private final ConcurrentMap<String, Class<? extends MoverProtocol>> _movermap = new ConcurrentHashMap<>();
+                            new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-transfer-service-%d").build()));
     private FaultListener _faultListener;
     private ChecksumModule _checksumModule;
     private PostTransferService _postTransferService;
-    private Map<String,Object> _environment;
-
-    @Override
-    public void setEnvironment(Map<String,Object> environment)
-    {
-        _environment = ImmutableMap.copyOf(environment);
-    }
 
     @Required
     public void setFaultListener(FaultListener faultListener)
@@ -89,49 +85,19 @@ public class MoverProtocolTransferService extends AbstractCellComponent
     {
         ProtocolInfo info = message.getProtocolInfo();
         try {
-            MoverProtocol moverProtocol = createMoverProtocol(getMoverProtocolClass(info));
-            return new MoverProtocolMover(handle, message, pathToDoor, this,
-                    moverProtocol, _checksumModule);
+            MoverProtocol moverProtocol = createMoverProtocol(info);
+            return new MoverProtocolMover(handle, message, pathToDoor, this, moverProtocol, _checksumModule);
         } catch (InvocationTargetException e) {
             throw new CacheException(27, "Could not create mover for " + info, e.getTargetException());
         } catch (ClassNotFoundException e) {
             throw new CacheException(27, "Protocol " + info + " is not supported", e);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+        } catch (Exception e) {
             LOGGER.error("Invalid mover for " + info + ": " + e.toString(), e);
             throw new CacheException(27, "Could not create mover for " + info, e);
         }
     }
 
-    private Class<? extends MoverProtocol> getMoverProtocolClass(ProtocolInfo info) throws ClassNotFoundException
-    {
-        String protocolName = info.getProtocol() + "-" + info.getMajorVersion();
-        Class<? extends MoverProtocol> moverClass = _movermap.get(protocolName);
-        if (moverClass == null) {
-            String moverClassName =
-                    "org.dcache.pool.movers." + info.getProtocol() + "Protocol_" + info.getMajorVersion();
-            moverClass = Class.forName(moverClassName).asSubclass(MoverProtocol.class);
-            Class<? extends MoverProtocol> oldClass = _movermap.putIfAbsent(protocolName, moverClass);
-            if (oldClass != null) {
-                moverClass = oldClass;
-            }
-        }
-        return moverClass;
-    }
-
-    private MoverProtocol createMoverProtocol(Class<? extends MoverProtocol> moverClass) throws
-        NoSuchMethodException, InstantiationException, IllegalAccessException,
-        InvocationTargetException
-    {
-        Class<?>[] argsClass = {CellEndpoint.class};
-        Constructor<? extends MoverProtocol> moverCon = moverClass.getConstructor(argsClass);
-        Object[] args = {getCellEndpoint()};
-        MoverProtocol mover = moverCon.newInstance(args);
-        if (mover instanceof EnvironmentAware) {
-            ((EnvironmentAware)mover).setEnvironment(_environment);
-        }
-        return mover;
-    }
-
+    protected abstract MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception;
 
     @Override
     public Cancellable executeMover(MoverProtocolMover mover, CompletionHandler<Void, Void> completionHandler)
@@ -227,57 +193,6 @@ public class MoverProtocolTransferService extends AbstractCellComponent
             } else {
                 _needInterruption = true;
             }
-        }
-    }
-
-    @Command(name = "movermap define",
-            description = "Adds a transfer protocol mapping")
-    class DefineCommand implements Callable<String>
-    {
-        @Argument(index = 0, valueSpec = "PROTOCOL-MAJOR",
-                usage = "Protocol identification string")
-        String protocol;
-
-        @Argument(index = 1, metaVar = "moverclassname",
-                usage = "A class implementing the MoverProtocol interface.")
-        String moverClassName;
-
-        @Override
-        public String call() throws ClassNotFoundException
-        {
-            _movermap.put(protocol, Class.forName(moverClassName).asSubclass(MoverProtocol.class));
-            return "";
-        }
-    }
-
-    @Command(name = "movermap undefine",
-            description = "Removes a transfer protocol mapping")
-    class UndefineCommand implements Callable<String>
-    {
-        @Argument(valueSpec = "PROTOCOL-MAJOR",
-                usage = "Protocol identification string")
-        String protocol;
-
-        @Override
-        public String call()
-        {
-            _movermap.remove(protocol);
-            return "";
-        }
-    }
-
-    @Command(name = "movermap ls",
-            description = "Lists all defined protocol mappings.")
-    class ListCommand implements Callable<String>
-    {
-        @Override
-        public String call() throws Exception
-        {
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, Class<? extends MoverProtocol>> entry : _movermap.entrySet()) {
-                sb.append(entry.getKey()).append(" -> ").append(entry.getValue().getName()).append("\n");
-            }
-            return sb.toString();
         }
     }
 }

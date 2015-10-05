@@ -2,16 +2,16 @@ package org.dcache.srm.util;
 
 import com.google.common.net.InetAddresses;
 import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.OpensslNameUtils;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.apache.axis.MessageContext;
 import org.apache.axis.transport.http.HTTPConstants;
-import org.globus.gsi.bc.BouncyCastleUtil;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 
 import java.net.InetSocketAddress;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
@@ -58,9 +58,8 @@ public class Axis
     {
         return Axis.getCertificateChain().flatMap(t -> {
             try {
-                X509Certificate cert = BouncyCastleUtil.getIdentityCertificate(t);
-                return Optional.ofNullable(BouncyCastleUtil.getIdentity(cert));
-            } catch (CertificateException e) {
+                return Optional.of(OpensslNameUtils.convertFromRfc2253(ProxyUtils.getOriginalUserDN(t).getName(), true));
+            } catch (IllegalArgumentException e) {
                 return Optional.empty();
             }
         });
