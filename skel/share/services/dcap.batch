@@ -55,7 +55,7 @@ set env paths-when-readonly-is-false "-brokerReadPaths=/ -brokerWritePaths=/"
 set env arguments-plain    "${plain-paths-when-anonymous-access-is-${dcap.authz.anonymous-operations}} -localOk"
 set env arguments-auth     "${paths-when-readonly-is-${dcap.authz.readonly}} -pswdfile=${dcap.authn.passwd} -authorization=required"
 set env arguments-gsi      "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.GsiEngineDssContextFactory -service_key='${dcap.authn.hostcert.key}' -service_cert='${dcap.authn.hostcert.cert}' -service_trusted_certs='${dcap.authn.capath}' -ciphers='${dcap.authn.ciphers}'\\\""
-set env arguments-kerberos "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=javatunnel.DssServerSocketCreator org.dcache.dss.KerberosDssContextFactory '${dcap.authn.kerberos.service-principle-name}'"
+set env arguments-kerberos "${paths-when-readonly-is-${dcap.authz.readonly}} -localOk -authorization=strong -socketfactory=\\\"javatunnel.DssServerSocketCreator org.dcache.dss.KerberosDssContextFactory '${dcap.authn.kerberos.service-principle-name}'\\\""
 
 create dmg.cells.services.login.LoginManager ${dcap.cell.name} \
             "${dcap.net.port} diskCacheV111.doors.DCapDoor \
