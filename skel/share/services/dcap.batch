@@ -47,7 +47,7 @@ onerror shutdown
 
 set env plain-paths-when-anonymous-access-is-NONE "-brokerReadPaths= -brokerWritePaths="
 set env plain-paths-when-anonymous-access-is-READONLY "-brokerReadPaths=/ -brokerWritePaths="
-set env plain-paths-when-anonymous-access-is-FULL "${paths-when-readonly-is-$dcap.authz.readonly}}"
+set env plain-paths-when-anonymous-access-is-FULL "${paths-when-readonly-is-${dcap.authz.readonly}}"
 
 set env paths-when-readonly-is-true "-brokerReadPaths=/ -brokerWritePaths="
 set env paths-when-readonly-is-false "-brokerReadPaths=/ -brokerWritePaths=/"
