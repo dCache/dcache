@@ -15,17 +15,15 @@
  */
 package org.dcache.ftp.client.vanilla;
 
-import org.globus.net.ServerSocketFactory;
-import org.globus.net.SocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 
 import org.dcache.ftp.client.DataSink;
@@ -48,6 +46,7 @@ import org.dcache.ftp.client.exception.FTPException;
 import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.PortRange;
 
 /**
  * <b>
@@ -88,10 +87,6 @@ public class FTPServerFacade
     private static final Logger logger =
             LoggerFactory.getLogger(FTPServerFacade.class);
 
-    /**
-     * local server socket parameter; used in setPassive()
-     **/
-    public static final int ANY_PORT = 0;
     /**
      * local server socket parameter; used in setPassive()
      **/
@@ -184,25 +179,25 @@ public class FTPServerFacade
      **/
     public HostPort setPassive() throws IOException
     {
-        return setPassive(ANY_PORT, DEFAULT_QUEUE);
+        return setPassive(new PortRange(0), DEFAULT_QUEUE);
     }
 
     /**
      * Start the local server
      *
-     * @param port  required server port; can be set to ANY_PORT
+     * @param range required server port range
      * @param queue max size of queue of awaiting new connection
      *              requests
      * @return the server address
      **/
-    public HostPort setPassive(int port, int queue)
+    public HostPort setPassive(PortRange range, int queue)
             throws IOException
     {
 
         if (serverSocket == null) {
-            ServerSocketFactory factory =
-                    ServerSocketFactory.getDefault();
-            serverSocket = factory.createServerSocket(port, queue);
+            ServerSocketChannel channel = ServerSocketChannel.open();
+            range.bind(channel.socket(), queue);
+            serverSocket = channel.socket();
         }
 
         session.serverMode = Session.SERVER_PASSIVE;
@@ -346,24 +341,14 @@ public class FTPServerFacade
         if (serverSocket == null) {
             return;
         }
-        Socket s = null;
         try {
-            InetAddress address = ((InetSocketAddress) serverSocket.getLocalSocketAddress()).getAddress();
-            int port = serverSocket.getLocalPort();
             // this is a hack to ensue the server socket is
             // unblocked from accpet()
             // but this is not guaranteed to work still
-            SocketFactory factory = SocketFactory.getDefault();
-            s = factory.createSocket(address, port);
-            s.getInputStream();
-        } catch (Exception e) {
-        } finally {
-            if (s != null) {
-                try {
-                    s.close();
-                } catch (Exception e) {
-                }
+            try (SocketChannel channel = SocketChannel.open(serverSocket.getLocalSocketAddress())) {
+                channel.socket().getInputStream();
             }
+        } catch (Exception e) {
         }
     }
 

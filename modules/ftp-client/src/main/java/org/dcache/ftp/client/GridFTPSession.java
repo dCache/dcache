@@ -80,8 +80,6 @@ public class GridFTPSession extends Session
 
     public int parallel = 1;
 
-    public int TCPBufferSize = SERVER_DEFAULT;
-
     /**
      * This concerns local server. if in SERVER_EPAS mode, the server listener
      * socket list is stored here. If in SERVER_PASV mode, the server listener

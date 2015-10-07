@@ -104,6 +104,7 @@ import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
+import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
 public class RemoteGsiftpTransferProtocol_1
@@ -158,11 +159,9 @@ public class RemoteGsiftpTransferProtocol_1
 
         URI url = new URI(protocolInfo.getGsiftpUrl());
         int port = (url.getPort() == -1) ? DEFAULT_PORT : url.getPort();
-        _client = new GridftpClient(url.getHost(), port,
-                                    protocolInfo.getTcpBufferSize(),
+        _client = new GridftpClient(url.getHost(), port, PortRange.getGlobusTcpPortRange(),
                                     protocolInfo.getCredential());
         _client.setStreamsNum(protocolInfo.getNumberOfStreams());
-        _client.setTcpBufferSize(protocolInfo.getTcpBufferSize());
     }
 
     @Override

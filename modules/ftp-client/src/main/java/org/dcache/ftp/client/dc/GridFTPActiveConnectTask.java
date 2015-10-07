@@ -15,20 +15,19 @@
  */
 package org.dcache.ftp.client.dc;
 
-import org.globus.net.SocketFactory;
-
-import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.DataChannelAuthentication;
-import org.dcache.ftp.client.HostPort;
-import org.dcache.ftp.client.Session;
-import org.dcache.ftp.client.vanilla.FTPServerFacade;
-import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-import org.dcache.ftp.client.extended.GridFTPServerFacade;
-
-import java.net.Socket;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.channels.SocketChannel;
+
+import org.dcache.ftp.client.DataChannelAuthentication;
+import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.ftp.client.HostPort;
+import org.dcache.ftp.client.extended.GridFTPServerFacade;
+import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
+import org.dcache.ftp.client.vanilla.FTPServerFacade;
 
 /**
  * Unlike in the parent class, here we use authentication
@@ -69,20 +68,8 @@ public class GridFTPActiveConnectTask extends Task
                          hostPort.getHost() + " " + hostPort.getPort());
         }
 
-        SocketFactory factory = SocketFactory.getDefault();
-
         try {
-            mySocket = factory.createSocket(hostPort.getHost(),
-                                            hostPort.getPort());
-
-            // set TCP buffer size
-
-            if (gSession.TCPBufferSize != Session.SERVER_DEFAULT) {
-                logger.debug("setting socket's TCP buffer size to "
-                             + gSession.TCPBufferSize);
-                mySocket.setReceiveBufferSize(gSession.TCPBufferSize);
-                mySocket.setSendBufferSize(gSession.TCPBufferSize);
-            }
+            mySocket = SocketChannel.open(new InetSocketAddress(hostPort.getHost(), hostPort.getPort())).socket();
 
             if (!gSession.dataChannelAuthentication.equals(
                     DataChannelAuthentication.NONE)) {

@@ -72,14 +72,6 @@ public class GridFTPPassiveConnectTask extends PassiveConnectTask
 
         Socket newSocket = myServer.accept();
 
-        // set TCP buffer size
-        if (gSession.TCPBufferSize != Session.SERVER_DEFAULT) {
-            logger.debug("setting socket's TCP buffer size to "
-                         + gSession.TCPBufferSize);
-            newSocket.setReceiveBufferSize(gSession.TCPBufferSize);
-            newSocket.setSendBufferSize(gSession.TCPBufferSize);
-        }
-
         logger.debug("server.accept() returned");
 
         if (!gSession.dataChannelAuthentication.equals(

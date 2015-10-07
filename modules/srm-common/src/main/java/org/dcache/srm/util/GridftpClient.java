@@ -18,6 +18,8 @@ import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
 import org.dcache.ftp.client.vanilla.Reply;
+import org.dcache.util.PortRange;
+
 import org.globus.gsi.CredentialException;
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.ietf.jgss.GSSCredential;
@@ -64,7 +66,6 @@ public class GridftpClient
     private String _cksmValue;
 
     private int _streamsNum = 10;
-    private int _tcpBufferSize = 1024*1024;
     private int _bufferSize = 1024*1024;
 
     private volatile IDiskDataSourceSink _current_source_sink;
@@ -76,19 +77,14 @@ public class GridftpClient
     private static List<String> cksmTypeList =
             Arrays.asList("ADLER32","MD5","MD4");
 
-    public GridftpClient(String host, int port,
-                         int tcpBufferSize,
-                         X509Credential cred)
+    public GridftpClient(String host, int port, PortRange portRange, X509Credential cred)
         throws IOException, ServerException, ClientException,
                CredentialException, GSSException
     {
-        this(host, port, tcpBufferSize, 0, cred);
+        this(host, port, 0, portRange, cred);
     }
 
-    public GridftpClient(String host, int port,
-                         int tcpBufferSize,
-                         int bufferSize,
-                         X509Credential cred)
+    public GridftpClient(String host, int port, int bufferSize, PortRange portRange, X509Credential cred)
         throws IOException, ServerException, ClientException,
                CredentialException, GSSException
     {
@@ -96,21 +92,15 @@ public class GridftpClient
             _bufferSize = bufferSize;
             logger.debug("memory buffer size is set to "+bufferSize);
         }
-        if(tcpBufferSize > 0)
-            {
-                _tcpBufferSize = tcpBufferSize;
-                logger.debug("tcp buffer size is set to "+tcpBufferSize);
-            }
         _host = host;
         logger.debug("connecting to "+_host+" on port "+port);
 
         _client  = new GridFTPClient(_host, port);
-        _client.setLocalTCPBufferSize(_tcpBufferSize);
-        logger.debug("gridFTPClient tcp buffer size is set to "+_tcpBufferSize);
 
         _client.authenticate(new GlobusGSSCredentialImpl(
                 new org.globus.gsi.X509Credential(cred.getKey(), cred.getCertificateChain()),
                 GSSCredential.INITIATE_ONLY)); /* use credentials */
+        _client.setPortRange(portRange);
         _client.setType(GridFTPSession.TYPE_IMAGE);
     }
 
@@ -667,29 +657,6 @@ public class GridftpClient
         _streamsNum = streamsNum;
     }
 
-    /** Getter for property tcpBufferSize.
-     * @return Value of property tcpBufferSize.
-     *
-     */
-    public int getTcpBufferSize() {
-        return _tcpBufferSize;
-    }
-
-    /** Setter for property tcpBufferSize.
-     * @param tcpBufferSize New value of property tcpBufferSize.
-     *
-     */
-    public void setTcpBufferSize(int tcpBufferSize)
-        throws ClientException
-    {
-        if(tcpBufferSize > 0)
-            {
-                _tcpBufferSize = tcpBufferSize;
-                _client.setLocalTCPBufferSize(tcpBufferSize);
-            }
-
-    }
-
     /** Getter for property bufferSize.
      * @return Value of property bufferSize.
      *
@@ -734,7 +701,6 @@ public class GridftpClient
         String source = args[0];
         String dest   = args[1];
         int bs = Integer.parseInt(args[2]);
-        int tcp_bs = Integer.parseInt(args[3]);
         int streams = Integer.parseInt(args[4]);
         boolean emode=true;
 	String server_mode="active";
@@ -773,8 +739,8 @@ public class GridftpClient
             dst_url.getScheme().equals("file")) {
             GridftpClient client;
 
-            client = new GridftpClient(src_url.getHost(),
-                                       src_url.getPort(), tcp_bs, bs, x509Credential);
+            client = new GridftpClient(src_url.getHost(), src_url.getPort(), bs,
+                                       PortRange.getGlobusTcpPortRange(), x509Credential);
             client.setStreamsNum(streams);
             client.setChecksum(chsmType,chsmValue);
             try {
@@ -792,8 +758,8 @@ public class GridftpClient
                dst_url.getScheme().equals("gridftp") )
              ) {
             GridftpClient client;
-            client = new GridftpClient(dst_url.getHost(),
-                                       dst_url.getPort(), tcp_bs, bs, x509Credential);
+            client = new GridftpClient(dst_url.getHost(), dst_url.getPort(), bs,
+                                       PortRange.getGlobusTcpPortRange(), x509Credential);
             client.setStreamsNum(streams);
             try {
                 client.setChecksum(chsmType,chsmValue);

@@ -49,6 +49,7 @@ import org.dcache.ftp.client.vanilla.Command;
 import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.ftp.client.vanilla.TransferMonitor;
 import org.dcache.ftp.client.vanilla.TransferState;
+import org.dcache.util.PortRange;
 
 /**
  * This is the main user interface for FTP operations.
@@ -76,6 +77,8 @@ public class FTPClient
     protected SimpleDateFormat dateFormat = null;
 
     protected String username = null;
+
+    protected PortRange portRange = new PortRange(0);
 
     /**
      * Whether to use ALLO with put()/asyncPut() or not
@@ -111,9 +114,19 @@ public class FTPClient
         localServer.authorize();
     }
 
-    /* 
-     * @return host
-     */
+    public PortRange getPortRange()
+    {
+        return portRange;
+    }
+
+    public void setPortRange(PortRange portRange)
+    {
+        this.portRange = portRange;
+    }
+
+    /*
+         * @return host
+         */
     public String getHost()
     {
         return this.controlChannel.getHost();
@@ -1167,21 +1180,20 @@ public class FTPClient
      **/
     public HostPort setLocalPassive() throws IOException
     {
-        return localServer.setPassive();
+        return localServer.setPassive(portRange, FTPServerFacade.DEFAULT_QUEUE);
     }
 
     /**
      * Starts the local server in passive server mode.
      *
-     * @param port  port at which local server should be listening;
-     *              can be set to FTPServerFacade.ANY_PORT
+     * @param range port range at which local server should be listening
      * @param queue max size of queue of awaiting new connection
      *              requests
      * @return the server address
      **/
-    public HostPort setLocalPassive(int port, int queue) throws IOException
+    public HostPort setLocalPassive(PortRange range, int queue) throws IOException
     {
-        return localServer.setPassive(port, queue);
+        return localServer.setPassive(range, queue);
     }
 
     /**

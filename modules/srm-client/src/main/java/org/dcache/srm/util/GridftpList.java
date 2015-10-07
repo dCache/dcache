@@ -8,6 +8,8 @@ package org.dcache.srm.util;
 
 import java.net.URI;
 
+import org.dcache.util.PortRange;
+
 /**
  *
  * @author  timur
@@ -53,7 +55,7 @@ public class GridftpList {
         }
 
         GridftpClient client = new GridftpClient(directory_url.getHost(),
-            directory_url.getPort(),0,null);
+            directory_url.getPort(), PortRange.getGlobusTcpPortRange(), null);
             client.setStreamsNum(1);
 
             System.out.println( client.list(directory_url.getPath(),serverPassive));

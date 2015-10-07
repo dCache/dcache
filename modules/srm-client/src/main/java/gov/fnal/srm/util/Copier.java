@@ -77,9 +77,6 @@ package gov.fnal.srm.util;
 
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import org.dcache.ftp.client.exception.ServerException;
-import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
-import org.dcache.ftp.client.vanilla.Reply;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -91,8 +88,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.ftp.client.exception.ServerException;
+import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
+import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient;
+import org.dcache.util.PortRange;
 
 
 /**
@@ -577,10 +578,12 @@ public class Copier implements Runnable {
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
                 GridftpClient client = new GridftpClient(src_url.getHost(),
-                        src_url.getPort(),
-                        configuration.getTcp_buffer_size(),
-                        configuration.getBuffer_size(),
-                        credential);
+                                                         src_url.getPort(),
+                                                         configuration.getBuffer_size(),
+                                                         configuration.getGlobus_tcp_port_range() != null
+                                                         ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
+                                                         : new PortRange(0),
+                                                         credential);
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
                         configuration.getCksmValue());
@@ -630,10 +633,12 @@ public class Copier implements Runnable {
             boolean emode = (numberOfStreams!=1);
             if(! dryRun ) {
                 GridftpClient client = new GridftpClient(dst_url.getHost(),
-                        dst_url.getPort(),
-                        configuration.getTcp_buffer_size(),
-                        configuration.getBuffer_size(),
-                        credential);
+                                                         dst_url.getPort(),
+                                                         configuration.getBuffer_size(),
+                                                         configuration.getGlobus_tcp_port_range() != null
+                                                         ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
+                                                         : new PortRange(0),
+                                                         credential);
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
                         configuration.getCksmValue());

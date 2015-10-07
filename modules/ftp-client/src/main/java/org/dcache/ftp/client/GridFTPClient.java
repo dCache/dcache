@@ -35,7 +35,9 @@ import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
 import org.dcache.ftp.client.extended.GridFTPControlChannel;
 import org.dcache.ftp.client.extended.GridFTPServerFacade;
 import org.dcache.ftp.client.vanilla.Command;
+import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.ftp.client.vanilla.Reply;
+import org.dcache.util.PortRange;
 import org.dcache.util.Version;
 
 
@@ -238,101 +240,6 @@ public class GridFTPClient extends FTPClient
     }
 
     /**
-     * Sets remote server TCP buffer size, in the following way:
-     * First see if server supports "SBUF" and if so, use it.
-     * If not, try the following commands until success:
-     * "SITE RETRBUFSIZE", "SITE RBUFSZ", "SITE RBUFSIZ",
-     * "SITE STORBUFSIZE", "SITE SBUFSZ", "SITE SBUFSIZ",
-     * "SITE BUFSIZE".
-     * Returns normally if the server confirms successfull setting of the
-     * remote buffer size, both for sending and for receiving data.
-     * Otherwise, throws ServerException.
-     **/
-    public void setTCPBufferSize(int size)
-            throws IOException, ServerException
-    {
-        if (size <= 0) {
-            throw new IllegalArgumentException("size <= 0");
-        }
-        try {
-            boolean succeeded = false;
-            String sizeString = Integer.toString(size);
-            FeatureList feat = getFeatureList();
-
-            if (feat.contains(FeatureList.SBUF)) {
-                succeeded = tryExecutingCommand(new Command("SBUF", sizeString));
-            }
-
-            if (!succeeded) {
-                succeeded = tryExecutingCommand(new Command("SITE BUFSIZE", sizeString));
-            }
-
-            if (!succeeded) {
-                succeeded = tryExecutingTwoCommands(new Command("SITE RETRBUFSIZE", sizeString),
-                                                    new Command("SITE STORBUFSIZE", sizeString));
-            }
-
-            if (!succeeded) {
-                succeeded = tryExecutingTwoCommands(new Command("SITE RBUFSZ", sizeString),
-                                                    new Command("SITE SBUFSZ", sizeString));
-            }
-
-            if (!succeeded) {
-                succeeded = tryExecutingTwoCommands(new Command("SITE RBUFSIZ", sizeString),
-                                                    new Command("SITE SBUFSIZ", sizeString));
-            }
-
-            if (succeeded) {
-                this.gSession.TCPBufferSize = size;
-            } else {
-                throw new ServerException(ServerException.SERVER_REFUSED,
-                                          "Server refused setting TCP buffer size with any of the known commands.");
-            }
-
-        } catch (FTPReplyParseException rpe) {
-            throw ServerException.embedFTPReplyParseException(rpe);
-        }
-    }
-
-    private boolean tryExecutingTwoCommands(Command cmd1, Command cmd2)
-            throws IOException,
-            FTPReplyParseException,
-            ServerException
-    {
-        boolean result = tryExecutingCommand(cmd1);
-        if (result) {
-            result = tryExecutingCommand(cmd2);
-        }
-        return result;
-    }
-
-    /*
-     * This is like controlChannel.executeCommand, only that negative reply it
-     * returns "false" rather than throwing exception
-     */
-    private boolean tryExecutingCommand(Command cmd)
-            throws IOException,
-            FTPReplyParseException,
-            ServerException
-    {
-        Reply reply = controlChannel.exchange(cmd);
-        return Reply.isPositiveCompletion(reply);
-    }
-
-    /**
-     * Sets local TCP buffer size (for both receiving and sending).
-     **/
-    public void setLocalTCPBufferSize(int size)
-            throws ClientException
-    {
-        if (size <= 0) {
-            throw new IllegalArgumentException("size <= 0");
-        }
-        gLocalServer.setTCPBufferSize(size);
-
-    }
-
-    /**
      * Sets remote server to striped passive server mode (SPAS).
      **/
     public HostPortList setStripedPassive()
@@ -394,16 +301,16 @@ public class GridFTPClient extends FTPClient
      * Starts local server in striped passive mode. Since the local server
      * is not distributed, it will only listen on one socket.
      *
-     * @param port  required server port; can be set to FTPServerFacade.ANY_PORT
+     * @param range required server port
      * @param queue max size of queue of awaiting new data channel connection
      *              requests
      * @return the HostPortList of 1 element representing the socket where the
      * local server is listening
      **/
-    public HostPortList setLocalStripedPassive(int port, int queue)
+    public HostPortList setLocalStripedPassive(PortRange range, int queue)
             throws IOException
     {
-        return gLocalServer.setStripedPassive(port, queue);
+        return gLocalServer.setStripedPassive(range, queue);
     }
 
     /**
@@ -413,7 +320,7 @@ public class GridFTPClient extends FTPClient
     public HostPortList setLocalStripedPassive()
             throws IOException
     {
-        return gLocalServer.setStripedPassive();
+        return gLocalServer.setStripedPassive(portRange, FTPServerFacade.DEFAULT_QUEUE);
     }
 
     /**

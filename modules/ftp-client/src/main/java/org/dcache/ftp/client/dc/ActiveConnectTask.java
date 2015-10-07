@@ -15,19 +15,18 @@
  */
 package org.dcache.ftp.client.dc;
 
-import org.dcache.ftp.client.HostPort;
-import org.dcache.ftp.client.Session;
-import org.dcache.ftp.client.DataSource;
-import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.vanilla.FTPServerFacade;
-import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-
-import org.globus.net.SocketFactory;
-
-import java.net.Socket;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
+
+import org.dcache.ftp.client.DataSink;
+import org.dcache.ftp.client.DataSource;
+import org.dcache.ftp.client.HostPort;
+import org.dcache.ftp.client.Session;
+import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
+import org.dcache.ftp.client.vanilla.FTPServerFacade;
 
 /**
  * Makes a connection to a remote data channel (FTPClient use only).
@@ -131,12 +130,7 @@ public class ActiveConnectTask extends Task
     protected SocketBox openSocket() throws Exception
     {
         SocketBox sBox = new SimpleSocketBox();
-
-        SocketFactory factory = SocketFactory.getDefault();
-        Socket mySocket = factory.createSocket(this.hostPort.getHost(),
-                                               this.hostPort.getPort());
-        sBox.setSocket(mySocket);
-
+        sBox.setSocket(SocketChannel.open(new InetSocketAddress(hostPort.getHost(), hostPort.getPort())).socket());
         return sBox;
     }
 

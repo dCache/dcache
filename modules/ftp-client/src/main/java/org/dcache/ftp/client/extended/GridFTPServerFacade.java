@@ -21,7 +21,6 @@ import org.globus.gsi.gssapi.auth.IdentityAuthorization;
 import org.globus.gsi.gssapi.auth.SelfAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.GssSocketFactory;
-import org.globus.net.ServerSocketFactory;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.ietf.jgss.GSSContext;
@@ -35,6 +34,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.channels.ServerSocketChannel;
 
 import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.DataSink;
@@ -59,6 +59,7 @@ import org.dcache.ftp.client.exception.ClientException;
 import org.dcache.ftp.client.exception.DataChannelException;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.util.NetworkUtils;
+import org.dcache.util.PortRange;
 
 public class GridFTPServerFacade extends FTPServerFacade
 {
@@ -109,49 +110,6 @@ public class GridFTPServerFacade extends FTPServerFacade
             gSession.parallel =
                     ((RetrieveOptions) opts).getStartingParallelism();
             logger.debug("parallelism set to " + gSession.parallel);
-        }
-    }
-
-    /**
-     * This method needs to be called BEFORE the local socket(s) get created.
-     * In other words, before setActive(), setPassive(), get(), put(), etc.
-     **/
-    public void setTCPBufferSize(final int size) throws ClientException
-    {
-        logger.debug("Changing local TCP buffer setting to " + size);
-
-        gSession.TCPBufferSize = size;
-
-        SocketOperator op = new SocketOperator()
-        {
-            @Override
-            public void operate(SocketBox s) throws Exception
-            {
-
-                // synchronize to prevent race condition against
-                // the socket initialization code that also sets
-                // TCP buffer (GridFTPActiveConnectTask)
-                synchronized (s) {
-                    logger.debug(
-                            "Changing local socket's TCP buffer to " + size);
-                    Socket mySocket = s.getSocket();
-                    if (mySocket != null) {
-                        mySocket.setReceiveBufferSize(size);
-                        mySocket.setSendBufferSize(size);
-                    } else {
-                        logger.debug(
-                                "the socket is null. probably being initialized");
-                    }
-                }
-            }
-        };
-        try {
-            socketPool.applyToAll(op);
-        } catch (Exception e) {
-            ClientException ce =
-                    new ClientException(ClientException.SOCKET_OP_FAILED);
-            ce.setRootCause(e);
-            throw ce;
         }
     }
 
@@ -248,20 +206,20 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     @Override
-    public HostPort setPassive(int port, int queue) throws IOException
+    public HostPort setPassive(PortRange range, int queue) throws IOException
     {
         // remove existing sockets, if any
         socketPool.flush();
 
-        return super.setPassive(port, queue);
+        return super.setPassive(range, queue);
     }
 
     public HostPortList setStripedPassive() throws IOException
     {
-        return setStripedPassive(ANY_PORT, DEFAULT_QUEUE);
+        return setStripedPassive(new PortRange(0), DEFAULT_QUEUE);
     }
 
-    public HostPortList setStripedPassive(int port, int queue)
+    public HostPortList setStripedPassive(PortRange range, int queue)
             throws IOException
     {
 
@@ -269,9 +227,9 @@ public class GridFTPServerFacade extends FTPServerFacade
         socketPool.flush();
 
         if (serverSocket == null) {
-            ServerSocketFactory factory =
-                    ServerSocketFactory.getDefault();
-            serverSocket = factory.createServerSocket(port, queue);
+            ServerSocketChannel channel = ServerSocketChannel.open();
+            range.bind(channel.socket(), queue);
+            serverSocket = channel.socket();
         }
 
         gSession.serverMode = GridFTPSession.SERVER_EPAS;

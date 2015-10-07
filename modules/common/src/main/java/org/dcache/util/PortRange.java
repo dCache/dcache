@@ -107,6 +107,28 @@ public class PortRange
         }
     }
 
+    /**
+     * Returns the tcp port range.
+     * <p>
+     * It first checks the 'GLOBUS_TCP_PORT_RANGE' environment variable. If that
+     * system property is not set then 'org.globus.tcp.port.range' system
+     * property is checked. Returns an open range otherwise.
+     * <p>
+     * The port range is in the following form: minport, maxport
+     */
+    public static PortRange getGlobusTcpPortRange()
+    {
+        String value = System.getenv("GLOBUS_TCP_PORT_RANGE");
+        if (value != null) {
+            return valueOf(value);
+        }
+        value = System.getProperty("org.globus.tcp.port.range");
+        if (value != null) {
+            return valueOf(value);
+        }
+        return new PortRange(0);
+    }
+
     public int getLower()
     {
         return _lower;
