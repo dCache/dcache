@@ -23,17 +23,17 @@ import org.dcache.ftp.client.Buffer;
 public interface DataChannelReader
 {
 
-    public void setDataStream(InputStream in);
+    void setDataStream(InputStream in);
 
     // looks like DataSource interface
 
     /**
      * @return Buffer of read data or null if end of data
      **/
-    public Buffer read()
+    Buffer read()
             throws IOException;
 
-    public void close()
+    void close()
             throws IOException;
 
 }

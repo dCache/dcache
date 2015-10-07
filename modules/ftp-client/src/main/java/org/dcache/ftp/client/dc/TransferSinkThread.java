@@ -34,14 +34,14 @@ import org.slf4j.LoggerFactory;
 public class TransferSinkThread extends TransferThread
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(TransferSinkThread.class);
 
     protected DataChannelReader reader;
-    protected DataSink sink;
-    protected BasicServerControlChannel localControlChannel;
-    protected TransferContext context;
-    protected SocketBox socketBox;
+    protected final DataSink sink;
+    protected final BasicServerControlChannel localControlChannel;
+    protected final TransferContext context;
+    protected final SocketBox socketBox;
 
     public TransferSinkThread(AbstractDataChannel dataChannel,
                               SocketBox socketBox,

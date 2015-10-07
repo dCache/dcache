@@ -42,7 +42,7 @@ public class ClientException extends FTPException
     public static final int SOCKET_OP_FAILED = 14;
     public static final int OTHER = 15;
 
-    private static String[] codeExplained;
+    private static final String[] codeExplained;
 
     static {
         codeExplained = new String[]

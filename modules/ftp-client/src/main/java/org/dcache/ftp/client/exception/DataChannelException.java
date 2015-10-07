@@ -24,7 +24,7 @@ public class DataChannelException extends FTPException
     //public static final int UNSPECIFIED = 0;
     public static final int UNDEFINED_SERVER_MODE = 1;
     public static final int BAD_SERVER_MODE = 2;
-    private static String[] codeExplained;
+    private static final String[] codeExplained;
 
     static {
         codeExplained = new String[]

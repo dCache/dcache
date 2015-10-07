@@ -33,7 +33,7 @@ public interface DataSource
      * no more data to be read.
      * @throws IOException if an I/O error occurs.
      */
-    public Buffer read()
+    Buffer read()
             throws IOException;
 
     /**
@@ -42,7 +42,7 @@ public interface DataSource
      *
      * @throws IOException if an I/O error occurs.
      */
-    public void close()
+    void close()
             throws IOException;
 
     /**
@@ -53,5 +53,5 @@ public interface DataSource
      *
      * @throws IOException if an I/O exception occurs
      */
-    public long totalSize() throws IOException;
+    long totalSize() throws IOException;
 }

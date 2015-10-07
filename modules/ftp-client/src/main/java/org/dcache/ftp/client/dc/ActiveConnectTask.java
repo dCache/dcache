@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class ActiveConnectTask extends Task
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(ActiveConnectTask.class);
 
     protected HostPort hostPort;

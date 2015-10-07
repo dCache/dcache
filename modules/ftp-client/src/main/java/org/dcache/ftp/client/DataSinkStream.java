@@ -26,9 +26,9 @@ import java.io.OutputStream;
 public class DataSinkStream implements DataSink
 {
 
-    protected OutputStream out;
-    protected boolean autoFlush;
-    protected boolean ignoreOffset;
+    protected final OutputStream out;
+    protected final boolean autoFlush;
+    protected final boolean ignoreOffset;
     protected long offset = 0;
 
     public DataSinkStream(OutputStream out)

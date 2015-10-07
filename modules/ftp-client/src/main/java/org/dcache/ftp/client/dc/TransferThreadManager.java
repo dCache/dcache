@@ -32,16 +32,16 @@ import org.dcache.ftp.client.vanilla.FTPServerFacade;
 public class TransferThreadManager
 {
 
-    static Logger logger =
+    static final Logger logger =
             LoggerFactory.getLogger(TransferThreadManager.class);
 
-    protected SocketPool socketPool;
-    protected GridFTPServerFacade facade;
-    protected BasicServerControlChannel localControlChannel;
-    protected GridFTPSession gSession;
+    protected final SocketPool socketPool;
+    protected final GridFTPServerFacade facade;
+    protected final BasicServerControlChannel localControlChannel;
+    protected final GridFTPSession gSession;
     protected TaskThread taskThread;
     protected int transferThreadCount = 0;
-    protected DataChannelFactory dataChannelFactory;
+    protected final DataChannelFactory dataChannelFactory;
 
     public TransferThreadManager(SocketPool socketPool,
                                  GridFTPServerFacade facade,

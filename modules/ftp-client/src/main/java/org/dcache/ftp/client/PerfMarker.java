@@ -29,11 +29,11 @@ import java.util.StringTokenizer;
 public class PerfMarker implements Marker
 {
 
-    private static Logger logger = LoggerFactory.getLogger(PerfMarker.class);
+    private static final Logger logger = LoggerFactory.getLogger(PerfMarker.class);
 
     protected final String nl = System.getProperty("line.separator");
 
-    protected final static int UNDEFINED = -1;
+    protected static final int UNDEFINED = -1;
     // must have timeStamp
     protected boolean hasTimeStamp = false;
     protected double timeStamp = UNDEFINED;
@@ -93,42 +93,39 @@ public class PerfMarker implements Marker
             // value
             String value = line.nextToken().trim();
 
-            if (name.equals("Timestamp")) {
-
+            switch (name) {
+            case "Timestamp":
                 try {
                     timeStamp = Double.parseDouble(value);
                     hasTimeStamp = true;
                 } catch (NumberFormatException e) {
                     badMsg("Not double value:" + value, msg);
                 }
-
-            } else if (name.equals("Stripe Index")) {
-
+                break;
+            case "Stripe Index":
                 try {
                     stripeIndex = Long.parseLong(value);
                     hasStripeIndex = true;
                 } catch (NumberFormatException e) {
                     badMsg("Not long value:" + value, msg);
                 }
-
-            } else if (name.equals("Stripe Bytes Transferred")) {
-
+                break;
+            case "Stripe Bytes Transferred":
                 try {
                     stripeBytesTransferred = Long.parseLong(value);
                     hasStripeBytesTransferred = true;
                 } catch (NumberFormatException e) {
                     badMsg("Not long value:" + value, msg);
                 }
-
-            } else if (name.equals("Total Stripe Count")) {
-
+                break;
+            case "Total Stripe Count":
                 try {
                     totalStripeCount = Long.parseLong(value);
                     hasTotalStripeCount = true;
                 } catch (NumberFormatException e) {
                     badMsg("Not long value:" + value, msg);
                 }
-
+                break;
             }
 
         }//traverse lines

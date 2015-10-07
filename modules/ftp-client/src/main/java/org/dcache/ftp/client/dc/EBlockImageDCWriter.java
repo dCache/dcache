@@ -29,7 +29,7 @@ public class EBlockImageDCWriter
         implements DataChannelWriter
 {
 
-    static Logger logger = LoggerFactory.getLogger(EBlockImageDCWriter.class);
+    static final Logger logger = LoggerFactory.getLogger(EBlockImageDCWriter.class);
     protected DataOutputStream output;
 
     @Override

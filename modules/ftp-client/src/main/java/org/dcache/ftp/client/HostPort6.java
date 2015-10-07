@@ -78,7 +78,7 @@ public class HostPort6 extends HostPort
     private static class Parser
     {
 
-        String line;
+        final String line;
         int offset = 0;
 
         public Parser(String line)
@@ -164,7 +164,7 @@ public class HostPort6 extends HostPort
     @Override
     public String toFtpCmdArgument()
     {
-        StringBuffer msg = new StringBuffer();
+        StringBuilder msg = new StringBuilder();
         msg.append("|");
         if (this.version != null) {
             msg.append(this.version);

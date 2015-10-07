@@ -22,14 +22,14 @@ import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 public interface TransferThreadFactory
 {
 
-    public TransferThread
+    TransferThread
     getTransferSinkThread(DataChannel dataChannel,
                           SocketBox socketBox,
                           DataSink sink,
                           BasicServerControlChannel localControlChannel,
                           TransferContext context) throws Exception;
 
-    public TransferThread
+    TransferThread
     getTransferSourceThread(DataChannel dataChannel,
                             SocketBox socketBox,
                             DataSource source,

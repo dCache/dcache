@@ -24,7 +24,7 @@ public class SimpleTransferContext
 {
 
 
-    private static SimpleTransferContext singleton = new SimpleTransferContext();
+    private static final SimpleTransferContext singleton = new SimpleTransferContext();
 
     /**
      * return the default instance of this class

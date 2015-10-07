@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class GridFTPDataChannelFactory implements DataChannelFactory
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(GridFTPDataChannelFactory.class);
 
     @Override

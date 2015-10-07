@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class PassiveConnectTask extends Task
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(PassiveConnectTask.class);
 
     protected ServerSocket myServer;

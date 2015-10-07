@@ -342,7 +342,7 @@ public class FileInfo
 
     public String getModeAsString()
     {
-        StringBuffer modeStr = new StringBuffer();
+        StringBuilder modeStr = new StringBuilder();
         for (int j = 2; j >= 0; j--) {
             int oct = 0;
             for (int i = 2; i >= 0; i--) {
@@ -404,12 +404,12 @@ public class FileInfo
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("FileInfo: ");
-        buf.append(getName() + " ");
-        buf.append(getSize() + " ");
-        buf.append(getDate() + " ");
-        buf.append(getTime() + " ");
+        buf.append(getName()).append(" ");
+        buf.append(getSize()).append(" ");
+        buf.append(getDate()).append(" ");
+        buf.append(getTime()).append(" ");
 
         switch (fileType) {
         case DIRECTORY_TYPE:
@@ -424,7 +424,7 @@ public class FileInfo
         default:
             buf.append("unknown type");
         }
-        buf.append(" " + getModeAsString());
+        buf.append(" ").append(getModeAsString());
 
         return buf.toString();
     }

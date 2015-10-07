@@ -15,10 +15,10 @@ public interface MlsxEntryWriter
      * @param entry the file/directory entry
      * @return true to continue, false to stop writer
      */
-    public void write(MlsxEntry entry) throws IOException;
+    void write(MlsxEntry entry) throws IOException;
 
     /**
      * Notifies the writer that the stream of entries has ended.
      */
-    public void close();
+    void close();
 }

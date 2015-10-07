@@ -32,7 +32,7 @@ public class EBlockImageDCReader
     boolean eodReceived = false;
     boolean willCloseReceived = false;
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(EBlockImageDCReader.class);
 
     protected DataInputStream input;

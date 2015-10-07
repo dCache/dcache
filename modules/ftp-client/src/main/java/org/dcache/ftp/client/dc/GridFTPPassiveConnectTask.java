@@ -36,11 +36,11 @@ import org.slf4j.LoggerFactory;
 public class GridFTPPassiveConnectTask extends PassiveConnectTask
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(GridFTPPassiveConnectTask.class);
 
     // alias to session
-    GridFTPSession gSession;
+    final GridFTPSession gSession;
 
     public GridFTPPassiveConnectTask(ServerSocket myServer,
                                      DataSink sink,

@@ -24,7 +24,7 @@ public class ChecksumAlgorithm
     public static final ChecksumAlgorithm MD5 =
             new ChecksumAlgorithm("MD5");
 
-    protected String argument;
+    protected final String argument;
 
     public ChecksumAlgorithm(String name)
     {

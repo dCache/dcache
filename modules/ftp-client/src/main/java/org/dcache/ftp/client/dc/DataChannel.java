@@ -25,15 +25,15 @@ import org.dcache.ftp.client.DataSink;
 public interface DataChannel
 {
 
-    public void startTransfer(DataSink sink,
-                              BasicServerControlChannel localControlChannel,
-                              TransferContext context)
+    void startTransfer(DataSink sink,
+                       BasicServerControlChannel localControlChannel,
+                       TransferContext context)
             throws Exception;
 
-    public void startTransfer(DataSource source,
-                              BasicServerControlChannel localControlChannel,
-                              TransferContext context)
+    void startTransfer(DataSource source,
+                       BasicServerControlChannel localControlChannel,
+                       TransferContext context)
             throws Exception;
 
-    public void close() throws IOException;
+    void close() throws IOException;
 } 

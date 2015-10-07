@@ -21,6 +21,6 @@ package org.dcache.ftp.client.dc;
 public interface SocketOperator
 {
 
-    public void operate(SocketBox s) throws Exception;
+    void operate(SocketBox s) throws Exception;
 
 }

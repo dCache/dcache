@@ -20,9 +20,9 @@ import java.net.Socket;
 public interface SocketBox
 {
 
-    public void setSocket(Socket s);
+    void setSocket(Socket s);
 
-    public Socket getSocket();
+    Socket getSocket();
 
 }
 

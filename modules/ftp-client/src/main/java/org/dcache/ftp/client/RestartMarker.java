@@ -18,6 +18,6 @@ package org.dcache.ftp.client;
 public interface RestartMarker extends Marker
 {
 
-    public String toFtpCmdArgument();
+    String toFtpCmdArgument();
 
 }

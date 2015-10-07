@@ -26,7 +26,7 @@ public class FTPReplyParseException extends FTPException
     public static final int FIRST_3_CHARS = 2;
     public static final int UNEXPECTED_4TH_CHAR = 3;
     public static final int MESSAGE_UNPARSABLE = 4;
-    private static String[] codeExplained;
+    private static final String[] codeExplained;
 
     static {
         codeExplained = new String[]{

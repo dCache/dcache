@@ -23,10 +23,10 @@ public class TaskThread implements Runnable
 
     static final int MAX_TASK_QUEUE = 100;
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(TaskThread.class);
 
-    protected Buffer buffer;
+    protected final Buffer buffer;
     protected boolean stop;
     protected Thread thread;
 
@@ -103,11 +103,11 @@ public class TaskThread implements Runnable
     class Buffer
     {
 
-        protected Object[] buf;
+        protected final Object[] buf;
         protected int in = 0;
         protected int out = 0;
         protected int count = 0;
-        protected int size;
+        protected final int size;
 
         public Buffer(int size)
         {

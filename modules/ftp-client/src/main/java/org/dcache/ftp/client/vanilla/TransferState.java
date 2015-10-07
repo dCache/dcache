@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class TransferState
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(TransferState.class);
 
     private int transferDone;

@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 public class GridFTPActiveConnectTask extends Task
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(GridFTPActiveConnectTask.class);
 
     protected HostPort hostPort;

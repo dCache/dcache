@@ -29,6 +29,6 @@ public interface MarkerListener
      * When writing your implementation, assume this method
      * being called whenever a marker arrives.
      **/
-    public void markerArrived(Marker m);
+    void markerArrived(Marker m);
 
 }

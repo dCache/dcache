@@ -25,5 +25,5 @@ public interface RestartData
      * @return the restart data in the format of REST command argument.
      * For instance (in GridFTP) "4-50,62-75"
      **/
-    public String toFtpCmdArgument();
+    String toFtpCmdArgument();
 }

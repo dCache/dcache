@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class SimpleSocketBox implements SocketBox
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(SimpleSocketBox.class);
 
     protected Socket socket;

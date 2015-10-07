@@ -63,7 +63,7 @@ import org.dcache.ftp.client.vanilla.TransferState;
 public class FTPClient
 {
 
-    private static Logger logger = LoggerFactory.getLogger(FTPClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(FTPClient.class);
 
     // represents the state of interaction with remote server
     protected Session session;
@@ -396,7 +396,7 @@ public class FTPClient
     private class ByteArrayDataSink implements DataSink
     {
 
-        private ByteArrayOutputStream received;
+        private final ByteArrayOutputStream received;
 
         public ByteArrayDataSink()
         {
@@ -2087,7 +2087,7 @@ public class FTPClient
      * @param mListener     marker listener.
      *                      Can be set to null.
      */
-    static public void transfer(FTPClient source,
+    public static void transfer(FTPClient source,
                                 String remoteSrcFile,
                                 FTPClient destination,
                                 String remoteDstFile,
@@ -2105,7 +2105,7 @@ public class FTPClient
             if (destination.isFeatureSupported(FeatureList.GETPUT)) {
                 destination.issueGETPUT("PUT", true, null,
                                         mode, remoteDstFile);
-                hp = ((GridFTPClient) destination).get127Reply();
+                hp = destination.get127Reply();
             } else {
                 if (mode > 0) {
                     destination.setMode(mode);
@@ -2196,9 +2196,7 @@ public class FTPClient
         algorithms = new ArrayList();
         for (FeatureList.Feature feature : cksumFeature) {
             String[] parms = feature.getParms().split(",");
-            for (String parm : parms) {
-                algorithms.add(parm);
-            }
+            Collections.addAll(algorithms, parms);
         }
         return algorithms;
     }
@@ -2340,7 +2338,6 @@ public class FTPClient
                                       cksumReply.getMessage());
         }
 
-        return;
     }
 
 } //FTPClient

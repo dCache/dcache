@@ -20,6 +20,6 @@ import org.dcache.ftp.client.Session;
 public interface DataChannelFactory
 {
 
-    public DataChannel getDataChannel(Session state, SocketBox socketBox);
+    DataChannel getDataChannel(Session state, SocketBox socketBox);
 
 }

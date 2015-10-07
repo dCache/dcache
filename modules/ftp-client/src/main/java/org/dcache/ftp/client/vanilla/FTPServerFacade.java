@@ -85,7 +85,7 @@ import org.dcache.util.NetworkUtils;
 public class FTPServerFacade
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(FTPServerFacade.class);
 
     /**
@@ -98,10 +98,10 @@ public class FTPServerFacade
     public static final int DEFAULT_QUEUE = 100;
 
     protected Session session;
-    protected LocalControlChannel localControlChannel;
+    protected final LocalControlChannel localControlChannel;
     protected DataChannelFactory dataChannelFactory;
     protected ServerSocket serverSocket;
-    protected FTPControlChannel remoteControlChannel;
+    protected final FTPControlChannel remoteControlChannel;
     protected HostPort remoteServerAddress;
 
     // used only by FTPServerFacade

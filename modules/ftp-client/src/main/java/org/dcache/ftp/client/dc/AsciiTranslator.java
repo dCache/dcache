@@ -27,13 +27,13 @@ public class AsciiTranslator
     protected boolean possibleBreak = false;
 
     /* enables checking for \r\n */
-    protected boolean rnSep;
+    protected final boolean rnSep;
     /* enables checking for \n */
-    protected boolean nSep;
+    protected final boolean nSep;
 
-    protected byte[] lineSep;
+    protected final byte[] lineSep;
 
-    protected static byte[] systemLineSep;
+    protected static final byte[] systemLineSep;
 
     static {
         systemLineSep = System.getProperty("line.separator").getBytes();

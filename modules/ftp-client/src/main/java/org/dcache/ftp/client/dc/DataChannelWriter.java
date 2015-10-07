@@ -23,11 +23,11 @@ import org.dcache.ftp.client.Buffer;
 public interface DataChannelWriter
 {
 
-    public void setDataStream(OutputStream out);
+    void setDataStream(OutputStream out);
 
     // looks like DataSink interface
 
-    public void write(Buffer buffer)
+    void write(Buffer buffer)
             throws IOException;
 
     /*
@@ -36,13 +36,13 @@ public interface DataChannelWriter
       will not necessarily be closed.
       E.g. in stream mode, do nothing. In Eblock mode, send EOD|EOF.
      */
-    public void endOfData()
+    void endOfData()
             throws IOException;
 
     /*
       Close the underlying resources (the socket)
      */
-    public void close()
+    void close()
             throws IOException;
 
 }

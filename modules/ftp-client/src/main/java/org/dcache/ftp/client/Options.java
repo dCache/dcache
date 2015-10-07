@@ -21,7 +21,7 @@ package org.dcache.ftp.client;
 public abstract class Options
 {
 
-    protected String command;
+    protected final String command;
 
     /**
      * @param cmd command whose options are represent by this object

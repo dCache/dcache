@@ -31,8 +31,8 @@ public class FileRandomIO
 
     public static final int DEFAULT_BUFFER_SIZE = 16384;
 
-    protected int bufferSize;
-    protected RandomAccessFile file;
+    protected final int bufferSize;
+    protected final RandomAccessFile file;
     protected long offset;
 
     /**

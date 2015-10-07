@@ -44,7 +44,7 @@ public class GridFTPRestartMarker implements Marker
     private static Logger logger =
             LoggerFactory.getLogger(GridFTPRestartMarker.class);
 
-    Vector vector;
+    final Vector vector;
 
 
     /**
@@ -110,8 +110,6 @@ public class GridFTPRestartMarker implements Marker
         }
     }
 
-    ;
-
     private void badMsg(String why, String msg)
     {
         throw new IllegalArgumentException(
@@ -133,7 +131,5 @@ public class GridFTPRestartMarker implements Marker
     {
         return vector;
     }
-
-    ;
 
 }

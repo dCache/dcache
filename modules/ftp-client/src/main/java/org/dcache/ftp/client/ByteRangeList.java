@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public class ByteRangeList implements RestartData
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(ByteRangeList.class);
 
     /**
@@ -49,7 +49,7 @@ public class ByteRangeList implements RestartData
      * nor have a common subset.
      * They are unordered, however.
      **/
-    protected Vector vector;
+    protected final Vector vector;
 
     public ByteRangeList()
     {
@@ -204,7 +204,7 @@ public class ByteRangeList implements RestartData
     {
         char comma = ',';
         boolean first = true;
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i < vector.size(); i++) {
 
             if (first) {

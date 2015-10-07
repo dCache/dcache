@@ -21,7 +21,7 @@ package org.dcache.ftp.client;
 public class ChecksumOptions extends Options
 {
 
-    protected ChecksumAlgorithm algo;
+    protected final ChecksumAlgorithm algo;
 
     /**
      * @param cmd command whose options are represent by this object

@@ -23,7 +23,7 @@ public class StreamModeRestartMarker
         implements Marker, RestartData
 {
 
-    protected long offset;
+    protected final long offset;
 
     public StreamModeRestartMarker(long offset)
     {

@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory;
 public class StripeContextManager
 {
 
-    static Logger logger =
+    static final Logger logger =
             LoggerFactory.getLogger(StripeContextManager.class);
 
-    protected int stripes;
-    protected StripeTransferContext contextList[];
+    protected final int stripes;
+    protected final StripeTransferContext[] contextList;
     protected int stripeQuitTokens = 0;
     protected Object contextQuitToken = new Object();
 
@@ -92,7 +92,7 @@ public class StripeContextManager
     class StripeTransferContext extends EBlockParallelTransferContext
     {
 
-        StripeContextManager mgr;
+        final StripeContextManager mgr;
 
         public StripeTransferContext(StripeContextManager mgr)
         {

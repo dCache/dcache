@@ -37,7 +37,7 @@ public class Reply
         implements Serializable
 {
 
-    private static Logger logger = LoggerFactory.getLogger(Reply.class);
+    private static final Logger logger = LoggerFactory.getLogger(Reply.class);
 
     public static final int POSITIVE_PRELIMINARY = 1;
     public static final int POSITIVE_COMPLETION = 2;
@@ -60,8 +60,6 @@ public class Reply
     protected Reply()
     {
     }
-
-    ;
 
     /**
      * @throws EOFException           on end of stream
@@ -139,7 +137,7 @@ public class Reply
                 logger.debug("lenght of line.separator on this OS: " +
                              lineSeparator.length());
             }
-            StringBuffer buf = new StringBuffer(message);
+            StringBuilder buf = new StringBuilder(message);
             for (; ; ) {
                 logger.debug("read line");
                 line = input.readLine();

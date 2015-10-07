@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class GridFTPTransferSinkThread extends TransferSinkThread
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(GridFTPTransferSinkThread.class);
 
     // utility alias to context

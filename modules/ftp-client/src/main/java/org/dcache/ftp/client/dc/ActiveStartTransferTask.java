@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  **/
 public class ActiveStartTransferTask extends Task
 {
-    static Logger logger =
+    static final Logger logger =
             LoggerFactory.getLogger(ActiveStartTransferTask.class);
     HostPort hostPort;
     BasicServerControlChannel control;

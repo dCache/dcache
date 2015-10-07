@@ -34,13 +34,13 @@ import org.slf4j.LoggerFactory;
 public class TransferSourceThread extends TransferThread
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(TransferSourceThread.class);
 
     protected DataChannelWriter writer;
-    protected DataSource source;
-    protected BasicServerControlChannel localControlChannel;
-    protected TransferContext context;
+    protected final DataSource source;
+    protected final BasicServerControlChannel localControlChannel;
+    protected final TransferContext context;
     protected SocketBox socketBox = null;
 
     public TransferSourceThread(AbstractDataChannel dataChannel,

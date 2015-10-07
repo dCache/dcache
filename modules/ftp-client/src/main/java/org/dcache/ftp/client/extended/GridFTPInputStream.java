@@ -40,7 +40,7 @@ public class GridFTPInputStream extends GssInputStream
             return null;
         }
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append((char) c);
         while ((c = this.in.read()) != -1) {
             if (c == '\r') {
@@ -84,7 +84,7 @@ public class GridFTPInputStream extends GssInputStream
         if (line.length() > 4 && line.charAt(3) == '-') {
             String lineSeparator = System.getProperty("line.separator");
             String lastLineStarts = line.substring(0, 3) + ' ';
-            StringBuffer buf = new StringBuffer();
+            StringBuilder buf = new StringBuilder();
             buf.append(line);
             for (; ; ) {
                 line = readLine();

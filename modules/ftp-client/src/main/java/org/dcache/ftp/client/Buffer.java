@@ -25,9 +25,9 @@ package org.dcache.ftp.client;
 public class Buffer
 {
 
-    protected byte[] buf;
-    protected int length;
-    protected long offset;
+    protected final byte[] buf;
+    protected final int length;
+    protected final long offset;
 
     /**
      * @param buf    the data buffer (always starts at 0)

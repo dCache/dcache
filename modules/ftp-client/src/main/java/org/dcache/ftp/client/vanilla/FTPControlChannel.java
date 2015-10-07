@@ -43,7 +43,7 @@ import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
 public class FTPControlChannel extends BasicClientControlChannel
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(FTPControlChannel.class);
 
     public static final String CRLF = "\r\n";

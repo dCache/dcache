@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractDataChannel implements DataChannel
 {
 
-    private static Logger logger = LoggerFactory.getLogger(AbstractDataChannel.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractDataChannel.class);
 
-    protected Session session;
+    protected final Session session;
 
     protected static Map dataHandlers;
 

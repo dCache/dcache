@@ -30,11 +30,11 @@ import org.slf4j.LoggerFactory;
 public class SocketPool
 {
 
-    private static Logger logger = LoggerFactory.getLogger(SocketPool.class);
+    private static final Logger logger = LoggerFactory.getLogger(SocketPool.class);
 
-    protected Hashtable allSockets = new Hashtable();
-    protected Hashtable freeSockets = new Hashtable();
-    protected Hashtable busySockets = new Hashtable();
+    protected final Hashtable allSockets = new Hashtable();
+    protected final Hashtable freeSockets = new Hashtable();
+    protected final Hashtable busySockets = new Hashtable();
 
     /**
      * Constructor for SocketPool.

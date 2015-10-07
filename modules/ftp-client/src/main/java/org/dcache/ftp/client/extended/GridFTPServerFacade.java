@@ -63,7 +63,7 @@ import org.dcache.util.NetworkUtils;
 public class GridFTPServerFacade extends FTPServerFacade
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(GridFTPServerFacade.class);
 
     // utility alias to session
@@ -291,7 +291,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         gSession.serverAddressList.add(hp);
 
         logger.debug("started single striped passive server at port " +
-                     ((HostPort) gSession.serverAddressList.get(0)).getPort());
+                     gSession.serverAddressList.get(0).getPort());
 
         return gSession.serverAddressList;
     }
@@ -422,8 +422,6 @@ public class GridFTPServerFacade extends FTPServerFacade
                             ManagedSocketBox.NON_REUSABLE);
                 }
 
-                return;
-
             } else if (session.serverMode == Session.SERVER_ACTIVE) {
 
                 //
@@ -502,8 +500,6 @@ public class GridFTPServerFacade extends FTPServerFacade
             exceptionToControlChannel(e, "ocurred during retrieve()");
         }
     }
-
-    ;
 
     //override
     @Override

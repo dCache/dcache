@@ -31,7 +31,7 @@ public class GridFTPDataChannel extends SimpleDataChannel
             LoggerFactory.getLogger(GridFTPDataChannel.class);
 
     // utility alias to session
-    protected GridFTPSession gSession;
+    protected final GridFTPSession gSession;
 
     public GridFTPDataChannel(Session session, SocketBox socketBox)
     {

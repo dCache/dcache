@@ -25,7 +25,7 @@ public class StreamImageDCReader implements DataChannelReader
 
     public static final int BUF_SIZE = 512000;
 
-    protected int bufferSize = BUF_SIZE;
+    protected final int bufferSize = BUF_SIZE;
     protected InputStream input;
 
     @Override

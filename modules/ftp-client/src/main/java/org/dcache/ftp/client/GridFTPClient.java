@@ -60,7 +60,7 @@ public class GridFTPClient extends FTPClient
     private static final Version VERSION = Version.of(GridFTPClient.class);
 
     //utility alias to session and localServer
-    protected GridFTPSession gSession;
+    protected final GridFTPSession gSession;
     protected GridFTPServerFacade gLocalServer;
     protected String usageString;
 
@@ -1075,8 +1075,8 @@ public class GridFTPClient extends FTPClient
     private class MlsxParserDataSink implements DataSink
     {
 
-        private MlsxEntryWriter writer;
-        private byte[] buf = new byte[4096];
+        private final MlsxEntryWriter writer;
+        private final byte[] buf = new byte[4096];
         private int pos = 0;
 
         public MlsxParserDataSink(MlsxEntryWriter w)

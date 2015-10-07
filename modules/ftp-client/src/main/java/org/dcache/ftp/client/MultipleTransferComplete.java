@@ -4,11 +4,11 @@ package org.dcache.ftp.client;
 public class
         MultipleTransferComplete
 {
-    public String remoteSrcFile;
-    public String remoteDstFile;
-    public GridFTPClient source;
-    public GridFTPClient destination;
-    public int index;
+    public final String remoteSrcFile;
+    public final String remoteDstFile;
+    public final GridFTPClient source;
+    public final GridFTPClient destination;
+    public final int index;
 
     public MultipleTransferComplete(
             String remoteSrcFile,

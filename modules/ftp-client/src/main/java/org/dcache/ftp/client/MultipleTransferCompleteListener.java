@@ -19,5 +19,5 @@ package org.dcache.ftp.client;
  **/
 public interface MultipleTransferCompleteListener
 {
-    public void transferComplete(MultipleTransferComplete mtc);
+    void transferComplete(MultipleTransferComplete mtc);
 }

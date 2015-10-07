@@ -38,10 +38,10 @@ import org.dcache.ftp.client.exception.FTPException;
 public class MlsxEntry
 {
 
-    private static Logger logger =
+    private static final Logger logger =
             LoggerFactory.getLogger(MlsxEntry.class);
 
-    private static SimpleDateFormat dateFormatter = null;
+    private static final SimpleDateFormat dateFormatter;
 
     public static final String SIZE = "size";
     public static final String MODIFY = "modify";
@@ -70,7 +70,7 @@ public class MlsxEntry
     public static final String ERROR_INVALIDLINK = "InvalidLink";
 
     private String fileName = null;
-    private Hashtable facts = new Hashtable();
+    private final Hashtable facts = new Hashtable();
 
     /**
      * Constructor for MlsxEntry.
@@ -150,16 +150,16 @@ public class MlsxEntry
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         Enumeration e = facts.keys();
 
         while (e.hasMoreElements()) {
             String key = (String) e.nextElement();
             String value = (String) facts.get(key);
-            buf.append(key + "=" + value + ";");
+            buf.append(key).append("=").append(value).append(";");
         }
 
-        buf.append(" " + fileName);
+        buf.append(" ").append(fileName);
 
         return buf.toString();
     }

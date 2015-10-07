@@ -31,24 +31,24 @@ import org.slf4j.LoggerFactory;
 public class TransferMonitor implements Runnable
 {
 
-    public final static int
+    public static final int
             LOCAL = 1,
             REMOTE = 2;
-    private int side; // source or dest 
+    private final int side; // source or dest
 
     private Logger logger = null;
 
-    private int maxWait;
-    private int ioDelay;
+    private final int maxWait;
+    private final int ioDelay;
 
-    private BasicClientControlChannel controlChannel;
-    private TransferState transferState;
-    private MarkerListener mListener;
+    private final BasicClientControlChannel controlChannel;
+    private final TransferState transferState;
+    private final MarkerListener mListener;
 
     private TransferMonitor other;
 
     private boolean abortable;
-    private Flag aborted = new Flag();
+    private final Flag aborted = new Flag();
 
     private Thread thread;
 

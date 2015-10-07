@@ -35,7 +35,7 @@ public interface DataSink
      * @param buffer the data buffer to write.
      * @throws IOException if an I/O error occurs.
      */
-    public void write(Buffer buffer)
+    void write(Buffer buffer)
             throws IOException;
 
     /**
@@ -44,7 +44,7 @@ public interface DataSink
      *
      * @throws IOException if an I/O error occurs.
      */
-    public void close()
+    void close()
             throws IOException;
 
 }

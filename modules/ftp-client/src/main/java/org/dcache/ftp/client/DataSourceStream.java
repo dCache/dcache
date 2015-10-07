@@ -28,8 +28,8 @@ public class DataSourceStream implements DataSource
 
     private static final int DEFAULT_BUFFER_SIZE = 16384;
 
-    protected InputStream in;
-    protected int bufferSize;
+    protected final InputStream in;
+    protected final int bufferSize;
     protected long totalRead = 0;
 
     public DataSourceStream(InputStream in)

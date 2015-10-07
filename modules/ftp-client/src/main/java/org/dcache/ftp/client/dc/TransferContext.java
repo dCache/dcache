@@ -30,5 +30,5 @@ public interface TransferContext
      *
      * @return a non-null token is a permission for closing, null means no permission.
      **/
-    public Object getQuitToken();
+    Object getQuitToken();
 }

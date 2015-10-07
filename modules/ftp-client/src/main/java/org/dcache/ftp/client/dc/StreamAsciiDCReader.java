@@ -22,7 +22,7 @@ import org.dcache.ftp.client.Buffer;
 public class StreamAsciiDCReader extends StreamImageDCReader
 {
 
-    protected AsciiTranslator translator;
+    protected final AsciiTranslator translator;
 
     public StreamAsciiDCReader()
     {

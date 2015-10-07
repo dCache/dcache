@@ -38,7 +38,7 @@ public class ServerException extends FTPException
     public static final int REPLY_TIMEOUT = 4;
     public static final int PREVIOUS_TRANSFER_ACTIVE = 5;
 
-    private static String[] codeExplained;
+    private static final String[] codeExplained;
 
     static {
         codeExplained = new String[]

@@ -43,8 +43,6 @@ public class StreamImageDCWriter implements DataChannelWriter
     {
     }
 
-    ;
-
     @Override
     public void close()
             throws IOException

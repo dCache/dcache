@@ -26,7 +26,7 @@ public class PerfMarkerException extends FTPException
      **/
     public static final int NO_SUCH_PARAMETER = 1;
 
-    private static String[] codeExplained;
+    private static final String[] codeExplained;
 
     static {
         codeExplained = new String[]

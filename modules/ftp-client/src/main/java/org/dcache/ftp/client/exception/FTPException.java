@@ -31,7 +31,7 @@ public class FTPException extends Exception
 
     protected int code = UNSPECIFIED;
 
-    private static String[] codeExplained = {"Unspecified category."};
+    private static final String[] codeExplained = {"Unspecified category."};
 
     public String getCodeExplanation(int code)
     {
@@ -99,7 +99,7 @@ public class FTPException extends Exception
     @Override
     public String getMessage()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         if (code != UNSPECIFIED) {
             buf.append(getCodeExplanation(code));
         }

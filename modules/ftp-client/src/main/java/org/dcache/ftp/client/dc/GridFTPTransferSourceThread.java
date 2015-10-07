@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class GridFTPTransferSourceThread extends TransferSourceThread
 {
 
-    protected static Logger logger =
+    protected static final Logger logger =
             LoggerFactory.getLogger(GridFTPTransferSourceThread.class);
 
     // utility alias to context
