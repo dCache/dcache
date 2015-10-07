@@ -32,6 +32,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.TimeoutCacheException;
 
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.namespace.FileType;
 import org.dcache.util.OptionParser;
 
@@ -65,6 +66,7 @@ public class AbstractFtpDoorV1Test {
         door._doorRootPath = new FsPath("pathRoot");
         door._cwd = "/cwd";
         door._pnfs = pnfs;
+        door._authz = Restrictions.none();
     }
 
     @After

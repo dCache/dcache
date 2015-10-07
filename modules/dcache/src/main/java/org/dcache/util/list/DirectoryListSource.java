@@ -9,6 +9,7 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FsPath;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.Glob;
 
@@ -39,7 +40,7 @@ public interface DirectoryListSource
      * @return A DirectoryStream of the entries in the directory
      * @see #list(FsPath path, Glob pattern, Range<Integer> range, Set<FileAttribute> attrs)
      */
-    DirectoryStream list(Subject subject, FsPath path,
+    DirectoryStream list(Subject subject, Restriction restriction, FsPath path,
                          Glob pattern, Range<Integer> range)
         throws InterruptedException, CacheException;
 
@@ -67,7 +68,7 @@ public interface DirectoryListSource
      * @param attrs The file attributes to query for each entry
      * @return A DirectoryStream of the entries in the directory
      */
-    DirectoryStream list(Subject subject, FsPath path,
+    DirectoryStream list(Subject subject, Restriction restriction, FsPath path,
                          Glob pattern, Range<Integer> range,
                          Set<FileAttribute> attrs)
         throws InterruptedException, CacheException;
@@ -79,8 +80,9 @@ public interface DirectoryListSource
      * @param printer The ListPrinter used to print the directory entry
      * @param path The path to the entry to print
      */
-    void printFile(Subject subject, DirectoryListPrinter printer, FsPath path)
-        throws InterruptedException, CacheException;
+    void printFile(Subject subject, Restriction restriction,
+            DirectoryListPrinter printer, FsPath path)
+            throws InterruptedException, CacheException;
 
     /**
      * Prints the entries of a directory using a DirectoryListPrinter.
@@ -94,7 +96,7 @@ public interface DirectoryListSource
      * @param range A range used to filter which entries to print
      * @return The number of entries in the directory
      */
-    int printDirectory(Subject subject, DirectoryListPrinter printer,
-                       FsPath path, Glob glob, Range<Integer> range)
-        throws InterruptedException, CacheException;
+    int printDirectory(Subject subject, Restriction restriction,
+            DirectoryListPrinter printer, FsPath path, Glob glob, Range<Integer> range)
+            throws InterruptedException, CacheException;
 }

@@ -23,6 +23,7 @@ import diskCacheV111.util.PnfsHandler;
 
 import dmg.cells.nucleus.CellMessageReceiver;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.util.CacheExceptionFactory;
 import org.dcache.util.Glob;
@@ -61,35 +62,43 @@ public class ListDirectoryHandler
     /**
      * Sends a directory list request to PnfsManager. The result is
      * provided as a stream of directory entries.
-     *
+     * <p>
      * The method blocks until the first set of directory entries have
      * been received from the server.  Hence errors like
      * FILE_NOT_FOUND are thrown by the call to the list method rather
      * than while iterating over the stream.
+     * <p>
+     * Note that supplied subject and restriction values will be overwritten if
+     * {@link PnfsHandler#setSubject} or {@link PnfsHandler#setRestriction} have
+     * been called on the underlying PnfsHandler instance.
      */
     @Override
     public DirectoryStream
-        list(Subject subject, FsPath path, Glob pattern, Range<Integer> range)
+        list(Subject subject, Restriction restriction, FsPath path, Glob pattern, Range<Integer> range)
         throws InterruptedException, CacheException
     {
-        return list(subject, path, pattern, range,
+        return list(subject, restriction, path, pattern, range,
                     EnumSet.noneOf(FileAttribute.class));
     }
 
     /**
      * Sends a directory list request to PnfsManager. The result is
      * provided as a stream of directory entries.
-     *
+     * <p>
      * The method blocks until the first set of directory entries have
      * been received from the server.  Hence errors like
      * FILE_NOT_FOUND are thrown by the call to the list method rather
      * than while iterating over the stream.
+     * <p>
+     * Note that supplied subject and restriction values will be overwritten if
+     * {@link PnfsHandler#setSubject} or {@link PnfsHandler#setRestriction} have
+     * been called on the underlying PnfsHandler instance.
      */
     @Override
     public DirectoryStream
-        list(Subject subject, FsPath path, Glob pattern, Range<Integer> range,
-             Set<FileAttribute> attributes)
-        throws InterruptedException, CacheException
+        list(Subject subject, Restriction restriction, FsPath path, Glob pattern,
+                Range<Integer> range, Set<FileAttribute> attributes)
+                throws InterruptedException, CacheException
     {
         String dir = path.toString();
         PnfsListDirectoryMessage msg =
@@ -99,6 +108,7 @@ public class ListDirectoryHandler
         Stream stream = new Stream(dir, uuid);
         try {
             msg.setSubject(subject);
+            msg.setRestriction(restriction);
             _replies.put(uuid, stream);
             _pnfs.send(msg);
             stream.waitForMoreEntries();
@@ -112,11 +122,11 @@ public class ListDirectoryHandler
     }
 
     @Override
-    public void printFile(Subject subject, DirectoryListPrinter printer,
-                          FsPath path)
-        throws InterruptedException, CacheException
+    public void printFile(Subject subject, Restriction restriction,
+            DirectoryListPrinter printer, FsPath path)
+            throws InterruptedException, CacheException
     {
-        PnfsHandler handler = new PnfsHandler(_pnfs, subject);
+        PnfsHandler handler = new PnfsHandler(_pnfs, subject, restriction);
         Set<FileAttribute> required = printer.getRequiredAttributes();
         FileAttributes attributes = handler.getFileAttributes(path.toString(), required);
         DirectoryEntry entry = new DirectoryEntry(path.getName(), attributes);
@@ -129,15 +139,15 @@ public class ListDirectoryHandler
     }
 
     @Override
-    public int printDirectory(Subject subject, DirectoryListPrinter printer,
-                              FsPath path, Glob glob, Range<Integer> range)
-        throws InterruptedException, CacheException
+    public int printDirectory(Subject subject, Restriction restriction,
+            DirectoryListPrinter printer, FsPath path, Glob glob, Range<Integer> range)
+            throws InterruptedException, CacheException
     {
         Set<FileAttribute> required =
             printer.getRequiredAttributes();
         FileAttributes dirAttr =
             _pnfs.getFileAttributes(path.toString(), required);
-        try (DirectoryStream stream = list(subject, path, glob, range, required)) {
+        try (DirectoryStream stream = list(subject, restriction, path, glob, range, required)) {
             int total = 0;
             for (DirectoryEntry entry: stream) {
                 printer.print(path, dirAttr, entry);

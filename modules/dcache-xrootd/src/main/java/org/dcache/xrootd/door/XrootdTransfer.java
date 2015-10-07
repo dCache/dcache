@@ -11,6 +11,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.vehicles.XrootdProtocolInfo;
 
@@ -20,8 +21,8 @@ public class XrootdTransfer extends RedirectedTransfer<InetSocketAddress>
     private InetSocketAddress _doorAddress;
     private int _fileHandle;
 
-    public XrootdTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
-        super(pnfs, subject, path);
+    public XrootdTransfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path) {
+        super(pnfs, subject, restriction, path);
     }
 
     public synchronized void setFileHandle(int fileHandle) {

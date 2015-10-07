@@ -22,6 +22,12 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.Glob;
 import org.dcache.vehicles.FileAttributes;
 
+/**
+ * Any mechanism of storing dCache namespace must implement this interface.
+ *
+ * Note that classes that implement NameSpaceProvider are NOT required to
+ * handle Restriction: it is the caller's responsibility to enforce this.
+ */
 public interface NameSpaceProvider
 {
     /**

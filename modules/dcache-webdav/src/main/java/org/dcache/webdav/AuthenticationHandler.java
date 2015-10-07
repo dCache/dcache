@@ -17,7 +17,6 @@ import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.NetLoggerBuilder;
@@ -47,10 +46,14 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
+
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.reverse;
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import static java.util.Arrays.asList;
 
 public class AuthenticationHandler extends HandlerWrapper {
@@ -60,11 +63,13 @@ public class AuthenticationHandler extends HandlerWrapper {
             "javax.servlet.request.X509Certificate";
     public static final String DCACHE_SUBJECT_ATTRIBUTE =
             "org.dcache.subject";
+    public static final String DCACHE_RESTRICTION_ATTRIBUTE =
+            "org.dcache.restriction";
 
     private static final InetAddress UNKNOWN_ADDRESS = InetAddresses.forString("0.0.0.0");
 
     private String _realm;
-    private boolean _isReadOnly;
+    private Restriction _doorRestriction;
     private boolean _isBasicAuthenticationEnabled;
     private LoginStrategy _loginStrategy;
     private PathMapper _pathMapper;
@@ -79,13 +84,6 @@ public class AuthenticationHandler extends HandlerWrapper {
         if (isStarted() && !baseRequest.isHandled()) {
             Subject subject = new Subject();
 
-            if (!isReadMethodsAllowed(request.getMethod())) {
-                LOG.debug("Failing {} from {} as door is read-only",
-                        request.getMethod(), request.getRemoteAddr());
-                response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-                return;
-            }
-
             try {
                 addX509ChainToSubject(request, subject);
                 addOriginToSubject(request, subject);
@@ -93,13 +91,11 @@ public class AuthenticationHandler extends HandlerWrapper {
 
                 LoginReply login = _loginStrategy.login(subject);
                 subject = login.getSubject();
+                Restriction restriction = Restrictions.concat(_doorRestriction, login.getRestriction());
 
                 request.setAttribute(DCACHE_SUBJECT_ATTRIBUTE, subject);
+                request.setAttribute(DCACHE_RESTRICTION_ATTRIBUTE, restriction);
 
-                if (!isAuthorizedMethod(request.getMethod(), login)) {
-                    throw new PermissionDeniedCacheException("Permission denied: " +
-                            "read-only user");
-                }
                 checkRootPath(request, login);
                 /* Process the request as the authenticated user.*/
                 Exception problem = Subject.doAs(subject, (PrivilegedAction<Exception>) () -> {
@@ -132,7 +128,6 @@ public class AuthenticationHandler extends HandlerWrapper {
             }
         }
     }
-
 
     /**
      * Verifies that the request is within the root directory of the given user.
@@ -267,36 +262,6 @@ public class AuthenticationHandler extends HandlerWrapper {
         }
     }
 
-    private boolean isAuthorizedMethod(String method, LoginReply login) {
-        return !isUserReadOnly(login) || isReadMethod(method);
-    }
-
-
-    private boolean isUserReadOnly(LoginReply login) {
-        for (LoginAttribute attribute: login.getLoginAttributes()) {
-            if (attribute instanceof ReadOnly) {
-                return ((ReadOnly) attribute).isReadOnly();
-            }
-        }
-        return false;
-    }
-
-    private boolean isReadMethodsAllowed(String method) {
-        return !_isReadOnly || isReadMethod(method);
-    }
-
-    private boolean isReadMethod(String method) {
-        switch (method) {
-        case "GET":
-        case "HEAD":
-        case "OPTIONS":
-        case "PROPFIND":
-            return true;
-        default:
-            return false;
-        }
-    }
-
     public String getRealm() {
         return _realm;
     }
@@ -308,15 +273,11 @@ public class AuthenticationHandler extends HandlerWrapper {
         _realm = realm;
     }
 
-    public boolean isReadOnly() {
-        return _isReadOnly;
-    }
-
     /**
      * Specifies whether the door is read only.
      */
     public void setReadOnly(boolean isReadOnly) {
-        _isReadOnly = isReadOnly;
+        _doorRestriction = isReadOnly ? Restrictions.readOnly() : Restrictions.none();
     }
 
     public void setEnableBasicAuthentication(boolean isEnabled) {

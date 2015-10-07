@@ -9,6 +9,8 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.TimeoutCacheException;
 
+import org.dcache.auth.attributes.Restriction;
+
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -20,12 +22,13 @@ public class RedirectedTransfer<T> extends Transfer
     private boolean _isRedirected;
     private T _redirectObject;
 
-    public RedirectedTransfer(PnfsHandler pnfs, Subject namespaceSubject, Subject subject, FsPath path) {
-        super(pnfs, namespaceSubject, subject, path);
+    public RedirectedTransfer(PnfsHandler pnfs, Subject namespaceSubject,
+            Restriction restriction, Subject subject, FsPath path) {
+        super(pnfs, namespaceSubject, restriction, subject, path);
     }
 
-    public RedirectedTransfer(PnfsHandler pnfs, Subject subject, FsPath path) {
-        super(pnfs, subject, path);
+    public RedirectedTransfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path) {
+        super(pnfs, subject, restriction, path);
     }
 
     /**

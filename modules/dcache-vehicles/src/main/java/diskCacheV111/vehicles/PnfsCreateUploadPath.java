@@ -26,6 +26,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.RetentionPolicy;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.CreateOption;
 
 /**
@@ -53,7 +54,7 @@ public class PnfsCreateUploadPath extends PnfsMessage
     private final String rootPath;
     private String uploadPath;
 
-    public PnfsCreateUploadPath(Subject subject, FsPath path, FsPath rootPath, Long size,
+    public PnfsCreateUploadPath(Subject subject, Restriction restriction, FsPath path, FsPath rootPath, Long size,
                                 AccessLatency accessLatency, RetentionPolicy retentionPolicy, String spaceToken,
                                 Set<CreateOption> options)
     {
@@ -64,6 +65,7 @@ public class PnfsCreateUploadPath extends PnfsMessage
         this.options = options;
         this.rootPath = rootPath.toString();
         setSubject(subject);
+        setRestriction(restriction);
         setPnfsPath(path.toString());
         setReplyRequired(true);
     }

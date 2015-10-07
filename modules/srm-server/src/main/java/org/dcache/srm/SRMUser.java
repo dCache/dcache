@@ -78,7 +78,6 @@ public interface SRMUser
 {
     int getPriority();
     Long getId();
-    boolean isReadOnly();
 
     /**
      * Provide a terse description of this user, such as a username.

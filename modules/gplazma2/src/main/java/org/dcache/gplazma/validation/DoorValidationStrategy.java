@@ -12,7 +12,6 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.LoginReply;
@@ -112,7 +111,6 @@ public class DoorValidationStrategy  implements ValidationStrategy {
     {
         boolean hasHome = false;
         boolean hasRoot = false;
-        boolean hasReadOnly = false;
 
         for(Object attribute:attributes) {
             if(attribute instanceof HomeDirectory) {
@@ -123,30 +121,23 @@ public class DoorValidationStrategy  implements ValidationStrategy {
                 checkAuthentication(!hasRoot, "multiple root-directories");
                 hasRoot = true;
             }
-            if(attribute instanceof ReadOnly) {
-                checkAuthentication(!hasReadOnly,
-                        "multiple read-only declarations");
-                hasReadOnly = true;
-            }
         }
 
-        checkAuthentication(hasHome && hasRoot && hasReadOnly,
-                attributesErrorMessage(hasHome, hasRoot, hasReadOnly));
+        checkAuthentication(hasHome && hasRoot, attributesErrorMessage(hasHome, hasRoot));
     }
 
-    private static String attributesErrorMessage(boolean hasHome,
-            boolean hasRoot, boolean hasReadOnly)
+    private static String attributesErrorMessage(boolean hasHome, boolean hasRoot)
     {
         StringBuilder errorMsg = new StringBuilder();
 
-        if(!hasHome) {
+        if (!hasHome) {
             errorMsg.append("no home-directory");
         }
-        if(!hasRoot) {
-            appendWithComma(errorMsg, "no root-directory");
-        }
-        if(!hasReadOnly) {
-            appendWithComma(errorMsg, "no read-only declaration");
+        if (!hasRoot) {
+            if (!hasHome) {
+                errorMsg.append(", ");
+            }
+            errorMsg.append("no root-directory");
         }
 
         return errorMsg.toString();

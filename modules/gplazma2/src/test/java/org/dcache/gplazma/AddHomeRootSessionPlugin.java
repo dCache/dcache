@@ -8,7 +8,8 @@ import java.util.Set;
 
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 
@@ -32,14 +33,15 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
     private final UserNamePrincipal user;
     private final HomeDirectory home;
     private final RootDirectory root;
-    private final ReadOnly readOnly;
+    private final Restriction restriction;
 
     public AddHomeRootSessionPlugin(Properties properties) {
 
         root = new RootDirectory(Preconditions.checkNotNull(properties.getProperty(ROOT_KEY), "Root directory must be set."));
         user = new UserNamePrincipal(properties.getProperty(USER_KEY, USER_DEFAULT));
         home = new HomeDirectory(properties.getProperty(HOME_KEY, HOME_DEFAULT));
-        readOnly = new ReadOnly(properties.getProperty(READONLY_KEY, READONLY_DEFAULT));
+        boolean isReadonly = Boolean.valueOf(properties.getProperty(READONLY_KEY, READONLY_DEFAULT));
+        restriction = isReadonly ? Restrictions.readOnly() : null;
     }
 
     @Override
@@ -49,7 +51,9 @@ public class AddHomeRootSessionPlugin implements GPlazmaSessionPlugin {
             if(principal.equals(user)) {
                 attrib.add(home);
                 attrib.add(root);
-                attrib.add(readOnly);
+                if (restriction != null) {
+                    attrib.add(restriction);
+                }
                 return;
             }
         }

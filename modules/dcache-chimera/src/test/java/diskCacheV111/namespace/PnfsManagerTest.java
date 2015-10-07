@@ -39,6 +39,7 @@ import diskCacheV111.vehicles.PnfsSetChecksumMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FileSystemProvider;
@@ -552,12 +553,12 @@ public class PnfsManagerTest
         FsPath path = new FsPath("/test");
 
         PnfsCreateUploadPath create =
-                new PnfsCreateUploadPath(Subjects.ROOT, path, root, null,
+                new PnfsCreateUploadPath(Subjects.ROOT, Restrictions.none(), path, root, null,
                                          null, null, null, EnumSet.noneOf(CreateOption.class));
         _pnfsManager.createUploadPath(create);
         assertThat(create.getReturnCode(), is(0));
 
-        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, create.getUploadPath(), path);
+        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, Restrictions.none(), create.getUploadPath(), path);
         _pnfsManager.cancelUpload(cancel);
         assertThat(cancel.getReturnCode(), is(0));
 
@@ -572,7 +573,7 @@ public class PnfsManagerTest
         FsPath path = new FsPath("/test");
 
         PnfsCreateUploadPath create =
-                new PnfsCreateUploadPath(Subjects.ROOT, path, root, null,
+                new PnfsCreateUploadPath(Subjects.ROOT, Restrictions.none(), path, root, null,
                                          null, null, null, EnumSet.noneOf(CreateOption.class));
         _pnfsManager.createUploadPath(create);
         assertThat(create.getReturnCode(), is(0));
@@ -582,7 +583,7 @@ public class PnfsManagerTest
         _fs.mkdir(create.getUploadPath().getParent() + "/baz");
         _fs.createFile(create.getUploadPath().getParent() + "/baz/baz");
 
-        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, create.getUploadPath(), path);
+        PnfsCancelUpload cancel = new PnfsCancelUpload(Subjects.ROOT, Restrictions.none(), create.getUploadPath(), path);
         _pnfsManager.cancelUpload(cancel);
         assertThat(cancel.getReturnCode(), is(0));
 

@@ -19,6 +19,8 @@ import diskCacheV111.vehicles.PoolMoverKillMessage;
 import dmg.cells.nucleus.CellAddressCore;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.auth.attributes.Restriction;
+
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -43,14 +45,14 @@ public abstract class AsynchronousRedirectedTransfer<T> extends Transfer
     private final Executor executor;
     private final Monitor monitor = new Monitor();
 
-    public AsynchronousRedirectedTransfer(Executor executor, PnfsHandler pnfs, Subject namespaceSubject, Subject subject, FsPath path) {
-        super(pnfs, namespaceSubject, subject, path);
+    public AsynchronousRedirectedTransfer(Executor executor, PnfsHandler pnfs, Subject namespaceSubject, Restriction restriction, Subject subject, FsPath path) {
+        super(pnfs, namespaceSubject, restriction, subject, path);
         this.executor = executor;
     }
 
-    public AsynchronousRedirectedTransfer(Executor executor, PnfsHandler pnfs, Subject subject, FsPath path)
+    public AsynchronousRedirectedTransfer(Executor executor, PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path)
     {
-        super(pnfs, subject, path);
+        super(pnfs, subject, restriction, path);
         this.executor = executor;
     }
 

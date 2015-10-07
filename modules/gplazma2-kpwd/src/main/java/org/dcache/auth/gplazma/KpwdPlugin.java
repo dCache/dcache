@@ -21,7 +21,7 @@ import org.dcache.auth.UserAuthRecord;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.UserPwdRecord;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.GPlazmaAccountPlugin;
@@ -305,6 +305,8 @@ public class KpwdPlugin
 
         attrib.add(new HomeDirectory(kpwd.home));
         attrib.add(new RootDirectory(kpwd.root));
-        attrib.add(new ReadOnly(kpwd.isReadOnly));
+        if (kpwd.isReadOnly) {
+            attrib.add(Restrictions.readOnly());
+        }
     }
 }

@@ -1,5 +1,9 @@
 package diskCacheV111.vehicles;
 
+import org.dcache.auth.attributes.Restriction;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Patrick F.
  * @author Timur Perelmutov. timur@fnal.gov
@@ -14,6 +18,7 @@ public class CopyManagerMessage extends Message
   private String dstPnfsPath;
   private int returnCode;
   private String description;
+  private Restriction restriction;
 
   private static final long serialVersionUID = -1490534904266183106L;
 
@@ -23,6 +28,16 @@ public class CopyManagerMessage extends Message
     setId(id);
     this.srcPnfsPath = srcPnfsPath;
     this.dstPnfsPath = dstPnfsPath;
+  }
+
+  public Restriction getRestriction()
+  {
+      return restriction;
+  }
+
+  public void setRestriction(Restriction restriction)
+  {
+      this.restriction = checkNotNull(restriction);
   }
 
   /** Getter for property gsiftpUrl.

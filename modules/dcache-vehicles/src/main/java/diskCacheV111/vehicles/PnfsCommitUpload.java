@@ -24,6 +24,7 @@ import java.util.Set;
 
 import diskCacheV111.util.FsPath;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.namespace.CreateOption;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.vehicles.FileAttributes;
@@ -44,12 +45,14 @@ public class PnfsCommitUpload extends PnfsMessage
     private FileAttributes fileAttributes;
 
     public PnfsCommitUpload(Subject subject,
+                            Restriction restriction,
                             FsPath uploadPath,
                             FsPath path,
                             Set<CreateOption> options,
                             Set<FileAttribute> requestedAttributes)
     {
         setSubject(subject);
+        setRestriction(restriction);
         setPnfsPath(path.toString());
         setReplyRequired(true);
         this.options = options;

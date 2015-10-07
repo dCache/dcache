@@ -16,9 +16,7 @@ import org.dcache.auth.GidPrincipal
 import org.dcache.auth.GroupNamePrincipal
 import org.dcache.auth.UidPrincipal
 import org.dcache.auth.UserNamePrincipal
-import org.dcache.auth.attributes.HomeDirectory
-import org.dcache.auth.attributes.ReadOnly
-import org.dcache.auth.attributes.RootDirectory
+import org.dcache.auth.attributes._
 import org.dcache.gplazma.AuthenticationException
 import org.dcache.gplazma.NoSuchPrincipalException
 import scala.collection.convert.WrapAsJava
@@ -282,7 +280,6 @@ class Ldap(properties : Properties) extends GPlazmaIdentityPlugin with GPlazmaSe
           sResult.foreach( searchResult => {
             attrib.add(new HomeDirectory(replaceKeywordsByAttributes(userHome, searchResult.getAttributes)))
             attrib.add(new RootDirectory(replaceKeywordsByAttributes(userRoot, searchResult.getAttributes)))
-            attrib.add(new ReadOnly(false))
           })
         } catch {
           case e: NamingException => throw new AuthenticationException("no mapping")

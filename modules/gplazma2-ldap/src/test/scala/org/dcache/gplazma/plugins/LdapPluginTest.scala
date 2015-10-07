@@ -12,7 +12,7 @@ import scala.collection.convert.WrapAsJava.setAsJavaSet
 
 import org.dcache.auth.{GroupNamePrincipal, GidPrincipal, UidPrincipal, UserNamePrincipal}
 import org.dcache.gplazma.NoSuchPrincipalException
-import org.dcache.auth.attributes.{ReadOnly, HomeDirectory, RootDirectory}
+import org.dcache.auth.attributes.{HomeDirectory, RootDirectory}
 
 
 /**
@@ -103,7 +103,6 @@ class LdapPluginTest extends FlatSpec with Matchers {
     attr should have size 3
     attr should contain (new HomeDirectory("/root"))
     attr should contain (new RootDirectory("/root/dcache-cloud/testuser/home"))
-    attr should contain (new ReadOnly(false))
   }
 
 }

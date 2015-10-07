@@ -21,7 +21,7 @@ import org.dcache.auth.LoginUidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.plugins.AuthzMapLineParser.UserAuthzInformation;
@@ -262,7 +262,9 @@ public class AuthzDbPlugin
         for (UserAuthzInformation mapping : mappings) {
             attrib.add(new HomeDirectory(mapping.getHome()));
             attrib.add(new RootDirectory(mapping.getRoot()));
-            attrib.add(new ReadOnly(mapping.isReadOnly()));
+            if (mapping.isReadOnly()) {
+                attrib.add(Restrictions.readOnly());
+            }
         }
     }
 }

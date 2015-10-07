@@ -8,8 +8,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.dcache.auth.attributes.LoginAttribute;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.filter;
 
 /**
  * Immutable encapsulation of a login result as provided by a
@@ -79,6 +82,27 @@ public class LoginReply
         return result;
     }
 
+    public Restriction getRestriction()
+    {
+        Iterable<Restriction> restrictions = filter(_attributes, Restriction.class);
+
+        Restriction restriction = null;
+
+        for (Restriction r : restrictions) {
+            if (restriction == null) {
+                restriction = r;
+            } else if (restriction.isSubsumedBy(r)) {
+                restriction = r;
+            } else if (r.isSubsumedBy(restriction)) {
+                // skip r, restriction is already more restrictive.
+            } else {
+                return Restrictions.concat(restrictions);
+            }
+        }
+
+        return restriction == null ? Restrictions.none() : restriction;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -102,6 +126,7 @@ public class LoginReply
         return result;
     }
 
+    @Override
     public String toString()
     {
         String name = Subjects.getDisplayName(_subject);

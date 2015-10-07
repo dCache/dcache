@@ -64,6 +64,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.util.TimebasedCounter;
 
 import org.dcache.acl.enums.AccessMask;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.commons.util.NDC;
 import org.dcache.namespace.FileAttribute;
@@ -138,9 +139,10 @@ public class Transfer implements Comparable<Transfer>
      * @param ioSubject        The subject performing the transfer
      * @param path             The path of the file to transfer
      */
-    public Transfer(PnfsHandler pnfs, Subject namespaceSubject, Subject ioSubject, FsPath path)
+    public Transfer(PnfsHandler pnfs, Subject namespaceSubject,
+            Restriction namespaceRestriction, Subject ioSubject, FsPath path)
     {
-        _pnfs = new PnfsHandler(pnfs, namespaceSubject);
+        _pnfs = new PnfsHandler(pnfs, namespaceSubject, namespaceRestriction);
         _subject = ioSubject;
         _path = path;
         _startedAt = System.currentTimeMillis();
@@ -156,9 +158,9 @@ public class Transfer implements Comparable<Transfer>
      * @param subject The subject performing the transfer and namespace operations
      * @param path    The path of the file to transfer
      */
-    public Transfer(PnfsHandler pnfs, Subject subject, FsPath path)
+    public Transfer(PnfsHandler pnfs, Subject subject, Restriction restriction, FsPath path)
     {
-        this(pnfs, subject, subject, path);
+        this(pnfs, subject, restriction, subject, path);
     }
 
     /**

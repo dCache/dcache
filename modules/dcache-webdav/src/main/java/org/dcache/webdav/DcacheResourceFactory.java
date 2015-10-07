@@ -26,6 +26,7 @@ import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupFile;
 
 import javax.security.auth.Subject;
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,13 +75,13 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.auth.SubjectWrapper;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.missingfiles.AlwaysFailMissingFileStrategy;
 import org.dcache.missingfiles.MissingFileStrategy;
@@ -577,7 +578,7 @@ public class DcacheResourceFactory
         try {
             while(true) {
                 try {
-                    PnfsHandler pnfs = new PnfsHandler(_pnfs, subject);
+                    PnfsHandler pnfs = new PnfsHandler(_pnfs, subject, getRestriction());
                     Set<FileAttribute> requestedAttributes =
                             buildRequestedAttributes();
                     FileAttributes attributes =
@@ -649,8 +650,9 @@ public class DcacheResourceFactory
                    URISyntaxException
     {
         Subject subject = getSubject();
+        Restriction restriction = getRestriction();
 
-        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, path);
+        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             boolean success = false;
@@ -697,9 +699,10 @@ public class DcacheResourceFactory
                    URISyntaxException
     {
         Subject subject = getSubject();
+        Restriction restriction = getRestriction();
 
         String uri = null;
-        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, path);
+        WriteTransfer transfer = new WriteTransfer(_pnfs, subject, restriction, path);
         _transfers.put((int) transfer.getId(), transfer);
         try {
             transfer.createNameSpaceEntry();
@@ -797,7 +800,7 @@ public class DcacheResourceFactory
                 }
             };
 
-        _list.printDirectory(getSubject(), printer, path, null,
+        _list.printDirectory(getSubject(), getRestriction(), printer, path, null,
                              Range.<Integer>all());
         return result;
     }
@@ -907,7 +910,7 @@ public class DcacheResourceFactory
                                   new FileLocalityWrapper(locality));
                     }
                 };
-        _list.printDirectory(getSubject(), printer, path, null,
+        _list.printDirectory(getSubject(), getRestriction(), printer, path, null,
                              Range.<Integer>all());
 
         t.write(new AutoIndentWriter(out));
@@ -920,7 +923,7 @@ public class DcacheResourceFactory
     public void deleteFile(FileAttributes attributes, FsPath path)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
         pnfs.deletePnfsEntry(attributes.getPnfsId(), path.toString(), EnumSet.of(REGULAR, LINK));
         sendRemoveInfoToBilling(attributes, path);
     }
@@ -944,7 +947,7 @@ public class DcacheResourceFactory
     public void deleteDirectory(PnfsId pnfsid, FsPath path)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
         pnfs.deletePnfsEntry(pnfsid, path.toString(),
                              EnumSet.of(DIR));
     }
@@ -956,7 +959,7 @@ public class DcacheResourceFactory
         makeDirectory(FileAttributes parent, FsPath path)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
         PnfsCreateEntryMessage reply =
             pnfs.createPnfsDirectory(path.toString());
         FileAttributes attributes =
@@ -968,7 +971,7 @@ public class DcacheResourceFactory
     public void move(FsPath sourcePath, PnfsId pnfsId, FsPath newPath)
         throws CacheException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
         pnfs.renameEntry(pnfsId, sourcePath.toString(), newPath.toString(), true);
     }
 
@@ -1000,10 +1003,11 @@ public class DcacheResourceFactory
             InterruptedException, URISyntaxException
     {
         Subject subject = getSubject();
+        Restriction restriction = getRestriction();
 
         String uri = null;
-        ReadTransfer transfer = new ReadTransfer(_pnfs, subject, path, pnfsid,
-                disposition);
+        ReadTransfer transfer = new ReadTransfer(_pnfs, subject, restriction,
+                path, pnfsid, disposition);
         transfer.setIsChecksumNeeded(isDigestRequested());
         _transfers.put((int) transfer.getId(), transfer);
         try {
@@ -1096,6 +1100,12 @@ public class DcacheResourceFactory
     private static Subject getSubject()
     {
         return Subject.getSubject(AccessController.getContext());
+    }
+
+    private Restriction getRestriction()
+    {
+        HttpServletRequest servletRequest = ServletRequest.getRequest();
+        return (Restriction) servletRequest.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 
     /**
@@ -1213,10 +1223,10 @@ public class DcacheResourceFactory
         private InetSocketAddress _clientAddressForPool;
         protected HttpProtocolInfo.Disposition _disposition;
 
-        public HttpTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
-                throws URISyntaxException
+        public HttpTransfer(PnfsHandler pnfs, Subject subject,
+                Restriction restriction, FsPath path) throws URISyntaxException
         {
-            super(pnfs, subject, path);
+            super(pnfs, subject, restriction, path);
             initializeTransfer(this, subject);
             _clientAddressForPool = getClientAddress();
 
@@ -1273,11 +1283,11 @@ public class DcacheResourceFactory
     private class ReadTransfer extends HttpTransfer
     {
         public ReadTransfer(PnfsHandler pnfs, Subject subject,
-                            FsPath path, PnfsId pnfsid,
+                            Restriction restriction, FsPath path, PnfsId pnfsid,
                             HttpProtocolInfo.Disposition disposition)
                 throws URISyntaxException
         {
-            super(pnfs, subject, path);
+            super(pnfs, subject, restriction, path);
             setPnfsId(pnfsid);
             _disposition = disposition;
         }
@@ -1350,10 +1360,10 @@ public class DcacheResourceFactory
      */
     private class WriteTransfer extends HttpTransfer
     {
-        public WriteTransfer(PnfsHandler pnfs, Subject subject, FsPath path)
-                throws URISyntaxException
+        public WriteTransfer(PnfsHandler pnfs, Subject subject,
+                Restriction restriction, FsPath path) throws URISyntaxException
         {
-            super(pnfs, subject, path);
+            super(pnfs, subject, restriction, path);
         }
 
         public void relayData(InputStream inputStream)

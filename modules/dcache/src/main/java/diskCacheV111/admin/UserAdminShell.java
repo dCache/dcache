@@ -65,6 +65,7 @@ import dmg.util.command.CommandLine;
 import dmg.util.command.HelpFormat;
 
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.namespace.FileType;
@@ -1019,8 +1020,8 @@ public class UserAdminShell
      */
     private DirectoryStream list(String dir, String pattern) throws InterruptedException, CacheException
     {
-        return _list.list(Subjects.ROOT, new FsPath(dir), new Glob(pattern), Range.<Integer>all(), EnumSet.of(
-                FileAttribute.TYPE));
+        return _list.list(Subjects.ROOT, Restrictions.none(), new FsPath(dir),
+                new Glob(pattern), Range.<Integer>all(), EnumSet.of(FileAttribute.TYPE));
     }
 
     /**

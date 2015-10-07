@@ -16,7 +16,7 @@ import java.util.Set;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PermissionDeniedCacheException;
 
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restrictions;
 
 /**
  * LoginStrategy which forms the union of allowed logins of several
@@ -99,7 +99,7 @@ public class UnionLoginStrategy implements LoginStrategy
         switch (_anonymousAccess) {
         case READONLY:
             _log.debug( "Allowing read-only access as an anonymous user");
-            reply.getLoginAttributes().add(new ReadOnly(true));
+            reply.getLoginAttributes().add(Restrictions.readOnly());
             if (origin.isPresent()) {
                 reply.getSubject().getPrincipals().add(origin.get());
             }
@@ -107,7 +107,6 @@ public class UnionLoginStrategy implements LoginStrategy
 
         case FULL:
             _log.debug( "Allowing full access as an anonymous user");
-            reply.getLoginAttributes().add(new ReadOnly(false));
             if (origin.isPresent()) {
                 reply.getSubject().getPrincipals().add(origin.get());
             }

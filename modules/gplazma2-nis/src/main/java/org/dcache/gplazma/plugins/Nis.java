@@ -21,7 +21,6 @@ import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
@@ -185,7 +184,6 @@ public class Nis implements GPlazmaIdentityPlugin, GPlazmaSessionPlugin, GPlazma
             Attributes userAttr = _ctx.getAttributes(NISMAP_PASSWORD_BY_NAME + "/" + principal.getName());
             attrib.add(new HomeDirectory((String) userAttr.get(HOME_DIR_ATTRIBUTE).get()));
             attrib.add(new RootDirectory("/"));
-            attrib.add(new ReadOnly(false));
         } catch (NamingException e) {
             throw new AuthenticationException("no mapping: "
                     + e.getMessage(), e);

@@ -17,7 +17,6 @@ import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.NoSuchPrincipalException;
@@ -134,7 +133,6 @@ public class Nsswitch implements GPlazmaMappingPlugin, GPlazmaIdentityPlugin, GP
     public void session(Set<Principal> authorizedPrincipals, Set<Object> attrib) throws AuthenticationException {
         attrib.add(new HomeDirectory("/"));
         attrib.add(new RootDirectory("/"));
-        attrib.add(new ReadOnly(false));
     }
 
     private int[] groupsOf(__password pwrecord) {

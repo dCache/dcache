@@ -22,7 +22,7 @@ import org.dcache.auth.PasswordCredential;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.AuthenticationException;
 
@@ -153,8 +153,7 @@ public class KpwdPluginTest
                               new GidPrincipal(1000, true),
                               new UserNamePrincipal("behrmann")),
               ImmutableSet.of(new HomeDirectory("/foo"),
-                              new RootDirectory("/bar"),
-                              new ReadOnly(false)));
+                              new RootDirectory("/bar")));
     }
 
     @Test
@@ -168,8 +167,7 @@ public class KpwdPluginTest
                               new GidPrincipal(1000, true),
                               new UserNamePrincipal("behrmann")),
               ImmutableSet.of(new HomeDirectory("/foo"),
-                              new RootDirectory("/bar"),
-                              new ReadOnly(false)));
+                              new RootDirectory("/bar")));
     }
 
     @Test
@@ -184,7 +182,7 @@ public class KpwdPluginTest
                               new UserNamePrincipal("behrmann2")),
               ImmutableSet.of(new HomeDirectory("/"),
                               new RootDirectory("/"),
-                              new ReadOnly(true)));
+                              Restrictions.readOnly()));
     }
 
     @Test(expected=AuthenticationException.class)
@@ -227,7 +225,7 @@ public class KpwdPluginTest
                               new UserNamePrincipal("behrmann2")),
               ImmutableSet.of(new HomeDirectory("/"),
                               new RootDirectory("/"),
-                              new ReadOnly(true)));
+                              Restrictions.readOnly()));
     }
 
     @Test
@@ -241,8 +239,7 @@ public class KpwdPluginTest
                               new GidPrincipal(1000, true),
                               new UserNamePrincipal("behrmann")),
               ImmutableSet.of(new HomeDirectory("/foo"),
-                              new RootDirectory("/bar"),
-                              new ReadOnly(false)));
+                              new RootDirectory("/bar")));
     }
 
     @Test
@@ -257,7 +254,7 @@ public class KpwdPluginTest
                               new UserNamePrincipal("behrmann2")),
               ImmutableSet.of(new HomeDirectory("/"),
                               new RootDirectory("/"),
-                              new ReadOnly(true)));
+                              Restrictions.readOnly()));
     }
 
     @Test(expected=AuthenticationException.class)
@@ -329,8 +326,7 @@ public class KpwdPluginTest
                               new UidPrincipal(1000),
                               new GidPrincipal(1000, true)),
               ImmutableSet.of(new HomeDirectory("/"),
-                              new RootDirectory("/"),
-                              new ReadOnly(false)));
+                              new RootDirectory("/")));
     }
 
     @Test
@@ -344,7 +340,7 @@ public class KpwdPluginTest
                               new GidPrincipal(2000, true)),
               ImmutableSet.of(new HomeDirectory("/"),
                               new RootDirectory("/"),
-                              new ReadOnly(true)));
+                              Restrictions.readOnly()));
     }
 
     @Test
@@ -358,7 +354,7 @@ public class KpwdPluginTest
                               new GidPrincipal(2000, true)),
               ImmutableSet.of(new HomeDirectory("/"),
                               new RootDirectory("/"),
-                              new ReadOnly(true)));
+                              Restrictions.readOnly()));
     }
 
     @Test
@@ -372,7 +368,7 @@ public class KpwdPluginTest
                               new GidPrincipal(2000, true)),
               ImmutableSet.of(new HomeDirectory("/"),
                               new RootDirectory("/"),
-                              new ReadOnly(true)));
+                              Restrictions.readOnly()));
     }
 
     @Test(expected=AuthenticationException.class)

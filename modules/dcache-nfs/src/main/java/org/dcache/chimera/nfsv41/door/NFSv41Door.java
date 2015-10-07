@@ -115,6 +115,8 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.stream.Stream;
 
+import org.dcache.auth.attributes.Restrictions;
+
 import static org.dcache.chimera.nfsv41.door.ExceptionUtils.asNfsException;
 
 public class NFSv41Door extends AbstractCellComponent implements
@@ -831,7 +833,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         private final Inode _nfsInode;
 
         NfsTransfer(PnfsHandler pnfs, Inode nfsInode, Subject ioSubject) {
-            super(pnfs, Subjects.ROOT, ioSubject,  new FsPath("/"));
+            super(pnfs, Subjects.ROOT, Restrictions.none(), ioSubject,  new FsPath("/"));
             _nfsInode = nfsInode;
         }
 

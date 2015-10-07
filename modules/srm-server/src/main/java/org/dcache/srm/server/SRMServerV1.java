@@ -10,7 +10,6 @@ import java.rmi.RemoteException;
 import org.dcache.commons.stats.RequestCounters;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.srm.SRM;
-import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMUser;
@@ -85,9 +84,6 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           try {
               requestCredential = srmAuth.getRequestCredential();
               user = srmAuth.getRequestUser();
-              if (user.isReadOnly()) {
-                  throw new SRMAuthorizationException("Session is read-only");
-              }
           } catch (SRMException sae) {
               log.error(sae.getMessage());
               throw new java.rmi.RemoteException(sae.getMessage());
@@ -469,9 +465,6 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           SRMUser user;
           try {
               user = srmAuth.getRequestUser();
-              if (user.isReadOnly()) {
-                  throw new SRMAuthorizationException("Session is read-only");
-              }
           }
           catch (SRMException sae) {
               log.error(sae.getMessage());
@@ -479,7 +472,6 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
           }
 
           try {
-
               srm.advisoryDelete(user,arg0);
           } catch(Exception e) {
              log.error(e.toString());

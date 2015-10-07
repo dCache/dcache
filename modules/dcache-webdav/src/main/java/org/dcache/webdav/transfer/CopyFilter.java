@@ -52,11 +52,13 @@ import diskCacheV111.util.PnfsHandler;
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.namespace.FileType;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.webdav.PathMapper;
 import org.dcache.webdav.transfer.RemoteTransferHandler.Direction;
+import org.dcache.webdav.AuthenticationHandler;
 import org.dcache.webdav.transfer.RemoteTransferHandler.TransferType;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -425,7 +427,7 @@ public class CopyFilter implements Filter
      */
     private void checkPath(FsPath path, Direction direction) throws ErrorResponseException
     {
-        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject());
+        PnfsHandler pnfs = new PnfsHandler(_pnfs, getSubject(), getRestriction());
 
         // Always check any client-supplied Overwrite header.
         boolean overwriteAllowed = clientAllowsOverwrite();
@@ -480,5 +482,11 @@ public class CopyFilter implements Filter
     private Subject getSubject()
     {
         return Subject.getSubject(AccessController.getContext());
+    }
+
+    private Restriction getRestriction()
+    {
+        HttpServletRequest servletRequest = ServletRequest.getRequest();
+        return (Restriction) servletRequest.getAttribute(AuthenticationHandler.DCACHE_RESTRICTION_ATTRIBUTE);
     }
 }

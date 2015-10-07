@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +33,9 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CheckStagePermission;
 import diskCacheV111.util.DCapUrl;
+import diskCacheV111.util.FsPath;
 import diskCacheV111.util.InvalidMessageCacheException;
+import diskCacheV111.util.PermissionDeniedCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
@@ -48,6 +51,7 @@ import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.DirRequestMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
@@ -77,8 +81,9 @@ import org.dcache.auth.LoginStrategy;
 import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UnionLoginStrategy;
-import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Activity;
+import org.dcache.auth.attributes.Restrictions;
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.namespace.FileAttribute;
@@ -88,6 +93,7 @@ import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsGetFileAttributes;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.dcache.namespace.FileAttribute.*;
 import static org.dcache.namespace.FileType.DIR;
 import static org.dcache.namespace.FileType.REGULAR;
@@ -237,7 +243,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
     private boolean _isAccessLatencyOverwriteAllowed;
     private boolean _isRetentionPolicyOverwriteAllowed;
-    private final boolean _readOnlyDoor;
+    private final Restriction _doorRestriction;
 
     public DCapDoorInterpreterV3(CellEndpoint cell, PrintWriter pw,
             Subject subject, InetAddress clientAddress)
@@ -333,9 +339,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         String ro = _args.getOpt("read-only");
-        _readOnlyDoor = ( ro != null ) && ro.equalsIgnoreCase("true");
+        boolean isReadonly = Objects.equals(ro, "true");
+        _doorRestriction = isReadonly ? Restrictions.readOnly() : Restrictions.none();
 
-        if (_readOnlyDoor) {
+        if (isReadonly) {
             _log.debug("Door is configured as read-only");
         }
         else {
@@ -821,7 +828,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         protected Subject _subject;
         protected Origin _origin;
-        protected boolean _readOnly;
+        protected Restriction _authz = Restrictions.denyAll();
 
         protected SessionHandler(int sessionId, int commandId, VspArgs args)
         {
@@ -844,14 +851,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             LoginReply login = login(_vargs.getOpt("role"));
             _subject = login.getSubject();
             _origin = Subjects.getOrigin(_subject);
-
-            _readOnly = _readOnlyDoor;
-            for (LoginAttribute attribute: login.getLoginAttributes()) {
-                if (attribute instanceof ReadOnly) {
-                    _readOnly |= ((ReadOnly) attribute).isReadOnly();
-                }
-            }
-
+            _authz = Restrictions.concat(_doorRestriction, login.getRestriction());
             _info.setSubject(_subject);
         }
 
@@ -878,6 +878,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 doLogin();
                 doStart();
                 isStarted = true;
+            } catch (PermissionDeniedCacheException e) {
+                throw new CommandException(2, e.getMessage());
             } catch (CacheException e) {
                 throw new CommandException(e.getRc(), e.getMessage());
             } finally {
@@ -1084,8 +1086,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _pnfs = new PnfsHandler(_cell, new CellPath(_pnfsManagerName));
             if (_isUrl || _authorizationRequired) {
                 _pnfs.setSubject(_subject);
+                _pnfs.setRestriction(_authz);
             }
-
         }
 
         @Override
@@ -1334,16 +1336,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'unlink': Permission denied") ;
-            }
-        }
-
-        @Override
         public void fileAttributesAvailable()
         {
             try {
@@ -1401,16 +1393,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'chmod': Permission denied");
-            }
-        }
-
-        @Override
         public void fileAttributesAvailable()
         {
             try {
@@ -1443,16 +1425,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             _owner  = Integer.parseInt(owner_group[0]);
             if( owner_group.length == 2 ) {
                 _group = Integer.parseInt(owner_group[1]);
-            }
-        }
-
-        @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'chown': Permission denied");
             }
         }
 
@@ -1496,16 +1468,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'chgrp': Permission denied");
-            }
-        }
-
-        @Override
         public void fileAttributesAvailable(){
 
             try {
@@ -1535,16 +1497,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         {
             super( sessionId , commandId , args , true , false ) ;
             _newName = args.argv(1);
-        }
-
-        @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'rename': Permission denied");
-            }
         }
 
         @Override
@@ -1582,16 +1534,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'rmdir': Permission denied");
-            }
-        }
-
-        @Override
         public void fileAttributesAvailable()
         {
             try {
@@ -1619,20 +1561,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        protected void doLogin()
-            throws CacheException
-        {
-            super.doLogin();
-            if (_readOnly) {
-                throw new CacheException(2, "Cannot execute 'mkdir': Permission denied");
-            }
-        }
-
-        @Override
         public boolean fileAttributesNotAvailable() throws CacheException
         {
             String path = _message.getPnfsPath();
-           PnfsCreateEntryMessage  pnfsEntry = _pnfs.createPnfsDirectory(path, getUid(), getGid(),
+            PnfsCreateEntryMessage  pnfsEntry = _pnfs.createPnfsDirectory(path, getUid(), getGid(),
                                       getMode(NameSpaceProvider.DEFAULT));
             if (_vargs.hasOption("acl")) {
                 String aclString = _vargs.getOption("acl");
@@ -1647,7 +1579,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
         @Override
         public void fileAttributesAvailable() {
-
             sendReply("fileAttributesAvailable", 20, "Directory exists", "EEXIST");
             removeUs() ;
         }
@@ -1799,8 +1730,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             }finally{
                 removeUs();
             }
-
         }
+
         @Override
         public String toString(){ return "ck "+super.toString() ; }
     }
@@ -1910,10 +1841,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
         }
 
         @Override
-        public boolean fileAttributesNotAvailable() throws CacheException {
-            if(_readOnly && _ioMode.indexOf('w') >= 0) {
-                throw new CacheException( 2 , "Only read-only access allowed" );
-            }            //
+        public boolean fileAttributesNotAvailable() throws CacheException
+        {
+            //
             // hsm only support files in the cache.
             //
             if( _isHsmRequest ) {
@@ -1989,11 +1919,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
 
             if (_fileAttributes.getStorageInfo().isCreatedOnly() || _overwrite || _truncate ||
             ( _isHsmRequest && ( _ioMode.indexOf( 'w' ) >= 0 ) ) ){
-                if(_readOnly) {
-                    sendReply("fileAttributesAvailable", 1,"Only read-only access allowed" );
-                    removeUs() ;
-                    return ;
-                }                //
                 //
                 if (_isHsmRequest && _fileAttributes.getStorageInfo().isStored()){
                     sendReply( "fileAttributesAvailable", 1 ,
@@ -2163,6 +2088,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 new PnfsFlagMessage(pnfsId,"c", PnfsFlagMessage.FlagOperation.SET) ;
                 flag.setReplyRequired(false) ;
                 flag.setValue(checksumString);
+                flag.setPnfsPath(_path);
 
                 _pnfs.send(flag);
             }catch(RuntimeException eee ){
@@ -2422,7 +2348,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
             // we are not called if the pnfs request failed.
             //
 
-            String path = _message.getPnfsPath();
+            FsPath path = _message.getFsPath();
 
             if( _fileAttributes.getFileType() != DIR) {
                 sendReply( "fileAttributesAvailable" , 22, path +" is not a directory", "ENOTDIR" ) ;
@@ -2430,7 +2356,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener,
                 return ;
             }
 
-            PoolIoFileMessage poolIoFileMessage = new PoolIoFileMessage(_pool,_fileAttributes.getPnfsId(), _protocolInfo);
+            DirRequestMessage poolIoFileMessage = new DirRequestMessage(_pool,
+                    _fileAttributes.getPnfsId(), _protocolInfo, _authz);
 
             poolIoFileMessage.setId(_sessionId);
             if (_ioQueueName != null) {

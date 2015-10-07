@@ -290,23 +290,6 @@ public class SRMServerV2 implements ISRM  {
                 Character.toUpperCase(requestName.charAt(0))+
                 requestName.substring(1);
         try {
-            try {
-                if (user.isReadOnly()) {
-                    switch (requestName) {
-                    case "srmRmdir":
-                    case "srmMkdir":
-                    case "srmPrepareToPut":
-                    case "srmRm" :
-                    case "srmMv":
-                    case "srmSetPermission":
-                        throw new SRMAuthorizationException(requestName + " denied because account " +
-                                                                    user.getDisplayName() + " is read-only.");
-                    }
-                }
-            } catch (SRMAuthorizationException e) {
-                LOGGER.info(e.getMessage());
-                return getFailedResponse(capitalizedRequestName, e.getStatusCode(), "Permission denied.");
-            }
             LOGGER.debug("About to call {} handler", requestName);
             Constructor<?> handlerConstructor;
             Object handler;

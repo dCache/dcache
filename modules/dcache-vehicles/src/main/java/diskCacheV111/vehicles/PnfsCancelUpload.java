@@ -21,6 +21,8 @@ import javax.security.auth.Subject;
 
 import diskCacheV111.util.FsPath;
 
+import org.dcache.auth.attributes.Restriction;
+
 /**
  * Revoke a temporary upload path.
  *
@@ -34,9 +36,10 @@ public class PnfsCancelUpload extends PnfsMessage
 
     private final String uploadPath;
 
-    public PnfsCancelUpload(Subject subject, FsPath uploadPath, FsPath path)
+    public PnfsCancelUpload(Subject subject, Restriction restriction, FsPath uploadPath, FsPath path)
     {
         setSubject(subject);
+        setRestriction(restriction);
         setPnfsPath(path.toString());
         setReplyRequired(true);
         this.uploadPath = uploadPath.toString();

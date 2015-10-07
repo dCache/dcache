@@ -17,7 +17,7 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.configuration.Configuration;
 import org.dcache.gplazma.configuration.ConfigurationItem;
@@ -382,7 +382,7 @@ public class GPlazmaTests {
         Set<Object> expectedAttributes = new HashSet<>();
         expectedAttributes.add(new HomeDirectory(HOME_PATH_ARG_VALUE));
         expectedAttributes.add(new RootDirectory(ROOT_PATH_ARG_VALUE));
-        expectedAttributes.add(new ReadOnly(READ_ONLY_ARG_VALUE));
+        expectedAttributes.add(Restrictions.readOnly());
 
         Set<Object> resultAttributes = result.getSessionAttributes();
 

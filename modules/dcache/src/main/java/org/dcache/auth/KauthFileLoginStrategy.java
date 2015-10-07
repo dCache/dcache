@@ -17,7 +17,7 @@ import diskCacheV111.util.PermissionDeniedCacheException;
 
 import org.dcache.auth.attributes.HomeDirectory;
 import org.dcache.auth.attributes.LoginAttribute;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 
 /**
@@ -126,7 +126,9 @@ public class KauthFileLoginStrategy implements LoginStrategy
         Set<LoginAttribute> attributes = new HashSet<>();
         attributes.add(new HomeDirectory(record.Home));
         attributes.add(new RootDirectory(record.Root));
-        attributes.add(new ReadOnly(record.ReadOnly));
+        if (record.ReadOnly) {
+            attributes.add(Restrictions.readOnly());
+        }
         return attributes;
     }
 

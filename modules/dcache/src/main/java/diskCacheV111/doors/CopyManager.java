@@ -30,6 +30,7 @@ import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
 
+import org.dcache.auth.attributes.Restriction;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 import org.dcache.util.RedirectedTransfer;
@@ -309,6 +310,7 @@ public class CopyManager extends AbstractCellComponent
                               message.getId());
 
                     copy(message.getSubject(),
+                         message.getRestriction(),
                          new FsPath(message.getSrcPnfsPath()),
                          new FsPath(message.getDstPnfsPath()));
 
@@ -355,13 +357,14 @@ public class CopyManager extends AbstractCellComponent
         }
 
         private void copy(Subject subject,
+                          Restriction restriction,
                           FsPath srcPnfsFilePath,
                           FsPath dstPnfsFilePath)
             throws CacheException, InterruptedException
         {
             synchronized (this) {
-                _target = new RedirectedTransfer<>(_pnfsHandler, subject, dstPnfsFilePath);
-                _source = new Transfer(_pnfsHandler, subject, srcPnfsFilePath);
+                _target = new RedirectedTransfer<>(_pnfsHandler, subject, restriction, dstPnfsFilePath);
+                _source = new Transfer(_pnfsHandler, subject, restriction, srcPnfsFilePath);
             }
 
             _source.setPoolManagerStub(_poolManager);

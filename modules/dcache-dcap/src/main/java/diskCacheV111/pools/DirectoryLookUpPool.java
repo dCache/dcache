@@ -3,10 +3,14 @@
 package diskCacheV111.pools;
 
 import com.google.common.collect.Range;
+
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -15,7 +19,6 @@ import java.net.Socket;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -24,13 +27,16 @@ import diskCacheV111.util.NotDirCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.DirRequestMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.auth.Subjects;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.cells.AbstractCell;
 import org.dcache.util.Option;
 import org.dcache.namespace.FileAttribute;
@@ -100,17 +106,17 @@ public class DirectoryLookUpPool extends AbstractCell
     /**
      * List a directory.
      */
-    private String list(FsPath path)
+    private String list(FsPath path, Subject subject, Restriction restriction)
         throws InterruptedException, CacheException
     {
         StringBuilder sb = new StringBuilder();
         try {
-            _list.printDirectory(null, new DirectoryPrinter(sb),
+            _list.printDirectory(subject, restriction, new DirectoryPrinter(sb),
                                  path, null, Range.<Integer>all());
         } catch (FileNotFoundCacheException e) {
             sb.append("Path ").append(path).append(" does not exist.");
         } catch (NotDirCacheException e) {
-            _list.printFile(null, new FilePrinter(sb), path);
+            _list.printFile(subject, restriction, new FilePrinter(sb), path);
         }
         return sb.toString();
     }
@@ -199,7 +205,7 @@ public class DirectoryLookUpPool extends AbstractCell
         {
             try {
                 try {
-                    reply(list(_path));
+                    reply(list(_path, Subjects.ROOT, Restrictions.none()));
                 } catch (CacheException e) {
                     reply(e);
                 }
@@ -242,11 +248,13 @@ public class DirectoryLookUpPool extends AbstractCell
     // The io File Part
     //
     //
-    public PoolIoFileMessage messageArrived(PoolIoFileMessage message)
+    public DirRequestMessage messageArrived(DirRequestMessage message)
     {
         DCapProtocolInfo dcap = (DCapProtocolInfo) message.getProtocolInfo();
         PnfsId pnfsId = message.getPnfsId();
-        DirectoryService service = new DirectoryService(dcap, pnfsId);
+        Restriction restriction = message.getRestriction();
+        Subject subject = message.getSubject();
+        DirectoryService service = new DirectoryService(subject, restriction, dcap, pnfsId);
         new Thread(service, "list[" + pnfsId + "]").start();
         message.setSucceeded();
         return message;
@@ -263,21 +271,25 @@ public class DirectoryLookUpPool extends AbstractCell
      */
     private class DirectoryService implements Runnable
     {
-        private DCapProtocolInfo dcap;
-        private int sessionId;
+        private final DCapProtocolInfo dcap;
+        private final PnfsId pnfsId;
+        private final int sessionId;
+        private final Subject subject;
+        private final Restriction restriction;
 
         private DCapDataOutputStream ostream;
         private DataInputStream istream;
         private Socket dataSocket;
         private DCapDataOutputStream cntOut;
         private DataInputStream cntIn;
-        private PnfsId pnfsId;
 
-        DirectoryService(DCapProtocolInfo dcap, PnfsId pnfsId)
+        DirectoryService(Subject subject, Restriction restriction, DCapProtocolInfo dcap, PnfsId pnfsId)
         {
             this.dcap = dcap;
             this.pnfsId = pnfsId;
             this.sessionId = dcap.getSessionId();
+            this.subject = subject;
+            this.restriction = restriction;
         }
 
         @Override
@@ -291,7 +303,7 @@ public class DirectoryLookUpPool extends AbstractCell
 
             try {
                 FsPath path = _pnfs.getPathByPnfsId(pnfsId);
-                String dirList = list(path);
+                String dirList = list(path, subject, restriction);
 
                 connectToClinet();
 

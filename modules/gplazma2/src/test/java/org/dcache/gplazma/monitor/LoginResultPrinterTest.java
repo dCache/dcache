@@ -16,7 +16,8 @@ import org.dcache.auth.GidPrincipal;
 import org.dcache.auth.GroupNamePrincipal;
 import org.dcache.auth.UidPrincipal;
 import org.dcache.auth.attributes.HomeDirectory;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.monitor.LoginMonitor.Result;
@@ -55,7 +56,7 @@ public class LoginResultPrinterTest
 
     private static final HomeDirectory HOMEDIR = new HomeDirectory("/home/paul");
     private static final RootDirectory ROOTDIR = new RootDirectory("/");
-    private static final ReadOnly READONLY = new ReadOnly(false);
+    private static final Restriction POLICY = Restrictions.none();
 
     @Rule
     public TestName name = new TestName();
@@ -121,7 +122,7 @@ public class LoginResultPrinterTest
                         authorized, authorized)
                 );
 
-        Set<Object> attributes = attributes(HOMEDIR, ROOTDIR, READONLY);
+        Set<Object> attributes = attributes(HOMEDIR, ROOTDIR, POLICY);
 
         givenSessionPhaseWith(SUCCESS, authorized, authorized, attributes);
 

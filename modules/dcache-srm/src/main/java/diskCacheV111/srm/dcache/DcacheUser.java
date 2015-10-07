@@ -22,15 +22,12 @@ import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import diskCacheV111.util.FsPath;
 
 import org.dcache.auth.LoginReply;
-import org.dcache.auth.Origin;
 import org.dcache.auth.Subjects;
-import org.dcache.auth.attributes.ReadOnly;
+import org.dcache.auth.attributes.Restriction;
+import org.dcache.auth.attributes.Restrictions;
 import org.dcache.auth.attributes.RootDirectory;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.Request;
@@ -54,20 +51,18 @@ import static java.util.Collections.singleton;
  */
 public class DcacheUser implements SRMUser
 {
-    private static final ReadOnly READ_ONLY = new ReadOnly(true);
-
     private final Token token;
     private final Subject subject;
-    private final boolean isReadOnly;
     private final FsPath root;
     private final boolean isLoggedIn;
+    private final Restriction restriction;
 
     public DcacheUser(Token token, LoginReply login)
     {
         this.isLoggedIn = true;
         this.token = token;
         this.subject = checkNotNull(login.getSubject());
-        this.isReadOnly = login.getLoginAttributes().contains(READ_ONLY);
+        this.restriction = login.getRestriction();
         this.root =
                 login.getLoginAttributes().stream()
                         .filter(RootDirectory.class::isInstance)
@@ -83,8 +78,8 @@ public class DcacheUser implements SRMUser
         this.token = token;
         this.subject = new Subject(true, singleton(dn), emptySet(), emptySet());
         this.root = new FsPath();
-        this.isReadOnly = true;
         this.isLoggedIn = false;
+        this.restriction = Restrictions.denyAll();
     }
 
     public DcacheUser()
@@ -92,8 +87,8 @@ public class DcacheUser implements SRMUser
         this.token = null;
         this.subject = Subjects.NOBODY;
         this.root = new FsPath();
-        this.isReadOnly = true;
         this.isLoggedIn = false;
+        this.restriction = Restrictions.denyAll();
     }
 
     boolean isLoggedIn()
@@ -113,12 +108,6 @@ public class DcacheUser implements SRMUser
         return (token == null) ? null : token.getId();
     }
 
-    @Override
-    public boolean isReadOnly()
-    {
-        return this.isReadOnly;
-    }
-
     @Nonnull
     public Subject getSubject()
     {
@@ -134,8 +123,12 @@ public class DcacheUser implements SRMUser
     @Override
     public String toString()
     {
-        return subject.getPrincipals() + " " +
-                (isReadOnly() ? "read-only" : "read-write") + " " + root;
+        return subject.getPrincipals() + " " + root;
+    }
+
+    public Restriction getRestriction()
+    {
+        return restriction;
     }
 
     @Override
