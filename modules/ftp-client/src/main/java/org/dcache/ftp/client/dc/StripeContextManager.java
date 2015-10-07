@@ -14,98 +14,108 @@
  * limitations under the License.
  */
 package org.dcache.ftp.client.dc;
+
 import org.dcache.ftp.client.extended.GridFTPServerFacade;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class StripeContextManager {
+public class StripeContextManager
+{
 
-	static Logger logger =
-		LoggerFactory.getLogger(StripeContextManager.class);
+    static Logger logger =
+            LoggerFactory.getLogger(StripeContextManager.class);
 
-	protected int stripes;
-	protected StripeTransferContext contextList[];
-	protected int stripeQuitTokens = 0;
-	protected Object contextQuitToken = new Object();
+    protected int stripes;
+    protected StripeTransferContext contextList[];
+    protected int stripeQuitTokens = 0;
+    protected Object contextQuitToken = new Object();
 
-	public StripeContextManager(int stripes, 
-				    SocketPool pool, 
-				    GridFTPServerFacade facade) {
-		this.stripes = stripes;
-		contextList = new StripeTransferContext[stripes];
-		for (int i = 0; i < stripes; i++) {
-			contextList[i] = new StripeTransferContext(this);
-			contextList[i].setSocketPool(pool);
-			contextList[i].setTransferThreadManager(
-			    facade.createTransferThreadManager());
-		}
-	}
+    public StripeContextManager(int stripes,
+                                SocketPool pool,
+                                GridFTPServerFacade facade)
+    {
+        this.stripes = stripes;
+        contextList = new StripeTransferContext[stripes];
+        for (int i = 0; i < stripes; i++) {
+            contextList[i] = new StripeTransferContext(this);
+            contextList[i].setSocketPool(pool);
+            contextList[i].setTransferThreadManager(
+                    facade.createTransferThreadManager());
+        }
+    }
 
-	/**
-	   return number of stripes
-	 **/
-	public int getStripes() {
-		return stripes;
-	}
+    /**
+     * return number of stripes
+     **/
+    public int getStripes()
+    {
+        return stripes;
+    }
 
-	public EBlockParallelTransferContext getStripeContext(int stripe) {
-		return contextList[stripe];
-	}
+    public EBlockParallelTransferContext getStripeContext(int stripe)
+    {
+        return contextList[stripe];
+    }
 
-	public Object getQuitToken() {
-		int i = 0;
-		while (i < stripes) {
-			logger.debug("examining stripe " + i);
-			if (contextList[i].getStripeQuitToken() != null) {
-				// obtained quit token from one stripe.
-				stripeQuitTokens ++;
-				logger.debug("obtained stripe quit token. Total = " + stripeQuitTokens + "; total needed = " + stripes);
-			}
-			i ++;
-		}
-		if (stripeQuitTokens == stripes) {
-			// obtained quit tokens from all stripes.
-			// ready to release the quit token. But make sure not to do it twice.
-			// This section only returns non-nul the first time it is entered.
-			if (contextQuitToken == null) {
-			    logger.debug("not releasing the quit token.");
-			} else {
-			    logger.debug("releasing the quit token.");
-			}
-			Object myToken = contextQuitToken;
-			contextQuitToken = null;
-			return myToken;
-		} else {
-			// not all stripes ready to quit
-			logger.debug("not releasing the quit token. ");
-			return null;
-		}
-	}
+    public Object getQuitToken()
+    {
+        int i = 0;
+        while (i < stripes) {
+            logger.debug("examining stripe " + i);
+            if (contextList[i].getStripeQuitToken() != null) {
+                // obtained quit token from one stripe.
+                stripeQuitTokens++;
+                logger.debug("obtained stripe quit token. Total = " + stripeQuitTokens + "; total needed = " + stripes);
+            }
+            i++;
+        }
+        if (stripeQuitTokens == stripes) {
+            // obtained quit tokens from all stripes.
+            // ready to release the quit token. But make sure not to do it twice.
+            // This section only returns non-nul the first time it is entered.
+            if (contextQuitToken == null) {
+                logger.debug("not releasing the quit token.");
+            } else {
+                logger.debug("releasing the quit token.");
+            }
+            Object myToken = contextQuitToken;
+            contextQuitToken = null;
+            return myToken;
+        } else {
+            // not all stripes ready to quit
+            logger.debug("not releasing the quit token. ");
+            return null;
+        }
+    }
 
-	class StripeTransferContext extends EBlockParallelTransferContext {
+    class StripeTransferContext extends EBlockParallelTransferContext
+    {
 
-		StripeContextManager mgr;
+        StripeContextManager mgr;
 
-		public StripeTransferContext(StripeContextManager mgr) {
-			this.mgr = mgr;
-		}
+        public StripeTransferContext(StripeContextManager mgr)
+        {
+            this.mgr = mgr;
+        }
 
-		/**
-		   @return non-null if this stripe received or sent all the EODs
-		**/
-		public Object getStripeQuitToken() {
-			Object token = super.getQuitToken();
-			StripeContextManager.logger.debug(
-				(token != null) ? "stripe released the quit token" : "stripe did not release the quit token");
-			return token;
-		}
+        /**
+         * @return non-null if this stripe received or sent all the EODs
+         **/
+        public Object getStripeQuitToken()
+        {
+            Object token = super.getQuitToken();
+            StripeContextManager.logger.debug(
+                    (token != null) ? "stripe released the quit token" : "stripe did not release the quit token");
+            return token;
+        }
 
-		/**
-		   @return non-null if all EODs in all stripes have been transferred.
-		**/
-		public Object getQuitToken() {
-			return mgr.getQuitToken();
-		}
-	}
+        /**
+         * @return non-null if all EODs in all stripes have been transferred.
+         **/
+        public Object getQuitToken()
+        {
+            return mgr.getQuitToken();
+        }
+    }
 }

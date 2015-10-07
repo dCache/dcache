@@ -23,7 +23,8 @@ import java.io.InputStream;
  * non-parallel transfers. It cannot be used with Extended Block Mode because
  * it is not thread safe.
  **/
-public class DataSourceStream implements DataSource {
+public class DataSourceStream implements DataSource
+{
 
     private static final int DEFAULT_BUFFER_SIZE = 16384;
 
@@ -31,34 +32,39 @@ public class DataSourceStream implements DataSource {
     protected int bufferSize;
     protected long totalRead = 0;
 
-    public DataSourceStream(InputStream in) {
+    public DataSourceStream(InputStream in)
+    {
         this(in, DEFAULT_BUFFER_SIZE);
     }
-    
-    public DataSourceStream(InputStream in, int bufferSize) {
+
+    public DataSourceStream(InputStream in, int bufferSize)
+    {
         this.in = in;
         this.bufferSize = bufferSize;
     }
 
     public Buffer read()
-        throws IOException {
-        byte [] buf = new byte[bufferSize];
+            throws IOException
+    {
+        byte[] buf = new byte[bufferSize];
         int read = in.read(buf);
         if (read == -1) {
             return null;
         } else {
-            Buffer result =  new Buffer(buf, read, totalRead);
+            Buffer result = new Buffer(buf, read, totalRead);
             totalRead += read;
             return result;
         }
     }
-    
+
     public void close()
-        throws IOException {
+            throws IOException
+    {
         in.close();
     }
-    
-    public long totalSize() {
-	    return -1;
+
+    public long totalSize()
+    {
+        return -1;
     }
 }

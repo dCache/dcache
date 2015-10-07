@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 package org.dcache.ftp.client;
+
 /**
-   Represents a container for restart data
-   capable for representing it in the format of FTP REST command argument.
+ * Represents a container for restart data
+ * capable for representing it in the format of FTP REST command argument.
  **/
-public interface RestartData {
+public interface RestartData
+{
     /**
-       @return the restart data in the format of REST command argument.
-       For instance (in GridFTP) "4-50,62-75"
+     * @return the restart data in the format of REST command argument.
+     * For instance (in GridFTP) "4-50,62-75"
      **/
     public String toFtpCmdArgument();
 }

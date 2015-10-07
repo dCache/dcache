@@ -16,16 +16,18 @@
 package org.dcache.ftp.client;
 
 /**
-   Represents an entity capable of receiving incoming markers.
-   Implement it to provide your own methods of analyzing markers.
-   @see FTPClient#transfer(String, FTPClient, String, boolean, MarkerListener)
-   @see GridFTPClient#extendedTransfer(String, GridFTPClient, String, MarkerListener)
+ * Represents an entity capable of receiving incoming markers.
+ * Implement it to provide your own methods of analyzing markers.
+ *
+ * @see FTPClient#transfer(String, FTPClient, String, boolean, MarkerListener)
+ * @see GridFTPClient#extendedTransfer(String, GridFTPClient, String, MarkerListener)
  **/
-public interface MarkerListener{
+public interface MarkerListener
+{
 
     /**
-       When writing your implementation, assume this method
-       being called whenever a marker arrives.
+     * When writing your implementation, assume this method
+     * being called whenever a marker arrives.
      **/
     public void markerArrived(Marker m);
 

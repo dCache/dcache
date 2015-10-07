@@ -20,19 +20,20 @@ import java.io.IOException;
 
 import org.dcache.ftp.client.Buffer;
 
-public interface DataChannelReader {
+public interface DataChannelReader
+{
 
     public void setDataStream(InputStream in);
 
     // looks like DataSource interface
 
     /**
-       @return Buffer of read data or null if end of data
+     * @return Buffer of read data or null if end of data
      **/
     public Buffer read()
-	throws IOException;
-    
+            throws IOException;
+
     public void close()
-	throws IOException;
+            throws IOException;
 
 }

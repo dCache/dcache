@@ -18,22 +18,25 @@ package org.dcache.ftp.client.dc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TaskThread implements Runnable {
-    
+public class TaskThread implements Runnable
+{
+
     static final int MAX_TASK_QUEUE = 100;
 
     protected static Logger logger =
-        LoggerFactory.getLogger(TaskThread.class);
+            LoggerFactory.getLogger(TaskThread.class);
 
     protected Buffer buffer;
     protected boolean stop;
     protected Thread thread;
 
-    public TaskThread() {
+    public TaskThread()
+    {
         buffer = new Buffer(MAX_TASK_QUEUE);
     }
-    
-    public synchronized void start() {
+
+    public synchronized void start()
+    {
         if (thread == null) {
             thread = new Thread(this);
             thread.setName("Task" + thread.getName());
@@ -42,7 +45,8 @@ public class TaskThread implements Runnable {
         }
     }
 
-    public void runTask(Task task) {
+    public void runTask(Task task)
+    {
         start();
         try {
             buffer.put(task);
@@ -50,19 +54,21 @@ public class TaskThread implements Runnable {
         }
     }
 
-    public Task getNextTask() {
+    public Task getNextTask()
+    {
         try {
-            return (Task)buffer.get();
+            return (Task) buffer.get();
         } catch (Exception e) {
             return null;
         }
     }
 
-    public void run() {
+    public void run()
+    {
         stop = false;
         Exception exception;
         Task task;
-        while(!stop) {
+        while (!stop) {
             task = getNextTask();
             if (task == null) break;
             exception = null;
@@ -77,12 +83,14 @@ public class TaskThread implements Runnable {
         }
     }
 
-    public synchronized void stop() {
+    public synchronized void stop()
+    {
         stop = true;
         buffer.release();
     }
 
-    public void join() {
+    public void join()
+    {
         if (thread != null) {
             try {
                 thread.join();
@@ -91,49 +99,54 @@ public class TaskThread implements Runnable {
         }
     }
 
-    class Buffer {
-        
+    class Buffer
+    {
+
         protected Object[] buf;
         protected int in = 0;
-        protected int out= 0;
-        protected int count= 0;
+        protected int out = 0;
+        protected int count = 0;
         protected int size;
 
-        public Buffer(int size) {
+        public Buffer(int size)
+        {
             this.size = size;
             buf = new Object[size];
         }
 
-        public synchronized void put(Object o) 
-            throws InterruptedException {
-            while (count==size) {
+        public synchronized void put(Object o)
+                throws InterruptedException
+        {
+            while (count == size) {
                 wait();
                 if (stop) return;
             }
             buf[in] = o;
             ++count;
-            in=(in+1) % size;
+            in = (in + 1) % size;
             notify();
         }
 
-        public synchronized Object get() 
-            throws InterruptedException {
-            while (count==0) {
+        public synchronized Object get()
+                throws InterruptedException
+        {
+            while (count == 0) {
                 wait();
                 if (stop) return null;
             }
-            Object o =buf[out];
-            buf[out]=null;
+            Object o = buf[out];
+            buf[out] = null;
             --count;
-            out=(out+1) % size;
+            out = (out + 1) % size;
             notify();
             return (o);
         }
 
-        public synchronized void release() {
+        public synchronized void release()
+        {
             notify();
         }
-            
+
     }
 
 }

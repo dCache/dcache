@@ -14,25 +14,27 @@
  * limitations under the License.
  */
 package org.dcache.ftp.client.dc;
+
 import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 
-public interface TransferThreadFactory {
+public interface TransferThreadFactory
+{
 
-    public TransferThread 
-	getTransferSinkThread(DataChannel dataChannel,
-			      SocketBox socketBox, 
-			      DataSink sink,
-			      BasicServerControlChannel localControlChannel,
-			      TransferContext context) throws Exception;
+    public TransferThread
+    getTransferSinkThread(DataChannel dataChannel,
+                          SocketBox socketBox,
+                          DataSink sink,
+                          BasicServerControlChannel localControlChannel,
+                          TransferContext context) throws Exception;
 
-    public TransferThread 
-	getTransferSourceThread(DataChannel dataChannel,
-				SocketBox socketBox, 
-				DataSource source,
-				BasicServerControlChannel localControlChannel,
-				TransferContext context) throws Exception;
+    public TransferThread
+    getTransferSourceThread(DataChannel dataChannel,
+                            SocketBox socketBox,
+                            DataSource source,
+                            BasicServerControlChannel localControlChannel,
+                            TransferContext context) throws Exception;
 
 }
 

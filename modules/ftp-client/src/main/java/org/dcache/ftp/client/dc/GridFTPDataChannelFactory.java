@@ -21,19 +21,21 @@ import org.dcache.ftp.client.GridFTPSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GridFTPDataChannelFactory implements DataChannelFactory {
+public class GridFTPDataChannelFactory implements DataChannelFactory
+{
 
     protected static Logger logger =
-        LoggerFactory.getLogger(GridFTPDataChannelFactory.class);
+            LoggerFactory.getLogger(GridFTPDataChannelFactory.class);
 
-    public DataChannel getDataChannel(Session session, SocketBox socketBox) {
-	if (! (session instanceof GridFTPSession)) {
-	    throw new IllegalArgumentException(
-					       "session should be a GridFTPSession");
-	}
+    public DataChannel getDataChannel(Session session, SocketBox socketBox)
+    {
+        if (!(session instanceof GridFTPSession)) {
+            throw new IllegalArgumentException(
+                    "session should be a GridFTPSession");
+        }
 
-	logger.debug("starting secure data channel");
-	return new GridFTPDataChannel(session, socketBox);
+        logger.debug("starting secure data channel");
+        return new GridFTPDataChannel(session, socketBox);
 
     }
 }

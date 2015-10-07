@@ -25,35 +25,40 @@ import org.bouncycastle.util.encoders.Base64;
 
 import org.ietf.jgss.GSSContext;
 
-public class GridFTPOutputStream extends GssOutputStream {
-    
+public class GridFTPOutputStream extends GssOutputStream
+{
+
     private static final byte[] CRLF = "\r\n".getBytes();
     private static final byte[] ADAT = "ADAT ".getBytes();
-    private static final byte[] MIC  = "MIC ".getBytes();
-    private static final byte[] ENC  = "ENC ".getBytes();
-    
-    public GridFTPOutputStream(OutputStream out, GSSContext context) {
-	super(new BufferedOutputStream(out), context);
+    private static final byte[] MIC = "MIC ".getBytes();
+    private static final byte[] ENC = "ENC ".getBytes();
+
+    public GridFTPOutputStream(OutputStream out, GSSContext context)
+    {
+        super(new BufferedOutputStream(out), context);
     }
-    
-    public void flush() 
-	throws IOException {
-	if (this.index == 0) return;
-	if (this.context.getConfState()) {
-	    writeToken(ENC, wrap());
-	} else {
-	    writeToken(MIC, wrap());
-	}
-	this.index = 0;
+
+    public void flush()
+            throws IOException
+    {
+        if (this.index == 0) return;
+        if (this.context.getConfState()) {
+            writeToken(ENC, wrap());
+        } else {
+            writeToken(MIC, wrap());
+        }
+        this.index = 0;
     }
-    
-    public void writeHandshakeToken(byte [] token) 
-	throws IOException {
-	writeToken(ADAT, token);
+
+    public void writeHandshakeToken(byte[] token)
+            throws IOException
+    {
+        writeToken(ADAT, token);
     }
 
     private void writeToken(byte[] header, byte[] token)
-        throws IOException {
+            throws IOException
+    {
         this.out.write(header);
         this.out.write(Base64.encode(token));
         this.out.write(CRLF);

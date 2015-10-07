@@ -17,11 +17,12 @@ package org.dcache.ftp.client.dc;
 
 import java.net.Socket;
 
-public interface SocketBox {
-    
+public interface SocketBox
+{
+
     public void setSocket(Socket s);
-    
+
     public Socket getSocket();
-   
+
 }
 

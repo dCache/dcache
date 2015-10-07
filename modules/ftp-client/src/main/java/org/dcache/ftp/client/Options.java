@@ -16,29 +16,32 @@
 package org.dcache.ftp.client;
 
 /**
-   Represents FTP command options, as defined in RFC 2389.
+ * Represents FTP command options, as defined in RFC 2389.
  */
-public abstract class Options {
+public abstract class Options
+{
 
     protected String command;
 
     /**
-       @param cmd command whose options are represent by this object
+     * @param cmd command whose options are represent by this object
      */
-    public Options(String cmd) {
-	command = cmd;
+    public Options(String cmd)
+    {
+        command = cmd;
     }
 
-    public String toFtpCmdArgument() {
-	return command + " " + getArgument();
+    public String toFtpCmdArgument()
+    {
+        return command + " " + getArgument();
     }
-    
+
     /**
-       Subclasses should implement this method. It should
-       return the right side of the options line,
-       in the format of OPTS command. It should not include the
-       command name.
+     * Subclasses should implement this method. It should
+     * return the right side of the options line,
+     * in the format of OPTS command. It should not include the
+     * command name.
      */
     public abstract String getArgument();
-    
+
 }

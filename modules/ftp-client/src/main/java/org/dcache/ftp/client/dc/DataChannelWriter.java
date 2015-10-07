@@ -20,14 +20,15 @@ import java.io.IOException;
 
 import org.dcache.ftp.client.Buffer;
 
-public interface DataChannelWriter {
+public interface DataChannelWriter
+{
 
     public void setDataStream(OutputStream out);
 
     // looks like DataSink interface
 
     public void write(Buffer buffer)
-	throws IOException;
+            throws IOException;
 
     /*
       Send the mode-specific signal indicating that the data
@@ -36,12 +37,12 @@ public interface DataChannelWriter {
       E.g. in stream mode, do nothing. In Eblock mode, send EOD|EOF.
      */
     public void endOfData()
-        throws IOException;
+            throws IOException;
 
     /*
       Close the underlying resources (the socket)
      */
     public void close()
-	throws IOException;
-    
+            throws IOException;
+
 }

@@ -18,26 +18,30 @@ package org.dcache.ftp.client.exception;
 import org.dcache.ftp.client.vanilla.Reply;
 
 /**
-   Indicates that the received reply had different code than
-   it had been expected.
+ * Indicates that the received reply had different code than
+ * it had been expected.
  */
-public class UnexpectedReplyCodeException extends FTPException {
+public class UnexpectedReplyCodeException extends FTPException
+{
 
     private Reply reply;
 
-    public UnexpectedReplyCodeException(int code, String msg, Reply r) {
-	super(code,msg);
-	this.reply = r;
+    public UnexpectedReplyCodeException(int code, String msg, Reply r)
+    {
+        super(code, msg);
+        this.reply = r;
     }
 
-    public UnexpectedReplyCodeException(Reply r) {
-	super(FTPException.UNSPECIFIED, 
-	      "Unexpected reply: " + r);
-	this.reply = r;
+    public UnexpectedReplyCodeException(Reply r)
+    {
+        super(FTPException.UNSPECIFIED,
+              "Unexpected reply: " + r);
+        this.reply = r;
     }
 
-    public Reply getReply() {
-	return reply;
+    public Reply getReply()
+    {
+        return reply;
     }
 
- }
+}

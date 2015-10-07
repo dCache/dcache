@@ -24,19 +24,21 @@ import org.slf4j.LoggerFactory;
 /*
    GridFTPDataChannel, unlike SimpleDataChannel, does not own the associated socket and does not destroy it when the transfer completes. It is the facade who is responsible for socket lifetime management. This approach allows for data channel reuse.
  **/
-public class GridFTPDataChannel extends SimpleDataChannel {
+public class GridFTPDataChannel extends SimpleDataChannel
+{
 
-	private static Logger logger =
-		LoggerFactory.getLogger(GridFTPDataChannel.class);
+    private static Logger logger =
+            LoggerFactory.getLogger(GridFTPDataChannel.class);
 
-	// utility alias to session
-	protected GridFTPSession gSession;
+    // utility alias to session
+    protected GridFTPSession gSession;
 
-	public GridFTPDataChannel(Session session, SocketBox socketBox) {
-		super(session, socketBox);
-		gSession = (GridFTPSession) session;
-		transferThreadFactory = new GridFTPTransferThreadFactory();
-	}
+    public GridFTPDataChannel(Session session, SocketBox socketBox)
+    {
+        super(session, socketBox);
+        gSession = (GridFTPSession) session;
+        transferThreadFactory = new GridFTPTransferThreadFactory();
+    }
 
-	// todo: reimplement close()?
+    // todo: reimplement close()?
 }

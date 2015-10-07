@@ -16,22 +16,24 @@
 package org.dcache.ftp.client.dc;
 
 /**
-   Represents a data channel reader or writer
-   aware of being in one of a pool of asynchronous
-   data channels
+ * Represents a data channel reader or writer
+ * aware of being in one of a pool of asynchronous
+ * data channels
  **/
-public class EBlockAware {
+public class EBlockAware
+{
 
-    public static final int 
-	EOF = 64,
-	EOD = 8,
-	WILL_CLOSE = 4;
-    
+    public static final int
+            EOF = 64,
+            EOD = 8,
+            WILL_CLOSE = 4;
+
     protected EBlockParallelTransferContext context;
-    
 
-    public void setTransferContext(EBlockParallelTransferContext context) {
-	this.context = context;
+
+    public void setTransferContext(EBlockParallelTransferContext context)
+    {
+        this.context = context;
     }
 
 }

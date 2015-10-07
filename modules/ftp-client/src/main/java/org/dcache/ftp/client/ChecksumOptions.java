@@ -16,26 +16,31 @@
 package org.dcache.ftp.client;
 
 /**
-   CKSM options as defined in GridFTP.
+ * CKSM options as defined in GridFTP.
  */
-public class ChecksumOptions extends Options {
+public class ChecksumOptions extends Options
+{
 
     protected ChecksumAlgorithm algo;
 
     /**
-       @param cmd command whose options are represent by this object
+     * @param cmd command whose options are represent by this object
      */
-    public ChecksumOptions(ChecksumAlgorithm algo) {
+    public ChecksumOptions(ChecksumAlgorithm algo)
+    {
         super("CKSM");
-	this.algo = algo;
+        this.algo = algo;
     }
 
     /**
-       Subclasses should implement this method. It should
-       return the right side of the options line,
-       in the format of OPTS command. It should not include the
-       command name.
+     * Subclasses should implement this method. It should
+     * return the right side of the options line,
+     * in the format of OPTS command. It should not include the
+     * command name.
      */
-    public String getArgument() { return algo.toFtpCmdArgument(); }
-    
+    public String getArgument()
+    {
+        return algo.toFtpCmdArgument();
+    }
+
 }

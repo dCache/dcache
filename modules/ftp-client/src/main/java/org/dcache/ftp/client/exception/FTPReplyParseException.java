@@ -16,9 +16,10 @@
 package org.dcache.ftp.client.exception;
 
 /**
-   Indicates that the reply received from server failed to parse.
+ * Indicates that the reply received from server failed to parse.
  */
-public class FTPReplyParseException extends FTPException {
+public class FTPReplyParseException extends FTPException
+{
 
     //public static final int UNSPECIFIED = 0;
     public static final int STRING_TOO_SHORT = 1;
@@ -26,29 +27,33 @@ public class FTPReplyParseException extends FTPException {
     public static final int UNEXPECTED_4TH_CHAR = 3;
     public static final int MESSAGE_UNPARSABLE = 4;
     private static String[] codeExplained;
+
     static {
-	codeExplained =new String[]{
-	    "Unspecified exception.",
-	    "Reply string too short.",
-	    "First 3 characters are not digits.",
-	    "Unexpected 4th character.",
-	    "Reply message unparsable"
-	};
+        codeExplained = new String[]{
+                "Unspecified exception.",
+                "Reply string too short.",
+                "First 3 characters are not digits.",
+                "Unexpected 4th character.",
+                "Reply message unparsable"
+        };
     }
 
-    public String getCodeExplanation(int code) {
+    public String getCodeExplanation(int code)
+    {
 
-	if (codeExplained.length > code)
-	    return codeExplained[code];
-	else return "";
+        if (codeExplained.length > code)
+            return codeExplained[code];
+        else return "";
     }
 
-    public FTPReplyParseException(int code) {
-	super(code);
+    public FTPReplyParseException(int code)
+    {
+        super(code);
     }
 
-    public FTPReplyParseException(int code, String message) {
-	super(code, message);
+    public FTPReplyParseException(int code, String message)
+    {
+        super(code, message);
     }
 
 }

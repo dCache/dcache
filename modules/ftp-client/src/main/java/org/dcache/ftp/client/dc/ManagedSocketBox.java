@@ -19,52 +19,58 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
-   A container for Socket, making it available to pass a null socket reference.
-
-   We use asynchronously active connect task to initialize socket,
-   and active start transfer task to run it.
-   We need to pass the socket reference, which is sometimes null
-   (before initialization).
-   This is a sane way to do it; a simple socket container.
-
-   Additionally, the box contains a flag that states whether the socket 
-   is currently in use, ie whether it is assigned to some data channel.
-   It is needed in GridFTP for data channel reuse.
+ * A container for Socket, making it available to pass a null socket reference.
+ * <p>
+ * We use asynchronously active connect task to initialize socket,
+ * and active start transfer task to run it.
+ * We need to pass the socket reference, which is sometimes null
+ * (before initialization).
+ * This is a sane way to do it; a simple socket container.
+ * <p>
+ * Additionally, the box contains a flag that states whether the socket
+ * is currently in use, ie whether it is assigned to some data channel.
+ * It is needed in GridFTP for data channel reuse.
  **/
 
-public class ManagedSocketBox extends SimpleSocketBox {
+public class ManagedSocketBox extends SimpleSocketBox
+{
 
     private static Logger logger =
-        LoggerFactory.getLogger(ManagedSocketBox.class);
+            LoggerFactory.getLogger(ManagedSocketBox.class);
 
     public static final int FREE = 1;
     public static final int BUSY = 2;
-    
+
     public static final boolean REUSABLE = true;
     public static final boolean NON_REUSABLE = false;
 
     protected int status = FREE;
-        
+
     // should the socket be reused? by default, yes
     protected boolean reusable = true;
 
-    public ManagedSocketBox() {
+    public ManagedSocketBox()
+    {
     }
 
-    public void setStatus(int s) {
+    public void setStatus(int s)
+    {
         this.status = s;
     }
-    
-    public int getStatus() {
+
+    public int getStatus()
+    {
         return status;
     }
-    
-    public void setReusable(boolean r) {
+
+    public void setReusable(boolean r)
+    {
         this.reusable = r;
     }
-    
-    public boolean isReusable() {
+
+    public boolean isReusable()
+    {
         return reusable;
-    }   
-    
+    }
+
 }

@@ -19,23 +19,26 @@ import java.io.IOException;
 
 import org.dcache.ftp.client.Buffer;
 
-public class StreamAsciiDCReader extends StreamImageDCReader {
+public class StreamAsciiDCReader extends StreamImageDCReader
+{
 
     protected AsciiTranslator translator;
 
-    public StreamAsciiDCReader() {
-	// only check for \r\n separators - others are ignored
-	// output tokens with system specific line separators
-	translator = new AsciiTranslator(true, false);
+    public StreamAsciiDCReader()
+    {
+        // only check for \r\n separators - others are ignored
+        // output tokens with system specific line separators
+        translator = new AsciiTranslator(true, false);
     }
 
     public Buffer read()
-	throws IOException {
-	Buffer buf = super.read();
-	if (buf == null) {
-	    return null;
-	}
-	return translator.translate(buf);
+            throws IOException
+    {
+        Buffer buf = super.read();
+        if (buf == null) {
+            return null;
+        }
+        return translator.translate(buf);
     }
 
 }

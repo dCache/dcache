@@ -28,11 +28,12 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TransferMonitor implements Runnable {
+public class TransferMonitor implements Runnable
+{
 
-    public final static int 
-        LOCAL = 1,
-        REMOTE = 2;
+    public final static int
+            LOCAL = 1,
+            REMOTE = 2;
     private int side; // source or dest 
 
     private Logger logger = null;
@@ -51,14 +52,15 @@ public class TransferMonitor implements Runnable {
 
     private Thread thread;
 
-    public TransferMonitor(BasicClientControlChannel controlChannel, 
-                           TransferState transferState, 
+    public TransferMonitor(BasicClientControlChannel controlChannel,
+                           TransferState transferState,
                            MarkerListener mListener,
                            int maxWait,
                            int ioDelay,
-                           int side) {
-        logger =  LoggerFactory.getLogger(TransferMonitor.class.getName() +
-                                    ((side == LOCAL) ? ".Local" : ".Remote")); 
+                           int side)
+    {
+        logger = LoggerFactory.getLogger(TransferMonitor.class.getName() +
+                                         ((side == LOCAL) ? ".Local" : ".Remote"));
         this.controlChannel = controlChannel;
         this.transferState = transferState;
         this.mListener = mListener;
@@ -70,40 +72,46 @@ public class TransferMonitor implements Runnable {
     }
 
     /**
-       In this class, each instance gets a separate logger which is
-       assigned the name in the constructor.
-       This name is in the form "...GridFTPClient.thread host:port". 
-       @return the logger name.
+     * In this class, each instance gets a separate logger which is
+     * assigned the name in the constructor.
+     * This name is in the form "...GridFTPClient.thread host:port".
+     *
+     * @return the logger name.
      **/
-    public String getLoggerName() {
+    public String getLoggerName()
+    {
         return logger.toString();
     }
 
-    public void setOther(TransferMonitor other) {
+    public void setOther(TransferMonitor other)
+    {
         this.other = other;
     }
 
     /**
-     * Abort the tpt transfer 
+     * Abort the tpt transfer
      * but do not close resources
      */
-    public synchronized void abort() {
+    public synchronized void abort()
+    {
         logger.debug("abort");
-        
+
         if (!this.abortable) {
             return;
         }
 
         controlChannel.abortTransfer();
-        
+
         aborted.flag = true;
     }
 
-    private synchronized void done() {
+    private synchronized void done()
+    {
         this.abortable = false;
     }
 
-    public void start(boolean blocking) {
+    public void start(boolean blocking)
+    {
         if (blocking) {
             this.thread = Thread.currentThread();
             run();
@@ -114,8 +122,9 @@ public class TransferMonitor implements Runnable {
         }
     }
 
-    public void run() {
-        
+    public void run()
+    {
+
         try {
             // if the other thread had already terminated
             // with an error, behave as if it happened just now.
@@ -124,7 +133,7 @@ public class TransferMonitor implements Runnable {
                 throw new InterruptedException();
             }
 
-            logger.debug("waiting for 1st reply;  maxWait = " + 
+            logger.debug("waiting for 1st reply;  maxWait = " +
                          maxWait + ", ioDelay = " + ioDelay);
             this.controlChannel.waitFor(aborted,
                                         ioDelay,
@@ -140,22 +149,22 @@ public class TransferMonitor implements Runnable {
                 transferState.transferStarted();
                 logger.debug("first reply OK: " + firstReply.toString());
 
-                for(;;) {
-          
+                for (; ; ) {
+
                     logger.debug("reading next reply");
                     this.controlChannel.waitFor(aborted,
-                                                ioDelay);                   
+                                                ioDelay);
                     logger.debug("got next reply");
                     Reply nextReply = controlChannel.read();
 
                     //perf marker
                     if (nextReply.getCode() == 112) {
                         logger.debug("marker arrived: " + nextReply.toString());
-                        if (mListener != null) {   
+                        if (mListener != null) {
                             mListener.markerArrived(
                                     new PerfMarker(nextReply.getMessage()));
                         }
-                            continue;
+                        continue;
                     }
 
                     //restart marker
@@ -168,26 +177,26 @@ public class TransferMonitor implements Runnable {
                         }
                         continue;
                     }
-                    
+
                     //226 Transfer complete
                     if (nextReply.getCode() == 226) {
                         abortable = false;
                         logger.debug("transfer complete: " + nextReply.toString());
                         break;
                     }
-                 
+
                     // any other reply
                     logger.debug("unexpected reply: " + nextReply.toString());
                     logger.debug("exiting the transfer thread");
                     ServerException e = ServerException.embedUnexpectedReplyCodeException(
                             new UnexpectedReplyCodeException(nextReply),
                             "Server reported transfer failure");
-                    
+
                     transferState.transferError(e);
                     other.abort();
                     break;
                 }
-                
+
             } else {    //first reply negative
                 logger.debug("first reply bad: " + firstReply.toString());
                 logger.debug("category: " + firstReply.getCategory());
@@ -201,7 +210,7 @@ public class TransferMonitor implements Runnable {
 
             logger.debug("thread dying naturally");
 
-        } catch (InterruptedException td) { 
+        } catch (InterruptedException td) {
             //other transfer thread called abort()
             logger.debug("thread dying of InterruptedException.");
             transferState.transferError(td);

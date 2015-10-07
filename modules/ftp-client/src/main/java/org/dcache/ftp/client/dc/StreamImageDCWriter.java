@@ -20,23 +20,31 @@ import java.io.IOException;
 
 import org.dcache.ftp.client.Buffer;
 
-public class StreamImageDCWriter implements DataChannelWriter {
+public class StreamImageDCWriter implements DataChannelWriter
+{
 
     protected OutputStream output;
-    
-    public void setDataStream(OutputStream out) {
-	output = out;
+
+    public void setDataStream(OutputStream out)
+    {
+        output = out;
     }
 
     public void write(Buffer buf)
-	throws IOException {
-	output.write(buf.getBuffer(), 0, buf.getLength());
+            throws IOException
+    {
+        output.write(buf.getBuffer(), 0, buf.getLength());
     }
 
-    public void endOfData() throws IOException {};
-    
-    public void close() 
-	throws IOException {
-	output.close(); 
+    public void endOfData() throws IOException
+    {
+    }
+
+    ;
+
+    public void close()
+            throws IOException
+    {
+        output.close();
     }
 }

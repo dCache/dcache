@@ -22,7 +22,8 @@ import org.ietf.jgss.GSSCredential;
 /**
  * Represents parameters of an FTP session between a client and a server.
  */
-public class GridFTPSession extends Session {
+public class GridFTPSession extends Session
+{
 
     /**
      * Indicates Extended Block Mode for data transfer. Used with
@@ -91,7 +92,8 @@ public class GridFTPSession extends Session {
     /**
      * Sets maxWait to twice the time of DEFAULT_MAX_WAIT
      */
-    public GridFTPSession() {
+    public GridFTPSession()
+    {
         maxWait = 2 * DEFAULT_MAX_WAIT;
     }
 
@@ -101,26 +103,28 @@ public class GridFTPSession extends Session {
      * if Mode E is needed, and if so, checks whether it has been set. If not,
      * ClientException is thrown.
      */
-    public void matches(Session other) throws ClientException {
+    public void matches(Session other) throws ClientException
+    {
 
         compareTransferParams(other);
         compareServerMode(other);
 
         if (needsGridFTP() && transferMode != MODE_EBLOCK) {
             throw new ClientException(ClientException.BAD_MODE,
-                    "Extended block mode necessary");
+                                      "Extended block mode necessary");
         }
 
         if (other instanceof GridFTPSession &&
             ((GridFTPSession) other).needsGridFTP() &&
             transferMode != MODE_EBLOCK) {
             throw new ClientException(ClientException.BAD_MODE,
-                    "Extended block mode necessary");
+                                      "Extended block mode necessary");
         }
     }
 
     // called by inherited matches() method
-    protected void compareServerMode(Session other) throws ClientException {
+    protected void compareServerMode(Session other) throws ClientException
+    {
 
         if (transferMode != MODE_EBLOCK) {
 
@@ -138,11 +142,11 @@ public class GridFTPSession extends Session {
                 // in mode E, source must be active and dest passive
 
                 if (!((serverMode == SERVER_EACT && other.serverMode == SERVER_EPAS)
-                        || (serverMode == SERVER_EPAS && other.serverMode == SERVER_EACT)
-                        || (serverMode == SERVER_ACTIVE && other.serverMode == SERVER_PASSIVE) || (serverMode == SERVER_PASSIVE && other.serverMode == SERVER_ACTIVE))) {
+                      || (serverMode == SERVER_EPAS && other.serverMode == SERVER_EACT)
+                      || (serverMode == SERVER_ACTIVE && other.serverMode == SERVER_PASSIVE) || (serverMode == SERVER_PASSIVE && other.serverMode == SERVER_ACTIVE))) {
                     throw new ClientException(ClientException.BAD_SERVER_MODE,
-                            "One server must be active"
-                                    + " and other must be passive");
+                                              "One server must be active"
+                                              + " and other must be passive");
                 }
             }
         }
@@ -150,12 +154,13 @@ public class GridFTPSession extends Session {
 
     /**
      * @return true if this session requires GridFTP extensions; false if it
-     *         only requires vanilla FTP.
+     * only requires vanilla FTP.
      */
-    public boolean needsGridFTP() {
-        return (parallel > 1 || 
-                transferMode == MODE_EBLOCK || 
-                (serverMode == GridFTPSession.SERVER_EPAS || 
+    public boolean needsGridFTP()
+    {
+        return (parallel > 1 ||
+                transferMode == MODE_EBLOCK ||
+                (serverMode == GridFTPSession.SERVER_EPAS ||
                  serverMode == GridFTPSession.SERVER_EACT));
     }
 }

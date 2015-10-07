@@ -23,33 +23,34 @@ import java.io.IOException;
  * It must be thread safe; in parallel transfer mode several
  * streams may attempt to read.
  **/
-public interface DataSource {
+public interface DataSource
+{
 
     /**
      * Reads a data buffer from this data source.
      *
      * @return The data buffer read. Null, if there is
-     *         no more data to be read.
+     * no more data to be read.
      * @throws IOException if an I/O error occurs.
      */
     public Buffer read()
-       throws IOException;
+            throws IOException;
 
     /**
-     * Closes this data source and releases any system 
+     * Closes this data source and releases any system
      * resources associated with this source.
      *
      * @throws IOException if an I/O error occurs.
      */
     public void close()
-	throws IOException;
+            throws IOException;
 
     /**
      * Optional operation. Returns the total size, in bytes, of the
-     * data in this source. If the implementation is not able to 
+     * data in this source. If the implementation is not able to
      * provide a total size for the data source, it should return
      * -1
-     * 
+     *
      * @throws IOException if an I/O exception occurs
      */
     public long totalSize() throws IOException;

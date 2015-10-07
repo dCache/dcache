@@ -29,7 +29,8 @@ import org.dcache.ftp.client.exception.ClientException;
  * <li> prefix SERVER denotes server mode
  * </ul>
  */
-public class Session {
+public class Session
+{
     public static final int TYPE_IMAGE = 1;
 
     public static final int TYPE_ASCII = 2;
@@ -104,11 +105,11 @@ public class Session {
      * protection buffer sizes match. Additionally, if one party is passive, the
      * other must be active. If any of the variables are set to SERVER_DEFAULT,
      * sessions are considered matching.
-     * 
-     * @throws ClientException
-     *             if sessions do not match
+     *
+     * @throws ClientException if sessions do not match
      */
-    public void matches(Session other) throws ClientException {
+    public void matches(Session other) throws ClientException
+    {
 
         compareTransferParams(other);
         compareServerMode(other);
@@ -117,10 +118,11 @@ public class Session {
     /**
      * defines how to compare parameters: authorized, PBSZ, MODE, TYPE
      */
-    protected void compareTransferParams(Session other) throws ClientException {
+    protected void compareTransferParams(Session other) throws ClientException
+    {
         if (!this.authorized || !other.authorized)
             throw new ClientException(ClientException.NOT_AUTHORIZED,
-                    "Need to perform authorization first");
+                                      "Need to perform authorization first");
 
         // synchronize protection buffer size
         if (this.protectionBufferSize != other.protectionBufferSize) {
@@ -139,9 +141,10 @@ public class Session {
     /**
      * checks that active / passive sides are correctly set
      */
-    protected void compareServerMode(Session other) throws ClientException {
+    protected void compareServerMode(Session other) throws ClientException
+    {
 
-        if (serverMode == SERVER_DEFAULT && 
+        if (serverMode == SERVER_DEFAULT &&
             other.serverMode == SERVER_DEFAULT) {
             // this is OK
         } else {
@@ -155,15 +158,15 @@ public class Session {
             if (this.serverMode == SERVER_DEFAULT ||
                 other.serverMode == SERVER_DEFAULT) {
                 throw new ClientException(ClientException.BAD_SERVER_MODE,
-                        "Only one server has been defined as active or passive");
+                                          "Only one server has been defined as active or passive");
             }
 
             // both servers cannot have the same mode
             if (other.serverMode == this.serverMode) {
                 String modeStr = (this.serverMode == SERVER_PASSIVE) ? "passive"
-                        : "active";
+                                                                     : "active";
                 throw new ClientException(ClientException.BAD_SERVER_MODE,
-                        "Both servers are " + modeStr);
+                                          "Both servers are " + modeStr);
             }
         }
     }// compareServerMode

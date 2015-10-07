@@ -15,6 +15,7 @@
  */
 package org.dcache.ftp.client.dc;
 
-public abstract class TransferThread extends Thread {
+public abstract class TransferThread extends Thread
+{
 
 }

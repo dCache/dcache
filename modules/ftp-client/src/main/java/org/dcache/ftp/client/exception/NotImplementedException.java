@@ -15,13 +15,16 @@
  */
 package org.dcache.ftp.client.exception;
 
-/** Not used.
-    This exception should be thrown on an attempt of accessing
-    functionality that has not been implemented.
-**/
-public class NotImplementedException extends RuntimeException {
+/**
+ * Not used.
+ * This exception should be thrown on an attempt of accessing
+ * functionality that has not been implemented.
+ **/
+public class NotImplementedException extends RuntimeException
+{
 
-    public NotImplementedException() {
-	super("This method has not been implemented.");
+    public NotImplementedException()
+    {
+        super("This method has not been implemented.");
     }
 }

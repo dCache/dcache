@@ -19,20 +19,23 @@ import java.io.IOException;
 
 import org.dcache.ftp.client.Buffer;
 
-public class StreamAsciiDCWriter extends StreamImageDCWriter {
+public class StreamAsciiDCWriter extends StreamImageDCWriter
+{
 
     protected AsciiTranslator translator;
 
-    public StreamAsciiDCWriter() {
-	// check for \r\n and \n separators 
-	// output tokens with \r\n line separators
-	translator = new AsciiTranslator(true, true, AsciiTranslator.CRLF);
+    public StreamAsciiDCWriter()
+    {
+        // check for \r\n and \n separators
+        // output tokens with \r\n line separators
+        translator = new AsciiTranslator(true, true, AsciiTranslator.CRLF);
     }
 
     public void write(Buffer buffer)
-	throws IOException {
-	if (buffer == null) return;
-	super.write( translator.translate(buffer) );
+            throws IOException
+    {
+        if (buffer == null) return;
+        super.write(translator.translate(buffer));
     }
-    
+
 }

@@ -18,36 +18,41 @@ package org.dcache.ftp.client;
 /**
  * Represents the algorithm used for checksum operation.
  **/
-public class ChecksumAlgorithm {
+public class ChecksumAlgorithm
+{
 
     public static final ChecksumAlgorithm MD5 =
-        new ChecksumAlgorithm("MD5");
-    
+            new ChecksumAlgorithm("MD5");
+
     protected String argument;
-    
-    public ChecksumAlgorithm(String name) {
+
+    public ChecksumAlgorithm(String name)
+    {
         this.argument = name;
     }
-    
-    public String toFtpCmdArgument() {
+
+    public String toFtpCmdArgument()
+    {
         return argument;
     }
-    
-    public boolean equals(Object other) {
+
+    public boolean equals(Object other)
+    {
         if (other == this) {
             return true;
         }
         if (other instanceof ChecksumAlgorithm) {
-            ChecksumAlgorithm otherObj = 
-                (ChecksumAlgorithm)other;
+            ChecksumAlgorithm otherObj =
+                    (ChecksumAlgorithm) other;
             return (this.argument.equals(otherObj.argument));
         } else {
             return false;
         }
     }
-    
-    public int hashCode() {
+
+    public int hashCode()
+    {
         return (this.argument == null) ? 1 : this.argument.hashCode();
     }
-    
+
 }

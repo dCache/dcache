@@ -15,28 +15,31 @@
  */
 package org.dcache.ftp.client.exception;
 
-/** 
-    thrown by PerformanceMarker, mostly during construction.
-**/
-public class PerfMarkerException extends FTPException {
+/**
+ * thrown by PerformanceMarker, mostly during construction.
+ **/
+public class PerfMarkerException extends FTPException
+{
 
     /**
-       
+
      **/
     public static final int NO_SUCH_PARAMETER = 1;
 
     private static String[] codeExplained;
+
     static {
-	codeExplained = new String[]
-	{"Unspecified category.",
-	 "Marker does not contain the requested parameter."
-	};
+        codeExplained = new String[]
+                {"Unspecified category.",
+                        "Marker does not contain the requested parameter."
+                };
     }
 
-    public String getCodeExplanation(int code) {
-	if (codeExplained.length > code)
-	    return codeExplained[code];
-	else return "";
+    public String getCodeExplanation(int code)
+    {
+        if (codeExplained.length > code)
+            return codeExplained[code];
+        else return "";
     }
 
 
@@ -47,13 +50,15 @@ public class PerfMarkerException extends FTPException {
     //conditions of the error.
     protected String customMessage;
 
-    public PerfMarkerException(int code, String message) {
-	super(code, message);
-	customMessage = message;
+    public PerfMarkerException(int code, String message)
+    {
+        super(code, message);
+        customMessage = message;
     }
 
-    public PerfMarkerException(int code) {
-	super(code);
+    public PerfMarkerException(int code)
+    {
+        super(code);
     }
- 
+
 }

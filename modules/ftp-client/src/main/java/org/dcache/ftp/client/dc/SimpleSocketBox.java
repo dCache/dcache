@@ -21,17 +21,19 @@ import java.net.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SimpleSocketBox implements SocketBox {
+public class SimpleSocketBox implements SocketBox
+{
 
     private static Logger logger =
-        LoggerFactory.getLogger(SimpleSocketBox.class);
-    
+            LoggerFactory.getLogger(SimpleSocketBox.class);
+
     protected Socket socket;
-    
+
     /**
      * @see SocketBox#setSocket(Socket)
      */
-    public void setSocket(Socket newSocket) {
+    public void setSocket(Socket newSocket)
+    {
         if (newSocket == null) {
             logger.debug("Setting socket to null");
             closeSocket();
@@ -40,14 +42,19 @@ public class SimpleSocketBox implements SocketBox {
         }
         this.socket = newSocket;
     }
-    
-    public Socket getSocket() {
+
+    public Socket getSocket()
+    {
         return this.socket;
     }
 
-    private void closeSocket() {
+    private void closeSocket()
+    {
         if (this.socket != null) {
-            try { this.socket.close(); } catch (IOException e) {}
+            try {
+                this.socket.close();
+            } catch (IOException e) {
+            }
         }
     }
 

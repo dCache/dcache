@@ -14,38 +14,42 @@
  * limitations under the License.
  */
 package org.dcache.ftp.client.dc;
+
 import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 
-public class GridFTPTransferThreadFactory implements TransferThreadFactory {
+public class GridFTPTransferThreadFactory implements TransferThreadFactory
+{
 
-    public TransferThread 
-	getTransferSinkThread(DataChannel dataChannel,
-			      SocketBox socketBox, 
-			      DataSink sink,
-			      BasicServerControlChannel localControlChannel,
-			      TransferContext context) throws Exception {
+    public TransferThread
+    getTransferSinkThread(DataChannel dataChannel,
+                          SocketBox socketBox,
+                          DataSink sink,
+                          BasicServerControlChannel localControlChannel,
+                          TransferContext context) throws Exception
+    {
 
-	return new GridFTPTransferSinkThread((GridFTPDataChannel) dataChannel,
-					     socketBox, 
-					     sink,
-					     localControlChannel,
-					     (EBlockParallelTransferContext)context);
+        return new GridFTPTransferSinkThread((GridFTPDataChannel) dataChannel,
+                                             socketBox,
+                                             sink,
+                                             localControlChannel,
+                                             (EBlockParallelTransferContext) context);
     }
 
-    public TransferThread 
-	getTransferSourceThread(DataChannel dataChannel,
-				SocketBox socketBox, 
-				DataSource source,
-				BasicServerControlChannel localControlChannel,
-				TransferContext context) throws Exception {
-	
-	return new GridFTPTransferSourceThread((GridFTPDataChannel) dataChannel,
-					       socketBox, 
-					       source,
-					       localControlChannel,
-					       (EBlockParallelTransferContext)context);
+    public TransferThread
+    getTransferSourceThread(DataChannel dataChannel,
+                            SocketBox socketBox,
+                            DataSource source,
+                            BasicServerControlChannel localControlChannel,
+                            TransferContext context) throws Exception
+    {
+
+        return new GridFTPTransferSourceThread((GridFTPDataChannel) dataChannel,
+                                               socketBox,
+                                               source,
+                                               localControlChannel,
+                                               (EBlockParallelTransferContext) context);
     }
 
 }

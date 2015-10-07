@@ -21,34 +21,37 @@ import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GridFTPTransferSinkThread extends TransferSinkThread {
+public class GridFTPTransferSinkThread extends TransferSinkThread
+{
 
     protected static Logger logger =
-        LoggerFactory.getLogger(GridFTPTransferSinkThread.class);
+            LoggerFactory.getLogger(GridFTPTransferSinkThread.class);
 
     // utility alias to context
     protected EBlockParallelTransferContext eContext;
 
     public GridFTPTransferSinkThread(
-                          AbstractDataChannel dataChannel,
-                          SocketBox socketBox,
-                          DataSink sink,
-                          BasicServerControlChannel localControlChannel,
-                          EBlockParallelTransferContext context)
-        throws Exception {
+            AbstractDataChannel dataChannel,
+            SocketBox socketBox,
+            DataSink sink,
+            BasicServerControlChannel localControlChannel,
+            EBlockParallelTransferContext context)
+            throws Exception
+    {
         super(dataChannel, socketBox, sink, localControlChannel, context);
         this.eContext = context;
     }
 
-    protected void startup() {
-        
+    protected void startup()
+    {
+
         //update manager's thread count
         TransferThreadManager threadManager =
-            eContext.getTransferThreadManager();
+                eContext.getTransferThreadManager();
         threadManager.transferThreadStarting();
 
         //send initial reply only if nothing has yet been sent
-        synchronized(localControlChannel) {
+        synchronized (localControlChannel) {
             if (localControlChannel.getReplyCount() == 0) {
                 // 125 Data connection already open; transfer starting
                 localControlChannel.write(new LocalReply(125));
@@ -56,14 +59,15 @@ public class GridFTPTransferSinkThread extends TransferSinkThread {
         }
     }
 
-    protected void shutdown(Object quitToken) throws java.io.IOException {
+    protected void shutdown(Object quitToken) throws java.io.IOException
+    {
 
         SocketPool pool =
-            ((EBlockParallelTransferContext) context).getSocketPool();
-        
+                ((EBlockParallelTransferContext) context).getSocketPool();
+
         if (((ManagedSocketBox) socketBox).isReusable()) {
             // we're in EBLOCK mode, so reader is EBlockImageDCReader
-            if (! ((EBlockImageDCReader)reader).willCloseReceived()) {
+            if (!((EBlockImageDCReader) reader).willCloseReceived()) {
                 // we're in EBLOCK mode. Store the socket for later reuse
                 logger.debug("shutdown; leaving the socket open");
                 pool.checkIn(socketBox);
@@ -96,8 +100,8 @@ public class GridFTPTransferSinkThread extends TransferSinkThread {
 
         //update manager's thread count
         TransferThreadManager threadManager =
-            eContext.getTransferThreadManager();
+                eContext.getTransferThreadManager();
         threadManager.transferThreadTerminating();
-        
+
     }
 }

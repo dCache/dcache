@@ -17,7 +17,8 @@ package org.dcache.ftp.client.dc;
 
 import org.dcache.ftp.client.Session;
 
-public interface DataChannelFactory {
+public interface DataChannelFactory
+{
 
     public DataChannel getDataChannel(Session state, SocketBox socketBox);
 

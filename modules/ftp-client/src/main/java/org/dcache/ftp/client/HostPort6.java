@@ -16,19 +16,21 @@
 package org.dcache.ftp.client;
 
 /**
- * Utility class for parsing and converting host-port information from EPSV 
+ * Utility class for parsing and converting host-port information from EPSV
  * and EPRT ftp commands.
  */
-public class HostPort6 extends HostPort {
+public class HostPort6 extends HostPort
+{
 
     public static final String IPv4 = "1";
     public static final String IPv6 = "2";
-    
+
     private String host;
     private int port;
     private String version;
-    
-    public HostPort6(String version, String host, int port) {
+
+    public HostPort6(String version, String host, int port)
+    {
         this.version = version;
         this.host = host;
         this.port = port;
@@ -42,7 +44,8 @@ public class HostPort6 extends HostPort {
      *
      * @param passiveReplyMessage reply message for the EPSV command
      */
-    public HostPort6(String passiveReplyMessage) {
+    public HostPort6(String passiveReplyMessage)
+    {
         Parser tokens = new Parser(passiveReplyMessage);
         String token = null;
 
@@ -54,7 +57,7 @@ public class HostPort6 extends HostPort {
         } else if (token.equals(IPv6)) {
             this.version = IPv6;
         } else {
-            throw new IllegalArgumentException("Invalid network protocol: " + 
+            throw new IllegalArgumentException("Invalid network protocol: " +
                                                token);
         }
 
@@ -64,34 +67,37 @@ public class HostPort6 extends HostPort {
         } else {
             this.host = token;
         }
-        
+
         token = tokens.nextToken().trim();
         if (token.length() == 0) {
             throw new IllegalArgumentException("Port number is required");
         }
         this.port = Integer.parseInt(token);
     }
- 
-    private static class Parser {
+
+    private static class Parser
+    {
 
         String line;
         int offset = 0;
 
-        public Parser(String line) {
+        public Parser(String line)
+        {
             this.line = line;
         }
 
-        public String nextToken() {
+        public String nextToken()
+        {
             int start = line.indexOf('|', this.offset);
             if (start == -1) {
                 throw new IllegalArgumentException("Formatting error");
             }
-            int end = line.indexOf('|', start+1);
+            int end = line.indexOf('|', start + 1);
             if (end == -1) {
                 throw new IllegalArgumentException("Formatting error");
             }
             this.offset = end;
-            return line.substring(start+1, end);
+            return line.substring(start + 1, end);
         }
     }
 
@@ -100,26 +106,29 @@ public class HostPort6 extends HostPort {
      *
      * @return port number
      */
-    public int getPort() {
-	return this.port;
+    public int getPort()
+    {
+        return this.port;
     }
-  
+
     /**
      * Sets the host address
      *
-     * @param host the host address 
+     * @param host the host address
      */
-    public void setHost(String host) {
-	this.host = host;
+    public void setHost(String host)
+    {
+        this.host = host;
     }
 
     /**
      * Returns the host address
      *
-     * @return host address 
+     * @return host address
      */
-    public String getHost() {
-	return this.host;
+    public String getHost()
+    {
+        return this.host;
     }
 
     /**
@@ -127,8 +136,9 @@ public class HostPort6 extends HostPort {
      *
      * @return address version
      */
-    public String getVersion() {
-	return this.version;
+    public String getVersion()
+    {
+        return this.version;
     }
 
     /**
@@ -136,20 +146,22 @@ public class HostPort6 extends HostPort {
      *
      * @param version the address version
      */
-    public void setVersion(String version) {
-	this.version = version;
+    public void setVersion(String version)
+    {
+        this.version = version;
     }
-  
+
     /**
      * Returns the host-port information in the
-     * format used by EPRT command. 
+     * format used by EPRT command.
      * <d><net-prt><d><net-addr><d><tcp-port><d>
      *
      * @return host-port information in EPRT command
-     *         representation.
+     * representation.
      */
-    public String toFtpCmdArgument() {
-	StringBuffer msg = new StringBuffer();
+    public String toFtpCmdArgument()
+    {
+        StringBuffer msg = new StringBuffer();
         msg.append("|");
         if (this.version != null) {
             msg.append(this.version);
@@ -161,11 +173,12 @@ public class HostPort6 extends HostPort {
         msg.append("|");
         msg.append(String.valueOf(this.port));
         msg.append("|");
-	return msg.toString();
+        return msg.toString();
     }
 
-    public static String getIPAddressVersion(String address) {
+    public static String getIPAddressVersion(String address)
+    {
         return (address.indexOf(':') == -1) ? IPv4 : IPv6;
     }
-    
+
 }

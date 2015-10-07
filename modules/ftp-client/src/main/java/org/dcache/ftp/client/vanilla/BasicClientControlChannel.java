@@ -16,47 +16,52 @@
 package org.dcache.ftp.client.vanilla;
 
 import org.dcache.ftp.client.exception.FTPReplyParseException;
+
 import java.io.IOException;
+
 import org.dcache.ftp.client.exception.ServerException;
 
 /**
-   Basic subset of client side control channel functionality, enough to
-   implement the part of transfer after sending transfer command (RETR)
-   up until receiving 200 reply.
+ * Basic subset of client side control channel functionality, enough to
+ * implement the part of transfer after sending transfer command (RETR)
+ * up until receiving 200 reply.
  **/
-public abstract class BasicClientControlChannel{
+public abstract class BasicClientControlChannel
+{
 
     public static final int WAIT_FOREVER = -1;
 
-    public abstract Reply read() 
-        throws ServerException, 
-               IOException,
-               FTPReplyParseException;
+    public abstract Reply read()
+            throws ServerException,
+            IOException,
+            FTPReplyParseException;
 
     /**
-       Return when reply is waiting
+     * Return when reply is waiting
      **/
     public void waitFor(Flag flag,
-                        int waitDelay) 
-        throws ServerException,
-               IOException,
-               InterruptedException {
+                        int waitDelay)
+            throws ServerException,
+            IOException,
+            InterruptedException
+    {
         waitFor(flag, waitDelay, WAIT_FOREVER);
     }
 
     /**
-       Block until reply is waiting in the control channel,
-       or after timeout (maxWait), or when flag changes to true.
-       If maxWait == WAIT_FOREVER, do not timeout.
-       @param maxWait timeout in miliseconds
+     * Block until reply is waiting in the control channel,
+     * or after timeout (maxWait), or when flag changes to true.
+     * If maxWait == WAIT_FOREVER, do not timeout.
+     *
+     * @param maxWait timeout in miliseconds
      **/
 
     public abstract void waitFor(Flag flag,
                                  int waitDelay,
                                  int maxWait)
-        throws ServerException,
-               IOException,
-               InterruptedException;
+            throws ServerException,
+            IOException,
+            InterruptedException;
 
     /*    public void write(Command cmd)
         throws IOException,

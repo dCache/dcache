@@ -15,27 +15,30 @@
  */
 package org.dcache.ftp.client.exception;
 
-/** 
-    Indicates data channel problems. Thrown by local server at layer 2.
-**/
-public class DataChannelException extends FTPException {
+/**
+ * Indicates data channel problems. Thrown by local server at layer 2.
+ **/
+public class DataChannelException extends FTPException
+{
 
     //public static final int UNSPECIFIED = 0;
     public static final int UNDEFINED_SERVER_MODE = 1;
     public static final int BAD_SERVER_MODE = 2;
     private static String[] codeExplained;
+
     static {
-	codeExplained = new String[]
-	{"Unspecified category.",
-	 "Undefined server mode (active or passive?)",
-	 "setPassive() must match store() and setActive() - retrieve() "
-	};
+        codeExplained = new String[]
+                {"Unspecified category.",
+                        "Undefined server mode (active or passive?)",
+                        "setPassive() must match store() and setActive() - retrieve() "
+                };
     }
 
-    public String getCodeExplanation(int code) {
-	if (codeExplained.length > code)
-	    return codeExplained[code];
-	else return "";
+    public String getCodeExplanation(int code)
+    {
+        if (codeExplained.length > code)
+            return codeExplained[code];
+        else return "";
     }
 
 
@@ -46,13 +49,15 @@ public class DataChannelException extends FTPException {
     //conditions of the error.
     protected String customMessage;
 
-    public DataChannelException(int code, String message) {
-	super(code, message);
-	customMessage = message;
+    public DataChannelException(int code, String message)
+    {
+        super(code, message);
+        customMessage = message;
     }
 
-    public DataChannelException(int code) {
-	super(code);
+    public DataChannelException(int code)
+    {
+        super(code);
     }
- 
+
 }

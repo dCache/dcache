@@ -29,19 +29,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
-   This task will wait on the local server for the new incoming connection 
-   and when it comes it will start a new transfer thread on the new connection.
-   It is little tricky: it will cause data channel to start
-   a new thread. By the time this task completes, the new
-   thread is running the transfer.
-
-   Any resulting exceptions are piped to the local control channel.
-
+ * This task will wait on the local server for the new incoming connection
+ * and when it comes it will start a new transfer thread on the new connection.
+ * It is little tricky: it will cause data channel to start
+ * a new thread. By the time this task completes, the new
+ * thread is running the transfer.
+ * <p>
+ * Any resulting exceptions are piped to the local control channel.
  **/
-public class PassiveConnectTask extends Task {
+public class PassiveConnectTask extends Task
+{
 
     protected static Logger logger =
-        LoggerFactory.getLogger(PassiveConnectTask.class);
+            LoggerFactory.getLogger(PassiveConnectTask.class);
 
     protected ServerSocket myServer;
     protected SocketBox mySocketBox;
@@ -51,23 +51,25 @@ public class PassiveConnectTask extends Task {
     protected Session session;
     protected DataChannelFactory factory;
     protected TransferContext context;
-    
+
     public PassiveConnectTask(ServerSocket myServer,
                               DataSink sink,
                               BasicServerControlChannel control,
                               Session session,
                               DataChannelFactory factory,
-                              TransferContext context) {
+                              TransferContext context)
+    {
         this.sink = sink;
         init(myServer, control, session, factory, context);
     }
-    
+
     public PassiveConnectTask(ServerSocket myServer,
                               DataSource source,
                               BasicServerControlChannel control,
                               Session session,
                               DataChannelFactory factory,
-                              TransferContext context) {
+                              TransferContext context)
+    {
         this.source = source;
         init(myServer, control, session, factory, context);
     }
@@ -76,12 +78,13 @@ public class PassiveConnectTask extends Task {
                       BasicServerControlChannel control,
                       Session session,
                       DataChannelFactory factory,
-                      TransferContext context) {
+                      TransferContext context)
+    {
         if (!(session.serverMode == Session.SERVER_PASSIVE
               || session.serverMode == GridFTPSession.SERVER_EPAS)) {
             throw new IllegalStateException();
         }
-        
+
         if (myServer == null) {
             throw new IllegalArgumentException("server is nul");
         }
@@ -92,7 +95,8 @@ public class PassiveConnectTask extends Task {
         this.context = context;
     }
 
-    public void execute() {
+    public void execute()
+    {
         try {
             DataChannel dataChannel = null;
             mySocketBox = null;
@@ -120,9 +124,9 @@ public class PassiveConnectTask extends Task {
 
             } catch (Exception e) {
                 FTPServerFacade.exceptionToControlChannel(
-                                        e,
-                                        "startTransfer() failed: ",
-                                        control);
+                        e,
+                        "startTransfer() failed: ",
+                        control);
                 if (dataChannel != null) {
                     dataChannel.close();
                 }
@@ -134,24 +138,30 @@ public class PassiveConnectTask extends Task {
     }
 
     /**
-       Override this to implement authentication
-    **/
-    protected SocketBox openSocket() throws Exception {
+     * Override this to implement authentication
+     **/
+    protected SocketBox openSocket() throws Exception
+    {
         logger.debug("server.accept()");
-        
+
         SocketBox sBox = new SimpleSocketBox();
         Socket newSocket = myServer.accept();
         sBox.setSocket(newSocket);
-        
+
         return sBox;
     }
-    
-    private void close() {
+
+    private void close()
+    {
         // server will by closed by the FTPServerFacade.
-        try { myServer.close(); } catch (Exception ignore) {}
+        try {
+            myServer.close();
+        } catch (Exception ignore) {
+        }
     }
-    
-    public void stop() {
+
+    public void stop()
+    {
         close();
     }
 }

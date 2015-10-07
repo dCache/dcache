@@ -16,22 +16,24 @@
 package org.dcache.ftp.client.dc;
 
 import java.io.IOException;
+
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 import org.dcache.ftp.client.DataSource;
 
 import org.dcache.ftp.client.DataSink;
 
-public interface DataChannel {
+public interface DataChannel
+{
 
     public void startTransfer(DataSink sink,
-			      BasicServerControlChannel localControlChannel,
-			      TransferContext context)
-	throws Exception;
-    
+                              BasicServerControlChannel localControlChannel,
+                              TransferContext context)
+            throws Exception;
+
     public void startTransfer(DataSource source,
-			      BasicServerControlChannel localControlChannel,
-			      TransferContext context)
-	throws Exception;
+                              BasicServerControlChannel localControlChannel,
+                              TransferContext context)
+            throws Exception;
 
     public void close() throws IOException;
 } 

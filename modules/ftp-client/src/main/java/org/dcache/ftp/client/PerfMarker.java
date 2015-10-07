@@ -23,11 +23,12 @@ import org.slf4j.LoggerFactory;
 import java.util.StringTokenizer;
 
 /**
-   Represents GridFTP performance marker.
-   Use getter methods to access its parameters.
+ * Represents GridFTP performance marker.
+ * Use getter methods to access its parameters.
  **/
-public class PerfMarker implements Marker {
-    
+public class PerfMarker implements Marker
+{
+
     private static Logger logger = LoggerFactory.getLogger(PerfMarker.class);
 
     protected final String nl = System.getProperty("line.separator");
@@ -47,143 +48,152 @@ public class PerfMarker implements Marker {
     protected long totalStripeCount = UNDEFINED;
 
     /**
-       @param msg an FTP reply message containing the perf marker (not the reply itself!)
+     * @param msg an FTP reply message containing the perf marker (not the reply itself!)
      **/
-    public PerfMarker(String msg) 
-    throws IllegalArgumentException{
-	StringTokenizer tokens = new StringTokenizer(msg, nl);
-	if (! tokens.nextToken().trim().equals("Perf Marker")) {
-	    badMsg("should start with Perf Marker'", msg);
-	}
-	if (! tokens.hasMoreTokens()) {
-	    badMsg("No parameters", msg);
-	}
-	
-	//traverse lines
-	while(tokens.hasMoreTokens()) {
+    public PerfMarker(String msg)
+            throws IllegalArgumentException
+    {
+        StringTokenizer tokens = new StringTokenizer(msg, nl);
+        if (!tokens.nextToken().trim().equals("Perf Marker")) {
+            badMsg("should start with Perf Marker'", msg);
+        }
+        if (!tokens.hasMoreTokens()) {
+            badMsg("No parameters", msg);
+        }
 
-	    //line = "name : value"
-	    StringTokenizer line = new StringTokenizer(tokens.nextToken(), 
-						       ":");
-	    if (! line.hasMoreTokens()) {
-		badMsg("one of lines empty", msg);
-	    }
+        //traverse lines
+        while (tokens.hasMoreTokens()) {
 
-	    // name
-	    String name = line.nextToken();
+            //line = "name : value"
+            StringTokenizer line = new StringTokenizer(tokens.nextToken(),
+                                                       ":");
+            if (!line.hasMoreTokens()) {
+                badMsg("one of lines empty", msg);
+            }
 
-	    if (! name.startsWith(" ")) {
-		//last line
-		if (! name.startsWith("112")) {
-		    //that wasn't a 112 message!
-		    logger.debug("ending line: ->" + name +"<-");
-		    badMsg("No ending '112' line", msg);
-		}
-		break;
-	    }
+            // name
+            String name = line.nextToken();
 
-	    name = name.trim();
+            if (!name.startsWith(" ")) {
+                //last line
+                if (!name.startsWith("112")) {
+                    //that wasn't a 112 message!
+                    logger.debug("ending line: ->" + name + "<-");
+                    badMsg("No ending '112' line", msg);
+                }
+                break;
+            }
 
-	    if (! line.hasMoreTokens()) {
-		badMsg("one of parameters has no value", msg);
-	    }
+            name = name.trim();
 
-	    // value
-	    String value = line.nextToken().trim();
+            if (!line.hasMoreTokens()) {
+                badMsg("one of parameters has no value", msg);
+            }
 
-	    if(name.equals( "Timestamp")) {
+            // value
+            String value = line.nextToken().trim();
 
-		try {
-		    timeStamp = Double.parseDouble(value);
-		    hasTimeStamp = true;
-		} catch ( NumberFormatException e) {
-		    badMsg("Not double value:" + value, msg);
-		}
+            if (name.equals("Timestamp")) {
 
-	    } else if (name.equals("Stripe Index")) {
+                try {
+                    timeStamp = Double.parseDouble(value);
+                    hasTimeStamp = true;
+                } catch (NumberFormatException e) {
+                    badMsg("Not double value:" + value, msg);
+                }
 
-		try {
-		    stripeIndex = Long.parseLong(value);
-		    hasStripeIndex = true;
-		} catch ( NumberFormatException e) {
-		    badMsg("Not long value:" + value, msg);
-		}
-		
-	    } else if (name.equals("Stripe Bytes Transferred")) {
+            } else if (name.equals("Stripe Index")) {
 
-		try {
-		    stripeBytesTransferred = Long.parseLong(value);
-		    hasStripeBytesTransferred = true;
-		} catch ( NumberFormatException e) {
-		    badMsg("Not long value:" + value, msg);
-		}
+                try {
+                    stripeIndex = Long.parseLong(value);
+                    hasStripeIndex = true;
+                } catch (NumberFormatException e) {
+                    badMsg("Not long value:" + value, msg);
+                }
 
-	    } else if (name.equals("Total Stripe Count")) {
+            } else if (name.equals("Stripe Bytes Transferred")) {
 
-		try {
-		    totalStripeCount = Long.parseLong(value);
-		    hasTotalStripeCount = true;
-		} catch ( NumberFormatException e) {
-		    badMsg("Not long value:" + value, msg);
-		}
+                try {
+                    stripeBytesTransferred = Long.parseLong(value);
+                    hasStripeBytesTransferred = true;
+                } catch (NumberFormatException e) {
+                    badMsg("Not long value:" + value, msg);
+                }
 
-	    }
+            } else if (name.equals("Total Stripe Count")) {
 
-	}//traverse lines
+                try {
+                    totalStripeCount = Long.parseLong(value);
+                    hasTotalStripeCount = true;
+                } catch (NumberFormatException e) {
+                    badMsg("Not long value:" + value, msg);
+                }
 
-	//marker must contain time stamp
-	if (!hasTimeStamp) {
-	    badMsg("no timestamp", msg);
-	}
+            }
+
+        }//traverse lines
+
+        //marker must contain time stamp
+        if (!hasTimeStamp) {
+            badMsg("no timestamp", msg);
+        }
     }//PerfMarker
 
-    private void badMsg(String why, String msg) {
-	throw new IllegalArgumentException(
-	    "argument is not FTP 112 reply message ("
-	    + why + ": ->" + msg + "<-");
+    private void badMsg(String why, String msg)
+    {
+        throw new IllegalArgumentException(
+                "argument is not FTP 112 reply message ("
+                + why + ": ->" + msg + "<-");
     }
 
-    public boolean hasStripeIndex() {
-	return hasStripeIndex;
+    public boolean hasStripeIndex()
+    {
+        return hasStripeIndex;
     }
 
-    public boolean hasStripeBytesTransferred() {
-	return hasStripeBytesTransferred;
+    public boolean hasStripeBytesTransferred()
+    {
+        return hasStripeBytesTransferred;
     }
 
-    public boolean hasTotalStripeCount() {
-	return hasTotalStripeCount;
+    public boolean hasTotalStripeCount()
+    {
+        return hasTotalStripeCount;
     }
 
-    public double getTimeStamp() {
-	return timeStamp;
+    public double getTimeStamp()
+    {
+        return timeStamp;
     }
 
     public long getStripeIndex()
-	throws PerfMarkerException {
-	if (! hasStripeIndex) {
-	    throw new PerfMarkerException(
-				      PerfMarkerException.NO_SUCH_PARAMETER);
-	}
-	return stripeIndex;
+            throws PerfMarkerException
+    {
+        if (!hasStripeIndex) {
+            throw new PerfMarkerException(
+                    PerfMarkerException.NO_SUCH_PARAMETER);
+        }
+        return stripeIndex;
     }
 
     public long getStripeBytesTransferred()
-	throws PerfMarkerException {
-	if (! hasStripeBytesTransferred) {
-	    throw new PerfMarkerException(
-				      PerfMarkerException.NO_SUCH_PARAMETER);
-	}
-	return stripeBytesTransferred;
+            throws PerfMarkerException
+    {
+        if (!hasStripeBytesTransferred) {
+            throw new PerfMarkerException(
+                    PerfMarkerException.NO_SUCH_PARAMETER);
+        }
+        return stripeBytesTransferred;
     }
 
     public long getTotalStripeCount()
-	throws PerfMarkerException {
-	if (! hasTotalStripeCount) {
-	    throw new PerfMarkerException(
-				      PerfMarkerException.NO_SUCH_PARAMETER);
-	}
-	return totalStripeCount;
+            throws PerfMarkerException
+    {
+        if (!hasTotalStripeCount) {
+            throw new PerfMarkerException(
+                    PerfMarkerException.NO_SUCH_PARAMETER);
+        }
+        return totalStripeCount;
     }
 
 }

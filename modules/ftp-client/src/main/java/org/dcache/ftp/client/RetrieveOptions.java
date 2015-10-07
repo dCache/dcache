@@ -16,67 +16,77 @@
 package org.dcache.ftp.client;
 
 /**
-   Options to the command RETR, as defined in GridFTP.
-   In client-server transfers, this implementation does not 
-   support starting/min/max parallelism. All three values must be equal.
-   In third party transfers, this is not necessary.
+ * Options to the command RETR, as defined in GridFTP.
+ * In client-server transfers, this implementation does not
+ * support starting/min/max parallelism. All three values must be equal.
+ * In third party transfers, this is not necessary.
  */
-public class RetrieveOptions extends Options {
+public class RetrieveOptions extends Options
+{
 
     protected int startParallelism;
     protected int minParallelism;
     protected int maxParallelism;
-	
-    public RetrieveOptions() {
-	this(1);
+
+    public RetrieveOptions()
+    {
+        this(1);
     }
 
     /**
-       @param parallelism required min, max, and starting parallelism 
-    */
-    public RetrieveOptions(int parallelism) {
-	super("RETR");
-	this.startParallelism = parallelism;
-	this.minParallelism = parallelism;
-	this.maxParallelism = parallelism;
-    }
-
-    /**
-       Use only in third party mode.
+     * @param parallelism required min, max, and starting parallelism
      */
-    public void setStartingParallelism(int startParallelism) {
-	this.startParallelism = startParallelism;
+    public RetrieveOptions(int parallelism)
+    {
+        super("RETR");
+        this.startParallelism = parallelism;
+        this.minParallelism = parallelism;
+        this.maxParallelism = parallelism;
     }
 
     /**
-       Use only in third party mode.
+     * Use only in third party mode.
      */
-    public void setMinParallelism(int minParallelism) {
-	this.minParallelism = minParallelism;
+    public void setStartingParallelism(int startParallelism)
+    {
+        this.startParallelism = startParallelism;
     }
-    
+
     /**
-       Use only in third party mode.
+     * Use only in third party mode.
      */
-    public void setMaxParallelism(int maxParallelism) {
-	this.maxParallelism = maxParallelism;
+    public void setMinParallelism(int minParallelism)
+    {
+        this.minParallelism = minParallelism;
     }
 
-    public int getStartingParallelism() {
-	return this.startParallelism;
+    /**
+     * Use only in third party mode.
+     */
+    public void setMaxParallelism(int maxParallelism)
+    {
+        this.maxParallelism = maxParallelism;
     }
 
-    public int getMinParallelism() {
-	return this.minParallelism;
+    public int getStartingParallelism()
+    {
+        return this.startParallelism;
     }
-    
-    public int getMaxParallelism() {
-	return this.maxParallelism;
+
+    public int getMinParallelism()
+    {
+        return this.minParallelism;
     }
-    
-    public String getArgument() {
-	return "Parallelism=" + startParallelism + "," +
-	    minParallelism + "," + maxParallelism + ";";
+
+    public int getMaxParallelism()
+    {
+        return this.maxParallelism;
+    }
+
+    public String getArgument()
+    {
+        return "Parallelism=" + startParallelism + "," +
+               minParallelism + "," + maxParallelism + ";";
     }
 
 }

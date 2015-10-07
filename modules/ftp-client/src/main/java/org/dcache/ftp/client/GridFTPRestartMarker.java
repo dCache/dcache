@@ -23,106 +23,117 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
-   Represents GridFTP restart marker, which contains unordered set 
-   of byte ranges representing transferred data. 
-   The ranges are preserved exactly as received 
-   from the server, which may not be very useful. 
-   For additional processing on byte ranges, 
-   use ByteRangeList.
-   Typical usage:
-   <pre>
-   list = new ByteRangeList();
-   marker = new GridFTPRestartMarker(reply.getMessage());
-   list.merge(marker.getVector());
-   </pre>
-   @see ByteRangeList
+ * Represents GridFTP restart marker, which contains unordered set
+ * of byte ranges representing transferred data.
+ * The ranges are preserved exactly as received
+ * from the server, which may not be very useful.
+ * For additional processing on byte ranges,
+ * use ByteRangeList.
+ * Typical usage:
+ * <pre>
+ * list = new ByteRangeList();
+ * marker = new GridFTPRestartMarker(reply.getMessage());
+ * list.merge(marker.getVector());
+ * </pre>
+ *
+ * @see ByteRangeList
  **/
-public class GridFTPRestartMarker implements Marker {
+public class GridFTPRestartMarker implements Marker
+{
 
     private static Logger logger =
-        LoggerFactory.getLogger(GridFTPRestartMarker.class);
+            LoggerFactory.getLogger(GridFTPRestartMarker.class);
 
     Vector vector;
 
 
     /**
-       Constructs the restart marker by parsing the parameter string.
-       @param msg The string in the format of FTP reply 111 message,
-       for instance "Range Marker 0-29,30-89"
-       @throws IllegalArgumentException if the parameter is in bad format
+     * Constructs the restart marker by parsing the parameter string.
+     *
+     * @param msg The string in the format of FTP reply 111 message,
+     *            for instance "Range Marker 0-29,30-89"
+     * @throws IllegalArgumentException if the parameter is in bad format
      **/
     public GridFTPRestartMarker(String msg)
-	throws IllegalArgumentException{
+            throws IllegalArgumentException
+    {
 
-	// expecting msg like "Range Marker 0-29,30-89"
+        // expecting msg like "Range Marker 0-29,30-89"
 
-	vector = new Vector();
-	StringTokenizer tokens = new StringTokenizer(msg);
-	
-	if (! tokens.hasMoreTokens()) {
-	    badMsg("message empty", msg);
-	}
+        vector = new Vector();
+        StringTokenizer tokens = new StringTokenizer(msg);
 
-	if (! tokens.nextToken(" ").equals("Range")) {
-	    badMsg("should start with Range Marker", msg);
-	}
-	if (! tokens.nextToken(" ").equals("Marker")) {
-	    badMsg("should start with Range Marker", msg);
-	}
+        if (!tokens.hasMoreTokens()) {
+            badMsg("message empty", msg);
+        }
 
-	while(tokens.hasMoreTokens()) {
-	    long from =0;
-	    long to =0;
-	    try {
+        if (!tokens.nextToken(" ").equals("Range")) {
+            badMsg("should start with Range Marker", msg);
+        }
+        if (!tokens.nextToken(" ").equals("Marker")) {
+            badMsg("should start with Range Marker", msg);
+        }
 
-		String rangeStr = tokens.nextToken(",");
-		StringTokenizer rangeTok = new StringTokenizer(rangeStr, "-");
-		from = Long.parseLong(rangeTok.nextToken().trim());
-		to = Long.parseLong(rangeTok.nextToken().trim());
+        while (tokens.hasMoreTokens()) {
+            long from = 0;
+            long to = 0;
+            try {
 
-		if (rangeTok.hasMoreElements()) {
-		    badMsg("A range is followed by '-'", msg);
-		}
+                String rangeStr = tokens.nextToken(",");
+                StringTokenizer rangeTok = new StringTokenizer(rangeStr, "-");
+                from = Long.parseLong(rangeTok.nextToken().trim());
+                to = Long.parseLong(rangeTok.nextToken().trim());
 
-	    } catch(NoSuchElementException nse) {
-		// range does not look like "from-to"
-		badMsg("one of the ranges is malformatted", msg);
-	    } catch (NumberFormatException nfe) {
-		badMsg("one of the integers is malformatted", msg);
-	    }
+                if (rangeTok.hasMoreElements()) {
+                    badMsg("A range is followed by '-'", msg);
+                }
 
-	    try {
+            } catch (NoSuchElementException nse) {
+                // range does not look like "from-to"
+                badMsg("one of the ranges is malformatted", msg);
+            } catch (NumberFormatException nfe) {
+                badMsg("one of the integers is malformatted", msg);
+            }
 
-		vector.add(new ByteRange(from, to));
+            try {
 
-	    } catch(IllegalArgumentException iae) {
-		// to < from
-		badMsg("range beginning > range end", msg);
-	    }   
-	}
-	//vector now contains all ranges
-	if (vector.size() == 0 ) {
-	    badMsg("empty range list", msg);
-	}
-    };
+                vector.add(new ByteRange(from, to));
 
-    private void badMsg(String why, String msg) {
-	throw new IllegalArgumentException(
-	    "argument is not FTP 111 reply message ("
-	    + why + ": ->" + msg + "<-");
+            } catch (IllegalArgumentException iae) {
+                // to < from
+                badMsg("range beginning > range end", msg);
+            }
+        }
+        //vector now contains all ranges
+        if (vector.size() == 0) {
+            badMsg("empty range list", msg);
+        }
+    }
+
+    ;
+
+    private void badMsg(String why, String msg)
+    {
+        throw new IllegalArgumentException(
+                "argument is not FTP 111 reply message ("
+                + why + ": ->" + msg + "<-");
     }
 
     /**
-      Returns Vector representation of this object.  Its elements
-      are be ByteRange objects. They are in the order exactly as received
-      in the FTP reply; no additional processing has been done on them.
-      To order and merge them, use ByteRangeList.
-      Subsequent calls of this method will return
-      the same Vector object.
-      @return Vector representation of this object.
-    **/
-    public Vector toVector() {
-	return vector;
-    };
-    
+     * Returns Vector representation of this object.  Its elements
+     * are be ByteRange objects. They are in the order exactly as received
+     * in the FTP reply; no additional processing has been done on them.
+     * To order and merge them, use ByteRangeList.
+     * Subsequent calls of this method will return
+     * the same Vector object.
+     *
+     * @return Vector representation of this object.
+     **/
+    public Vector toVector()
+    {
+        return vector;
+    }
+
+    ;
+
 }

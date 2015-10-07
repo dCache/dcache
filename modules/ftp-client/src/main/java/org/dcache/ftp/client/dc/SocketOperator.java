@@ -15,8 +15,11 @@
  */
 package org.dcache.ftp.client.dc;
 
-/** Callback operating on a socketBox. Used in SocketPool. */
-public interface SocketOperator {
+/**
+ * Callback operating on a socketBox. Used in SocketPool.
+ */
+public interface SocketOperator
+{
 
     public void operate(SocketBox s) throws Exception;
 

@@ -20,31 +20,35 @@ import java.io.IOException;
 
 import org.dcache.ftp.client.Buffer;
 
-public class StreamImageDCReader implements DataChannelReader {
+public class StreamImageDCReader implements DataChannelReader
+{
 
     public static final int BUF_SIZE = 512000;
 
     protected int bufferSize = BUF_SIZE;
     protected InputStream input;
 
-    public void setDataStream(InputStream in) {
-	input = in;
+    public void setDataStream(InputStream in)
+    {
+        input = in;
     }
-    
+
     public Buffer read()
-	throws IOException {
-	byte[] bt = new byte[bufferSize];
-	int read = input.read(bt);
-	if (read == -1) {
-	    return null;
-	} else {
-	    return new Buffer(bt, read);
-	}
+            throws IOException
+    {
+        byte[] bt = new byte[bufferSize];
+        int read = input.read(bt);
+        if (read == -1) {
+            return null;
+        } else {
+            return new Buffer(bt, read);
+        }
     }
-    
-    public void close() 
-	throws IOException {
-	input.close();
+
+    public void close()
+            throws IOException
+    {
+        input.close();
     }
 
 }

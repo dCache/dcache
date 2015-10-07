@@ -20,10 +20,12 @@ import java.util.HashMap;
 
 import org.dcache.ftp.client.GridFTPSession;
 import org.dcache.ftp.client.Session;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractDataChannel implements DataChannel {
+public abstract class AbstractDataChannel implements DataChannel
+{
 
     private static Logger logger = LoggerFactory.getLogger(AbstractDataChannel.class);
 
@@ -32,94 +34,96 @@ public abstract class AbstractDataChannel implements DataChannel {
     protected static Map dataHandlers;
 
     private static final int SOURCE = 1;
-    private static final int SINK   = 2;
+    private static final int SINK = 2;
 
     static {
-	try {
+        try {
 
-	    // Stream [Image/Ascii] Reader and Writer support
+            // Stream [Image/Ascii] Reader and Writer support
 
-	    registerHandler(Session.MODE_STREAM, 
-			    Session.TYPE_IMAGE,
-			    SOURCE,
-			    StreamImageDCReader.class);
+            registerHandler(Session.MODE_STREAM,
+                            Session.TYPE_IMAGE,
+                            SOURCE,
+                            StreamImageDCReader.class);
 
-	    registerHandler(Session.MODE_STREAM, 
-			    Session.TYPE_ASCII,
-			    SOURCE,
-			    StreamAsciiDCReader.class);
-	
-	    registerHandler(Session.MODE_STREAM, 
-			    Session.TYPE_IMAGE,
-			    SINK,
-			    StreamImageDCWriter.class);
+            registerHandler(Session.MODE_STREAM,
+                            Session.TYPE_ASCII,
+                            SOURCE,
+                            StreamAsciiDCReader.class);
 
-	    registerHandler(Session.MODE_STREAM, 
-			    Session.TYPE_ASCII,
-			    SINK,
-			    StreamAsciiDCWriter.class);
+            registerHandler(Session.MODE_STREAM,
+                            Session.TYPE_IMAGE,
+                            SINK,
+                            StreamImageDCWriter.class);
 
-	    // EBlock
+            registerHandler(Session.MODE_STREAM,
+                            Session.TYPE_ASCII,
+                            SINK,
+                            StreamAsciiDCWriter.class);
 
-	    registerHandler(GridFTPSession.MODE_EBLOCK,
-			    Session.TYPE_IMAGE,
-			    SOURCE,
-			    EBlockImageDCReader.class);
+            // EBlock
 
-	    registerHandler(GridFTPSession.MODE_EBLOCK,
-			    Session.TYPE_IMAGE,
-			    SINK,
-			    EBlockImageDCWriter.class);
+            registerHandler(GridFTPSession.MODE_EBLOCK,
+                            Session.TYPE_IMAGE,
+                            SOURCE,
+                            EBlockImageDCReader.class);
 
-	    // EBlock ASCII modes not supported
+            registerHandler(GridFTPSession.MODE_EBLOCK,
+                            Session.TYPE_IMAGE,
+                            SINK,
+                            EBlockImageDCWriter.class);
 
-	} catch (Exception e) {
-	    throw new RuntimeException("Failed to install default data channel handlers: " + e.getMessage());
-	}
+            // EBlock ASCII modes not supported
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to install default data channel handlers: " + e.getMessage());
+        }
     }
 
 
-    public AbstractDataChannel(Session session) {
-	this.session = session;
+    public AbstractDataChannel(Session session)
+    {
+        this.session = session;
     }
 
 
     public static void registerHandler(int transferMode,
-				int transferType,
-				int type,
-				Class clazz) 
-	throws Exception {
-	switch (type) {
-	case SOURCE:
-	    if (!DataChannelReader.class.isAssignableFrom(clazz)) {
-		throw new Exception("Incorrect type");
-	    }
-	    break;
-	case SINK:
-	    if (!DataChannelWriter.class.isAssignableFrom(clazz)) {
-		throw new Exception("Incorrect type");
-	    }
-	    break;
-	default:
-	    throw new IllegalArgumentException("Type not supported: " + 
-					       type);
-	}   
+                                       int transferType,
+                                       int type,
+                                       Class clazz)
+            throws Exception
+    {
+        switch (type) {
+        case SOURCE:
+            if (!DataChannelReader.class.isAssignableFrom(clazz)) {
+                throw new Exception("Incorrect type");
+            }
+            break;
+        case SINK:
+            if (!DataChannelWriter.class.isAssignableFrom(clazz)) {
+                throw new Exception("Incorrect type");
+            }
+            break;
+        default:
+            throw new IllegalArgumentException("Type not supported: " +
+                                               type);
+        }
 
-	String id = getHandlerID(transferMode, transferType, type);
+        String id = getHandlerID(transferMode, transferType, type);
 
-	if (dataHandlers == null) {
-	    dataHandlers = new HashMap();
-	}
+        if (dataHandlers == null) {
+            dataHandlers = new HashMap();
+        }
 
-	// Allow for overwrites
-	/*
+        // Allow for overwrites
+    /*
 	if (dataHandlers.get(id) != null) {
 	    throw new Exception("Handler already registered.");
 	}
 	*/
-	
-	logger.debug("registering handler for class " + clazz.toString() + "; id = " + id); 
-	dataHandlers.put(id, clazz);
+
+        logger.debug("registering handler for class " + clazz.toString() + "; id = " + id);
+        dataHandlers.put(id, clazz);
     }
 
     /**
@@ -127,9 +131,10 @@ public abstract class AbstractDataChannel implements DataChannel {
      * (the client can read data in specific type & mode from the
      * data connection)
      */
-    public boolean isDataSourceModeSupported() {
-	String id = getHandlerID(session.transferMode, session.transferType, SOURCE);
-	return (dataHandlers.get(id) != null);
+    public boolean isDataSourceModeSupported()
+    {
+        String id = getHandlerID(session.transferMode, session.transferType, SOURCE);
+        return (dataHandlers.get(id) != null);
     }
 
     /**
@@ -137,83 +142,93 @@ public abstract class AbstractDataChannel implements DataChannel {
      * (the client can write data in specific type & mode to the
      * data connection)
      */
-    public boolean isDataSinkModeSupported() {
-	String id = getHandlerID(session.transferMode, session.transferType, SINK);
-	return (dataHandlers.get(id) != null);
+    public boolean isDataSinkModeSupported()
+    {
+        String id = getHandlerID(session.transferMode, session.transferType, SINK);
+        return (dataHandlers.get(id) != null);
     }
 
     // currently context is only needed in case of EBlock mode
 
-    public DataChannelReader getDataChannelSource(TransferContext context) 
-	throws Exception {
-	String id = getHandlerID(session.transferMode, session.transferType, SOURCE);
-	logger.debug("type/mode: " + id);
-	Class clazz = (Class)dataHandlers.get(id);
-	if (clazz == null) {
-	    throw new Exception("No data reader for type/mode" + id);
-	}
-	DataChannelReader reader =  (DataChannelReader)clazz.newInstance();
-	if (reader instanceof EBlockAware) {
-	    ((EBlockAware)reader).setTransferContext((EBlockParallelTransferContext)context);
-	}
-	return reader;
+    public DataChannelReader getDataChannelSource(TransferContext context)
+            throws Exception
+    {
+        String id = getHandlerID(session.transferMode, session.transferType, SOURCE);
+        logger.debug("type/mode: " + id);
+        Class clazz = (Class) dataHandlers.get(id);
+        if (clazz == null) {
+            throw new Exception("No data reader for type/mode" + id);
+        }
+        DataChannelReader reader = (DataChannelReader) clazz.newInstance();
+        if (reader instanceof EBlockAware) {
+            ((EBlockAware) reader).setTransferContext((EBlockParallelTransferContext) context);
+        }
+        return reader;
     }
 
-    public DataChannelWriter getDataChannelSink(TransferContext context) 
-	throws Exception {
-	String id = getHandlerID(session.transferMode, session.transferType, SINK);
-	Class clazz = (Class)dataHandlers.get(id);
-	if (clazz == null) {
-	    throw new Exception("No data reader for type/mode");
-	}
-	DataChannelWriter writer =  (DataChannelWriter)clazz.newInstance();
-	if (writer instanceof EBlockAware) {
-	    ((EBlockAware)writer).setTransferContext((EBlockParallelTransferContext)context);
-	}
-	return writer;
+    public DataChannelWriter getDataChannelSink(TransferContext context)
+            throws Exception
+    {
+        String id = getHandlerID(session.transferMode, session.transferType, SINK);
+        Class clazz = (Class) dataHandlers.get(id);
+        if (clazz == null) {
+            throw new Exception("No data reader for type/mode");
+        }
+        DataChannelWriter writer = (DataChannelWriter) clazz.newInstance();
+        if (writer instanceof EBlockAware) {
+            ((EBlockAware) writer).setTransferContext((EBlockParallelTransferContext) context);
+        }
+        return writer;
     }
 
     // it is important for this method to handle all possible
     // mode/transfer types
     private static String getHandlerID(int transferMode,
-				       int transferType,
-				       int type) {
-	String id = "";
+                                       int transferType,
+                                       int type)
+    {
+        String id = "";
 
-	switch (transferMode) {
-	case Session.MODE_STREAM:
-	    id += "S-"; break;
-	case GridFTPSession.MODE_EBLOCK:
-	    id += "E-"; break;
-	default:
-	    throw new IllegalArgumentException("Mode not supported: " + 
-					       transferMode);
-	}
+        switch (transferMode) {
+        case Session.MODE_STREAM:
+            id += "S-";
+            break;
+        case GridFTPSession.MODE_EBLOCK:
+            id += "E-";
+            break;
+        default:
+            throw new IllegalArgumentException("Mode not supported: " +
+                                               transferMode);
+        }
 
-	switch (transferType) {
-	case Session.TYPE_IMAGE:
-	    id += "I-"; break;
-	case Session.TYPE_ASCII:
-	    id += "A-"; break;
-	default:
-	    throw new IllegalArgumentException("Type not supported: " + 
-					       transferType);
-	}
+        switch (transferType) {
+        case Session.TYPE_IMAGE:
+            id += "I-";
+            break;
+        case Session.TYPE_ASCII:
+            id += "A-";
+            break;
+        default:
+            throw new IllegalArgumentException("Type not supported: " +
+                                               transferType);
+        }
 
-	switch (type) {
-	case SOURCE:
-	    id += "R"; break;
-	case SINK:
-	    id += "W"; break;
-	default:
-	    throw new IllegalArgumentException("Type not supported: " + 
-					       type);
-	}   
-	
-	if (id.equals("")) {
-	    return null;
-	}
-	return id;
+        switch (type) {
+        case SOURCE:
+            id += "R";
+            break;
+        case SINK:
+            id += "W";
+            break;
+        default:
+            throw new IllegalArgumentException("Type not supported: " +
+                                               type);
+        }
+
+        if (id.equals("")) {
+            return null;
+        }
+        return id;
     }
-	
+
 }

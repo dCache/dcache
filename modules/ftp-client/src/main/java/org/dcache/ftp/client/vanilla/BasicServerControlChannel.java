@@ -17,25 +17,28 @@ package org.dcache.ftp.client.vanilla;
 
 
 /**
-   Basic subset of server side control channel functionality.
-   Using this class, local server can send replies but not receive
-   commands.
+ * Basic subset of server side control channel functionality.
+ * Using this class, local server can send replies but not receive
+ * commands.
  **/
-public interface BasicServerControlChannel{
+public interface BasicServerControlChannel
+{
 
     /**
-       write reply to the control channel
+     * write reply to the control channel
      **/
     public void write(Reply reply);
+
     /**
-       @return number of replies sent so far
+     * @return number of replies sent so far
      **/
     public int getReplyCount();
+
     /**
-       set reply count to 0. If this function is used consequently
-       at the beginning of each transfer,
-       then reply count will always indicate number of messages
-       of last transfer.
+     * set reply count to 0. If this function is used consequently
+     * at the beginning of each transfer,
+     * then reply count will always indicate number of messages
+     * of last transfer.
      **/
     public void resetReplyCount();
 } //BasicServerControlChannel

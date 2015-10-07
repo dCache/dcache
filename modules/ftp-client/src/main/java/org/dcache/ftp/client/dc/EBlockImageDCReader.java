@@ -25,47 +25,52 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class EBlockImageDCReader
-    extends EBlockAware
-    implements DataChannelReader {
+        extends EBlockAware
+        implements DataChannelReader
+{
 
     boolean eodReceived = false;
     boolean willCloseReceived = false;
-    
+
     private static Logger logger =
-        LoggerFactory.getLogger(EBlockImageDCReader.class);
-    
+            LoggerFactory.getLogger(EBlockImageDCReader.class);
+
     protected DataInputStream input;
-    
-    public void setDataStream(InputStream in) {
+
+    public void setDataStream(InputStream in)
+    {
         input = new DataInputStream(in);
     }
-    
-    /** @return true if at least once received
-	the "server will close the connection" signal
-    */
-    public boolean willCloseReceived() {
+
+    /**
+     * @return true if at least once received
+     * the "server will close the connection" signal
+     */
+    public boolean willCloseReceived()
+    {
         return willCloseReceived;
     }
-    
-    public Buffer read() throws IOException {
-        
+
+    public Buffer read() throws IOException
+    {
+
         //EOD received in previous read
         if (eodReceived) {
             return null;
         }
-        
+
         // WILL_CLOSE received in previous read
         if (willCloseReceived) {
             return null;
         }
-        
+
         byte desc = input.readByte();
         long size = input.readLong();
         long offset = input.readLong();
-        
+
         boolean eof = (desc & EOF) != 0;
         boolean eod = (desc & EOD) != 0;
-        
+
         if (logger.isDebugEnabled()) {
             logger.debug(desc + " " + size + " " + offset);
         }
@@ -76,20 +81,20 @@ public class EBlockImageDCReader
         if (willCloseReceived) {
             logger.debug("Received the CLOSE flag");
         }
-        
+
         if (eod) {
             this.eodReceived = true;
             context.eodTransferred();
             if (logger.isDebugEnabled()) {
                 logger.debug(
-                         "Received EOD. Still expecting: "
-                         + ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
-                            ? "?"
-                            : Integer.toString(
-                                               context.eodsTotal - context.eodsTransferred)));
+                        "Received EOD. Still expecting: "
+                        + ((context.getEodsTotal() == EBlockParallelTransferContext.UNDEFINED)
+                           ? "?"
+                           : Integer.toString(
+                                context.eodsTotal - context.eodsTransferred)));
             }
         }
-        
+
         if (eof) {
             context.setEodsTotal((int) offset);
             if (logger.isDebugEnabled()) {
@@ -97,15 +102,16 @@ public class EBlockImageDCReader
                              + context.getEodsTotal());
             }
             return null;
-            
+
         } else {
             byte[] bt = new byte[(int) size];
             input.readFully(bt);
             return new Buffer(bt, (int) size, offset);
         }
     }
-    
-    public void close() throws IOException {
+
+    public void close() throws IOException
+    {
         // we want to reuse the socket
         input.close();
     }

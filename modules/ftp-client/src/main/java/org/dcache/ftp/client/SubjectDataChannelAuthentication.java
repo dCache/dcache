@@ -16,17 +16,19 @@
 package org.dcache.ftp.client;
 
 /**
-   Represents subject data channel authentication.
+ * Represents subject data channel authentication.
  */
-public class SubjectDataChannelAuthentication 
-    extends DataChannelAuthentication {
+public class SubjectDataChannelAuthentication
+        extends DataChannelAuthentication
+{
 
-    public SubjectDataChannelAuthentication(String subject) {
-	super();
-	if (subject == null) {
-	    throw new IllegalArgumentException("Subject is null");
-	}
-	setArgument("S " + subject);
+    public SubjectDataChannelAuthentication(String subject)
+    {
+        super();
+        if (subject == null) {
+            throw new IllegalArgumentException("Subject is null");
+        }
+        setArgument("S " + subject);
     }
-    
+
 }

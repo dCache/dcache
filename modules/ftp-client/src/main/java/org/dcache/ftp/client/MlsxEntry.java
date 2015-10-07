@@ -25,20 +25,22 @@ import java.util.TimeZone;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.dcache.ftp.client.exception.FTPException;
 
 /**
- * 
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
+ *
  */
-public class MlsxEntry {
+public class MlsxEntry
+{
 
-   private static Logger logger =
-	LoggerFactory.getLogger(MlsxEntry.class);
-   
+    private static Logger logger =
+            LoggerFactory.getLogger(MlsxEntry.class);
+
     private static SimpleDateFormat dateFormatter = null;
 
     public static final String SIZE = "size";
@@ -57,56 +59,60 @@ public class MlsxEntry {
     public static final String UNIX_UID = "unix.uid";
     public static final String UNIX_GID = "unix.gid";
     public static final String ERROR = "error";
-    
+
     public static final String TYPE_FILE = "file";
     public static final String TYPE_CDIR = "cdir";
     public static final String TYPE_PDIR = "pdir";
     public static final String TYPE_DIR = "dir";
     public static final String TYPE_SLINK = "slink";
-    
+
     public static final String ERROR_OPENFAILED = "OpenFailed";
     public static final String ERROR_INVALIDLINK = "InvalidLink";
-    
+
     private String fileName = null;
     private Hashtable facts = new Hashtable();
 
     /**
      * Constructor for MlsxEntry.
+     *
      * @param mlsxEntry
      * @throws FTPException
      */
-    public MlsxEntry(String mlsxEntry) throws FTPException {
+    public MlsxEntry(String mlsxEntry) throws FTPException
+    {
         this.parse(mlsxEntry);
     }
-    
+
     /**
      * Method parse.
+     *
      * @param mlsxEntry
      */
-    private void parse(String mlsxEntry) {
-        
+    private void parse(String mlsxEntry)
+    {
+
         StringTokenizer tokenizer = new StringTokenizer(mlsxEntry, ";");
 
         while (tokenizer.hasMoreTokens()) {
-            
+
             String token = tokenizer.nextToken();
-            
+
             if (tokenizer.hasMoreTokens()) {
-                
+
                 //next fact
                 String fact = token;
                 logger.debug("fact: " + fact);
                 int equalSign = fact.indexOf('=');
                 String factName = fact.substring(0, equalSign).trim().toLowerCase();
                 String factValue =
-                    fact.substring(equalSign + 1, fact.length());
+                        fact.substring(equalSign + 1, fact.length());
 
                 facts.put(factName, factValue);
 
             } else {
 
                 // name: trim leading space
-                this.fileName = token.substring(1, 
+                this.fileName = token.substring(1,
                                                 token.length());
                 logger.debug("name: " + fileName);
 
@@ -114,47 +120,52 @@ public class MlsxEntry {
         }
     }
 
-    public void set(String factName, String factValue) {
+    public void set(String factName, String factValue)
+    {
         facts.put(factName, factValue);
     }
-    
-    public String getFileName() {
+
+    public String getFileName()
+    {
         return this.fileName;
     }
 
-    public String get(String factName) {
+    public String get(String factName)
+    {
         return (String) facts.get(factName);
     }
 
-    public Date getDate(String factName) {
-    	Date d = null;
+    public Date getDate(String factName)
+    {
+        Date d = null;
         synchronized (dateFormatter) {
             try {
-                d = dateFormatter.parse((String)facts.get(factName));
+                d = dateFormatter.parse((String) facts.get(factName));
             } catch (ParseException e) {
                 d = null;
             }
         }
         return d;
     }
-    
-    public String toString() {
+
+    public String toString()
+    {
         StringBuffer buf = new StringBuffer();
         Enumeration e = facts.keys();
-        
+
         while (e.hasMoreElements()) {
             String key = (String) e.nextElement();
-            String value = (String)facts.get(key);
-            buf.append( key + "=" + value +";");
+            String value = (String) facts.get(key);
+            buf.append(key + "=" + value + ";");
         }
-        
-        buf.append( " " + fileName);
-        
-        return buf.toString();		
+
+        buf.append(" " + fileName);
+
+        return buf.toString();
     }
-	
+
     static {
-		dateFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
-		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+        dateFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 }

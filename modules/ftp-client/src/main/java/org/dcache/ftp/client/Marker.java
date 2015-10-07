@@ -16,7 +16,9 @@
 package org.dcache.ftp.client;
 
 /**
-   FTP and GridFTP markers (restart markers, performance markers) all extend this
-   interface.
+ * FTP and GridFTP markers (restart markers, performance markers) all extend this
+ * interface.
  **/
-public interface Marker {}
+public interface Marker
+{
+}

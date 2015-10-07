@@ -17,10 +17,12 @@ package org.dcache.ftp.client.dc;
 
 import org.dcache.ftp.client.Session;
 
-public class SimpleDataChannelFactory implements DataChannelFactory {
+public class SimpleDataChannelFactory implements DataChannelFactory
+{
 
-    public DataChannel getDataChannel(Session state, SocketBox socketBox) {
-	return new SimpleDataChannel(state, socketBox);
+    public DataChannel getDataChannel(Session state, SocketBox socketBox)
+    {
+        return new SimpleDataChannel(state, socketBox);
     }
 
 }

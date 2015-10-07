@@ -14,40 +14,44 @@
  * limitations under the License.
  */
 package org.dcache.ftp.client.dc;
+
 import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 
-public class SimpleTransferThreadFactory 
- implements TransferThreadFactory {
+public class SimpleTransferThreadFactory
+        implements TransferThreadFactory
+{
 
-    public TransferThread 
-	getTransferSinkThread(DataChannel dataChannel,
-			      SocketBox socketBox, 
-			      DataSink sink,
-			      BasicServerControlChannel localControlChannel,
-			      TransferContext context) throws Exception {
+    public TransferThread
+    getTransferSinkThread(DataChannel dataChannel,
+                          SocketBox socketBox,
+                          DataSink sink,
+                          BasicServerControlChannel localControlChannel,
+                          TransferContext context) throws Exception
+    {
 
-	return new TransferSinkThread((SimpleDataChannel)dataChannel,
-				      socketBox, 
-				      sink,
-				      localControlChannel,
-				      context);
+        return new TransferSinkThread((SimpleDataChannel) dataChannel,
+                                      socketBox,
+                                      sink,
+                                      localControlChannel,
+                                      context);
     }
 
-    public TransferThread 
-	getTransferSourceThread(DataChannel dataChannel,
-				SocketBox socketBox, 
-				DataSource source,
-				BasicServerControlChannel localControlChannel,
-				TransferContext context) throws Exception {
-	
-	return new TransferSourceThread((SimpleDataChannel)dataChannel,
-					socketBox, 
-					source,
-					localControlChannel,
-					context);
+    public TransferThread
+    getTransferSourceThread(DataChannel dataChannel,
+                            SocketBox socketBox,
+                            DataSource source,
+                            BasicServerControlChannel localControlChannel,
+                            TransferContext context) throws Exception
+    {
+
+        return new TransferSourceThread((SimpleDataChannel) dataChannel,
+                                        socketBox,
+                                        source,
+                                        localControlChannel,
+                                        context);
     }
-    
+
 }
 

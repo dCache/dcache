@@ -16,8 +16,9 @@
 package org.dcache.ftp.client.vanilla;
 
 /**
-   A semaphore
+ * A semaphore
  **/
-public class Flag {
+public class Flag
+{
     public boolean flag = false;
 }

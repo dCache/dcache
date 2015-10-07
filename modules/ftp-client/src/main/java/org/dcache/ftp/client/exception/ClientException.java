@@ -16,10 +16,12 @@
 package org.dcache.ftp.client.exception;
 
 
-/** Indicates a local client side problem that has 
-    not been caused by remote server nor the local data channel. 
-**/
-public class ClientException extends FTPException {
+/**
+ * Indicates a local client side problem that has
+ * not been caused by remote server nor the local data channel.
+ **/
+public class ClientException extends FTPException
+{
 
 
     //public static final int UNSPECIFIED = 0;
@@ -41,41 +43,45 @@ public class ClientException extends FTPException {
     public static final int OTHER = 15;
 
     private static String[] codeExplained;
+
     static {
-	codeExplained = new String[]
-	{"Unspecified category.",
-	 "Server authorization has not been performed.",
-	 "Servers have been set up with different protection buffer sizes.",
-	 "Servers have been set up with different transfer modes.",
-	 "Servers have been set up with different transfer types.",
-	 "One server should be have been set active and the other passive.",
-	 "Reply wait timeout.",
-	 "Transfer thread has been killed.",
-	 "Server has been set to wrong transfer mode.",
-	 "Client's BufferedReader implementation does not support mark().",
-	 "Set one server to passive before setting other to active.",
-	 "Local transfer problem.",
-	 "Cannot connect - unknown remote host.",
-	 "Server has been set to wrong transfer type.",
-	 "Socket operation failed."
-	};
+        codeExplained = new String[]
+                {"Unspecified category.",
+                        "Server authorization has not been performed.",
+                        "Servers have been set up with different protection buffer sizes.",
+                        "Servers have been set up with different transfer modes.",
+                        "Servers have been set up with different transfer types.",
+                        "One server should be have been set active and the other passive.",
+                        "Reply wait timeout.",
+                        "Transfer thread has been killed.",
+                        "Server has been set to wrong transfer mode.",
+                        "Client's BufferedReader implementation does not support mark().",
+                        "Set one server to passive before setting other to active.",
+                        "Local transfer problem.",
+                        "Cannot connect - unknown remote host.",
+                        "Server has been set to wrong transfer type.",
+                        "Socket operation failed."
+                };
     }
 
-    public String getCodeExplanation(int code) {
-	if (codeExplained.length > code)
-	    return codeExplained[code];
-	else return "";
+    public String getCodeExplanation(int code)
+    {
+        if (codeExplained.length > code)
+            return codeExplained[code];
+        else return "";
     }
 
 
     protected int code = UNSPECIFIED;
 
-    public ClientException(int code, String message) {
-	super(code, message);
+    public ClientException(int code, String message)
+    {
+        super(code, message);
     }
 
-    public ClientException(int code) {
-	super(code);
+    public ClientException(int code)
+    {
+        super(code);
     }
- 
+
 }

@@ -16,19 +16,22 @@
 package org.dcache.ftp.client;
 
 /**
-   Represents FTP stream mode restart marker, as defined in RFC 959.
-   Not used.
+ * Represents FTP stream mode restart marker, as defined in RFC 959.
+ * Not used.
  */
-public class StreamModeRestartMarker 
-    implements Marker, RestartData {
+public class StreamModeRestartMarker
+        implements Marker, RestartData
+{
 
     protected long offset;
-    
-    public StreamModeRestartMarker(long offset) {
-	this.offset = offset;
+
+    public StreamModeRestartMarker(long offset)
+    {
+        this.offset = offset;
     }
-    
-    public String toFtpCmdArgument() {
-	return String.valueOf(offset);
+
+    public String toFtpCmdArgument()
+    {
+        return String.valueOf(offset);
     }
 }

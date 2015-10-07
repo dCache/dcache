@@ -26,107 +26,112 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
-   Implements outgoing transfer.
-   While the transfer is in progress, replies are sent to the
-   local control channel. Also any failure messages go there
-   in the form of a negative reply.
-**/
-public class TransferSourceThread extends TransferThread {
+ * Implements outgoing transfer.
+ * While the transfer is in progress, replies are sent to the
+ * local control channel. Also any failure messages go there
+ * in the form of a negative reply.
+ **/
+public class TransferSourceThread extends TransferThread
+{
 
     protected static Logger logger =
-	LoggerFactory.getLogger(TransferSourceThread.class);
-    
+            LoggerFactory.getLogger(TransferSourceThread.class);
+
     protected DataChannelWriter writer;
     protected DataSource source;
     protected BasicServerControlChannel localControlChannel;
     protected TransferContext context;
     protected SocketBox socketBox = null;
-    
+
     public TransferSourceThread(AbstractDataChannel dataChannel,
-				SocketBox socketBox,
-				DataSource source,
-				BasicServerControlChannel localControlChannel,
-				TransferContext context)
-	throws Exception {
-	this.socketBox = socketBox;
-	this.source = source;
-	this.localControlChannel = localControlChannel;
-	this.context = context;
-	this.writer = dataChannel.getDataChannelSink(context);
-	logger.debug("using socket " + socketBox.getSocket().toString());
-	writer.setDataStream(socketBox.getSocket().getOutputStream());
+                                SocketBox socketBox,
+                                DataSource source,
+                                BasicServerControlChannel localControlChannel,
+                                TransferContext context)
+            throws Exception
+    {
+        this.socketBox = socketBox;
+        this.source = source;
+        this.localControlChannel = localControlChannel;
+        this.context = context;
+        this.writer = dataChannel.getDataChannelSink(context);
+        logger.debug("using socket " + socketBox.getSocket().toString());
+        writer.setDataStream(socketBox.getSocket().getOutputStream());
     }
 
-    public void run() {
-	Buffer buf;
-	long transferred = 0;
-	boolean error = false;
-	logger.debug("TransferSourceThread executing");
+    public void run()
+    {
+        Buffer buf;
+        long transferred = 0;
+        boolean error = false;
+        logger.debug("TransferSourceThread executing");
 
-	try {
-	    startup();
-			
-	    try {
-		while ((buf = source.read()) != null) {
-		    transferred += buf.getLength();
-		    writer.write(buf);
-		}
+        try {
+            startup();
 
-		logger.debug("finished sending data; sent " + 
-			     transferred + " bytes");
+            try {
+                while ((buf = source.read()) != null) {
+                    transferred += buf.getLength();
+                    writer.write(buf);
+                }
 
-	    } catch (Exception e) {
-		// this happens also if thread gets interrupted
-		error = true;
-		FTPServerFacade.exceptionToControlChannel(
-				    e,
-				    "exception during TransferSourceThread",
-				    localControlChannel);
-	    }
+                logger.debug("finished sending data; sent " +
+                             transferred + " bytes");
 
-	    Object quitToken = shutdown();
-	    
-	    if (!error && (quitToken != null)) {
-		//226 Transfer complete
-		localControlChannel.write(new LocalReply(226));
-	    }
+            } catch (Exception e) {
+                // this happens also if thread gets interrupted
+                error = true;
+                FTPServerFacade.exceptionToControlChannel(
+                        e,
+                        "exception during TransferSourceThread",
+                        localControlChannel);
+            }
 
-	} catch (Exception e) {
-	    FTPServerFacade.cannotPropagateError(e);
-	}
+            Object quitToken = shutdown();
+
+            if (!error && (quitToken != null)) {
+                //226 Transfer complete
+                localControlChannel.write(new LocalReply(226));
+            }
+
+        } catch (Exception e) {
+            FTPServerFacade.cannotPropagateError(e);
+        }
     }
 
-    protected void startup() {
-	//send initial reply only if nothing has yet been sent
-	synchronized(localControlChannel) {
-	    if (localControlChannel.getReplyCount() == 0) {
-		// 125 Data connection already open; transfer starting
-		localControlChannel.write(new LocalReply(125));
-	    }
-	}
+    protected void startup()
+    {
+        //send initial reply only if nothing has yet been sent
+        synchronized (localControlChannel) {
+            if (localControlChannel.getReplyCount() == 0) {
+                // 125 Data connection already open; transfer starting
+                localControlChannel.write(new LocalReply(125));
+            }
+        }
     }
 
     // called after the transfer completes, before 226
-    protected Object shutdown() throws IOException {
-	logger.debug("shutdown");
+    protected Object shutdown() throws IOException
+    {
+        logger.debug("shutdown");
 
-	// close the socket
-	writer.close();
-	
-	// garbage collect the socket
-	socketBox.setSocket(null);
+        // close the socket
+        writer.close();
 
-	// attempt to obtain permission to close data source
-	Object quitToken = context.getQuitToken();
-	
-	// data source is shared by all data channels,
-	// so should be closed by the last one exiting
-	if (quitToken != null) {
-	    source.close();
-	}
-	
-	return quitToken;
+        // garbage collect the socket
+        socketBox.setSocket(null);
+
+        // attempt to obtain permission to close data source
+        Object quitToken = context.getQuitToken();
+
+        // data source is shared by all data channels,
+        // so should be closed by the last one exiting
+        if (quitToken != null) {
+            source.close();
+        }
+
+        return quitToken;
     }
-    
-    
+
+
 }

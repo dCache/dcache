@@ -21,6 +21,7 @@ import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.DataSink;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
+
 import org.globus.net.SocketFactory;
 
 import java.net.Socket;
@@ -31,10 +32,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Makes a connection to a remote data channel (FTPClient use only).
  **/
-public class ActiveConnectTask extends Task {
+public class ActiveConnectTask extends Task
+{
 
     protected static Logger logger =
-        LoggerFactory.getLogger(ActiveConnectTask.class);
+            LoggerFactory.getLogger(ActiveConnectTask.class);
 
     protected HostPort hostPort;
     protected SocketBox mySocketBox;
@@ -44,23 +46,25 @@ public class ActiveConnectTask extends Task {
     protected Session session;
     protected DataChannelFactory factory;
     protected TransferContext context;
-    
+
     public ActiveConnectTask(HostPort hostPort,
                              DataSink sink,
                              BasicServerControlChannel control,
                              Session session,
                              DataChannelFactory factory,
-                             TransferContext context) {
+                             TransferContext context)
+    {
         this.sink = sink;
         init(hostPort, control, session, factory, context);
     }
-    
+
     public ActiveConnectTask(HostPort hostPort,
                              DataSource source,
                              BasicServerControlChannel control,
                              Session session,
                              DataChannelFactory factory,
-                             TransferContext context) {
+                             TransferContext context)
+    {
         this.source = source;
         init(hostPort, control, session, factory, context);
     }
@@ -69,7 +73,8 @@ public class ActiveConnectTask extends Task {
                       BasicServerControlChannel control,
                       Session session,
                       DataChannelFactory factory,
-                      TransferContext context) {
+                      TransferContext context)
+    {
         this.hostPort = hostPort;
         this.session = session;
         this.control = control;
@@ -77,7 +82,8 @@ public class ActiveConnectTask extends Task {
         this.context = context;
     }
 
-    public void execute() {
+    public void execute()
+    {
         try {
             DataChannel dataChannel = null;
             mySocketBox = null;
@@ -85,9 +91,9 @@ public class ActiveConnectTask extends Task {
                 mySocketBox = openSocket();
             } catch (Exception e) {
                 FTPServerFacade.exceptionToControlChannel(
-                                        e,
-                                        "active connection failed",
-                                        control);
+                        e,
+                        "active connection failed",
+                        control);
                 return;
             }
 
@@ -105,9 +111,9 @@ public class ActiveConnectTask extends Task {
 
             } catch (Exception e) {
                 FTPServerFacade.exceptionToControlChannel(
-                                        e,
-                                        "active connection to server failed",
-                                        control);
+                        e,
+                        "active connection to server failed",
+                        control);
                 if (dataChannel != null) {
                     dataChannel.close();
                 }
@@ -119,25 +125,28 @@ public class ActiveConnectTask extends Task {
     }
 
     /**
-       Override this to implement authentication
-    **/
-    protected SocketBox openSocket() throws Exception {
+     * Override this to implement authentication
+     **/
+    protected SocketBox openSocket() throws Exception
+    {
         SocketBox sBox = new SimpleSocketBox();
-        
+
         SocketFactory factory = SocketFactory.getDefault();
-        Socket mySocket = factory.createSocket(this.hostPort.getHost(), 
+        Socket mySocket = factory.createSocket(this.hostPort.getHost(),
                                                this.hostPort.getPort());
         sBox.setSocket(mySocket);
-        
+
         return sBox;
     }
-    
-    private void close() {
+
+    private void close()
+    {
         // server will by closed by the FTPServerFacade.
         //try { server.close(); } catch (Exception ignore) {}
     }
-    
-    public void stop() {
+
+    public void stop()
+    {
         close();
     }
 }

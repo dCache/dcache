@@ -22,10 +22,11 @@ import java.util.Vector;
 
 /**
  * Utility class for parsing
- * and converting host-port information from SPAS 
+ * and converting host-port information from SPAS
  * and SPOR FTP commands. Represents a list of host-port pairs.
  */
-public class HostPortList {
+public class HostPortList
+{
 
     /*
       This class is internally represented as String or as vector.
@@ -40,7 +41,7 @@ public class HostPortList {
       The vector is not usable until updateVector() is first called,
       and then it always remains up to date.
     */
-    
+
     //internal string, in form of parameters to SPOR command
     private String sporCommandParam;
     private Vector vector = null;
@@ -50,7 +51,8 @@ public class HostPortList {
      *
      * @param spasReplyMsg reply message for the SPAS command
      */
-    public HostPortList(String spasReplyMsg) {
+    public HostPortList(String spasReplyMsg)
+    {
         try {
             parseFormat(spasReplyMsg, false);
         } catch (IOException e) {
@@ -61,47 +63,52 @@ public class HostPortList {
     /**
      * Creates an empty list
      **/
-    public HostPortList() {
+    public HostPortList()
+    {
     }
 
     /**
      * Adds an element to the list
      **/
-    public void add(HostPort hp) {
+    public void add(HostPort hp)
+    {
         if (this.vector == null) {
             this.vector = new Vector();
         }
         this.vector.add(hp);
         this.sporCommandParam = null;
     }
-    
+
     /**
      * @return number of elements in the list
      **/
-    public int size() {
+    public int size()
+    {
         return (this.vector == null) ? 0 : this.vector.size();
     }
 
     /**
      * @return element of the specified index
      **/
-    public HostPort get(int index) {
-        return (this.vector == null) ? 
-            null : (HostPort)this.vector.elementAt(index);
+    public HostPort get(int index)
+    {
+        return (this.vector == null) ?
+               null : (HostPort) this.vector.elementAt(index);
     }
 
     /**
      * Returns the host-port infromation in the
-     * format used by SPOR command. 
+     * format used by SPOR command.
      *
      * @return host-port information in SPOR command parameter
-     *         representation.
+     * representation.
      */
-    public String toFtpCmdArgument() {
+    public String toFtpCmdArgument()
+    {
         if (this.sporCommandParam == null && this.vector != null) {
             StringBuffer cmd = new StringBuffer();
-            for (int i = 0; i < this.vector.size(); i ++) {
-                HostPort hp = (HostPort)this.vector.get(i);
+            for (int i = 0; i < this.vector.size(); i++) {
+                HostPort hp = (HostPort) this.vector.get(i);
                 if (i != 0) {
                     cmd.append(' ');
                 }
@@ -112,21 +119,22 @@ public class HostPortList {
         return this.sporCommandParam;
     }
 
-    private void parseFormat(String msg, boolean ipv6) throws IOException {
+    private void parseFormat(String msg, boolean ipv6) throws IOException
+    {
         BufferedReader reader = new BufferedReader(new StringReader(msg));
         StringBuffer command = null;
         String line = null;
 
         line = reader.readLine();
-        while( (line = reader.readLine()) != null) {
+        while ((line = reader.readLine()) != null) {
             if (!line.startsWith(" ")) {
                 if (line.startsWith("229")) {
                     break;
                 } else {
                     throw new IllegalArgumentException(
-                         "Not a proper reply message " +
-                         "->" + line  + "<-");
-                }    
+                            "Not a proper reply message " +
+                            "->" + line + "<-");
+                }
             }
             line = line.trim();
             if (line.startsWith("229")) {
@@ -149,13 +157,14 @@ public class HostPortList {
         }
         if (this.vector == null) {
             throw new IllegalArgumentException(
-                         "Not a proper reply message " +
-                         "->" + line  + "<-");
+                    "Not a proper reply message " +
+                    "->" + line + "<-");
         }
         this.sporCommandParam = command.toString();
     }
 
-    public static HostPortList parseIPv6Format(String message) {
+    public static HostPortList parseIPv6Format(String message)
+    {
         HostPortList list = new HostPortList();
         try {
             list.parseFormat(message, true);
@@ -164,8 +173,9 @@ public class HostPortList {
         }
         return list;
     }
-    
-    public static HostPortList parseIPv4Format(String message) {
+
+    public static HostPortList parseIPv4Format(String message)
+    {
         HostPortList list = new HostPortList();
         try {
             list.parseFormat(message, false);
@@ -174,5 +184,5 @@ public class HostPortList {
         }
         return list;
     }
-    
+
 }

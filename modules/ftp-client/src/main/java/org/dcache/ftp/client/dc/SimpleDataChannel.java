@@ -26,26 +26,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
-   Data channel receives in the constructor a socket that should
-   be ready for communication, and starts a new thread that
-   will perform the transfer.<br>
-   In previous version, the data channel would perform socket
-   initialization (server.accept() etc.). This is now done by the
-   facade's manager thread, so it can start several data channels.
+ * Data channel receives in the constructor a socket that should
+ * be ready for communication, and starts a new thread that
+ * will perform the transfer.<br>
+ * In previous version, the data channel would perform socket
+ * initialization (server.accept() etc.). This is now done by the
+ * facade's manager thread, so it can start several data channels.
  **/
-public class SimpleDataChannel extends AbstractDataChannel {
+public class SimpleDataChannel extends AbstractDataChannel
+{
 
     protected static Logger logger =
-        LoggerFactory.getLogger(SimpleDataChannel.class);
+            LoggerFactory.getLogger(SimpleDataChannel.class);
 
     protected SocketBox socketBox;
     protected TransferThread transferThread;
     protected TransferThreadFactory transferThreadFactory;
 
     /**
-       @param socketBox should be opened and ready for comunication
-    **/
-    public SimpleDataChannel(Session session, SocketBox socketBox) {
+     * @param socketBox should be opened and ready for comunication
+     **/
+    public SimpleDataChannel(Session session, SocketBox socketBox)
+    {
         super(session);
         if (socketBox == null) {
             throw new IllegalArgumentException("socketBox is null");
@@ -59,8 +61,9 @@ public class SimpleDataChannel extends AbstractDataChannel {
         this.socketBox = socketBox;
         this.transferThreadFactory = new SimpleTransferThreadFactory();
     }
-    
-    public void close() throws IOException {
+
+    public void close() throws IOException
+    {
         if (transferThread != null) {
             transferThread.interrupt();
             // wait till thread dies
@@ -69,36 +72,38 @@ public class SimpleDataChannel extends AbstractDataChannel {
             } catch (InterruptedException e) {
             }
         }
-        
+
         // thread should clean up after itself,
         // but let's check it
         socketBox.setSocket(null);
     }
-        
+
     public void startTransfer(DataSink sink,
                               BasicServerControlChannel localControlChannel,
                               TransferContext context)
-        throws Exception {
+            throws Exception
+    {
         transferThread =
-            transferThreadFactory.getTransferSinkThread(this,
-                                                        socketBox,
-                                                        sink,
-                                                        localControlChannel,
-                                                        context);
-        
+                transferThreadFactory.getTransferSinkThread(this,
+                                                            socketBox,
+                                                            sink,
+                                                            localControlChannel,
+                                                            context);
+
         transferThread.start();
     }
 
     public void startTransfer(DataSource source,
                               BasicServerControlChannel localControlChannel,
                               TransferContext context)
-        throws Exception {
+            throws Exception
+    {
         transferThread =
-            transferThreadFactory.getTransferSourceThread(this,
-                                                          socketBox,
-                                                          source,
-                                                          localControlChannel,
-                                                          context);
+                transferThreadFactory.getTransferSourceThread(this,
+                                                              socketBox,
+                                                              source,
+                                                              localControlChannel,
+                                                              context);
         transferThread.start();
     }
 }

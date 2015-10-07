@@ -23,27 +23,28 @@ import java.io.IOException;
  * It must be thread safe; in parallel transfer mode several
  * streams may attempt to write.
  **/
-public interface DataSink {
-    
+public interface DataSink
+{
+
     /**
      * Writes the specified buffer to this data sink. <BR>
      * <i>Note: {@link Buffer#getOffset() buffer.getOffset()} might
      * return -1 if the transfer mode used does not support
      * data offsets, for example stream transfer mode.</i>
      *
-     * @param buffer the data buffer to write. 
+     * @param buffer the data buffer to write.
      * @throws IOException if an I/O error occurs.
      */
     public void write(Buffer buffer)
-	throws IOException;
-    
+            throws IOException;
+
     /**
-     * Closes this data sink and releases any system 
+     * Closes this data sink and releases any system
      * resources associated with this sink.
      *
      * @throws IOException if an I/O error occurs.
      */
     public void close()
-	throws IOException;
-    
+            throws IOException;
+
 }

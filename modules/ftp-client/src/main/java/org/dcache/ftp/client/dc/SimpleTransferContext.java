@@ -16,27 +16,30 @@
 package org.dcache.ftp.client.dc;
 
 /**
-   transfer context for single threaded transfers
-   using 1 data channel.
+ * transfer context for single threaded transfers
+ * using 1 data channel.
  **/
-public class SimpleTransferContext 
-    implements TransferContext {
+public class SimpleTransferContext
+        implements TransferContext
+{
 
 
     private static SimpleTransferContext singleton = new SimpleTransferContext();
 
     /**
-       return the default instance of this class
+     * return the default instance of this class
      **/
-    public static TransferContext getDefault() {
-	return singleton;
+    public static TransferContext getDefault()
+    {
+        return singleton;
     }
 
     /**
-       @return always non-null
+     * @return always non-null
      **/
-    public Object getQuitToken() {
-	return new Object();
+    public Object getQuitToken()
+    {
+        return new Object();
     }
 
 

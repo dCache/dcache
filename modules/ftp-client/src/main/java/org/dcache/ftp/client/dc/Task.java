@@ -15,31 +15,35 @@
  */
 package org.dcache.ftp.client.dc;
 
-public abstract class Task {
+public abstract class Task
+{
 
     protected boolean complete = false;
     protected Exception exception;
 
     public abstract void execute() throws Exception;
 
-    public void stop() {
+    public void stop()
+    {
     }
 
-    public synchronized void setComplete(Exception e) {
-	complete = true;
-	exception = e;
-	notify();
+    public synchronized void setComplete(Exception e)
+    {
+        complete = true;
+        exception = e;
+        notify();
     }
 
-    public synchronized Exception waitFor() {
-	while (!complete) {
-	    try {
-		wait();
-	    } catch (Exception e) {
-		return e;
-	    }
-	}
-	return exception;
+    public synchronized Exception waitFor()
+    {
+        while (!complete) {
+            try {
+                wait();
+            } catch (Exception e) {
+                return e;
+            }
+        }
+        return exception;
     }
-    
+
 }

@@ -19,48 +19,53 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
-   Reference implementation of DataSink. It can be used with non-parallel transfers.
-   It cannot be used with Extended Block Mode because it uses implicit assumption 
-   that data arrives in correct sequence. It is not thread safe.  
+ * Reference implementation of DataSink. It can be used with non-parallel transfers.
+ * It cannot be used with Extended Block Mode because it uses implicit assumption
+ * that data arrives in correct sequence. It is not thread safe.
  **/
-public class DataSinkStream implements DataSink {
+public class DataSinkStream implements DataSink
+{
 
     protected OutputStream out;
     protected boolean autoFlush;
     protected boolean ignoreOffset;
     protected long offset = 0;
 
-    public DataSinkStream(OutputStream out) {
-	this(out, false, false);
+    public DataSinkStream(OutputStream out)
+    {
+        this(out, false, false);
     }
 
     public DataSinkStream(OutputStream out,
-			  boolean autoFlush,
-			  boolean ignoreOffset) {
-	this.out = out;
-	this.autoFlush = autoFlush;
-	this.ignoreOffset = ignoreOffset;
+                          boolean autoFlush,
+                          boolean ignoreOffset)
+    {
+        this.out = out;
+        this.autoFlush = autoFlush;
+        this.ignoreOffset = ignoreOffset;
     }
 
     public void write(Buffer buffer)
-	throws IOException {
-	long bufOffset = buffer.getOffset();
-	if (ignoreOffset ||
-	    bufOffset == -1 ||
-	    bufOffset == offset) {
-	    out.write(buffer.getBuffer(), 0, buffer.getLength());
-	    if (autoFlush) {
-		out.flush();
-	    }
-	    offset += buffer.getLength();
-	} else {
-	    throw new IOException("Random offsets not supported.");
-	}
+            throws IOException
+    {
+        long bufOffset = buffer.getOffset();
+        if (ignoreOffset ||
+            bufOffset == -1 ||
+            bufOffset == offset) {
+            out.write(buffer.getBuffer(), 0, buffer.getLength());
+            if (autoFlush) {
+                out.flush();
+            }
+            offset += buffer.getLength();
+        } else {
+            throw new IOException("Random offsets not supported.");
+        }
     }
-    
+
     public void close()
-	throws IOException {
-	out.close();
+            throws IOException
+    {
+        out.close();
     }
-    
+
 }
