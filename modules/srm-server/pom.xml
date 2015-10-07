@@ -44,12 +44,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>gridftp</artifactId>
-    </dependency>
-
-
-    <dependency>
         <groupId>javax.xml</groupId>
         <artifactId>jaxrpc-api</artifactId>
     </dependency>

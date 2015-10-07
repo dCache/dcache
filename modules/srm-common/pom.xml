@@ -107,11 +107,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>gridftp</artifactId>
-    </dependency>
-
-    <dependency>
         <groupId>axis</groupId>
         <artifactId>axis</artifactId>
     </dependency>
@@ -129,6 +124,11 @@
     <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-common</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.dcache</groupId>
+        <artifactId>ftp-client</artifactId>
         <version>${project.version}</version>
     </dependency>
   </dependencies>

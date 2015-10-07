@@ -15,8 +15,6 @@
   <logger name="org.apache.client.Call" level="DEBUG"/>
   <logger name="org.apache.axis.transport.http.HTTPSender" level="DEBUG"/>
   <logger name="org.globus.axis.axis.transport" level="DEBUG"/>
-  <logger name="org.globus.ftp.app.Transfer" level="DEBUG"/>
-  <logger name="org.globus.ftp.app.TransferParams" level="DEBUG"/>
   <logger name="org.globus.ftp.dc.AbstractDataChannel" level="DEBUG"/>
   <logger name="org.globus.ftp.dc.ActiveConnectTask" level="DEBUG"/>
   <logger name="org.globus.ftp.dc.ActiveStartTransferTask" level="DEBUG"/>
