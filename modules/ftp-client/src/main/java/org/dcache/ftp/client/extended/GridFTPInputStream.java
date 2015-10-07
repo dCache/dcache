@@ -103,6 +103,7 @@ public class GridFTPInputStream extends GssInputStream
         }
     }
 
+    @Override
     protected void readMsg()
             throws IOException
     {

@@ -38,6 +38,7 @@ public class ChecksumOptions extends Options
      * in the format of OPTS command. It should not include the
      * command name.
      */
+    @Override
     public String getArgument()
     {
         return algo.toFtpCmdArgument();

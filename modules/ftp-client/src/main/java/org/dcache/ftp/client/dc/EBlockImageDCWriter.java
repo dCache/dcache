@@ -32,11 +32,13 @@ public class EBlockImageDCWriter
     static Logger logger = LoggerFactory.getLogger(EBlockImageDCWriter.class);
     protected DataOutputStream output;
 
+    @Override
     public void setDataStream(OutputStream out)
     {
         output = new DataOutputStream(out);
     }
 
+    @Override
     public void write(Buffer buf)
             throws IOException
     {
@@ -56,6 +58,7 @@ public class EBlockImageDCWriter
 
     }
 
+    @Override
     public void endOfData() throws IOException
     {
         byte desc;
@@ -99,6 +102,7 @@ public class EBlockImageDCWriter
         myOutput.close();
     }
 
+    @Override
     public void close() throws IOException
     {
         close(output);

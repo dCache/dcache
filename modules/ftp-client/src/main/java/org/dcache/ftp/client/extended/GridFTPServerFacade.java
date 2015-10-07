@@ -102,6 +102,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         gSession.dataChannelAuthentication = authentication;
     }
 
+    @Override
     public void setOptions(Options opts)
     {
         if (opts instanceof RetrieveOptions) {
@@ -123,6 +124,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
         SocketOperator op = new SocketOperator()
         {
+            @Override
             public void operate(SocketBox s) throws Exception
             {
 
@@ -153,6 +155,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         }
     }
 
+    @Override
     protected void transferAbort()
     {
         if (session.serverMode == Session.SERVER_PASSIVE) {
@@ -170,6 +173,7 @@ public class GridFTPServerFacade extends FTPServerFacade
 
         SocketOperator op = new SocketOperator()
         {
+            @Override
             public void operate(SocketBox sb) throws Exception
             {
                 if (((ManagedSocketBox) sb).isReusable()) {
@@ -195,6 +199,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         }
     }
 
+    @Override
     public void setActive(HostPort hp)
             throws UnknownHostException, ClientException, IOException
     {
@@ -242,6 +247,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         }
     }
 
+    @Override
     public HostPort setPassive(int port, int queue) throws IOException
     {
         // remove existing sockets, if any
@@ -297,6 +303,7 @@ public class GridFTPServerFacade extends FTPServerFacade
      *
      * @param sink source of data
      **/
+    @Override
     public void store(DataSink sink)
     {
         try {
@@ -385,6 +392,7 @@ public class GridFTPServerFacade extends FTPServerFacade
      *
      * @param source source of data
      **/
+    @Override
     public void retrieve(DataSource source)
     {
         try {
@@ -498,6 +506,7 @@ public class GridFTPServerFacade extends FTPServerFacade
     ;
 
     //override
+    @Override
     public void abort() throws IOException
     {
         super.abort();
@@ -507,6 +516,7 @@ public class GridFTPServerFacade extends FTPServerFacade
     }
 
     //override
+    @Override
     public void close() throws IOException
     {
         super.close();
@@ -585,6 +595,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         }
     }
 
+    @Override
     protected TransferContext createTransferContext()
     {
         EBlockParallelTransferContext context =

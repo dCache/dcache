@@ -20,6 +20,7 @@ import org.dcache.ftp.client.Session;
 public class SimpleDataChannelFactory implements DataChannelFactory
 {
 
+    @Override
     public DataChannel getDataChannel(Session state, SocketBox socketBox)
     {
         return new SimpleDataChannel(state, socketBox);

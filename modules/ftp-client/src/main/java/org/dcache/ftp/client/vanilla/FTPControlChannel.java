@@ -303,6 +303,7 @@ public class FTPControlChannel extends BasicClientControlChannel
      *                and checking the conditions
      * @param aborted flag indicating wait aborted.
      **/
+    @Override
     public void waitFor(Flag aborted, int ioDelay, int maxWait) throws ServerException,
             IOException, InterruptedException
     {
@@ -357,6 +358,7 @@ public class FTPControlChannel extends BasicClientControlChannel
      * @throws IOException            on I/O error
      * @throws FTPReplyParseException on malformatted server reply
      **/
+    @Override
     public Reply read()
             throws ServerException, IOException, FTPReplyParseException, EOFException
     {
@@ -370,6 +372,7 @@ public class FTPControlChannel extends BasicClientControlChannel
         return reply;
     }
 
+    @Override
     public void abortTransfer()
     {
     }

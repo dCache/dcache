@@ -25,23 +25,27 @@ public class StreamImageDCWriter implements DataChannelWriter
 
     protected OutputStream output;
 
+    @Override
     public void setDataStream(OutputStream out)
     {
         output = out;
     }
 
+    @Override
     public void write(Buffer buf)
             throws IOException
     {
         output.write(buf.getBuffer(), 0, buf.getLength());
     }
 
+    @Override
     public void endOfData() throws IOException
     {
     }
 
     ;
 
+    @Override
     public void close()
             throws IOException
     {

@@ -43,6 +43,7 @@ public class DataSourceStream implements DataSource
         this.bufferSize = bufferSize;
     }
 
+    @Override
     public Buffer read()
             throws IOException
     {
@@ -57,12 +58,14 @@ public class DataSourceStream implements DataSource
         }
     }
 
+    @Override
     public void close()
             throws IOException
     {
         in.close();
     }
 
+    @Override
     public long totalSize()
     {
         return -1;

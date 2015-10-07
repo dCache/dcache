@@ -74,6 +74,7 @@ public class EBlockParallelTransferContext
      * received), and the token has not been released yet.
      * So this method will return non-null only one in the instance's lifetime.
      **/
+    @Override
     synchronized public Object getQuitToken()
     {
         logger.debug("checking if ready to quit");

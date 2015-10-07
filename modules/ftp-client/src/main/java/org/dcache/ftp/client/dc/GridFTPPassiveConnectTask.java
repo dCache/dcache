@@ -64,6 +64,7 @@ public class GridFTPPassiveConnectTask extends PassiveConnectTask
         gSession = session;
     }
 
+    @Override
     protected SocketBox openSocket() throws Exception
     {
 

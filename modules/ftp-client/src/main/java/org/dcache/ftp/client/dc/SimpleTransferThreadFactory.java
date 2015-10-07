@@ -23,6 +23,7 @@ public class SimpleTransferThreadFactory
         implements TransferThreadFactory
 {
 
+    @Override
     public TransferThread
     getTransferSinkThread(DataChannel dataChannel,
                           SocketBox socketBox,
@@ -38,6 +39,7 @@ public class SimpleTransferThreadFactory
                                       context);
     }
 
+    @Override
     public TransferThread
     getTransferSourceThread(DataChannel dataChannel,
                             SocketBox socketBox,

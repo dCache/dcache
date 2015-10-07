@@ -38,6 +38,7 @@ public class FTPReplyParseException extends FTPException
         };
     }
 
+    @Override
     public String getCodeExplanation(int code)
     {
 

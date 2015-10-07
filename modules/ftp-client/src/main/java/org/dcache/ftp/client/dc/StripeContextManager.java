@@ -113,6 +113,7 @@ public class StripeContextManager
         /**
          * @return non-null if all EODs in all stripes have been transferred.
          **/
+        @Override
         public Object getQuitToken()
         {
             return mgr.getQuitToken();

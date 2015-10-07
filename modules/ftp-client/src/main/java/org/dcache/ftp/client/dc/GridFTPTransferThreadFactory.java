@@ -22,6 +22,7 @@ import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 public class GridFTPTransferThreadFactory implements TransferThreadFactory
 {
 
+    @Override
     public TransferThread
     getTransferSinkThread(DataChannel dataChannel,
                           SocketBox socketBox,
@@ -37,6 +38,7 @@ public class GridFTPTransferThreadFactory implements TransferThreadFactory
                                              (EBlockParallelTransferContext) context);
     }
 
+    @Override
     public TransferThread
     getTransferSourceThread(DataChannel dataChannel,
                             SocketBox socketBox,

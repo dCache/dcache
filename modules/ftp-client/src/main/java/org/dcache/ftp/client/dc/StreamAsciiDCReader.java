@@ -31,6 +31,7 @@ public class StreamAsciiDCReader extends StreamImageDCReader
         translator = new AsciiTranslator(true, false);
     }
 
+    @Override
     public Buffer read()
             throws IOException
     {

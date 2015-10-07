@@ -42,6 +42,7 @@ public class GridFTPTransferSinkThread extends TransferSinkThread
         this.eContext = context;
     }
 
+    @Override
     protected void startup()
     {
 
@@ -59,6 +60,7 @@ public class GridFTPTransferSinkThread extends TransferSinkThread
         }
     }
 
+    @Override
     protected void shutdown(Object quitToken) throws java.io.IOException
     {
 

@@ -37,6 +37,7 @@ public class EBlockImageDCReader
 
     protected DataInputStream input;
 
+    @Override
     public void setDataStream(InputStream in)
     {
         input = new DataInputStream(in);
@@ -51,6 +52,7 @@ public class EBlockImageDCReader
         return willCloseReceived;
     }
 
+    @Override
     public Buffer read() throws IOException
     {
 
@@ -110,6 +112,7 @@ public class EBlockImageDCReader
         }
     }
 
+    @Override
     public void close() throws IOException
     {
         // we want to reuse the socket

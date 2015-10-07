@@ -30,6 +30,7 @@ public class StreamModeRestartMarker
         this.offset = offset;
     }
 
+    @Override
     public String toFtpCmdArgument()
     {
         return String.valueOf(offset);

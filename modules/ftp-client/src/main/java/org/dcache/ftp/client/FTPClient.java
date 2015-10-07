@@ -403,6 +403,7 @@ public class FTPClient
             this.received = new ByteArrayOutputStream(1000);
         }
 
+        @Override
         public void write(Buffer buffer) throws IOException
         {
             if (logger.isDebugEnabled()) {
@@ -414,6 +415,7 @@ public class FTPClient
             this.received.write(buffer.getBuffer(), 0, buffer.getLength());
         }
 
+        @Override
         public void close() throws IOException
         {
         }

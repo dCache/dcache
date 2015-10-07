@@ -37,6 +37,7 @@ public class SimpleTransferContext
     /**
      * @return always non-null
      **/
+    @Override
     public Object getQuitToken()
     {
         return new Object();

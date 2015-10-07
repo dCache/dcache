@@ -28,11 +28,13 @@ public class StreamImageDCReader implements DataChannelReader
     protected int bufferSize = BUF_SIZE;
     protected InputStream input;
 
+    @Override
     public void setDataStream(InputStream in)
     {
         input = in;
     }
 
+    @Override
     public Buffer read()
             throws IOException
     {
@@ -45,6 +47,7 @@ public class StreamImageDCReader implements DataChannelReader
         }
     }
 
+    @Override
     public void close()
             throws IOException
     {

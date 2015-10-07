@@ -96,6 +96,7 @@ public class FTPException extends Exception
     }
 
     //overwriting inherited
+    @Override
     public String getMessage()
     {
         StringBuffer buf = new StringBuffer();
@@ -127,11 +128,13 @@ public class FTPException extends Exception
         return answer;
     }
 
+    @Override
     public void printStackTrace()
     {
         printStackTrace(System.err);
     }
 
+    @Override
     public void printStackTrace(java.io.PrintStream ps)
     {
         if (cause != null) {
@@ -147,6 +150,7 @@ public class FTPException extends Exception
         }
     }
 
+    @Override
     public void printStackTrace(java.io.PrintWriter pw)
     {
         if (cause != null) {

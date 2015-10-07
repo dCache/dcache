@@ -145,6 +145,7 @@ public class GridFTPClient extends FTPClient
      * Unlike in vanilla FTP, here IMAGE mode is allowed.
      * For more documentation, look at FTPClient.
      */
+    @Override
     public Vector list(String filter, String modifier)
             throws ServerException, ClientException, IOException
     {
@@ -166,6 +167,7 @@ public class GridFTPClient extends FTPClient
      * Unlike in vanilla FTP, here IMAGE mode is allowed.
      * For more documentation, look at FTPClient.
      */
+    @Override
     public Vector nlist(String path)
             throws ServerException, ClientException, IOException
     {
@@ -187,6 +189,7 @@ public class GridFTPClient extends FTPClient
      * Unlike in vanilla FTP, here IMAGE mode is allowed.
      * For more documentation, look at FTPClient.
      */
+    @Override
     public Vector mlsd(String filter)
             throws ServerException, ClientException, IOException
     {
@@ -198,11 +201,13 @@ public class GridFTPClient extends FTPClient
         return super.mlsd(filter);
     }
 
+    @Override
     protected void listCheck() throws ClientException
     {
         // do nothing
     }
 
+    @Override
     protected void checkTransferParamsGet()
             throws ServerException, IOException, ClientException
     {
@@ -217,6 +222,7 @@ public class GridFTPClient extends FTPClient
         }
     }
 
+    @Override
     protected String getModeStr(int mode)
     {
         switch (mode) {
@@ -948,6 +954,7 @@ public class GridFTPClient extends FTPClient
 
     // basic compatibility API
 
+    @Override
     public void get(String remoteFileName,
                     File localFile)
             throws IOException,
@@ -963,6 +970,7 @@ public class GridFTPClient extends FTPClient
         }
     }
 
+    @Override
     public void put(File localFile,
                     String remoteFileName,
                     boolean append)
@@ -1076,6 +1084,7 @@ public class GridFTPClient extends FTPClient
             writer = w;
         }
 
+        @Override
         public void write(Buffer buffer) throws IOException
         {
             byte[] data = buffer.getBuffer();
@@ -1099,6 +1108,7 @@ public class GridFTPClient extends FTPClient
             }
         }
 
+        @Override
         public void close() throws IOException
         {
             writer.close();

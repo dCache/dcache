@@ -32,6 +32,7 @@ public class SimpleSocketBox implements SocketBox
     /**
      * @see SocketBox#setSocket(Socket)
      */
+    @Override
     public void setSocket(Socket newSocket)
     {
         if (newSocket == null) {
@@ -43,6 +44,7 @@ public class SimpleSocketBox implements SocketBox
         this.socket = newSocket;
     }
 
+    @Override
     public Socket getSocket()
     {
         return this.socket;

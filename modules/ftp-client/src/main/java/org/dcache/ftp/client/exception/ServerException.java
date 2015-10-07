@@ -50,6 +50,7 @@ public class ServerException extends FTPException
                         "Refusing to start transfer before previous transfer completes"};
     }
 
+    @Override
     public String getCodeExplanation(int code)
     {
         if (codeExplained.length > code)

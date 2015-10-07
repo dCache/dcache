@@ -83,6 +83,7 @@ public class RetrieveOptions extends Options
         return this.maxParallelism;
     }
 
+    @Override
     public String getArgument()
     {
         return "Parallelism=" + startParallelism + "," +

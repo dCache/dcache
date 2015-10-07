@@ -62,6 +62,7 @@ public class SimpleDataChannel extends AbstractDataChannel
         this.transferThreadFactory = new SimpleTransferThreadFactory();
     }
 
+    @Override
     public void close() throws IOException
     {
         if (transferThread != null) {
@@ -78,6 +79,7 @@ public class SimpleDataChannel extends AbstractDataChannel
         socketBox.setSocket(null);
     }
 
+    @Override
     public void startTransfer(DataSink sink,
                               BasicServerControlChannel localControlChannel,
                               TransferContext context)
@@ -93,6 +95,7 @@ public class SimpleDataChannel extends AbstractDataChannel
         transferThread.start();
     }
 
+    @Override
     public void startTransfer(DataSource source,
                               BasicServerControlChannel localControlChannel,
                               TransferContext context)

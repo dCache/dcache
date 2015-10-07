@@ -58,6 +58,7 @@ public class FileRandomIO
         this.bufferSize = bufferSize;
     }
 
+    @Override
     public synchronized void write(Buffer buffer)
             throws IOException
     {
@@ -78,6 +79,7 @@ public class FileRandomIO
     /**
      * In this implementation, each read() returns data sequentially.
      */
+    @Override
     public synchronized Buffer read()
             throws IOException
     {
@@ -94,6 +96,7 @@ public class FileRandomIO
     /**
      * Closes the underlying file
      */
+    @Override
     public synchronized void close()
             throws IOException
     {
@@ -101,6 +104,7 @@ public class FileRandomIO
     }
 
 
+    @Override
     public long totalSize()
             throws IOException
     {

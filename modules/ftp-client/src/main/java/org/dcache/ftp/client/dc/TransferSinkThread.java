@@ -58,6 +58,7 @@ public class TransferSinkThread extends TransferThread
         reader.setDataStream(socketBox.getSocket().getInputStream());
     }
 
+    @Override
     public void run()
     {
         boolean error = false;

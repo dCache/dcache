@@ -31,6 +31,7 @@ public class StreamAsciiDCWriter extends StreamImageDCWriter
         translator = new AsciiTranslator(true, true, AsciiTranslator.CRLF);
     }
 
+    @Override
     public void write(Buffer buffer)
             throws IOException
     {

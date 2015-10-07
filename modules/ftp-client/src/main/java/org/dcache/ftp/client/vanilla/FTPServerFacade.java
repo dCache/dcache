@@ -501,17 +501,20 @@ public class FTPServerFacade
             return (!replies.isEmpty());
         }
 
+        @Override
         public synchronized int getReplyCount()
         {
             return replyCount;
         }
 
+        @Override
         public synchronized void resetReplyCount()
         {
             replies.clear();
             replyCount = 0;
         }
 
+        @Override
         public Reply read()
                 throws IOException,
                 FTPReplyParseException,
@@ -528,11 +531,13 @@ public class FTPServerFacade
             }
         }
 
+        @Override
         public void write(Reply reply)
         {
             push(reply);
         }
 
+        @Override
         public void waitFor(Flag aborted,
                             int ioDelay,
                             int maxWait)
@@ -558,6 +563,7 @@ public class FTPServerFacade
             logger.debug("local control channel ready");
         }
 
+        @Override
         public void abortTransfer()
         {
             transferAbort();

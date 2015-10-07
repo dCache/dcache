@@ -103,6 +103,7 @@ public class GridFTPSession extends Session
      * if Mode E is needed, and if so, checks whether it has been set. If not,
      * ClientException is thrown.
      */
+    @Override
     public void matches(Session other) throws ClientException
     {
 
@@ -123,6 +124,7 @@ public class GridFTPSession extends Session
     }
 
     // called by inherited matches() method
+    @Override
     protected void compareServerMode(Session other) throws ClientException
     {
 

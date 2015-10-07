@@ -35,6 +35,7 @@ public class PerfMarkerException extends FTPException
                 };
     }
 
+    @Override
     public String getCodeExplanation(int code)
     {
         if (codeExplained.length > code)

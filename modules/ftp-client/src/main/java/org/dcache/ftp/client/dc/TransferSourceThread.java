@@ -59,6 +59,7 @@ public class TransferSourceThread extends TransferThread
         writer.setDataStream(socketBox.getSocket().getOutputStream());
     }
 
+    @Override
     public void run()
     {
         Buffer buf;

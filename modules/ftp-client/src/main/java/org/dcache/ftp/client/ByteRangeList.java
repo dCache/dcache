@@ -199,6 +199,7 @@ public class ByteRangeList implements RestartData
      * The resulting String will preserve the features
      * of ByteRangeList: (1) order and (2) separation
      **/
+    @Override
     public String toFtpCmdArgument()
     {
         char comma = ',';

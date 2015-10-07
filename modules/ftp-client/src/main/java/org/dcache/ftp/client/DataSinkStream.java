@@ -45,6 +45,7 @@ public class DataSinkStream implements DataSink
         this.ignoreOffset = ignoreOffset;
     }
 
+    @Override
     public void write(Buffer buffer)
             throws IOException
     {
@@ -62,6 +63,7 @@ public class DataSinkStream implements DataSink
         }
     }
 
+    @Override
     public void close()
             throws IOException
     {

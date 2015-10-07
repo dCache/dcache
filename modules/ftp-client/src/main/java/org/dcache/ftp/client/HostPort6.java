@@ -106,6 +106,7 @@ public class HostPort6 extends HostPort
      *
      * @return port number
      */
+    @Override
     public int getPort()
     {
         return this.port;
@@ -126,6 +127,7 @@ public class HostPort6 extends HostPort
      *
      * @return host address
      */
+    @Override
     public String getHost()
     {
         return this.host;
@@ -159,6 +161,7 @@ public class HostPort6 extends HostPort
      * @return host-port information in EPRT command
      * representation.
      */
+    @Override
     public String toFtpCmdArgument()
     {
         StringBuffer msg = new StringBuffer();
