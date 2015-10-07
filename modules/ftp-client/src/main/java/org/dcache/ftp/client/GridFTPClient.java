@@ -15,32 +15,28 @@
  */
 package org.dcache.ftp.client;
 
-import java.io.IOException;
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.util.Vector;
-import java.net.UnknownHostException;
-
-import org.dcache.ftp.client.exception.ClientException;
-import org.dcache.ftp.client.exception.ServerException;
-import org.dcache.ftp.client.exception.FTPReplyParseException;
-import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
-import org.dcache.ftp.client.vanilla.Command;
-import org.dcache.ftp.client.vanilla.Reply;
-import org.dcache.ftp.client.extended.GridFTPServerFacade;
-import org.dcache.ftp.client.extended.GridFTPControlChannel;
-
 import org.globus.gsi.gssapi.auth.Authorization;
-
 import org.ietf.jgss.GSSCredential;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.globus.common.Version;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.net.UnknownHostException;
 import java.text.DecimalFormat;
+import java.util.Vector;
 
+import org.dcache.ftp.client.exception.ClientException;
 import org.dcache.ftp.client.exception.FTPException;
+import org.dcache.ftp.client.exception.FTPReplyParseException;
+import org.dcache.ftp.client.exception.ServerException;
+import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
+import org.dcache.ftp.client.extended.GridFTPControlChannel;
+import org.dcache.ftp.client.extended.GridFTPServerFacade;
+import org.dcache.ftp.client.vanilla.Command;
+import org.dcache.ftp.client.vanilla.Reply;
+import org.dcache.util.Version;
 
 
 /**
@@ -60,6 +56,8 @@ public class GridFTPClient extends FTPClient
 
     private static Logger logger =
             LoggerFactory.getLogger(GridFTPClient.class);
+
+    private static final Version VERSION = Version.of(GridFTPClient.class);
 
     //utility alias to session and localServer
     protected GridFTPSession gSession;
@@ -87,7 +85,7 @@ public class GridFTPClient extends FTPClient
         gLocalServer.authorize();
         this.useAllo = true;
 
-        setUsageInformation("CoG", Version.getVersion());
+        setUsageInformation("dCache", VERSION.getVersion());
     }
 
     /**
@@ -107,9 +105,7 @@ public class GridFTPClient extends FTPClient
             String appName,
             String appVer)
     {
-        usageString = new String(
-                "CLIENTINFO appname=" + appName + ";appver=" + appVer +
-                ";schema=gsiftp;");
+        usageString = "CLIENTINFO appname=" + appName + ";appver=" + appVer + ";schema=gsiftp;";
     }
 
     /**
@@ -134,8 +130,6 @@ public class GridFTPClient extends FTPClient
         // quietly send version information to the server.
         // ignore errors
         try {
-            String version = Version.getVersion();
-
             this.site(usageString);
         } catch (Exception ex) {
         }

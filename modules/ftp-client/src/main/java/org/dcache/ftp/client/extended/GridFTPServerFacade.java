@@ -15,52 +15,50 @@
  */
 package org.dcache.ftp.client.extended;
 
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.io.IOException;
-import java.io.DataOutputStream;
-
-import org.globus.util.Util;
-import org.globus.net.ServerSocketFactory;
+import org.globus.gsi.GSIConstants;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.auth.IdentityAuthorization;
+import org.globus.gsi.gssapi.auth.SelfAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.GssSocketFactory;
-import org.globus.gsi.gssapi.auth.SelfAuthorization;
-import org.globus.gsi.gssapi.auth.IdentityAuthorization;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.GSIConstants;
+import org.globus.net.ServerSocketFactory;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.gridforum.jgss.ExtendedGSSManager;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+import org.dcache.ftp.client.DataChannelAuthentication;
+import org.dcache.ftp.client.DataSink;
+import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.GridFTPSession;
 import org.dcache.ftp.client.HostPort;
 import org.dcache.ftp.client.HostPort6;
 import org.dcache.ftp.client.HostPortList;
-import org.dcache.ftp.client.RetrieveOptions;
-import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.DataSource;
-import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.Options;
+import org.dcache.ftp.client.RetrieveOptions;
 import org.dcache.ftp.client.Session;
+import org.dcache.ftp.client.dc.EBlockImageDCWriter;
 import org.dcache.ftp.client.dc.EBlockParallelTransferContext;
 import org.dcache.ftp.client.dc.ManagedSocketBox;
 import org.dcache.ftp.client.dc.SocketBox;
 import org.dcache.ftp.client.dc.SocketOperator;
 import org.dcache.ftp.client.dc.SocketPool;
-import org.dcache.ftp.client.dc.TransferContext;
 import org.dcache.ftp.client.dc.StripeContextManager;
-import org.dcache.ftp.client.dc.EBlockImageDCWriter;
+import org.dcache.ftp.client.dc.TransferContext;
 import org.dcache.ftp.client.dc.TransferThreadManager;
-import org.dcache.ftp.client.exception.DataChannelException;
 import org.dcache.ftp.client.exception.ClientException;
+import org.dcache.ftp.client.exception.DataChannelException;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
-
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSContext;
-
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSManager;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.util.NetworkUtils;
 
 public class GridFTPServerFacade extends FTPServerFacade
 {
@@ -273,7 +271,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         gSession.serverMode = GridFTPSession.SERVER_EPAS;
         gSession.serverAddressList = new HostPortList();
 
-        String address = Util.getLocalHostAddress();
+        String address = NetworkUtils.getLocalAddress(InetAddress.getByName(remoteControlChannel.getHost())).getHostAddress();
         int localPort = serverSocket.getLocalPort();
 
         HostPort hp = null;

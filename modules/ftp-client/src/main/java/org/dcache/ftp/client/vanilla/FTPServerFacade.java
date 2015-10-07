@@ -15,38 +15,39 @@
  */
 package org.dcache.ftp.client.vanilla;
 
-import org.globus.net.SocketFactory;
-import org.globus.util.Util;
 import org.globus.net.ServerSocketFactory;
+import org.globus.net.SocketFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.dcache.ftp.client.exception.FTPException;
-import org.dcache.ftp.client.exception.ServerException;
-import org.dcache.ftp.client.exception.ClientException;
-import org.dcache.ftp.client.exception.FTPReplyParseException;
-import org.dcache.ftp.client.Session;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.LinkedList;
+
+import org.dcache.ftp.client.DataSink;
+import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.HostPort;
 import org.dcache.ftp.client.HostPort6;
-import org.dcache.ftp.client.DataSource;
 import org.dcache.ftp.client.Options;
-import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.dc.DataChannelFactory;
-import org.dcache.ftp.client.dc.TaskThread;
-import org.dcache.ftp.client.dc.Task;
+import org.dcache.ftp.client.Session;
 import org.dcache.ftp.client.dc.ActiveConnectTask;
-import org.dcache.ftp.client.dc.TransferContext;
+import org.dcache.ftp.client.dc.DataChannelFactory;
+import org.dcache.ftp.client.dc.LocalReply;
 import org.dcache.ftp.client.dc.PassiveConnectTask;
 import org.dcache.ftp.client.dc.SimpleDataChannelFactory;
 import org.dcache.ftp.client.dc.SimpleTransferContext;
-import org.dcache.ftp.client.dc.LocalReply;
-
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.UnknownHostException;
-import java.net.Socket;
-import java.util.LinkedList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.ftp.client.dc.Task;
+import org.dcache.ftp.client.dc.TaskThread;
+import org.dcache.ftp.client.dc.TransferContext;
+import org.dcache.ftp.client.exception.ClientException;
+import org.dcache.ftp.client.exception.FTPException;
+import org.dcache.ftp.client.exception.FTPReplyParseException;
+import org.dcache.ftp.client.exception.ServerException;
+import org.dcache.util.NetworkUtils;
 
 /**
  * <b>
@@ -206,7 +207,7 @@ public class FTPServerFacade
 
         session.serverMode = Session.SERVER_PASSIVE;
 
-        String address = Util.getLocalHostAddress();
+        String address = NetworkUtils.getLocalAddress(InetAddress.getByName(remoteControlChannel.getHost())).getHostAddress();
         int localPort = serverSocket.getLocalPort();
 
         if (remoteControlChannel.isIPv6()) {
@@ -345,14 +346,14 @@ public class FTPServerFacade
         if (serverSocket == null) {
             return;
         }
-        String address = Util.getLocalHostAddress();
-        int port = serverSocket.getLocalPort();
-        // this is a hack to ensue the server socket is 
-        // unblocked from accpet()
-        // but this is not guaranteed to work still
-        SocketFactory factory = SocketFactory.getDefault();
         Socket s = null;
         try {
+            InetAddress address = ((InetSocketAddress) serverSocket.getLocalSocketAddress()).getAddress();
+            int port = serverSocket.getLocalPort();
+            // this is a hack to ensue the server socket is
+            // unblocked from accpet()
+            // but this is not guaranteed to work still
+            SocketFactory factory = SocketFactory.getDefault();
             s = factory.createSocket(address, port);
             s.getInputStream();
         } catch (Exception e) {

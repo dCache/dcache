@@ -15,25 +15,23 @@
  */
 package org.dcache.ftp.client.vanilla;
 
-import java.net.Socket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.InputStreamReader;
-import java.io.BufferedReader;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 
-import org.globus.common.CoGProperties;
-
+import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
-import org.dcache.ftp.client.exception.FTPReplyParseException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -166,7 +164,6 @@ public class FTPControlChannel extends BasicClientControlChannel
                             new InetSocketAddress(allIPs[i], port);
 
                     socket = new Socket();
-                    socket.setSoTimeout(CoGProperties.getDefault().getSocketTimeout());
                     socket.connect(isa);
                     found = true;
                 } catch (IOException ioEx) {
@@ -184,12 +181,7 @@ public class FTPControlChannel extends BasicClientControlChannel
                 }
             }
 
-            String pv = System.getProperty("org.globus.ftp.IPNAME");
-            if (pv != null) {
-                host = socket.getInetAddress().getHostAddress();
-            } else {
-                host = socket.getInetAddress().getCanonicalHostName();
-            }
+            host = socket.getInetAddress().getHostAddress();
 
             setInputStream(socket.getInputStream());
             setOutputStream(socket.getOutputStream());
