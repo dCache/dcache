@@ -77,9 +77,9 @@ package gov.fnal.srm.util;
 
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import org.globus.ftp.exception.ServerException;
-import org.globus.ftp.exception.UnexpectedReplyCodeException;
-import org.globus.ftp.vanilla.Reply;
+import org.dcache.ftp.client.exception.ServerException;
+import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
+import org.dcache.ftp.client.vanilla.Reply;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

@@ -68,9 +68,9 @@
 
 package org.dcache.pool.movers;
 
-import org.globus.ftp.Buffer;
-import org.globus.ftp.exception.ClientException;
-import org.globus.ftp.exception.ServerException;
+import org.dcache.ftp.client.Buffer;
+import org.dcache.ftp.client.exception.ClientException;
+import org.dcache.ftp.client.exception.ServerException;
 import org.globus.gsi.CredentialException;
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
