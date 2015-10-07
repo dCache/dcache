@@ -102,16 +102,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>axisg</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>ssl-proxies</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>org.italiangrid</groupId>
       <artifactId>voms-api-java</artifactId>
     </dependency>
@@ -124,6 +114,11 @@
     <dependency>
         <groupId>axis</groupId>
         <artifactId>axis</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
     </dependency>
 
     <dependency>

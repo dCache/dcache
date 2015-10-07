@@ -11,6 +11,12 @@ else
     logbackDefn=-Dlogback.configurationFile=$conf_dir/logback.xml
 fi
 
+if [ -n "$X509_USER_PROXY" ]; then
+    x509_user_proxy="$X509_USER_PROXY"
+else
+    x509_user_proxy=/tmp/x509up_u$(id -u)
+fi
+
 CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
     -client \
     -Djava.awt.headless=true \
@@ -18,4 +24,5 @@ CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
     $logbackDefn \
     -XX:+TieredCompilation \
     -XX:TieredStopAtLevel=0 \
-    org.dcache.srm.DelegationShell "$@"
+    ${SRM_JAVA_OPTIONS} \
+    org.dcache.srm.DelegationShell -x509_user_proxy="$x509_user_proxy" "$@"

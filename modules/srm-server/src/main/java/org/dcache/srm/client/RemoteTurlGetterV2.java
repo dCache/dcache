@@ -73,9 +73,6 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.apache.axis.types.URI;
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,6 +113,7 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
     private ISRM srmv2;
     protected final String[] SURLs;
+    private final String caCertificatePath;
     private final HashMap<String,Integer> pendingSurlsToIndex = new HashMap<>();
     protected final int number_of_file_reqs;
     protected boolean createdMap;
@@ -129,12 +127,13 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
 
 
     public RemoteTurlGetterV2(AbstractStorageElement storage,
-                              RequestCredential credential,String[] SURLs,
-                              String[] protocols,PropertyChangeListener listener,
-                              long retry_timeout,int retry_num , long lifetime,
-                              Transport transport) {
+                              RequestCredential credential, String[] SURLs,
+                              String[] protocols, PropertyChangeListener listener,
+                              long retry_timeout, int retry_num, long lifetime,
+                              String caCertificatePath, Transport transport) {
         super(storage,credential,protocols);
         this.SURLs = SURLs;
+        this.caCertificatePath = caCertificatePath;
         this.number_of_file_reqs = SURLs.length;
         this.retry_num = retry_num;
         this.retry_timout = retry_timeout;
@@ -173,17 +172,14 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
         logger.debug("SURLs[0] is "+SURLs[0]);
         try {
             java.net.URI srmUrl = SrmUrl.createWithDefaultPort(SURLs[0]);
-            eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
-            GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
-                    new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
-                    GSSCredential.INITIATE_ONLY);
             srmv2 = new SRMClientV2(srmUrl,
-                    globusGSSCredential,
-                    retry_timout,
-                    retry_num,
-                    true,
-                    true,
-                    transport);
+                                    credential.getDelegatedCredential(),
+                                    retry_timout,
+                                    retry_num,
+                                    true,
+                                    true,
+                                    caCertificatePath,
+                                    transport);
             int len = SURLs.length;
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
             for(int i = 0; i < len; ++i) {
@@ -412,20 +408,17 @@ public final class RemoteTurlGetterV2 extends TurlGetterPutter {
                                          String requestTokenString,
                                          long retry_timeout,
                                          int retry_num,
-                                         Transport transport) throws Exception
+                                         String caCertificatePath, Transport transport) throws Exception
     {
         java.net.URI srmUrl = SrmUrl.createWithDefaultPort(surl);
-        eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
-        GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
-                new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
-                GSSCredential.INITIATE_ONLY);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
-                globusGSSCredential,
-                retry_timeout,
-                retry_num,
-                true,
-                true,
-                transport);
+                                            credential.getDelegatedCredential(),
+                                            retry_timeout,
+                                            retry_num,
+                                            true,
+                                            true,
+                                            caCertificatePath,
+                                            transport);
         String requestToken = requestTokenString;
         URI surlArray[] = new URI[1];
         surlArray[0]= new URI(surl);

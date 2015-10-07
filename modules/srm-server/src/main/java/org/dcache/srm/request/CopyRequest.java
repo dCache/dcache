@@ -421,7 +421,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             setRemoteTurlClient(new RemoteTurlGetterV2(getStorage(),
                     credential, remoteSurlsUniqueArray, getProtocols(),
                     this, getConfiguration().getCopyMaxPollPeriod(), 2,
-                    this.getRemainingLifetime(), clientTransport));
+                    this.getRemainingLifetime(), getConfiguration().getCaCertificatePath(),
+                    clientTransport));
             getRemoteTurlClient().getInitialRequest();
             getRemoteTurlClient().run();
             return;
@@ -523,6 +524,7 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
                                                    this.getRemainingLifetime(), getStorageType(),
                                                    getTargetRetentionPolicy(), getTargetAccessLatency(),
                                                    getOverwriteMode(), getTargetSpaceToken(),
+                                                   getConfiguration().getCaCertificatePath(),
                                                    clientTransport));
         getRemoteTurlClient().getInitialRequest();
 
@@ -637,17 +639,20 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
             try {
                 Scheduler<?> scheduler = Scheduler.getScheduler(schedulerId);
                 RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
+                String caCertificatePath = getConfiguration().getCaCertificatePath();
                 if (isSourceSrm() && !isSourceLocal()) {
                    RemoteTurlGetterV2.staticReleaseFile(credential,
                                                         surl, requestId,
                                                         0,
                                                         0,
+                                                        caCertificatePath,
                                                         clientTransport);
                 } else {
                     RemoteTurlPutterV2.staticPutDone(credential,
                                                      surl, requestId,
                                                      0,
                                                      0,
+                                                     caCertificatePath,
                                                      clientTransport);
                 }
             } catch (Exception e) {

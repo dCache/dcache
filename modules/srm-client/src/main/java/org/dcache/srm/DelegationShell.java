@@ -19,21 +19,23 @@ package org.dcache.srm;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
+import eu.emi.security.authn.x509.proxy.ProxyGenerator;
+import eu.emi.security.authn.x509.proxy.ProxyRequestOptions;
 import org.apache.axis.SimpleTargetedChain;
+import org.apache.axis.client.Call;
+import org.apache.axis.client.Stub;
 import org.apache.axis.configuration.SimpleProvider;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
-import org.globus.axis.transport.HTTPSSender;
-import org.globus.axis.util.Util;
-import org.globus.common.CoGProperties;
-import org.globus.gsi.CredentialException;
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.bc.BouncyCastleCertProcessingFactory;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.xml.rpc.ServiceException;
 import javax.xml.rpc.holders.StringHolder;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
@@ -45,12 +47,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -69,6 +66,9 @@ import org.dcache.delegation.gridsite1.DelegationExceptionType;
 import org.dcache.delegation.gridsite1.NewProxyReq;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.delegation.gridsite2.DelegationServiceLocator;
+import org.dcache.srm.client.CanlContextFactory;
+import org.dcache.srm.client.HttpClientSender;
+import org.dcache.srm.client.HttpClientTransport;
 import org.dcache.util.Args;
 import org.dcache.util.cli.ShellApplication;
 
@@ -108,18 +108,22 @@ public class DelegationShell extends ShellApplication
     private String _prompt = "$ ";
     private Delegation _client;
     private GridSiteVersionPolicy _versionPolicy = GridSiteVersionPolicy.PROBE;
+    private final PEMCredential _proxy;
+    private final String _proxyPath;
 
     public static void main(String[] arguments) throws Throwable
     {
         Args args = new Args(arguments);
 
-        try (DelegationShell shell = new DelegationShell()) {
+        try (DelegationShell shell = new DelegationShell(args.getOption("x509_user_proxy"))) {
             if (args.hasOption("endpoint")) {
                 shell.setEndpoint(URI.create(args.getOption("endpoint")));
                 args = args.removeOptions("endpoint");
             }
 
             shell.start(args);
+        } catch (FileNotFoundException | CommandException e) {
+            System.err.println(e.getMessage());
         } catch (RuntimeException e) {
             System.err.println("Bug detected: " + e.toString());
             e.printStackTrace(System.err);
@@ -128,10 +132,19 @@ public class DelegationShell extends ShellApplication
         }
     }
 
-    public DelegationShell() throws Throwable
+    public DelegationShell(String proxyPath) throws Exception
     {
-        _provider.deployTransport("https", new SimpleTargetedChain(new HTTPSSender()));
-        Util.registerTransport();
+        _proxyPath = proxyPath;
+        _proxy = new PEMCredential(proxyPath, (char[]) null);
+
+        Call.initialize();
+        Call.setTransportForProtocol("http", HttpClientTransport.class);
+        Call.setTransportForProtocol("https", HttpClientTransport.class);
+
+        HttpClientSender sender = new HttpClientSender();
+        sender.setSslContextFactory(CanlContextFactory.createDefault());
+        sender.init();
+        _provider.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME, new SimpleTargetedChain(sender));
         _v1Locator = new org.dcache.delegation.gridsite1.DelegationServiceLocator(_provider);
         _v2Locator = new DelegationServiceLocator(_provider);
     }
@@ -152,7 +165,9 @@ public class DelegationShell extends ShellApplication
     private org.dcache.delegation.gridsite1.Delegation buildV1Client(URL url)
     {
         try {
-            return _v1Locator.getGridsiteDelegation(url);
+            org.dcache.delegation.gridsite1.Delegation delegation = _v1Locator.getGridsiteDelegation(url);
+            ((Stub) delegation)._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, _proxy);
+            return delegation;
         } catch (ServiceException e) {
             // Should never happen
             throw new RuntimeException("Failed to create v1 client: " +
@@ -163,7 +178,9 @@ public class DelegationShell extends ShellApplication
     private org.dcache.delegation.gridsite2.Delegation buildV2Client(URL url)
     {
         try {
-            return _v2Locator.getGridsiteDelegation(url);
+            org.dcache.delegation.gridsite2.Delegation delegation = _v2Locator.getGridsiteDelegation(url);
+            ((Stub) delegation)._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, _proxy);
+            return delegation;
         } catch (ServiceException e) {
             // Should never happen
             throw new RuntimeException("Failed to create v1 client: " +
@@ -184,6 +201,7 @@ public class DelegationShell extends ShellApplication
         try {
             org.dcache.delegation.gridsite1.Delegation client =
                     locator.getGridsiteDelegation(url);
+            ((Stub) client)._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, _proxy);
             client.getNewProxyReq();
             return true;
         } catch (ServiceException e) {
@@ -203,6 +221,7 @@ public class DelegationShell extends ShellApplication
         try {
             org.dcache.delegation.gridsite2.Delegation client =
                     locator.getGridsiteDelegation(url);
+            ((Stub) client)._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, _proxy);
             client.getVersion();
             return true;
         } catch (ServiceException e) {
@@ -244,11 +263,20 @@ public class DelegationShell extends ShellApplication
         String newPrompt = "[" + uri + "] $ ";
         uri = canonicalise(uri);
 
+        checkProxyAge();
+
         try {
             _client = buildClient(uri.toURL());
             _prompt = newPrompt;
         } catch (MalformedURLException e) {
             throw new CommandException("Bad URI: " + e.toString());
+        }
+    }
+
+    private void checkProxyAge() throws CommandException
+    {
+        if (_proxy.getCertificate().getNotAfter().before(new Date())) {
+            throw new CommandException(_proxyPath + " has expired.");
         }
     }
 
@@ -286,11 +314,11 @@ public class DelegationShell extends ShellApplication
         Throwable t = Throwables.getRootCause(e);
 
         if (t instanceof UnknownHostException) {
-            throw new CommandException("Unknown host: " + t.getMessage());
+            throw new CommandException("Unknown host: " + t.getMessage(), t);
         }
 
         if (t instanceof ConnectException) {
-            throw new CommandException("Failed to connect to endpoint: " + t.getMessage());
+            throw new CommandException("Failed to connect to endpoint: " + t.getMessage(), t);
         }
     }
 
@@ -298,15 +326,15 @@ public class DelegationShell extends ShellApplication
     {
         Throwable t = Throwables.getRootCause(e);
 
-        if (t instanceof CredentialException) {
-            throw new CommandException("Problem with local credental: " + t.getMessage());
+        if (t instanceof CertificateException || t instanceof SSLPeerUnverifiedException) {
+            throw new CommandException(t.getMessage(), e);
         }
     }
 
     private static void throwAsGenericProblem(Exception e) throws CommandException
     {
         if (e instanceof DelegationException || e instanceof DelegationExceptionType) {
-            throw new CommandException("Remote server said: " + e.toString());
+            throw new CommandException("Remote server said: " + e.toString(), e);
         } else {
             Throwable t = Throwables.getRootCause(e);
             StringBuilder sb = new StringBuilder();
@@ -315,7 +343,7 @@ public class DelegationShell extends ShellApplication
                 sb.append(t.getClass().getCanonicalName()).append(": ");
             }
             sb.append(t.getMessage());
-            throw new CommandException(sb.toString());
+            throw new CommandException(sb.toString(), e);
         }
     }
 
@@ -549,13 +577,11 @@ public class DelegationShell extends ShellApplication
                     csrData = _client.getProxyReq(id);
                 }
                 PKCS10CertificationRequest csr = fromPEM(csrData);
-                String path = CoGProperties.getDefault().getProxyFile();
-                X509Credential credential = new X509Credential(path);
 
-                lifetime = limitLifetime(credential.getCertificateChain(), lifetime);
+                lifetime = limitLifetime(_proxy.getCertificateChain(), lifetime);
 
-                X509Certificate certificate = createCertificate(credential, csr, lifetime);
-                String result = toPEM(concat(certificate, credential.getCertificateChain()));
+                X509Certificate certificate = createCertificate(_proxy, csr, lifetime);
+                String result = toPEM(concat(certificate, _proxy.getCertificateChain()));
                 _client.putProxy(id, result);
             } catch (RemoteException e) {
                 throw asCommandException(e);
@@ -583,17 +609,12 @@ public class DelegationShell extends ShellApplication
         }
 
         private X509Certificate createCertificate(X509Credential proxy, PKCS10CertificationRequest csr, int lifetime)
-                throws NoSuchAlgorithmException, NoSuchProviderException,
-                InvalidKeyException, IOException, CertificateEncodingException,
-                SignatureException, CredentialException, GeneralSecurityException
+                throws IOException, GeneralSecurityException
         {
-            PublicKey pubKey = csr.getPublicKey();
-            BouncyCastleCertProcessingFactory factory =
-                    BouncyCastleCertProcessingFactory.getDefault();
-
-            return factory.createProxyCertificate(proxy.getCertificateChain()[0],
-                    proxy.getPrivateKey(), pubKey, lifetime, proxy.getProxyType(),
-                    null, null);
+            ProxyRequestOptions options = new ProxyRequestOptions(proxy.getCertificateChain(), csr);
+            options.setLifetime(lifetime);
+            X509Certificate[] chain = ProxyGenerator.generate(options, proxy.getKey());
+            return chain[0];
         }
 
         private Iterable<X509Certificate> concat(X509Certificate certificate,

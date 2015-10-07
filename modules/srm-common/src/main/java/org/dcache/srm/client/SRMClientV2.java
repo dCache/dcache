@@ -15,15 +15,11 @@
 
 package org.dcache.srm.client;
 
+import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.SimpleTargetedChain;
+import org.apache.axis.client.Call;
 import org.apache.axis.client.Stub;
 import org.apache.axis.configuration.SimpleProvider;
-import org.apache.axis.transport.http.HTTPSender;
-import org.globus.axis.transport.GSIHTTPSender;
-import org.globus.axis.transport.GSIHTTPTransport;
-import org.globus.axis.util.Util;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +32,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.util.Date;
 
 import org.dcache.srm.v2_2.ISRM;
 import org.dcache.srm.v2_2.SRMServiceLocator;
@@ -133,17 +130,18 @@ public class SRMClientV2 implements ISRM {
     private long retrytimeout;
 
     private ISRM axis_isrm;
-    private GSSCredential user_cred;
+    private X509Credential user_cred;
     private String service_url;
     private String host;
 
     /** Creates a new instance of SRMClientV2 */
     public SRMClientV2(URI srmurl,
-                       GSSCredential user_cred,
+                       X509Credential user_cred,
                        long retrytimeout,
                        int numberofretries,
                        boolean do_delegation,
                        boolean full_delegation,
+                       String caPath,
                        Transport transport)
         throws IOException,InterruptedException,ServiceException {
         this(srmurl,
@@ -153,38 +151,32 @@ public class SRMClientV2 implements ISRM {
              do_delegation,
              full_delegation,
              GSS_EXPECTED_NAME,
-             WEB_SERVICE_PATH,
+             WEB_SERVICE_PATH, caPath,
              transport);
     }
 
     public SRMClientV2(URI srmurl,
-                       GSSCredential user_cred,
+                       X509Credential user_cred,
                        long retrytimeout,
                        int numberofretries,
                        boolean do_delegation,
                        boolean full_delegation,
                        String gss_expected_name,
                        String webservice_path,
-                       Transport transport)
+                       String caPath, Transport transport)
     throws IOException,InterruptedException,ServiceException {
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;
         this.user_cred = user_cred;
-        try {
-            logger.debug("user credentials are: {}",user_cred.getName());
-            if(user_cred.getRemainingLifetime() < 60) {
-                throw new IOException("credential remaining lifetime is less then a minute ");
-            }
-        }
-        catch(GSSException gsse) {
-            throw new IOException(gsse.toString());
+        if (user_cred.getCertificate().getNotAfter().before(new Date())) {
+            throw new IOException("credentials have expired");
         }
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
-	if (isInetAddress(host) && host.indexOf(':') != -1) {
-	    // IPv6 without DNS record
-	    host = "[" + host + "]";
-	}
+        if (isInetAddress(host) && host.indexOf(':') != -1) {
+            // IPv6 without DNS record
+            host = "[" + host + "]";
+        }
         int port = srmurl.getPort();
 
         if( port == 80) {
@@ -210,30 +202,24 @@ public class SRMClientV2 implements ISRM {
         else {
             service_url += "/"+webservice_path;
         }
-        Util.registerTransport();
-        SimpleProvider provider =
-            new SimpleProvider();
-        SimpleTargetedChain c;
-        c = new SimpleTargetedChain(new GSIHTTPSender());
-        provider.deployTransport("httpg", c);
-        c = new SimpleTargetedChain(new  HTTPSender());
-        provider.deployTransport("http", c);
+        Call.initialize();
+        Call.setTransportForProtocol("http", HttpClientTransport.class);
+        Call.setTransportForProtocol("https", HttpClientTransport.class);
+        SimpleProvider provider = new SimpleProvider();
+        GsiHttpClientSender sender = new GsiHttpClientSender();
+        sender.setSslContextFactory(CanlContextFactory.custom().withCertificateAuthorityPath(caPath).build());
+        sender.init();
+        provider.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME, new SimpleTargetedChain(sender));
         SRMServiceLocator sl = new SRMServiceLocator(provider);
         URL url = new URL(service_url);
         logger.debug("connecting to srm at {}",service_url);
         axis_isrm = sl.getsrm(url);
         if(axis_isrm instanceof Stub) {
             Stub axis_isrm_as_stub = (Stub)axis_isrm;
-            axis_isrm_as_stub._setProperty(GSIHTTPTransport.GSI_CREDENTIALS,user_cred);
-            // sets authorization type
-            axis_isrm_as_stub._setProperty(
-                    GSIHTTPTransport.GSI_AUTHORIZATION,
-                    new PromiscuousHostAuthorization());
-
-            if( TransportUtil.hasGsiMode(transport)) {
-                String gsiMode = TransportUtil.gsiModeFor(transport, do_delegation, full_delegation);
-                axis_isrm_as_stub._setProperty(GSIHTTPTransport.GSI_MODE, gsiMode);
-            }
+            axis_isrm_as_stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_CREDENTIALS, user_cred);
+            axis_isrm_as_stub._setProperty(HttpClientTransport.TRANSPORT_HTTP_DELEGATION,
+                                           TransportUtil.delegationModeFor(transport, do_delegation, full_delegation));
+            axis_isrm_as_stub._setProperty(Call.SESSION_MAINTAIN_PROPERTY, true);
         }
         else {
             throw new IOException("can't set properties to the axis_isrm");
@@ -247,15 +233,8 @@ public class SRMClientV2 implements ISRM {
         logger.debug(" {} , contacting service {}",name,service_url);
         int i = 0;
         while(true) {
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                            "credential remaining lifetime is less " +
-                    "than one minute ");
-                }
-            }
-            catch(GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
+            if (user_cred.getCertificate().getNotAfter().before(new Date())) {
+                throw new RuntimeException("credentials have expired");
             }
             try {
                 Class<?> clazz = argument.getClass();

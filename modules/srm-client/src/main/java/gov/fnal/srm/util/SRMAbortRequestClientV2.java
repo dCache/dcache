@@ -9,11 +9,11 @@
 
 package gov.fnal.srm.util;
 
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Date;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
@@ -26,7 +26,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 public class SRMAbortRequestClientV2 extends SRMClient {
     private ISRM isrm;
     private URI srmURL;
-    private GSSCredential credential;
+    private X509Credential credential;
 
     public SRMAbortRequestClientV2(Configuration configuration,
                                    URI url) {
@@ -36,28 +36,23 @@ public class SRMAbortRequestClientV2 extends SRMClient {
 
     @Override
     public void connect() throws Exception {
-        credential=getGssCredential();
+        credential= getCredential();
         isrm = new SRMClientV2(srmURL,
-                credential,
-                configuration.getRetry_timeout(),
-                configuration.getRetry_num(),
-                doDelegation,
-                fullDelegation,
-                gss_expected_name,
-                configuration.getWebservice_path(),
-                configuration.getTransport());
+                               credential,
+                               configuration.getRetry_timeout(),
+                               configuration.getRetry_num(),
+                               doDelegation,
+                               fullDelegation,
+                               gss_expected_name,
+                               configuration.getWebservice_path(),
+                               configuration.getX509_user_trusted_certificates(),
+                               configuration.getTransport());
     }
 
     @Override
     public void start() throws Exception{
-        try {
-            if (credential.getRemainingLifetime() < 60) {
-                throw new Exception(
-                        "Remaining lifetime of credential is less than a minute.");
-            }
-        }
-        catch (GSSException gsse) {
-            throw gsse;
+        if (credential.getCertificate().getNotAfter().before(new Date())) {
+            throw new RuntimeException("credentials have expired");
         }
         for (String requestToken : configuration.getArrayOfRequestTokens()) {
             try {

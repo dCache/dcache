@@ -100,11 +100,11 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import eu.emi.security.authn.x509.X509Credential;
 import org.apache.axis.types.URI;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -141,7 +141,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
     private java.net.URI to[];
     private SrmCopyRequest req = new SrmCopyRequest();
 
-    private GSSCredential cred;
+    private X509Credential cred;
     private ISRM srmv2;
     private Thread hook;
     private HashMap<java.net.URI,Integer> pendingSurlsMap = new HashMap<>();
@@ -152,7 +152,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         this.from = from;
         this.to = to;
         try {
-            cred = getGssCredential();
+            cred = getCredential();
         } catch (Exception e) {
             cred = null;
             System.err.println("Couldn't getGssCredential.");
@@ -168,25 +168,21 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             srmUrl = to[0];
         }
         srmv2 = new SRMClientV2(srmUrl,
-                getGssCredential(),
-                configuration.getRetry_timeout(),
-                configuration.getRetry_num(),
-                doDelegation,
-                fullDelegation,
-                gss_expected_name,
-                configuration.getWebservice_path(),
-                configuration.getTransport());
+                                getCredential(),
+                                configuration.getRetry_timeout(),
+                                configuration.getRetry_num(),
+                                doDelegation,
+                                fullDelegation,
+                                gss_expected_name,
+                                configuration.getWebservice_path(),
+                                configuration.getX509_user_trusted_certificates(),
+                                configuration.getTransport());
     }
 
     @Override
     public void start() throws Exception {
-        try {
-            if (cred.getRemainingLifetime() < 60) {
-                throw new Exception(
-                        "Remaining lifetime of credential is less than a minute.");
-            }
-        } catch (GSSException gsse) {
-            throw gsse;
+        if (cred.getCertificate().getNotAfter().before(new Date())) {
+            throw new RuntimeException("credentials have expired");
         }
         try {
             //

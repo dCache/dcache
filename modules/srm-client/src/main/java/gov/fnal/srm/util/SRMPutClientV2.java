@@ -143,14 +143,15 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
     public void connect() throws Exception {
         java.net.URI srmUrl = to[0];
         srmv2 = new SRMClientV2(srmUrl,
-                getGssCredential(),
-                configuration.getRetry_timeout(),
-                configuration.getRetry_num(),
-                doDelegation,
-                fullDelegation,
-                gss_expected_name,
-                configuration.getWebservice_path(),
-                configuration.getTransport());
+                                getCredential(),
+                                configuration.getRetry_timeout(),
+                                configuration.getRetry_num(),
+                                doDelegation,
+                                fullDelegation,
+                                gss_expected_name,
+                                configuration.getWebservice_path(),
+                                configuration.getX509_user_trusted_certificates(),
+                                configuration.getTransport());
     }
 
     @Override

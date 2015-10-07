@@ -74,10 +74,6 @@ COPYRIGHT STATUS:
 package org.dcache.srm.client;
 
 import org.apache.axis.types.URI;
-import org.globus.gsi.X509Credential;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +133,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
     final Transport transport;
 
     protected final String[] SURLs;
+    private final String caCertificatePath;
     protected final int number_of_file_reqs;
     protected boolean createdMap;
     final long[] sizes;
@@ -154,16 +151,17 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
                               String[] protocols,
                               PropertyChangeListener listener,
                               long retry_timeout,
-                              int retry_num ,
+                              int retry_num,
                               long requestLifetime,
                               TFileStorageType storageType,
                               TRetentionPolicy retentionPolicy,
                               TAccessLatency accessLatency,
                               TOverwriteMode overwriteMode,
                               String targetSpaceToken,
-                              Transport transport) {
+                              String caCertificatePath, Transport transport) {
         super(storage,credential,protocols);
         this.SURLs = SURLs;
+        this.caCertificatePath = caCertificatePath;
         this.number_of_file_reqs = SURLs.length;
         addListener(listener);
         this.sizes = sizes;
@@ -202,17 +200,14 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
         }
         try {
             java.net.URI srmUrl = SrmUrl.createWithDefaultPort(SURLs[0]);
-            eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
-            GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
-                    new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
-                    GSSCredential.INITIATE_ONLY);
             srmv2 = new SRMClientV2(srmUrl,
-                    globusGSSCredential,
-                    retry_timout,
-                    retry_num,
-                    true,
-                    true,
-                    transport);
+                                    credential.getDelegatedCredential(),
+                                    retry_timout,
+                                    retry_num,
+                                    true,
+                                    true,
+                                    caCertificatePath,
+                                    transport);
 
             int len = SURLs.length;
             TPutFileRequest fileRequests[] = new TPutFileRequest[len];
@@ -249,7 +244,7 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
             srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
-        catch(URISyntaxException | GSSException | IOException | InterruptedException | ServiceException e) {
+        catch(URISyntaxException | IOException | InterruptedException | ServiceException e) {
             logger.error("failed to connect to {} {}",SURLs[0],e.getMessage());
             throw new SRMException("failed to connect to "+SURLs[0],e);
         }
@@ -457,24 +452,20 @@ public final class RemoteTurlPutterV2 extends TurlGetterPutter
 
     public static void staticPutDone(RequestCredential credential,
                                      String surl,
-                                     String  requestTokenString,
+                                     String requestTokenString,
                                      long retry_timeout,
                                      int retry_num,
-                                     Transport transport) throws Exception
+                                     String caCertificatePath, Transport transport) throws Exception
     {
-
         java.net.URI srmUrl = SrmUrl.createWithDefaultPort(surl);
-        eu.emi.security.authn.x509.X509Credential x509Credential = credential.getDelegatedCredential();
-        GlobusGSSCredentialImpl globusGSSCredential = new GlobusGSSCredentialImpl(
-                new X509Credential(x509Credential.getKey(), x509Credential.getCertificateChain()),
-                GSSCredential.INITIATE_ONLY);
         SRMClientV2 srmv2 = new SRMClientV2(srmUrl,
-                globusGSSCredential,
-                retry_timeout,
-                retry_num,
-                true,
-                true,
-                transport);
+                                            credential.getDelegatedCredential(),
+                                            retry_timeout,
+                                            retry_num,
+                                            true,
+                                            true,
+                                            caCertificatePath,
+                                            transport);
         String requestToken = requestTokenString;
         URI surlArray[] = new URI[1];
         surlArray[0]= new URI(surl);

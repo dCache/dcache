@@ -67,6 +67,9 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
 import org.ietf.jgss.GSSCredential;
 
 import java.io.IOException;
@@ -174,7 +177,7 @@ public abstract class SRMClient {
         try {
 
             SRMClientV1 client;
-            client = new SRMClientV1(srmUrl, getGssCredential(),
+            client = new SRMClientV1(srmUrl, getCredential(),
                     configuration.getRetry_timeout(),
                     configuration.getRetry_num(),
                     doDelegation, fullDelegation, gss_expected_name,
@@ -194,19 +197,11 @@ public abstract class SRMClient {
 
     }
 
-    public GSSCredential  getGssCredential()
-    throws Exception {
-        if(configuration.isUseproxy()) {
-            return SslGsiSocketFactory.
-            createUserCredential(configuration.getX509_user_proxy(),
-                    null,
-                    null);
+    public X509Credential getCredential() throws Exception {
+        if (configuration.isUseproxy()) {
+            return new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         } else {
-            return SslGsiSocketFactory.
-            createUserCredential(
-                    null,
-                    configuration.getX509_user_cert(),
-                    configuration.getX509_user_key());
+            return new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
         }
     }
 

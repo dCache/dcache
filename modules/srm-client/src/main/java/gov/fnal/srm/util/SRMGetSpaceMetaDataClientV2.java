@@ -82,10 +82,10 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.X509Credential;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.util.RequestStatusTool;
@@ -100,7 +100,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 
 public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
     private java.net.URI srmURL;
-    private GSSCredential credential;
+    private X509Credential credential;
     private ISRM srmv2;
 
     public SRMGetSpaceMetaDataClientV2(Configuration configuration,
@@ -108,7 +108,7 @@ public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
         super(configuration);
         srmURL=url;
         try {
-            credential = getGssCredential();
+            credential = getCredential();
         }
         catch (Exception e) {
             credential = null;
@@ -120,26 +120,21 @@ public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
     public void connect() throws Exception {
 
         srmv2 = new SRMClientV2(srmURL,
-                getGssCredential(),
-                configuration.getRetry_timeout(),
-                configuration.getRetry_num(),
-                doDelegation,
-                fullDelegation,
-                gss_expected_name,
-                configuration.getWebservice_path(),
-                configuration.getTransport());
+                                getCredential(),
+                                configuration.getRetry_timeout(),
+                                configuration.getRetry_num(),
+                                doDelegation,
+                                fullDelegation,
+                                gss_expected_name,
+                                configuration.getWebservice_path(),
+                                configuration.getX509_user_trusted_certificates(),
+                                configuration.getTransport());
     }
 
     @Override
     public void start() throws Exception {
-        try {
-            if (credential.getRemainingLifetime() < 60) {
-                throw new Exception(
-                        "Remaining lifetime of credential is less than a minute.");
-            }
-        }
-        catch (GSSException gsse) {
-            throw gsse;
+        if (credential.getCertificate().getNotAfter().before(new Date())) {
+            throw new RuntimeException("credentials have expired");
         }
         try {
             String[] tokens = configuration.getSpaceTokensList();

@@ -96,14 +96,15 @@ public class SRMPingClientV2 extends SRMClient  {
     @Override
     public void connect() throws Exception {
         srmv2 = new SRMClientV2(srmurl,
-                getGssCredential(),
-                configuration.getRetry_timeout(),
-                configuration.getRetry_num(),
-                doDelegation,
-                fullDelegation,
-                gss_expected_name,
-                configuration.getWebservice_path(),
-                configuration.getTransport());
+                                getCredential(),
+                                configuration.getRetry_timeout(),
+                                configuration.getRetry_num(),
+                                doDelegation,
+                                fullDelegation,
+                                gss_expected_name,
+                                configuration.getWebservice_path(),
+                                configuration.getX509_user_trusted_certificates(),
+                                configuration.getTransport());
     }
 
     @Override

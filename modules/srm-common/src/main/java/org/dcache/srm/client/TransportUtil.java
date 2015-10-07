@@ -1,7 +1,5 @@
 package org.dcache.srm.client;
 
-import org.globus.axis.transport.GSIHTTPTransport;
-
 /**
  * Utility methods for working with Transport
  */
@@ -15,36 +13,25 @@ public final class TransportUtil {
         if(transport == Transport.TCP) {
             return "http";
         } else {
-            return "httpg";
+            return "https";
         }
-        /* TODO We return httpg for Transport.SSL since we're using JGlobus libraries.
-         * When using standard libraries for SSL, this should be changed to
-         * "https" once we switch away from JGlobus.
-         */
     }
 
-    public static boolean hasGsiMode(Transport transport) {
-        return transport == Transport.SSL || transport == Transport.GSI;
-    }
-
-    public static String gsiModeFor(Transport transport, boolean do_delegation, boolean full_delegation) {
-        switch( transport) {
+    public static HttpClientTransport.Delegation delegationModeFor(Transport transport, boolean do_delegation, boolean full_delegation)
+    {
+        switch (transport) {
+        case TCP:
+            return HttpClientTransport.Delegation.SKIP;
         case GSI:
             if (do_delegation) {
-                return  full_delegation ?
-                        GSIHTTPTransport.GSI_MODE_FULL_DELEG :
-                            GSIHTTPTransport.GSI_MODE_LIMITED_DELEG;
+                return full_delegation ? HttpClientTransport.Delegation.FULL : HttpClientTransport.Delegation.LIMITED;
             } else {
-                return GSIHTTPTransport.GSI_MODE_NO_DELEG;
+                return HttpClientTransport.Delegation.NONE;
             }
-
         case SSL:
-            return GSIHTTPTransport.GSI_MODE_SSL;
-
-        case TCP:
-            throw new RuntimeException("No GSI mode needed for TCP transport");
+            return HttpClientTransport.Delegation.SKIP;
+        default:
+            throw new IllegalArgumentException();
         }
-
-        throw new RuntimeException("Unknown transport: " + transport);
     }
 }

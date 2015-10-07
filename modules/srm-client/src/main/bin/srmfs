@@ -11,6 +11,20 @@ else
     logbackDefn=-Dlogback.configurationFile=$conf_dir/logback.xml
 fi
 
+if [ -n "$X509_USER_PROXY" ]; then
+    x509_user_proxy="$X509_USER_PROXY"
+elif [ -r /tmp/x509up_u$(id -u) ]; then
+    x509_user_proxy=/tmp/x509up_u$(id -u)
+fi
+
+if [ -n "$X509_CERT_DIR" ]; then
+   x509_user_trusted_certs=$X509_CERT_DIR
+elif [ -d "$HOME/.globus/certificates" ]; then
+   x509_user_trusted_certs=$HOME/.globus/certificates
+else
+   x509_user_trusted_certs=/etc/grid-security/certificates
+fi
+
 CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
     -client \
     -Djava.awt.headless=true \
@@ -18,4 +32,4 @@ CLASSPATH="$jar_dir/*" java -Dlog=${DELEGATION_LOG:-warn} \
     $logbackDefn \
     -XX:+TieredCompilation \
     -XX:TieredStopAtLevel=1 \
-    org.dcache.srm.shell.SrmShell "$@"
+    org.dcache.srm.shell.SrmShell -x509_user_proxy="$x509_user_proxy" -x509_user_trusted_certificates="$x509_user_trusted_certs" "$@"

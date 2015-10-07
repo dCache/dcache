@@ -21,12 +21,13 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
+import eu.emi.security.authn.x509.X509Credential;
+import eu.emi.security.authn.x509.impl.PEMCredential;
 import gov.fnal.srm.util.Configuration;
 import gov.fnal.srm.util.OptionParser;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
 import org.globus.gsi.CredentialException;
-import org.ietf.jgss.GSSCredential;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,7 +56,6 @@ import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInvalidPathException;
 import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.client.Transport;
-import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.util.SrmUrl;
 import org.dcache.srm.v2_2.ArrayOfString;
 import org.dcache.srm.v2_2.ArrayOfTExtraInfo;
@@ -114,7 +114,7 @@ public class SrmShell extends ShellApplication
         }
         args.shift();
 
-        try (SrmShell shell = new SrmShell(uri)) {
+        try (SrmShell shell = new SrmShell(uri, args)) {
             shell.start(args);
         } catch (CredentialException | MalformedURLException e) {
             System.err.println(e.getMessage());
@@ -122,12 +122,12 @@ public class SrmShell extends ShellApplication
         }
     }
 
-    public SrmShell(URI uri) throws Exception
+    public SrmShell(URI uri, Args args) throws Exception
     {
         super();
 
         Configuration configuration = new Configuration();
-        OptionParser.setDefaults(configuration);
+        OptionParser.parseOptions(configuration, args);
         configuration.setSrmProtocolVersion(2);
 
         switch (uri.getScheme()) {
@@ -140,20 +140,12 @@ public class SrmShell extends ShellApplication
             break;
         }
 
-        GSSCredential credential;
+        X509Credential credential;
         if (configuration.isUseproxy()) {
-            credential = SslGsiSocketFactory.
-                    createUserCredential(configuration.getX509_user_proxy(),
-                                         null,
-                                         null);
+            credential = new PEMCredential(configuration.getX509_user_proxy(), (char[]) null);
         } else {
-            credential = SslGsiSocketFactory.
-                    createUserCredential(
-                            null,
-                            configuration.getX509_user_cert(),
-                            configuration.getX509_user_key());
+            credential = new PEMCredential(configuration.getX509_user_key(), configuration.getX509_user_cert(), null);
         }
-
         fs = new AxisSrmFileSystem(
                 new SRMClientV2(SrmUrl.withDefaultPort(configuration.getSrmUrl()),
                                 credential,
@@ -163,6 +155,7 @@ public class SrmShell extends ShellApplication
                                 configuration.isFull_delegation(),
                                 configuration.getGss_expected_name(),
                                 configuration.getWebservice_path(),
+                                configuration.getX509_user_trusted_certificates(),
                                 Transport.GSI));
 
         cd(configuration.getSrmUrl().toASCIIString());
