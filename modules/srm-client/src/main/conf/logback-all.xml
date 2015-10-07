@@ -62,11 +62,9 @@
   <logger name="org.dcache.ftp.client.GridFTPSession" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.HostPort" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.HostPortList" level="DEBUG"/>
-  <logger name="org.dcache.ftp.client.InputStreamDataSink" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.Marker" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.MarkerListener" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.Options" level="DEBUG"/>
-  <logger name="org.dcache.ftp.client.OutputStreamDataSource" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.PerfMarker" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.RestartData" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.RestartMarker" level="DEBUG"/>
