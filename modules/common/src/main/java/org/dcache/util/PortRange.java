@@ -1,10 +1,21 @@
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.dcache.util;
-
-import com.google.common.base.Throwables;
-import com.google.common.util.concurrent.Uninterruptibles;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 
 import java.io.IOException;
 import java.net.BindException;
@@ -13,7 +24,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,19 +33,19 @@ import java.util.regex.Pattern;
 public class PortRange
 {
     /** Pattern matching <PORT>[:<PORT>] */
-    private final static Pattern FORMAT =
+    protected static final Pattern FORMAT =
         Pattern.compile("(\\d+)(?:(?:,|:)(\\d+))?");
 
     /**
      * Random number generator used when binding sockets.
      */
-    private final static Random _random = new Random();
+    private static final Random _random = new Random();
 
     /**
      * The port range to use.
      */
-    private final int _lower;
-    private final int _upper;
+    protected final int _lower;
+    protected final int _upper;
 
     /**
      * Creates a port range with the given bounds (both inclusive).
@@ -77,7 +87,7 @@ public class PortRange
      * the range [0,0] if <code>s</code> is null or empty.
      */
     public static PortRange valueOf(String s)
-        throws IllegalArgumentException
+            throws IllegalArgumentException
     {
         try {
             Matcher m = FORMAT.matcher(s);
@@ -223,35 +233,6 @@ public class PortRange
     }
 
     /**
-     * Binds <code>server</socket> to <code>address</code>. A port is
-     * chosen from this port range. If the port range is [0,0], then a
-     * free port is chosen by the OS.
-     *
-     * @throws IOException if the bind operation fails.
-     */
-    public Channel bind(ServerBootstrap server, InetAddress address)
-        throws IOException
-    {
-        int start = random();
-        int port = start;
-        do {
-            try {
-                ChannelFuture future = server.bind(new InetSocketAddress(address, port));
-                Uninterruptibles.getUninterruptibly(future);
-                return future.channel();
-            } catch (ExecutionException e) {
-                if (!(e.getCause() instanceof BindException)) {
-                    Throwables.propagateIfPossible(e.getCause(), IOException.class);
-                    throw Throwables.propagate(e.getCause());
-                }
-            }
-            port = succ(port);
-        } while (port != start);
-
-        throw new BindException("No free port within range");
-    }
-
-    /**
      * Binds <code>socket</socket> to the wildcard
      * <code>address</code>. A port is chosen from this port range. If
      * the port range is [0,0], then a free port is chosen by the OS.
@@ -291,20 +272,6 @@ public class PortRange
         throws IOException
     {
         return bind(socket, (InetAddress) null);
-    }
-
-    /**
-     * Binds <code>server</socket> to the wildcard
-     * <code>address</code>. A port is chosen from this port range. If
-     * the port range is [0,0], then a free port is chosen by the OS.
-     *
-     * @throws IOException if the bind operation fails, or if the
-     * socket is already bound.
-     */
-    public Channel bind(ServerBootstrap socket)
-        throws IOException
-    {
-        return bind(socket, null);
     }
 
     @Override

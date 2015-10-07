@@ -70,7 +70,7 @@ import org.dcache.pool.classic.PostTransferService;
 import org.dcache.pool.classic.TransferService;
 import org.dcache.pool.repository.ReplicaDescriptor;
 import org.dcache.util.CDCThreadFactory;
-import org.dcache.util.PortRange;
+import org.dcache.util.NettyPortRange;
 import org.dcache.util.TryCatchTemplate;
 import org.dcache.vehicles.FileAttributes;
 
@@ -109,7 +109,7 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     private InetSocketAddress lastServerAddress;
 
     /** Port range in which Netty will listen. */
-    private PortRange portRange;
+    private NettyPortRange portRange;
 
     /** UUID to channel map. */
     private final ConcurrentMap<UUID, NettyMoverChannel> uuids = Maps.newConcurrentMap();
@@ -222,12 +222,12 @@ public abstract class NettyTransferService<P extends ProtocolInfo>
     }
 
     @Required
-    public void setPortRange(PortRange portRange)
+    public void setPortRange(NettyPortRange portRange)
     {
         this.portRange = portRange;
     }
 
-    public PortRange getPortRange()
+    public NettyPortRange getPortRange()
     {
         return portRange;
     }

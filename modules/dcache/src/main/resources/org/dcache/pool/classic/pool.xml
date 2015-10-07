@@ -363,7 +363,7 @@
       </property>
       <property name="doorStub" ref="doorStub"/>
       <property name="portRange">
-          <bean class="org.dcache.util.PortRange">
+          <bean class="org.dcache.util.NettyPortRange">
               <constructor-arg value="${pool.mover.xrootd.port.min}"/>
               <constructor-arg value="${pool.mover.xrootd.port.max}"/>
           </bean>
@@ -389,7 +389,7 @@
       <property name="connectTimeoutUnit" value="${pool.mover.http.timeout.connect.unit}"/>
       <property name="doorStub" ref="doorStub"/>
       <property name="portRange">
-          <bean class="org.dcache.util.PortRange">
+          <bean class="org.dcache.util.NettyPortRange">
               <constructor-arg value="${pool.mover.http.port.min}"/>
               <constructor-arg value="${pool.mover.http.port.max}"/>
           </bean>

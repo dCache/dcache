@@ -82,8 +82,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import org.dcache.util.PortRange;
-
 public class ActiveAdapter implements Runnable, ProxyAdapter
 {
     private final static Logger _log =
