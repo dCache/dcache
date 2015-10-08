@@ -4,8 +4,11 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.glassfish.grizzly.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import diskCacheV111.util.CacheException;
@@ -72,8 +77,10 @@ import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.status.LayoutTryLaterException;
 import org.dcache.nfs.status.LayoutUnavailableException;
 import org.dcache.nfs.status.NfsIoException;
+import org.dcache.nfs.status.NoEntException;
 import org.dcache.nfs.status.NoSpcException;
 import org.dcache.nfs.status.PermException;
+import org.dcache.nfs.status.ServerFaultException;
 import org.dcache.nfs.v3.MountServer;
 import org.dcache.nfs.v3.NfsServerV3;
 import org.dcache.nfs.v3.xdr.mount_prot;
@@ -115,6 +122,8 @@ import org.dcache.xdr.OncRpcSvcBuilder;
 import org.dcache.xdr.XdrBuffer;
 import org.dcache.xdr.gss.GssSessionManager;
 
+import static diskCacheV111.util.CacheException.*;
+
 public class NFSv41Door extends AbstractCellComponent implements
         NFSv41DeviceManager, CellCommandListener,
         CellMessageReceiver, CellInfoProvider {
@@ -139,6 +148,8 @@ public class NFSv41Door extends AbstractCellComponent implements
      * never block longer than 10s.
      */
     private final static long NFS_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
+
+    private static final long NFS_REQUEST_BLOCKING = 100; // in Millis
 
     /**
      * Given that the timeout is pretty short, the retry period has to
@@ -416,57 +427,79 @@ public class NFSv41Door extends AbstractCellComponent implements
         NDC.push(inode.toString());
         NDC.push(context.getRpcCall().getTransport().getRemoteSocketAddress().toString());
         try {
-            deviceid4 deviceid;
 
             if (layoutType != layouttype4.LAYOUT4_NFSV4_1_FILES) {
                 _log.warn("unsupported layout type ({}) requests from");
                 throw new LayoutUnavailableException("Unsuported layout type: " + layoutType);
             }
 
-            if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
-                /*
-                 * all non regular files ( AKA pnfs dot files ) provided by door itself.
-                 */
-                deviceid = MDS_ID;
+            deviceid4 deviceid;
+
+            final NFS4Client client;
+            if (context.getMinorversion() == 0) {
+                /* if we need to run proxy-io with NFSv4.0 */
+                client = context.getStateHandler().getClientIdByStateId(stateid);
             } else {
+                client = context.getSession().getClient();
+            }
 
-                final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
-                final PnfsId pnfsId = new PnfsId(inode.toString());
-                final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
-                            new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
-                            nfsInode.toNfsHandle()
-                        );
+            final NFS4State nfsState = client.state(stateid);
 
-                NfsTransfer transfer = _ioMessages.get(stateid);
-                if (transfer == null) {
-                    transfer = new NfsTransfer(_pnfsHandler, nfsInode,
-                            context.getRpcCall().getCredential().getSubject());
+            // serialize all requests by the same stateid
+            synchronized(nfsState) {
 
-                    transfer.setProtocolInfo(protocolInfo);
-                    transfer.setCellName(this.getCellName());
-                    transfer.setDomainName(this.getCellDomainName());
-                    transfer.setBillingStub(_billingStub);
-                    transfer.setPoolStub(_poolManagerStub);
-                    transfer.setPoolManagerStub(_poolManagerStub);
-                    transfer.setPnfsId(pnfsId);
-                    transfer.setClientAddress(remote);
-                    transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
+                if (inode.type() != FsInodeType.INODE || inode.getLevel() != 0) {
+                    /*
+                     * all non regular files ( AKA pnfs dot files ) provided by door itself.
+                     */
+                    deviceid = MDS_ID;
+                } else {
 
-                    if (transfer.isWrite()) {
-                        _log.debug("looking for write pool for {}", transfer.getPnfsId());
-                    } else {
-                        _log.debug("looking for read pool for {}", transfer.getPnfsId());
+                    final InetSocketAddress remote = context.getRpcCall().getTransport().getRemoteSocketAddress();
+                    final PnfsId pnfsId = new PnfsId(inode.toString());
+                    final NFS4ProtocolInfo protocolInfo = new NFS4ProtocolInfo(remote,
+                                new org.dcache.chimera.nfs.v4.xdr.stateid4(stateid),
+                                nfsInode.toNfsHandle()
+                            );
+
+                    NfsTransfer transfer = _ioMessages.get(stateid);
+                    if (transfer == null) {
+                        transfer = new NfsTransfer(_pnfsHandler, nfsInode,
+                                context.getRpcCall().getCredential().getSubject());
+
+                        transfer.setProtocolInfo(protocolInfo);
+                        transfer.setCellName(this.getCellName());
+                        transfer.setDomainName(this.getCellDomainName());
+                        transfer.setBillingStub(_billingStub);
+                        transfer.setPoolStub(_poolManagerStub);
+                        transfer.setPoolManagerStub(_poolManagerStub);
+                        transfer.setPnfsId(pnfsId);
+                        transfer.setClientAddress(remote);
+                        transfer.readNameSpaceEntry(ioMode != layoutiomode4.LAYOUTIOMODE4_READ);
+
+                        if (transfer.isWrite()) {
+                            _log.debug("looking for write pool for {}", transfer.getPnfsId());
+                        } else {
+                            _log.debug("looking for read pool for {}", transfer.getPnfsId());
+                        }
+
+                        /*
+                         * Bind transfer to open-state.
+                         * Cleanup transfer when state invalidated
+                         */
+                        nfsState.addDisposeListener((NFS4State state) -> {
+                            Transfer t = _ioMessages.remove(stateid);
+                            if (t != null) {
+                                t.killMover(0);
+                            }
+                        });
+
+                         _ioMessages.put(stateid, transfer);
                     }
 
-                    _ioMessages.put(stateid, transfer);
-
-                    transfer.selectPoolAndStartMover(_ioQueue, RETRY_POLICY);
-
-                    _log.debug("mover ready: pool={} moverid={}", transfer.getPool(), transfer.getMoverId());
+                    PoolDS ds = transfer.getPoolDataServer(_ioQueue, NFS_REQUEST_BLOCKING);
+                    deviceid = ds.getDeviceId();
                 }
-
-                PoolDS ds = transfer.waitForRedirect(NFS_REPLY_TIMEOUT);
-                deviceid = ds.getDeviceId();
             }
 
             nfs_fh4 fh = new nfs_fh4(nfsInode.toNfsHandle());
@@ -475,15 +508,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             layout4 layout = Layout.getLayoutSegment(deviceid, NFSv4Defaults.NFS4_STRIPE_SIZE, fh, ioMode,
                     0, nfs4_prot.NFS4_UINT64_MAX);
 
-            /*
-               if we need to run proxy-io with NFSv4.0
-            */
-            final NFS4Client client;
-            if (context.getMinorversion() == 0) {
-                client = context.getStateHandler().getClientIdByStateId(stateid);
-            } else {
-                client = context.getSession().getClient();
-            }
             /*
              * on on error client will issue layout return.
              * return we need a different stateid for layout to keep
@@ -498,7 +522,7 @@ public class NFSv41Door extends AbstractCellComponent implements
              * as  we will never see layout return with this stateid clean it
              * when open state id is disposed
              */
-            client.state(stateid).addDisposeListener(
+            nfsState.addDisposeListener(
                     // use java7 for 2.10 backport
                     new StateDisposeListener() {
 
@@ -514,49 +538,49 @@ public class NFSv41Door extends AbstractCellComponent implements
             );
             return new Layout(true, layoutStateId.stateid(), new layout4[]{layout});
 
-        } catch (FileInCacheException e) {
-	    cleanStateAndKillMover(stateid);
-            throw new NfsIoException(e.getMessage(), e);
-        } catch (PermissionDeniedCacheException e) {
-            cleanStateAndKillMover(stateid);
-            throw new PermException(e.getMessage(), e);
-        } catch (CacheException e) {
-	    cleanStateAndKillMover(stateid);
-            switch (e.getRc()) {
-            /*
-             * error 243: file is broken on tape.
-             * can't do a much. Tell it to client.
-             */
-            case CacheException.BROKEN_ON_TAPE:
-                throw new NfsIoException(e.getMessage(), e);
-            /*
-             * Configuration prevents transfer.
-             */
-            case CacheException.NO_POOL_CONFIGURED:
-                if (ioMode == layoutiomode4.LAYOUTIOMODE4_READ) {
-                    throw new PermException(e.getMessage(), e);
-                } else {
-                    throw new NoSpcException(e.getMessage(), e);
-                }
-            case CacheException.NO_POOL_ONLINE:
-            default:
-                throw new LayoutTryLaterException();
-            }
-        } catch (InterruptedException e) {
-            cleanStateAndKillMover(stateid);
-            throw new LayoutTryLaterException(e.getMessage(), e);
+        } catch (Throwable t) {
+            toNfsException(t);
         } finally {
             CDC.clearMessageContext();
             NDC.pop();
             NDC.pop();
         }
-
+        throw new RuntimeException("must never get here");
     }
 
-    private void cleanStateAndKillMover(stateid4 stateid) {
-        Transfer t = _ioMessages.remove(stateid);
-        if (t != null) {
-            t.killMover(0);
+    public void  toNfsException(Throwable t) throws ChimeraNFSException {
+        if (t instanceof ChimeraNFSException) {
+            throw (ChimeraNFSException) t;
+        } else if (t instanceof CacheException) {
+
+            CacheException e =  (CacheException)t;
+            switch (e.getRc()) {
+                case BROKEN_ON_TAPE:
+                case ERROR_IO_DISK:
+                case FILE_IN_CACHE:
+                    throw new NfsIoException(e.getMessage(), e);
+                case FILE_NOT_FOUND:
+                    throw new NoEntException(e.getMessage(), e);
+                case NO_POOL_ONLINE:
+                    throw new LayoutTryLaterException(e.getMessage(), e);
+                case PERMISSION_DENIED:
+                    throw new PermException(e.getMessage(), e);
+                case NO_POOL_CONFIGURED:
+                    throw new NoSpcException(e.getMessage(), e);
+                case TIMEOUT:
+                    throw new DelayException(e.getMessage(), e);
+                default:
+                    throw new DelayException(e.getMessage(), e);
+            }
+
+        } else if (t instanceof ExecutionException) {
+            toNfsException(t.getCause());
+        } else if (t instanceof TimeoutException) {
+            throw new DelayException(t.getMessage(), t);
+        } else if (t instanceof RuntimeException) {
+            throw new ServerFaultException(t.getMessage(), t);
+        } else {
+            throw new DelayException(t.getMessage(), t);
         }
     }
 
@@ -585,7 +609,7 @@ public class NFSv41Door extends AbstractCellComponent implements
         transfer.killMover(0);
 
         try {
-            if(!transfer.waitForMover(500)) {
+            if(transfer.hasMover() && !transfer.waitForMover(500)) {
                 throw new DelayException("Mover not stopped");
             }
         } catch (FileNotFoundCacheException e){
@@ -849,6 +873,32 @@ public class NFSv41Door extends AbstractCellComponent implements
 
         Inode getInode() {
             return _nfsInode;
+        }
+
+        PoolDS  getPoolDataServer(String queue, long timeout) throws
+                InterruptedException, ExecutionException,
+                TimeoutException, CacheException {
+
+            ListenableFuture<Void> redirectFuture;
+             synchronized (this) {
+                /*
+                 * Check try to re-run the selection if no pool selected yet.
+                 * Restart/ping mover if not running yet.
+                 */
+                if (getPool() == null) {
+                    // we did not select a pool
+                     redirectFuture = selectPoolAndStartMoverAsync(queue, RETRY_POLICY);
+                } else {
+                    // we may re-send the request, but pool will handle it
+                    redirectFuture = startMoverAsync(queue, NFS_REQUEST_BLOCKING);
+                 }
+             }
+
+            Stopwatch sw = Stopwatch.createStarted();
+            redirectFuture.get(NFS_REQUEST_BLOCKING, TimeUnit.MILLISECONDS);
+            _log.debug("mover ready: pool={} moverid={}", getPool(), getMoverId());
+
+            return  waitForRedirect(NFS_REQUEST_BLOCKING - sw.elapsed(TimeUnit.MILLISECONDS));
         }
     }
 
