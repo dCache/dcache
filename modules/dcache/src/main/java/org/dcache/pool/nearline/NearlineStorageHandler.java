@@ -124,9 +124,9 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
     private PnfsHandler pnfs;
     private CellStub billingStub;
     private HsmSet hsmSet;
-    private long stageTimeout;
-    private long flushTimeout;
-    private long removeTimeout;
+    private long stageTimeout = TimeUnit.HOURS.toMillis(4);
+    private long flushTimeout = TimeUnit.HOURS.toMillis(4);
+    private long removeTimeout = TimeUnit.HOURS.toMillis(4);
     private ScheduledFuture<?> timeoutFuture;
 
     @Required
