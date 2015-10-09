@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -71,8 +72,9 @@ import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.UOID;
-import dmg.util.command.Argument;
 import dmg.util.command.Command;
+import dmg.util.command.Argument;
+import dmg.util.command.Option;
 import dmg.util.command.CommandLine;
 import dmg.util.command.Option;
 
@@ -93,6 +95,7 @@ import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.MathUtils;
 import org.dcache.util.PrefixMap;
+
 import org.dcache.vehicles.FileAttributes;
 import org.dcache.vehicles.PnfsCreateSymLinkMessage;
 import org.dcache.vehicles.PnfsGetFileAttributes;
@@ -356,19 +359,20 @@ public class PnfsManagerV3
         pw.println(_gauges.toString());
     }
 
-    public static final String hh_pnfsidof     = "<globalPath>" ;
-    public String ac_pnfsidof_$_1( Args args )
+    @Command(name = "pnfsidof",
+             hint = "find the Pnfs-Id of a file",
+             description = "Print the Pnfs-Id of a file given by its absolute path.")
+    public class PnfsidofCommand implements Callable<String>
     {
-        PnfsId pnfsId;
-        StringBuilder sb = new StringBuilder();
-        try {
-            pnfsId = pathToPnfsid(ROOT, args.argv(0), false);
-            sb.append(pnfsId.toString());
-        }catch(Exception e){
-            sb.append("pnfsidof failed:").append(e.getMessage());
+        @Argument(usage = "The absolute path of the file.")
+        String path;
+
+        @Override
+        public String call() throws CacheException
+        {
+            return pathToPnfsid(ROOT, path, false).toString();
         }
 
-        return sb.toString();
     }
 
     public static final String hh_cacheinfoof = "<pnfsid>|<globalPath>" ;
@@ -398,10 +402,19 @@ public class PnfsManagerV3
         return sb.toString();
     }
 
-    public static final String hh_pathfinder = "<pnfsId>" ;
-    public String ac_pathfinder_$_1( Args args ) throws Exception {
-        PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
-        return _nameSpaceProvider.pnfsidToPath(ROOT, pnfsId);
+    @Command(name = "pathfinder",
+             hint = "find the path of a file",
+             description = "Print the absolute path of the specified Pnfs-Id of a file.")
+    public class PathfinderCommand implements  Callable<String>
+    {
+        @Argument(usage = "The Pnfs-Id of the file.")
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws CacheException
+        {
+            return _nameSpaceProvider.pnfsidToPath(ROOT, pnfsId);
+        }
     }
 
     @Command(name = "set meta",
@@ -507,17 +520,19 @@ public class PnfsManagerV3
                 }
             }else {
                 pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, noLinks );
-                    if (verbose) {
-                        sb.append("       Path : ").append(pnfsidOrPath)
-                                .append("\n");
-                        sb.append("       PnfsId : ").append(pnfsId).append("\n");
-                    }
+                if (verbose) {
+                    sb.append("         Path : ").append(pnfsidOrPath)
+                            .append("\n");
+                    sb.append("       PnfsId : ").append(pnfsId).append("\n");
+                    sb.append("    Meta Data : ");
+                }
+
             }
 
             FileAttributes attributes =
                     _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
                             EnumSet.of(FileAttribute.STORAGEINFO, FileAttribute.ACCESS_LATENCY,
-                                    FileAttribute.RETENTION_POLICY,  FileAttribute.SIZE));
+                                    FileAttribute.RETENTION_POLICY, FileAttribute.SIZE));
 
             StorageInfo info = StorageInfos.extractFrom(attributes);
             if(verbose) {
@@ -530,73 +545,86 @@ public class PnfsManagerV3
         }
     }
 
-    public static final String fh_metadataof =
-        "   metadataof <pnfsid>|<globalPath> [-v] [-n]\n"+
-        "        -v    verbose\n"+
-        "        -n    don't resolve links\n";
-    public static final String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n]";
-    public String ac_metadataof_$_1( Args args )
+    @Command(name = "metadataof",
+             hint = "get the meta-data of a file",
+             description = "Print the metadata of a file. This metadata contains the " +
+                     "following information:\n"+
+                    "\t\tThe owner id to whom file belongs.\n" +
+                    "\t\tThe group id to which file belongs.\n" +
+                    "\t\tc : creation time.\n" +
+                    "\t\tm : last modification time.\n" +
+                    "\t\ta : access time.")
+    public class MetadataofCommand implements Callable<String>
     {
-        PnfsId    pnfsId;
-        StringBuilder sb = new StringBuilder() ;
+        @Argument(valueSpec = "PNFSID|PATH",
+                  usage = "Pnfs-Id or absolute path of the file.")
+        String pnfsidOrPath;
 
-        boolean v = args.hasOption("v") ;
-        boolean n = args.hasOption("n") ;
+        @Option(name = "v", usage = "Get additional information about the file. If file path is specified, " +
+                "the return information contains: the path of the file, Pnfs-Id and the metadata of the file. " +
+                "If the Pnfs-Id is specified instead, the return info is just the Pnfs-Id and the metadata " +
+                "of the file.")
+        boolean verbose;
 
-        try{
-            try{
-                pnfsId = new PnfsId( args.argv(0) ) ;
-                if(v) {
+        @Option(name = "n",
+                usage = "Don't resolve links.")
+        boolean noLinks;
+
+
+        @Override
+        public String call() throws CacheException
+        {
+            PnfsId pnfsId;
+            StringBuilder sb = new StringBuilder() ;
+
+            if (PnfsId.isValid(pnfsidOrPath))
+            {
+                pnfsId = new PnfsId( pnfsidOrPath );
+                if (verbose) {
                     sb.append("PnfsId : ").append(pnfsId).append("\n");
                 }
-            }catch(Exception ee ){
-                pnfsId = pathToPnfsid(ROOT, args.argv(0) , n ) ;
-
-                if(v) {
-                    sb.append("   Local Path : ").append(args.argv(0))
-                            .append("\n");
-                }
-                if(v) {
+            } else
+            {
+                pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, noLinks );
+                if (verbose) {
+                    sb.append("         Path : ").append(pnfsidOrPath)
+                                    .append("\n");
                     sb.append("       PnfsId : ").append(pnfsId).append("\n");
+                    sb.append("    Meta Data : ");
                 }
+
             }
+
 
             FileAttributes fileAttributes = _nameSpaceProvider
-                    .getFileAttributes(ROOT, pnfsId, EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE,
-                            CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME));
+                        .getFileAttributes(ROOT, pnfsId, EnumSet.of(OWNER, OWNER_GROUP, MODE, TYPE,
+                                CREATION_TIME, ACCESS_TIME, MODIFICATION_TIME));
 
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-            StringBuilder info = new StringBuilder();
             switch (fileAttributes.getFileType()) {
-            case DIR:
-                info.append("d");
-                break;
-            case LINK:
-                info.append("l");
-                break;
-            case REGULAR:
-                info.append("-");
-                break;
-            default:
-                info.append("x");
-                break;
+                case DIR:
+                    sb.append("d");
+                    break;
+                case LINK:
+                    sb.append("l");
+                        break;
+                case REGULAR:
+                    sb.append("-");
+                    break;
+                default:
+                    sb.append("x");
+                    break;
             }
-            info.append(new UnixPermission(fileAttributes.getMode()).toString().substring(1));
-            info.append(";").append(fileAttributes.getOwner());
-            info.append(";").append(fileAttributes.getGroup());
-            info.append("[c=").append(formatter.format(fileAttributes.getCreationTime()));
-            info.append(";m=").append(formatter.format(fileAttributes.getModificationTime()));
-            info.append(";a=").append(formatter.format(fileAttributes.getAccessTime())).append("]");
-
-            if(v){
-                sb.append("    Meta Data : ").append(info).append("\n") ;
-            }else{
-                sb.append(info).append("\n");
-            }
-        }catch(Exception ee ){
-            sb.append("matadataof failed : ").append(ee.getMessage());
+            sb.append(new UnixPermission(fileAttributes.getMode()).toString().substring(1));
+            sb.append(";").append(fileAttributes.getOwner());
+            sb.append(";").append(fileAttributes.getGroup());
+            sb.append("[c=").append(formatter.format(fileAttributes.getCreationTime()));
+            sb.append(";m=").append(formatter.format(fileAttributes.getModificationTime()));
+            sb.append(";a=").append(formatter.format(fileAttributes.getAccessTime())).append("]");
+            sb.append("\n");
+            return sb.toString();
         }
-        return sb.toString() ;
+
     }
 
     @Command(name = "flags set", allowAnyOption = true, hint = "set flags",
@@ -683,7 +711,6 @@ public class PnfsManagerV3
         }
         return "dumped";
     }
-
 
     @Command(name = "set file size",
              hint = "changes registered file size",
