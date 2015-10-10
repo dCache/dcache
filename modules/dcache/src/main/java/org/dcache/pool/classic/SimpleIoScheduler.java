@@ -25,10 +25,8 @@ import dmg.cells.nucleus.CDC;
 
 import org.dcache.pool.movers.Mover;
 import org.dcache.util.AdjustableSemaphore;
-import org.dcache.util.FifoPriorityComparator;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
-import org.dcache.util.LifoPriorityComparator;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
@@ -79,23 +77,24 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 
-    public SimpleIoScheduler(String name,
-                             int queueId)
-    {
-        this(name, queueId, true);
-    }
-
-    public SimpleIoScheduler(String name,
-                             int queueId,
-                             boolean fifo)
+    public SimpleIoScheduler(String name, int queueId, boolean fifo)
     {
         _name = name;
         _queueId = queueId;
 
+        /* PriorityBlockinQueue returns the least elements first, that is, the
+         * the highest priority requests have to be first in the ordering.
+         */
         Comparator<IoPrioritizable> comparator =
             fifo
-            ? new FifoPriorityComparator()
-            : new LifoPriorityComparator();
+            ? Comparator
+                    .comparing(IoPrioritizable::getPriority)
+                    .reversed()
+                    .thenComparingLong(IoPrioritizable::getCreateTime)
+            : Comparator
+                    .comparing(IoPrioritizable::getPriority)
+                    .thenComparingLong(IoPrioritizable::getCreateTime)
+                    .reversed();
 
         _queue = new PriorityBlockingQueue<>(16, comparator);
 
