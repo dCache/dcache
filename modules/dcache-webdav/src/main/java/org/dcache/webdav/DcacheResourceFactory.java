@@ -72,6 +72,7 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
 import org.dcache.auth.SubjectWrapper;
@@ -988,8 +989,7 @@ public class DcacheResourceFactory
     /**
      * Message handler for redirect messages from the pools.
      */
-    public void messageArrived(CellMessage envelope,
-                               HttpDoorUrlInfoMessage message)
+    public void messageArrived(HttpDoorUrlInfoMessage message)
     {
         HttpTransfer transfer = _transfers.get((int) message.getId());
         if (transfer != null) {
@@ -1017,7 +1017,8 @@ public class DcacheResourceFactory
     public void messageArrived(PoolIoFileMessage message)
     {
         if (message.getReturnCode() == 0) {
-            _poolStub.notify(new PoolMoverKillMessage(message.getPoolName(), message.getMoverId()));
+            String pool = message.getPoolName();
+            _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, message.getMoverId()));
         }
     }
 
