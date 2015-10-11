@@ -442,6 +442,7 @@ public class XrootdDoor
             throw e;
         } finally {
             if (address == null) {
+                transfer.killMover(0);
                 _transfers.remove(handle);
             }
         }
@@ -737,12 +738,10 @@ public class XrootdDoor
      */
     public void messageArrived(PoolIoFileMessage message)
     {
-        String pool = message.getPoolName();
-        int moverId = message.getMoverId();
-        PoolMoverKillMessage killMessage =
-            new PoolMoverKillMessage(pool, moverId);
-        killMessage.setReplyRequired(false);
-        _poolStub.notify(new CellPath(pool), killMessage);
+        if (message.getReturnCode() == 0) {
+            String pool = message.getPoolName();
+            _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, message.getMoverId()));
+        }
     }
 
     public void messageArrived(XrootdDoorAdressInfoMessage msg)
