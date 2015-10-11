@@ -22,7 +22,7 @@ class PoolListByLink
     public void refresh()
     {
         CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByLinkMessage(_link)),
-                             this, MoreExecutors.sameThreadExecutor());
+                             this, MoreExecutors.directExecutor());
     }
 
     @Override

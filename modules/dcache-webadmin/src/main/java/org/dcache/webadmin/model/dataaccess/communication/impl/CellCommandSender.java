@@ -52,7 +52,7 @@ public class CellCommandSender implements CommandSender {
             CellPath destination = messageRequest.getDestination();
             Class<? extends Serializable> payloadType = messageRequest.getPayloadType();
             ListenableFuture<? extends Serializable> future = _cellStub.send(destination, message, payloadType);
-            Futures.addCallback(future, callback, MoreExecutors.sameThreadExecutor());
+            Futures.addCallback(future, callback, MoreExecutors.directExecutor());
         }
         _log.debug("messages send");
     }

@@ -126,7 +126,7 @@ public class MessageHandlerChain implements MessageMetadataRepository<UOID>,
             CellMessage envelope) throws SerializationException
     {
         putMetricTTL(envelope.getUOID(), ttl);
-        _endpoint.sendMessage(envelope, handler != null ? handler : this, MoreExecutors.sameThreadExecutor(), STANDARD_TIMEOUT);
+        _endpoint.sendMessage(envelope, handler != null ? handler : this, MoreExecutors.directExecutor(), STANDARD_TIMEOUT);
     }
 
     public void setHandlers(List<MessageHandler> handlers)

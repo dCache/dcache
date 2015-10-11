@@ -46,7 +46,7 @@ import dmg.util.logback.RootFilterThresholds;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static org.dcache.util.MathUtils.addWithInfinity;
 import static org.dcache.util.MathUtils.subWithInfinity;
 
@@ -415,7 +415,7 @@ public class CellNucleus implements ThreadFactory
                         {
                             future.set(null);
                         }
-                    }, sameThreadExecutor(), timeout);
+                    }, directExecutor(), timeout);
         try {
             return future.get(timeout, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {

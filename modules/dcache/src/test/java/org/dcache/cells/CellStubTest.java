@@ -62,7 +62,7 @@ public class CellStubTest
         Message message = new Message();
         message.setSucceeded();
         MessageCallback<Message> callback = mock(MessageCallback.class);
-        CellStub.addCallback(Futures.immediateFuture(message), callback, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(Futures.immediateFuture(message), callback, MoreExecutors.directExecutor());
         verify(callback).setReply(message);
         verify(callback).success();
         verifyNoMoreInteractions(callback);
@@ -74,7 +74,7 @@ public class CellStubTest
         Message message = new Message();
         message.setReply(1, "failed");
         MessageCallback<Message> callback = mock(MessageCallback.class);
-        CellStub.addCallback(Futures.immediateFuture(message), callback, MoreExecutors.sameThreadExecutor());
+        CellStub.addCallback(Futures.immediateFuture(message), callback, MoreExecutors.directExecutor());
         verify(callback).setReply(message);
         verify(callback).failure(1, "failed");
         verifyNoMoreInteractions(callback);

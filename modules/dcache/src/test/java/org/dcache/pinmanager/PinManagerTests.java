@@ -115,7 +115,7 @@ public class PinManagerTests
 
         PinRequestProcessor processor = new PinRequestProcessor();
         processor.setScheduledExecutor(new TestExecutor());
-        processor.setExecutor(MoreExecutors.sameThreadExecutor());
+        processor.setExecutor(MoreExecutors.directExecutor());
         processor.setDao(dao);
         processor.setPoolStub(new TestStub() {
                 public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)

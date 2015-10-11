@@ -24,7 +24,7 @@ public class PoolListByNames
     public void refresh()
     {
         CellStub.addCallback(_poolManager.send(new PoolManagerGetPoolsByNameMessage(_names)),
-                             this, MoreExecutors.sameThreadExecutor());
+                             this, MoreExecutors.directExecutor());
     }
 
     @Override

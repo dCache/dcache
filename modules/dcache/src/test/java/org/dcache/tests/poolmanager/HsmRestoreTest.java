@@ -100,7 +100,7 @@ public class HsmRestoreTest {
         _rc.setPnfsHandler(_pnfsHandler);
         _rc.setPoolMonitor(_poolMonitor);
         _rc.setPartitionManager(_partitionManager);
-        _rc.setExecutor(MoreExecutors.sameThreadExecutor());
+        _rc.setExecutor(MoreExecutors.directExecutor());
         _rc.setCellEndpoint(_cell);
         _rc.ac_rc_set_retry_$_1(new Args("0"));
         _rc.setStageConfigurationFile(null);

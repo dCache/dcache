@@ -433,9 +433,9 @@ public class CellStub
         concurrency.acquireUninterruptibly();
         _rateLimiter.acquire();
         if (_retryOnNoRouteToCell) {
-            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, MoreExecutors.sameThreadExecutor(), timeout);
+            _endpoint.sendMessageWithRetryOnNoRouteToCell(envelope, future, MoreExecutors.directExecutor(), timeout);
         } else {
-            _endpoint.sendMessage(envelope, future, MoreExecutors.sameThreadExecutor(), timeout);
+            _endpoint.sendMessage(envelope, future, MoreExecutors.directExecutor(), timeout);
         }
         return future;
     }
@@ -477,14 +477,14 @@ public class CellStub
      * computation is complete.
      *
      * <p>Note: For fast, lightweight listeners that would be safe to execute in
-     * any thread, consider {@link MoreExecutors#sameThreadExecutor}. For heavier
-     * listeners, {@code sameThreadExecutor()} carries some caveats. See {@link
+     * any thread, consider {@link MoreExecutors#directExecutor}. For heavier
+     * listeners, {@code directExecutor()} carries some caveats. See {@link
      * ListenableFuture#addListener} for details.
      *
      * <p>In is important the the executor isn't blocked by tasks waiting for
      * the callback; such tasks could lead to a deadlock.
      *
-     * <p>If not using {@code sameThreadExecutor()}, it is advisable to use a
+     * <p>If not using {@code directExecutor()}, it is advisable to use a
      * CDC preserving executor.
      *
      * @param future The future attach the callback to.

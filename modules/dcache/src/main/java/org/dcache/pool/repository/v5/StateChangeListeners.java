@@ -44,7 +44,7 @@ class StateChangeListeners
 
     public void setSynchronousNotification(boolean value)
     {
-        _executor = value ? MoreExecutors.sameThreadExecutor() : _executorService;
+        _executor = value ? MoreExecutors.directExecutor() : _executorService;
     }
 
     public void add(StateChangeListener listener)

@@ -378,7 +378,7 @@ public class LoginManager
         public void run()
         {
             LOGGER.info("Sending 'listening on {} {}'", getCellName(), _port);
-            sendMessage(_msg, this, MoreExecutors.sameThreadExecutor(), 5000);
+            sendMessage(_msg, this, MoreExecutors.directExecutor(), 5000);
         }
 
         @Override
