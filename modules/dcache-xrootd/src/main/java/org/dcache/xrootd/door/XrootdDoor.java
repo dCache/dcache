@@ -450,6 +450,7 @@ public class XrootdDoor
             throw e;
         } finally {
             if (address == null) {
+                transfer.killMover(0);
                 _transfers.remove(handle);
             }
         }
@@ -753,15 +754,14 @@ public class XrootdDoor
      */
     public void messageArrived(PoolIoFileMessage message)
     {
-        String pool = message.getPoolName();
-        int moverId = message.getMoverId();
-        try {
-            PoolMoverKillMessage killMessage =
-                new PoolMoverKillMessage(pool, moverId);
-            killMessage.setReplyRequired(false);
-            _poolStub.notify(new CellPath(pool), killMessage);
-        } catch (NoRouteToCellException e) {
-            _log.error("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
+        if (message.getReturnCode() == 0) {
+            String pool = message.getPoolName();
+            int moverId = message.getMoverId();
+            try {
+                _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, moverId));
+            } catch (NoRouteToCellException e) {
+                _log.error("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
+            }
         }
     }
 
