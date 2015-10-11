@@ -1,6 +1,7 @@
 package org.dcache.gplazma.util;
 
 import com.google.common.base.Preconditions;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
 
 import java.security.cert.CertPath;
@@ -37,4 +38,9 @@ public class CertPaths
         return new GlobusPrincipal(globusDn);
     }
 
+    public static X509Certificate getEndEntityCertificate(CertPath credential)
+    {
+        X509Certificate[] chain = getX509Certificates(credential);
+        return ProxyUtils.getEndUserCertificate(chain);
+    }
 }
