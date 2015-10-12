@@ -18,7 +18,7 @@ args = Array.new
 
 ARGV.each do |arg|
   case arg
-  when /-(\w+)=(\S+)/
+  when /-(\w[\w:]+)=(\S+)/
     options[$1] = $2
   else
     args << arg
