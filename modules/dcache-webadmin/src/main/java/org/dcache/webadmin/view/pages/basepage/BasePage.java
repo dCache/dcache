@@ -40,8 +40,9 @@ public abstract class BasePage extends WebPage {
             "<meta name=\"version\" content=\"" +
             Version.of(Version.class).getVersion() + "\" />";
 
-
     protected final Logger _log = LoggerFactory.getLogger(this.getClass());
+
+    private boolean autorefreshEnabled = false;
 
     public BasePage() {
         initialize();
@@ -104,6 +105,14 @@ public abstract class BasePage extends WebPage {
         response.render(new StringHeaderItem("<!-- wicket " +  this.getClass().getSimpleName() + " header END -->\n"));
     }
 
+    public boolean isAutorefreshEnabled() {
+        return autorefreshEnabled;
+    }
+
+    public void setAutorefreshEnabled(boolean autorefreshEnabled) {
+        this.autorefreshEnabled = autorefreshEnabled;
+    }
+
     /**
      * Adapter; additional scripting for this page header
      * Each successive subclass should call the super of this method before
@@ -114,21 +123,33 @@ public abstract class BasePage extends WebPage {
                         .getJavaScriptLibrarySettings()
                         .getJQueryReference()));
         response.render(JavaScriptHeaderItem.forUrl("js/infobox.js"));
-	response.render(JavaScriptHeaderItem.forScript("CLOSURE_NO_DEPS = true;",
+	    response.render(JavaScriptHeaderItem.forScript("CLOSURE_NO_DEPS = true;",
                         "nodeps"));
         response.render(StringHeaderItem.forString(META_GENERATOR_TAG));
         response.render(StringHeaderItem.forString(META_VERSION_TAG));
     }
 
     protected Form<?> getAutoRefreshingForm(String name) {
-        return getAutoRefreshingForm(name, 1, TimeUnit.MINUTES);
+        return getAutoRefreshingForm(name, true);
+    }
+
+    protected Form<?> getAutoRefreshingForm(String name, boolean immediately) {
+        return getAutoRefreshingForm(name, 1, TimeUnit.MINUTES, immediately);
+    }
+
+    protected Form<?> getAutoRefreshingForm(String name,
+                    long refresh,
+                    TimeUnit unit) {
+        return getAutoRefreshingForm(name, refresh, unit, true);
     }
 
     protected Form<?> getAutoRefreshingForm(String name,
                                             long refresh,
-                                            TimeUnit unit) {
+                                            TimeUnit unit,
+                                            boolean immediately) {
         Form<?> form = new Form<Void>(name);
         addAutoRefreshToForm(form, refresh, unit);
+        autorefreshEnabled = immediately;
         return form;
     }
 
@@ -148,6 +169,9 @@ public abstract class BasePage extends WebPage {
             @Override
             protected boolean shouldTrigger() {
                 _log.trace("checking to see if {} should be triggered", this);
+                if (!autorefreshEnabled) {
+                    return false;
+                }
                 return super.shouldTrigger();
             }
         });
