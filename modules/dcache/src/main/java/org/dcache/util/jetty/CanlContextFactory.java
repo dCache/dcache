@@ -47,9 +47,9 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.gsi.GsiEngine;
 import org.dcache.gsi.GsiFrameEngine;
 import org.dcache.gsi.KeyPairCache;
+import org.dcache.gsi.ServerGsiEngine;
 import org.dcache.util.Callables;
 
 /**
@@ -283,7 +283,7 @@ public class CanlContextFactory extends SslContextFactory
     protected SSLEngine wrapEngine(SSLEngine engine)
     {
         if (isGsiEnabled) {
-            GsiEngine gsiEngine = new GsiEngine(engine, cf);
+            ServerGsiEngine gsiEngine = new ServerGsiEngine(engine, cf);
             gsiEngine.setUsingLegacyClose(isUsingLegacyClose);
             gsiEngine.setKeyPairCache(keyPairCache);
             return new GsiFrameEngine(gsiEngine);

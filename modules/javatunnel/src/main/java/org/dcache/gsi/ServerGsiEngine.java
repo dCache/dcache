@@ -52,9 +52,9 @@ import static com.google.common.base.Preconditions.checkArgument;
  * Wrapper for SSLEngine that implements GSI delegation. Only the server side of GSI is
  * supported. The code is partly taken from org.globus.gsi.gssapi.GlobusGSSContextImpl.
  */
-public class GsiEngine extends InterceptingSSLEngine
+public class ServerGsiEngine extends InterceptingSSLEngine
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GsiEngine.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerGsiEngine.class);
 
     public static final String X509_CREDENTIAL = "org.dcache.credential";
 
@@ -68,7 +68,7 @@ public class GsiEngine extends InterceptingSSLEngine
     private boolean isUsingLegacyClose;
     private KeyPair keyPair;
 
-    public GsiEngine(SSLEngine delegate, CertificateFactory cf)
+    public ServerGsiEngine(SSLEngine delegate, CertificateFactory cf)
     {
         super(delegate);
         this.cf = cf;
@@ -100,6 +100,13 @@ public class GsiEngine extends InterceptingSSLEngine
     public void setKeyPairCache(KeyPairCache cache)
     {
         keyPairCache = cache;
+    }
+
+    @Override
+    public void setUseClientMode(boolean isClientMode)
+    {
+        checkArgument(!isClientMode, "Only the server side of GSI is supported by this engine.");
+        super.setUseClientMode(isClientMode);
     }
 
     private ByteBuffer getCertRequest() throws SSLPeerUnverifiedException, GeneralSecurityException

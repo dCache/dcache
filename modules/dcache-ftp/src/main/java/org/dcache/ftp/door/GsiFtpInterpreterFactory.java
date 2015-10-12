@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.ConfigurationException;
 
-import org.dcache.dss.GsiEngineDssContextFactory;
+import org.dcache.dss.ServerGsiEngineDssContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.Crypto;
 import org.dcache.util.Option;
@@ -60,7 +60,7 @@ public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
     @Option(name="key-cache-lifetime-unit", required=true)
     private TimeUnit keyCacheLifetimeUnit;
 
-    private GsiEngineDssContextFactory dssContextFactory;
+    private ServerGsiEngineDssContextFactory dssContextFactory;
 
     @Override
     public void configure(Args args) throws ConfigurationException
@@ -79,9 +79,9 @@ public class GsiFtpInterpreterFactory extends FtpInterpreterFactory
         return new GsiFtpDoorV1(dssContextFactory);
     }
 
-    protected GsiEngineDssContextFactory getDssContextFactory() throws Exception
+    protected ServerGsiEngineDssContextFactory getDssContextFactory() throws Exception
     {
-        return new GsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
+        return new ServerGsiEngineDssContextFactory(service_key, service_cert, service_trusted_certs,
                                               Crypto.getBannedCipherSuitesFromConfigurationValue(cipherFlags),
                                               namespaceMode, crlMode, ocspMode, keyCacheLifetime, keyCacheLifetimeUnit);
     }

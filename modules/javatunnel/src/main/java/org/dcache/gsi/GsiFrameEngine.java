@@ -36,10 +36,10 @@ public class GsiFrameEngine extends ForwardingSSLEngine
     private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
     private static final int MAX_LEN = 32 * 1024 * 1024;
 
-    private final GsiEngine gsiEngine;
+    private final ServerGsiEngine gsiEngine;
     private SSLEngine currentDelegate;
 
-    public GsiFrameEngine(GsiEngine delegate)
+    public GsiFrameEngine(ServerGsiEngine delegate)
     {
         gsiEngine = delegate;
         currentDelegate = new FrameDetectingEngine();

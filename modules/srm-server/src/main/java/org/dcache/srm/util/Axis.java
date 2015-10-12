@@ -15,7 +15,7 @@ import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
-import org.dcache.gsi.GsiEngine;
+import org.dcache.gsi.ServerGsiEngine;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
 
@@ -67,7 +67,7 @@ public class Axis
 
     public static Optional<X509Credential> getDelegatedCredential()
     {
-        return Optional.ofNullable(Axis.getRequestAttribute(GsiEngine.X509_CREDENTIAL, X509Credential.class));
+        return Optional.ofNullable(Axis.getRequestAttribute(ServerGsiEngine.X509_CREDENTIAL, X509Credential.class));
     }
 
     /**

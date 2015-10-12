@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 
-import static org.dcache.gsi.GsiEngine.X509_CREDENTIAL;
+import static org.dcache.gsi.ServerGsiEngine.X509_CREDENTIAL;
 
 
 /** Customizer that extracts the GSI attributes from an {@link javax.net.ssl.SSLContext}

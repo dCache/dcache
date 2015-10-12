@@ -36,14 +36,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import org.dcache.gsi.GsiEngine;
 import org.dcache.gsi.KeyPairCache;
+import org.dcache.gsi.ServerGsiEngine;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
 
-public class GsiEngineDssContextFactory implements DssContextFactory
+public class ServerGsiEngineDssContextFactory implements DssContextFactory
 {
     private static final String SERVICE_KEY = "service_key";
     private static final String SERVICE_CERT = "service_cert";
@@ -61,12 +61,12 @@ public class GsiEngineDssContextFactory implements DssContextFactory
     private final Callable<SSLContext> factory;
     private KeyPairCache keyPairCache;
 
-    public GsiEngineDssContextFactory(String args) throws Exception
+    public ServerGsiEngineDssContextFactory(String args) throws Exception
     {
         this(new Args(args));
     }
 
-    public GsiEngineDssContextFactory(Args arguments) throws Exception
+    public ServerGsiEngineDssContextFactory(Args arguments) throws Exception
     {
         this(new File(arguments.getOption(SERVICE_KEY)),
              new File(arguments.getOption(SERVICE_CERT)),
@@ -79,10 +79,11 @@ public class GsiEngineDssContextFactory implements DssContextFactory
              TimeUnit.valueOf(arguments.getOption(KEY_CACHE_LIFETIME_UNIT)));
     }
 
-    public GsiEngineDssContextFactory(File serverKeyPath, File serverCertificatePath,
-                                      File certificateAuthorityPath, String[] bannedCiphers,
-                                      NamespaceCheckingMode namespaceMode, CrlCheckingMode crlMode,
-                                      OCSPCheckingMode ocspMode, long keyCacheLifetime, TimeUnit keyCacheLifetimeUnit) throws Exception
+    public ServerGsiEngineDssContextFactory(File serverKeyPath, File serverCertificatePath,
+                                            File certificateAuthorityPath, String[] bannedCiphers,
+                                            NamespaceCheckingMode namespaceMode, CrlCheckingMode crlMode,
+                                            OCSPCheckingMode ocspMode, long keyCacheLifetime,
+                                            TimeUnit keyCacheLifetimeUnit) throws Exception
     {
         cf = CertificateFactories.newX509CertificateFactory();
 
@@ -120,7 +121,7 @@ public class GsiEngineDssContextFactory implements DssContextFactory
             sslParameters.setNeedClientAuth(true);
             delegate.setSSLParameters(sslParameters);
 
-            GsiEngine engine = new GsiEngine(delegate, cf);
+            ServerGsiEngine engine = new ServerGsiEngine(delegate, cf);
             engine.setKeyPairCache(keyPairCache);
             engine.setUsingLegacyClose(true);
             return new SslEngineDssContext(engine, cf);

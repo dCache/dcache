@@ -57,7 +57,7 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
     }
 
     /**
-     * Receives one SSL frame worth of data and calls the callback when done.
+     * Sets up the engine to receive one SSL frame worth of data and call the callback when done.
      */
     public void receive(Callback callback)
     {
@@ -68,14 +68,22 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
     }
 
     /**
-     * Sends the data {@code out} and then receives one SSL frame worth of data and calls
-     * the callback.
+     * Sets the engine up to sends the data in {@code out}.
+     */
+    public void send(ByteBuffer out)
+    {
+        this.out = out;
+        this.state = State.SEND;
+    }
+
+    /**
+     * Sets the engine up to sends the data in {@code out} and then receive one SSL frame worth of
+     * data and call the callback.
      */
     public void sendThenReceive(ByteBuffer out, Callback callback)
     {
         receive(callback);
-        this.out = out;
-        this.state = State.SEND;
+        send(out);
     }
 
     @Override
@@ -96,8 +104,13 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
                 return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NEED_WRAP, 0, result.bytesProduced());
             }
             out = null;
-            state = State.RECEIVE;
-            return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NEED_UNWRAP, 0, result.bytesProduced());
+            if (callback != null) {
+                state = State.RECEIVE;
+                return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NEED_UNWRAP, 0, result.bytesProduced());
+            } else {
+                state = State.PASSTHROUGH;
+                return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.FINISHED, result.bytesConsumed(), 0);
+            }
 
         case RECEIVE:
             result = delegate().wrap(EMPTY, dst);
