@@ -6,10 +6,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Ordering;
 import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-import org.ietf.jgss.GSSException;
+import eu.emi.security.authn.x509.impl.CertificateUtils;
+import eu.emi.security.authn.x509.proxy.ProxyUtils;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
@@ -22,6 +20,7 @@ import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -30,6 +29,7 @@ import java.security.cert.CRLException;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -37,21 +37,22 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import javax.security.auth.x500.X500Principal;
 
 import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
-import org.dcache.gplazma.util.X509Utils;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
+import static eu.emi.security.authn.x509.impl.OpensslNameUtils.convertFromRfc2253;
 import static java.util.Arrays.asList;
+import static org.dcache.gplazma.util.CertPaths.getOriginalUserDnAsGlobusPrincipal;
+import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -123,28 +124,94 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * Simple struct to hold the extensions extracted from the certificate
      * chain.
      *
+     * Attribute formats are described in [1] "An XACML Attribute and Obligation
+     * Profile for Authorization Interoperability in Grids". Relevant parts are
+     * quoted below.
+     *
      * @author arossi
      */
     private static class VomsExtensions {
+        /**
+         * From [1]: This attribute holds the Distinguished Name (DN) of the user. This DN is the subject extracted
+         * from the user’s certificate. This attribute is implicitly linked in this profile with subject-x509-issuer
+         * attribute. The datatype of this attribute is a string, to accommodate the OpenSSL one-line representation
+         * of slash-separated Relative Distinguished Names.
+         * <p>
+         * We acknowledge that the most commonly used representation for this attribute is the X.500 datatype;
+         * however, we decide not to use it because the slash-separated representation is the defacto standard
+         * in our environment. Tools and services are free to support the subject-x509-id as X.500 datatype
+         * besides the OpenSSL online representation. In that case the Datatype MUST be set to X509Name.
+         */
         private String _x509Subject;
+
+        /**
+         * From [1]: This attribute holds the Distinguished Name (DN) of the CA that signed the end entity user
+         * certificate. This DN is extracted from the user’s certificate and it is implicitly linked to the
+         * subject-x509 attribute-id. The datatype of this attribute is string, for the same reasons argued in the
+         * Subject-x509-id attribute.
+         */
         private String _x509SubjectIssuer;
+
+        /**
+         * From [1]: VOMS maintains the organizational structure of a VO in hierarchical groups. Users can belong
+         * to such groups and can have specific roles for each group. In the Attribute Certificate, the membership
+         * to a group with a role is encoded as a Fully Qualified Attribute Name (FQAN). This attribute holds one
+         * FQAN from the VOMS Attribute Certificate in the user credentials. Because users typically belong to
+         * several groups, this attribute can be set many times to encode all FQAN in the AC. For this profile,
+         * the order of the FQAN is not relevant, considering that the primary FQAN of the user is conveyed
+         * through the attribute VOMS-Primary-FQAN.
+         * <p>
+         * The PDP SHOULD perform a direct string match of the VOMS FQAN values when it evaluates an authorization
+         * request against its policy. VOMS FQANs have an optional suffix, e.g. /Role=NULL. A PDP COULD implement
+         * the VOMS matching rules to ignore these type of suffixes.
+         */
         private String _fqan;
         private boolean _primary;
-        private String _vo;
-        private String _vomsSubject;
-        private String _vomsSubjectIssuer;
 
-        private VomsExtensions (String proxySubject,
-                        String proxySubjectIssuer, String vo, String vomsSubject,
-                        X500Principal x500, String fqan, boolean primary) {
-            _x509Subject = proxySubject;
-            _x509SubjectIssuer = proxySubjectIssuer;
+        /**
+         * From [1]: This attribute holds the name of the first user Virtual Organization (VO) found in the set of
+         * attribute certificates. The user is requesting authorization in virtue of her membership to this VO,
+         * project or community. There are two methods for extracting the VO name from an Attribute Certificate
+         * (AC): (1) from the “VO” attribute of the VOMS AC; (2) from the left-most slash- separated portion of
+         * the Fully Qualified Attribute Names (FQAN) [FQAN] attributes. This attribute contains the name extracted
+         * from the VO attribute of the AC (method 1).
+         * <p>
+         * From our experience multiple simultaneous VO usage has not observed the use case. All the VO specific
+         * attributes in VOMS (more of these will follow in the document) are describing the top VO which is
+         * represented explicitly in the VOMS-PRIMARY-FQAN attribute. The VOMS FQANs from all the potentially
+         * conveyed VOs CAN be expressed in the VOMS-FQAN attribute.
+         */
+        private String _vo;
+
+        /**
+         * From [1]: VOMS-signing-subject holds the DN of the VOMS service that signed the first Attribute
+         * Certificate in the user credentials. It is extracted from the “issuer” attribute of the VOMS AC
+         * and is implicitly linked in this profile to the VOMS-signing-issuer attribute. As evident by its
+         * name, this attribute (and the others with similar names in this profile) is designed to convey
+         * information about an authoritative membership service implemented via a VOMS service. Other
+         * membership service implementations can still use this profile provided that their concepts can
+         * be properly described by the semantics of these attributes.
+         */
+        private String _vomsSigningSubject;
+
+        /**
+         * From [1]: Considering that VOMS ACs are signed by a VOMS certificate, VOMS-signing-issuer holds
+         * the DN of the CA that signed that VOMS certificate. This attribute does not provide information
+         * about the whole trust chain: it provides only the DN of the CA that issued the first VOMS attribute
+         * certificate. VOMS-signing-issuer is implicitly linked in this profile to the VOMS-signing-subject
+         * attribute. It can be extracted programmatically using the VOMS API and is not displayed in typical
+         * command line tools, like voms-proxy-info.
+         */
+        private String _vomsSigningIssuer;
+
+        private VomsExtensions(String x509Subject,
+                        String x509SubjectIssuer, String vo, String vomsSigningSubject,
+                        String vomsSigningIssuer, String fqan, boolean primary) {
+            _x509Subject = x509Subject;
+            _x509SubjectIssuer = x509SubjectIssuer;
             _vo = vo;
-            _vomsSubject = vomsSubject;
-            if (x500 != null) {
-                _vomsSubjectIssuer
-                    = X509Utils.toGlobusDN(x500.toString(), true);
-            }
+            _vomsSigningSubject = vomsSigningSubject;
+            _vomsSigningIssuer = vomsSigningIssuer;
             _fqan = fqan;
             _primary = primary;
         }
@@ -169,8 +236,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                             + _x509Subject + "', X509SubjectIssuer='"
                             + _x509SubjectIssuer + "', fqan='" + _fqan
                             + "', primary=" + _primary + ", VO='" + _vo
-                            + "', VOMSSubject='" + _vomsSubject
-                            + "', VOMSSubjectIssuer='" + _vomsSubjectIssuer
+                            + "', VOMSSubject='" + _vomsSigningSubject
+                            + "', VOMSSubjectIssuer='" + _vomsSigningIssuer
                             + "']";
         }
     }
@@ -196,8 +263,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
             xacmlClient.setX509SubjectIssuer(key._x509SubjectIssuer);
             xacmlClient.setFqan(key._fqan);
             xacmlClient.setVO(key._vo);
-            xacmlClient.setVOMSSigningSubject(key._vomsSubject);
-            xacmlClient.setVOMSSigningIssuer(key._vomsSubjectIssuer);
+            xacmlClient.setVOMSSigningSubject(key._vomsSigningSubject);
+            xacmlClient.setVOMSSigningIssuer(key._vomsSigningIssuer);
             xacmlClient.setResourceType(XACMLConstants.RESOURCE_SE);
             xacmlClient.setResourceDNSHostName(_resourceDNSHostName);
             xacmlClient.setResourceX509ID(_targetServiceName);
@@ -272,8 +339,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * caching and storage resource information.
      */
     public XACMLPlugin(Properties properties) throws ClassNotFoundException,
-                    GSSException, SocketException, CertificateException,
-                    CRLException, IOException {
+            SocketException, CertificateException, CRLException, IOException {
         _properties = properties;
 
         String caDir = properties.getProperty(CADIR);
@@ -341,25 +407,10 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * extract all sets of extensions from certificate chains
          */
         for (Object credential : publicCredentials) {
-            if (CertPaths.isX509CertPath(credential)) {
-                X509Certificate[] chain
-                                = CertPaths.getX509Certificates((CertPath) credential);
-
-                if (chain == null) {
-                    continue;
-                }
-
-                /*
-                 *  Add the DN.  This is now required for the
-                 *  ftp door (session logging).
-                 */
-                String dn = X509Utils.getSubjectFromX509Chain(chain, false);
-                identifiedPrincipals.add(new GlobusPrincipal(dn));
-
-                /*
-                 * Get VOMS extensions.
-                 */
-                extractExtensionsFromChain(dn, chain, extensions, validator);
+            if (isX509CertPath(credential)) {
+                CertPath certPath = (CertPath) credential;
+                identifiedPrincipals.add(getOriginalUserDnAsGlobusPrincipal(certPath));
+                extractExtensionsFromChain(certPath, extensions, validator);
             }
         }
 
@@ -369,10 +420,14 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
          * the credentials are given precedence
          */
         if (extensions.isEmpty()) {
+            /* REVISIT: This only gets executed if the public credentials do not contain
+             * a chert chain. Shouldn't this plugin fail in such cases? At least the
+             * OGF interoperability profile for XACML doesn't indicate that none DN values
+             * are allowed for the subject x509 id attribute.
+             */
             for (Principal principal: identifiedPrincipals) {
-                VomsExtensions vomsExtensions
-                    = new VomsExtensions(principal.getName(), null, null,
-                                       null, null, null, false);
+                VomsExtensions vomsExtensions =
+                        new VomsExtensions(principal.getName(), null, null, null, null, null, false);
                 logger.debug(" {} authenticate, adding voms extensions = {}",
                             this, vomsExtensions);
                 extensions.add(vomsExtensions);
@@ -454,87 +509,59 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     /**
      * Extracts the identity and certificate issuer from the host certificate.
      */
-    private void configureTargetServiceInfo() throws GSSException {
-        GlobusCredential serviceCredential;
-        try {
-            serviceCredential =
-                new GlobusCredential(_properties.getProperty(SERVICE_CERT),
-                                     _properties.getProperty(SERVICE_KEY));
-        } catch (GlobusCredentialException gce) {
-            throw new GSSException(GSSException.NO_CRED, 0,
-                            HOST_CREDENTIAL_ERROR + gce.toString());
-        }
-        _targetServiceName = serviceCredential.getIdentity();
-        _targetServiceIssuer
-            = X509Utils.toGlobusDN(serviceCredential.getIssuer(), true);
+    private void configureTargetServiceInfo() throws IOException
+    {
+        X509Certificate[] cert =
+                CertificateUtils.loadCertificateChain(new FileInputStream(_properties.getProperty(SERVICE_CERT)),
+                                                      CertificateUtils.Encoding.PEM);
+        _targetServiceName = convertFromRfc2253(cert[0].getSubjectX500Principal().getName(), true);
+        _targetServiceIssuer = convertFromRfc2253(cert[0].getIssuerX500Principal().getName(), true);
     }
 
     /**
      * Extracts VOMS extensions from the public credentials and adds them to the
      * running list.
-     *
-     * @param proxySubject
-     * @param chain
-     *            from the public credentials
-     * @param extensionsSet
-     *            all groups of extracted VOMS extensions
-     * @param validator
-     *
      */
     @SuppressWarnings("deprecation")
-    private void extractExtensionsFromChain(String proxySubject,
-                                            X509Certificate[] chain,
+    private void extractExtensionsFromChain(CertPath certPath,
                                             Set<VomsExtensions> extensionsSet,
                                             VOMSACValidator validator)
-                    throws AuthenticationException {
-        /*
-         * this is the issuer of the original cert in the chain (skips
-         * impersonation proxies)
-         */
-        String proxySubjectIssuer
-            = X509Utils.getSubjectX509Issuer(chain, true);
+            throws AuthenticationException
+    {
+        X509Certificate[] chain = CertPaths.getX509Certificates(certPath);
 
-        /*
-         * VOMS signs the first cert in the chain; its subject will be the x509
-         * subject issuer of that cert, not of the original
-         */
-        String vomsSubject
-            = X509Utils.getSubjectX509Issuer(chain, false);
+        X509Certificate eec = ProxyUtils.getEndUserCertificate(chain);
+        if (eec == null) {
+            throw new AuthenticationException("The checked certificate chain contains only proxy certificates.");
+        }
+        String x509Subject = convertFromRfc2253(eec.getSubjectX500Principal().getName(), true);
+        String x509SubjectIssuer = convertFromRfc2253(eec.getIssuerX500Principal().getName(), true);
 
         List<VOMSAttribute> vomsAttributes = validator.validate(chain);
-        boolean primary = true;
 
         if (vomsAttributes.isEmpty()) {
-            VomsExtensions vomsExtensions
-                = new VomsExtensions(proxySubject, proxySubjectIssuer, null,
-                                   vomsSubject, null, null, primary);
-            logger.debug(" {} authenticate, adding voms extensions = {}",
-                            this, vomsExtensions);
+            VomsExtensions vomsExtensions =
+                    new VomsExtensions(x509Subject, x509SubjectIssuer, null, null, null, null, true);
+            logger.trace(" {} authenticate, adding voms extensions = {}", this, vomsExtensions);
             extensionsSet.add(vomsExtensions);
         } else {
+            boolean primary = true;
             for (VOMSAttribute vomsAttr : vomsAttributes) {
-                X500Principal x500 = vomsAttr.getIssuer();
+                String vomsSigningSubject =
+                        convertFromRfc2253(vomsAttr.getIssuer().getName(), true);
+                String vomsSigningIssuer =
+                        convertFromRfc2253(vomsAttr.getAACertificates()[0].getIssuerX500Principal().getName(), true);
                 List<String> fqans = vomsAttr.getFQANs();
                 if (fqans.isEmpty()) {
-                    VomsExtensions vomsExtensions
-                        = new VomsExtensions(proxySubject, proxySubjectIssuer,
-                                           vomsAttr.getVO(), vomsSubject, x500,
-                                           null, primary);
+                    fqans = Collections.singletonList(null);
+                }
+                for (String fqan : fqans) {
+                    VomsExtensions vomsExtensions =
+                            new VomsExtensions(x509Subject, x509SubjectIssuer, vomsAttr.getVO(),
+                                               vomsSigningSubject, vomsSigningIssuer, fqan, primary);
                     primary = false;
-                    logger.debug(" {} authenticate, adding voms extensions = {}",
-                                    this, vomsExtensions);
+                    logger.trace(" {} authenticate, adding voms extensions = {}", this, vomsExtensions);
                     extensionsSet.add(vomsExtensions);
-                } else {
-                    for (Object fqan : vomsAttr.getFQANs()) {
-                        VomsExtensions vomsExtensions
-                            = new VomsExtensions(proxySubject, proxySubjectIssuer,
-                                               vomsAttr.getVO(), vomsSubject, x500,
-                                               String.valueOf(fqan), primary);
-                        primary = false;
-                        logger.debug(" {} authenticate, adding voms extensions = {}",
-                                        this, vomsExtensions);
-                        extensionsSet.add(vomsExtensions);
-                    }
                 }
             }
         }

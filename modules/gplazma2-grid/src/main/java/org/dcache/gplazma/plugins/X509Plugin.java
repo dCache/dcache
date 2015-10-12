@@ -1,16 +1,14 @@
 package org.dcache.gplazma.plugins;
 
-import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
-
 import java.security.Principal;
 import java.security.cert.CertPath;
 import java.util.Properties;
 import java.util.Set;
 
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.gplazma.util.CertPaths;
-import org.dcache.gplazma.util.X509Utils;
 
+import static org.dcache.gplazma.util.CertPaths.getOriginalUserDnAsGlobusPrincipal;
+import static org.dcache.gplazma.util.CertPaths.isX509CertPath;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -34,12 +32,12 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
     {
         boolean found = false;
         for (Object credential : publicCredentials) {
-            if (CertPaths.isX509CertPath(credential)) {
-                String dn = X509Utils.getSubjectFromX509Chain(CertPaths.getX509Certificates((CertPath) credential), false);
-                identifiedPrincipals.add(new GlobusPrincipal(dn));
+            if (isX509CertPath(credential)) {
+                identifiedPrincipals.add(getOriginalUserDnAsGlobusPrincipal((CertPath) credential));
                 found = true;
             }
         }
         checkAuthentication(found, "no X509 certificate chain");
     }
+
 }

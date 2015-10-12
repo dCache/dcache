@@ -32,12 +32,12 @@
         <artifactId>voms-api-java</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.jglobus</groupId>
-        <artifactId>ssl-proxies</artifactId>
-    </dependency>
-    <dependency>
        <groupId>org.bouncycastle</groupId>
        <artifactId>${bouncycastle.bcprov}</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>eu.eu-emi.security</groupId>
+        <artifactId>canl</artifactId>
     </dependency>
   </dependencies>
 </project>

@@ -22,10 +22,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
-	<dependency>
-	  <groupId>org.jglobus</groupId>
-	  <artifactId>ssl-proxies</artifactId>
-	</dependency>
         <dependency>
             <groupId>org.italiangrid</groupId>
             <artifactId>voms-api-java</artifactId>

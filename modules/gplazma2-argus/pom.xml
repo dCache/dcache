@@ -28,11 +28,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>ssl-proxies</artifactId>
-    </dependency>
-
-    <dependency>
         <groupId>org.glite.authz</groupId>
         <artifactId>pep-common</artifactId>
     </dependency>

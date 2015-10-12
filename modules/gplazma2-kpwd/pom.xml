@@ -24,11 +24,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>ssl-proxies</artifactId>
-    </dependency>
-
-    <dependency>
         <groupId>org.dcache</groupId>
         <artifactId>dcache-common</artifactId>
         <version>${project.version}</version>
