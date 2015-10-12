@@ -43,8 +43,8 @@ import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
 import org.dcache.auth.UserNamePrincipal;
 import org.dcache.gplazma.AuthenticationException;
+import org.dcache.gplazma.util.CertPaths;
 import org.dcache.gplazma.util.X509Utils;
-import org.dcache.util.CertPaths;
 import org.dcache.util.NetworkUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;

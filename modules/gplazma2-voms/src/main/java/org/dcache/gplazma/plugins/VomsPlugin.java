@@ -10,7 +10,7 @@ import java.util.Set;
 
 import org.dcache.auth.FQANPrincipal;
 import org.dcache.gplazma.AuthenticationException;
-import org.dcache.util.CertPaths;
+import org.dcache.gplazma.util.CertPaths;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import java.util.List;

@@ -48,7 +48,7 @@ import org.dcache.gplazma.monitor.LoginResult.PhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPhaseResult;
 import org.dcache.gplazma.monitor.LoginResult.SessionPluginResult;
 import org.dcache.gplazma.monitor.LoginResult.SetDiff;
-import org.dcache.util.CertPaths;
+import org.dcache.gplazma.util.CertPaths;
 
 import static java.util.concurrent.TimeUnit.*;
 import org.bouncycastle.asn1.x500.X500Name;
