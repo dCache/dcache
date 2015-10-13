@@ -236,8 +236,8 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
 
             if (_remoteSuppliedChecksum == null && info.isVerificationRequired()) {
                 throw new ClientProtocolException("failed to verify transfer: " +
-                        "server sent no useful checksum: " +
-                        rfc3230 == null ? "(none sent)" : rfc3230);
+                                                  "server sent no useful checksum: " +
+                                                  (rfc3230 == null ? "(none sent)" : rfc3230));
             }
 
             // NB. we MUST NOT close RepositoryChannel as pool wants to do this
@@ -380,9 +380,8 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
             }
 
             if (info.isVerificationRequired() && !verified) {
-                throw new ThirdPartyTransferFailedCacheException("server " +
-                        "sent no useful checksum: " +
-                        rfc3230 == null ? "(none sent)" : rfc3230);
+                throw new ThirdPartyTransferFailedCacheException("server sent no useful checksum: " +
+                                                                 (rfc3230 == null ? "(none sent)" : rfc3230));
             }
         } catch (IOException e) {
             throw new ThirdPartyTransferFailedCacheException("failed to " +
