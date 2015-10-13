@@ -16,6 +16,7 @@
 package org.dcache.ftp.client;
 
 import org.globus.gsi.gssapi.auth.Authorization;
+import org.globus.gsi.gssapi.auth.HostAuthorization;
 import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
 import org.dcache.ftp.client.extended.GridFTPControlChannel;
 import org.dcache.ftp.client.extended.GridFTPServerFacade;
 import org.dcache.ftp.client.vanilla.Command;
+import org.dcache.ftp.client.vanilla.FTPControlChannel;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.ftp.client.vanilla.Reply;
 import org.dcache.util.PortRange;
@@ -65,6 +67,8 @@ public class GridFTPClient extends FTPClient
     protected final GridFTPSession gSession;
     protected GridFTPServerFacade gLocalServer;
     protected String usageString;
+    protected Authorization authorization = HostAuthorization.getInstance();
+    protected int protection = GridFTPSession.PROTECTION_PRIVATE;
 
     /**
      * Constructs client and connects it to the remote server.
@@ -78,11 +82,10 @@ public class GridFTPClient extends FTPClient
         gSession = new GridFTPSession();
         session = gSession;
 
-        controlChannel = new GridFTPControlChannel(host, port);
+        controlChannel = new FTPControlChannel(host, port);
         controlChannel.open();
 
-        gLocalServer =
-                new GridFTPServerFacade((GridFTPControlChannel) controlChannel);
+        gLocalServer = new GridFTPServerFacade(controlChannel);
         localServer = gLocalServer;
         gLocalServer.authorize();
         this.useAllo = true;
@@ -123,17 +126,51 @@ public class GridFTPClient extends FTPClient
                              String username)
             throws IOException, ServerException
     {
-        ((GridFTPControlChannel) controlChannel).authenticate(credential,
-                                                              username);
-        gLocalServer.setCredential(credential);
-        gSession.authorized = true;
-        this.username = username;
-
-        // quietly send version information to the server.
-        // ignore errors
         try {
-            this.site(usageString);
-        } catch (Exception ex) {
+            // authenticate
+            GridFTPControlChannel gridFTPControlChannel = new GridFTPControlChannel(controlChannel, credential, protection, authorization);
+            gLocalServer.setCredential(credential);
+
+            //from now on, the commands and replies
+            //are protected and pass through gsi wrapped socket
+
+            // login
+            try {
+                Reply reply = gridFTPControlChannel.exchange(new Command("USER", (username == null) ? ":globus-mapping:" : username));
+                // wu-gsiftp sends intermediate code while
+                // gssftp send completion reply code
+                if (!Reply.isPositiveCompletion(reply) && !Reply.isPositiveIntermediate(reply)) {
+                    throw ServerException.embedUnexpectedReplyCodeException(
+                            new UnexpectedReplyCodeException(reply), "User authorization failed.");
+                }
+            } catch (FTPReplyParseException rpe) {
+                throw ServerException.embedFTPReplyParseException(rpe, "Received faulty reply to USER command.");
+            }
+
+            try {
+                Reply reply = gridFTPControlChannel.exchange(new Command("PASS", "dummy"));;
+                if (!Reply.isPositiveCompletion(reply)) {
+                    throw ServerException.embedUnexpectedReplyCodeException(
+                            new UnexpectedReplyCodeException(reply),
+                            "Bad password.");
+                }
+            } catch (FTPReplyParseException rpe) {
+                throw ServerException.embedFTPReplyParseException(rpe, "Received faulty reply to PASS command.");
+            }
+
+            // quietly send version information to the server.
+            // ignore errors
+            try {
+                this.site(usageString);
+            } catch (Exception ex) {
+            }
+
+            this.gSession.authorized = true;
+            this.username = username;
+            this.controlChannel = gridFTPControlChannel;
+        } catch (ServerException | IOException e) {
+            close();
+            throw e;
         }
     }
 
@@ -818,17 +855,7 @@ public class GridFTPClient extends FTPClient
      */
     public void setAuthorization(Authorization authorization)
     {
-        ((GridFTPControlChannel) this.controlChannel).setAuthorization(authorization);
-    }
-
-    /**
-     * Returns authorization method for the control channel.
-     *
-     * @return authorization method performed on the control channel.
-     */
-    public Authorization getAuthorization()
-    {
-        return ((GridFTPControlChannel) this.controlChannel).getAuthorization();
+        this.authorization = authorization;
     }
 
     /**
@@ -842,7 +869,17 @@ public class GridFTPClient extends FTPClient
      **/
     public void setControlChannelProtection(int protection)
     {
-        ((GridFTPControlChannel) this.controlChannel).setProtection(protection);
+        switch (protection) {
+        case GridFTPSession.PROTECTION_CLEAR:
+            throw new IllegalArgumentException("Unsupported protection: " + protection);
+        case GridFTPSession.PROTECTION_SAFE:
+        case GridFTPSession.PROTECTION_CONFIDENTIAL:
+        case GridFTPSession.PROTECTION_PRIVATE:
+            break;
+        default:
+            throw new IllegalArgumentException("Bad protection: " + protection);
+        }
+        this.protection = protection;
     }
 
     /**
@@ -856,7 +893,7 @@ public class GridFTPClient extends FTPClient
      **/
     public int getControlChannelProtection()
     {
-        return ((GridFTPControlChannel) this.controlChannel).getProtection();
+        return protection;
     }
 
     // basic compatibility API

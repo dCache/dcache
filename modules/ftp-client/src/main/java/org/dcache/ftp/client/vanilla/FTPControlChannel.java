@@ -28,6 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 
 import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
@@ -59,10 +60,10 @@ public class FTPControlChannel extends BasicClientControlChannel
     //output stream
     protected OutputStream ftpOut;
     protected String host;
-    protected int port;
+    protected final int port;
     //true if connection has already been opened.
     protected boolean hasBeenOpened = false;
-    private boolean ipv6 = false;
+    private final boolean ipv6;
 
     private Reply lastReply;
 
@@ -71,18 +72,6 @@ public class FTPControlChannel extends BasicClientControlChannel
         this.host = host;
         this.port = port;
         this.ipv6 = (this.host.indexOf(':') != -1);
-    }
-
-    /**
-     * Using this constructor, you can initialize an instance that does not
-     * talk directly to the socket. If you use this constructor using streams
-     * that belong to an active connection, there's no need to call open()
-     * afterwards.
-     **/
-    public FTPControlChannel(InputStream in, OutputStream out)
-    {
-        setInputStream(in);
-        setOutputStream(out);
     }
 
     public String getHost()
@@ -98,16 +87,6 @@ public class FTPControlChannel extends BasicClientControlChannel
     public boolean isIPv6()
     {
         return this.ipv6;
-    }
-
-    protected BufferedReader getBufferedReader()
-    {
-        return ftpIn;
-    }
-
-    protected OutputStream getOutputStream()
-    {
-        return ftpOut;
     }
 
     // not intended to be public. you can set streams in the constructor.
@@ -394,7 +373,8 @@ public class FTPControlChannel extends BasicClientControlChannel
         if (logger.isDebugEnabled()) {
             logger.debug("Control channel sending: " + cmd);
         }
-        writeStr(cmd.toString());
+        ftpOut.write(cmd.toString().getBytes(StandardCharsets.US_ASCII));
+        ftpOut.flush();
     }
 
     /**
@@ -448,17 +428,6 @@ public class FTPControlChannel extends BasicClientControlChannel
             throw new UnexpectedReplyCodeException(reply);
         }
         return reply;
-    }
-
-    protected void writeln(String msg) throws IOException
-    {
-        writeStr(msg + CRLF);
-    }
-
-    protected void writeStr(String msg) throws IOException
-    {
-        ftpOut.write(msg.getBytes());
-        ftpOut.flush();
     }
 
     protected boolean hasBeenOpened()

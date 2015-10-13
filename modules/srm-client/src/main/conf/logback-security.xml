@@ -83,8 +83,6 @@
   <logger name="org.dcache.ftp.client.exception.ServerException" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.exception.UnexpectedReplyCodeException" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.extended.GridFTPControlChannel" level="DEBUG"/>
-  <logger name="org.dcache.ftp.client.extended.GridFTPInputStream" level="DEBUG"/>
-  <logger name="org.dcache.ftp.client.extended.GridFTPOutputStream" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.extended.GridFTPServerFacade" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.vanilla.BasicClientControlChannel" level="DEBUG"/>
   <logger name="org.dcache.ftp.client.vanilla.BasicServerControlChannel" level="DEBUG"/>

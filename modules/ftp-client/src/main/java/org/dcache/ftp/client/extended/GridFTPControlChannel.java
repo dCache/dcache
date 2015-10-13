@@ -15,315 +15,212 @@
  */
 package org.dcache.ftp.client.extended;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.exception.ServerException;
-import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
-import org.dcache.ftp.client.exception.FTPReplyParseException;
-import org.dcache.ftp.client.vanilla.Reply;
-import org.dcache.ftp.client.vanilla.FTPControlChannel;
-import org.dcache.ftp.client.vanilla.Command;
-
 import org.globus.common.ChainedIOException;
-import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.gssapi.auth.GSSAuthorization;
-import org.globus.gsi.gssapi.auth.HostAuthorization;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.GSSConstants;
-
+import org.globus.gsi.gssapi.auth.Authorization;
+import org.globus.gsi.gssapi.auth.AuthorizationException;
+import org.globus.gsi.gssapi.auth.GSSAuthorization;
 import org.gridforum.jgss.ExtendedGSSManager;
-
-import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.ftp.client.exception.FTPReplyParseException;
+import org.dcache.ftp.client.exception.ServerException;
+import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
+import org.dcache.ftp.client.vanilla.Command;
+import org.dcache.ftp.client.vanilla.FTPControlChannel;
+import org.dcache.ftp.client.vanilla.Flag;
+import org.dcache.ftp.client.vanilla.Reply;
 
 /**
- * GridFTP control channel, unlike the vanilla control channel,
- * uses GSI autentication.
- **/
+ * GridFTP control channel wraps a vanilla control channel and
+ * adds GSI encryption.
+ */
 public class GridFTPControlChannel extends FTPControlChannel
 {
-
-    private static Logger logger =
-            LoggerFactory.getLogger(GridFTPControlChannel.class);
-
     protected static final int TIMEOUT = 120000;
 
-    //maybe this is useless
-    protected GSSCredential credentials = null;
+    protected final FTPControlChannel inner;
 
-    protected Authorization authorization =
-            HostAuthorization.getInstance();
+    protected final GSSContext context;
 
-    protected int protection = GridFTPSession.PROTECTION_PRIVATE;
-
-    public GridFTPControlChannel(String host, int port)
-    {
-        super(host, port);
-    }
-
-    public GridFTPControlChannel(InputStream in, OutputStream out)
-    {
-        super(in, out);
-    }
+    private Reply lastReply;
 
     /**
-     * Sets data channel protection level.
-     *
-     * @param protection should be
-     *                   {@link GridFTPSession#PROTECTION_CLEAR CLEAR},
-     *                   {@link GridFTPSession#PROTECTION_SAFE SAFE}, or
-     *                   {@link GridFTPSession#PROTECTION_PRIVATE PRIVATE}, or
-     *                   {@link GridFTPSession#PROTECTION_CONFIDENTIAL CONFIDENTIAL}.
-     **/
-    public void setProtection(int protection)
-    {
-
-        switch (protection) {
-        case GridFTPSession.PROTECTION_CLEAR:
-            throw new IllegalArgumentException("Unsupported protection: " +
-                                               protection);
-        case GridFTPSession.PROTECTION_SAFE:
-        case GridFTPSession.PROTECTION_CONFIDENTIAL:
-        case GridFTPSession.PROTECTION_PRIVATE:
-            break;
-        default:
-            throw new IllegalArgumentException("Bad protection: " +
-                                               protection);
-        }
-
-        this.protection = protection;
-    }
-
-    /**
-     * Returns control channel protection level.
-     *
-     * @return control channel protection level:
-     * {@link GridFTPSession#PROTECTION_CLEAR CLEAR},
-     * {@link GridFTPSession#PROTECTION_SAFE SAFE}, or
-     * {@link GridFTPSession#PROTECTION_PRIVATE PRIVATE}, or
-     * {@link GridFTPSession#PROTECTION_CONFIDENTIAL CONFIDENTIAL}.
-     **/
-    public int getProtection()
-    {
-        return this.protection;
-    }
-
-    /**
-     * Sets authorization method for the control channel.
-     *
-     * @param authorization authorization method.
+     * Creates an encrypted control channel wrapping an unencrypted control channel.
+     * The constructor will establish a common security context with the server.
      */
-    public void setAuthorization(Authorization authorization)
-    {
-        this.authorization = authorization;
-    }
-
-    /**
-     * Returns authorization method for the control channel.
-     *
-     * @return authorization method performed on the control channel.
-     */
-    public Authorization getAuthorization()
-    {
-        return this.authorization;
-    }
-
-    /**
-     * Performs authentication with specified user credentials.
-     *
-     * @param credential user credentials to use.
-     * @throws IOException     on i/o error
-     * @throws ServerException on server refusal or faulty server behavior
-     */
-    public void authenticate(GSSCredential credential)
+    public GridFTPControlChannel(FTPControlChannel inner, GSSCredential credential, int protection, Authorization authorization)
             throws IOException, ServerException
     {
-        authenticate(credential, null);
+        super(inner.getHost(), inner.getPort());
+        this.inner = inner;
+        this.context = authenticate(credential, protection, authorization);
     }
 
     /**
      * Performs authentication with specified user credentials and
      * a specific username (assuming the user dn maps to the passed username).
      *
-     * @param credential user credentials to use.
-     * @param username   specific username to authenticate as.
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    public void authenticate(GSSCredential credential,
-                             String username)
+    private GSSContext authenticate(GSSCredential credential, int protection, Authorization authorization)
             throws IOException, ServerException
     {
-
-        setCredentials(credential);
-
-        write(new Command("AUTH", "GSSAPI"));
-
-        Reply reply0 = null;
+        GSSContext context;
         try {
-            reply0 = read();
-        } catch (FTPReplyParseException rpe) {
-            throw ServerException.embedFTPReplyParseException(
-                    rpe,
-                    "Received faulty reply to AUTH GSSAPI");
-        }
-
-        if (!Reply.isPositiveIntermediate(reply0)) {
-            close();
-            throw ServerException.embedUnexpectedReplyCodeException(
-                    new UnexpectedReplyCodeException(reply0),
-                    "Server refused GSSAPI authentication.");
-        }
-
-        GSSManager manager = ExtendedGSSManager.getInstance();
-
-        GSSContext context = null;
-        GridFTPOutputStream gssout = null;
-        GridFTPInputStream gssin = null;
-
-        try {
-            String host = this.socket.getInetAddress().getHostAddress();
-
-            GSSName expectedName = null;
-
-
-            if (this.authorization instanceof GSSAuthorization) {
-                GSSAuthorization auth = (GSSAuthorization) this.authorization;
-                expectedName = auth.getExpectedName(credential, host);
+            try {
+                Reply reply = inner.exchange(new Command("AUTH", "GSSAPI"));
+                if (!Reply.isPositiveIntermediate(reply)) {
+                    throw ServerException.embedUnexpectedReplyCodeException(
+                            new UnexpectedReplyCodeException(reply),
+                            "Server refused GSSAPI authentication.");
+                }
+            } catch (FTPReplyParseException rpe) {
+                throw ServerException.embedFTPReplyParseException(
+                        rpe, "Received faulty reply to AUTH GSSAPI.");
             }
 
+
+            GSSName expectedName = null;
+            if (authorization instanceof GSSAuthorization) {
+                GSSAuthorization auth = (GSSAuthorization) authorization;
+                expectedName = auth.getExpectedName(credential, getHost());
+            }
+
+            GSSManager manager = ExtendedGSSManager.getInstance();
             context = manager.createContext(expectedName,
                                             GSSConstants.MECH_OID,
                                             credential,
                                             GSSContext.DEFAULT_LIFETIME);
             context.requestCredDeleg(true);
-            context.requestConf(this.protection ==
-                                GridFTPSession.PROTECTION_PRIVATE);
+            context.requestConf(protection == GridFTPSession.PROTECTION_PRIVATE);
 
-            gssout = new GridFTPOutputStream(ftpOut, context);
-            gssin = new GridFTPInputStream(rawFtpIn, context);
-
+            Reply reply;
             byte[] inToken = new byte[0];
-            byte[] outToken = null;
-
-            while (!context.isEstablished()) {
-
-                outToken = context.initSecContext(inToken, 0, inToken.length);
-
-                if (outToken != null) {
-                    gssout.writeHandshakeToken(outToken);
+            do {
+                byte[] outToken = context.initSecContext(inToken, 0, inToken.length);
+                reply = inner.exchange(new Command("ADAT", Base64.getEncoder().encodeToString(outToken != null ? outToken : new byte[0])));
+                if (reply.getMessage().startsWith("ADAT=")) {
+                    inToken = Base64.getDecoder().decode(reply.getMessage().substring(5));
+                } else {
+                    inToken = new byte[0];
                 }
+            } while (Reply.isPositiveIntermediate(reply) && !context.isEstablished());
 
-                if (!context.isEstablished()) {
-                    inToken = gssin.readHandshakeToken();
-                }
+            if (!Reply.isPositiveCompletion(reply)) {
+                throw ServerException.embedUnexpectedReplyCodeException(
+                        new UnexpectedReplyCodeException(reply), "Server failed GSI handshake.");
             }
 
+            if (inToken.length > 0 || !context.isEstablished()) {
+                byte[] outToken = context.initSecContext(inToken, 0, inToken.length);
+                if (outToken != null || !context.isEstablished()) {
+                    throw new ServerException(ServerException.WRONG_PROTOCOL, "Unexpected GSI handshake completion.");
+                }
+            }
         } catch (GSSException e) {
             throw new ChainedIOException("Authentication failed", e);
+        } catch (FTPReplyParseException e) {
+            throw ServerException.embedFTPReplyParseException(e, "Received faulty reply to ADAT.");
         }
-
-        if (this.authorization != null) {
+        if (authorization != null) {
             try {
-                this.authorization.authorize(context, host);
+                authorization.authorize(context, getHost());
             } catch (AuthorizationException e) {
-
                 throw new ChainedIOException("Authorization failed", e);
             }
         }
-
-        // this should be authentication success msg (plain)
-        // 234 (ok, no further data required)
-        Reply reply1 = null;
-        try {
-            reply1 = read();
-        } catch (FTPReplyParseException rpe) {
-            throw ServerException.embedFTPReplyParseException(
-                    rpe,
-                    "Received faulty reply to authentication");
-
-        }
-
-        if (!Reply.isPositiveCompletion(reply1)) {
-            close();
-            throw ServerException.embedUnexpectedReplyCodeException(
-                    new UnexpectedReplyCodeException(reply1),
-                    "GSSAPI authentication failed.");
-        }
-
-        // enter secure mode - send MIC commands
-        setInputStream(gssin);
-        setOutputStream(gssout);
-        //from now on, the commands and replies
-        //are protected and pass through gsi wrapped socket
-
-        write(new Command("USER",
-                          (username == null) ? ":globus-mapping:" : username));
-
-        Reply reply2 = null;
-        try {
-            reply2 = read();
-        } catch (FTPReplyParseException rpe) {
-            throw ServerException.embedFTPReplyParseException(
-                    rpe,
-                    "Received faulty reply to USER command");
-        }
-
-        if (Reply.isPositiveCompletion(reply2) ||
-            Reply.isPositiveIntermediate(reply2)) {
-            // wu-gsiftp sends intermediate code while
-            // gssftp send completion reply code
-        } else {
-            close();
-            throw ServerException.embedUnexpectedReplyCodeException(
-                    new UnexpectedReplyCodeException(reply2),
-                    "User authorization failed.");
-        }
-
-        write(new Command("PASS", "dummy"));
-
-        Reply reply3 = null;
-        try {
-            reply3 = read();
-        } catch (FTPReplyParseException rpe) {
-            throw ServerException.embedFTPReplyParseException(
-                    rpe,
-                    "Received faulty reply to PASS command");
-        }
-
-        if (!Reply.isPositiveCompletion(reply3)) {
-            close();
-            throw ServerException.embedUnexpectedReplyCodeException(
-                    new UnexpectedReplyCodeException(reply3),
-                    "Bad password.");
-        }
+        return context;
     }
 
-    protected void setCredentials(GSSCredential credentials)
+    @Override
+    public String getHost()
     {
-        this.credentials = credentials;
+        return inner.getHost();
     }
 
-    protected GSSCredential getCredentials()
+    @Override
+    public int getPort()
     {
-        return credentials;
+        return inner.getPort();
     }
 
+    @Override
+    public boolean isIPv6()
+    {
+        return inner.isIPv6();
+    }
+
+    @Override
+    public void open() throws IOException, ServerException
+    {
+        throw new UnsupportedOperationException("GridFTPControlChannel wraps existing control channel and cannot be opened.");
+    }
+
+    @Override
+    public Reply getLastReply()
+    {
+        return lastReply;
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        inner.close();
+    }
+
+    @Override
+    public void waitFor(Flag aborted, int ioDelay,
+                        int maxWait) throws ServerException, IOException, InterruptedException
+    {
+        inner.waitFor(aborted, ioDelay, maxWait);
+    }
+
+    @Override
+    public Reply read() throws ServerException, IOException, FTPReplyParseException, EOFException
+    {
+        try {
+            Reply reply = inner.read();
+            if (reply.getCode() != 632 && reply.getCode() != 633) {
+                throw ServerException.embedUnexpectedReplyCodeException(
+                        new UnexpectedReplyCodeException(reply), "Expected 632 or 633 reply.");
+            }
+            byte[] token = Base64.getDecoder().decode(reply.getMessage());
+            lastReply = new Reply(new BufferedReader(new StringReader(new String(context.unwrap(token, 0, token.length, null)))));
+            return lastReply;
+        } catch (GSSException e) {
+            throw new IOException("Failed to decrypt reply: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void abortTransfer()
+    {
+        inner.abortTransfer();
+    }
+
+    @Override
+    public void write(Command cmd) throws IOException, IllegalArgumentException
+    {
+        try {
+            byte[] bytes = cmd.toString().getBytes(StandardCharsets.US_ASCII);
+            byte[] token = context.wrap(bytes, 0, bytes.length, null);
+            inner.write(new Command(context.getConfState() ? "ENC" : "MIC", Base64.getEncoder().encodeToString(token)));
+        } catch (GSSException e) {
+            throw new IOException("Failed to encrypt command: " + e.getMessage(), e);
+        }
+    }
 }
-
-
-
-
-
-
-
-

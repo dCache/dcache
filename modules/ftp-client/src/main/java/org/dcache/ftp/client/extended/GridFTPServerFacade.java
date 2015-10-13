@@ -57,6 +57,7 @@ import org.dcache.ftp.client.dc.TransferContext;
 import org.dcache.ftp.client.dc.TransferThreadManager;
 import org.dcache.ftp.client.exception.ClientException;
 import org.dcache.ftp.client.exception.DataChannelException;
+import org.dcache.ftp.client.vanilla.FTPControlChannel;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
 import org.dcache.util.NetworkUtils;
 import org.dcache.util.PortRange;
@@ -77,7 +78,7 @@ public class GridFTPServerFacade extends FTPServerFacade
     // manager)
     protected StripeContextManager stripeRetrContextManager = null;
 
-    public GridFTPServerFacade(GridFTPControlChannel remoteControlChannel)
+    public GridFTPServerFacade(FTPControlChannel remoteControlChannel)
     {
         super(remoteControlChannel);
         gSession = new GridFTPSession();
