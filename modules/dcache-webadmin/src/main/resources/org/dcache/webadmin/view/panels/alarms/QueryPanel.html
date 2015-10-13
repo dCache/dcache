@@ -46,14 +46,19 @@
                 <td><input
                         wicket:id="refresh"
                         type="submit"
-                        wicket:message="value:refreshButton" /></td>
+                        wicket:message="value:refreshButton" />
+                    </td>
             </tr>
             <tr>
                 <td><b><wicket:message key="type" /> </b></td>
                 <td><input
                         wicket:id="typeField"
                         type="text" /></td>
-                <td />
+                <td>
+                    <b><wicket:message key="autorefresh" /></b>
+                    <input
+                            wicket:id="autofreshEnabled"
+                            type="checkbox" /></td>
             </tr>
             <tr>
                 <td><b><wicket:message key="filter" /> </b></td>
