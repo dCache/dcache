@@ -33,57 +33,22 @@ import static com.google.common.collect.ImmutableList.copyOf;
 public abstract class NetworkUtils {
     public final static String LOCAL_HOST_ADDRESS_PROPERTY = "org.dcache.net.localaddresses";
 
-    private final static String canonicalHostName;
+    private static String canonicalHostName;
     private static final int RANDOM_PORT = 23241;
     private static final int FIRST_CLIENT_HOST = 0;
 
-    private final static List<InetAddress> LOCAL_INET_ADDRESSES;
-    private final static boolean FAKED_ADDRESS;
+    private static List<InetAddress> LOCAL_INET_ADDRESSES;
+    private static final boolean FAKED_ADDRESS;
 
     static {
-        /*
-         * Get localcal Inet addresses
-         */
-        final String localaddresses = System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY);
-        final List<InetAddress> localInetAddress = new ArrayList<InetAddress>();
-
-        if(localaddresses != null && !localaddresses.isEmpty()) {
-            FAKED_ADDRESS = true;
-            Splitter s = Splitter.on(',')
-                    .omitEmptyStrings()
-                    .trimResults();
-            for(String address: s.split(localaddresses)) {
-                localInetAddress.add(InetAddresses.forString(address));
-            }
-        } else {
-            FAKED_ADDRESS = false;
-            try {
-                Enumeration<NetworkInterface> interfaces =
-                        NetworkInterface.getNetworkInterfaces();
-
-                while (interfaces.hasMoreElements()) {
-                    NetworkInterface i = interfaces.nextElement();
-                    try {
-                        if (i.isUp() && !i.isLoopback()) {
-                            Enumeration<InetAddress> addresses = i.getInetAddresses();
-                            while (addresses.hasMoreElements()) {
-                                localInetAddress.add(addresses.nextElement());
-                            }
-                        }
-                    } catch (SocketException e) {
-                        // skip faulty interface
-                    }
-                }
-            } catch (SocketException e) {
-                // huh....
-            }
-        }
-        LOCAL_INET_ADDRESSES = ImmutableList.copyOf(localInetAddress);
-
-        canonicalHostName = getPreferredHostName();
+        String localaddresses = System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY);
+        FAKED_ADDRESS = localaddresses != null && !localaddresses.isEmpty();
     }
 
-    public static String getCanonicalHostName() {
+    public static synchronized String getCanonicalHostName() {
+        if (canonicalHostName == null) {
+            canonicalHostName = getPreferredHostName();
+        }
         return canonicalHostName;
     }
 
@@ -114,7 +79,40 @@ public abstract class NetworkUtils {
      * @return
      * @throws SocketException
      */
-    public static List<InetAddress> getLocalAddresses() {
+    public static synchronized List<InetAddress> getLocalAddresses() {
+        if (LOCAL_INET_ADDRESSES == null) {
+            final List<InetAddress> localInetAddress = new ArrayList<>();
+            if (FAKED_ADDRESS) {
+                Splitter s = Splitter.on(',')
+                        .omitEmptyStrings()
+                        .trimResults();
+                for(String address: s.split(System.getProperty(LOCAL_HOST_ADDRESS_PROPERTY))) {
+                    localInetAddress.add(InetAddresses.forString(address));
+                }
+            } else {
+                try {
+                    Enumeration<NetworkInterface> interfaces =
+                            NetworkInterface.getNetworkInterfaces();
+
+                    while (interfaces.hasMoreElements()) {
+                        NetworkInterface i = interfaces.nextElement();
+                        try {
+                            if (i.isUp() && !i.isLoopback()) {
+                                Enumeration<InetAddress> addresses = i.getInetAddresses();
+                                while (addresses.hasMoreElements()) {
+                                    localInetAddress.add(addresses.nextElement());
+                                }
+                            }
+                        } catch (SocketException e) {
+                            // skip faulty interface
+                        }
+                    }
+                } catch (SocketException e) {
+                    // huh....
+                }
+            }
+            LOCAL_INET_ADDRESSES = ImmutableList.copyOf(localInetAddress);
+        }
         return LOCAL_INET_ADDRESSES;
     }
 
@@ -164,7 +162,7 @@ public abstract class NetworkUtils {
         InetAddress localAddress = getLocalAddress(intendedDestination, getProtocolFamily(intendedDestination));
         if (localAddress == null) {
             if (FAKED_ADDRESS) {
-                localAddress =  LOCAL_INET_ADDRESSES.get(0);
+                localAddress =  getLocalAddresses().get(0);
             } else {
                 try (DatagramSocket socket = new DatagramSocket()) {
                     socket.connect(intendedDestination, RANDOM_PORT);
@@ -180,7 +178,7 @@ public abstract class NetworkUtils {
                             try {
                                 localAddress = InetAddress.getLocalHost();
                             } catch (UnknownHostException e) {
-                                localAddress = LOCAL_INET_ADDRESSES.get(0);
+                                localAddress = getLocalAddresses().get(0);
                             }
                         }
                     }
@@ -199,7 +197,7 @@ public abstract class NetworkUtils {
             throws SocketException
     {
         if (FAKED_ADDRESS) {
-            for (InetAddress address : LOCAL_INET_ADDRESSES) {
+            for (InetAddress address : getLocalAddresses()) {
                 if (getProtocolFamily(address) == protocolFamily) {
                     return address;
                 }
@@ -257,9 +255,9 @@ public abstract class NetworkUtils {
     private static String getPreferredHostName() {
         String hostName = "localhost";
 
-        if (!LOCAL_INET_ADDRESSES.isEmpty()) {
-            InetAddress[] addresses
-                = LOCAL_INET_ADDRESSES.toArray(new InetAddress[0]);
+        List<InetAddress> localInetAddresses = getLocalAddresses();
+        if (!localInetAddresses.isEmpty()) {
+            InetAddress[] addresses = localInetAddresses.toArray(new InetAddress[localInetAddresses.size()]);
             Arrays.sort(addresses, getExternalInternalSorter());
 
             boolean found = false;
