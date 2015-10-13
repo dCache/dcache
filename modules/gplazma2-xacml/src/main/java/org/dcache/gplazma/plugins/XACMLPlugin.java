@@ -1,11 +1,11 @@
 package org.dcache.gplazma.plugins;
 
 import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Ordering;
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.globus.gsi.GlobusCredential;
 import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.gssapi.jaas.GlobusPrincipal;
@@ -13,13 +13,14 @@ import org.ietf.jgss.GSSException;
 import org.italiangrid.voms.VOMSAttribute;
 import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.security.auth.x500.X500Principal;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -36,6 +37,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.x500.X500Principal;
 
 import org.dcache.auth.LoginGidPrincipal;
 import org.dcache.auth.LoginNamePrincipal;
@@ -49,6 +51,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.find;
+import static java.util.Arrays.asList;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
 
 /**
@@ -77,12 +80,6 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  * <th>PROPERTY</th>
  * <th>DEFAULT VALUE</th>
  * <th>DESCRIPTION</th>
- * </tr>
- * <tr>
- * <td>gplazma.voms.validate</td>
- * <td>true</td>
- * <td>whether the VOMS attributes contained in the certificate chain should be
- * validated (this requires a non-empty local VOMS directory)</td>
  * </tr>
  * <tr>
  * <td>gplazma.vomsdir.dir</td>
@@ -216,9 +213,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         }
     }
 
-    static final String CADIR = "gplazma.vomsdir.ca";
-    static final String VOMSDIR = "gplazma.vomsdir.dir";
-    static final String VATTR_VALIDATE = "gplazma.voms.validate";
+    static final String CADIR = "gplazma.xacml.vomsdir.ca";
+    static final String VOMSDIR = "gplazma.xacml.vomsdir.dir";
     static final String ILLEGAL_CACHE_SIZE = "cache size must be non-zero positive integer; was: ";
     static final String ILLEGAL_CACHE_LIFE = "cache life must be positive integer; was: ";
     static final String DENIED_MESSAGE = "Permission Denied: "
@@ -248,11 +244,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     private LoadingCache<VomsExtensions, LocalId> _localIdCache;
 
     /*
-     * VOMS attribute validation turned off by default
-     */
-    private boolean _vomsAttrValidate;
-
-    /*
      * the XACML service
      */
     private final String _mappingServiceURL;
@@ -270,6 +261,12 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     private String _targetServiceIssuer;
     private String _resourceDNSHostName;
 
+    /*
+     * VOMS setup
+     */
+    private VOMSTrustStore vomsTrustStore;
+    private X509CertChainValidatorExt certChainValidator;
+
     /**
      * Configures VOMS extension validation, XACML service location, local id
      * caching and storage resource information.
@@ -279,17 +276,14 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                     CRLException, IOException {
         _properties = properties;
 
-        /*
-         * VOMS setup
-         */
-        String pki = properties.getProperty(VATTR_VALIDATE);
-        if (pki != null) {
-            _vomsAttrValidate = Boolean.parseBoolean(pki);
-        }
-
         String caDir = properties.getProperty(CADIR);
         String vomsDir = properties.getProperty(VOMSDIR);
 
+        checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
+        checkArgument(vomsDir != null, "Undefined property: " + CADIR);
+
+        vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
+        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
 
         /*
          * Adds SSL system properties required by privilege library.
@@ -339,7 +333,8 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         /*
          * validator not thread-safe; reinstantiated with each authenticate call
          */
-        VOMSACValidator validator = VOMSValidators.newValidator();
+        VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore,
+                                                                certChainValidator);
         Set<VomsExtensions> extensions = new LinkedHashSet<>();
 
         /*
@@ -478,16 +473,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
      * Extracts VOMS extensions from the public credentials and adds them to the
      * running list.
      *
-     * To preserve the feature of gPlazma1 which allows for XACML authentication
-     * without having to store the .lsc files in /etc/grid-security/vomsdir, the
-     * gplazma.voms.validate property is by default set to false. If
-     * vomsAttrValidate is set to true, the verifier will attempt to validate
-     * the VOMS attributes. In this case, the VOMSDIR needs to have a
-     * subdirectory corresponding to the VO for the VOMS signer, containing the
-     * necessary .lsc file(s).
-     *
-     * Calls {@link CertificateUtils#getVOMSAttribute(List, String)}
-     *
      * @param proxySubject
      * @param chain
      *            from the public credentials
@@ -557,7 +542,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
 
     /**
      * Convenience wrapper; loops through the set of extension groups and calls
-     * out to {@link Cache#get(Object)}.
+     * out to {@link LoadingCache#get(Object)}.
      *
      * @param login
      *            may be <code>null</code>
