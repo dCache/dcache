@@ -231,7 +231,7 @@ public class BoundedExecutor extends AbstractExecutorService
         {
             monitor.enter();
             try {
-                if (workQueue.isEmpty()) {
+                if (workQueue.isEmpty() || threads > maxThreads) {
                     threads--;
                     workers.remove(Thread.currentThread());
                     return null;
