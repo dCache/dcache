@@ -72,6 +72,8 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -90,6 +92,7 @@ public class QueryPanel extends Panel {
 
     private static final long serialVersionUID = -1214958555513880556L;
     private static final String DATE = "yyyy/MM/dd";
+    private boolean initialized = false;
 
     public QueryPanel(String id, final AlarmsPage parent) {
         super(id);
@@ -104,6 +107,8 @@ public class QueryPanel extends Panel {
         addShowClosed(provider);
         addRangeFields(provider);
         add(parent.getRefreshButton());
+        addEnableAutorefresh(parent);
+        initialized = true;
     }
 
     private void addAlarmsGroup(AlarmTableProvider provider) {
@@ -131,6 +136,19 @@ public class QueryPanel extends Panel {
         add(ending);
     }
 
+    private void addEnableAutorefresh(AlarmsPage parent) {
+        IModel<Boolean> autofreshEnabled = new PropertyModel<>(parent,
+                        "autorefreshEnabled");
+        add(new CheckBox("autofreshEnabled", autofreshEnabled) {
+            private static final long serialVersionUID = -5500105320665027261L;
+
+            @Override
+            protected boolean wantOnSelectionChangedNotifications() {
+                return true;
+            }
+        });
+    }
+
     private void addExpressionFields(AlarmTableProvider provider) {
         IModel<String> filterValue = new PropertyModel<>(provider, "expression");
         add(new TextField<>("filterField", filterValue));
@@ -150,7 +168,11 @@ public class QueryPanel extends Panel {
         add(new TextField<Integer>("rangeFrom", from));
 
         IModel<Integer> to = new PropertyModel<>(provider, "to");
-        add(new TextField<Integer>("rangeTo", to));
+        TextField<Integer> toField = new TextField<Integer>("rangeTo", to);
+        if (!initialized) {
+            toField.setModelObject(100);
+        }
+        add(toField);
     }
 
     private void addPriorityChoice(AlarmTableProvider provider) {
@@ -186,5 +208,11 @@ public class QueryPanel extends Panel {
                 return provider.getMap().keySet().iterator();
             }
         });
+    }
+
+    private static String getFormattedNow() {
+        DateFormat format = new SimpleDateFormat(DATE);
+        format.setLenient(false);
+        return format.format(new Date());
     }
 }

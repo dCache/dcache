@@ -106,7 +106,7 @@ public class AlarmsPage extends BasePage implements AuthenticatedWebPage {
             }
         };
 
-        Form<?> form = getAutoRefreshingForm("alarmsPageForm");
+        Form<?> form = getAutoRefreshingForm("alarmsPageForm", false);
         form.add(new QueryPanel("filterPanel", this));
         if(getWebadminApplication().getAlarmDisplayService().isConnected()) {
             displayPanel = new DisplayPanel("displayPanel", this);
