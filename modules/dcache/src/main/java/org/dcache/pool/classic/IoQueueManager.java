@@ -35,8 +35,8 @@ public class IoQueueManager {
         for (String name : concat(asList(DEFAULT_QUEUE), asList(names))) {
             name = name.trim();
             if (!name.isEmpty()) {
-                boolean fifo = !name.startsWith("-");
-                if (!fifo) {
+                boolean fifo = name.startsWith("-");
+                if (fifo) {
                     name = name.substring(1);
                 }
                 if (!queuesByName.containsKey(name)) {
