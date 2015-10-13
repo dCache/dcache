@@ -53,5 +53,9 @@
             <groupId>org.jglobus</groupId>
             <artifactId>gss</artifactId>
         </dependency>
+        <dependency>
+            <groupId>eu.eu-emi.security</groupId>
+            <artifactId>canl</artifactId>
+        </dependency>
     </dependencies>
 </project>

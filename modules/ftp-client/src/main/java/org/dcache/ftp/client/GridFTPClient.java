@@ -15,6 +15,7 @@
  */
 package org.dcache.ftp.client;
 
+import eu.emi.security.authn.x509.X509Credential;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.gssapi.auth.HostAuthorization;
 import org.ietf.jgss.GSSCredential;
@@ -100,7 +101,7 @@ public class GridFTPClient extends FTPClient
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    public void authenticate(GSSCredential credential)
+    public void authenticate(X509Credential credential)
             throws IOException, ServerException
     {
         authenticate(credential, null);
@@ -122,7 +123,7 @@ public class GridFTPClient extends FTPClient
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    public void authenticate(GSSCredential credential,
+    public void authenticate(X509Credential credential,
                              String username)
             throws IOException, ServerException
     {

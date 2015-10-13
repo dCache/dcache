@@ -15,8 +15,10 @@
  */
 package org.dcache.ftp.client.extended;
 
+import eu.emi.security.authn.x509.X509Credential;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.IdentityAuthorization;
 import org.globus.gsi.gssapi.auth.SelfAuthorization;
 import org.globus.gsi.gssapi.net.GssSocket;
@@ -89,7 +91,7 @@ public class GridFTPServerFacade extends FTPServerFacade
         transferThreadManager = createTransferThreadManager();
     }
 
-    public void setCredential(GSSCredential cred)
+    public void setCredential(X509Credential cred)
     {
         gSession.credential = cred;
     }
@@ -488,11 +490,14 @@ public class GridFTPServerFacade extends FTPServerFacade
     public static Socket authenticate(
             Socket simpleSocket,
             boolean isClientSocket,
-            GSSCredential credential,
+            X509Credential credential,
             int protection,
             DataChannelAuthentication dcau)
             throws Exception
     {
+        GlobusGSSCredentialImpl gssCredential = new GlobusGSSCredentialImpl(
+                new org.globus.gsi.X509Credential(credential.getKey(), credential.getCertificateChain()),
+                GSSCredential.INITIATE_ONLY);
 
         GSSContext gssContext = null;
         GSSManager manager = ExtendedGSSManager.getInstance();
@@ -502,10 +507,10 @@ public class GridFTPServerFacade extends FTPServerFacade
                     manager.createContext(
                             null,
                             GSSConstants.MECH_OID,
-                            credential,
+                            gssCredential,
                             GSSContext.DEFAULT_LIFETIME);
         } else {
-            gssContext = manager.createContext(credential);
+            gssContext = manager.createContext(gssCredential);
         }
 
         if (protection != GridFTPSession.PROTECTION_CLEAR) {

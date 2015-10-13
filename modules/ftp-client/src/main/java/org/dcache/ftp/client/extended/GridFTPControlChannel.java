@@ -15,8 +15,10 @@
  */
 package org.dcache.ftp.client.extended;
 
+import eu.emi.security.authn.x509.X509Credential;
 import org.globus.common.ChainedIOException;
 import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.auth.GSSAuthorization;
@@ -61,7 +63,7 @@ public class GridFTPControlChannel extends FTPControlChannel
      * Creates an encrypted control channel wrapping an unencrypted control channel.
      * The constructor will establish a common security context with the server.
      */
-    public GridFTPControlChannel(FTPControlChannel inner, GSSCredential credential, int protection, Authorization authorization)
+    public GridFTPControlChannel(FTPControlChannel inner, X509Credential credential, int protection, Authorization authorization)
             throws IOException, ServerException
     {
         super(inner.getHost(), inner.getPort());
@@ -76,7 +78,7 @@ public class GridFTPControlChannel extends FTPControlChannel
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    private GSSContext authenticate(GSSCredential credential, int protection, Authorization authorization)
+    private GSSContext authenticate(X509Credential credential, int protection, Authorization authorization)
             throws IOException, ServerException
     {
         GSSContext context;
@@ -93,17 +95,20 @@ public class GridFTPControlChannel extends FTPControlChannel
                         rpe, "Received faulty reply to AUTH GSSAPI.");
             }
 
+            GlobusGSSCredentialImpl gssCredential = new GlobusGSSCredentialImpl(
+                    new org.globus.gsi.X509Credential(credential.getKey(), credential.getCertificateChain()),
+                    GSSCredential.INITIATE_ONLY);
 
             GSSName expectedName = null;
             if (authorization instanceof GSSAuthorization) {
                 GSSAuthorization auth = (GSSAuthorization) authorization;
-                expectedName = auth.getExpectedName(credential, getHost());
+                expectedName = auth.getExpectedName(gssCredential, getHost());
             }
 
             GSSManager manager = ExtendedGSSManager.getInstance();
             context = manager.createContext(expectedName,
                                             GSSConstants.MECH_OID,
-                                            credential,
+                                            gssCredential,
                                             GSSContext.DEFAULT_LIFETIME);
             context.requestCredDeleg(true);
             context.requestConf(protection == GridFTPSession.PROTECTION_PRIVATE);

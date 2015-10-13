@@ -15,19 +15,18 @@
  */
 package org.dcache.ftp.client.dc;
 
-import org.dcache.ftp.client.DataChannelAuthentication;
-import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.DataSource;
-import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.Session;
-import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
-import org.dcache.ftp.client.extended.GridFTPServerFacade;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.dcache.ftp.client.DataChannelAuthentication;
+import org.dcache.ftp.client.DataSink;
+import org.dcache.ftp.client.DataSource;
+import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.ftp.client.extended.GridFTPServerFacade;
+import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 
 /**
  * Unlike in the parent class, here we use authentication

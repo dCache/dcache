@@ -97,9 +97,7 @@ public class GridftpClient
 
         _client  = new GridFTPClient(_host, port);
 
-        _client.authenticate(new GlobusGSSCredentialImpl(
-                new org.globus.gsi.X509Credential(cred.getKey(), cred.getCertificateChain()),
-                GSSCredential.INITIATE_ONLY)); /* use credentials */
+        _client.authenticate(cred);
         _client.setPortRange(portRange);
         _client.setType(GridFTPSession.TYPE_IMAGE);
     }
