@@ -70,8 +70,8 @@ import diskCacheV111.vehicles.ProtocolInfo;
 
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
-import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageReceiver;
+import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.login.LoginManagerChildrenInfo;
 
@@ -994,8 +994,7 @@ public class DcacheResourceFactory
     /**
      * Message handler for redirect messages from the pools.
      */
-    public void messageArrived(CellMessage envelope,
-                               HttpDoorUrlInfoMessage message)
+    public void messageArrived(HttpDoorUrlInfoMessage message)
     {
         HttpTransfer transfer = _transfers.get((int) message.getId());
         if (transfer != null) {
@@ -1023,11 +1022,12 @@ public class DcacheResourceFactory
     public void messageArrived(PoolIoFileMessage message)
     {
         if (message.getReturnCode() == 0) {
+            String pool = message.getPoolName();
+            int moverId = message.getMoverId();
             try {
-                _poolStub.notify(new PoolMoverKillMessage(message.getPoolName(), message.getMoverId()));
+                _poolStub.notify(new CellPath(pool), new PoolMoverKillMessage(pool, moverId));
             } catch (NoRouteToCellException e) {
-                _log.debug("Failed to kill mover {}/{}: {}", message.getPoolName(), message.getMoverId(),
-                           e.getMessage());
+                _log.debug("Failed to kill mover {}/{}: {}", pool, moverId, e.getMessage());
             }
         }
     }
