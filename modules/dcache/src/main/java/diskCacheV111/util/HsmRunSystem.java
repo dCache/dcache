@@ -32,22 +32,27 @@ public class HsmRunSystem extends RunSystem
         int returnCode = getExitValue();
         try {
             switch (returnCode) {
-                case 0:
-                    break;
-                case 71:
-                    throw new CacheException(CacheException.HSM_DELAY_ERROR,
-                                    "HSM script failed (script reported 71: "
-                                                    + getErrorString() + ")");
-                case 143:
-                    throw new TimeoutCacheException(
-                                    "HSM script was killed (script reported 143: "
-                                                    + getErrorString() + ")");
-                default:
-                    throw new CacheException(returnCode,
-                                    "HSM script failed (script reported: "
-                                                    + returnCode + ": "
-                                                    + getErrorString());
+            case 0:
+                break;
+            case 71:
+                throw new CacheException(CacheException.HSM_DELAY_ERROR,
+                                         "HSM script failed (script reported 71: "
+                                         + getErrorString() + ")");
+            case 72:
+                throw new InProgressCacheException(72, "HSM script requested retry (script reported 72: "
+                                                       + getErrorString() + ")");
+            case 143:
+                throw new TimeoutCacheException(
+                        "HSM script was killed (script reported 143: "
+                        + getErrorString() + ")");
+            default:
+                throw new CacheException(returnCode,
+                                         "HSM script failed (script reported: "
+                                         + returnCode + ": "
+                                         + getErrorString());
             }
+        } catch (InProgressCacheException e) {
+            throw e;
         } catch (CacheException e) {
             LOGGER.error(AlarmMarkerFactory.getMarker(PredefinedAlarm.HSM_SCRIPT_FAILURE,
                                                       NetworkUtils.getCanonicalHostName(),

@@ -29,16 +29,18 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.dcache.util.NDC;
+import diskCacheV111.util.InProgressCacheException;
+
 import org.dcache.pool.nearline.spi.FlushRequest;
 import org.dcache.pool.nearline.spi.NearlineRequest;
 import org.dcache.pool.nearline.spi.NearlineStorage;
 import org.dcache.pool.nearline.spi.RemoveRequest;
 import org.dcache.pool.nearline.spi.StageRequest;
 import org.dcache.util.Checksum;
+import org.dcache.util.NDC;
 import org.dcache.vehicles.FileAttributes;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Base class for NearlineStorage implementations that follow the one-thread-per-task
@@ -77,20 +79,28 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     public void flush(Iterable<FlushRequest> requests)
     {
         for (FlushRequest request : requests) {
-            getFlushExecutor().execute(new Task<FlushRequest, Set<URI>>(request)
-            {
-                @Override
-                public Set<URI> call() throws Exception
-                {
-                    FileAttributes fileAttributes = request.getFileAttributes();
-                    NDC.push(fileAttributes.getPnfsId().toString());
-                    try {
-                        return flush(request);
-                    } finally {
-                        NDC.pop();
-                    }
-                }
-            });
+            Task<FlushRequest, Set<URI>> task =
+                    new Task<FlushRequest, Set<URI>>(request)
+                    {
+                        @Override
+                        public Set<URI> call() throws Exception
+                        {
+                            FileAttributes fileAttributes = request.getFileAttributes();
+                            NDC.push(fileAttributes.getPnfsId().toString());
+                            try {
+                                return flush(request);
+                            } finally {
+                                NDC.pop();
+                            }
+                        }
+
+                        @Override
+                        protected void execute()
+                        {
+                            getFlushExecutor().execute(this);
+                        }
+                    };
+            task.execute();
         }
     }
 
@@ -98,21 +108,29 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     public void stage(Iterable<StageRequest> requests)
     {
         for (StageRequest request : requests) {
-            getStageExecutor().execute(new Task<StageRequest, Set<Checksum>>(request)
-            {
-                @Override
-                public Set<Checksum> call() throws Exception
-                {
-                    FileAttributes attributes = request.getFileAttributes();
-                    NDC.push(attributes.getPnfsId().toString());
-                    try {
-                        request.allocate().get();
-                        return stage(request);
-                    } finally {
-                        NDC.pop();
-                    }
-                }
-            });
+            Task<StageRequest, Set<Checksum>> task =
+                    new Task<StageRequest, Set<Checksum>>(request)
+                    {
+                        @Override
+                        public Set<Checksum> call() throws Exception
+                        {
+                            FileAttributes attributes = request.getFileAttributes();
+                            NDC.push(attributes.getPnfsId().toString());
+                            try {
+                                request.allocate().get();
+                                return stage(request);
+                            } finally {
+                                NDC.pop();
+                            }
+                        }
+
+                        @Override
+                        protected void execute()
+                        {
+                            getStageExecutor().execute(this);
+                        }
+                    };
+            task.execute();
         }
     }
 
@@ -120,20 +138,28 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
     public void remove(Iterable<RemoveRequest> requests)
     {
         for (RemoveRequest request : requests) {
-            getRemoveExecutor().execute(new Task<RemoveRequest, Void>(request)
-            {
-                @Override
-                public Void call() throws Exception
-                {
-                    NDC.push(request.getUri().toString());
-                    try {
-                        remove(request);
-                    } finally {
-                        NDC.pop();
-                    }
-                    return null;
-                }
-            });
+            Task<RemoveRequest, Void> task =
+                    new Task<RemoveRequest, Void>(request)
+                    {
+                        @Override
+                        public Void call() throws Exception
+                        {
+                            NDC.push(request.getUri().toString());
+                            try {
+                                remove(request);
+                            } finally {
+                                NDC.pop();
+                            }
+                            return null;
+                        }
+
+                        @Override
+                        protected void execute()
+                        {
+                            getRemoveExecutor().execute(this);
+                        }
+                    };
+            task.execute();
         }
     }
 
@@ -179,6 +205,15 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
             throws Exception;
 
     /**
+     * Hook called when a request is retryed because InProgressCacheException was thrown. Subclasses
+     * may choose to delay invocation of the runnable.
+     */
+    protected void retry(Runnable runnable)
+    {
+        runnable.run();
+    }
+
+    /**
      * Base class for tasks processing nearline requests.
      * @param <R> Request type
      * @param <T> Result type provided to the callback upon completion
@@ -188,6 +223,7 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
         protected final R request;
         private Thread thread;
         private boolean isDone;
+        private boolean isActivated;
 
         protected Task(R request)
         {
@@ -223,55 +259,86 @@ public abstract class AbstractBlockingNearlineStorage implements NearlineStorage
         }
 
         /**
-         * Releases task from its thread. If the thread was interrupted, InterruptedException
+         * Releases task from its thread. If the task was cancelled, InterruptedException
          * is thrown.
          */
-        private synchronized void release() throws InterruptedException
+        private synchronized void release(boolean isRetrying) throws InterruptedException
         {
             thread = null;
-            isDone = true;
-            if (Thread.interrupted()) {
+            if (isDone) {
+                /* If done it must because the task was cancelled.
+                 */
                 throw new InterruptedException();
             }
+            if (!isRetrying) {
+                isDone = true;
+                requests.remove(request.getId());
+            }
+        }
+
+        /** Returns true the first time it is called, otherwise false. */
+        private synchronized boolean activate()
+        {
+            if (!isActivated) {
+                isActivated = true;
+                return true;
+            }
+            return false;
         }
 
         public void run()
         {
-            Thread thread = Thread.currentThread();
-            if (bind(thread)) {
-                NDC.push(request.getId().toString());
-                try {
-                    processRequest();
-                } catch (Throwable e) {
-                    thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
-                } finally {
-                    requests.remove(request.getId());
-                    NDC.pop();
+            try {
+                Thread thread = Thread.currentThread();
+                if (bind(thread)) {
+                    boolean isSuccess = false;
+                    T result = null;
+                    try {
+                        try {
+                            result = processRequest();
+                            release(false);
+                            isSuccess = true;
+                        } catch (InProgressCacheException e) {
+                            release(true);
+                            throw e;
+                        } catch (Exception e) {
+                            release(false);
+                            throw e;
+                        }
+                    } catch (InProgressCacheException e) {
+                        retry(this::execute);
+                    } catch (InterruptedException e) {
+                        request.failed(new CancellationException());
+                    } catch (Exception cause) {
+                        request.failed(cause);
+                    }
+                    if (isSuccess) {
+                        request.completed(result);
+                    }
                 }
+            } catch (Throwable e) {
+                thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
             }
         }
 
-        private void processRequest() throws Throwable
+        private T processRequest() throws Throwable
         {
-            T result;
-            try {
+            if (activate()) {
                 try {
                     request.activate().get();
-                    result = call();
                 } catch (ExecutionException e) {
                     throw e.getCause();
-                } finally {
-                    release();
                 }
-            } catch (InterruptedException e) {
-                request.failed(new CancellationException());
-                return;
-            } catch (Exception cause) {
-                request.failed(cause);
-                return;
             }
-            request.completed(result);
+            NDC.push(request.getId().toString());
+            try {
+                return call();
+            } finally {
+                NDC.pop();
+            }
         }
+
+        protected abstract void execute();
 
         protected abstract T call() throws Exception;
     }
