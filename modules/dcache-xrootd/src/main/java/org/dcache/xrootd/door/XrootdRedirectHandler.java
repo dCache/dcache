@@ -134,7 +134,7 @@ public class XrootdRedirectHandler extends AbstractXrootdRequestHandler
     {
         ListenableFuture<?> future = _executor.submit(() -> super.requestReceived(ctx, req));
         _requests.add(future);
-        future.addListener(() -> _requests.remove(future), MoreExecutors.directExecutor());
+        future.addListener(() -> _requests.remove(future), _executor);
     }
 
     @Override
