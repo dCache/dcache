@@ -2,8 +2,11 @@ package org.dcache.pool.classic;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Ordering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.InterruptedIOException;
 import java.nio.channels.CompletionHandler;
@@ -26,10 +29,8 @@ import dmg.cells.nucleus.CDC;
 
 import org.dcache.pool.movers.Mover;
 import org.dcache.util.AdjustableSemaphore;
-import org.dcache.util.FifoPriorityComparator;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
-import org.dcache.util.LifoPriorityComparator;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.transform;
@@ -80,25 +81,46 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 
-    public SimpleIoScheduler(String name,
-                             int queueId)
-    {
-        this(name, queueId, true);
-    }
-
-    public SimpleIoScheduler(String name,
-                             int queueId,
-                             boolean fifo)
+    public SimpleIoScheduler(String name, int queueId, boolean fifo)
     {
         _name = name;
         _queueId = queueId;
 
-        Comparator<IoPrioritizable> comparator =
-            fifo
-            ? new FifoPriorityComparator()
-            : new LifoPriorityComparator();
+        /* PriorityBlockinQueue returns the least elements first, that is, the
+         * the highest priority requests have to be first in the ordering.
+         */
+        Function<IoPrioritizable, Comparable> getPriority =
+                new Function<IoPrioritizable, Comparable>()
+                {
+                    @Nullable
+                    @Override
+                    public Comparable apply(IoPrioritizable input)
+                    {
+                        return input.getPriority();
+                    }
+                };
+        Function<IoPrioritizable, Comparable> getCreationTime =
+                new Function<IoPrioritizable, Comparable>()
+                {
+                    @Nullable
+                    @Override
+                    public Comparable apply(IoPrioritizable input)
+                    {
+                        return input.getCreateTime();
+                    }
+                };
+        Ordering<IoPrioritizable> ordering =
+                fifo
+                ? Ordering.natural()
+                        .onResultOf(getPriority)
+                        .reverse()
+                        .compound(Ordering.natural().onResultOf(getCreationTime))
+                : Ordering.natural()
+                        .onResultOf(getPriority)
+                        .compound(Ordering.natural().onResultOf(getCreationTime))
+                        .reverse();
 
-        _queue = new PriorityBlockingQueue<>(16, comparator);
+        _queue = new PriorityBlockingQueue<>(16, ordering);
 
         _semaphore.setMaxPermits(2);
 
