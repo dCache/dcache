@@ -1366,6 +1366,19 @@ public class PoolV4
                  * supposed to be on the list, the exception is not a
                  * problem.
                  */
+            } catch (IllegalStateException e) {
+                /*
+                 * For the purposes of this listing, ignore files
+                 * with incomplete metadata (accessing an undefined file
+                 * attribute throws this exception).
+                 *
+                 * Otherwise the loading of the pool into the replica manager
+                 * database will fail and the pool will be marked offline when
+                 * it reality it is accessible (this method is only
+                 * used by DCacheCoreControllerV2).
+                 */
+                _log.warn("Skipping {} when listing contents of pool {}: {}.",
+                          pnfsid, _poolName, e.getMessage());
             }
         }
         return listing;
