@@ -22,7 +22,6 @@ st set timeout 14400
 rm set timeout 14400
 jtm set timeout -queue=regular -lastAccess=0 -total=0
 jtm set timeout -queue=p2p -lastAccess=0 -total=0
-jtm set timeout -queue=io -lastAccess=0 -total=0
 set heartbeat 30
 set report remove on
 set breakeven 0.7

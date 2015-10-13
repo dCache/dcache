@@ -220,7 +220,20 @@ public class JobTimeoutManager
                     entry.setTotal(total * 1000L);
                 }
             } else {
-                SchedulerEntry entry = findOrCreate(queueName);
+                SchedulerEntry entry = find(queueName);
+                if (entry == null)
+                {
+                    /*
+                        This patch (8639) enforce the main function of jtm set timeout
+                        command, which is to set the value of the _total and
+                        _lastAccessed variables. To avoid a fail start up (which
+                        might occur if an exception is thrown) when a user try to
+                        set non-existing queue (in a pool batch file), a waring
+                        message below will be printed.
+                    */
+                    return queueName + " queue does not exist. Please create the queue " +
+                            "before setting its timeout values.";
+                }
                 entry.setLastAccessed(lastAccessed * 1000L);
                 entry.setTotal(total * 1000L);
             }
