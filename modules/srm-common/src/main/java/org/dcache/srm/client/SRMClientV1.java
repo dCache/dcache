@@ -87,6 +87,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Date;
 
+import org.dcache.ssl.CanlContextFactory;
+
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 public class SRMClientV1 implements diskCacheV111.srm.ISRM {

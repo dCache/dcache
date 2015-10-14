@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.gsi;
+package org.dcache.util.jetty;
 
-import com.google.common.collect.Ordering;
+import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -39,13 +39,18 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.security.KeyStore;
 import java.security.cert.CRL;
 import java.security.cert.CertificateFactory;
 import java.util.Collection;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import org.dcache.gsi.GsiEngine;
+import org.dcache.gsi.GsiFrameEngine;
+import org.dcache.gsi.KeyPairCache;
+import org.dcache.util.Callables;
 
 /**
  * Specialized SSLContext factory that uses CANL for certificate handling.
@@ -69,11 +74,9 @@ public class CanlContextFactory extends SslContextFactory
     private long certificateAuthorityUpdateInterval = 600000;
     private long credentialUpdateInterval = 60000;
 
-    private long nextCredentialCheck;
-    private FileTime lastCredentialModificationTime;
-
-    private SslContextFactory delegate;
     private KeyPairCache keyPairCache;
+
+    private Callable<SslContextFactory> delegate;
 
     public File getCertificatePath()
     {
@@ -189,11 +192,10 @@ public class CanlContextFactory extends SslContextFactory
     protected void doStart() throws Exception
     {
         cf = CertificateFactory.getInstance("X.509");
-        lastCredentialModificationTime =
-                Ordering.natural().max(Files.getLastModifiedTime(keyPath),
-                                       Files.getLastModifiedTime(certificatePath));
-        nextCredentialCheck = System.currentTimeMillis() + credentialUpdateInterval;
-        delegate = createDelegate();
+        delegate = Callables.memoizeWithExpiration(
+                Callables.memoizeFromFiles(this::createDelegate, keyPath, certificatePath),
+                credentialUpdateInterval, TimeUnit.MILLISECONDS);
+        delegate.call(); // Fail fast
     }
 
     /**
@@ -278,34 +280,6 @@ public class CanlContextFactory extends SslContextFactory
         return factory;
     }
 
-    /**
-     * Actual SSLEngine creation is delegated to a another factory. That factory is recreated
-     * whenever the host key is updated. This method returns the current delegate and recreates
-     * it whenever the host key changes.
-     *
-     * Similar logic is not needed for CA files as CANL does that automatically.
-     */
-    protected synchronized SslContextFactory delegate()
-    {
-        long now = System.currentTimeMillis();
-        if (nextCredentialCheck < now) {
-            try {
-                FileTime lastModified =
-                        Ordering.natural().max(Files.getLastModifiedTime(keyPath),
-                                               Files.getLastModifiedTime(certificatePath));
-                if (lastModified.compareTo(lastCredentialModificationTime) > 0) {
-                    LOGGER.info("Reloading host credentials ({} and {})", keyPath, certificatePath);
-                    delegate = createDelegate();
-                    lastCredentialModificationTime = lastModified;
-                }
-            } catch (Exception e) {
-                LOGGER.error("Failed to load host credentials: " + e.getMessage());
-            }
-            nextCredentialCheck = now + credentialUpdateInterval;
-        }
-        return delegate;
-    }
-
     protected SSLEngine wrapEngine(SSLEngine engine)
     {
         if (isGsiEnabled) {
@@ -321,12 +295,20 @@ public class CanlContextFactory extends SslContextFactory
     @Override
     public SSLEngine newSSLEngine()
     {
-        return wrapEngine(delegate().newSSLEngine());
+        try {
+            return wrapEngine(delegate.call().newSSLEngine());
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 
     @Override
     public SSLEngine newSSLEngine(String host, int port)
     {
-        return wrapEngine(delegate().newSSLEngine(host, port));
+        try {
+            return wrapEngine(delegate.call().newSSLEngine(host, port));
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
     }
 }

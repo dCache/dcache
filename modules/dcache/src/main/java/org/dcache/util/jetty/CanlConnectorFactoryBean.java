@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.gsi.CanlContextFactory;
 import org.dcache.gsi.KeyPairCache;
 
 import static org.dcache.util.Crypto.getBannedCipherSuitesFromConfigurationValue;

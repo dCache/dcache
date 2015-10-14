@@ -17,18 +17,28 @@
  */
 package org.dcache.dss;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateFactory;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-import org.dcache.gsi.CanlContextFactory;
+import org.dcache.gsi.GsiEngine;
 import org.dcache.gsi.KeyPairCache;
+import org.dcache.ssl.CanlContextFactory;
 import org.dcache.util.Args;
 import org.dcache.util.CertificateFactories;
 import org.dcache.util.Crypto;
@@ -45,8 +55,11 @@ public class GsiEngineDssContextFactory implements DssContextFactory
     private static final String KEY_CACHE_LIFETIME = "key-cache-lifetime";
     private static final String KEY_CACHE_LIFETIME_UNIT = "key-cache-lifetime-unit";
 
-    private final CanlContextFactory factory;
     private final CertificateFactory cf;
+    private final Set<String> bannedCiphers;
+    private final Set<String> bannedProtocols;
+    private final Callable<SSLContext> factory;
+    private KeyPairCache keyPairCache;
 
     public GsiEngineDssContextFactory(String args) throws Exception
     {
@@ -73,25 +86,47 @@ public class GsiEngineDssContextFactory implements DssContextFactory
     {
         cf = CertificateFactories.newX509CertificateFactory();
 
-        factory = new CanlContextFactory();
-        factory.setCertificatePath(serverCertificatePath);
-        factory.setKeyPath(serverKeyPath);
-        factory.setCertificateAuthorityPath(certificateAuthorityPath);
-        factory.setNeedClientAuth(true);
-        factory.setWantClientAuth(true);
-        factory.setExcludeCipherSuites(bannedCiphers);
-        factory.setGsiEnabled(true);
-        factory.setKeyPairCache(new KeyPairCache(keyCacheLifetime, keyCacheLifetimeUnit));
-        factory.setNamespaceMode(namespaceMode);
-        factory.setCrlCheckingMode(crlMode);
-        factory.setOcspCheckingMode(ocspMode);
-        factory.start();
+        this.bannedCiphers = ImmutableSet.copyOf(bannedCiphers);
+        this.bannedProtocols = ImmutableSet.of("SSL", "SSLv2", "SSLv2Hello", "SSLv3");
+        keyPairCache = new KeyPairCache(keyCacheLifetime, keyCacheLifetimeUnit);
+
+        factory = CanlContextFactory.custom()
+                .withCertificateAuthorityPath(certificateAuthorityPath.toPath())
+                .withCrlCheckingMode(crlMode)
+                .withOcspCheckingMode(ocspMode)
+                .withNamespaceMode(namespaceMode)
+                .withLazy(false)
+                .withKeyPath(serverKeyPath.toPath())
+                .withCertificatePath(serverCertificatePath.toPath())
+                .buildWithCaching();
+        factory.call(); // Fail fast in case of config errors
     }
 
     @Override
-    public DssContext create(InetSocketAddress remoteSocketAddress,
-                             InetSocketAddress localSocketAddress) throws IOException
+    public DssContext create(InetSocketAddress remoteSocketAddress, InetSocketAddress localSocketAddress)
+            throws IOException
     {
-        return new SslEngineDssContext(factory.newSSLEngine(remoteSocketAddress), cf);
+        try {
+            SSLEngine delegate = factory.call().createSSLEngine(remoteSocketAddress.getHostString(),
+                                                                 remoteSocketAddress.getPort());
+            SSLParameters sslParameters = delegate.getSSLParameters();
+            sslParameters.setCipherSuites(Stream.of(sslParameters.getCipherSuites())
+                                                  .filter(cipher -> !bannedCiphers.contains(cipher))
+                                                  .toArray(String[]::new));
+            sslParameters.setProtocols(Stream.of(sslParameters.getProtocols())
+                                               .filter(protocol -> !bannedProtocols.contains(protocol))
+                                               .toArray(String[]::new));
+            sslParameters.setWantClientAuth(true);
+            sslParameters.setNeedClientAuth(true);
+            delegate.setSSLParameters(sslParameters);
+
+            GsiEngine engine = new GsiEngine(delegate, cf);
+            engine.setKeyPairCache(keyPairCache);
+            engine.setUsingLegacyClose(true);
+            return new SslEngineDssContext(engine, cf);
+        } catch (Exception e) {
+            Throwables.propagateIfPossible(e, IOException.class);
+            throw new IOException("Failed to create SSL engine: " + e.getMessage(), e);
+        }
     }
 }

@@ -17,9 +17,6 @@
  */
 package org.dcache.gsi;
 
-import org.eclipse.jetty.io.ArrayByteBufferPool;
-import org.eclipse.jetty.io.ByteBufferPool;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
@@ -38,7 +35,6 @@ import java.nio.ByteBuffer;
 public class InterceptingSSLEngine extends ForwardingSSLEngine
 {
     private static final ByteBuffer EMPTY = ByteBuffer.allocate(0);
-    private static final ByteBufferPool POOL = new ArrayByteBufferPool();
     private final SSLEngine delegate;
 
     private enum State { SEND, RECEIVE, PASSTHROUGH }
@@ -68,8 +64,7 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
         this.state = State.RECEIVE;
         this.callback = callback;
         int size = getSession().getApplicationBufferSize();
-        this.in = POOL.acquire(size, false);
-        this.in.limit(size);
+        this.in = ByteBuffer.allocate(size);
     }
 
     /**
@@ -166,8 +161,6 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
             } catch (SSLException e) {
                 delegate().closeOutbound();
                 throw e;
-            } finally {
-                POOL.release(in);
             }
             switch (state) {
             case SEND:
@@ -191,8 +184,8 @@ public class InterceptingSSLEngine extends ForwardingSSLEngine
     {
         state = State.PASSTHROUGH;
         callback = null;
-        POOL.release(in);
         out = null;
+        in = null;
         delegate().closeInbound();
     }
 

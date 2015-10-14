@@ -66,7 +66,7 @@ import org.dcache.delegation.gridsite1.DelegationExceptionType;
 import org.dcache.delegation.gridsite1.NewProxyReq;
 import org.dcache.delegation.gridsite2.DelegationException;
 import org.dcache.delegation.gridsite2.DelegationServiceLocator;
-import org.dcache.srm.client.CanlContextFactory;
+import org.dcache.ssl.CanlContextFactory;
 import org.dcache.srm.client.HttpClientSender;
 import org.dcache.srm.client.HttpClientTransport;
 import org.dcache.util.Args;

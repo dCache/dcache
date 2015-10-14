@@ -57,6 +57,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.dcache.ssl.SslContextFactory;
+
 import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.getDefaultHostnameVerifier;
 
 /**

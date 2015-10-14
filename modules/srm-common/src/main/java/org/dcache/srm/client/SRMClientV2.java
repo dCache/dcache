@@ -114,6 +114,7 @@ import org.dcache.srm.v2_2.SrmSuspendRequestRequest;
 import org.dcache.srm.v2_2.SrmSuspendRequestResponse;
 import org.dcache.srm.v2_2.SrmUpdateSpaceRequest;
 import org.dcache.srm.v2_2.SrmUpdateSpaceResponse;
+import org.dcache.ssl.CanlContextFactory;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
 /**

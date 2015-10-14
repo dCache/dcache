@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.dcache.srm.client;
+package org.dcache.ssl;
 
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
@@ -27,14 +27,22 @@ import eu.emi.security.authn.x509.X509CertChainValidator;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
+import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import static org.dcache.util.Callables.memoizeFromFiles;
+import static org.dcache.util.Callables.memoizeWithExpiration;
 
 /**
  * SslContextFactory based on the CANL library. Uses the builder pattern to
@@ -72,21 +80,30 @@ public class CanlContextFactory implements SslContextFactory
 
     public static class Builder
     {
-        private String certificateAuthorityPath = "/etc/grid-security/certificates";
+        private Path certificateAuthorityPath = FileSystems.getDefault().getPath("/etc/grid-security/certificates");
         private NamespaceCheckingMode namespaceMode = NamespaceCheckingMode.EUGRIDPMA_GLOBUS;
         private CrlCheckingMode crlCheckingMode = CrlCheckingMode.IF_VALID;
         private OCSPCheckingMode ocspCheckingMode = OCSPCheckingMode.IF_AVAILABLE;
         private long certificateAuthorityUpdateInterval = 600000;
         private boolean lazyMode = true;
+        private Path keyPath = FileSystems.getDefault().getPath("/etc/grid-security/hostkey.pem");
+        private Path certificatePath = FileSystems.getDefault().getPath("/etc/grid-security/hostcert.pem");
+        private long credentialUpdateInterval = 1;
+        private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
 
         private Builder()
         {
         }
 
-        public Builder withCertificateAuthorityPath(String certificateAuthorityPath)
+        public Builder withCertificateAuthorityPath(Path certificateAuthorityPath)
         {
             this.certificateAuthorityPath = certificateAuthorityPath;
             return this;
+        }
+
+        public Builder withCertificateAuthorityPath(String certificateAuthorityPath)
+        {
+            return withCertificateAuthorityPath(FileSystems.getDefault().getPath(certificateAuthorityPath));
         }
 
         public Builder withCertificateAuthorityUpdateInterval(long interval)
@@ -119,6 +136,25 @@ public class CanlContextFactory implements SslContextFactory
             return this;
         }
 
+        public Builder withKeyPath(Path keyPath)
+        {
+            this.keyPath = keyPath;
+            return this;
+        }
+
+        public Builder withCertificatePath(Path certificatePath)
+        {
+            this.certificatePath = certificatePath;
+            return this;
+        }
+
+        public Builder withCredentialUpdateInterval(long duration, TimeUnit unit)
+        {
+            this.credentialUpdateInterval = duration;
+            this.credentialUpdateIntervalUnit = unit;
+            return this;
+        }
+
         public CanlContextFactory build()
         {
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
@@ -126,10 +162,19 @@ public class CanlContextFactory implements SslContextFactory
                     new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
                                         ProxySupport.ALLOW);
             X509CertChainValidator v =
-                    new OpensslCertChainValidator(certificateAuthorityPath, true, namespaceMode,
+                    new OpensslCertChainValidator(certificateAuthorityPath.toString(), true, namespaceMode,
                                                   certificateAuthorityUpdateInterval,
                                                   validatorParams, lazyMode);
             return new CanlContextFactory(new SSLTrustManager(v));
+        }
+
+        public Callable<SSLContext> buildWithCaching()
+        {
+            CanlContextFactory factory = build();
+            Callable<SSLContext> newContext =
+                    () -> factory.getContext(new PEMCredential(keyPath.toString(), certificatePath.toString(), null));
+            return  memoizeWithExpiration(memoizeFromFiles(newContext, keyPath, certificatePath),
+                                          credentialUpdateInterval, credentialUpdateIntervalUnit);
         }
     }
 }
