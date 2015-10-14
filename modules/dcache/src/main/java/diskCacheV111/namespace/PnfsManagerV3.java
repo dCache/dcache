@@ -406,29 +406,50 @@ public class PnfsManagerV3
         return _nameSpaceProvider.pnfsidToPath(ROOT, pnfsId);
     }
 
-    public final static String hh_set_meta =
-        "<pnfsid>|<globalPath> <uid> <gid> <perm>";
-    public String ac_set_meta_$_4(Args args)
+    @Command(name = "set meta",
+             hint = "set the meta-data of a file",
+             description = "Set the meta-data including: new owner, group, and permissions. " +
+                           "Returns 'OK' if the meta-data has been set successfully.")
+    public class SetMetaCommand implements Callable<String>
     {
-        try {
+        @Argument(index = 0,
+                  valueSpec = "PNFSID|PATH",
+                  usage = "Pnfs-Id or absolute path of the file.")
+        String pnfsidOrPath;
+
+        @Argument(index = 1,
+                  usage = "The user id of the new owner of the file.")
+        int uid;
+
+        @Argument(index = 2,
+                  usage = "The new group id of the file.")
+        int gid;
+
+        @Argument(index = 3,
+                  usage = "The file access permissions mode."+
+                          "Only in decimal mode for example: set meta <pnfsid> <uid> <gid> 644(rw-r--r--).")
+        String perm;
+
+        @Override
+        public String call() throws CacheException
+        {
+
             PnfsId pnfsId;
-            if (PnfsId.isValid(args.argv(0))) {
-                pnfsId = new PnfsId(args.argv(0));
+            if (PnfsId.isValid(pnfsidOrPath)) {
+                pnfsId = new PnfsId(pnfsidOrPath);
             } else {
-                pnfsId = pathToPnfsid(ROOT, args.argv(0), true);
+                pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, true);
             }
 
             FileAttributes attributes = new FileAttributes();
-            attributes.setOwner(Integer.parseInt(args.argv(1)));
-            attributes.setGroup(Integer.parseInt(args.argv(2)));
-            attributes.setMode(Integer.parseInt(args.argv(3), 8));
+            attributes.setOwner(uid);
+            attributes.setGroup(gid);
+            attributes.setMode(Integer.parseInt(perm, 8));
 
             _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
-                                                 EnumSet.noneOf(FileAttribute.class));
+                    EnumSet.noneOf(FileAttribute.class));
 
             return "Ok";
-        }catch(Exception e) {
-            return "set metadata failed: + " + e.getMessage();
         }
     }
 
@@ -666,27 +687,33 @@ public class PnfsManagerV3
     }
 
 
-    public static final String fh_set_file_size =
-            "Updates the file's size in the namespace. This command has no effect on\n"
-            + "the data stored on pools or on tape.\n\n"
-            + "Syntax:\n"
-            + "  set file size <pnfsid> <new size>\n\n"
-            + "If the value of <new size> does not match the size of the stored data\n"
-            + "then the file may become unavailable. Use with caution!\n";
-
-    public final static String hh_set_file_size =
-            "<pnfsid> <new size> # changes registered file size";
-    public String ac_set_file_size_$_2(Args args) throws Exception
+    @Command(name = "set file size",
+             hint = "changes registered file size",
+             description = "Updates the file's size in the namespace. This command has no effect on\n" +
+                           "the data stored on pools or on tape.")
+    public class SetFileSizeCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
+        @Argument(index = 0,
+                  usage = "The unique identifier of the file within dCache.")
+        PnfsId pnfsId;
 
-        FileAttributes attributes = new FileAttributes();
-        attributes.setSize(Long.valueOf(args.argv(1)));
+        @Argument(index = 1,
+                  usage = "If the value does not match the size of the stored data" +
+                          "then the file may become unavailable. Use with caution!")
+        String newsize;
 
-        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
-                                             EnumSet.noneOf(FileAttribute.class));
+        @Override
+        public String call() throws CacheException
+        {
+            FileAttributes attributes = new FileAttributes();
+            attributes.setSize(Long.valueOf(newsize));
 
-        return "";
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+                    EnumSet.noneOf(FileAttribute.class));
+
+            return "";
+        }
+
     }
 
     public static final String hh_add_file_cache_location = "<pnfsid> <pool name>";
@@ -764,39 +791,64 @@ public class PnfsManagerV3
         return (checksum == null) ? "" : checksum.toString();
     }
 
-    public static final String hh_set_log_slow_threshold = "<timeout in ms>";
-    public static final String fh_set_log_slow_threshold = "Set the threshold for reporting slow PNFS interactions.";
-    public String ac_set_log_slow_threshold_$_1(Args args) {
+    @Command(name = "set log slow threshold",
+             hint = "set the threshold for reporting slow PNFS interactions",
+             description = "Enable reporting of slow PNFS interactions." +
+                           " If the interaction <timeout> is greater than the timeout specified by this command," +
+                           " a warning message is logged.")
+    public class SetLogLowThresholdCommand implements Callable<String>
+    {
+        @Argument(usage = "Time in milliseconds, must be greater than zero.")
+        String timeout;
 
-        int newTimeout;
+        @Override
+        public String call() throws NumberFormatException
+        {
+            int newTimeout;
+            try {
+                newTimeout = Integer.parseInt( timeout);
+            } catch ( NumberFormatException e) {
+                throw new NumberFormatException("Badly formatted number " + timeout);
+            }
 
-        try {
-            newTimeout = Integer.parseInt( args.argv(0));
-        } catch ( NumberFormatException e) {
-            return "Badly formatted number " + args.argv(0);
+            if( newTimeout <= 0) {
+                return "Timeout must be greater than zero.";
+            }
+
+            _logSlowThreshold = newTimeout;
+
+            return "";
         }
-
-        if( newTimeout <= 0) {
-            return "Timeout must be greater than zero";
-        }
-
-        _logSlowThreshold = newTimeout;
-
-        return "";
     }
 
-    public static final String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
-    public String ac_get_log_slow_threshold_$_0( Args args) {
-        if( _logSlowThreshold == THRESHOLD_DISABLED) {
+    @Command(name = "get log slow threshold",
+             hint = "return the current threshold for reporting slow PNFS interactions",
+             description = "If the threshold disabled returns" + " \"disabled\" " +"otherwise returns " +
+                           "the set time in ms.")
+    public class GetLogSlowThresholdCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            if( _logSlowThreshold == THRESHOLD_DISABLED) {
                 return "disabled";
             }
-        return String.valueOf(_logSlowThreshold) + " ms";
+            return String.valueOf(_logSlowThreshold) + " ms";
+        }
     }
 
-    public static final String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
-    public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
-        _logSlowThreshold = THRESHOLD_DISABLED;
-        return "";
+    @Command(name = "set log slow threshold disabled",
+             hint = "disable reporting of slow PNFS interactions",
+             description = "No warning messages are logged.")
+    public class SetLogSlowThresfoldDisabledCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            _logSlowThreshold = THRESHOLD_DISABLED;
+            return "";
+        }
+
     }
 
     public final static String fh_show_path_cache =
