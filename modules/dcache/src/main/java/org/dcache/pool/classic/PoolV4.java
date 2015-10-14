@@ -124,6 +124,7 @@ public class PoolV4
 
     private final static int P2P_CACHED = 1;
     private final static int P2P_PRECIOUS = 2;
+    private final static int HEARTBEAT = 30;
 
     private final static Pattern TAG_PATTERN =
         Pattern.compile("([^=]+)=(\\S*)\\s*");
@@ -1017,7 +1018,7 @@ public class PoolV4
         try {
             int id = kill.getMoverId();
             IoScheduler js = _ioQueue.getQueueByJobId(id);
-            mover_kill(js, id, false);
+            mover_kill(js, id);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
             _log.info(e.toString());
@@ -1419,7 +1420,7 @@ public class PoolV4
     private class PoolManagerPingThread implements Runnable
     {
         private final Thread _worker;
-        private int _heartbeat = 30;
+        private int _heartbeat = HEARTBEAT;
 
         private PoolManagerPingThread()
         {
@@ -1880,11 +1881,7 @@ public class PoolV4
     }
 
     public static final String hh_mover_ls = "[-binary [jobId] ]";
-    public static final String hh_mover_remove = "<jobId>";
-    public static final String hh_mover_kill = "<jobId> [-force]" ;
     public static final String hh_p2p_ls = "[-binary [jobId] ]";
-    public static final String hh_p2p_remove = "<jobId>; OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
-    public static final String hh_p2p_kill = "<jobId> [-force]; OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
 
     @Command(name = "mover set max active",
             hint = "set the maximum number of active client transfers",
@@ -2056,38 +2053,44 @@ public class PoolV4
         }
     }
 
-    public String ac_mover_remove_$_1(Args args)
-        throws NoSuchElementException, NumberFormatException
+    @Command(name = "mover remove",
+            hint = "#OBSOLETE command",
+            description = "This command is obsolete, please use: \n" +
+                    "\t mover kill <jobid>")
+    public class MoverRemoveCommand implements Callable<String>
     {
-        int id = Integer.parseInt(args.argv(0));
-        IoScheduler js = _ioQueue.getQueueByJobId(id);
-        js.cancel(id);
-        return "Removed";
+        @Argument(metaVar = "jobId", required = false)
+        String id;
+
+        @Override
+        public String call()
+        {
+            return "This command is obsolete. Please use: \n\tmover kill " +
+                    (id==null ? "<jobid>":id);
+        }
     }
 
-    public String ac_p2p_remove_$_1(Args args)
-        throws NoSuchElementException, NumberFormatException
+    @Command(name = "mover kill",
+            hint = "terminate a file transfer connection",
+            description = "Interrupt a specified file transfer in progress by " +
+                    "terminating the request. This is particularly useful when " +
+                    "the transfer request is stuck and blocking other requests.")
+    public class MoverKillCommand implements Callable<String>
     {
-        return "OBSOLETE: use: mover remove -queue=" + P2P_QUEUE_NAME;
+        @Argument(metaVar = "jobId",
+                usage = "Specify the job number of the transfer request to kill.")
+        int id;
+
+        @Override
+        public String call() throws NoSuchElementException, IllegalArgumentException
+        {
+            IoScheduler js = _ioQueue.getQueueByJobId(id);
+            mover_kill(js, id);
+            return "Kill initialized";
+        }
     }
 
-    public String ac_mover_kill_$_1(Args args)
-        throws NoSuchElementException, NumberFormatException
-    {
-        int id = Integer.parseInt(args.argv(0));
-        boolean force = args.hasOption("force");
-        IoScheduler js = _ioQueue.getQueueByJobId(id);
-        mover_kill(js, id, force);
-        return "Kill initialized";
-    }
-
-    public String ac_p2p_kill_$_1(Args args)
-        throws NoSuchElementException, NumberFormatException
-    {
-        return "OBSOLETE: use: mover kill -queue=" + P2P_QUEUE_NAME;
-    }
-
-    private void mover_kill(IoScheduler js, int id, boolean force)
+    private void mover_kill(IoScheduler js, int id)
         throws NoSuchElementException
     {
 
@@ -2095,13 +2098,27 @@ public class PoolV4
         js.cancel(id);
     }
 
-    public static final String hh_set_heartbeat = "<heartbeatInterval/sec>";
-    public String ac_set_heartbeat_$_0_1(Args args)
-        throws NumberFormatException
+    @Command(name = "set heartbeat",
+            hint = "set time interval for sending this pool cost info",
+            description = "Set the regular time interval at which this pool " +
+                    "sent it cost information to the pool manager. The sent " +
+                    "pool cost information are stored and will be use for load " +
+                    "balancing and pool selection. However, this time interval " +
+                    "is not guaranteed to be exact since this operation is limited " +
+                    "by the underlying OS where this pool reside.")
+    public class SetHeartbeatCommand implements Callable<String>
     {
-        if (args.argc() > 0) {
-            _pingThread.setHeartbeat(Integer.parseInt(args.argv(0)));
+        @Argument(usage = "Specify the time interval in seconds. This " +
+                "value has to be a positive integer.")
+        int value = HEARTBEAT;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            checkArgument(value > 0, "The heartbeat value must be a positive integer.");
+            _pingThread.setHeartbeat(value);
+
+            return "Heartbeat set to " + (_pingThread.getHeartbeat()) + " seconds";
         }
-        return "Heartbeat at " + (_pingThread.getHeartbeat());
     }
 }
