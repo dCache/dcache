@@ -197,7 +197,7 @@
       <property name="internalAddress" value="${webdav.net.internal}"/>
       <property name="templateResource" value="${webdav.templates.html}"/>
       <property name="templateConfig" ref="template-config"/>
-      <property name="staticContentPath" value="${webdav.static-content.location}"/>
+      <property name="staticContentPath" value="${webdav.static-content.uri}"/>
       <property name="redirectOnReadEnabled" value="${webdav.redirect.on-read}"/>
       <property name="redirectOnWriteEnabled" value="${webdav.redirect.on-write}"/>
       <property name="overwriteAllowed" value="${webdav.enable.overwrite}"/>
@@ -221,7 +221,7 @@
         <property name="enableCookieAuth" value="false"/>
         <property name="resourceFactory" ref="resource-factory"/>
         <property name="buffering" value="never"/>
-        <property name="staticContentPath" value="${webdav.static-content.location}"/>
+        <property name="staticContentPath" value="${webdav.static-content.uri}"/>
         <property name="templateResource" value="${webdav.templates.html}"/>
 	<property name="templateConfig" ref="template-config"/>
     </bean>
