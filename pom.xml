@@ -812,7 +812,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.11.1</version>
+            <version>0.11.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.common</groupId>
