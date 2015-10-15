@@ -76,11 +76,7 @@ public class GridFTPPassiveConnectTask extends PassiveConnectTask
         if (!gSession.dataChannelAuthentication.equals(
                 DataChannelAuthentication.NONE)) {
             logger.debug("authenticating");
-            newSocket = GridFTPServerFacade.authenticate(newSocket,
-                                                         false, // this is NOT client socket
-                                                         gSession.credential,
-                                                         gSession.dataChannelProtection,
-                                                         gSession.dataChannelAuthentication);
+            throw new UnsupportedOperationException("DCAU is not supported by this client.");
         } else {
             // do not authenticate
             logger.debug("not authenticating");

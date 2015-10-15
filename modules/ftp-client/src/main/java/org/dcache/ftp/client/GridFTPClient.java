@@ -130,7 +130,6 @@ public class GridFTPClient extends FTPClient
         try {
             // authenticate
             GridFTPControlChannel gridFTPControlChannel = new GridFTPControlChannel(controlChannel, credential, protection, authorization);
-            gLocalServer.setCredential(credential);
 
             //from now on, the commands and replies
             //are protected and pass through gsi wrapped socket

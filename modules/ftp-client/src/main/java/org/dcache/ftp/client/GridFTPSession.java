@@ -17,9 +17,6 @@ package org.dcache.ftp.client;
 
 import org.dcache.ftp.client.exception.ClientException;
 
-import eu.emi.security.authn.x509.X509Credential;
-import org.ietf.jgss.GSSCredential;
-
 /**
  * Represents parameters of an FTP session between a client and a server.
  */
@@ -76,8 +73,6 @@ public class GridFTPSession extends Session
     public DataChannelAuthentication dataChannelAuthentication = DataChannelAuthentication.SELF;
 
     public int dataChannelProtection = PROTECTION_CLEAR;
-
-    public X509Credential credential = null;
 
     public int parallel = 1;
 

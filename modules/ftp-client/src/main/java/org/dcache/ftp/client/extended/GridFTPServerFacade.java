@@ -15,19 +15,6 @@
  */
 package org.dcache.ftp.client.extended;
 
-import eu.emi.security.authn.x509.X509Credential;
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.gssapi.auth.IdentityAuthorization;
-import org.globus.gsi.gssapi.auth.SelfAuthorization;
-import org.globus.gsi.gssapi.net.GssSocket;
-import org.globus.gsi.gssapi.net.GssSocketFactory;
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,11 +76,6 @@ public class GridFTPServerFacade extends FTPServerFacade
         dataChannelFactory = null;
         socketPool = new SocketPool();
         transferThreadManager = createTransferThreadManager();
-    }
-
-    public void setCredential(X509Credential cred)
-    {
-        gSession.credential = cred;
     }
 
     public void setDataChannelProtection(int protection)
@@ -479,79 +461,6 @@ public class GridFTPServerFacade extends FTPServerFacade
         super.close();
         if (transferThreadManager != null) {
             transferThreadManager.close();
-        }
-    }
-
-    /**
-     * authenticate socket.
-     * if protection on, return authenticated socket wrapped over the original simpleSocket,
-     * else return original socket.
-     **/
-    public static Socket authenticate(
-            Socket simpleSocket,
-            boolean isClientSocket,
-            X509Credential credential,
-            int protection,
-            DataChannelAuthentication dcau)
-            throws Exception
-    {
-        GlobusGSSCredentialImpl gssCredential = new GlobusGSSCredentialImpl(
-                new org.globus.gsi.X509Credential(credential.getKey(), credential.getCertificateChain()),
-                GSSCredential.INITIATE_ONLY);
-
-        GSSContext gssContext = null;
-        GSSManager manager = ExtendedGSSManager.getInstance();
-
-        if (isClientSocket) {
-            gssContext =
-                    manager.createContext(
-                            null,
-                            GSSConstants.MECH_OID,
-                            gssCredential,
-                            GSSContext.DEFAULT_LIFETIME);
-        } else {
-            gssContext = manager.createContext(gssCredential);
-        }
-
-        if (protection != GridFTPSession.PROTECTION_CLEAR) {
-            ((ExtendedGSSContext) gssContext).setOption(
-                    GSSConstants.GSS_MODE,
-                    GSIConstants.MODE_SSL);
-        }
-
-        gssContext.requestConf(protection == GridFTPSession.PROTECTION_PRIVATE);
-
-        //Wrap the simple socket with GSI
-        logger.debug("Creating secure socket");
-
-        GssSocketFactory factory = GssSocketFactory.getDefault();
-        GssSocket secureSocket =
-                (GssSocket) factory.createSocket(simpleSocket, null, 0, gssContext);
-
-        secureSocket.setUseClientMode(isClientSocket);
-
-        if (dcau == null) {
-            secureSocket.setAuthorization(null);
-        } else if (dcau == DataChannelAuthentication.SELF) {
-            secureSocket.setAuthorization(SelfAuthorization.getInstance());
-        } else if (dcau == DataChannelAuthentication.NONE) {
-            // this should never be
-        } else if (dcau instanceof DataChannelAuthentication) {
-            // dcau.toFtpCmdArgument() kinda hackish but it works
-            secureSocket.setAuthorization(
-                    new IdentityAuthorization(dcau.toFtpCmdArgument()));
-        }
-        
-        /* that will force handshake */
-        secureSocket.getOutputStream().flush();
-
-        if (protection == GridFTPSession.PROTECTION_SAFE ||
-            protection == GridFTPSession.PROTECTION_PRIVATE) {
-            logger.debug("Data channel protection: on");
-            return secureSocket;
-        } else { // PROTECTION_CLEAR
-            logger.debug("Data channel protection: off");
-            return simpleSocket;
         }
     }
 

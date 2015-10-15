@@ -25,7 +25,6 @@ import java.nio.channels.SocketChannel;
 import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.GridFTPSession;
 import org.dcache.ftp.client.HostPort;
-import org.dcache.ftp.client.extended.GridFTPServerFacade;
 import org.dcache.ftp.client.vanilla.BasicServerControlChannel;
 import org.dcache.ftp.client.vanilla.FTPServerFacade;
 
@@ -75,13 +74,7 @@ public class GridFTPActiveConnectTask extends Task
                     DataChannelAuthentication.NONE)) {
 
                 logger.debug("authenticating");
-                mySocket = GridFTPServerFacade.authenticate(mySocket,
-                                                            true,
-                                                            // this IS client socket
-                                                            gSession.credential,
-                                                            gSession.dataChannelProtection,
-                                                            gSession.dataChannelAuthentication);
-
+                throw new UnsupportedOperationException("DCAU is not supported by this client.");
             } else {
                 logger.debug("not authenticating");
             }
