@@ -2,8 +2,13 @@
 
 package org.dcache.srm.util;
 
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.CharArrayPasswordFinder;
+
+import org.dcache.dss.ClientGsiEngineDssContextFactory;
 import org.dcache.ftp.client.Buffer;
 import org.dcache.ftp.client.DataChannelAuthentication;
 import org.dcache.ftp.client.DataSink;
@@ -18,11 +23,11 @@ import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
 import org.dcache.ftp.client.vanilla.Reply;
+import org.dcache.ssl.CanlContextFactory;
+import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
 
 import org.globus.gsi.CredentialException;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.italiangrid.voms.credential.LoadCredentialsStrategy;
 import org.italiangrid.voms.credential.impl.DefaultLoadCredentialsStrategy;
@@ -77,14 +82,34 @@ public class GridftpClient
     private static List<String> cksmTypeList =
             Arrays.asList("ADLER32","MD5","MD4");
 
-    public GridftpClient(String host, int port, PortRange portRange, X509Credential cred)
+    public GridftpClient(String host, int port, PortRange portRange, X509Credential cred, String[] bannedCiphers,
+                         String certificateAuthorityPath, CrlCheckingMode crlCheckMode,
+                         NamespaceCheckingMode namespaceMode, OCSPCheckingMode ocspCheckingMode)
         throws IOException, ServerException, ClientException,
                CredentialException, GSSException
     {
-        this(host, port, 0, portRange, cred);
+        this(host, port, 0, portRange, cred, bannedCiphers, certificateAuthorityPath, crlCheckMode, namespaceMode,
+             ocspCheckingMode);
     }
 
-    public GridftpClient(String host, int port, int bufferSize, PortRange portRange, X509Credential cred)
+    public GridftpClient(String host, int port, int bufferSize, PortRange portRange, X509Credential cred,
+                         String[] bannedCiphers, String certificateAuthorityPath, CrlCheckingMode crlCheckMode,
+                         NamespaceCheckingMode namespaceMode, OCSPCheckingMode ocspCheckingMode)
+        throws IOException, ServerException, ClientException,
+               CredentialException, GSSException
+    {
+        this(host, port, bufferSize, portRange, cred, bannedCiphers,
+             CanlContextFactory.custom()
+                     .withCertificateAuthorityPath(certificateAuthorityPath)
+                     .withCrlCheckingMode(crlCheckMode)
+                     .withNamespaceMode(namespaceMode)
+                     .withOcspCheckingMode(ocspCheckingMode)
+                     .withLazy(true)
+                     .build());
+    }
+
+    public GridftpClient(String host, int port, int bufferSize, PortRange portRange, X509Credential cred,
+                         String[] bannedCiphers, SslContextFactory sslContextFactory)
         throws IOException, ServerException, ClientException,
                CredentialException, GSSException
     {
@@ -95,9 +120,11 @@ public class GridftpClient
         _host = host;
         logger.debug("connecting to "+_host+" on port "+port);
 
+        ClientGsiEngineDssContextFactory dssContextFactory =
+                new ClientGsiEngineDssContextFactory(
+                        sslContextFactory, cred, bannedCiphers, true, true);
         _client  = new GridFTPClient(_host, port);
-
-        _client.authenticate(cred);
+        _client.authenticate(dssContextFactory);
         _client.setPortRange(portRange);
         _client.setType(GridFTPSession.TYPE_IMAGE);
     }
@@ -738,7 +765,9 @@ public class GridftpClient
             GridftpClient client;
 
             client = new GridftpClient(src_url.getHost(), src_url.getPort(), bs,
-                                       PortRange.getGlobusTcpPortRange(), x509Credential);
+                                       PortRange.getGlobusTcpPortRange(), x509Credential, new String[0],
+                                       "/etc/grid-security/certificates", CrlCheckingMode.IF_VALID,
+                                       NamespaceCheckingMode.EUGRIDPMA_GLOBUS, OCSPCheckingMode.IF_AVAILABLE);
             client.setStreamsNum(streams);
             client.setChecksum(chsmType,chsmValue);
             try {
@@ -757,7 +786,9 @@ public class GridftpClient
              ) {
             GridftpClient client;
             client = new GridftpClient(dst_url.getHost(), dst_url.getPort(), bs,
-                                       PortRange.getGlobusTcpPortRange(), x509Credential);
+                                       PortRange.getGlobusTcpPortRange(), x509Credential, new String[0],
+                                       "/etc/grid-security/certificates", CrlCheckingMode.IF_VALID,
+                                       NamespaceCheckingMode.EUGRIDPMA_GLOBUS, OCSPCheckingMode.IF_AVAILABLE);
             client.setStreamsNum(streams);
             try {
                 client.setChecksum(chsmType,chsmValue);

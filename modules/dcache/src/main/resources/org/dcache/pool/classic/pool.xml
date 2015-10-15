@@ -410,6 +410,31 @@
       <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
   </bean>
 
+  <bean id="banned-ciphers" class="org.dcache.util.Crypto"
+        factory-method="getBannedCipherSuitesFromConfigurationValue">
+      <constructor-arg value="${pool.authn.ciphers}"/>
+  </bean>
+
+  <bean id="remote-gsiftp-transfer-service" class="org.dcache.pool.classic.RemoteGsiftpTransferService"
+          depends-on="rep" init-method="init" destroy-method="shutdown">
+      <property name="faultListener" ref="pool"/>
+      <property name="checksumModule" ref="csm"/>
+      <property name="postTransferService" ref="post-transfer-service"/>
+      <property name="certificateAuthorityPath" value="${pool.authn.capath}"/>
+      <property name="certificateAuthorityUpdateInterval" value="${pool.authn.capath.refresh}"/>
+      <property name="certificateAuthorityUpdateIntervalUnit" value="${pool.authn.capath.refresh.unit}"/>
+      <property name="namespaceMode" value="${pool.authn.namespace-mode}"/>
+      <property name="crlCheckingMode" value="${pool.authn.crl-mode}"/>
+      <property name="ocspCheckingMode" value="${pool.authn.ocsp-mode}"/>
+      <property name="bannedCiphers" ref="banned-ciphers"/>
+      <property name="portRange">
+          <bean class="org.dcache.util.PortRange">
+              <constructor-arg value="${pool.mover.ftp.port.min}"/>
+              <constructor-arg value="${pool.mover.ftp.port.max}"/>
+          </bean>
+      </property>
+  </bean>
+
   <bean id="post-transfer-service" class="org.dcache.pool.classic.DefaultPostTransferService"
         init-method="init" destroy-method="shutdown" depends-on="rep">
       <description>Post processing execution service</description>
@@ -429,6 +454,7 @@
             <entry key="Http-1" value-ref="http-transfer-service"/>
             <entry key="RemoteHttpDataTransfer-1" value-ref="remote-http-transfer-service"/>
             <entry key="RemoteHttpsDataTransfer-1" value-ref="remote-http-transfer-service"/>
+            <entry key="RemoteGsiftpTransfer-1" value-ref="remote-gsiftp-transfer-service"/>
         </map>
       </property>
   </bean>

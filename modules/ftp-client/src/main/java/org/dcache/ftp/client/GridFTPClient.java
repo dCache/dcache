@@ -15,10 +15,6 @@
  */
 package org.dcache.ftp.client;
 
-import eu.emi.security.authn.x509.X509Credential;
-import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.gssapi.auth.HostAuthorization;
-import org.ietf.jgss.GSSCredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +25,7 @@ import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.Vector;
 
+import org.dcache.dss.DssContextFactory;
 import org.dcache.ftp.client.exception.ClientException;
 import org.dcache.ftp.client.exception.FTPException;
 import org.dcache.ftp.client.exception.FTPReplyParseException;
@@ -66,10 +63,9 @@ public class GridFTPClient extends FTPClient
 
     //utility alias to session and localServer
     protected final GridFTPSession gSession;
+    protected final String expectedHostName;
     protected GridFTPServerFacade gLocalServer;
     protected String usageString;
-    protected Authorization authorization = HostAuthorization.getInstance();
-    protected int protection = GridFTPSession.PROTECTION_PRIVATE;
 
     /**
      * Constructs client and connects it to the remote server.
@@ -83,6 +79,7 @@ public class GridFTPClient extends FTPClient
         gSession = new GridFTPSession();
         session = gSession;
 
+        expectedHostName = host;
         controlChannel = new FTPControlChannel(host, port);
         controlChannel.open();
 
@@ -95,16 +92,16 @@ public class GridFTPClient extends FTPClient
     }
 
     /**
-     * Performs authentication with specified user credentials.
+     * Establishes a secure and authenticated context with the server.
      *
-     * @param credential user credentials to use.
+     * @param factory    factory for creating the DssContext of the secure session
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    public void authenticate(X509Credential credential)
+    public void authenticate(DssContextFactory factory)
             throws IOException, ServerException
     {
-        authenticate(credential, null);
+        authenticate(factory, null);
     }
 
     public void setUsageInformation(
@@ -115,21 +112,19 @@ public class GridFTPClient extends FTPClient
     }
 
     /**
-     * Performs authentication with specified user credentials and
-     * a specific username (assuming the user dn maps to the passed username).
+     * Establishes a secure and authenticated context with the server.
      *
-     * @param credential user credentials to use.
+     * @param factory    factory for creating the DssContext of the secure session
      * @param username   specific username to authenticate as.
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    public void authenticate(X509Credential credential,
-                             String username)
+    public void authenticate(DssContextFactory factory, String username)
             throws IOException, ServerException
     {
         try {
             // authenticate
-            GridFTPControlChannel gridFTPControlChannel = new GridFTPControlChannel(controlChannel, credential, protection, authorization);
+            GridFTPControlChannel gridFTPControlChannel = new GridFTPControlChannel(controlChannel, factory, expectedHostName);
 
             //from now on, the commands and replies
             //are protected and pass through gsi wrapped socket
@@ -846,54 +841,6 @@ public class GridFTPClient extends FTPClient
     public int getDataChannelProtection()
     {
         return gSession.dataChannelProtection;
-    }
-
-    /**
-     * Sets authorization method for the control channel.
-     *
-     * @param authorization authorization method.
-     */
-    public void setAuthorization(Authorization authorization)
-    {
-        this.authorization = authorization;
-    }
-
-    /**
-     * Sets control channel protection level.
-     *
-     * @param protection should be
-     *                   {@link GridFTPSession#PROTECTION_CLEAR CLEAR},
-     *                   {@link GridFTPSession#PROTECTION_SAFE SAFE}, or
-     *                   {@link GridFTPSession#PROTECTION_PRIVATE PRIVATE}, or
-     *                   {@link GridFTPSession#PROTECTION_CONFIDENTIAL CONFIDENTIAL}.
-     **/
-    public void setControlChannelProtection(int protection)
-    {
-        switch (protection) {
-        case GridFTPSession.PROTECTION_CLEAR:
-            throw new IllegalArgumentException("Unsupported protection: " + protection);
-        case GridFTPSession.PROTECTION_SAFE:
-        case GridFTPSession.PROTECTION_CONFIDENTIAL:
-        case GridFTPSession.PROTECTION_PRIVATE:
-            break;
-        default:
-            throw new IllegalArgumentException("Bad protection: " + protection);
-        }
-        this.protection = protection;
-    }
-
-    /**
-     * Returns control channel protection level.
-     *
-     * @return control channel protection level:
-     * {@link GridFTPSession#PROTECTION_CLEAR CLEAR},
-     * {@link GridFTPSession#PROTECTION_SAFE SAFE}, or
-     * {@link GridFTPSession#PROTECTION_PRIVATE PRIVATE}, or
-     * {@link GridFTPSession#PROTECTION_CONFIDENTIAL CONFIDENTIAL}.
-     **/
-    public int getControlChannelProtection()
-    {
-        return protection;
     }
 
     // basic compatibility API

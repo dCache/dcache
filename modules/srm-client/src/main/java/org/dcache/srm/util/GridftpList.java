@@ -6,6 +6,10 @@
 
 package org.dcache.srm.util;
 
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
+
 import java.net.URI;
 
 import org.dcache.util.PortRange;
@@ -55,7 +59,10 @@ public class GridftpList {
         }
 
         GridftpClient client = new GridftpClient(directory_url.getHost(),
-            directory_url.getPort(), PortRange.getGlobusTcpPortRange(), null);
+            directory_url.getPort(), PortRange.getGlobusTcpPortRange(), null, new String[0],
+                                                 "/etc/grid-security/certificates",
+                                                 CrlCheckingMode.IF_VALID, NamespaceCheckingMode.EUGRIDPMA_GLOBUS,
+                                                 OCSPCheckingMode.IF_AVAILABLE);
             client.setStreamsNum(1);
 
             System.out.println( client.list(directory_url.getPath(),serverPassive));

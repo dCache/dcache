@@ -75,6 +75,9 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
+import eu.emi.security.authn.x509.CrlCheckingMode;
+import eu.emi.security.authn.x509.NamespaceCheckingMode;
+import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
 
@@ -583,7 +586,11 @@ public class Copier implements Runnable {
                                                          configuration.getGlobus_tcp_port_range() != null
                                                          ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
                                                          : new PortRange(0),
-                                                         credential);
+                                                         credential,
+                                                         new String[0],
+                                                         configuration.getX509_user_trusted_certificates(),
+                                                         CrlCheckingMode.IF_VALID, NamespaceCheckingMode.EUGRIDPMA_GLOBUS,
+                                                         OCSPCheckingMode.IF_AVAILABLE);
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
                         configuration.getCksmValue());
@@ -638,7 +645,10 @@ public class Copier implements Runnable {
                                                          configuration.getGlobus_tcp_port_range() != null
                                                          ? PortRange.valueOf(configuration.getGlobus_tcp_port_range())
                                                          : new PortRange(0),
-                                                         credential);
+                                                         credential, new String[0],
+                                                         configuration.getX509_user_trusted_certificates(),
+                                                         CrlCheckingMode.IF_VALID, NamespaceCheckingMode.EUGRIDPMA_GLOBUS,
+                                                         OCSPCheckingMode.IF_AVAILABLE);
                 client.setStreamsNum(numberOfStreams);
                 client.setChecksum(configuration.getCksmType(),
                         configuration.getCksmValue());

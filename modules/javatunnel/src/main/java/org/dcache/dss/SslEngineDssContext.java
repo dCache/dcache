@@ -20,6 +20,7 @@ package org.dcache.dss;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.auth.Subject;
 
 import java.io.EOFException;
@@ -255,6 +256,11 @@ public class SslEngineDssContext implements DssContext
         } catch (SSLPeerUnverifiedException e) {
             return null;
         }
+    }
+
+    public SSLSession getSSLSession()
+    {
+        return engine.getSession();
     }
 
     private Subject createSubject() throws IOException

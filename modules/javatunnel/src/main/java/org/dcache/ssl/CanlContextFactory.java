@@ -112,6 +112,12 @@ public class CanlContextFactory implements SslContextFactory
             return this;
         }
 
+        public Builder withCertificateAuthorityUpdateInterval(long interval, TimeUnit unit)
+        {
+            this.certificateAuthorityUpdateInterval = unit.toMillis(interval);
+            return this;
+        }
+
         public Builder withCrlCheckingMode(CrlCheckingMode crlCheckingMode)
         {
             this.crlCheckingMode = crlCheckingMode;

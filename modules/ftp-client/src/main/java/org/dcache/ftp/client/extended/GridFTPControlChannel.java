@@ -1,42 +1,45 @@
-/*
- * Copyright 1999-2006 University of Chicago
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/* dCache - http://www.dcache.org/
+ *
+ * Copyright (C) 2015 Deutsches Elektronen-Synchrotron
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.dcache.ftp.client.extended;
 
-import eu.emi.security.authn.x509.X509Credential;
-import org.globus.common.ChainedIOException;
-import org.globus.gsi.gssapi.GSSConstants;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.gssapi.auth.GSSAuthorization;
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.security.auth.x500.X500Principal;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringReader;
+<<<<<<< HEAD
 import java.nio.charset.StandardCharsets;
+=======
+import java.net.InetSocketAddress;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+>>>>>>> 2f6f2de... ftp-client: Port to our own GSI implementation
 import java.util.Base64;
 
-import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.dss.DssContext;
+import org.dcache.dss.DssContextFactory;
+import org.dcache.dss.SslEngineDssContext;
 import org.dcache.ftp.client.exception.FTPReplyParseException;
 import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
@@ -51,24 +54,24 @@ import org.dcache.ftp.client.vanilla.Reply;
  */
 public class GridFTPControlChannel extends FTPControlChannel
 {
-    protected static final int TIMEOUT = 120000;
-
     protected final FTPControlChannel inner;
 
-    protected final GSSContext context;
+    protected final DssContext context;
 
-    private Reply lastReply;
+    protected final HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.getDefaultHostnameVerifier();
+
+    protected Reply lastReply;
 
     /**
      * Creates an encrypted control channel wrapping an unencrypted control channel.
      * The constructor will establish a common security context with the server.
      */
-    public GridFTPControlChannel(FTPControlChannel inner, X509Credential credential, int protection, Authorization authorization)
+    public GridFTPControlChannel(FTPControlChannel inner, DssContextFactory factory, String expectedHostName)
             throws IOException, ServerException
     {
         super(inner.getHost(), inner.getPort());
         this.inner = inner;
-        this.context = authenticate(credential, protection, authorization);
+        this.context = authenticate(factory, expectedHostName);
     }
 
     /**
@@ -78,10 +81,10 @@ public class GridFTPControlChannel extends FTPControlChannel
      * @throws IOException     on i/o error
      * @throws ServerException on server refusal or faulty server behavior
      */
-    private GSSContext authenticate(X509Credential credential, int protection, Authorization authorization)
+    private DssContext authenticate(DssContextFactory factory, String expectedHostName)
             throws IOException, ServerException
     {
-        GSSContext context;
+        DssContext context;
         try {
             try {
                 Reply reply = inner.exchange(new Command("AUTH", "GSSAPI"));
@@ -95,28 +98,12 @@ public class GridFTPControlChannel extends FTPControlChannel
                         rpe, "Received faulty reply to AUTH GSSAPI.");
             }
 
-            GlobusGSSCredentialImpl gssCredential = new GlobusGSSCredentialImpl(
-                    new org.globus.gsi.X509Credential(credential.getKey(), credential.getCertificateChain()),
-                    GSSCredential.INITIATE_ONLY);
-
-            GSSName expectedName = null;
-            if (authorization instanceof GSSAuthorization) {
-                GSSAuthorization auth = (GSSAuthorization) authorization;
-                expectedName = auth.getExpectedName(gssCredential, getHost());
-            }
-
-            GSSManager manager = ExtendedGSSManager.getInstance();
-            context = manager.createContext(expectedName,
-                                            GSSConstants.MECH_OID,
-                                            gssCredential,
-                                            GSSContext.DEFAULT_LIFETIME);
-            context.requestCredDeleg(true);
-            context.requestConf(protection == GridFTPSession.PROTECTION_PRIVATE);
+            context = factory.create(inner.getRemoteAddress(), inner.getLocalAddress());
 
             Reply reply;
             byte[] inToken = new byte[0];
             do {
-                byte[] outToken = context.initSecContext(inToken, 0, inToken.length);
+                byte[] outToken = context.init(inToken);
                 reply = inner.exchange(new Command("ADAT", Base64.getEncoder().encodeToString(outToken != null ? outToken : new byte[0])));
                 if (reply.getMessage().startsWith("ADAT=")) {
                     inToken = Base64.getDecoder().decode(reply.getMessage().substring(5));
@@ -131,22 +118,22 @@ public class GridFTPControlChannel extends FTPControlChannel
             }
 
             if (inToken.length > 0 || !context.isEstablished()) {
-                byte[] outToken = context.initSecContext(inToken, 0, inToken.length);
+                byte[] outToken = context.init(inToken);
                 if (outToken != null || !context.isEstablished()) {
                     throw new ServerException(ServerException.WRONG_PROTOCOL, "Unexpected GSI handshake completion.");
                 }
             }
-        } catch (GSSException e) {
-            throw new ChainedIOException("Authentication failed", e);
+
+            SSLSession session = ((SslEngineDssContext) context).getSSLSession();
+            if (!this.hostnameVerifier.verify(expectedHostName, session)) {
+                final Certificate[] certs = session.getPeerCertificates();
+                final X509Certificate x509 = (X509Certificate) certs[0];
+                final X500Principal x500Principal = x509.getSubjectX500Principal();
+                throw new SSLPeerUnverifiedException("Host name '" + expectedHostName + "' does not match " +
+                                                     "the certificate subject provided by the peer (" + x500Principal.toString() + ")");
+            }
         } catch (FTPReplyParseException e) {
             throw ServerException.embedFTPReplyParseException(e, "Received faulty reply to ADAT.");
-        }
-        if (authorization != null) {
-            try {
-                authorization.authorize(context, getHost());
-            } catch (AuthorizationException e) {
-                throw new ChainedIOException("Authorization failed", e);
-            }
         }
         return context;
     }
@@ -161,6 +148,18 @@ public class GridFTPControlChannel extends FTPControlChannel
     public int getPort()
     {
         return inner.getPort();
+    }
+
+    @Override
+    public InetSocketAddress getLocalAddress()
+    {
+        return inner.getLocalAddress();
+    }
+
+    @Override
+    public InetSocketAddress getRemoteAddress()
+    {
+        return inner.getRemoteAddress();
     }
 
     @Override
@@ -197,18 +196,14 @@ public class GridFTPControlChannel extends FTPControlChannel
     @Override
     public Reply read() throws ServerException, IOException, FTPReplyParseException, EOFException
     {
-        try {
-            Reply reply = inner.read();
-            if (reply.getCode() != 632 && reply.getCode() != 633) {
-                throw ServerException.embedUnexpectedReplyCodeException(
-                        new UnexpectedReplyCodeException(reply), "Expected 632 or 633 reply.");
-            }
-            byte[] token = Base64.getDecoder().decode(reply.getMessage());
-            lastReply = new Reply(new BufferedReader(new StringReader(new String(context.unwrap(token, 0, token.length, null)))));
-            return lastReply;
-        } catch (GSSException e) {
-            throw new IOException("Failed to decrypt reply: " + e.getMessage(), e);
+        Reply reply = inner.read();
+        if (reply.getCode() != 632 && reply.getCode() != 633) {
+            throw ServerException.embedUnexpectedReplyCodeException(
+                    new UnexpectedReplyCodeException(reply), "Expected 632 or 633 reply.");
         }
+        byte[] token = Base64.getDecoder().decode(reply.getMessage());
+        lastReply = new Reply(new BufferedReader(new StringReader(new String(context.unwrap(token)))));
+        return lastReply;
     }
 
     @Override
@@ -220,12 +215,8 @@ public class GridFTPControlChannel extends FTPControlChannel
     @Override
     public void write(Command cmd) throws IOException, IllegalArgumentException
     {
-        try {
-            byte[] bytes = cmd.toString().getBytes(StandardCharsets.US_ASCII);
-            byte[] token = context.wrap(bytes, 0, bytes.length, null);
-            inner.write(new Command(context.getConfState() ? "ENC" : "MIC", Base64.getEncoder().encodeToString(token)));
-        } catch (GSSException e) {
-            throw new IOException("Failed to encrypt command: " + e.getMessage(), e);
-        }
+        byte[] bytes = cmd.toString().getBytes(StandardCharsets.US_ASCII);
+        byte[] token = context.wrap(bytes, 0, bytes.length);
+        inner.write(new Command("ENC", Base64.getEncoder().encodeToString(token)));
     }
 }

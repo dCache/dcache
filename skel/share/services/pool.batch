@@ -20,6 +20,7 @@ check -strong pool.authn.capath.refresh.unit
 check -strong pool.authn.namespace-mode
 check -strong pool.authn.crl-mode
 check -strong pool.authn.ocsp-mode
+check pool.authn.ciphers
 
 check -strong pool.limits.worker-threads
 check -strong pool.enable.repository-check
@@ -46,6 +47,8 @@ check -strong pool.mover.http.timeout.connect.unit
 check -strong pool.mover.http.chunk-size
 check -strong pool.mover.http.port.min
 check -strong pool.mover.http.port.max
+check -strong pool.mover.ftp.port.min
+check -strong pool.mover.ftp.port.max
 check -strong pool.mover.nfs.rpcsec_gss
 check -strong pool.service.pool.timeout
 check -strong pool.service.pool.timeout.unit

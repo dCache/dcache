@@ -102,6 +102,7 @@ import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
+import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.Checksum;
 import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
@@ -144,9 +145,17 @@ public class RemoteGsiftpTransferProtocol_1
         GridftpClient.setSupportedChecksumTypes(names);
     }
 
-    public RemoteGsiftpTransferProtocol_1(CellEndpoint cell)
+    private PortRange _portRange;
+    private String[] _bannedCiphers;
+    private SslContextFactory _sslContextFactory;
+
+    public RemoteGsiftpTransferProtocol_1(CellEndpoint cell, PortRange portRange, String[] bannedCiphers,
+                                          SslContextFactory sslContextFactory)
     {
         _cell = cell;
+        _portRange = portRange;
+        _bannedCiphers = bannedCiphers;
+        _sslContextFactory = sslContextFactory;
     }
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo protocolInfo)
@@ -159,8 +168,8 @@ public class RemoteGsiftpTransferProtocol_1
 
         URI url = new URI(protocolInfo.getGsiftpUrl());
         int port = (url.getPort() == -1) ? DEFAULT_PORT : url.getPort();
-        _client = new GridftpClient(url.getHost(), port, PortRange.getGlobusTcpPortRange(),
-                                    protocolInfo.getCredential());
+        _client = new GridftpClient(url.getHost(), port, 0, _portRange, protocolInfo.getCredential(),
+                                    _bannedCiphers, _sslContextFactory);
         _client.setStreamsNum(protocolInfo.getNumberOfStreams());
     }
 
