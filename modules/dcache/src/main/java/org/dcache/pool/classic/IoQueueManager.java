@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import diskCacheV111.vehicles.JobInfo;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.dcache.pool.movers.Mover;
 import org.dcache.util.IoPriority;
@@ -67,6 +69,14 @@ public class IoQueueManager {
         return _queuesByName.get(queueName);
     }
 
+    private MoverRequestScheduler getQueueByNameOrDefault(String queueName) {
+        if (queueName == null) {
+            return getDefaultQueue();
+        }
+        MoverRequestScheduler queue = getQueue(queueName);
+        return queue == null ? getDefaultQueue() : queue;
+    }
+
     public MoverRequestScheduler getQueueByJobId(int id) {
         int pos = id >> 24;
         if (pos >= _queues.size()) {
@@ -77,13 +87,7 @@ public class IoQueueManager {
 
     public int add(String queueName, Mover<?> transfer, IoPriority priority)
     {
-        MoverRequestScheduler js = (queueName == null) ? null : _queuesByName.get(queueName);
-        return (js == null) ? add(transfer, priority) : js.add(transfer, priority);
-    }
-
-    public int add(Mover<?> transfer, IoPriority priority)
-    {
-        return getDefaultQueue().add(transfer, priority);
+        return getQueueByNameOrDefault(queueName).add(transfer, priority);
     }
 
     public void cancel(int jobId) throws NoSuchElementException {
@@ -91,50 +95,41 @@ public class IoQueueManager {
     }
 
     public int getMaxActiveJobs() {
-        int sum = 0;
-        for (MoverRequestScheduler s : _queues) {
-            sum += s.getMaxActiveJobs();
-        }
-        return sum;
+        return _queues.stream()
+                .mapToInt(MoverRequestScheduler::getMaxActiveJobs).sum();
     }
 
     public int getActiveJobs() {
-        int sum = 0;
-        for (MoverRequestScheduler s : _queues) {
-            sum += s.getActiveJobs();
-        }
-        return sum;
+        return _queues.stream()
+                .mapToInt(MoverRequestScheduler::getActiveJobs).sum();
     }
 
     public int getQueueSize() {
-        int sum = 0;
-        for (MoverRequestScheduler s : _queues) {
-            sum += s.getQueueSize();
-        }
-        return sum;
+        return _queues.stream()
+                .mapToInt(MoverRequestScheduler::getQueueSize).sum();
     }
 
     public List<JobInfo> getJobInfos() {
-        List<JobInfo> list = new ArrayList<>();
-        for (MoverRequestScheduler s : _queues) {
-            list.addAll(s.getJobInfos());
-        }
-        return list;
+
+        return _queues.stream()
+                .map(MoverRequestScheduler::getJobInfos)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     public void printSetup(PrintWriter pw) {
-        for (MoverRequestScheduler s : _queues) {
+        _queues.forEach(s -> {
             pw.println("mover set max active -queue=" + s.getName() + " " + s.getMaxActiveJobs());
-        }
+        });
     }
 
     public JobInfo findJob(String client, long id) {
-        for (JobInfo info : getJobInfos()) {
-            if (client.equals(info.getClientName()) && id == info.getClientId()) {
-                return info;
-            }
-        }
-        return null;
+        return _queues.stream()
+                .map(MoverRequestScheduler::getJobInfos)
+                .flatMap(Collection::stream)
+                .filter(i -> client.equals(i.getClientName()))
+                .filter(i -> id == i.getClientId())
+                .findFirst().orElse(null);
     }
 
     public synchronized void shutdown() throws InterruptedException {
