@@ -693,7 +693,7 @@ public class PoolV4
             pw.println("Inventory         : " + _hybridCurrent);
         }
 
-        for (IoScheduler js : _ioQueue.getQueues()) {
+        for (MoverRequestScheduler js : _ioQueue.getQueues()) {
             pw.println("Mover Queue (" + js.getName() + ") "
                        + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
                        + ")/" + js.getQueueSize());
@@ -1017,7 +1017,7 @@ public class PoolV4
 
         try {
             int id = kill.getMoverId();
-            IoScheduler js = _ioQueue.getQueueByJobId(id);
+            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
             mover_kill(js, id);
             kill.setSucceeded();
         } catch (NoSuchElementException e) {
@@ -1511,7 +1511,7 @@ public class PoolV4
         info.getSpaceInfo().setParameter(_breakEven, space.getGap());
         info.setMoverCostFactor(_moverCostFactor);
 
-        for (IoScheduler js : _ioQueue.getQueues()) {
+        for (MoverRequestScheduler js : _ioQueue.getQueues()) {
             /*
              * we skip p2p queue as it is handled differently
              * FIXME: no special cases
@@ -1532,7 +1532,7 @@ public class PoolV4
                                     _p2pClient.getMaxActiveJobs(),
                                     _p2pClient.getQueueSize());
 
-        IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
+        MoverRequestScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
         info.setP2pServerQueueSizes(p2pQueue.getActiveJobs(),
                                     p2pQueue.getMaxActiveJobs(),
                                     p2pQueue.getQueueSize());
@@ -1910,7 +1910,7 @@ public class PoolV4
                 return mover_set_max_active(_ioQueue.getDefaultQueue(), maxActiveIoMovers);
             }
 
-            IoScheduler js = _ioQueue.getQueue(queueName);
+            MoverRequestScheduler js = _ioQueue.getQueue(queueName);
 
             if (js == null) {
                 return "Not found : " + queueName;
@@ -1934,12 +1934,12 @@ public class PoolV4
         @Override
         public String call() throws IllegalArgumentException
         {
-            IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
+            MoverRequestScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
             return mover_set_max_active(p2pQueue, maxActiveP2PTransfers);
         }
     }
 
-    private String mover_set_max_active(IoScheduler js, int active)
+    private String mover_set_max_active(MoverRequestScheduler js, int active)
             throws IllegalArgumentException
     {
         checkArgument(active > 0, "<maxActiveMovers> must be >= 0");
@@ -1968,14 +1968,14 @@ public class PoolV4
             StringBuilder sb = new StringBuilder();
 
             if (l) {
-                for (IoScheduler js : _ioQueue.getQueues()) {
+                for (MoverRequestScheduler js : _ioQueue.getQueues()) {
                     sb.append(js.getName())
                             .append(" ").append(js.getActiveJobs())
                             .append(" ").append(js.getMaxActiveJobs())
                             .append(" ").append(js.getQueueSize()).append("\n");
                 }
             } else {
-                for (IoScheduler js : _ioQueue.getQueues()) {
+                for (MoverRequestScheduler js : _ioQueue.getQueues()) {
                     sb.append(js.getName()).append("\n");
                 }
             }
@@ -1991,7 +1991,7 @@ public class PoolV4
 
         if (binary && args.argc() > 0) {
             int id = Integer.parseInt(args.argv(0));
-            IoScheduler js = _ioQueue.getQueueByJobId(id);
+            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
             return js.getJobInfo(id);
         }
 
@@ -2001,14 +2001,14 @@ public class PoolV4
 
         if (queueName.length() == 0) {
             StringBuilder sb = new StringBuilder();
-            for (IoScheduler js : _ioQueue.getQueues()) {
+            for (MoverRequestScheduler js : _ioQueue.getQueues()) {
                 sb.append("[").append(js.getName()).append("]\n");
                 sb.append(mover_ls(js, binary).toString());
             }
             return sb.toString();
         }
 
-        IoScheduler js = _ioQueue.getQueue(queueName);
+        MoverRequestScheduler js = _ioQueue.getQueue(queueName);
         if (js == null) {
             throw new NoSuchElementException(queueName);
         }
@@ -2020,33 +2020,33 @@ public class PoolV4
     public Object ac_p2p_ls_$_0_1(Args args)
             throws NoSuchElementException, NumberFormatException
     {
-        IoScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
+        MoverRequestScheduler p2pQueue = _ioQueue.getQueue(P2P_QUEUE_NAME);
 
         boolean binary = args.hasOption("binary");
         if (binary && args.argc() > 0) {
             int id = Integer.parseInt(args.argv(0));
-            IoScheduler js = _ioQueue.getQueueByJobId(id);
+            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
             return js.getJobInfo(id);
         }
 
         return mover_ls(p2pQueue, binary);
     }
 
-    private Object mover_ls(IoScheduler js, boolean binary) {
+    private Object mover_ls(MoverRequestScheduler js, boolean binary) {
         return mover_ls(Arrays.asList(js), binary);
     }
 
-    private Object mover_ls(Collection<IoScheduler> jobSchedulers, boolean binary) {
+    private Object mover_ls(Collection<MoverRequestScheduler> jobSchedulers, boolean binary) {
 
         if (binary) {
             List<JobInfo> list = new ArrayList<>();
-            for (IoScheduler js : jobSchedulers) {
+            for (MoverRequestScheduler js : jobSchedulers) {
                 list.addAll(js.getJobInfos());
             }
             return list.toArray(new IoJobInfo[list.size()]);
         } else {
             StringBuffer sb = new StringBuffer();
-            for (IoScheduler js : jobSchedulers) {
+            for (MoverRequestScheduler js : jobSchedulers) {
                 js.printJobQueue(sb);
             }
             return sb.toString();
@@ -2084,13 +2084,13 @@ public class PoolV4
         @Override
         public String call() throws NoSuchElementException, IllegalArgumentException
         {
-            IoScheduler js = _ioQueue.getQueueByJobId(id);
+            MoverRequestScheduler js = _ioQueue.getQueueByJobId(id);
             mover_kill(js, id);
             return "Kill initialized";
         }
     }
 
-    private void mover_kill(IoScheduler js, int id)
+    private void mover_kill(MoverRequestScheduler js, int id)
         throws NoSuchElementException
     {
 

@@ -28,18 +28,18 @@ import org.dcache.util.AdjustableSemaphore;
 import org.dcache.util.IoPrioritizable;
 import org.dcache.util.IoPriority;
 
+import static org.dcache.pool.classic.IoRequestState.*;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.stream.Collectors.joining;
-import static org.dcache.pool.classic.IoRequestState.*;
 
 /**
  *
  * @since 1.9.11
  */
-public class SimpleIoScheduler implements IoScheduler, Runnable {
+public class MoverRequestScheduler implements Runnable {
 
     private final static Logger _log =
-            LoggerFactory.getLogger(SimpleIoScheduler.class);
+            LoggerFactory.getLogger(MoverRequestScheduler.class);
 
     /**
      * A worker thread for request queue processing.
@@ -77,7 +77,7 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
 
     private final AdjustableSemaphore _semaphore = new AdjustableSemaphore();
 
-    public SimpleIoScheduler(String name, int queueId, boolean fifo)
+    public MoverRequestScheduler(String name, int queueId, boolean fifo)
     {
         _name = name;
         _queueId = queueId;
@@ -113,7 +113,6 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
      * @param priority
      * @return mover id
      */
-    @Override
     public synchronized int add(Mover<?> mover, IoPriority priority) {
         checkState(!_shutdown);
 
@@ -148,12 +147,23 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         return _nextId;
     }
 
-    @Override
+    /**
+     * Get current number of concurrently running jobs.
+     *
+     * @return number of running jobs.
+     */
     public synchronized int getActiveJobs() {
         return _jobs.size() - _queue.size();
     }
 
-    @Override
+    /**
+     * Get job information
+     *
+     * @param id
+     * @return
+     * @throws NoSuchElementException if job with specified <code>id</code> does
+     * not exist
+     */
     public JobInfo getJobInfo(int id) {
         PrioritizedRequest request = _jobs.get(id);
         if(request == null) {
@@ -162,7 +172,11 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         return request.toJobInfo();
     }
 
-    @Override
+    /**
+     * Get list of all jobs in this queue.
+     *
+     * @return list of all jobs
+     */
     public List<JobInfo> getJobInfos() {
 
         return Collections.unmodifiableList(_jobs.values().stream()
@@ -171,17 +185,27 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         );
     }
 
-    @Override
+    /**
+     * Get the maximal number allowed of concurrently running jobs by this scheduler.
+     *
+     * @return maximal number of jobs.
+     */
     public int getMaxActiveJobs() {
         return _semaphore.getMaxPermits();
     }
 
-    @Override
+    /**
+     * Get number of requests waiting for execution.
+     *
+     * @return number of pending requests.
+     */
     public int getQueueSize() {
         return _queue.size();
     }
 
-    @Override
+    /**
+     * Get the number of write requests running or waiting to run.
+     */
     public int getCountByPriority(IoPriority priority)
     {
         return (int)_queue.stream()
@@ -189,12 +213,21 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
                 .count();
     }
 
-    @Override
+    /**
+     * Get the name of this scheduler.
+     *
+     * @return name of the scheduler
+     */
     public String getName() {
         return _name;
     }
 
-    @Override
+    /**
+     * Cancel the request. Any IO in progress will be interrupted.
+     *
+     * @param id
+     * @throws NoSuchElementException
+     */
     public synchronized void cancel(int id) throws NoSuchElementException {
         PrioritizedRequest wrapper;
         wrapper = _jobs.get(id);
@@ -240,19 +273,32 @@ public class SimpleIoScheduler implements IoScheduler, Runnable {
         }
     }
 
-    @Override
+    /**
+     * Print job list and status into provided {@link StringBuffer}
+     *
+     * @param sb int
+     * @return provided string buffer
+     */
     public StringBuffer printJobQueue(StringBuffer sb) {
         _jobs.values()
                 .forEach(j -> sb.append(j.getId()).append(" : ").append(j).append('\n'));
         return sb;
     }
 
-    @Override
+    /**
+     * Set maximal number of concurrently running jobs by this scheduler. All
+     * pending jobs will be executed.
+     *
+     * @param max
+     */
     public void setMaxActiveJobs(int maxJobs) {
         _semaphore.setMaxPermits(maxJobs);
     }
 
-    @Override
+    /**
+     * Shutdown the scheduler. All subsequent execution request will be
+     * rejected.
+     */
     public synchronized void shutdown() throws InterruptedException
     {
         if (!_shutdown) {

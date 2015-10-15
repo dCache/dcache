@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 class SchedulerEntry
 {
     private final String _name;
-    private IoScheduler _scheduler;
+    private MoverRequestScheduler _scheduler;
     private long _lastAccessed;
     private long _total;
 
@@ -35,12 +35,12 @@ class SchedulerEntry
         return _name;
     }
 
-    synchronized void setScheduler(IoScheduler scheduler)
+    synchronized void setScheduler(MoverRequestScheduler scheduler)
     {
         _scheduler = scheduler;
     }
 
-    synchronized IoScheduler getScheduler()
+    synchronized MoverRequestScheduler getScheduler()
     {
         return _scheduler;
     }
@@ -114,7 +114,7 @@ public class JobTimeoutManager
         _worker.interrupt();
     }
 
-    public void addScheduler(String type, IoScheduler scheduler)
+    public void addScheduler(String type, MoverRequestScheduler scheduler)
     {
         say("Adding scheduler : " + type);
         SchedulerEntry entry = findOrCreate(type);
@@ -249,7 +249,7 @@ public class JobTimeoutManager
 
                 long now = System.currentTimeMillis();
                 for (SchedulerEntry entry: _schedulers) {
-                    IoScheduler jobs = entry.getScheduler();
+                    MoverRequestScheduler jobs = entry.getScheduler();
                     if (jobs == null) {
                         continue;
                     }

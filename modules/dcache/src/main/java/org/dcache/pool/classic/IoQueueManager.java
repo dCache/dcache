@@ -18,20 +18,20 @@ import diskCacheV111.vehicles.JobInfo;
 import org.dcache.pool.movers.Mover;
 import org.dcache.util.IoPriority;
 
-import static com.google.common.collect.Iterables.concat;
 import static java.util.Arrays.asList;
+import static com.google.common.collect.Iterables.concat;
 
 public class IoQueueManager {
 
     private final static Logger _log = LoggerFactory.getLogger(IoQueueManager.class);
 
     public static final String DEFAULT_QUEUE = "regular";
-    private final ImmutableList<IoScheduler> _queues;
-    private final ImmutableMap<String, IoScheduler> _queuesByName;
+    private final ImmutableList<MoverRequestScheduler> _queues;
+    private final ImmutableMap<String, MoverRequestScheduler> _queuesByName;
 
     public IoQueueManager(JobTimeoutManager jobTimeoutManager, String[] names) {
-        Map<String,IoScheduler> queuesByName = new HashMap<>();
-        List<IoScheduler> queues = new ArrayList<>();
+        Map<String,MoverRequestScheduler> queuesByName = new HashMap<>();
+        List<MoverRequestScheduler> queues = new ArrayList<>();
         for (String name : concat(asList(DEFAULT_QUEUE), asList(names))) {
             name = name.trim();
             if (!name.isEmpty()) {
@@ -41,7 +41,7 @@ public class IoQueueManager {
                 }
                 if (!queuesByName.containsKey(name)) {
                     _log.debug("Creating queue: {}", name);
-                    IoScheduler job = new SimpleIoScheduler(name, queues.size(), fifo);
+                    MoverRequestScheduler job = new MoverRequestScheduler(name, queues.size(), fifo);
                     queues.add(job);
                     queuesByName.put(name, job);
                     jobTimeoutManager.addScheduler(name, job);
@@ -55,19 +55,19 @@ public class IoQueueManager {
         _log.debug("Defined IO queues: {}", _queuesByName.keySet());
     }
 
-    public IoScheduler getDefaultQueue() {
+    public MoverRequestScheduler getDefaultQueue() {
         return _queues.get(0);
     }
 
-    public ImmutableCollection<IoScheduler> getQueues() {
+    public ImmutableCollection<MoverRequestScheduler> getQueues() {
         return _queues;
     }
 
-    public IoScheduler getQueue(String queueName) {
+    public MoverRequestScheduler getQueue(String queueName) {
         return _queuesByName.get(queueName);
     }
 
-    public IoScheduler getQueueByJobId(int id) {
+    public MoverRequestScheduler getQueueByJobId(int id) {
         int pos = id >> 24;
         if (pos >= _queues.size()) {
             throw new IllegalArgumentException("Invalid id (doesn't belong to any known scheduler)");
@@ -77,7 +77,7 @@ public class IoQueueManager {
 
     public int add(String queueName, Mover<?> transfer, IoPriority priority)
     {
-        IoScheduler js = (queueName == null) ? null : _queuesByName.get(queueName);
+        MoverRequestScheduler js = (queueName == null) ? null : _queuesByName.get(queueName);
         return (js == null) ? add(transfer, priority) : js.add(transfer, priority);
     }
 
@@ -92,7 +92,7 @@ public class IoQueueManager {
 
     public int getMaxActiveJobs() {
         int sum = 0;
-        for (IoScheduler s : _queues) {
+        for (MoverRequestScheduler s : _queues) {
             sum += s.getMaxActiveJobs();
         }
         return sum;
@@ -100,7 +100,7 @@ public class IoQueueManager {
 
     public int getActiveJobs() {
         int sum = 0;
-        for (IoScheduler s : _queues) {
+        for (MoverRequestScheduler s : _queues) {
             sum += s.getActiveJobs();
         }
         return sum;
@@ -108,7 +108,7 @@ public class IoQueueManager {
 
     public int getQueueSize() {
         int sum = 0;
-        for (IoScheduler s : _queues) {
+        for (MoverRequestScheduler s : _queues) {
             sum += s.getQueueSize();
         }
         return sum;
@@ -116,14 +116,14 @@ public class IoQueueManager {
 
     public List<JobInfo> getJobInfos() {
         List<JobInfo> list = new ArrayList<>();
-        for (IoScheduler s : _queues) {
+        for (MoverRequestScheduler s : _queues) {
             list.addAll(s.getJobInfos());
         }
         return list;
     }
 
     public void printSetup(PrintWriter pw) {
-        for (IoScheduler s : _queues) {
+        for (MoverRequestScheduler s : _queues) {
             pw.println("mover set max active -queue=" + s.getName() + " " + s.getMaxActiveJobs());
         }
     }
@@ -138,7 +138,7 @@ public class IoQueueManager {
     }
 
     public synchronized void shutdown() throws InterruptedException {
-        for (IoScheduler queue : _queues) {
+        for (MoverRequestScheduler queue : _queues) {
             queue.shutdown();
         }
     }
