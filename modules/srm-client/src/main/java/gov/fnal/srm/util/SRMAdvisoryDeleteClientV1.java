@@ -73,9 +73,6 @@ COPYRIGHT STATUS:
 
 package gov.fnal.srm.util;
 
-import org.globus.util.GlobusURL;
-
-
 /**
  *
  * @author  timur

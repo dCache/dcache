@@ -70,7 +70,6 @@
         <version.jetty>9.3.3.v20150827</version.jetty>
         <version.wicket>7.0.0</version.wicket>
         <version.xrootd4j>3.0.0</version.xrootd4j>
-        <version.jglobus>2.0.6-rc9.d</version.jglobus>
 
         <!-- BouncyCastle seems to change the naming convention of
              their ArtifactId fairly often.  Here is a summary of
@@ -667,56 +666,6 @@
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>${version.xerces}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jglobus</groupId>
-                <artifactId>gss</artifactId>
-                <version>${version.jglobus}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jglobus</groupId>
-                <artifactId>axisg</artifactId>
-                <version>${version.jglobus}</version>
-                <exclusions>
-                  <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk16</artifactId>
-                  </exclusion>
-                  <!-- 'servlet-api' conflicts with Jetty-supplied
-                       'javax.servlet' jar. -->
-                  <exclusion>
-                      <groupId>javax.servlet</groupId>
-                      <artifactId>servlet-api</artifactId>
-                  </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jglobus</groupId>
-                <artifactId>ssl-proxies</artifactId>
-                <version>${version.jglobus}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcprov-jdk16</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jglobus</groupId>
-                <artifactId>jsse</artifactId>
-                <version>${version.jglobus}</version>
             </dependency>
 
             <dependency>

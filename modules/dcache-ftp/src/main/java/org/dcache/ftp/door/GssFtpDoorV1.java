@@ -183,7 +183,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             data = context.unwrap(data);
         } catch (IOException e) {
             reply("500 Can not decrypt command: " + e);
-            LOGGER.error("GssFtpDoorV1::secure_command: got GSSException: {}",
+            LOGGER.error("GssFtpDoorV1::secure_command: got IOException: {}",
                          e.getMessage());
             return;
         }

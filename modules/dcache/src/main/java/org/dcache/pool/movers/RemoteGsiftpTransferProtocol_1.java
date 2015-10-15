@@ -68,11 +68,6 @@
 
 package org.dcache.pool.movers;
 
-import org.dcache.ftp.client.Buffer;
-import org.dcache.ftp.client.exception.ClientException;
-import org.dcache.ftp.client.exception.ServerException;
-import org.globus.gsi.CredentialException;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,6 +92,9 @@ import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellPath;
 
+import org.dcache.ftp.client.Buffer;
+import org.dcache.ftp.client.exception.ClientException;
+import org.dcache.ftp.client.exception.ServerException;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.repository.RepositoryChannel;
@@ -159,8 +157,7 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo protocolInfo)
-            throws ServerException, ClientException,
-            CredentialException, GSSException, IOException, KeyStoreException, URISyntaxException
+            throws ServerException, ClientException, IOException, KeyStoreException, URISyntaxException
     {
         if (_client != null) {
             return;
@@ -180,8 +177,7 @@ public class RemoteGsiftpTransferProtocol_1
                       Allocator allocator,
                       IoMode access)
             throws CacheException, IOException,
-            ServerException, ClientException,
-            CredentialException, GSSException, KeyStoreException, URISyntaxException
+            ServerException, ClientException, KeyStoreException, URISyntaxException
     {
         _pnfsId = fileAttributes.getPnfsId();
         if (_log.isDebugEnabled()) {
@@ -354,16 +350,18 @@ public class RemoteGsiftpTransferProtocol_1
             URI src_url =  new URI(remoteGsiftpProtocolInfo.getGsiftpUrl());
             _ftpCksm = _client.negotiateCksm(src_url.getPath());
             return ChecksumFactory.getFactory(ChecksumType.getChecksumType(_ftpCksm.type));
-        } catch (NoSuchAlgorithmException | IllegalArgumentException e) {
+        } catch (NoSuchAlgorithmException | GridftpClient.ChecksumNotSupported | IllegalArgumentException e) {
             _log.error("Checksum algorithm is not supported: " + e.getMessage());
-        } catch (CredentialException e) {
-            _log.error("Failed to authenticate with FTP server: " + e.getMessage());
-        } catch (GSSException e) {
-            _log.error("Failed to authenticate with FTP server: " + e.getMessage());
         } catch (IOException e) {
             _log.error("I/O failure talking to FTP server: " + e.getMessage());
-        } catch (Exception e) {
-            _log.error("Failed to negotiate checksum with FTP server: " + e.getMessage());
+        } catch (ServerException e) {
+            _log.error("GridFTP server failure: " + e.getMessage());
+        } catch (KeyStoreException e) {
+            _log.error("GridFTP authentication failure: " + e.getMessage());
+        } catch (URISyntaxException e) {
+            _log.error("Invalid GridFTP URL: " + e.getMessage());
+        } catch (ClientException e) {
+            _log.error("GridFTP client failure: " + e.getMessage());
         }
         return null;
     }

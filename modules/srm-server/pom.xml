@@ -23,11 +23,6 @@
       <artifactId>guava</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>axisg</artifactId>
-    </dependency>
-
     <!-- SRM doesn't depend on jetty-server, but jetty-server has a
          dependency on the Jetty-supplied 'javax.servlet'.  The latter
          conflicts with javax.servlet:servlet-api when both appear in
@@ -36,11 +31,6 @@
     <dependency>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-server</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jglobus</groupId>
-      <artifactId>ssl-proxies</artifactId>
     </dependency>
 
     <dependency>

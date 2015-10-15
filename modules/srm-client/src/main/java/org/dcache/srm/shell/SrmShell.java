@@ -27,7 +27,6 @@ import gov.fnal.srm.util.Configuration;
 import gov.fnal.srm.util.OptionParser;
 import org.apache.axis.types.URI;
 import org.apache.axis.types.UnsignedLong;
-import org.globus.gsi.CredentialException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -116,7 +115,7 @@ public class SrmShell extends ShellApplication
 
         try (SrmShell shell = new SrmShell(uri, args)) {
             shell.start(args);
-        } catch (CredentialException | MalformedURLException e) {
+        } catch (MalformedURLException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         }

@@ -24,7 +24,6 @@ import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import eu.emi.security.authn.x509.proxy.ProxyCSRGenerator;
 import eu.emi.security.authn.x509.proxy.ProxyCertificateOptions;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +130,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
         }
     }
 
-    private void readDelegatedCredentials(ByteSource source) throws GeneralSecurityException, GSSException, IOException
+    private void readDelegatedCredentials(ByteSource source) throws GeneralSecurityException, IOException
     {
         SSLSession session = getSession();
 
@@ -194,7 +193,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
             ByteSource source = (data == null) ? chunk : ByteSource.concat(data, chunk);
             try {
                 readDelegatedCredentials(source);
-            } catch (GeneralSecurityException | GSSException | IOException e) {
+            } catch (GeneralSecurityException | IOException e) {
                 /* Check if we got the entire BER encoded object. We rely on the fact that the delegated
                  * credential is transferred in its own SSL frames - i.e. buffer doesn't contain any
                  * application data.

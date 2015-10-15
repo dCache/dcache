@@ -7,28 +7,6 @@ import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.CharArrayPasswordFinder;
-
-import org.dcache.dss.ClientGsiEngineDssContextFactory;
-import org.dcache.ftp.client.Buffer;
-import org.dcache.ftp.client.DataChannelAuthentication;
-import org.dcache.ftp.client.DataSink;
-import org.dcache.ftp.client.DataSource;
-import org.dcache.ftp.client.FeatureList;
-import org.dcache.ftp.client.GridFTPClient;
-import org.dcache.ftp.client.GridFTPSession;
-import org.dcache.ftp.client.HostPort;
-import org.dcache.ftp.client.RetrieveOptions;
-import org.dcache.ftp.client.exception.ClientException;
-import org.dcache.ftp.client.exception.FTPReplyParseException;
-import org.dcache.ftp.client.exception.ServerException;
-import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
-import org.dcache.ftp.client.vanilla.Reply;
-import org.dcache.ssl.CanlContextFactory;
-import org.dcache.ssl.SslContextFactory;
-import org.dcache.util.PortRange;
-
-import org.globus.gsi.CredentialException;
-import org.ietf.jgss.GSSException;
 import org.italiangrid.voms.credential.LoadCredentialsStrategy;
 import org.italiangrid.voms.credential.impl.DefaultLoadCredentialsStrategy;
 import org.slf4j.Logger;
@@ -49,6 +27,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Adler32;
+
+import org.dcache.dss.ClientGsiEngineDssContextFactory;
+import org.dcache.ftp.client.Buffer;
+import org.dcache.ftp.client.DataChannelAuthentication;
+import org.dcache.ftp.client.DataSink;
+import org.dcache.ftp.client.DataSource;
+import org.dcache.ftp.client.FeatureList;
+import org.dcache.ftp.client.GridFTPClient;
+import org.dcache.ftp.client.GridFTPSession;
+import org.dcache.ftp.client.HostPort;
+import org.dcache.ftp.client.RetrieveOptions;
+import org.dcache.ftp.client.exception.ClientException;
+import org.dcache.ftp.client.exception.FTPReplyParseException;
+import org.dcache.ftp.client.exception.ServerException;
+import org.dcache.ftp.client.exception.UnexpectedReplyCodeException;
+import org.dcache.ftp.client.vanilla.Reply;
+import org.dcache.ssl.CanlContextFactory;
+import org.dcache.ssl.SslContextFactory;
+import org.dcache.util.PortRange;
 /**
  * THE CLASS IS NOT THREAD SAVE
  * DO ONLY ONE OPERATION (READ / WRITE) AT A TIME
@@ -85,8 +82,7 @@ public class GridftpClient
     public GridftpClient(String host, int port, PortRange portRange, X509Credential cred, String[] bannedCiphers,
                          String certificateAuthorityPath, CrlCheckingMode crlCheckMode,
                          NamespaceCheckingMode namespaceMode, OCSPCheckingMode ocspCheckingMode)
-        throws IOException, ServerException, ClientException,
-               CredentialException, GSSException
+        throws IOException, ServerException, ClientException
     {
         this(host, port, 0, portRange, cred, bannedCiphers, certificateAuthorityPath, crlCheckMode, namespaceMode,
              ocspCheckingMode);
@@ -95,8 +91,7 @@ public class GridftpClient
     public GridftpClient(String host, int port, int bufferSize, PortRange portRange, X509Credential cred,
                          String[] bannedCiphers, String certificateAuthorityPath, CrlCheckingMode crlCheckMode,
                          NamespaceCheckingMode namespaceMode, OCSPCheckingMode ocspCheckingMode)
-        throws IOException, ServerException, ClientException,
-               CredentialException, GSSException
+        throws IOException, ServerException, ClientException
     {
         this(host, port, bufferSize, portRange, cred, bannedCiphers,
              CanlContextFactory.custom()
@@ -110,8 +105,7 @@ public class GridftpClient
 
     public GridftpClient(String host, int port, int bufferSize, PortRange portRange, X509Credential cred,
                          String[] bannedCiphers, SslContextFactory sslContextFactory)
-        throws IOException, ServerException, ClientException,
-               CredentialException, GSSException
+        throws IOException, ServerException, ClientException
     {
         if(bufferSize >0) {
             _bufferSize = bufferSize;
@@ -589,8 +583,7 @@ public class GridftpClient
    throws IOException,
        ServerException,
        ClientException,
-       ChecksumNotSupported,
-       ChecksumValueFormatException
+       ChecksumNotSupported
    {
         String commonAlgorithm = getCommonChecksumAlgorithm();
         if(commonAlgorithm == null) {

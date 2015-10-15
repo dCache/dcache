@@ -74,23 +74,13 @@ import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import org.apache.axis.MessageContext;
-import org.apache.axis.transport.http.HTTPConstants;
-import org.globus.gsi.bc.BouncyCastleUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -103,7 +93,6 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.SRMInternalErrorException;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.handler.CredentialAwareHandler;
-import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.util.Axis;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.JDC;

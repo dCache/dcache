@@ -68,9 +68,7 @@ COPYRIGHT STATUS:
 package gov.fnal.srm.util;
 
 import eu.emi.security.authn.x509.X509Credential;
-import eu.emi.security.authn.x509.impl.KeyAndCertCredential;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import org.ietf.jgss.GSSCredential;
 
 import java.io.IOException;
 import java.net.URI;
@@ -84,7 +82,6 @@ import org.dcache.srm.Logger;
 import org.dcache.srm.client.SRMClientV1;
 import org.dcache.srm.client.Transport;
 import org.dcache.srm.client.TransportUtil;
-import org.dcache.srm.security.SslGsiSocketFactory;
 
 /**
  *

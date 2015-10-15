@@ -1,9 +1,6 @@
 package org.dcache.util.aspects;
 
-import org.globus.gsi.gssapi.GlobusGSSException;
 import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
 
