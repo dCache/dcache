@@ -1,5 +1,6 @@
 package org.dcache.tests.poolmanager;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.After;
 import org.junit.Before;
@@ -94,7 +95,7 @@ public class HsmRestoreTest {
         /*
          * allow stage
          */
-        _partitionManager.ac_pm_set_$_0_1(new Args("-stage-allowed=yes"));
+        _partitionManager.setProperties(null, ImmutableMap.of("stage-allowed", "yes"));
         _rc = new RequestContainerV5(RETRY_INTERVAL);
         _rc.setPoolSelectionUnit(_selectionUnit);
         _rc.setPnfsHandler(_pnfsHandler);

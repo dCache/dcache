@@ -10,11 +10,16 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellSetupProvider;
 import dmg.util.CommandException;
 
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
+import dmg.util.command.CommandLine;
+import dmg.util.command.Option;
 import org.dcache.util.Args;
 
 import static com.google.common.base.Predicates.*;
@@ -173,20 +178,17 @@ public class PartitionManager
         return partition;
     }
 
-    public static final String fh_pmx_get_map =
-        "Name:\n" +
-        "    pmx get map - get partition map\n" +
-        "\n" +
-        "Synopsis:\n" +
-        "    pmx get map\n" +
-        "\n" +
-        "Description:\n" +
-        "    Internal command to query the internal representation of all\n" +
-        "    partitions.\n";
-    public static final String hh_pmx_get_map = "# get partition map";
-    public Object ac_pmx_get_map(Args args)
+    @Command(name = "pmx get map",
+            hint = "get partition map",
+            description = "Internal command to query the internal representation of " +
+                    "all partitions.")
+    public class PmxGetMapCommand implements Callable<ImmutableMap>
     {
-       return _partitions;
+        @Override
+        public ImmutableMap call()
+        {
+            return _partitions;
+        }
     }
 
     public ImmutableMap<String,Partition> getPartitions()
@@ -194,177 +196,192 @@ public class PartitionManager
         return _partitions;
     }
 
-    public static final String fh_pm_set =
-        "Name:\n" +
-        "    pm set - set partition parameters\n" +
-        "\n" +
-        "Synopsis:\n" +
-        "    pm set [<partition>] OPTION...\n" +
-        "\n" +
-        "Description:\n" +
-        "    Set one or more parameters on a partition.\n" +
-        "\n" +
-        "    If no partition name is provided, then the set of inherited\n" +
-        "    parameters is updated. These parameters are inherited by all\n" +
-        "    partitions except for those that explicitly redefine the\n" +
-        "    parameters.\n" +
-        "\n" +
-        "    Setting a parameter to the value 'off' resets it back to\n" +
-        "    inherited value or back to the default parameter value.\n" +
-        "\n" +
-        "    Available parameters depend on the partition type. Use\n" +
-        "    'pm ls -a' to see available parameters and their current\n" +
-        "    value. A small set of parameters are common to all partition\n" +
-        "    types. These are:\n" +
-        "\n" +
-        "       -p2p-allowed=yes|no|off\n"+
-        "       -p2p-oncost=yes|no|off\n"+
-        "       -p2p-fortransfer=yes|no|off\n"+
-        "       -stage-allowed=yes|no|off\n"+
-        "       -stage-oncost=yes|no|off\n";
-    public static final String hh_pm_set =
-        "[<partition>] OPTION... # set partition parameters";
-    public String ac_pm_set_$_0_1(Args args)
-        throws IllegalArgumentException
-    {
-        setProperties(args.argv(0), scanProperties(args));
-        return "";
-    }
+    @Command(name = "pm set",
+            hint = "set partition parameters",
+            description = "Set one or more parameters on a partition. If no partition " +
+                    "name is provided, then the set of inherited parameters is updated. " +
+                    "These parameters are inherited by all partitions except for those " +
+                    "that explicitly redefine the parameters.\n\n" +
 
-    public static final String fh_pm_types =
-        "Name:\n" +
-        "    pm types - list available partition types\n" +
-        "\n" +
-        "Synopsis:\n" +
-        "    pm types\n" +
-        "\n" +
-        "Description:\n" +
-        "    List partition types that can be used when creating new\n" +
-        "    partitions. The pool selection algorithm, the configuration\n" +
-        "    parameters, and the default values are defined by the\n" +
-        "    partition type.\n" +
-        "\n" +
-        "    Partition types are pluggable and new partition types can\n" +
-        "    be added through a plugin mechanism.";
-    public static final String hh_pm_types =
-        "# list available partition types";
-    public String ac_pm_types_$_0(Args args)
+                    "Setting a parameter to the value 'off' resets it back to inherited " +
+                    "value or back to the default parameter value.\n\n" +
+
+                    "Different partitions have different parameters and their corresponding " +
+                    "values but a small set of parameters are common to all partition types. " +
+                    "These are:\n" +
+                    "\t\t-p2p-allowed=yes|no|off\n" +
+                    "\t\t-p2p-oncost=yes|no|off\n" +
+                    "\t\t-p2p-fortransfer=yes|no|off\n" +
+                    "\t\t-stage-allowed=yes|no|off\n" +
+                    "\t\t-stage-oncost=yes|no|off")
+    public class PmSetCommand implements Callable<String>
     {
-        final String format = "%-16s %s\n";
-        Formatter s = new Formatter(new StringBuilder());
-        s.format(format, "Partition type", "Description");
-        s.format(format, "--------------", "-----------");
-        for (PartitionFactory factory: _factories) {
-            s.format(format, factory.getType(), factory.getDescription());
+        @CommandLine
+        Args args;
+
+        @Argument(required = false,
+                usage = "The name of the partition to set its corresponding parameter and " +
+                        "values.")
+        String partition;
+
+        @Option(name = "p2p-allowed", values = {"yes", "no", "off"})
+        String p2pAllowed;
+
+        @Option(name = "p2p-oncost", values = {"yes", "no", "off"})
+        String p2pOncost;
+
+        @Option(name = "p2p-fortransfer", values = {"yes", "no", "off"})
+        String p2pFortransfer;
+
+        @Option(name = "stage-allowed", values = {"yes", "no", "off"})
+        String stageAllowed;
+
+        @Option(name = "stage-oncost", values = {"yes", "no", "off"})
+        String stageOncost;
+
+        @Option(name = "otherOPTIONS", valueSpec = "VALUE",
+                usage = "Available parameters depend on the partition type. Use 'pm ls -a' to " +
+                        "see available parameters and their current value.")
+        String Options;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            setProperties(args.argv(0), scanProperties(args));
+            return "";
         }
-        return s.toString();
     }
 
-    public static final String hh_pm_create =
-        "[-type=<type>] <partition> # create new partition";
-    public static final String fh_pm_create =
-        "Name:\n" +
-        "    pm create - create new partition\n" +
-        "\n" +
-        "Synopsis:\n" +
-        "    pm create [-type=<type>] <partition>\n" +
-        "\n" +
-        "Description:\n" +
-        "    Creates a pool manager partition named <partition> of <type>.\n" +
-        "    If no <type> is specified then 'wass' is used as a default\n" +
-        "    type.\n" +
-        "\n" +
-        "    A partition encapsulates configuration parameters and pool\n" +
-        "    selection logic. Each pool manager link identifies a partition\n" +
-        "    to use for transfers in that link.\n" +
-        "\n" +
-        "    The partition type defines the pool selection logic and the\n" +
-        "    available configuration parameters. 'pm types' lists available\n" +
-        "    partition types." +
-        "\n" +
-        "    A default partition named 'default' exists and is used for\n" +
-        "    links that do not explicitly define which partition to use.\n" +
-        "    Creating a partition reusing an existing name overwrites that\n" +
-        "    partition. This allows the type of the default partition to be\n" +
-        "    redefined. Any parameter values on the partition are lost.";
-    public String ac_pm_create_$_1(Args args) throws CommandException
+    @Command(name = "pm types",
+            hint = "list available partition types",
+            description = "List partition types that can be used when creating new " +
+                    "partitions. The pool selection algorithm, the configuration " +
+                    "parameters, and the default values are defined by the partition " +
+                    "type.\n\n" +
+                    "Partition types are pluggable and new partition types can " +
+                    "be added through a plugin mechanism.")
+    public class PmTypesCommand implements Callable<String>
     {
-        String type = args.getOption("type", "wass");
-        PartitionFactory factory;
-        try {
-            factory = getFactory(type);
-        } catch (NoSuchElementException e) {
-            throw new CommandException(1, "Unknown partition type \"" + type + "\"");
+        @Override
+        public String call()
+        {
+            final String format = "%-16s %s\n";
+            Formatter s = new Formatter(new StringBuilder());
+            s.format(format, "Partition type", "Description");
+            s.format(format, "--------------", "-----------");
+            for (PartitionFactory factory: _factories) {
+                s.format(format, factory.getType(), factory.getDescription());
+            }
+            return s.toString();
         }
-        createPartition(factory,args.argv(0));
-        return "";
     }
 
-    public static final String fh_pm_destroy =
-        "Name:\n" +
-        "    pm destroy - remove partition\n" +
-        "\n" +
-        "Synopsis:\n" +
-        "    pm destroy <partition>\n" +
-        "\n" +
-        "Description:\n" +
-        "    Remove the specified pool manager partition. Links using the\n" +
-        "    partition will fall back to the default partition. Any\n" +
-        "    parameter values associated with the partition are lost.";
-    public static final String hh_pm_destroy =
-        "<partition> # remove partition";
-    public String ac_pm_destroy_$_1(Args args)
+    @Command(name = "pm create",
+            hint = "create a new partition",
+            description = "Creates a pool manager partition named <partition> of <type>. " +
+                    "If no <type> is specified then 'wass' is used as a default type.\n\n" +
+
+                    "A partition encapsulates configuration parameters and pool " +
+                    "selection logic. Each pool manager link identifies a partition " +
+                    "to use for transfers in that link.\n\n" +
+
+                    "The partition type defines the pool selection logic and the " +
+                    "available configuration parameters.\n\n" +
+
+                    "A default partition named 'default' exists and is used for " +
+                    "links that do not explicitly define which partition to use. " +
+                    "Creating a partition reusing an existing name overwrites that " +
+                    "partition. This allows the type of the default partition to be " +
+                    "redefined. Any parameter values on the partition are lost.")
+    public class PmCreateCommand implements Callable<String>
     {
-        destroyPartition(args.argv(0));
-        return "";
+        @Argument(usage = "The name of the partition to be created.")
+        String partition;
+
+        @Option(name = "type",
+                usage = "The partition type to create. Use 'pm types' to see list of " +
+                        "available partition types.")
+        String type = "wass";
+
+        @Override
+        public String call() throws CommandException
+        {
+            PartitionFactory factory;
+            try {
+                factory = getFactory(type);
+            } catch (NoSuchElementException e) {
+                throw new CommandException(1, "Unknown partition type \"" + type + "\"");
+            }
+            createPartition(factory, partition);
+            return "";
+        }
     }
 
-    public static final String fh_pm_ls =
-        "Name:\n" +
-        "    pm ls - list partitions\n" +
-        "\n" +
-        "Synopsis:\n" +
-        "    pm ls [-l] [-a] [<partition>]\n" +
-        "\n" +
-        "Description:\n" +
-        "    List information about the <partition>. If no <partition> is\n" +
-        "    specified then information about all partitions is given.\n" +
-        "\n" +
-        "    -l  List parameters (default when <partition> is specified).\n" +
-        "    -a  List all parameters. The default is not to list inherited\n" +
-        "        and default parameters.\n";
-    public static final String hh_pm_ls =
-        "[-l] [-a] [<partition>] # list partitions";
-    public String ac_pm_ls_$_0_1(Args args)
-        throws IllegalArgumentException
+    @Command(name = "pm destroy",
+            hint = "remove a partition",
+            description = "Remove the specified pool manager partition. Links using the " +
+                    "partition will fall back to the default partition. Any parameter " +
+                    "values associated with the partition are lost.")
+    public class PmDestroyCommand implements Callable<String>
     {
-        boolean showAll = args.hasOption("a");
-        StringBuilder sb = new StringBuilder();
-        if (args.argc() != 0) {
-            String name = args.argv(0);
-            Partition partition = _partitions.get(name);
-            if (partition == null) {
-                throw new IllegalArgumentException("Partition not found: " + name);
-            }
+        @Argument(usage = "The name of the partition to remove.")
+        String partition;
 
-            sb.append(name).append(" (").append(partition.getType()).append(")\n");
-            printProperties(sb, partition, showAll);
-        } else {
-            boolean showProperties = args.hasOption("l") || showAll;
-            if (showProperties) {
-                printInheritedProperties(sb);
-            }
-            for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
-                sb.append(entry.getKey())
-                    .append(" (")
-                    .append(entry.getValue().getType())
-                    .append(")\n");
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            destroyPartition(partition);
+            return "";
+        }
+    }
+
+    @Command(name = "pm ls",
+            hint = "list all partitions",
+            description = "List information about the <partition>. If no <partition> is " +
+                    "specified then information about all partitions is given.")
+    public class PmLsCommand implements Callable<String>
+    {
+        @Argument(required = false, metaVar = "",
+                usage = "The name of the partition to list the info.")
+        String name;
+
+        @Option(name = "a",
+                usage = "List all parameters. The default is not to list inherited " +
+                        "and default parameters.")
+        boolean showAll;
+
+        @Option(name = "l", usage = "List parameters (default when <partition> is specified).")
+        boolean showMore;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            StringBuilder sb = new StringBuilder();
+            if ( name != null ) {
+                Partition partition = _partitions.get(name);
+                if (partition == null) {
+                    throw new IllegalArgumentException("Partition not found: " + name);
+                }
+
+                sb.append(name).append(" (").append(partition.getType()).append(")\n");
+                printProperties(sb, partition, showAll);
+            } else {
+                boolean showProperties = showMore || showAll;
                 if (showProperties) {
-                    printProperties(sb, entry.getValue(), showAll);
+                    printInheritedProperties(sb);
+                }
+                for (Map.Entry<String,Partition> entry: _partitions.entrySet()) {
+                    sb.append(entry.getKey())
+                            .append(" (")
+                            .append(entry.getValue().getType())
+                            .append(")\n");
+                    if (showProperties) {
+                        printProperties(sb, entry.getValue(), showAll);
+                    }
                 }
             }
+            return sb.toString();
         }
-        return sb.toString();
     }
 
     private void printInheritedProperties(StringBuilder sb)
