@@ -1080,6 +1080,9 @@ public class Transfer implements Comparable<Transfer>
             setStatus("PnfsManager: Deleting name space entry");
             try {
                 _pnfs.deletePnfsEntry(pnfsId, _path.toString());
+            } catch (FileNotFoundCacheException e) {
+                _log.debug("Failed to delete file after failed upload: " +
+                           _path + " (" + pnfsId + "): " + e.getMessage());
             } catch (CacheException e) {
                 _log.error("Failed to delete file after failed upload: " +
                            _path + " (" + pnfsId + "): " + e.getMessage());
