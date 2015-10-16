@@ -360,11 +360,6 @@
                 <version>4.0.28.Final</version>
             </dependency>
             <dependency>
-                <groupId>org.glassfish.grizzly</groupId>
-                <artifactId>grizzly-framework</artifactId>
-                <version>2.3.21</version>
-            </dependency>
-            <dependency>
                 <groupId>com.sleepycat</groupId>
                 <artifactId>je</artifactId>
                 <version>6.3.8</version>
@@ -804,7 +799,7 @@
         <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>nfs4j-core</artifactId>
-            <version>0.10.6</version>
+            <version>0.10.7</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.dcache.chimera</groupId>
