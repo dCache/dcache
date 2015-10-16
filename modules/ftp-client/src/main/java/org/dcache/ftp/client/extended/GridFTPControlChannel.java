@@ -28,13 +28,10 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.StringReader;
-<<<<<<< HEAD
-import java.nio.charset.StandardCharsets;
-=======
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
->>>>>>> 2f6f2de... ftp-client: Port to our own GSI implementation
 import java.util.Base64;
 
 import org.dcache.dss.DssContext;
