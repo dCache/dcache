@@ -156,13 +156,13 @@ public class XrootdTransferService extends NettyTransferService<XrootdProtocolIn
 
         ChannelPipeline pipeline = ch.pipeline();
 
+        pipeline.addLast("handshake",
+                         new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         pipeline.addLast("encoder", new XrootdEncoder());
         pipeline.addLast("decoder", new XrootdDecoder());
         if (LOGGER.isDebugEnabled()) {
             pipeline.addLast("logger", new LoggingHandler());
         }
-        pipeline.addLast("handshake",
-                         new XrootdHandshakeHandler(XrootdProtocol.DATA_SERVER));
         for (ChannelHandlerFactory plugin: plugins) {
             pipeline.addLast("plugin:" + plugin.getName(),
                              plugin.createHandler());

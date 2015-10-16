@@ -196,12 +196,12 @@ public class NettyXrootdServer implements CellMessageSender
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast("session", new SessionHandler(session));
                         pipeline.addLast("tracker", _connectionTracker);
+                        pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                         pipeline.addLast("encoder", new XrootdEncoder());
                         pipeline.addLast("decoder", new XrootdDecoder());
                         if (_log.isDebugEnabled()) {
                             pipeline.addLast("logger", new LoggingHandler(NettyXrootdServer.class));
                         }
-                        pipeline.addLast("handshake", new XrootdHandshakeHandler(XrootdProtocol.LOAD_BALANCER));
                         for (ChannelHandlerFactory factory: _channelHandlerFactories) {
                             pipeline.addLast("plugin:" + factory.getName(), factory.createHandler());
                         }
