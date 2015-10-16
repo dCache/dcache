@@ -241,6 +241,15 @@
                       </bean>
                   </property>
               </bean>
+              <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+                  <property name="contextPath" value="/robots.txt"/>
+                  <property name="allowNullPathInfo" value="true"/>
+                  <property name="handler">
+                      <bean class="org.dcache.services.httpd.handlers.ContextHandler">
+                          <constructor-arg value="robots.txt"/>
+                      </bean>
+                  </property>
+              </bean>
               <bean class="org.dcache.webdav.MiltonHandler">
                   <property name="httpManager" ref="http-manager"/>
               </bean>

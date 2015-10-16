@@ -61,7 +61,7 @@ public class ContextHandler extends AbstractHandler {
 
             proxy.getPrintWriter().println(html);
             proxy.getPrintWriter().flush();
-
+            baseRequest.setHandled(true);
         } catch (final Exception t) {
             throw new ServletException("ContextHandler", t);
         }
