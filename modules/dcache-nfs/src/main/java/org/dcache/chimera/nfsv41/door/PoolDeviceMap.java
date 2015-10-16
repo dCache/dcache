@@ -1,17 +1,32 @@
 package org.dcache.chimera.nfsv41.door;
 
 import com.google.common.collect.ImmutableSet;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.dcache.nfs.v4.xdr.deviceid4;
 import org.dcache.chimera.nfsv41.door.NFSv41Door.PoolDS;
+import org.dcache.nfs.v4.StripingPattern;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.utils.Bytes;
 
 /**
  * A mapping between pool name, nfs device id and pool's ip addresses.
  */
 public class PoolDeviceMap {
+
+    /**
+     * next device id, 0 reserved for MDS
+     */
+    private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
+
+    /**
+     * Data striping pattern for a file.
+     */
+    private final StripingPattern<InetSocketAddress[]> _stripingPattern;
 
     /**
      * dCache-friendly NFS device id to pool name mapping
@@ -30,18 +45,15 @@ public class PoolDeviceMap {
     private final ReentrantReadWriteLock.ReadLock _rlock = _lock.readLock();
     private final ReentrantReadWriteLock.WriteLock _wlock = _lock.writeLock();
 
-    void add(String poolName, PoolDS device) {
-        _wlock.lock();
-        try {
-            PoolDS oldDevice = _poolNameToIpMap.put(poolName, device);
-            // remove dead entry
-            if (oldDevice != null) {
-                _deviceMap.remove(oldDevice.getDeviceId());
-            }
-            _deviceMap.put(device.getDeviceId(), device);
-        } finally {
-            _wlock.unlock();
-        }
+    public PoolDeviceMap(StripingPattern<InetSocketAddress[]> stripingPattern) {
+        _stripingPattern = stripingPattern;
+    }
+
+    static deviceid4 deviceidOf(int id) {
+        byte[] deviceidBytes = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
+        Bytes.putInt(deviceidBytes, 0, id);
+
+        return new deviceid4(deviceidBytes);
     }
 
     Collection<PoolDS> getDevices() {
@@ -62,12 +74,27 @@ public class PoolDeviceMap {
         }
     }
 
-    PoolDS getByPoolName(String name) {
-        _rlock.lock();
+    PoolDS getOrCreateDS(String name, long verifier, InetSocketAddress[] poolAddress) {
+        _wlock.lock();
         try {
-            return _poolNameToIpMap.get(name);
+
+            PoolDS ds = _poolNameToIpMap.get(name);
+            if (ds != null && ds.getVerifier() == verifier) {
+                return ds;
+            }
+
+            if (ds != null) {
+                // remove old mapping
+                _deviceMap.remove(ds.getDeviceId());
+            }
+            deviceid4 deviceid = deviceidOf(_nextDeviceID.incrementAndGet());
+            ds = new PoolDS(deviceid, _stripingPattern, poolAddress, verifier);
+            _poolNameToIpMap.put(name, ds);
+            _deviceMap.put(ds.getDeviceId(), ds);
+            return ds;
+
         } finally {
-            _rlock.unlock();
+            _wlock.unlock();
         }
     }
 
