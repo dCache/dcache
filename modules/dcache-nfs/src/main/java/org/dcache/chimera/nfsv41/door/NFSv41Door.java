@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
@@ -98,7 +97,6 @@ import org.dcache.nfs.vfs.VfsCacheConfig;
 import org.dcache.util.RedirectedTransfer;
 import org.dcache.util.Transfer;
 import org.dcache.util.TransferRetryPolicy;
-import org.dcache.utils.Bytes;
 import org.dcache.vehicles.DoorValidateMoverMessage;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.OncRpcProgram;
@@ -116,14 +114,12 @@ public class NFSv41Door extends AbstractCellComponent implements
     /**
      * A mapping between pool name, nfs device id and pool's ip addresses.
      */
-    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap();
+    private final PoolDeviceMap _poolDeviceMap = new PoolDeviceMap(new RoundRobinStripingPattern<InetSocketAddress[]>());
 
-    /** next device id, 0 reserved for MDS */
-    private final AtomicInteger _nextDeviceID = new AtomicInteger(1);
     /*
      * reserved device for IO through MDS (for pnfs dot files)
      */
-    private static final deviceid4 MDS_ID = deviceidOf(0);
+    private static final deviceid4 MDS_ID = PoolDeviceMap.deviceidOf(0);
 
     private final Map<stateid4, NfsTransfer> _ioMessages = new ConcurrentHashMap<>();
 
@@ -188,12 +184,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     private final static TransferRetryPolicy RETRY_POLICY =
         new TransferRetryPolicy(Integer.MAX_VALUE, NFS_RETRY_PERIOD,
                                 NFS_REPLY_TIMEOUT, NFS_REPLY_TIMEOUT);
-
-    /**
-     * Data striping pattern for a file.
-     */
-    private final StripingPattern<InetSocketAddress[]> _stripingPattern =
-            new RoundRobinStripingPattern<>();
 
     private VfsCacheConfig _vfsCacheConfig;
 
@@ -324,22 +314,12 @@ public class NFSv41Door extends AbstractCellComponent implements
     public void messageArrived(PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
 
         String poolName = message.getPoolName();
+        long verifier = message.getVerifier();
+        InetSocketAddress[] poolAddresses = message.socketAddresses();
 
         _log.debug("NFS mover ready: {}", poolName);
 
-        InetSocketAddress[] poolAddress = message.socketAddresses();
-        PoolDS device = _poolDeviceMap.getByPoolName(poolName);
-
-        if (device == null || isPoolRestarted(device, message)) {
-            /* pool is unknown yet or has been restarted so create new device and device-id */
-            final int id = this.nextDeviceID();
-            final deviceid4 deviceid = deviceidOf(id);
-            final PoolDS newDevice = new PoolDS(deviceid, _stripingPattern, poolAddress, message.getVerifier());
-
-            _log.debug("new mapping: {}", newDevice);
-            _poolDeviceMap.add(poolName, newDevice);
-            device = newDevice;
-        }
+        PoolDS device = _poolDeviceMap.getOrCreateDS(poolName, verifier, poolAddresses);
 
         org.dcache.chimera.nfs.v4.xdr.stateid4 legacyStateid = message.challange();
         NfsTransfer transfer = _ioMessages.get(new stateid4(legacyStateid.other, legacyStateid.seqid.value));
@@ -352,16 +332,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         if(transfer != null) {
             transfer.redirect(device);
         }
-    }
-
-    private boolean isPoolRestarted(PoolDS ds, PoolPassiveIoFileMessage<org.dcache.chimera.nfs.v4.xdr.stateid4> message) {
-        long verifier = message.getVerifier();
-        if (verifier != 0) {
-            // pool supports verifier
-            return ds.getVerifier() != verifier;
-        }
-        // pre-2.9 pool
-        return !Arrays.equals(ds.getInetSocketAddress(), message.socketAddresses());
     }
 
     public void messageArrived(DoorTransferFinishedMessage transferFinishedMessage) {
@@ -393,10 +363,6 @@ public class NFSv41Door extends AbstractCellComponent implements
         }
         message.setIsValid(isValid);
         return message;
-    }
-
-    private int nextDeviceID() {
-        return _nextDeviceID.incrementAndGet();
     }
 
     // NFSv41DeviceManager interface
@@ -711,13 +677,6 @@ public class NFSv41Door extends AbstractCellComponent implements
             _nfs4.getStateHandler().removeClient(client);
             return "Done.";
         }
-    }
-
-    private static deviceid4 deviceidOf(int id) {
-        byte[] deviceidBytes = new byte[nfs4_prot.NFS4_DEVICEID4_SIZE];
-        Bytes.putInt(deviceidBytes, 0, id);
-
-        return new deviceid4(deviceidBytes);
     }
 
     static class PoolDS {
