@@ -2577,29 +2577,27 @@ public final class Storage
     private String getPathOfSurl(URI surl)
         throws SRMInvalidPathException
     {
-        try {
-            String scheme = surl.getScheme();
-            if (scheme != null && !scheme.equalsIgnoreCase("srm")) {
-                throw new SRMInvalidPathException("Invalid scheme: " + scheme);
-            }
-
-            String host = surl.getHost();
-            if (host != null && !Tools.sameHost(config.getSrmHosts(), host)) {
-                throw new SRMInvalidPathException("SURL is not local: " + surl);
-            }
-
-            String path = surl.getPath();
-            String query = surl.getQuery();
-            if (query != null) {
-                int i = query.indexOf(SFN_STRING);
-                if (i != -1) {
-                    path = query.substring(i + SFN_STRING.length());
-                }
-            }
-            return path;
-        } catch (UnknownHostException e) {
-            throw new SRMInvalidPathException(e.getMessage());
+        String scheme = surl.getScheme();
+        if (scheme == null || !scheme.equalsIgnoreCase("srm")) {
+            throw new SRMInvalidPathException("Invalid scheme: " + scheme);
         }
+
+        String host = surl.getHost();
+        int port = surl.getPort();
+        if (host != null && !config.getSrmHosts().stream().anyMatch(host::equalsIgnoreCase) ||
+            port != -1 && port != config.getPort()) {
+            throw new SRMInvalidPathException("SURL is not local: " + surl);
+        }
+
+        String path = surl.getPath();
+        String query = surl.getQuery();
+        if (query != null) {
+            int i = query.indexOf(SFN_STRING);
+            if (i != -1) {
+                path = query.substring(i + SFN_STRING.length());
+            }
+        }
+        return path;
     }
 
     private static class ToSRMException implements Function<Exception, SRMException>

@@ -10,7 +10,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 /**
  *
  * @author  timur
@@ -34,19 +33,6 @@ public class Tools {
         }
         return false;
     }
-
-    public static final boolean sameHost(Set<String> hosts, String host2 )
-        throws UnknownHostException {
-        for(String host1:hosts) {
-            if(sameHost(host1,host2)) {
-                return true;
-            }
-        }
-        //System.out.println("sameHost("+host1+","+ host2+") returns false");
-        return false;
-    }
-
-    private static final String[] emptyArr = new String[0];
 
     public static final String[] trimStringArray(String[] sarray) {
 

@@ -85,6 +85,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.dcache.srm.SRM;
 import org.dcache.srm.SRMException;
@@ -326,31 +327,23 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
             isSourceSrm = sourceProtocol.equals("srm");
             isDestinationSrm = destinationProtocol.equals("srm");
-            boolean isSourceGsiftp = sourceProtocol.equals("gsiftp");
-            boolean isDestinationGsiftp = sourceProtocol.equals("gsiftp");
 
-            if (isSourceSrm) {
-                isSourceLocal = sourcePort == getConfiguration().getPort() &&
-                        Tools.sameHost(getConfiguration().getSrmHosts(), sourceHost);
-            } else {
-                isSourceLocal = getStorage().isLocalTransferUrl(source);
-            }
+            Set<String> srmHosts = getConfiguration().getSrmHosts();
+            isSourceLocal =
+                    isSourceSrm &&
+                    (sourcePort == -1 || sourcePort == getConfiguration().getPort()) &&
+                    (sourceHost == null || srmHosts.stream().anyMatch(sourceHost::equalsIgnoreCase));
+            isDestinationLocal =
+                    isDestinationSrm &&
+                    (destinationPort == -1 || destinationPort == getConfiguration().getPort()) &&
+                    (destinationHost == null || srmHosts.stream().anyMatch(destinationHost::equalsIgnoreCase));
 
-            if (isDestinationSrm) {
-                isDestinationLocal = destinationPort == getConfiguration().getPort() &&
-                        Tools.sameHost(getConfiguration().getSrmHosts(), destinationHost);
-            } else {
-                isDestinationLocal = getStorage().isLocalTransferUrl(destination);
-            }
-
-            LOG.debug("src (srm={}, gsiftp={}, local={}), " +
-                    "dest (srm={}, gsiftp={}, local={})",
-                    isSourceSrm, isSourceGsiftp, isSourceLocal,
-                    isDestinationSrm, isDestinationGsiftp, isDestinationLocal);
+            LOG.debug("src (srm={}, local={}), dest (srm={}, local={})",
+                      isSourceSrm, isSourceLocal, isDestinationSrm, isDestinationLocal);
 
             if (!isSourceLocal && !isDestinationLocal) {
-                LOG.error("Both source and destination URLs are remote");
-                throw new IOException("Both source and destination URLs are remote");
+                LOG.error("Both source ({}) and destination ({}) URLs are remote.", source, destination);
+                throw new SRMInvalidRequestException("Both source and destination URLs are remote.");
             }
         } finally {
             wunlock();
