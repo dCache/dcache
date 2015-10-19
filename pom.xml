@@ -1159,6 +1159,7 @@
         <module>modules/logback-console-config</module>
         <module>modules/common</module>
         <module>modules/common-cli</module>
+        <module>modules/common-security</module>
         <module>modules/cells</module>
         <module>modules/gplazma2</module>
         <module>modules/gplazma2-argus</module>
@@ -1174,7 +1175,6 @@
         <module>modules/gplazma2-ldap</module>
         <module>modules/gplazma2-gsi</module>
         <module>modules/gplazma2-htpasswd</module>
-        <module>modules/javatunnel</module>
         <module>modules/dcache-vehicles</module>
         <module>modules/dcache-nearline-spi</module>
         <module>modules/dcache</module>

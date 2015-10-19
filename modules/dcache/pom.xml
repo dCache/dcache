@@ -80,7 +80,7 @@
     </dependency>
     <dependency>
       <groupId>org.dcache</groupId>
-      <artifactId>javatunnel</artifactId>
+      <artifactId>common-security</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
