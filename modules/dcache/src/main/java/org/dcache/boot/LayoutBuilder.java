@@ -51,7 +51,7 @@ public class LayoutBuilder
         config.setProperty(PROPERTY_DCACHE_VERSION,
                 Version.of(this).getVersion());
         config.setProperty(PROPERTY_DCACHE_SCM_STATE,
-                Version.of(this).getBuild());
+                Version.of(this).getState());
         return config;
     }
 
