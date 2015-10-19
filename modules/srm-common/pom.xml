@@ -102,6 +102,10 @@
     </dependency>
 
     <dependency>
+        <groupId>eu.eu-emi.security</groupId>
+        <artifactId>canl</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.italiangrid</groupId>
       <artifactId>voms-api-java</artifactId>
     </dependency>
@@ -111,6 +115,10 @@
         <artifactId>axis</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>

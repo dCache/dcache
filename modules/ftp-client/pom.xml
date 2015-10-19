@@ -32,16 +32,8 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>${bouncycastle.bcprov}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.dcache</groupId>
@@ -52,10 +44,6 @@
             <groupId>org.dcache</groupId>
             <artifactId>common-security</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>eu.eu-emi.security</groupId>
-            <artifactId>canl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
