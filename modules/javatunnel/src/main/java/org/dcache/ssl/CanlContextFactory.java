@@ -53,7 +53,7 @@ public class CanlContextFactory implements SslContextFactory
     private final SecureRandom secureRandom = new SecureRandom();
     private final TrustManager[] trustManagers;
 
-    protected CanlContextFactory(SSLTrustManager... trustManagers)
+    protected CanlContextFactory(TrustManager... trustManagers)
     {
         this.trustManagers = trustManagers;
     }
@@ -66,6 +66,11 @@ public class CanlContextFactory implements SslContextFactory
     public static Builder custom()
     {
         return new Builder();
+    }
+
+    public TrustManager[] getTrustManagers()
+    {
+        return trustManagers;
     }
 
     @Override

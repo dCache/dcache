@@ -21,14 +21,7 @@ import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
-import eu.emi.security.authn.x509.OCSPParametes;
-import eu.emi.security.authn.x509.ProxySupport;
-import eu.emi.security.authn.x509.RevocationParameters;
-import eu.emi.security.authn.x509.X509CertChainValidator;
-import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
-import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.PEMCredential;
-import eu.emi.security.authn.x509.impl.ValidatorParams;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
@@ -265,15 +258,15 @@ public class CanlContextFactory extends SslContextFactory
             protected TrustManager[] getTrustManagers(KeyStore trustStore,
                                                       Collection<? extends CRL> crls) throws Exception
             {
-                OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
-                ValidatorParams validatorParams =
-                        new ValidatorParams(new RevocationParameters(crlCheckingMode, ocspParameters),
-                                            ProxySupport.ALLOW);
-                X509CertChainValidator v =
-                        new OpensslCertChainValidator(certificateAuthorityPath.toString(), true, namespaceMode,
-                                                      certificateAuthorityUpdateInterval,
-                                                      validatorParams, false);
-                return new TrustManager[] { new SSLTrustManager(v) };
+                return org.dcache.ssl.CanlContextFactory.custom()
+                        .withOcspCheckingMode(ocspCheckingMode)
+                        .withCrlCheckingMode(crlCheckingMode)
+                        .withNamespaceMode(namespaceMode)
+                        .withCertificateAuthorityPath(certificateAuthorityPath)
+                        .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval)
+                        .withLazy(false)
+                        .build()
+                        .getTrustManagers();
             }
         };
         factory.start();
