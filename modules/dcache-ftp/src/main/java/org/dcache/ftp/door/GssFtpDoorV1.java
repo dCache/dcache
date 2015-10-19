@@ -106,14 +106,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             subject = context.getSubject();
             //debug("GssFtpDoorV1::ftp_adat: User principal: " + UserPrincipal);
         } catch (IOException e) {
-            CertPathValidatorException cpve =
-                    getFirst(filter(Throwables.getCausalChain(e), CertPathValidatorException.class), null);
-            if (cpve != null && cpve.getCertPath() != null && LOGGER.isDebugEnabled()) {
-                LOGGER.error("Authentication failed: {} in #{} of {}",
-                             e.getMessage(), cpve.getIndex() + 1, cpve.getCertPath());
-            } else {
-                LOGGER.error("Authentication failed: {}", e.getMessage());
-            }
             LOGGER.trace("Authentication failed", e);
             reply("535 Authentication failed: " + e.getMessage());
             return;
@@ -128,8 +120,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             if (!context.isEstablished()) {
                 reply("335 ADAT=");
             } else {
-                LOGGER.info("GssFtpDoorV1::ftp_adat: security context established " +
-                            "with {}", subject);
+                LOGGER.info("GssFtpDoorV1::ftp_adat: security context established with {}", subject);
                 reply("235 OK");
             }
         }

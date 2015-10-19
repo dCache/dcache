@@ -23,12 +23,15 @@ import eu.emi.security.authn.x509.OCSPCheckingMode;
 import eu.emi.security.authn.x509.OCSPParametes;
 import eu.emi.security.authn.x509.ProxySupport;
 import eu.emi.security.authn.x509.RevocationParameters;
+import eu.emi.security.authn.x509.ValidationErrorCategory;
 import eu.emi.security.authn.x509.X509CertChainValidator;
 import eu.emi.security.authn.x509.X509Credential;
 import eu.emi.security.authn.x509.helpers.ssl.SSLTrustManager;
 import eu.emi.security.authn.x509.impl.OpensslCertChainValidator;
 import eu.emi.security.authn.x509.impl.PEMCredential;
 import eu.emi.security.authn.x509.impl.ValidatorParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -38,9 +41,14 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import static eu.emi.security.authn.x509.ValidationErrorCategory.*;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.CRL;
+import static eu.emi.security.authn.x509.ValidationErrorCategory.OCSP;
 import static org.dcache.util.Callables.memoizeFromFiles;
 import static org.dcache.util.Callables.memoizeWithExpiration;
 
@@ -50,6 +58,11 @@ import static org.dcache.util.Callables.memoizeWithExpiration;
  */
 public class CanlContextFactory implements SslContextFactory
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CanlContextFactory.class);
+
+    private static final EnumSet<ValidationErrorCategory> VALIDATION_ERRORS_TO_LOG =
+            EnumSet.of(NAMESPACE, X509_BASIC, X509_CHAIN, NAME_CONSTRAINT, CRL, OCSP);
+
     private final SecureRandom secureRandom = new SecureRandom();
     private final TrustManager[] trustManagers;
 
@@ -176,6 +189,27 @@ public class CanlContextFactory implements SslContextFactory
                     new OpensslCertChainValidator(certificateAuthorityPath.toString(), true, namespaceMode,
                                                   certificateAuthorityUpdateInterval,
                                                   validatorParams, lazyMode);
+            v.addUpdateListener((location, type, level, cause) -> {
+                switch (level) {
+                case ERROR:
+                    LOGGER.error("Error loading {} from {}: ", type, location, cause);
+                    break;
+                case WARNING:
+                    LOGGER.warn("Problem loading {} from {}: ", type, location, cause);
+                    break;
+                case NOTIFICATION:
+                    LOGGER.info("Reloaded {} from {}: ", type, location);
+                    break;
+                }
+            });
+            v.addValidationListener(error -> {
+                if (VALIDATION_ERRORS_TO_LOG.contains(error.getErrorCategory())) {
+                    X509Certificate[] chain = error.getChain();
+                    String subject = (chain != null && chain.length > 0) ? chain[0].getSubjectX500Principal().getName() : "";
+                    LOGGER.warn("The peer's certificate with DN {} was rejected: {}", subject, error);
+                }
+                return false;
+            });
             return new CanlContextFactory(new SSLTrustManager(v));
         }
 
