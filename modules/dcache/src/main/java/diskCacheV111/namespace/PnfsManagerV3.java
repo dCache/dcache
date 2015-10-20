@@ -713,7 +713,6 @@ public class PnfsManagerV3
 
             return "";
         }
-
     }
 
     public static final String hh_add_file_cache_location = "<pnfsid> <pool name>";
@@ -758,37 +757,85 @@ public class PnfsManagerV3
         return "";
     }
 
-    public static final String hh_add_file_checksum = "<pnfsid> <type> <checksum>";
-    public String ac_add_file_checksum_$_3(Args args)
-        throws CacheException
+    @Command(name = "add file checksum",
+             hint = "adds new checksum to the file",
+             description = "Adds checksum value storage for the specific file and " +
+                     "checksum type. If the file already has a checksum corresponding " +
+                     "to the specified type it should be cleared, otherwise 'Checksum " +
+                     "mismatch' error is raised. Only one checksum with the " +
+                     "corresponding type could be added.")
+    public class AddFileChecksumCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
-        Checksum checksum = new Checksum(type, args.argv(2));
-        FileAttributes attributes = new FileAttributes();
-        attributes.setChecksums(Collections.singleton(checksum));
-        _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
-                EnumSet.noneOf(FileAttribute.class));
-        return "";
+        @Argument(index = 0,
+                  usage = "The unique identifier of the file within dCache system.")
+        PnfsId pnfsId;
+
+        @Argument(index = 1,
+                  usage = "The checksums type of the file. The following checksums " +
+                          "are supported: adler32, md5 and md4.")
+        ChecksumType type;
+
+        @Argument(index = 2,
+                  usage = "The checksum value in hexadecimal.")
+        String checksumValue;
+
+        @Override
+        public String call() throws CacheException
+        {
+
+            Checksum checksum = new Checksum(type, checksumValue);
+            FileAttributes attributes = new FileAttributes();
+            attributes.setChecksums(Collections.singleton(checksum));
+            _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
+                    EnumSet.noneOf(FileAttribute.class));
+            return "";
+        }
     }
 
-    public static final String hh_clear_file_checksum = "<pnfsid> <type>";
-    public String ac_clear_file_checksum_$_2(Args args) throws CacheException
+    @Command(name = "clear file checksum",
+             hint = "clears existing checksum for the file",
+             description = "Clears checksum value storage for the specific file and " +
+                     "checksum type.")
+    public class ClearFileChecksumCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
-        _nameSpaceProvider.removeChecksum(ROOT, pnfsId, type);
-        return "";
+        @Argument(index = 0,
+                  usage = "The unique identifier of the file within dCache system.")
+        PnfsId pnfsId;
+
+        @Argument(index = 1,
+                  usage = "The checksums type of the file. These following checksums " +
+                          "are supported: adler32, md5 and md4.")
+        ChecksumType type;
+
+        @Override
+        public String call() throws CacheException
+        {
+            _nameSpaceProvider.removeChecksum(ROOT, pnfsId, type);
+            return "";
+        }
     }
 
-    public static final String hh_get_file_checksum = "<pnfsid> <type>";
-    public String ac_get_file_checksum_$_2(Args args)
-        throws CacheException, NoSuchAlgorithmException
+    @Command(name = "get file checksum",
+             hint = "returns file checksum",
+             description = "Display the checksum corresponding to the specified file and " +
+                     "the checksum type. Nothing is returned if there is no corresponding checksum.")
+    public class GetFileChecksumCommand implements Callable<String>
     {
-        PnfsId pnfsId = new PnfsId(args.argv(0));
-        ChecksumType type = ChecksumType.getChecksumType(args.argv(1));
-        Checksum checksum = getChecksum(ROOT, pnfsId, type);
-        return (checksum == null) ? "" : checksum.toString();
+        @Argument(index = 0,
+                  usage = "The unique identifier of the file.")
+        PnfsId pnfsId;
+
+        @Argument(index = 1,
+                  usage = "The checksums type of the file. These following checksums " +
+                          "are supported: adler32, md5 and md4.")
+        ChecksumType type;
+
+        @Override
+        public String call() throws CacheException, NoSuchAlgorithmException
+        {
+            Checksum checksum = getChecksum(ROOT, pnfsId, type);
+            return (checksum == null) ? "" : checksum.toString();
+        }
     }
 
     @Command(name = "set log slow threshold",
