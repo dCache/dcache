@@ -13,7 +13,6 @@ import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,8 +26,6 @@ import org.dcache.srm.request.Job;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.util.Configuration;
-
-import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
 /**
  *
@@ -143,60 +140,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
         return getTableName()+"_protocols";
     }
 
-    private Boolean validateProtocolsTableSchema(final String tableName)
-    {
-        return jdbcTemplate.execute((Connection con) -> {
-            DatabaseMetaData md = con.getMetaData();
-            String tableNameAsStored =
-                    getIdentifierAsStored(md, tableName);
-            try (ResultSet columns = md.getColumns(null, null, tableNameAsStored, null)) {
-                if (!columns.next()) {
-                    return false;
-                }
-                try {
-                    verifyStringType("PROTOCOL", 1, tableName,
-                            columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
-                } catch (SQLException e) {
-                    return false;
-                }
-                if (!columns.next()) {
-                    return false;
-                }
-                try {
-                    verifyLongType("RequestID", 2, tableName,
-                            columns.getString("COLUMN_NAME"), columns.getInt("DATA_TYPE"));
-                } catch (SQLException e) {
-                    return false;
-                }
-                return true;
-            }
-        });
-    }
-
-    @Override
-    protected void dbInit() throws DataAccessException
-    {
-        super.dbInit();
-
-        String protocolsTableName = getProtocolsTableName().toLowerCase();
-        if (droppedOldTable || !validateProtocolsTableSchema(protocolsTableName)) {
-            dropTable(protocolsTableName);
-        }
-
-        String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
-                " PROTOCOL "+stringType+","+
-                " RequestID "+longType+", "+ //forein key
-                " CONSTRAINT fk_"+getTableName()+"_PP FOREIGN KEY (RequestID) REFERENCES "+
-                getTableName() +" (ID) "+
-                " ON DELETE CASCADE"+
-                " )";
-        logger.trace("calling createTable for {}", protocolsTableName);
-        createTable(protocolsTableName, createProtocolsTable);
-        createIndex(new String[]{ "RequestID" }, protocolsTableName);
-    }
-
-    private static int ADDITIONAL_FIELDS;
-
     @Override
     protected PutRequest getContainerRequest(
             Connection _con,
@@ -256,11 +199,6 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
     }
 
     @Override
-    public String getRequestCreateTableFields() {
-        return "";
-    }
-
-    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -294,14 +232,4 @@ public class PutRequestStorage extends DatabaseContainerRequestStorage<PutReques
     public String getFileRequestsTableName() {
         return PutFileRequestStorage.TABLE_NAME;
     }
-
-    @Override
-    protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-    }
-
-    @Override
-    protected int getMoreCollumnsNum() {
-        return ADDITIONAL_FIELDS;
-    }
-
 }

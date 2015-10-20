@@ -38,29 +38,6 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
         srmUserPersistenceManager = checkNotNull(configuration.getSrmUserPersistenceManager());
     }
 
-    public abstract String getRequestCreateTableFields();
-
-    @Override
-    public String getCreateTableFields() {
-        return
-                ", "+
-                "CREDENTIALID "+  longType+
-                ", "+
-                "RETRYDELTATIME "+  intType+
-                ", "+
-                "SHOULDUPDATERETRYDELTATIME "+  booleanType+
-                ", "+
-                "DESCRIPTION "+ stringType+
-                ", "+
-                "CLIENTHOST "+ stringType+
-                ", "+
-                "STATUSCODE "+ stringType+
-                ", "+
-                "USERID "+ longType+
-
-                getRequestCreateTableFields();
-    }
-
     protected abstract R getRequest(
             Connection _con,
             long ID,
@@ -130,66 +107,4 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
                 set,
                 next_index );
     }
-    private static final int ADDITIONAL_FIELDS_NUM=7;
-
-    protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
-
-    @Override
-    protected final void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-        /*
-         *additional fields:
-                 ","+
-        "CREDENTIALID "+  stringType+
-        ","+
-        "RETRYDELTATIME "+  intType+
-        ","+
-        "SHOULDUPDATERETRYDELTATIME "+  booleanType+
-        ","+
-        "DESCRIPTION "+  stringType+
-        ","+
-        "CLIENTHOST "+ stringType+
-        ", "+
-        "STATUSCODE "+ stringType+
-         */
-        if(columnIndex == nextIndex) {
-            verifyLongType("CREDENTIALID",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+1)
-        {
-            verifyIntType("RETRYDELTATIME",columnIndex,tableName, columnName, columnType);
-
-        }
-        else if(columnIndex == nextIndex+2)
-        {
-            verifyBooleanType("SHOULDUPDATERETRYDELTATIME",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+3)
-        {
-            verifyStringType("DESCRIPTION",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+4)
-        {
-            verifyStringType("CLIENTHOST",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+5)
-        {
-            verifyStringType("STATUSCODE",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+6)
-        {
-            verifyLongType("USERID",columnIndex,tableName, columnName, columnType);
-        }
-        else
-        {
-            __verify(nextIndex+7,columnIndex,tableName, columnName, columnType);
-        }
-    }
-
-    protected abstract int getMoreCollumnsNum();
-
-    @Override
-    protected final int getAdditionalColumnsNum() {
-        return ADDITIONAL_FIELDS_NUM +getMoreCollumnsNum();
-    }
-
 }

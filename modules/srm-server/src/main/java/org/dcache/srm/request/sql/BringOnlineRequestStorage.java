@@ -149,26 +149,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     }
 
     @Override
-    protected void dbInit() throws DataAccessException
-    {
-            super.dbInit();
-            if (droppedOldTable) {
-                    dropTable(getProtocolsTableName());
-            }
-            String protocolsTableName = getProtocolsTableName().toLowerCase();
-            String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
-            " PROTOCOL "+stringType+ ","+
-            " RequestID "+longType+ ", "+ //forein key
-            " CONSTRAINT fk_"+getTableName()+"_PG FOREIGN KEY (RequestID) REFERENCES "+
-            getTableName() +" (ID) "+
-            " ON DELETE CASCADE"+
-            " )";
-            createTable(protocolsTableName, createProtocolsTable);
-   }
-
-    private static int ADDITIONAL_FIELDS;
-
-    @Override
     protected BringOnlineRequest getContainerRequest(
     Connection _con,
     long ID,
@@ -229,10 +209,6 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     }
 
     @Override
-    public String getRequestCreateTableFields() {
-        return "";
-    }
-    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -266,15 +242,4 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage<B
     public String getFileRequestsTableName() {
         return BringOnlineFileRequestStorage.TABLE_NAME;
     }
-
-    @Override
-    protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-    }
-
-
-    @Override
-    protected int getMoreCollumnsNum() {
-         return ADDITIONAL_FIELDS;
-     }
-
 }

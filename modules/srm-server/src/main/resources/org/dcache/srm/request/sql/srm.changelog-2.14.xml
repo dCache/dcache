@@ -1,0 +1,915 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+
+    <changeSet id="1" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating SRM schema as it already exists (this is not an error)">
+            <not><tableExists tableName="srmjobstate"/></not>
+        </preConditions>
+
+        <comment>Create dCache 2.13 compatible SRM schema</comment>
+
+        <createTable tableName="srmjobstate">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="srmjobstate_pkey"/></column>
+            <column name="state" type="varchar(32762)"/>
+        </createTable>
+
+        <!-- BRING ONLINE -->
+
+        <createTable tableName="bringonlinerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="bringonlinerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="retrydeltatime" type="integer"/>
+            <column name="shouldupdateretrydeltatime" type="integer"/>
+            <column name="description" type="varchar(32762)"/>
+            <column name="clienthost" type="varchar(32762)"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="userid" type="bigint"/>
+        </createTable>
+
+        <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="bringonlinerequests" baseColumnNames="state" constraintName="fk_bringonlinerequests_st"
+                                 referencedTableName="srmjobstate" referencedColumnNames="id"/>
+
+        <createTable tableName="bringonlinerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="bringonlinerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="bringonlinerequestshistory" indexName="bringonlinerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinerequestshistory" indexName="bringonlinerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinerequestshistory" indexName="bringonlinerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="bringonlinerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_bringonlinerequests_hi"
+                                 referencedTableName="bringonlinerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="bringonlinerequests_protocols">
+            <column name="protocol" type="varchar(32762)"/>
+            <column name="requestid" type="bigint"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="bringonlinerequests_protocols" baseColumnNames="requestid"
+                                 constraintName="fk_bringonlinerequests_pg"
+                                 referencedTableName="bringonlinerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="bringonlinefilerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="bringonlinefilerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="requestid" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="surl" type="varchar(32762)"/>
+            <column name="fileid" type="varchar(32762)"/>
+            <column name="pinid" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+
+        <addForeignKeyConstraint baseTableName="bringonlinefilerequests" baseColumnNames="state"
+                                 constraintName="fk_bringonlinefilerequests_st"
+                                 referencedTableName="srmjobstate"
+                                 referencedColumnNames="id"/>
+
+        <createTable tableName="bringonlinefilerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="bringonlinefilerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="bringonlinefilerequestshistory" indexName="bringonlinefilerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinefilerequestshistory" indexName="bringonlinefilerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinefilerequestshistory" indexName="bringonlinefilerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="bringonlinefilerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_bringonlinefilerequests_hi"
+                                 referencedTableName="bringonlinefilerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <!-- COPY -->
+
+        <createTable tableName="copyrequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="copyrequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="retrydeltatime" type="integer"/>
+            <column name="shouldupdateretrydeltatime" type="integer"/>
+            <column name="description" type="varchar(32762)"/>
+            <column name="clienthost" type="varchar(32762)"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="userid" type="bigint"/>
+            <column name="storagetype" type="varchar(32762)"/>
+            <column name="retentionpolicy" type="varchar(32762)"/>
+            <column name="accesslatency" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="copyrequests" indexName="copyrequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="copyrequests" indexName="copyrequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="copyrequests" indexName="copyrequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="copyrequests" baseColumnNames="state" constraintName="fk_copyrequests_st"
+                                 referencedTableName="srmjobstate" referencedColumnNames="id"/>
+
+        <createTable tableName="copyrequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="copyrequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="copyrequestshistory" indexName="copyrequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="copyrequestshistory" indexName="copyrequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="copyrequestshistory" indexName="copyrequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="copyrequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_copyrequests_hi"
+                                 referencedTableName="copyrequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="copyfilerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="copyfilerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="requestid" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="fromurl" type="varchar(32762)"/>
+            <column name="tourl" type="varchar(32762)"/>
+            <column name="fromturl" type="varchar(32762)"/>
+            <column name="toturl" type="varchar(32762)"/>
+            <column name="fromlocalpath" type="varchar(32762)"/>
+            <column name="tolocalpath" type="varchar(32762)"/>
+            <column name="size" type="bigint"/>
+            <column name="fromfileid" type="varchar(32762)"/>
+            <column name="tofileid" type="varchar(32762)"/>
+            <column name="remoterequestid" type="varchar(32762)"/>
+            <column name="remotefileid" type="varchar(32762)"/>
+            <column name="spacereservationid" type="varchar(32762)"/>
+            <column name="transferid" type="varchar(32762)"/>
+            <column name="extrainfo" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="copyfilerequests" indexName="copyfilerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="copyfilerequests" indexName="copyfilerequests_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <createIndex tableName="copyfilerequests" indexName="copyfilerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="copyfilerequests" indexName="copyfilerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="copyfilerequests" baseColumnNames="state"
+                                 constraintName="fk_copyfilerequests_st"
+                                 referencedTableName="srmjobstate"
+                                 referencedColumnNames="id"/>
+
+        <createTable tableName="copyfilerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="copyfilerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="copyfilerequestshistory" indexName="copyfilerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="copyfilerequestshistory" indexName="copyfilerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="copyfilerequestshistory" indexName="copyfilerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="copyfilerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_copyfilerequests_hi"
+                                 referencedTableName="copyfilerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+
+        <!-- GET -->
+
+        <createTable tableName="getrequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="getrequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="retrydeltatime" type="integer"/>
+            <column name="shouldupdateretrydeltatime" type="integer"/>
+            <column name="description" type="varchar(32762)"/>
+            <column name="clienthost" type="varchar(32762)"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="userid" type="bigint"/>
+        </createTable>
+
+        <createIndex tableName="getrequests" indexName="getrequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="getrequests" indexName="getrequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="getrequests" indexName="getrequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="getrequests" baseColumnNames="state" constraintName="fk_getrequests_st"
+                                 referencedTableName="srmjobstate" referencedColumnNames="id"/>
+
+        <createTable tableName="getrequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="getrequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="getrequestshistory" indexName="getrequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="getrequestshistory" indexName="getrequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="getrequestshistory" indexName="getrequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="getrequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_getrequests_hi"
+                                 referencedTableName="getrequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="getrequests_protocols">
+            <column name="protocol" type="varchar(32762)"/>
+            <column name="requestid" type="bigint"/>
+        </createTable>
+
+        <createIndex tableName="getrequests_protocols" indexName="getrequests_protocols_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="getrequests_protocols" baseColumnNames="requestid"
+                                 constraintName="fk_getrequests_pp"
+                                 referencedTableName="getrequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="getfilerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="getfilerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="requestid" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="surl" type="varchar(32762)"/>
+            <column name="turl" type="varchar(32762)"/>
+            <column name="fileid" type="varchar(32762)"/>
+            <column name="pinid" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="getfilerequests" indexName="getfilerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="getfilerequests" indexName="getfilerequests_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <createIndex tableName="getfilerequests" indexName="getfilerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="getfilerequests" indexName="getfilerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="getfilerequests" baseColumnNames="state"
+                                 constraintName="fk_getfilerequests_st"
+                                 referencedTableName="srmjobstate"
+                                 referencedColumnNames="id"/>
+
+        <createTable tableName="getfilerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="getfilerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="getfilerequestshistory" indexName="getfilerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="getfilerequestshistory" indexName="getfilerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="getfilerequestshistory" indexName="getfilerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="getfilerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_getfilerequests_hi"
+                                 referencedTableName="getfilerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+
+
+        <!-- LS-->
+
+        <createTable tableName="lsrequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="lsrequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="retrydeltatime" type="integer"/>
+            <column name="shouldupdateretrydeltatime" type="integer"/>
+            <column name="description" type="varchar(32762)"/>
+            <column name="clienthost" type="varchar(32762)"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="userid" type="bigint"/>
+            <column name="explanation" type="varchar(32762)"/>
+            <column name="longformat" type="integer"/>
+            <column name="numoflevels" type="integer"/>
+            <column name="count" type="integer"/>
+            <column name="lsoffset" type="integer"/>
+        </createTable>
+
+        <createIndex tableName="lsrequests" indexName="lsrequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="lsrequests" indexName="lsrequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="lsrequests" indexName="lsrequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="lsrequests" baseColumnNames="state" constraintName="fk_lsrequests_st"
+                                 referencedTableName="srmjobstate" referencedColumnNames="id"/>
+
+        <createTable tableName="lsrequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="lsrequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="lsrequestshistory" indexName="lsrequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="lsrequestshistory" indexName="lsrequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="lsrequestshistory" indexName="lsrequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="lsrequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_lsrequests_hi"
+                                 referencedTableName="lsrequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="lsfilerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="lsfilerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="requestid" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="surl" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="lsfilerequests" indexName="lsfilerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="lsfilerequests" indexName="lsfilerequests_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <createIndex tableName="lsfilerequests" indexName="lsfilerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="lsfilerequests" indexName="lsfilerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="lsfilerequests" baseColumnNames="state"
+                                 constraintName="fk_lsfilerequests_st"
+                                 referencedTableName="srmjobstate"
+                                 referencedColumnNames="id"/>
+
+        <createTable tableName="lsfilerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="lsfilerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="lsfilerequestshistory" indexName="lsfilerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="lsfilerequestshistory" indexName="lsfilerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="lsfilerequestshistory" indexName="lsfilerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="lsfilerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_lsfilerequests_hi"
+                                 referencedTableName="lsfilerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <!-- PUT -->
+
+        <createTable tableName="putrequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="putrequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="retrydeltatime" type="integer"/>
+            <column name="shouldupdateretrydeltatime" type="integer"/>
+            <column name="description" type="varchar(32762)"/>
+            <column name="clienthost" type="varchar(32762)"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="userid" type="bigint"/>
+        </createTable>
+
+        <createIndex tableName="putrequests" indexName="putrequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="putrequests" indexName="putrequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="putrequests" indexName="putrequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="putrequests" baseColumnNames="state" constraintName="fk_putrequests_st"
+                                 referencedTableName="srmjobstate" referencedColumnNames="id"/>
+
+        <createTable tableName="putrequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="putrequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="putrequestshistory" indexName="putrequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="putrequestshistory" indexName="putrequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="putrequestshistory" indexName="putrequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="putrequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_putrequests_hi"
+                                 referencedTableName="putrequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="putrequests_protocols">
+            <column name="protocol" type="varchar(32762)"/>
+            <column name="requestid" type="bigint"/>
+        </createTable>
+
+        <createIndex tableName="putrequests_protocols" indexName="putrequests_protocols_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="putrequests_protocols" baseColumnNames="requestid"
+                                 constraintName="fk_putrequests_pp"
+                                 referencedTableName="putrequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <createTable tableName="putfilerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="putfilerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="requestid" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="surl" type="varchar(32762)"/>
+            <column name="turl" type="varchar(32762)"/>
+            <column name="fileid" type="varchar(32762)"/>
+            <column name="parentfileid" type="varchar(32762)"/>
+            <column name="spacereservationid" type="varchar(32762)"/>
+            <column name="size" type="bigint"/>
+            <column name="retentionpolicy" type="varchar(32762)"/>
+            <column name="accesslatency" type="varchar(32762)"/>
+        </createTable>
+
+
+        <createIndex tableName="putfilerequests" indexName="putfilerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="putfilerequests" indexName="putfilerequests_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+
+        <createIndex tableName="putfilerequests" indexName="putfilerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="putfilerequests" indexName="putfilerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="putfilerequests" baseColumnNames="state"
+                                 constraintName="fk_putfilerequests_st"
+                                 referencedTableName="srmjobstate"
+                                 referencedColumnNames="id"/>
+
+        <createTable tableName="putfilerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="putfilerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="putfilerequestshistory" indexName="putfilerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="putfilerequestshistory" indexName="putfilerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="putfilerequestshistory" indexName="putfilerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="putfilerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_putfilerequests_hi"
+                                 referencedTableName="putfilerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+
+        <!-- RESERVE SPACE -->
+
+        <createTable tableName="reservespacerequests">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="reservespacerequests_pkey"/></column>
+            <column name="nextjobid" type="bigint"/>
+            <column name="creationtime" type="bigint"/>
+            <column name="lifetime" type="bigint"/>
+            <column name="state" type="integer"/>
+            <column name="errormessage" type="varchar(32762)"/>
+            <column name="schedulerid" type="varchar(32762)"/>
+            <column name="schedulertimestamp" type="bigint"/>
+            <column name="numofretr" type="bigint"/>
+            <column name="maxnumofretr" type="bigint"/>
+            <column name="laststatetransitiontime" type="bigint"/>
+            <column name="credentialid" type="bigint"/>
+            <column name="retrydeltatime" type="integer"/>
+            <column name="shouldupdateretrydeltatime" type="integer"/>
+            <column name="description" type="varchar(32762)"/>
+            <column name="clienthost" type="varchar(32762)"/>
+            <column name="statuscode" type="varchar(32762)"/>
+            <column name="userid" type="bigint"/>
+            <column name="sizeinbytes" type="bigint"/>
+            <column name="reservationlifetime" type="bigint"/>
+            <column name="spacetoken" type="varchar(32762)"/>
+            <column name="retentionpolicy" type="varchar(32762)"/>
+            <column name="accesslatency" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="reservespacerequests" indexName="reservespacerequests_nextjobid_idx">
+            <column name="nextjobid"/>
+        </createIndex>
+
+        <createIndex tableName="reservespacerequests" indexName="reservespacerequests_schedulerid_idx">
+            <column name="schedulerid"/>
+        </createIndex>
+
+        <createIndex tableName="reservespacerequests" indexName="reservespacerequests_state_idx">
+            <column name="state"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="reservespacerequests" baseColumnNames="state" constraintName="fk_reservespacerequests_st"
+                                 referencedTableName="srmjobstate" referencedColumnNames="id"/>
+
+        <createTable tableName="reservespacerequestshistory">
+            <column name="id" type="bigint"><constraints primaryKey="true" nullable="false" primaryKeyName="reservespacerequestshistory_pkey"/></column>
+            <column name="jobid" type="bigint"/>
+            <column name="stateid" type="bigint"/>
+            <column name="transitiontime" type="bigint"/>
+            <column name="description" type="varchar(32762)"/>
+        </createTable>
+
+        <createIndex tableName="reservespacerequestshistory" indexName="reservespacerequestshistory_jobid_idx">
+            <column name="jobid"/>
+        </createIndex>
+
+        <createIndex tableName="reservespacerequestshistory" indexName="reservespacerequestshistory_stateid_idx">
+            <column name="stateid"/>
+        </createIndex>
+
+        <createIndex tableName="reservespacerequestshistory" indexName="reservespacerequestshistory_transitiontime_idx">
+            <column name="transitiontime"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="reservespacerequestshistory" baseColumnNames="jobid"
+                                 constraintName="fk_reservespacerequests_hi"
+                                 referencedTableName="reservespacerequests"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="2" author="behrmann" dbms="postgresql">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating computed indexes as they already exist (this is not an error)">
+            <not><indexExists indexName="bringonlinerequests_expirationtime_idx"/></not>
+        </preConditions>
+
+        <comment>Add computed indexes for expiration time</comment>
+
+        <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="copyrequests" indexName="copyrequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="copyfilerequests" indexName="copyfilerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="getrequests" indexName="getrequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="getfilerequests" indexName="getfilerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="lsrequests" indexName="lsrequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="lsfilerequests" indexName="lsfilerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="putrequests" indexName="putrequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="putfilerequests" indexName="putfilerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <createIndex tableName="reservespacerequests" indexName="reservespacerequests_expirationtime_idx">
+            <column name="(creationtime + lifetime)" computed="true"/>
+        </createIndex>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="3" author="behrmann">
+        <comment>Drop request states 1,4,5, and 13</comment>
+
+        <sql>
+            UPDATE bringonlinerequests SET state=2 WHERE state=4;
+            UPDATE bringonlinerequests SET state=3 WHERE state IN (1,5,13);
+            UPDATE bringonlinefilerequests SET state=2 WHERE state=4;
+            UPDATE bringonlinefilerequests SET state=3 WHERE state IN (1,5,13);
+
+            UPDATE copyrequests SET state=2 WHERE state=4;
+            UPDATE copyrequests SET state=3 WHERE state IN (1,5,13);
+            UPDATE copyfilerequests SET state=2 WHERE state=4;
+            UPDATE copyfilerequests SET state=3 WHERE state IN (1,5,13);
+
+            UPDATE getrequests SET state=2 WHERE state=4;
+            UPDATE getrequests SET state=3 WHERE state IN (1,5,13);
+            UPDATE getfilerequests SET state=2 WHERE state=4;
+            UPDATE getfilerequests SET state=3 WHERE state IN (1,5,13);
+
+            UPDATE lsrequests SET state=2 WHERE state=4;
+            UPDATE lsrequests SET state=3 WHERE state IN (1,5,13);
+            UPDATE lsfilerequests SET state=2 WHERE state=4;
+            UPDATE lsfilerequests SET state=3 WHERE state IN (1,5,13);
+
+            UPDATE putrequests SET state=2 WHERE state=4;
+            UPDATE putrequests SET state=3 WHERE state IN (1,5,13);
+            UPDATE putfilerequests SET state=2 WHERE state=4;
+            UPDATE putfilerequests SET state=3 WHERE state IN (1,5,13);
+
+            UPDATE reservespacerequests SET state=2 WHERE state=4;
+            UPDATE reservespacerequests SET state=3 WHERE state IN (1,5,13);
+        </sql>
+        <sql>
+            DELETE FROM srmjobstate WHERE id IN (1,4,5,13);
+        </sql>
+
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="4" author="behrmann">
+        <comment>Refresh list of valid request states</comment>
+
+        <loadUpdateData tableName="srmjobstate" primaryKey="id" file="/org/dcache/srm/request/sql/srmjobstate-214.csv"/>
+    </changeSet>
+
+</databaseChangeLog>

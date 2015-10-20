@@ -133,8 +133,6 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         return stmt;
     }
 
-        private static final int ADDITIONAL_FIELDS = 5;
-
         public LsRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
                 throws IOException, DataAccessException
         {
@@ -194,17 +192,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                                       offset);
         }
 
-        @Override
-        public String getRequestCreateTableFields() {
-                return " "+
-                        ",EXPLANATION "+stringType +
-                        ",LONGFORMAT "+booleanType +
-                        ",NUMOFLEVELS "+intType +
-                        ",\"count\" "+intType +
-                        ",LSOFFSET "+intType;
-        }
-
-        @Override
+    @Override
         public String getTableName() {
                 return TABLE_NAME;
         }
@@ -212,40 +200,5 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         @Override
         public String getFileRequestsTableName() {
                 return LsFileRequestStorage.TABLE_NAME;
-        }
-
-        @Override
-        protected void __verify(int nextIndex,
-                                int columnIndex,
-                                String tableName,
-                                String columnName,
-                                int columnType) throws SQLException {
-                if(columnIndex == nextIndex) {
-                        verifyStringType("EXPLANATION",columnIndex,tableName, columnName, columnType);
-                }
-                else if(columnIndex == nextIndex+1) {
-                        verifyBooleanType("LONGFORMAT",columnIndex,tableName, columnName, columnType);
-                }
-                else if(columnIndex == nextIndex+2) {
-                        verifyIntType("NUMOFLEVELS",columnIndex,tableName, columnName, columnType);
-                }
-                else if(columnIndex == nextIndex+3) {
-                        verifyIntType("count",columnIndex,tableName, columnName, columnType);
-                }
-                else if(columnIndex == nextIndex+4) {
-                        verifyIntType("LSOFFSET",columnIndex,tableName, columnName, columnType);
-                }
-                else {
-                        throw new SQLException("database table schema changed:"+
-                                               "table named "+tableName+
-                                               " column #"+columnIndex+" has name \""+columnName+
-                                               "\"  has type \""+getTypeName(columnType)+
-                                               " this column should not be present!!!");
-                }
-        }
-
-        @Override
-        protected int getMoreCollumnsNum() {
-                return ADDITIONAL_FIELDS;
         }
 }

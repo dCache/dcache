@@ -25,7 +25,7 @@ liquibase() # $1 = domain, $2 = cell, $3+ = liquibase arguments
     password=$(getScopedProperty db.password "$1" "$2")
     driver=$(getScopedProperty db.driver "$1" "$2")
     classpath=$(printLimitedClassPath liquibase-core liquibase-slf4j slf4j-api logback-classic \
-                logback-core logback-console-config dcache-core dcache-spacemanager chimera postgresql hsqldb h2)
+                logback-core logback-console-config dcache-core dcache-spacemanager srm-server chimera postgresql hsqldb h2)
     changelog=$(getScopedProperty db.schema.changelog "$1" "$2")
 
     shift 2

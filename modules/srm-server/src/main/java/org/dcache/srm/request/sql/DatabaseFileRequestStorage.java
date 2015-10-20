@@ -29,33 +29,6 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
         super(configuration, executor);
     }
 
-    @Override
-    protected void dbInit() throws DataAccessException
-    {
-           super.dbInit();
-           String columns[] = {
-		    "REQUESTID"};
-	   createIndex(columns, getTableName().toLowerCase());
-    }
-
-
-    public abstract String getFileRequestCreateTableFields();
-
-    public abstract String getRequestTableName();
-
-    @Override
-    public String getCreateTableFields() {
-        return
-        ","+
-        "REQUESTID "+  longType+
-        ", CREDENTIALID "+  longType+
-        ", "+
-        "STATUSCODE "+ stringType+
-        getFileRequestCreateTableFields();
-    }
-
-    private static final int ADDITIONAL_FIELDS_NUM=3;
-
     protected abstract F getFileRequest(
     Connection _con,
     long ID,
@@ -114,38 +87,6 @@ public abstract class DatabaseFileRequestStorage<F extends FileRequest<?>> exten
 
     @Override
     public abstract String getTableName();
-
-    protected abstract void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException ;
-
-    @Override
-    protected void _verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-        /*
-         *additional fields:
-         "REQUESTID "+  longType+
-        ", CREDENTIALID "+  stringType+*/
-        if(columnIndex == nextIndex) {
-            verifyLongType("REQUESTID",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+1)
-        {
-            verifyLongType("CREDENTIALID",columnIndex,tableName, columnName, columnType);
-
-        }
-        else if(columnIndex == nextIndex+2)
-        {
-            verifyStringType("STATUSCODE",columnIndex,tableName, columnName, columnType);
-        }
-        else
-        {
-            __verify(nextIndex+3,columnIndex,tableName, columnName, columnType);
-        }
-   }
-
-    protected abstract int getMoreCollumnsNum();
-    @Override
-    protected int getAdditionalColumnsNum() {
-        return ADDITIONAL_FIELDS_NUM +getMoreCollumnsNum();
-    }
 
     /*protected java.util.Set getFileRequests(String requestId) throws java.sql.SQLException{
         return getJobsByCondition(" REQUESTID = '"+requestId+"'");

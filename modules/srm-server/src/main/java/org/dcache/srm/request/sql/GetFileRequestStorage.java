@@ -181,69 +181,7 @@ public class GetFileRequestStorage extends DatabaseFileRequestStorage<GetFileReq
     }
 
     @Override
-    public String getFileRequestCreateTableFields() {
-        return
-        ","+
-        "SURL "+  stringType+
-        ","+
-        "TURL "+  stringType+
-        ","+
-        "FILEID "+  stringType+
-        ","+
-        "PINID "+  stringType;
-    }
-
-    private static final int ADDITIONAL_FIELDS = 4;
-
-    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
-
-     @Override
-     public String getRequestTableName() {
-         return GetRequestStorage.TABLE_NAME;
-     }
-
-     @Override
-     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-         /*
-          *       "SURL "+  stringType+
-        ","+
-        "TURL "+  stringType+
-        ","+
-        "FILEID "+  stringType+
-        ","+
-        "PINID "+  stringType;
-         */
-        if(columnIndex == nextIndex) {
-            verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+1)
-        {
-            verifyStringType("TURL",columnIndex,tableName, columnName, columnType);
-
-        }
-        else if(columnIndex == nextIndex+2)
-        {
-            verifyStringType("FILEID",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+3)
-        {
-            verifyStringType("PINID",columnIndex,tableName, columnName, columnType);
-        }
-        else {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has name \""+columnName+
-                    "\"  has type \""+getTypeName(columnType)+
-                    " this column should not be present!!!");
-        }
-     }
-
-    @Override
-    protected int getMoreCollumnsNum() {
-         return ADDITIONAL_FIELDS;
-     }
-
 }

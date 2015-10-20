@@ -236,18 +236,6 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
     }
 
     @Override
-    public String getRequestCreateTableFields() {
-        return ", "+
-                "STORAGETYPE "+ stringType+
-        ", "+
-                "RETENTIONPOLICY "+ stringType+
-        ", "+
-        "ACCESSLATENCY "+ stringType;
-    }
-
-    private static final int ADDITIONAL_FIELDS = 3;
-
-    @Override
     public String getTableName() {
         return TABLE_NAME;
     }
@@ -256,34 +244,4 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage<CopyRequ
     public String getFileRequestsTableName() {
         return CopyFileRequestStorage.TABLE_NAME;
     }
-
-    @Override
-    protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-        if(columnIndex == nextIndex)
-        {
-            verifyStringType("STORAGETYPE",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+1)
-        {
-            verifyStringType("RETENTIONPOLICY",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+2)
-        {
-            verifyStringType("ACCESSLATENCY",columnIndex,tableName, columnName, columnType);
-        }
-        else {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has name \""+columnName+
-                    "\"  has type \""+getTypeName(columnType)+
-                    " this column should not be present!!!");
-        }
-    }
-
-
-    @Override
-    protected int getMoreCollumnsNum() {
-         return ADDITIONAL_FIELDS;
-     }
-
 }

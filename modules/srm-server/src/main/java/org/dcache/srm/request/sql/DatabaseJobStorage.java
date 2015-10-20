@@ -70,23 +70,17 @@ import com.google.common.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.BadSqlGrammarException;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -103,8 +97,6 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 
-import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
-
 /**
  *
  * @author  timur
@@ -112,8 +104,6 @@ import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>, Runnable {
     private final static Logger logger =
             LoggerFactory.getLogger(DatabaseJobStorage.class);
-
-    protected static final String INDEX_SUFFIX="_idx";
 
     @SuppressWarnings("unchecked")
     private final Class<J> jobType = (Class<J>) new TypeToken<J>(getClass()) {}.getRawType();
@@ -124,17 +114,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
     protected final TransactionTemplate transactionTemplate;
     private final boolean logHistory;
 
-    protected static final String stringType=" VARCHAR(32672) ";
-    protected static final String longType=" BIGINT ";
-    protected static final String intType=" INTEGER ";
-    protected static final String dateTimeType= " TIMESTAMP ";
-    protected static final String booleanType= " INT ";
-    protected static final int stringType_int= Types.VARCHAR;
-    protected static final int longType_int= Types.BIGINT;
-    protected static final int intType_int= Types.INTEGER;
-    protected static final int dateTimeType_int= Types.TIMESTAMP;
-    protected static final int booleanType_int= Types.INTEGER;
-
     public DatabaseJobStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
             throws DataAccessException
     {
@@ -143,8 +122,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         this.logHistory = configuration.isRequestHistoryDatabaseEnabled();
         this.jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
         this.transactionTemplate = new TransactionTemplate(configuration.getTransactionManager());
-
-        dbInit();
     }
 
     @Override
@@ -153,144 +130,12 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
         return logHistory;
     }
 
-    public static final String createFileRequestTablePrefix =
-            "ID "+         longType+" NOT NULL PRIMARY KEY"+
-                    ","+
-                    "NEXTJOBID "+           longType+
-                    ","+
-                    "CREATIONTIME "+        longType
-                    +","+
-                    "LIFETIME "+            longType
-                    +","+
-                    "STATE "+               intType
-                    +","+
-                    "ERRORMESSAGE "+        stringType+
-                    ","+
-                    "SCHEDULERID "+         stringType+
-                    ","+
-                    "SCHEDULERTIMESTAMP "+  longType+
-                    ","+
-                    "NUMOFRETR "+  longType+
-                    ","+
-                    "MAXNUMOFRETR "+  longType+
-                    ","+
-                    "LASTSTATETRANSITIONTIME"+ longType;
-
-    public static final String srmStateTableName =
-            "SRMJOBSTATE";
-    public static final String createStateTable =
-            "CREATE TABLE "+srmStateTableName+" ( "+
-                    "ID "+   longType+" NOT NULL PRIMARY KEY"+
-                    ","+
-                    "STATE "+           stringType+
-                    " )";
-
-    public static final String createHistroyTablePrefix =
-            "ID "+         longType+" NOT NULL PRIMARY KEY"+
-                    ","+
-                    "JOBID "+         longType+
-                    ","+
-                    "STATEID "+           longType+
-                    ","+
-                    "TRANSITIONTIME "+        longType
-                    +","+
-                    "DESCRIPTION "+            stringType;
-
     //this should always reflect the number of field definde in the
     // prefix above
-    private static final int COLLUMNS_NUM= 11;
     public abstract String getTableName();
 
-    public abstract String getCreateTableFields();
-
-    protected boolean droppedOldTable;
     private String getHistoryTableName() {
         return getTableName().toLowerCase()+"history";
-    }
-
-    protected void dbInit()
-            throws DataAccessException
-    {
-        createTable(srmStateTableName, createStateTable);
-        insertStates();
-        String tableName = getTableName().toLowerCase();
-        String createStatement = "CREATE TABLE " + tableName + "(" +
-                createFileRequestTablePrefix +getCreateTableFields()+", "+
-                " CONSTRAINT fk_"+tableName+"_ST FOREIGN KEY (STATE) REFERENCES "+
-                srmStateTableName +" (ID) "+
-                " )";
-        createTable(tableName,createStatement,true);
-        String historyTableName = getHistoryTableName();
-        if (droppedOldTable) {
-            dropTable(historyTableName);
-        }
-        String createHistoryTable = "CREATE TABLE "+ historyTableName+" ( "+
-                createHistroyTablePrefix+", "+
-                " CONSTRAINT fk_"+tableName+"_HI FOREIGN KEY (JOBID) REFERENCES "+
-                tableName +" (ID) "+
-                " ON DELETE CASCADE"+
-                " )";
-        createTable(historyTableName, createHistoryTable);
-        //
-        // create indexes (litvinse@fnal.gov), some hack
-        //
-        String columns[] = {
-                "NEXTJOBID",
-                "STATE",
-        "SCHEDULERID"};
-        createIndex(columns, getTableName().toLowerCase());
-        //
-        // create index on expirationtime (CREATIONTIME+LIFETIME)
-        // which is used to find requests that can be removed from DB
-        //
-        try {
-            createIndex(getTableName().toLowerCase()+"_expirationtime_idx",
-                    "(CREATIONTIME+LIFETIME)".toLowerCase(),
-                    getTableName().toLowerCase());
-        } catch (BadSqlGrammarException ignored) {
-            // Not all databases support computed indexes
-        }
-
-
-        String history_columns[] = {
-                "STATEID",
-                "TRANSITIONTIME",
-        "JOBID"};
-        createIndex(history_columns, getHistoryTableName().toLowerCase());
-    }
-
-    private void insertStates() throws DataAccessException
-    {
-        jdbcTemplate.execute((Connection connection) -> {
-            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-
-            EnumSet<State> states = EnumSet.allOf(State.class);
-            try (Statement s = connection.createStatement()) {
-                ResultSet rs = s.executeQuery("SELECT ID,STATE FROM " + srmStateTableName);
-                while (rs.next()) {
-                    int id = rs.getInt(1);
-                    String name = rs.getString(2);
-                    State state = State.getState(id);
-                    if (state.toString().equals(name)) {
-                        states.remove(state);
-                    }
-                }
-            }
-            if (!states.isEmpty()) {
-                try (Statement s = connection.createStatement()) {
-                    s.executeUpdate("DELETE FROM " + srmStateTableName);
-                }
-                try (PreparedStatement s = connection.prepareStatement("INSERT INTO " + srmStateTableName + " VALUES (?,?)")) {
-                    for (State state : State.values()) {
-                        s.setInt(1, state.getStateId());
-                        s.setString(2, state.toString());
-                        s.addBatch();
-                    }
-                    s.executeBatch();
-                }
-            }
-            return null;
-        });
     }
 
     protected abstract J getJob(
@@ -606,326 +451,6 @@ public abstract class DatabaseJobStorage<J extends Job> implements JobStorage<J>
             }
             return stmt;
         });
-    }
-
-    protected void createTable(String tableName, String createStatement)
-            throws DataAccessException
-    {
-        createTable(tableName, createStatement,false);
-    }
-
-    protected void createTable(final String tableName, final String createStatement, final boolean verify)
-            throws DataAccessException
-    {
-            jdbcTemplate.execute((Connection con) -> {
-                DatabaseMetaData md = con.getMetaData();
-                String tableNameAsStored = getIdentifierAsStored(md, tableName);
-                try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
-                    if (!tableRs.next()) {
-                        logger.debug("DatabaseMetaData.getTables returned empty result set");
-                        logger.debug("{} does not exits", tableName);
-                        logger.debug("executing statement: {}", createStatement);
-                        try (Statement s = con.createStatement()) {
-                            s.executeUpdate(createStatement);
-                        }
-                    } else if (verify) {
-                        try (ResultSet columns = md
-                                .getColumns(null, null, tableNameAsStored, null)) {
-                            int columnIndex = 0;
-                            while (columns.next()) {
-                                columnIndex++;
-                                String columnName = columns.getString("COLUMN_NAME");
-                                int columnDataType = columns.getInt("DATA_TYPE");
-                                verify(columnIndex, tableName, columnName, columnDataType);
-                            }
-                            if (getColumnNum() != columnIndex) {
-                                throw new SQLException("database table schema changed:" +
-                                        " table named " + tableName +
-                                        " has wrong number of fields: " + columnIndex + ", should be :" + getColumnNum());
-                            }
-                        } catch (SQLException e) {
-                            logger.warn("Verification failed. Trying to drop the table and create a new one: {}",
-                                    e.toString());
-                            dropTable(tableName, con);
-                            droppedOldTable = true;
-
-                            try (Statement s = con.createStatement()) {
-                                logger.debug("executing statement: {}", createStatement);
-                                s.executeUpdate(createStatement);
-                            }
-                        }
-                    }
-                }
-                return null;
-            });
-    }
-
-    protected int dropTable(final String oldName) throws DataAccessException
-    {
-        return jdbcTemplate.execute((Connection con) -> dropTable(oldName, con));
-    }
-
-    private int dropTable(String oldName, Connection con) throws SQLException
-    {
-        //rename does not work because the implicit index created for the
-        // original table remains connected to the renamed table
-        /// and the new table creation fails because of imposibility of creation
-        // of the new index
-        String dropStatement = "DROP TABLE IF EXISTS " + oldName + " CASCADE";
-        try (Statement s = con.createStatement()) {
-            logger.debug("executing statement: {}", dropStatement);
-            return s.executeUpdate(dropStatement);
-        }
-    }
-
-    protected abstract int getAdditionalColumnsNum();
-    private int getColumnNum() {
-        return COLLUMNS_NUM + getAdditionalColumnsNum();
-    }
-
-    protected void createIndex(final String[] columns, final String tableName)
-            throws DataAccessException
-    {
-        jdbcTemplate.execute(new ConnectionCallback<Void>()
-        {
-            @Override
-            public Void doInConnection(Connection con) throws SQLException, DataAccessException
-            {
-                Set<String> indexedColumns = getExistingIndexes(con);
-                createNewIndexes(con, indexedColumns);
-                return null;
-            }
-
-            private void createNewIndexes(Connection con, Set<String> indexedColumns)
-                    throws SQLException
-            {
-                for (String column : columns) {
-                    column = column.toLowerCase();
-                    if (!indexedColumns.contains(column)) {
-                        String indexName = tableName.toLowerCase() + "_" + column + INDEX_SUFFIX;
-                        createIndex(con, indexName, tableName, column);
-                    }
-                }
-            }
-
-            private Set<String> getExistingIndexes(Connection con) throws SQLException
-            {
-                Set<String> indexedColumns = new HashSet<>();
-                DatabaseMetaData md = con.getMetaData();
-                String tableNameAsStored = getIdentifierAsStored(md, tableName);
-                try (ResultSet rs = md.getIndexInfo(null, null, tableNameAsStored, false, false)) {
-                    while (rs.next()) {
-                        indexedColumns.add(rs.getString("column_name").toLowerCase());
-                    }
-                }
-                return indexedColumns;
-            }
-        });
-    }
-
-    protected void createIndex(final String indexname, final String expression, final String tableName)
-                    throws DataAccessException
-    {
-        jdbcTemplate.execute((Connection con) -> {
-            DatabaseMetaData dbMetaData = con.getMetaData();
-            ResultSet index_rset =
-                    dbMetaData.getIndexInfo(null,
-                            null,
-                            getIdentifierAsStored(dbMetaData, tableName),
-                            false,
-                            false);
-
-            while (index_rset.next()) {
-                String s = index_rset.getString("index_name").toLowerCase();
-                if (indexname.equalsIgnoreCase(s)) {
-                    logger.debug("index {} already exists", indexname);
-                    return null;
-                }
-            }
-            createIndex(con, indexname, tableName, expression);
-            return null;
-        });
-    }
-
-    private void createIndex(
-            final Connection con,
-            final String indexName,
-            final String tableName,
-            final String columnOrExpression) throws SQLException
-    {
-        String createIndexStatementText = "CREATE INDEX "+indexName+
-                " ON "+tableName+" ("+columnOrExpression+")";
-        logger.debug("Executing {}", createIndexStatementText);
-        try (Statement createIndexStatement = con.createStatement()) {
-            createIndexStatement.executeUpdate(createIndexStatementText);
-        }
-    }
-
-
-
-    protected abstract void _verify(int nextIndex, int columnIndex,String tableName,String columnName,int columnType)
-            throws SQLException;
-
-    protected String getTypeName(int type){
-        Field[] fields = Types.class.getFields();
-        for (Field field : fields) {
-            try {
-
-                Object val = field.get(null);
-                int value = (Integer) val;
-                if (value == type) {
-                    return field.getName();
-                }
-            } catch (Exception e) {/*ignore*/}
-
-        }
-        return "UNKNOWN SQL TYPE:"+type;
-    }
-
-    protected void verifyLongType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
-            throws SQLException
-            {
-        if(!columnName.equalsIgnoreCase(expectedName) )
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has name \""+columnName+
-                    "\" should be \""+expectedName+"\"");
-        }
-        if( columnType != longType_int)
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has type \""+getTypeName(columnType)+
-                    "\" should be \""+longType+"\"");
-
-        }
-
-            }
-    protected void verifyIntType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
-            throws SQLException
-            {
-        if(!columnName.equalsIgnoreCase(expectedName) )
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has name \""+columnName+
-                    "\" should be \""+expectedName+"\"");
-        }
-        if( columnType != intType_int)
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has type \""+getTypeName(columnType)+
-                    "\" should be \""+intType+"\"");
-
-        }
-
-            }
-
-    protected void verifyBooleanType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
-            throws SQLException
-            {
-        if(!columnName.equalsIgnoreCase(expectedName) )
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has name \""+columnName+
-                    "\" should be \""+expectedName+"\"");
-        }
-        if( columnType != booleanType_int)
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has type \""+getTypeName(columnType)+
-                    "\" should be \""+booleanType+"\"");
-
-        }
-
-            }
-
-    protected void verifyStringType(String expectedName,int columnIndex,String tableName, String columnName,int columnType)
-            throws SQLException
-            {
-        if(!columnName.equalsIgnoreCase(expectedName) )
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" has name \""+columnName+
-                    "\" should be \""+expectedName+"\"");
-        }
-        if( columnType != stringType_int)
-        {
-            throw new SQLException("database table schema changed:"+
-                    "table named "+tableName+
-                    " column #"+columnIndex+" named \""+columnName+"\" has type \""+getTypeName(columnType)+
-                    "\" should be \""+stringType+"\"");
-
-        }
-
-            }
-
-    public void verify(int columnIndex,String tableName, String columnName,int columnType) throws SQLException {
-        switch (columnIndex) {
-        /*    "ID "+         longType+" NOT NULL PRIMARY KEY"+
-    ","+
-    "NEXTJOBID "+           longType+
-    ","+
-    "CREATIONTIME "+        longType
-    +","+
-    "LIFETIME "+            longType
-    +","+
-    "STATE "+               stringType
-    +","+
-    "ERRORMESSAGE "+        stringType+
-    ","+
-    "CREATORID "+           stringType+
-    ","+
-    "SCHEDULERID "+         stringType+
-    ","+
-    "SCHEDULERTIMESTAMP "+  longType+
-    ","+
-    "NUMOFRETR "+  longType+
-    ","+
-    "MAXNUMOFRETR "+  longType;
-         */
-        case 1:
-            verifyLongType("ID",columnIndex,tableName, columnName, columnType);
-            break;
-        case 2:
-            verifyLongType("NEXTJOBID",columnIndex,tableName, columnName, columnType);
-            break;
-        case 3:
-            verifyLongType("CREATIONTIME",columnIndex,tableName, columnName, columnType);
-            break;
-        case 4:
-            verifyLongType("LIFETIME",columnIndex,tableName, columnName, columnType);
-            break;
-        case 5:
-            verifyIntType("STATE",columnIndex,tableName, columnName, columnType);
-            break;
-        case 6:
-            verifyStringType("ERRORMESSAGE",columnIndex,tableName, columnName, columnType);
-            break;
-        case 7:
-            verifyStringType("SCHEDULERID",columnIndex,tableName, columnName, columnType);
-            break;
-        case 8:
-            verifyLongType("SCHEDULERTIMESTAMP",columnIndex,tableName, columnName, columnType);
-            break;
-        case 9:
-            verifyLongType("NUMOFRETR",columnIndex,tableName, columnName, columnType);
-            break;
-        case 10:
-            verifyLongType("MAXNUMOFRETR",columnIndex,tableName, columnName, columnType);
-            break;
-        case 11:
-            verifyLongType("LASTSTATETRANSITIONTIME",columnIndex,tableName, columnName, columnType);
-            break;
-
-        default:
-            _verify(12,columnIndex,tableName, columnName, columnType);
-        }
     }
 
     @Override

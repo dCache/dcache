@@ -36,6 +36,8 @@ check -strong srm.authn.gsi.delegation.cache.lifetime.unit
 
 check -strong srm.client-transport
 
+check -strong srm.db.schema.auto
+check -strong srm.db.schema.changelog
 check -strong srm.db.connections.idle
 check -strong srm.db.connections.max
 check -strong srm.db.url

@@ -165,21 +165,6 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
         super(configuration, executor);
     }
 
-    @Override
-    public String getRequestCreateTableFields() {
-        return
-        ","+
-        "SIZEINBYTES "+  longType+
-         ","+
-        "RESERVATIONLIFETIME "+  longType+
-        ","+
-         "SPACETOKEN "+  stringType+
-         ","+
-        "RETENTIONPOLICY "+  stringType+
-        ","+
-        "ACCESSLATENCY "+  stringType;
-    }
-
 
     @Override
     protected ReserveSpaceRequest getRequest(
@@ -284,55 +269,5 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage<ReserveSp
          sb.append(", ACCESSLATENCY = \'").append( r.getAccessLatency().getValue()).append('\'');
         }
     }
-
-    private static final int ADDITIONAL_FIELDS_NUM=5;
-    @Override
-    protected int getMoreCollumnsNum() {
-        return ADDITIONAL_FIELDS_NUM;
-    }
-
-    @Override
-    protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-        /*
-         *additional fields:
-                 ","+
-        ","+
-        "CREDENTIALID "+  longType+
-        ","+
-        "SIZEINBYTES "+  longType+
-        ","+
-        "RESERVATIONLIFETIME "+  longType+
-        ","+
-         "SPACETOKEN "+  stringType+
-         ","+
-        "RETENTIONPOLICY "+  stringType+
-        ","+
-        "ACCESSLATENCY "+  stringType+
-        ","+
-        "DESCRIPTION "+  stringType;
-        */
-        if(columnIndex == nextIndex) {
-            verifyLongType("SIZEINBYTES",columnIndex,tableName, columnName, columnType);
-
-        }
-        else if(columnIndex == nextIndex+1)
-        {
-            verifyLongType("RESERVATIONLIFETIME",columnIndex,tableName, columnName, columnType);
-
-        }
-        else if(columnIndex == nextIndex+2)
-        {
-            verifyStringType("SPACETOKEN",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+3)
-        {
-            verifyStringType("RETENTIONPOLICY",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+4)
-        {
-            verifyStringType("ACCESSLATENCY",columnIndex,tableName, columnName, columnType);
-        }
-   }
-
 }
 

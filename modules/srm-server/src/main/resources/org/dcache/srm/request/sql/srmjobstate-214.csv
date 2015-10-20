@@ -1,0 +1,11 @@
+id,state
+0,Unscheduled
+2,Queued
+3,InProgress
+6,RQueued
+7,Ready
+8,Transferring
+9,Done
+10,Cancelled
+11,Failed
+12,Restored

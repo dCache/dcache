@@ -239,7 +239,7 @@
     <property name="verificationRequired" value="${srm.enable.third-party.requiring-verification-by-default}"/>
   </bean>
 
-  <bean id="config" class="diskCacheV111.srm.dcache.Configuration">
+  <bean id="config" class="diskCacheV111.srm.dcache.Configuration" depends-on="liquibase">
     <description>SRM configuration</description>
     <property name="port" value="${srm.net.port}"/>
     <property name="timeout"
@@ -632,7 +632,15 @@
         </constructor-arg>
     </bean>
 
-    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <bean id="liquibase" class="org.dcache.util.SpringLiquibase">
+        <description>Database schema manager</description>
+        <property name="dataSource" ref="data-source"/>
+        <property name="changeLog" value="classpath:${srm.db.schema.changelog}"/>
+        <property name="shouldUpdate" value="${srm.db.schema.auto}"/>
+    </bean>
+
+    <bean id="tx-manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+          depends-on="liquibase">
         <description>Database transaction manager</description>
         <property name="dataSource" ref="data-source"/>
     </bean>

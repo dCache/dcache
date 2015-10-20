@@ -25,7 +25,6 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
         "NUMOFRETR=?," +
         "LASTSTATETRANSITIONTIME=? ";//10
 
-        private static final int ADDITIONAL_FIELDS = 1;
         public LsFileRequestStorage(Configuration.DatabaseParameters configuration, ScheduledExecutorService executor)
                 throws DataAccessException
         {
@@ -68,14 +67,7 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                          SURL);
         }
 
-        @Override
-        public String getFileRequestCreateTableFields() {
-                return
-                        ","+
-                        "SURL "+  stringType;
-        }
-
-        @Override
+    @Override
         public String getTableName() {
                 return TABLE_NAME;
         }
@@ -159,34 +151,5 @@ public class LsFileRequestStorage extends DatabaseFileRequestStorage<LsFileReque
                                           gfr.getStatusCodeString(),
                                           gfr.getSurlString());
                 return stmt;
-        }
-
-
-        @Override
-        public String getRequestTableName() {
-                return LsRequestStorage.TABLE_NAME;
-        }
-
-        @Override
-        protected void __verify(int nextIndex,
-                                int columnIndex,
-                                String tableName,
-                                String columnName,
-                                int columnType) throws SQLException {
-                if(columnIndex == nextIndex) {
-                        verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
-                }
-                else {
-                        throw new SQLException("database table schema changed:"+
-                                               "table named "+tableName+
-                                               " column #"+columnIndex+" has name \""+columnName+
-                                               "\"  has type \""+getTypeName(columnType)+
-                                               " this column should not be present!!!");
-                }
-        }
-
-        @Override
-        protected int getMoreCollumnsNum() {
-                return ADDITIONAL_FIELDS;
         }
 }
