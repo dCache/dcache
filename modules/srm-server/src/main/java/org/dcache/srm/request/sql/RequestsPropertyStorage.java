@@ -64,38 +64,22 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * ResuestsPropertyStorage.java
- *
- * Created on April 27, 2004, 4:23 PM
- */
-
 package org.dcache.srm.request.sql;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
-
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import org.dcache.srm.scheduler.JobIdGenerator;
 import org.dcache.srm.scheduler.JobIdGeneratorFactory;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.dcache.srm.request.sql.Utilities.getIdentifierAsStored;
 
 /**
  * This class is used by srm to generate long and int ids
@@ -110,7 +94,6 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private static final long NEXT_LONG_STEP = 10000;
     private static RequestsPropertyStorage requestsPropertyStorage;
 
-    private final String nextRequestIdTableName;
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate transactionTemplate;
 
@@ -120,49 +103,12 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     private long nextLongIncrement = NEXT_LONG_STEP;
 
     /** Creates a new instance of RequestsPropertyStorage */
-    private RequestsPropertyStorage(PlatformTransactionManager transactionManager,
-                                    DataSource dataSource, String nextRequestIdTableName)
+    private RequestsPropertyStorage(PlatformTransactionManager transactionManager, DataSource dataSource)
             throws DataAccessException
     {
-        this.nextRequestIdTableName = nextRequestIdTableName;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
-
-        dbInit();
     }
-
-    private void dbInit()
-            throws DataAccessException
-    {
-        jdbcTemplate.execute((Connection con) -> {
-            DatabaseMetaData md = con.getMetaData();
-            String tableNameAsStored =
-                    getIdentifierAsStored(md, nextRequestIdTableName);
-            try (ResultSet tableRs = md.getTables(null, null, tableNameAsStored, null)) {
-                if (!tableRs.next()) {
-                    logger.debug("RequestsPropertyStorage: {} does not exits", nextRequestIdTableName);
-                    try (Statement s = con.createStatement()) {
-                        String createTable =
-                                "CREATE TABLE " + nextRequestIdTableName + "(NEXTINT INTEGER ,NEXTLONG BIGINT)";
-                        logger.debug("RequestsPropertyStorage: dbInit trying {}", createTable);
-                        s.executeUpdate(createTable);
-                        try (ResultSet set = s
-                                .executeQuery("SELECT * FROM " + nextRequestIdTableName)) {
-                            if (!set.next()) {
-                                String insert = "INSERT INTO " + nextRequestIdTableName + " VALUES (" + Integer.MIN_VALUE +
-                                        ", " + Long.MIN_VALUE + ")";
-                                logger.debug("RequestsPropertyStorage: dbInit trying {}", insert);
-                                s.executeUpdate(insert);
-                            }
-                        }
-                    }
-                }
-            }
-            return null;
-        });
-    }
-
-
 
     /**
      * Generate a next unique int request id
@@ -181,12 +127,12 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     public synchronized  int nextInt()   {
         if (nextIntIncrement >= NEXT_INT_STEP) {
             nextIntBase = transactionTemplate.execute(status -> {
-                int base = jdbcTemplate.queryForObject("SELECT NEXTINT FROM " + nextRequestIdTableName + " FOR UPDATE", Integer.class);
+                int base = jdbcTemplate.queryForObject("SELECT NEXTINT FROM srmnextrequestid FOR UPDATE", Integer.class);
                 int newBase = base + NEXT_INT_STEP;
-                int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTINT=?", newBase);
+                int n = jdbcTemplate.update("UPDATE srmnextrequestid SET NEXTINT=?", newBase);
                 if (n != 1) {
                     throw new IncorrectResultSizeDataAccessException(
-                            "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
+                            "Unexpected number of rows got updated in srmnextrequestid", 1, n);
                 }
                 return newBase;
             });
@@ -217,12 +163,12 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     public synchronized long nextLong() {
         if (nextLongIncrement >= NEXT_LONG_STEP) {
             nextLongBase = transactionTemplate.execute(status -> {
-                long base = jdbcTemplate.queryForObject("SELECT NEXTLONG FROM " + nextRequestIdTableName + " FOR UPDATE", Long.class);
+                long base = jdbcTemplate.queryForObject("SELECT NEXTLONG FROM srmnextrequestid FOR UPDATE", Long.class);
                 long newBase = base + NEXT_LONG_STEP;
-                int n = jdbcTemplate.update("UPDATE " + nextRequestIdTableName + " SET NEXTLONG=?", newBase);
+                int n = jdbcTemplate.update("UPDATE srmnextrequestid SET NEXTLONG=?", newBase);
                 if (n != 1) {
                     throw new IncorrectResultSizeDataAccessException(
-                            "Unexpected number of rows got updated in " + nextRequestIdTableName, 1, n);
+                            "Unexpected number of rows got updated in srmnextrequestid", 1, n);
                 }
                 return newBase;
             });
@@ -240,13 +186,13 @@ public class RequestsPropertyStorage extends JobIdGeneratorFactory implements Jo
     }
 
     public static final synchronized void initPropertyStorage(
-            PlatformTransactionManager transactionManager, DataSource dataSource, String nextRequestIdTableName)
+            PlatformTransactionManager transactionManager, DataSource dataSource)
             throws DataAccessException
     {
         checkState(RequestsPropertyStorage.requestsPropertyStorage == null,
                 "RequestsPropertyStorage is already initialized");
         requestsPropertyStorage  =
-                new RequestsPropertyStorage(transactionManager, dataSource, nextRequestIdTableName);
+                new RequestsPropertyStorage(transactionManager, dataSource);
         initJobIdGeneratorFactory(requestsPropertyStorage);
     }
 }

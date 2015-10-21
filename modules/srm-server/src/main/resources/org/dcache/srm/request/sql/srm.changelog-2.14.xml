@@ -912,4 +912,24 @@
         <loadUpdateData tableName="srmjobstate" primaryKey="id" file="/org/dcache/srm/request/sql/srmjobstate-214.csv"/>
     </changeSet>
 
+    <changeSet id="5" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not creating srmnextrequestid table as it already exist (this is not an error)">
+            <not>
+                <tableExists tableName="srmnextrequestid"/>
+            </not>
+        </preConditions>
+
+        <comment>Create table to generate SRM request IDs</comment>
+
+        <createTable tableName="srmnextrequestid">
+            <column name="nextint" type="integer"/>
+            <column name="nextlong" type="bigint"/>
+        </createTable>
+
+        <insert tableName="srmnextrequestid">
+            <column name="nextint" valueNumeric="-2147483648"/>
+            <column name="nextlong" valueNumeric="-9223372036854775808"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

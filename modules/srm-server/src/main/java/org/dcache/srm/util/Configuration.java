@@ -165,7 +165,6 @@ public class Configuration {
     protected boolean useFtpForSrmCopy=true;
     protected boolean recursiveDirectoryCreation=false;
     protected boolean advisoryDelete=false;
-    protected String nextRequestIdStorageTable = "srmnextrequestid";
     protected long storage_info_update_period = TimeUnit.SECONDS.toMillis(30);
     protected String qosPluginClass = null;
     protected String qosConfigFile = null;
@@ -710,22 +709,6 @@ public class Configuration {
     public PlatformTransactionManager getTransactionManager()
     {
         return transactionManager;
-    }
-
-    /**
-     * Getter for property nextRequestIdStorageTable.
-     * @return Value of property nextRequestIdStorageTable.
-     */
-    public String getNextRequestIdStorageTable() {
-        return nextRequestIdStorageTable;
-    }
-
-    /**
-     * Setter for property nextRequestIdStorageTable.
-     * @param nextRequestIdStorageTable New value of property nextRequestIdStorageTable.
-     */
-    public void setNextRequestIdStorageTable(String nextRequestIdStorageTable) {
-        this.nextRequestIdStorageTable = nextRequestIdStorageTable;
     }
 
     /**

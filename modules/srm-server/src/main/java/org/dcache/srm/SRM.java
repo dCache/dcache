@@ -250,8 +250,7 @@ public class SRM {
 
         try {
             RequestsPropertyStorage.initPropertyStorage(
-                    config.getTransactionManager(), config.getDataSource(),
-                    config.getNextRequestIdStorageTable());
+                    config.getTransactionManager(), config.getDataSource());
         } catch (IllegalStateException ise) {
             //already initialized
         }
