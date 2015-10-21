@@ -75,6 +75,8 @@ import dmg.cells.nucleus.UOID;
 import dmg.util.command.Argument;
 import dmg.util.command.Command;
 import dmg.util.command.CommandLine;
+import dmg.util.command.Option;
+
 
 import org.dcache.acl.enums.AccessMask;
 import org.dcache.acl.enums.AccessType;
@@ -430,55 +432,85 @@ public class PnfsManagerV3
         }
     }
 
-    public static final String fh_storageinfoof =
-        "   storageinfoof <pnfsid>|<globalPath> [-v] [-n]\n"+
-        "        -v    verbose\n"+
-        "        -n    don't resolve links\n";
-    public static final String hh_storageinfoof = "<pnfsid>|<globalPath> [-v] [-n]" ;
-    public String ac_storageinfoof_$_1( Args args )
+    @Command(name = "storageinfoof",
+             hint = "Print the storage info of a file",
+             description = "Display the storage information of a file including the following:\n" +
+                           "\t size:   \tSize of the file in bytes\n" +
+                           "\t new:    \tFalse if file already in the dCache\n" +
+                           "\t stored: \tTrue if file already stored in the HSM (Hierarchical Storage\n" +
+                           "\t         \tManager)\n" +
+                           "\t sClass: \tHSM depended. Used by the PoolManager for pool attraction\n" +
+                           "\t hsm:    \tStorage Manager name (enstore/osm)\n" +
+                           "\t         \tCan be overwritten by parent directory tag (hsmType)\n\n"+
+                           "\t accessLatency: \tfile's access latency (e.g. ONLINE/NEARLINE)\n" +
+                           "\t retentionPolicy: \tfile's retention policy (e.g. CUSTODIAL/REPLICA).\n\n" +
+                           "The next returned information is HSM specific. For OSM the following storage information" +
+                           " is displayed:\n" +
+                           "\t store: \tOSM store (e.g. zeus,h1, ...)\n" +
+                           "\t group: \tOSM Storage Group (e.g. h1raw99, ...)\n" +
+                           "\t bfid:  \tBitfile Id (GET only) (e.g. 000451243.2542452542.25424524).\n\n" +
+                           "For Enstore the following information is returned:\n" +
+                           "\t group: \tStorage Group (e.g. cdf,cms ...)\n" +
+                           "\t family: \tFile family (e.g. sgi2test,h6nxl8, ...)\n" +
+                           "\t bfid:   \tBitfile Id (GET only) (e.g. B0MS105746894100000)\n" +
+                           "\t volume: \tTape Volume (GET only) (e.g. IA6912)\n" +
+                           "\t location: \tLocation on tape (GET only)\n" +
+                           "\t           \t(e.g. : 0000_000000000_0000117).")
+
+    public class StorageinfoofCommand implements Callable<String>
     {
-        PnfsId    pnfsId;
-        boolean v = args.hasOption("v") ;
-        boolean n = args.hasOption("n") ;
+        @Argument(valueSpec = "PNFSID|PATH",
+                  usage = "The Pnfs-Id or the absolute path of the file.")
+        String pnfsidOrPath;
 
-        StringBuilder sb = new StringBuilder() ;
+        @Option(name = "v",
+                usage = "Get additional information about the file. If file path" +
+                        " is specified, the return information contains: the path " +
+                        "of the file, Pnfs-Id, path and the storage info of the file. " +
+                        "If the Pnfs-Id is specified instead, the return info is just" +
+                        " the Pnfs-Id and the storage info of the file.")
+        boolean verbose;
 
-        try{
-            try{
-                pnfsId = new PnfsId( args.argv(0) ) ;
-                if(v) {
+        @Option(name = "n",
+                usage = "Don't resolve links.")
+        boolean noLinks;
+
+        @Override
+        public String call() throws CacheException
+        {
+            PnfsId    pnfsId;
+            StringBuilder sb = new StringBuilder() ;
+
+            if (PnfsId.isValid(pnfsidOrPath)) {
+                pnfsId = new PnfsId(pnfsidOrPath);
+                if (verbose) {
                     sb.append("PnfsId : ").append(pnfsId).append("\n");
                 }
-            }catch(Exception ee ){
-                pnfsId = pathToPnfsid(ROOT, args.argv(0) , n ) ;
-
-                if(v) {
-                    sb.append("   Local Path : ").append(args.argv(0))
-                            .append("\n");
-                }
-                if(v) {
-                    sb.append("       PnfsId : ").append(pnfsId).append("\n");
-                }
+            }else {
+                pnfsId = pathToPnfsid(ROOT, pnfsidOrPath, noLinks );
+                    if (verbose) {
+                        sb.append("       Path : ").append(pnfsidOrPath)
+                                .append("\n");
+                        sb.append("       PnfsId : ").append(pnfsId).append("\n");
+                    }
             }
 
             FileAttributes attributes =
-                _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
-                        EnumSet.of(FileAttribute.STORAGEINFO, FileAttribute.ACCESS_LATENCY,
-                                FileAttribute.RETENTION_POLICY,  FileAttribute.SIZE));
+                    _nameSpaceProvider.getFileAttributes(ROOT, pnfsId,
+                            EnumSet.of(FileAttribute.STORAGEINFO, FileAttribute.ACCESS_LATENCY,
+                                    FileAttribute.RETENTION_POLICY,  FileAttribute.SIZE));
 
             StorageInfo info = StorageInfos.extractFrom(attributes);
-            if(v) {
+            if(verbose) {
                 sb.append(" Storage Info : ").append(info).append("\n") ;
             }else{
-                sb.append(info.toString()).append("\n");
+                sb.append(info).append("\n");
             }
 
-        }catch(Exception ee ){
-            sb.append("storageinfoof failed : ").append(ee.getMessage());
+            return sb.toString() ;
         }
-
-        return sb.toString() ;
     }
+
     public static final String fh_metadataof =
         "   metadataof <pnfsid>|<globalPath> [-v] [-n]\n"+
         "        -v    verbose\n"+
