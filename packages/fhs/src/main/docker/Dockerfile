@@ -1,4 +1,4 @@
-FROM dcache/deps:master
+FROM dcache/deps:latest
 MAINTAINER dCache "https://www.dcache.org"
 
 RUN groupadd -r dcache && useradd -r -g dcache dcache
