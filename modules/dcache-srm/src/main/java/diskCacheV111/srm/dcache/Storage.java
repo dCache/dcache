@@ -2578,7 +2578,7 @@ public final class Storage
         throws SRMInvalidPathException
     {
         String scheme = surl.getScheme();
-        if (scheme == null || !scheme.equalsIgnoreCase("srm")) {
+        if (scheme != null && !scheme.equalsIgnoreCase("srm")) {
             throw new SRMInvalidPathException("Invalid scheme: " + scheme);
         }
 
