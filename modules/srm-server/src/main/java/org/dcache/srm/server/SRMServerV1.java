@@ -40,8 +40,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
          srmAuth = new SrmAuthorizer(config.getAuthorization(),
                 srm.getRequestCredentialStorage(),
                 config.isClientDNSLookup(),
-                config.getVomsdir(),
-                config.getCaCertificatePath());
+                config.getVomsValidator());
          isClientDNSLookup = config.isClientDNSLookup();
          srmServerCounters = srm.getSrmServerV1Counters();
          srmServerGauges = srm.getSrmServerV1Gauges();

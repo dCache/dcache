@@ -17,14 +17,9 @@
  */
 package org.dcache.gridsite;
 
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import eu.emi.security.authn.x509.X509Credential;
 import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
-import org.italiangrid.voms.store.VOMSTrustStore;
-import org.italiangrid.voms.store.VOMSTrustStores;
-import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
@@ -41,7 +36,6 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.util.Glob;
 
-import static java.util.Collections.singletonList;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 /**
@@ -51,19 +45,11 @@ import static org.dcache.gridsite.Utilities.assertThat;
 public class SrmCredentialStore implements CredentialStore
 {
     private RequestCredentialStorage _store;
-    private X509CertChainValidatorExt certChainValidator;
-    private VOMSTrustStore vomsTrustStore;
+    private VOMSACValidator validator;
 
-    @Required
-    public void setCaCertificatePath(String caDir)
+    public void setVomsValidator(VOMSACValidator validator)
     {
-        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
-    }
-
-    @Required
-    public void setVomsdir(String vomsDir)
-    {
-        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsDir));
+        this.validator = validator;
     }
 
     @Required
@@ -87,7 +73,6 @@ public class SrmCredentialStore implements CredentialStore
     {
         try {
             X509Certificate[] chain = credential.getCertificateChain();
-            VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
             FQAN primaryFqan = getPrimary(validator.validate(chain));
             RequestCredential srmCredential =
                     new RequestCredential(nameFromId(id), Objects.toString(primaryFqan, null), credential, _store);

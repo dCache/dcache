@@ -34,8 +34,7 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
 
     private static final String CADIR = "gplazma.vomsdir.ca";
     private static final String VOMSDIR = "gplazma.vomsdir.dir";
-    private final VOMSTrustStore vomsTrustStore;
-    private final X509CertChainValidatorExt certChainValidator;
+    private final VOMSACValidator validator;
 
     public VomsPlugin(Properties properties) throws CertificateException,
                     CRLException, IOException {
@@ -45,8 +44,9 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
         checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(vomsDir != null, "Undefined property: " + CADIR);
 
-        vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
-        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+        VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
+        X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+        validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
     }
 
     @Override
@@ -54,9 +54,6 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
                     Set<Object> privateCredentials,
                     Set<Principal> identifiedPrincipals)
                     throws AuthenticationException {
-        VOMSACValidator validator
-            = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
-
         boolean primary = true;
         boolean hasX509 = false;
         boolean hasFQANs = false;

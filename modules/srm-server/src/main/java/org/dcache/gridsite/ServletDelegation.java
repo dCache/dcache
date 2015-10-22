@@ -21,7 +21,6 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
 
 import javax.xml.rpc.holders.StringHolder;
@@ -62,11 +61,20 @@ public class ServletDelegation implements Delegation
             "org.dcache.gridsite.credential-delegation-factory";
     public static final String ATTRIBUTE_NAME_SERVICE_METADATA =
             "org.dcache.gridsite.service-metadata";
+    public static final String ATTRIBUTE_NAME_VOMS_VALIDATOR =
+            "org.dcache.gridsite.voms-validator";
 
     private final Map<String,String> _serviceMetadata = getServiceMetadata();
     private final CredentialDelegationStore _delegations = getDelegationStore();
     private final CredentialDelegationFactory _factory = getFactory();
     private final CredentialStore _credentials = getCredentialStore();
+    private final VOMSACValidator validator = getVomsValidator();
+
+    private static VOMSACValidator getVomsValidator()
+    {
+        return Axis.getAttribute(ATTRIBUTE_NAME_VOMS_VALIDATOR,
+                VOMSACValidator.class);
+    }
 
     private static CredentialStore getCredentialStore()
     {
@@ -212,8 +220,6 @@ public class ServletDelegation implements Delegation
 
     private String getFqanList() throws DelegationException
     {
-        VOMSACValidator validator = VOMSValidators.newValidator();
-
         List<VOMSAttribute> vomsAttrs = validator.validate(getClientCertificates());
         List<String> fqans = new ArrayList<>();
 

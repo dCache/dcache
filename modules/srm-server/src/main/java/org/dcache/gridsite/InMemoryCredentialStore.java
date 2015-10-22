@@ -17,14 +17,9 @@
  */
 package org.dcache.gridsite;
 
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import eu.emi.security.authn.x509.X509Credential;
 import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
-import org.italiangrid.voms.store.VOMSTrustStore;
-import org.italiangrid.voms.store.VOMSTrustStores;
-import org.italiangrid.voms.util.CertificateValidatorBuilder;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.security.cert.X509Certificate;
@@ -39,7 +34,6 @@ import java.util.stream.Stream;
 import org.dcache.auth.FQAN;
 import org.dcache.delegation.gridsite2.DelegationException;
 
-import static java.util.Collections.singletonList;
 import static org.dcache.gridsite.Utilities.assertThat;
 
 /**
@@ -52,19 +46,12 @@ public class InMemoryCredentialStore implements CredentialStore
 {
     private final Map<DelegationIdentity, X509Credential> _storage = new HashMap<>();
 
-    private VOMSTrustStore vomsTrustStore;
-    private X509CertChainValidatorExt certChainValidator;
+    private VOMSACValidator validator;
 
     @Required
-    public void setCaCertificatePath(String caDir)
+    public void setVomsValidator(VOMSACValidator validator)
     {
-        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
-    }
-
-    @Required
-    public void setVomsdir(String vomsDir)
-    {
-        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsDir));
+        this.validator = validator;
     }
 
     @Override
@@ -170,8 +157,6 @@ public class InMemoryCredentialStore implements CredentialStore
                 X509Credential credential = entry.getValue();
 
                 X509Certificate[] chain = credential.getCertificateChain();
-                VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
-                /* REVISIT: Do we really need to validate the AC every time? */
                 FQAN primaryFqan = getPrimary(validator.validate(chain));
 
                 if (!predicate.matches(entry.getKey().getDn(), Objects.toString(primaryFqan, null))) {
