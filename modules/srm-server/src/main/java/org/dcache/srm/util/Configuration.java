@@ -76,6 +76,7 @@ package org.dcache.srm.util;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import org.italiangrid.voms.ac.VOMSACValidator;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -211,6 +212,7 @@ public class Configuration {
     private String vomsdir;
 
     private ImmutableMap<String,String> pingExtraInfo = ImmutableMap.of();
+    private VOMSACValidator vomsValidator;
 
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -1130,24 +1132,14 @@ public class Configuration {
         return databaseParameters.get(name);
     }
 
-    public void setCaCertificatePath(String caCertificatePath)
+    public void setVomsValidator(VOMSACValidator vomsValidator)
     {
-        this.caCertificatePath = caCertificatePath;
+        this.vomsValidator = vomsValidator;
     }
 
-    public String getCaCertificatePath()
+    public VOMSACValidator getVomsValidator()
     {
-        return caCertificatePath;
-    }
-
-    public void setVomsdir(String vomsdir)
-    {
-        this.vomsdir = vomsdir;
-    }
-
-    public String getVomsdir()
-    {
-        return vomsdir;
+        return vomsValidator;
     }
 
     public class DatabaseParameters

@@ -264,8 +264,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     /*
      * VOMS setup
      */
-    private VOMSTrustStore vomsTrustStore;
-    private X509CertChainValidatorExt certChainValidator;
+    private final VOMSACValidator validator;
 
     /**
      * Configures VOMS extension validation, XACML service location, local id
@@ -282,8 +281,9 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(vomsDir != null, "Undefined property: " + CADIR);
 
-        vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
-        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+        VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
+        X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
+        validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
 
         /*
          * Adds SSL system properties required by privilege library.
@@ -330,11 +330,6 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 !any(identifiedPrincipals, instanceOf(UserNamePrincipal.class)),
                 "username already defined");
 
-        /*
-         * validator not thread-safe; reinstantiated with each authenticate call
-         */
-        VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore,
-                                                                certChainValidator);
         Set<VomsExtensions> extensions = new LinkedHashSet<>();
 
         /*
@@ -509,7 +504,7 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
                 = new VomsExtensions(proxySubject, proxySubjectIssuer, null,
                                    vomsSubject, null, null, primary);
             logger.debug(" {} authenticate, adding voms extensions = {}",
-                            this, vomsExtensions);
+                         this, vomsExtensions);
             extensionsSet.add(vomsExtensions);
         } else {
             for (VOMSAttribute vomsAttr : vomsAttributes) {

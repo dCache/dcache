@@ -64,15 +64,10 @@ exporting documents or software obtained from this server.
 
 package org.dcache.srm.server;
 
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
 import org.italiangrid.voms.ac.VOMSACValidator;
-import org.italiangrid.voms.store.VOMSTrustStore;
-import org.italiangrid.voms.store.VOMSTrustStores;
-import org.italiangrid.voms.util.CertificateValidatorBuilder;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -88,8 +83,6 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Axis;
 
-import static java.util.Collections.singletonList;
-
 
 /**
  * The SrmAUthorizer provides helper methods that mediates access to
@@ -100,18 +93,16 @@ public class SrmAuthorizer
     private final RequestCredentialStorage storage;
     private final SRMAuthorization authorization;
     private final boolean isClientDNSLookup;
-    private final VOMSTrustStore vomsTrustStore;
-    private final X509CertChainValidatorExt certChainValidator;
+    private final VOMSACValidator validator;
 
     public SrmAuthorizer(SRMAuthorization authorization,
                          RequestCredentialStorage storage, boolean isClientDNSLookup,
-                         String vomsdir, String capath)
+                         VOMSACValidator validator)
     {
         this.isClientDNSLookup = isClientDNSLookup;
         this.authorization = authorization;
         this.storage = storage;
-        vomsTrustStore = VOMSTrustStores.newTrustStore(singletonList(vomsdir));
-        certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(capath).build();
+        this.validator = validator;
     }
 
     /**
@@ -168,7 +159,6 @@ public class SrmAuthorizer
         GSSCredential credential = Axis.getDelegatedCredential().orElse(null);
 
         try {
-            VOMSACValidator validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
             FQAN role = getPrimary(validator.validate(certificates));
 
             RequestCredential requestCredential = RequestCredential.newRequestCredential(dn, Objects.toString(role, null), storage);
