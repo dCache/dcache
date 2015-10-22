@@ -478,7 +478,7 @@
             <column name="explanation" type="varchar(32762)"/>
             <column name="longformat" type="integer"/>
             <column name="numoflevels" type="integer"/>
-            <column name="count" type="integer"/>
+            <column name='"count"' type="integer"/>
             <column name="lsoffset" type="integer"/>
         </createTable>
 
