@@ -1119,4 +1119,11 @@
             </createIndex>
         </rollback>
     </changeSet>
+
+    <changeSet id="12" author="behrmann">
+        <comment>Add index on bringolinerequests_protocols(requestid)</comment>
+        <createIndex tableName="bringonlinerequests_protocols" indexName="bringonlinerequests_protocols_requestid_idx">
+            <column name="requestid"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>
