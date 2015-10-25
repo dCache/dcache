@@ -1015,4 +1015,56 @@
         <comment>Rename count column to use the same capitalization as for other columns</comment>
         <renameColumn tableName="lsrequests" oldColumnName='"count"' newColumnName="count"/>
     </changeSet>
+
+    <changeSet id="10" author="behrmann">
+        <comment>Drop indexes on unused nextjob columns</comment>
+
+        <dropIndex tableName="bringonlinerequests" indexName="bringonlinerequests_nextjobid_idx"/>
+        <dropIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_nextjobid_idx"/>
+        <dropIndex tableName="copyrequests" indexName="copyrequests_nextjobid_idx"/>
+        <dropIndex tableName="copyfilerequests" indexName="copyfilerequests_nextjobid_idx"/>
+        <dropIndex tableName="getrequests" indexName="getrequests_nextjobid_idx"/>
+        <dropIndex tableName="getfilerequests" indexName="getfilerequests_nextjobid_idx"/>
+        <dropIndex tableName="lsrequests" indexName="lsrequests_nextjobid_idx"/>
+        <dropIndex tableName="lsfilerequests" indexName="lsfilerequests_nextjobid_idx"/>
+        <dropIndex tableName="putrequests" indexName="putrequests_nextjobid_idx"/>
+        <dropIndex tableName="putfilerequests" indexName="putfilerequests_nextjobid_idx"/>
+        <dropIndex tableName="reservespacerequests" indexName="reservespacerequests_nextjobid_idx"/>
+
+        <rollback>
+            <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="bringonlinefilerequests" indexName="bringonlinefilerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="copyrequests" indexName="copyrequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="copyfilerequests" indexName="copyfilerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="getrequests" indexName="getrequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="getfilerequests" indexName="getfilerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="lsrequests" indexName="lsrequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="lsfilerequests" indexName="lsfilerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="putrequests" indexName="putrequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="putfilerequests" indexName="putfilerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+            <createIndex tableName="reservespacerequests" indexName="reservespacerequests_nextjobid_idx">
+                <column name="nextjobid"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
