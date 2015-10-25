@@ -897,7 +897,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
     {
         TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
         copyRequestFileStatus.setFileSize(new UnsignedLong(size));
-        copyRequestFileStatus.setEstimatedWaitTime((int) (getRemainingLifetime() / 1000));
+        copyRequestFileStatus.setEstimatedWaitTime(getContainerRequest().getRetryDeltaTime());
         copyRequestFileStatus.setRemainingFileLifetime((int) (getRemainingLifetime() / 1000));
         org.apache.axis.types.URI sourceSurl;
         org.apache.axis.types.URI destinationSurl;

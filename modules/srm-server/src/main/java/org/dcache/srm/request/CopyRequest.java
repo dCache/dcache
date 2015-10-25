@@ -934,9 +934,11 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
 
     public final SrmCopyResponse getSrmCopyResponse() throws SRMInvalidRequestException
     {
-        ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
-                new ArrayOfTCopyRequestFileStatus(getArrayOfTCopyRequestFileStatuses());
-        return new SrmCopyResponse(getTReturnStatus(), getTRequestToken(), arrayOfTCopyRequestFileStatus, null);
+        SrmCopyResponse response = new SrmCopyResponse();
+        response.setReturnStatus(getTReturnStatus());
+        response.setRequestToken(getTRequestToken());
+        response.setArrayOfFileStatuses(new ArrayOfTCopyRequestFileStatus(getArrayOfTCopyRequestFileStatuses()));
+        return response;
     }
 
     private String getTRequestToken()
@@ -988,11 +990,8 @@ public final class CopyRequest extends ContainerRequest<CopyFileRequest>
     {
         SrmStatusOfCopyRequestResponse response = new SrmStatusOfCopyRequestResponse();
         response.setReturnStatus(getTReturnStatus());
-        ArrayOfTCopyRequestFileStatus arrayOfTCopyRequestFileStatus =
-            new ArrayOfTCopyRequestFileStatus();
-        arrayOfTCopyRequestFileStatus.setStatusArray(
-            getArrayOfTCopyRequestFileStatuses(fromurls,tourls));
-        response.setArrayOfFileStatuses(arrayOfTCopyRequestFileStatus);
+        TCopyRequestFileStatus[] fileStatuses = getArrayOfTCopyRequestFileStatuses(fromurls, tourls);
+        response.setArrayOfFileStatuses(new ArrayOfTCopyRequestFileStatus(fileStatuses));
         return response;
     }
 
