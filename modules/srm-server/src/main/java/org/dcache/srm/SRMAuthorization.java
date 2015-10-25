@@ -93,21 +93,19 @@ public interface SRMAuthorization
      * representation of this user and verifies that the user is not banned
      * from using the SRM.
      *
-     * @param dn The X.509 Distinguished Name of the user's EEC
      * @param certificateChain The X.509 chain used to identify the user
      * @param remoteIP The IP address from which the user is connecting
      * @return The mapped identity of this user.
      */
-    SRMUser authorize(String dn, X509Certificate[] certificateChain, String remoteIP)
+    SRMUser authorize(X509Certificate[] certificateChain, String remoteIP)
             throws SRMAuthorizationException, SRMInternalErrorException, SRMAuthenticationException;
 
     /**
      * Verify whether the user is allowed to use the SRM.
-     * @param dn The X.509 Distinguished Name of the user's EEC
      * @param certificateChain The X.509 chain used to identify the user
      * @param remoteIP The IP address from which the user is connecting
      * @return true if the user is allowed to use the SRM.
      */
-    boolean isAuthorized(String dn, X509Certificate[] certificateChain, String remoteIP)
+    boolean isAuthorized(X509Certificate[] certificateChain, String remoteIP)
             throws SRMInternalErrorException, SRMAuthenticationException;
 }

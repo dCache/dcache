@@ -99,7 +99,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.Subjects;
 import org.dcache.namespace.FileAttribute;
 import org.dcache.srm.SRMUser;

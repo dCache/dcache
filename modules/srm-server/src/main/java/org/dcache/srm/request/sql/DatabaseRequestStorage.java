@@ -83,8 +83,11 @@ public abstract class DatabaseRequestStorage<R extends Request> extends Database
         String DESCRIPTION = set.getString(next_index++);
         String CLIENTHOST = set.getString(next_index++);
         String STATUSCODE= set.getString(next_index++);
-        SRMUser user =
-                srmUserPersistenceManager.find(set.getLong(next_index++));
+        long id = set.getLong(next_index++);
+        SRMUser user = set.wasNull()
+                       ? srmUserPersistenceManager.createAnonymous()
+                       // FIXME: Using client host for this is not correct as the client may specify a different host
+                       : srmUserPersistenceManager.find(CLIENTHOST, id);
         return getRequest(
                 _con,
                 ID,

@@ -112,13 +112,9 @@ public class SrmAuthorizer
     public SRMUser getRequestUser()
             throws SRMInternalErrorException, SRMAuthorizationException, SRMAuthenticationException
     {
-        String dn = Axis.getDN().orElseThrow(() ->
-                new SRMAuthenticationException("Failed to resolve DN"));
-
         X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
                 new SRMAuthenticationException("Client's certificate chain is missing from request"));
-
-        return authorization.authorize(dn, certificates, Axis.getRemoteAddress());
+        return authorization.authorize(certificates, Axis.getRemoteAddress());
     }
 
     /**
@@ -129,13 +125,9 @@ public class SrmAuthorizer
     public boolean isUserAuthorized() throws SRMInternalErrorException,
             SRMAuthenticationException
     {
-        String dn = Axis.getDN().orElseThrow(() ->
-                new SRMAuthenticationException("Failed to resolve DN"));
-
         X509Certificate[] certificates = Axis.getCertificateChain().orElseThrow(() ->
                 new SRMAuthenticationException("Client's certificate chain is missing from request"));
-
-        return authorization.isAuthorized(dn, certificates, Axis.getRemoteAddress());
+        return authorization.isAuthorized(certificates, Axis.getRemoteAddress());
     }
 
 

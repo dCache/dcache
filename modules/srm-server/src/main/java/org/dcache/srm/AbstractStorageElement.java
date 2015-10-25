@@ -177,7 +177,7 @@ public interface AbstractStorageElement {
      *
      * Any uploads to the TURL are discarded.
      *
-     * @param user User ID
+     * @param user User ID, or null for super user.
      * @param fileId File ID as provided by prepareToPut
      * @param surl Site URL
      * @param reason explanation why the request was aborted
@@ -355,7 +355,7 @@ public interface AbstractStorageElement {
 
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"
-     * @param user User ID
+     * @param user User ID or null for super user
      * @param fileId Storage Element internal file ID
      * @param pinId Unique id received during pinFile operation (?)
      * @return A promise of an ID of the pin that was released

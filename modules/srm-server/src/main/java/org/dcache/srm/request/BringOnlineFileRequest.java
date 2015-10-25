@@ -405,7 +405,7 @@ public final class BringOnlineFileRequest extends FileRequest<BringOnlineRequest
                 AbstractStorageElement storage = getStorage();
                 if (fileId != null && pinId != null) {
                     logger.info("State changed to final state, unpinning fileId = {} pinId = {}.", fileId, pinId);
-                    CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(user, fileId, pinId);
+                    CheckedFuture<String, ? extends SRMException> future = storage.unPinFile(null, fileId, pinId);
                     future.addListener(() -> {
                         try {
                             logger.debug("File unpinned (pinId={}).", future.checkedGet());

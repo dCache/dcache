@@ -489,7 +489,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
             getStorage().putDone(getUser(), getDestinationFileId(), getDestinationSurl(), getContainerRequest().isOverwrite());
             setStateToDone();
         } catch (SRMException e) {
-            getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(), e.getMessage());
+            getStorage().abortPut(null, getDestinationFileId(), getDestinationSurl(), e.getMessage());
             throw e;
         }
     }
@@ -541,7 +541,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
 
             getStorage().killRemoteTransfer(getTransferId());
             SRMException transferError = getTransferError();
-            getStorage().abortPut(getUser(), getDestinationFileId(), getDestinationSurl(), transferError.getMessage());
+            getStorage().abortPut(null, getDestinationFileId(), getDestinationSurl(), transferError.getMessage());
             setDestinationFileId(null);
             setTransferId(null);
             throw transferError;
@@ -631,7 +631,7 @@ public final class CopyFileRequest extends FileRequest<CopyRequest> implements D
                 if (toFileId != null) {
                     try {
                         Exception transferError = getTransferError();
-                        getStorage().abortPut(getUser(), toFileId, getDestinationSurl(),
+                        getStorage().abortPut(null, toFileId, getDestinationSurl(),
                                               (transferError == null) ? null : transferError.getMessage());
                     } catch (SRMException e) {
                         LOG.error("Failed to abort copy: {}", e.getMessage());

@@ -37,47 +37,9 @@
           <artifactId>dcache-spacemanager</artifactId>
           <version>${project.version}</version>
       </dependency>
-      <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-core</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-cache</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-api-jpa</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.datanucleus</groupId>
-          <artifactId>datanucleus-rdbms</artifactId>
-      </dependency>
   </dependencies>
 
   <build>
-      <plugins>
-          <plugin>
-              <groupId>org.datanucleus</groupId>
-              <artifactId>datanucleus-maven-plugin</artifactId>
-              <configuration>
-                  <verbose>false</verbose>
-              </configuration>
-              <executions>
-                  <execution>
-                      <id>datanucleus-enhance-jpa</id>
-                      <phase>process-classes</phase>
-                      <goals>
-                          <goal>enhance</goal>
-                      </goals>
-                      <configuration>
-                          <api>JPA</api>
-                          <persistenceUnitName>AuthRecordPersistenceUnit</persistenceUnitName>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
-      </plugins>
       <pluginManagement>
         <plugins>
             <!--This plugin's configuration is used to store Eclipse

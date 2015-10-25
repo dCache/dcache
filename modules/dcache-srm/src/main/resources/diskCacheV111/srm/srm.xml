@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:task="http://www.springframework.org/schema/task"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
@@ -8,10 +9,16 @@
               http://www.springframework.org/schema/context
               http://www.springframework.org/schema/context/spring-context.xsd
               http://www.springframework.org/schema/util
-              http://www.springframework.org/schema/util/spring-util.xsd">
+              http://www.springframework.org/schema/util/spring-util.xsd
+              http://www.springframework.org/schema/task
+              http://www.springframework.org/schema/task/spring-task.xsd">
 
   <context:property-placeholder/>
   <context:annotation-config/>
+
+  <task:scheduled-tasks scheduler="scheduler">
+      <task:scheduled ref="user-manager" method="gc" cron="0 47 * * * *"/>
+  </task:scheduled-tasks>
 
   <!-- Convert properties with multiple values separated by comma into an array of strings:
        key=value1,value2,value3 : String[] {value1, value2, value3}
@@ -121,6 +128,11 @@
       <description>Thread pool for scheduled activities</description>
   </bean>
 
+  <bean id="scheduler" class="org.springframework.scheduling.concurrent.ConcurrentTaskScheduler">
+      <description>Scheduler for periodic activities</description>
+      <property name="scheduledExecutor" ref="scheduledExecutor"/>
+  </bean>
+
   <bean id="login-broker-source" class="dmg.cells.services.login.LoginBrokerSubscriber">
       <property name="topic" value="${srm.loginbroker.request-topic}"/>
       <property name="tags" value="${srm.protocols.tags}"/>
@@ -159,20 +171,6 @@
        =====================================================================================
     -->
 
-  <bean id="auth-persistence-manager" class="diskCacheV111.srm.dcache.DcacheUserPersistenceManager">
-    <description>Persistence manager for authentication</description>
-    <constructor-arg>
-      <bean class="org.dcache.auth.persistence.AuthRecordPersistenceManager">
-        <constructor-arg>
-          <bean id="emf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-            <property name="dataSource" ref="data-source"/>
-            <property name="persistenceUnitName" value="AuthRecordPersistenceUnit"/>
-          </bean>
-        </constructor-arg>
-      </bean>
-    </constructor-arg>
-  </bean>
-
   <bean id="login-strategy" class="org.dcache.auth.CachingLoginStrategy">
     <description>Caching gPlazma client</description>
     <constructor-arg>
@@ -185,10 +183,10 @@
     <constructor-arg value="${srm.service.gplazma.cache.timeout.unit}"/>
   </bean>
 
-  <bean id="authorization" class="diskCacheV111.srm.dcache.DCacheAuthorization">
+  <bean id="user-manager" class="diskCacheV111.srm.dcache.PersistentLoginUserManager">
     <description>gPlazma plugin for SRM</description>
     <constructor-arg ref="login-strategy"/>
-    <constructor-arg ref="auth-persistence-manager"/>
+    <constructor-arg ref="data-source"/>
   </bean>
 
     <bean id="voms-validator" class="org.italiangrid.voms.VOMSValidators"
@@ -360,8 +358,8 @@
     <property name="qosPluginClass" value="${srm.plugins.qos.class}"/>
     <property name="qosConfigFile" value="${srm.plugins.qos.config.file}"/>
 
-    <property name="srmUserPersistenceManager" ref="auth-persistence-manager"/>
-    <property name="authorization" ref="authorization"/>
+    <property name="srmUserPersistenceManager" ref="user-manager"/>
+    <property name="authorization" ref="user-manager"/>
     <property name="dataSource" ref="data-source"/>
     <property name="transactionManager" ref="tx-manager"/>
 

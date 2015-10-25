@@ -932,4 +932,82 @@
         </insert>
     </changeSet>
 
+    <changeSet id="6" author="behrmann">
+        <comment>Clear user references ahead of dropping old user tables</comment>
+        <sql>
+            UPDATE bringonlinerequests SET userid = null;
+            UPDATE copyrequests SET userid = null;
+            UPDATE getrequests SET userid = null;
+            UPDATE lsrequests SET userid = null;
+            UPDATE putrequests SET userid = null;
+            UPDATE reservespacerequests SET userid = null;
+        </sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="7" author="behrmann">
+        <comment>Create srmuser table to persist user identities</comment>
+
+        <createTable tableName="srmuser">
+            <column name="id" type="bigint"><constraints primaryKey="true" primaryKeyName="srmuser_pkey" nullable="false"/></column>
+            <column name="type" type="varchar(8)"/>
+            <column name="encoded" type="blob"/>
+        </createTable>
+
+        <createIndex tableName="bringonlinerequests" indexName="bringonlinerequests_userid_idx">
+            <column name="userid"/>
+        </createIndex>
+
+        <createIndex tableName="copyrequests" indexName="copyrequests_userid_idx">
+            <column name="userid"/>
+        </createIndex>
+
+        <createIndex tableName="getrequests" indexName="getrequests_userid_idx">
+            <column name="userid"/>
+        </createIndex>
+
+        <createIndex tableName="lsrequests" indexName="lsrequests_userid_idx">
+            <column name="userid"/>
+        </createIndex>
+
+        <createIndex tableName="putrequests" indexName="putrequests_userid_idx">
+            <column name="userid"/>
+        </createIndex>
+
+        <createIndex tableName="reservespacerequests" indexName="reservespacerequests_userid_idx">
+            <column name="userid"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="bringonlinerequests" baseColumnNames="userid" constraintName="fk_bringonlinerequests_userid"
+                                 referencedTableName="srmuser" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="copyrequests" baseColumnNames="userid" constraintName="fk_copyrequests_userid"
+                                 referencedTableName="srmuser" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="getrequests" baseColumnNames="userid" constraintName="fk_getrequests_userid"
+                                 referencedTableName="srmuser" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="lsrequests" baseColumnNames="userid" constraintName="fk_lsrequests_userid"
+                                 referencedTableName="srmuser" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="putrequests" baseColumnNames="userid" constraintName="fk_putrequests_userid"
+                                 referencedTableName="srmuser" referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="reservespacerequests" baseColumnNames="userid" constraintName="fk_reservespacerequests_userid"
+                                 referencedTableName="srmuser" referencedColumnNames="id"/>
+    </changeSet>
+
+    <changeSet id="8" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not dropping old user schema as it doesn't exist (this is not an error)">
+            <tableExists tableName='"AUTHRECORD"'/>
+        </preConditions>
+
+        <dropTable tableName='"AUTHGROUP"'/>
+        <dropTable tableName='"AUTHGROUPLIST"'/>
+        <dropTable tableName='"AUTHRECORD"'/>
+        <dropSequence sequenceName='"AUTHGROUPLIST_ID_seq"'/>
+        <dropSequence sequenceName='"AUTHGROUP_ID_seq"'/>
+
+        <rollback/>
+    </changeSet>
 </databaseChangeLog>
