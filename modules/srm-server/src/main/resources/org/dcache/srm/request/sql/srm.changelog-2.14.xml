@@ -1067,4 +1067,56 @@
             </createIndex>
         </rollback>
     </changeSet>
+
+    <changeSet id="11" author="behrmann">
+        <comment>Drop unused indexes on transitiontime columns</comment>
+
+        <dropIndex tableName="bringonlinerequestshistory" indexName="bringonlinerequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="bringonlinefilerequestshistory" indexName="bringonlinefilerequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="copyrequestshistory" indexName="copyrequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="copyfilerequestshistory" indexName="copyfilerequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="getrequestshistory" indexName="getrequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="getfilerequestshistory" indexName="getfilerequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="lsrequestshistory" indexName="lsrequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="lsfilerequestshistory" indexName="lsfilerequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="putrequestshistory" indexName="putrequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="putfilerequestshistory" indexName="putfilerequestshistory_transitiontime_idx"/>
+        <dropIndex tableName="reservespacerequestshistory" indexName="reservespacerequestshistory_transitiontime_idx"/>
+
+        <rollback>
+            <createIndex tableName="bringonlinerequestshistory" indexName="bringonlinerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="bringonlinefilerequestshistory" indexName="bringonlinefilerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="copyrequestshistory" indexName="copyrequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="copyfilerequestshistory" indexName="copyfilerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="getrequestshistory" indexName="getrequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="getfilerequestshistory" indexName="getfilerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="lsrequestshistory" indexName="lsrequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="lsfilerequestshistory" indexName="lsfilerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="putrequestshistory" indexName="putrequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="putfilerequestshistory" indexName="putfilerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+            <createIndex tableName="reservespacerequestshistory" indexName="reservespacerequestshistory_transitiontime_idx">
+                <column name="transitiontime"/>
+            </createIndex>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>
