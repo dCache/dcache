@@ -71,18 +71,6 @@ check webdav.net.internal
 check webdav.mover.queue
 check webdav.authn.ciphers
 
-# Our /robots.txt file.  This advertises which parts of the HTTP
-# service indexing robots (web-crawlers) should index.  The particular
-# configuration below disallows all indexing.  Details on how to
-# configure robot.txt files are available from:
-# http://www.robotstxt.org/robotstxt.html
-####################################################################
-
-define context robots.txt endDefine
-User-agent: *
-Disallow: /
-endDefine
-
 define env verify-http.exe enddefine
 enddefine
 
