@@ -17,6 +17,7 @@
  */
 package org.dcache.pool.nearline.script;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
@@ -179,7 +180,8 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         executor.shutdown();
     }
 
-    private String[] getFlushCommand(File file, FileAttributes fileAttributes)
+    @VisibleForTesting
+    String[] getFlushCommand(File file, FileAttributes fileAttributes)
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
         String[] argsArray = Stream.concat(Stream.of(
@@ -193,21 +195,21 @@ public class ScriptNearlineStorage extends AbstractBlockingNearlineStorage
         return argsArray;
     }
 
-    private String[] getFetchCommand(File file, FileAttributes fileAttributes)
+    @VisibleForTesting
+    String[] getFetchCommand(File file, FileAttributes fileAttributes)
     {
         StorageInfo storageInfo = StorageInfos.extractFrom(fileAttributes);
-        String[] argsArray = Stream.concat(Stream.of(
-                command,
-                "get",
-                fileAttributes.getPnfsId().toString(),
-                file.getPath(),
-                "-si=" + storageInfo.toString()),
-                options.stream()).toArray(String[]::new);
+        String[] argsArray = Stream.of(
+                Stream.of(command, "get", fileAttributes.getPnfsId().toString(), file.getPath(), "-si=" + storageInfo.toString()),
+                getLocations(fileAttributes).stream().map(uri -> "-uri="+uri),
+                options.stream()
+        ).flatMap(s -> s).toArray(String[]::new);
         LOGGER.debug("COMMAND: {}", Arrays.deepToString(argsArray));
         return argsArray;
     }
 
-    private String[] getRemoveCommand(URI uri)
+    @VisibleForTesting
+    String[] getRemoveCommand(URI uri)
     {
         String[] argsArray = Stream.concat(Stream.of(
                 command,
