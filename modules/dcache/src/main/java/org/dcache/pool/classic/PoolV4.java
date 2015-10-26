@@ -1691,10 +1691,8 @@ public class PoolV4
         }
     }
 
-    public static final String hh_pnfs_register = " # add entry of all files into pnfs";
-    public static final String hh_pnfs_unregister = " # remove entry of all files from pnfs";
-
-    public String ac_pnfs_register(Args args)
+    private void startHybridInventory(boolean register)
+            throws IllegalArgumentException
     {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive) {
@@ -1702,37 +1700,39 @@ public class PoolV4
                         "Hybrid inventory still active");
             }
             _hybridInventoryActive = true;
-            new HybridInventory(true);
+            new HybridInventory(register);
         }
-        return "";
     }
 
-    public String ac_pnfs_unregister(Args args)
+    @Command(name = "pnfs register",
+            hint = "add file locations in namespace",
+            description = "Record all the file replicas in this pool with the namespace. " +
+                    "This is achieved by registering all file replicas in this pool into " +
+                    "the namespace, provided they have not been registered. If the replica " +
+                    "is unknown to the namespace then local copy is removed.\n\n" +
+                    "By default, dCache synchronously update the namespace whenever " +
+                    "a file is uploaded or removed from the pool.")
+    public class PnfsRegisterCommand implements Callable<String>
     {
-        synchronized (_hybridInventoryLock) {
-            if (_hybridInventoryActive) {
-                throw new IllegalArgumentException(
-                        "Hybrid inventory still active");
-            }
-            _hybridInventoryActive = true;
-            new HybridInventory(false);
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            startHybridInventory(true);
+            return "";
         }
-        return "";
     }
 
-    public static final String hh_run_hybrid_inventory = " [-destroy]";
-
-    public String ac_run_hybrid_inventory(Args args)
+    @Command(name = "pnfs unregister",
+            hint = "remove file locations from namespace",
+            description = "Unregister all file replicas of this pool from the namespace.")
+    public class PnfsUnregisterCommand implements Callable<String>
     {
-        synchronized (_hybridInventoryLock) {
-            if (_hybridInventoryActive) {
-                throw new IllegalArgumentException(
-                        "Hybrid inventory still active");
-            }
-            _hybridInventoryActive = true;
-            new HybridInventory(!args.hasOption("destroy"));
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            startHybridInventory(false);
+            return "";
         }
-        return "";
     }
 
     @Command(name = "pf", hint = "return the path of a file",
