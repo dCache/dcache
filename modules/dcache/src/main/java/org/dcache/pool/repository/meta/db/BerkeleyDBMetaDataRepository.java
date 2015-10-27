@@ -4,6 +4,7 @@ import com.sleepycat.collections.StoredMap;
 import com.sleepycat.je.DatabaseException;
 
 import com.sleepycat.je.EnvironmentFailureException;
+import com.sleepycat.je.OperationFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,29 +104,39 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public Collection<PnfsId> list() throws DiskErrorCacheException
+    public Collection<PnfsId> list() throws CacheException
     {
         try {
             Set<PnfsId> ids = new HashSet<>();
-            for (Object id: _views.getStorageInfoMap().keySet()) {
+            for (Object id : _views.getStorageInfoMap().keySet()) {
                 ids.add(new PnfsId((String) id));
             }
-            for (Object id: _views.getStateMap().keySet()) {
+            for (Object id : _views.getStateMap().keySet()) {
                 ids.add(new PnfsId((String) id));
             }
             return ids;
-        } catch (DatabaseException e) {
-            throw new DiskErrorCacheException("Meta data lookup failed: " + e.getMessage(), e);
+        } catch (EnvironmentFailureException e) {
+            if (!isValid()) {
+                throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
+            }
+            throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
+        } catch (OperationFailureException e) {
+            throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public MetaDataRecord get(PnfsId id) throws DiskErrorCacheException
+    public MetaDataRecord get(PnfsId id) throws CacheException
     {
         try {
             return CacheRepositoryEntryImpl.load(this, id);
-        } catch (DatabaseException e) {
-            throw new DiskErrorCacheException("Meta data updated failed: " + e.getMessage(), e);
+        } catch (EnvironmentFailureException e) {
+            if (!isValid()) {
+                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+            }
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
+        } catch (OperationFailureException e) {
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         }
     }
 
@@ -134,7 +145,7 @@ public class BerkeleyDBMetaDataRepository
      */
     @Override
     public MetaDataRecord create(PnfsId id)
-            throws DuplicateEntryException, DiskErrorCacheException
+            throws CacheException
     {
         /* CacheRepositoryEntryImpl.load silently drops incomplete
          * entries. To conform to the contract of the MetaDataStore
@@ -164,13 +175,18 @@ public class BerkeleyDBMetaDataRepository
     }
 
     @Override
-    public void remove(PnfsId id) throws DiskErrorCacheException
+    public void remove(PnfsId id) throws CacheException
     {
         try {
             _views.getStorageInfoMap().remove(id.toString());
             _views.getStateMap().remove(id.toString());
-        } catch (DatabaseException e) {
-            throw new DiskErrorCacheException("Meta data update failed: " + e.getMessage(), e);
+        } catch (EnvironmentFailureException e) {
+            if (!isValid()) {
+                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+            }
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
+        } catch (OperationFailureException e) {
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         }
     }
 
@@ -261,5 +277,10 @@ public class BerkeleyDBMetaDataRepository
     public long getTotalSpace()
     {
         return _fileStore.getTotalSpace();
+    }
+
+    public boolean isValid()
+    {
+        return _database.getEnvironment().isValid();
     }
 }
