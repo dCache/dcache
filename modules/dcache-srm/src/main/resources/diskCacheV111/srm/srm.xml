@@ -190,6 +190,22 @@
     <constructor-arg ref="auth-persistence-manager"/>
   </bean>
 
+    <bean id="voms-validator" class="org.italiangrid.voms.VOMSValidators"
+          factory-method="newValidator" destroy-method="shutdown">
+        <description>Validator for VOMS attribute certificates</description>
+        <constructor-arg>
+            <bean class="org.italiangrid.voms.store.VOMSTrustStores" factory-method="newTrustStore">
+                <constructor-arg><list><value>${srm.authn.vomsdir}</value></list></constructor-arg>
+            </bean>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="org.italiangrid.voms.util.CertificateValidatorBuilder" factory-method="buildCertificateValidator"
+                    destroy-method="dispose">
+                <constructor-arg value="${srm.authn.capath}"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
     <bean id="srm-credential-store"
           class="org.dcache.srm.request.sql.DatabaseRequestCredentialStorage">
         <description>SRM credential store</description>
@@ -247,8 +263,7 @@
                      '${srm.limits.external-copy-script.timeout.unit}')}" />
     <property name="srmHost" value="${srm.net.host}"/>
     <property name="srmHostsAsArray" value="${srm.net.local-hosts}"/>
-    <property name="caCertificatePath" value="${srm.authn.capath}"/>
-    <property name="vomsdir" value="${srm.authn.vomsdir}"/>
+    <property name="vomsValidator" ref="voms-validator"/>
     <property name="sizeOfSingleRemoveBatch"
               value="${srm.limits.remove-batch-size}"/>
     <property name="maxNumberOfLsEntries"
@@ -671,10 +686,8 @@
         class="org.dcache.gridsite.SrmCredentialStore">
       <description>Bridge between GridSite- and SRM- credential storage</description>
 
-      <property name="requestCredentialStorage"
-              ref="srm-credential-store"/>
-      <property name="caCertificatePath" value="${srm.authn.capath}"/>
-      <property name="vomsdir" value="${srm.authn.vomsdir}"/>
+      <property name="requestCredentialStorage" ref="srm-credential-store"/>
+      <property name="vomsValidator" ref="voms-validator"/>
   </bean>
 
   <bean id="gridsite-credential-delegation-factory"
@@ -793,6 +806,8 @@
                                      value-ref="gridsite-credential-delegation-factory"/>
                                           <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_SERVICE_METADATA }"
                                      value-ref="gridsite-service-metadata"/>
+                                          <entry key="#{ T(org.dcache.gridsite.ServletDelegation).ATTRIBUTE_NAME_VOMS_VALIDATOR }"
+                                     value-ref="voms-validator"/>
                                         </map>
                                     </constructor-arg>
                                 </bean>

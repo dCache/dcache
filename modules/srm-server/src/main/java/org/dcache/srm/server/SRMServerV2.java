@@ -223,7 +223,7 @@ public class SRMServerV2 implements ISRM  {
         Configuration config = Axis.getConfiguration();
         srmAuth = new SrmAuthorizer(config.getAuthorization(),
                 srm.getRequestCredentialStorage(),
-                config.isClientDNSLookup(), config.getVomsdir(), config.getCaCertificatePath());
+                config.isClientDNSLookup(), config.getVomsValidator());
         srmServerCounters = srm.getSrmServerV2Counters();
         srmServerGauges = srm.getSrmServerV2Gauges();
         pingExtraInfo = buildExtraInfo(config.getPingExtraInfo());
