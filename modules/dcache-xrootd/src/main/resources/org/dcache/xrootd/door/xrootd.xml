@@ -134,9 +134,7 @@
     <property name="cellStub" ref="gPlazma-stub" />
   </bean>
 
-  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler"
-        init-method="start"
-        destroy-method="stop">
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler">
     <description>Notifies LoginBroker </description>
     <property name="executor" ref="scheduled-thread-pool"/>
     <property name="updateTime" value="${xrootd.service.loginbroker.update-period}"/>

@@ -208,8 +208,6 @@ public class LoginManager
                 _loginBrokerHandler.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
                 _loginBrokerHandler.setRoot(Strings.emptyToNull(_args.getOption("root")));
                 _loginBrokerHandler.afterSetup();
-                _loginBrokerHandler.start();
-                _loginBrokerHandler.afterStart();
                 addCommandListener(_loginBrokerHandler);
 
                 if (_maxLogin < 0) {
@@ -243,6 +241,10 @@ public class LoginManager
         }
 
         start();
+
+        if (_loginBrokerHandler != null) {
+            _loginBrokerHandler.afterStart();
+        }
     }
 
     private static Class<?> toAuthClass(String authClassName, String protocol) throws ClassNotFoundException
@@ -502,12 +504,11 @@ public class LoginManager
     public void cleanUp()
     {
         LOGGER.info("cleanUp requested by nucleus, closing listen socket");
-        if (_listenThread != null) {
-            _listenThread.shutdown();
-        }
         if (_loginBrokerHandler != null) {
             _loginBrokerHandler.beforeStop();
-            _loginBrokerHandler.stop();
+        }
+        if (_listenThread != null) {
+            _listenThread.shutdown();
         }
         if (_scheduledExecutor != null) {
             _scheduledExecutor.shutdown();

@@ -225,11 +225,6 @@ public class LoginBrokerHandler
         rescheduleTask();
     }
 
-    public synchronized String[] getLoginBrokers()
-    {
-        return Arrays.copyOf(_loginBrokers, _loginBrokers.length);
-    }
-
     public synchronized void setProtocolFamily(String protocolFamily)
     {
         _protocolFamily = protocolFamily;
@@ -310,12 +305,14 @@ public class LoginBrokerHandler
         rescheduleTask();
     }
 
-    public synchronized void start()
+    @Override
+    public synchronized void afterStart()
     {
         scheduleTask();
     }
 
-    public synchronized void stop()
+    @Override
+    public synchronized void beforeStop()
     {
         if (_task != null) {
             _task.cancel(false);
