@@ -2,7 +2,8 @@ package org.dcache.pool.repository.meta.db;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.EnvironmentFailureException;
+import com.sleepycat.je.OperationFailureException;
 import com.sleepycat.util.RuntimeExceptionWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,7 +185,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized FileAttributes getFileAttributes() throws DiskErrorCacheException
+    public synchronized FileAttributes getFileAttributes() throws CacheException
     {
         try {
             FileAttributes attributes = new FileAttributes();
@@ -194,13 +195,18 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
                 StorageInfos.injectInto(storageInfo, attributes);
             }
             return attributes;
-        } catch (DatabaseException e) {
-            throw new DiskErrorCacheException("Meta data lookup failed: " + e.getMessage(), e);
+        } catch (EnvironmentFailureException e) {
+            if (!_repository.isValid()) {
+                throw new DiskErrorCacheException("Meta data lookup failed and a pool restart is required: " + e.getMessage(), e);
+            }
+            throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
+        } catch (OperationFailureException e) {
+            throw new CacheException("Meta data lookup failed: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public void setFileAttributes(FileAttributes attributes) throws DiskErrorCacheException
+    public void setFileAttributes(FileAttributes attributes) throws CacheException
     {
         try {
             String id = _pnfsId.toString();
@@ -209,8 +215,13 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
             } else {
                 _repository.getStorageInfoMap().remove(id);
             }
-        } catch (DatabaseException e) {
-            throw new DiskErrorCacheException("Meta data update failed: " + e.getMessage(), e);
+        } catch (EnvironmentFailureException e) {
+            if (!_repository.isValid()) {
+                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+            }
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
+        } catch (OperationFailureException e) {
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         }
     }
 
@@ -227,7 +238,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized void setState(EntryState state) throws DiskErrorCacheException
+    public synchronized void setState(EntryState state) throws CacheException
     {
         if (_state != state) {
             _state = state;
@@ -248,7 +259,7 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
     }
 
     @Override
-    public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws DiskErrorCacheException
+    public synchronized Collection<StickyRecord> removeExpiredStickyFlags() throws CacheException
     {
         long now = System.currentTimeMillis();
         List<StickyRecord> removed = Lists.newArrayList(filter(_sticky, r -> !r.isValidAt(now)));
@@ -296,12 +307,17 @@ public class CacheRepositoryEntryImpl implements MetaDataRecord
         return _sticky;
     }
 
-    private synchronized void storeState() throws DiskErrorCacheException
+    private synchronized void storeState() throws CacheException
     {
         try {
             _repository.getStateMap().put(_pnfsId.toString(), new CacheRepositoryEntryState(_state, _sticky));
-        } catch (DatabaseException e) {
-            throw new DiskErrorCacheException("Meta data updated failed: " + e.getMessage(), e);
+        } catch (EnvironmentFailureException e) {
+            if (!_repository.isValid()) {
+                throw new DiskErrorCacheException("Meta data update failed and a pool restart is required: " + e.getMessage(), e);
+            }
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
+        } catch (OperationFailureException e) {
+            throw new CacheException("Meta data update failed: " + e.getMessage(), e);
         }
     }
 
