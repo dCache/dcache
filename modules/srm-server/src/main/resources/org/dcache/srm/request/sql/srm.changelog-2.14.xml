@@ -1009,8 +1009,6 @@
         <dropTable tableName="AUTHGROUP"/>
         <dropTable tableName="AUTHGROUPLIST"/>
         <dropTable tableName="AUTHRECORD"/>
-        <dropSequence sequenceName="AUTHGROUPLIST_ID_seq"/>
-        <dropSequence sequenceName="AUTHGROUP_ID_seq"/>
 
         <rollback/>
     </changeSet>
