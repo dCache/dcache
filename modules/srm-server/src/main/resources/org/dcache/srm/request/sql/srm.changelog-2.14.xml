@@ -997,16 +997,16 @@
                                  referencedTableName="srmuser" referencedColumnNames="id"/>
     </changeSet>
 
-    <changeSet id="8" author="behrmann">
+    <changeSet id="8" author="behrmann" objectQuotingStrategy="QUOTE_ALL_OBJECTS">
         <preConditions onFail="MARK_RAN" onFailMessage="Not dropping old user schema as it doesn't exist (this is not an error)">
-            <tableExists tableName='"AUTHRECORD"'/>
+            <tableExists tableName="AUTHRECORD"/>
         </preConditions>
 
-        <dropTable tableName='"AUTHGROUP"'/>
-        <dropTable tableName='"AUTHGROUPLIST"'/>
-        <dropTable tableName='"AUTHRECORD"'/>
-        <dropSequence sequenceName='"AUTHGROUPLIST_ID_seq"'/>
-        <dropSequence sequenceName='"AUTHGROUP_ID_seq"'/>
+        <dropTable tableName="AUTHGROUP"/>
+        <dropTable tableName="AUTHGROUPLIST"/>
+        <dropTable tableName="AUTHRECORD"/>
+        <dropSequence sequenceName="AUTHGROUPLIST_ID_seq"/>
+        <dropSequence sequenceName="AUTHGROUP_ID_seq"/>
 
         <rollback/>
     </changeSet>
