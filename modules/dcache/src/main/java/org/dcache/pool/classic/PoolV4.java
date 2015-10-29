@@ -126,6 +126,8 @@ public class PoolV4
     private final static int P2P_PRECIOUS = 2;
     private final static int HEARTBEAT = 30;
 
+    private final static double DEFAULT_BREAK_EVEN = 0.7;
+
     private final static Pattern TAG_PATTERN =
         Pattern.compile("([^=]+)=(\\S*)\\s*");
 
@@ -191,7 +193,7 @@ public class PoolV4
     private InetAddress _replicationIp;
 
     private boolean _running;
-    private double _breakEven = 0.7;
+    private double _breakEven = DEFAULT_BREAK_EVEN;
     private double _moverCostFactor = 0.5;
     private TransferServices _transferServices;
 
@@ -633,10 +635,10 @@ public class PoolV4
             pw.println("pool suppress hsmload on");
         }
         pw.println("set duplicate request "
-                   + ((_dupRequest == DUP_REQ_NONE)
-                      ? "none"
-                      : (_dupRequest == DUP_REQ_IGNORE)
-                      ? "ignore"
+                + ((_dupRequest == DUP_REQ_NONE)
+                ? "none"
+                : (_dupRequest == DUP_REQ_IGNORE)
+                ? "ignore"
                       : "refresh"));
         _ioQueue.printSetup(pw);
     }
@@ -669,6 +671,7 @@ public class PoolV4
         pw.println("Hsm Load Suppr.   : " + (_suppressHsmLoad ? "on" : "off"));
         pw.println("Ping Heartbeat    : " + _pingThread.getHeartbeat()
                    + " seconds");
+        pw.println("Breakeven         : " + getBreakEven());
         pw.println("ReplicationMgr    : " + _replicationHandler);
         if (_hasTapeBackend) {
             pw.println("LargeFileStore    : None");
@@ -1294,11 +1297,11 @@ public class PoolV4
         }
 
         _repository.setSticky(msg.getPnfsId(),
-                              msg.getOwner(),
-                              msg.isSticky()
-                              ? msg.getLifeTime()
-                              : 0,
-                              true);
+                msg.getOwner(),
+                msg.isSticky()
+                        ? msg.getLifeTime()
+                        : 0,
+                true);
         msg.setSucceeded();
         return msg;
     }
@@ -1535,42 +1538,69 @@ public class PoolV4
                                     p2pQueue.getQueueSize());
 
         info.setQueueSizes(_suppressHsmLoad ? 0 : _storageHandler.getActiveFetchJobs(),
-                           0,
-                           _suppressHsmLoad ? 0 : _storageHandler.getFetchQueueSize(),
-                           _suppressHsmLoad ? 0 : _storageHandler.getActiveStoreJobs(),
-                           0,
-                           _suppressHsmLoad ? 0 : _storageHandler.getStoreQueueSize());
+                0,
+                _suppressHsmLoad ? 0 : _storageHandler.getFetchQueueSize(),
+                _suppressHsmLoad ? 0 : _storageHandler.getActiveStoreJobs(),
+                0,
+                _suppressHsmLoad ? 0 : _storageHandler.getStoreQueueSize());
         return info;
     }
 
-    public final static String hh_set_breakeven =
-        "[<breakEven>] # free and recoverable space";
-    public String ac_set_breakeven_$_0_1(Args args)
+    @Command(name = "set breakeven", hint = "set the space cost value of a week old file for this pool",
+            description = "Set the breakeven parameter which is used within the space " +
+                    "cost calculation scheme. This calculation is relevant for determining " +
+                    "this pool space availability and selection for storing a file. The set " +
+                    "parameter specifies the impact of the age of the least recently used " +
+                    "(LRU) file on space cost.\n\n" +
+                    "If the LRU file is one week old, the space cost will be equal to " +
+                    "(1 + costForMinute), where costForMinute =  breakeven parameter * 7 * 24 * 60. " +
+                    "Note that, if the breakeven parameter of a pool is set to equal or greater " +
+                    "than 1.0, the default value of " + DEFAULT_BREAK_EVEN + " is used.")
+    public class SetBreakevenCommand implements Callable<String>
     {
-        if (args.argc() > 0) {
-            _breakEven = Double.parseDouble(args.argv(0));
+        @Argument(usage = "Specify the breakeven value. This value has to be a positive and " +
+                "less than 1.0.")
+        double parameter = _breakEven;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            checkArgument(parameter > 0, "The breakeven parameter must be a positive number.");
+
+            if (parameter >= 1){
+                parameter = DEFAULT_BREAK_EVEN;
+            }
+            _breakEven = parameter;
+            return "BreakEven = " + getBreakEven();
         }
-        return "BreakEven = " + _breakEven;
+
     }
 
-    public final static String hh_set_mover_cost_factor =
-        "[<factor>]";
-    public final static String fh_set_mover_cost_factor =
-        "The mover cost factor controls how much the number of movers" +
-        "affects proportional pool selection.\n\n" +
-        "Intuitively, for every 1/f movers, where f is the mover cost" +
-        "factor, the probability of choosing this pools is halfed. When" +
-        "set to zero, the number of movers does not affect pool selection.";
-    public String ac_set_mover_cost_factor_$_0_1(Args args)
+    public double getBreakEven()
     {
-        if (args.argc() > 0) {
-            double value = Double.parseDouble(args.argv(0));
-            if (value < 0.0) {
-                throw new IllegalArgumentException("Mover cost factor must be larger than or equal to 0.0");
-            }
+        return _breakEven;
+    }
+
+    @Command(name = "set mover cost factor", hint = "set the selectivity of this pool by movers",
+            description = "The mover cost factor controls how much the number of movers " +
+                    "affects proportional pool selection.\n\n" +
+                    "Intuitively, for every 1/f movers, where f is the mover cost " +
+                    "factor, the probability of choosing this pools is halved. When " +
+                    "set to zero, the number of movers does not affect pool selection.")
+    public class SetMoverCostFactorCommand implements Callable<String>
+    {
+        @Argument(usage = "Specify the cost factor value. This value " +
+                "must be greater than or equal to 0.0.", required = false)
+        double value = _moverCostFactor;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            checkArgument(value > 0, "Mover cost factor must be larger than or equal to 0.0");
+
             _moverCostFactor = value;
+            return "Cost factor is " + _moverCostFactor;
         }
-        return "Cost factor is " + _moverCostFactor;
     }
 
     // /////////////////////////////////////////////////
@@ -1705,11 +1735,22 @@ public class PoolV4
         return "";
     }
 
-    public static final String hh_pf = "<pnfsId>";
-
-    public String ac_pf_$_1(Args args) throws CacheException, IllegalArgumentException
+    @Command(name = "pf", hint = "return the path of a file",
+            description = "Get the path corresponding to a particular file by " +
+                    "specifying the pnfsid. In case of hard links, one of the " +
+                    "possible path is returned. The pnfsid is the internal identifier " +
+                    "of the file within dCache. This is unique within a single " +
+                    "dCache instance and globally unique with a very high probability.")
+    public class PfCommand implements Callable<String>
     {
-        return _pnfs.getPathByPnfsId(new PnfsId(args.argv(0))).toString();
+        @Argument(usage = "Specify the pnfsid of the file.")
+        PnfsId pnfsId;
+
+        @Override
+        public String call() throws CacheException, IllegalArgumentException
+        {
+            return _pnfs.getPathByPnfsId(pnfsId).toString();
+        }
     }
 
     public static final String hh_set_replication = "[-off] [<mgr> [<host>]]";
