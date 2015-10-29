@@ -910,6 +910,8 @@
         <comment>Refresh list of valid request states</comment>
 
         <loadUpdateData tableName="srmjobstate" primaryKey="id" file="/org/dcache/srm/request/sql/srmjobstate-214.csv"/>
+
+        <rollback/>
     </changeSet>
 
     <changeSet id="5" author="behrmann">
@@ -930,6 +932,8 @@
             <column name="nextint" valueNumeric="-2147483648"/>
             <column name="nextlong" valueNumeric="-9223372036854775808"/>
         </insert>
+
+        <rollback/>
     </changeSet>
 
     <changeSet id="6" author="behrmann">
