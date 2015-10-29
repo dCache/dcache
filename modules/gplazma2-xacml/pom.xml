@@ -49,6 +49,14 @@
             <artifactId>opensaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.jglobus</groupId>
+            <artifactId>ssl-proxies</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jglobus</groupId>
+            <artifactId>gss</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.dcache</groupId>
             <artifactId>gplazma2</artifactId>
             <version>${project.version}</version>
