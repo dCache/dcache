@@ -6,6 +6,7 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.ExceptionEvent;
 import com.sleepycat.je.ExceptionListener;
 import com.sleepycat.je.RunRecoveryException;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 /**
  * MetaDataRepositoryDatabase encapsulates the initialisation of
@@ -45,15 +47,17 @@ public class MetaDataRepositoryDatabase
         envConfig.setReadOnly(readonly);
         envConfig.setConfigParam(EnvironmentConfig.MAX_MEMORY_PERCENT, "20");
         envConfig.setConfigParam(EnvironmentConfig.STATS_COLLECT, "false");
-        envConfig.setExceptionListener(event -> {
-            if (event.getException() instanceof RunRecoveryException) {
-                setFailed();
-                _log.error("Pool restart required due to Berkeley DB failure: "
-                           + event.getException().getMessage());
-            }
-        });
+        envConfig.setConfigParam(EnvironmentConfig.LOCK_N_LOCK_TABLES, "5");
+        envConfig.setLockTimeout(60, TimeUnit.SECONDS);
 
         env = new Environment(homeDirectory, envConfig);
+
+        envConfig.setExceptionListener(event -> {
+            if (event.getException() instanceof EnvironmentFailureException && !env.isValid()) {
+                setFailed();
+                _log.error("Pool restart required due to Berkeley DB failure: " + event.getException().getMessage());
+            }
+        });
 
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
