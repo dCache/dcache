@@ -497,9 +497,12 @@
                 <version>0.8.0</version>
             </dependency>
             <dependency>
+                <!-- Never versions have two problems. A performance regression causes it to block on non-responding network
+                     interfaces (https://liquibase.jira.com/browse/CORE-2549). There is also an as of yet unreported regression
+                     affecting how quoting rules are applied during rollback. -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-core</artifactId>
-                <version>3.4.1</version>
+                <version>3.3.3</version>
             </dependency>
             <dependency>
                 <groupId>com.mattbertolini</groupId>
