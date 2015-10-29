@@ -349,9 +349,10 @@
                 <version>2.4.1</version>
             </dependency>
             <dependency>
+                <!-- 1204 appears to contain a bug in handling timestamp types (pinmanager fails) -->
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>9.4-1204-jdbc42</version>
+                <version>9.4-1203-jdbc42</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
