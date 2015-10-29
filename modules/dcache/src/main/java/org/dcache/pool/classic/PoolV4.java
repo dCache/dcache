@@ -1736,11 +1736,11 @@ public class PoolV4
     }
 
     @Command(name = "pf", hint = "return the path of a file",
-            description = "Get the path corresponding to a particular file by " +
-                    "specifying the pnfsid. In case of hard links, one of the " +
-                    "possible path is returned. The pnfsid is the internal identifier " +
-                    "of the file within dCache. This is unique within a single " +
-                    "dCache instance and globally unique with a very high probability.")
+            description = "Get the path corresponding to a particular file by specifying " +
+                    "the pnfsid. In case of hard links, one of the possible path is returned. " +
+                    "The pnfsid is the internal identifier of the file within dCache. This is " +
+                    "unique within a single dCache instance and globally unique with a very " +
+                    "high probability.")
     public class PfCommand implements Callable<String>
     {
         @Argument(usage = "Specify the pnfsid of the file.")
