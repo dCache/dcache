@@ -478,7 +478,7 @@
             <column name="explanation" type="varchar(32762)"/>
             <column name="longformat" type="integer"/>
             <column name="numoflevels" type="integer"/>
-            <column name='"count"' type="integer"/>
+            <column name="count" type="integer"/>
             <column name="lsoffset" type="integer"/>
         </createTable>
 
@@ -1009,11 +1009,6 @@
         <dropSequence sequenceName='"AUTHGROUP_ID_seq"'/>
 
         <rollback/>
-    </changeSet>
-
-    <changeSet id="9" author="behrmann">
-        <comment>Rename count column to use the same capitalization as for other columns</comment>
-        <renameColumn tableName="lsrequests" oldColumnName='"count"' newColumnName="count"/>
     </changeSet>
 
     <changeSet id="10" author="behrmann">
