@@ -276,6 +276,7 @@ public class NFSv41Door extends AbstractCellComponent implements
                 case V3:
                     NfsServerV3 nfs3 = new NfsServerV3(_exportFile, _vfs);
                     _rpcService.register(new OncRpcProgram(nfs3_prot.NFS_PROGRAM, nfs3_prot.NFS_V3), nfs3);
+                    _loginBrokerHandler.setLoginBrokers(null);
                     break;
                 case V41:
                     final NFSv41DeviceManager _dm = this;
@@ -283,7 +284,6 @@ public class NFSv41Door extends AbstractCellComponent implements
                     _nfs4 = new NFSServerV41(new ProxyIoMdsOpFactory(_proxyIoFactory, new MDSOperationFactory()),
                             _dm, _vfs, _exportFile);
                     _rpcService.register(new OncRpcProgram(nfs4_prot.NFS4_PROGRAM, nfs4_prot.NFS_V4), _nfs4);
-                    _loginBrokerHandler.start();
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported NFS version: " + version);
@@ -295,7 +295,6 @@ public class NFSv41Door extends AbstractCellComponent implements
     }
 
     public void destroy() throws IOException {
-        _loginBrokerHandler.stop();
         _rpcService.stop();
         if (_nfs4 != null) {
             _nfs4.getStateHandler().shutdown();

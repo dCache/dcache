@@ -266,8 +266,7 @@
   </bean>
 
 
-  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler"
-	init-method="start" destroy-method="stop">
+  <bean id="lb" class="dmg.cells.services.login.LoginBrokerHandler">
       <description>Registers the door with a LoginBroker</description>
 
       <property name="executor" ref="scheduled-thread-pool"/>

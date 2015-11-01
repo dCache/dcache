@@ -441,11 +441,6 @@ public class PoolV4
     public void init()
     {
         checkState(!_isVolatile || !_hasTapeBackend, "Volatile pool cannot have a tape backend");
-        /*
-         * Do not send alarm.
-         */
-        disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
-        _pingThread.start();
     }
 
     @Override
@@ -453,6 +448,8 @@ public class PoolV4
     {
         assertNotRunning("Cannot initialize several times");
         _running = true;
+        disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Awaiting initialization");
+        _pingThread.start();
         new Thread() {
             @Override
             public void run() {

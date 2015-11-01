@@ -74,7 +74,6 @@ public class SrmLoginBrokerHandler extends LoginBrokerHandler
         setLoadProvider(srm::getLoad);
     }
 
-    @Override
     public void start()
     {
         try {
@@ -84,8 +83,6 @@ public class SrmLoginBrokerHandler extends LoginBrokerHandler
             _log.error("Failed to create delegation endpoint: {}", e);
             throw Throwables.propagate(e);
         }
-
-        super.start();
     }
 
     @Override
