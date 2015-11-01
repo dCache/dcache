@@ -113,9 +113,7 @@
       </constructor-arg>
   </bean>
 
-  <bean id="lb" class="diskCacheV111.srm.dcache.SrmLoginBrokerHandler"
-        init-method="start"
-        destroy-method="stop">
+  <bean id="lb" class="diskCacheV111.srm.dcache.SrmLoginBrokerHandler" init-method="start">
     <description>Registers the door with a LoginBroker</description>
     <property name="executor">
       <bean class="java.util.concurrent.Executors"
