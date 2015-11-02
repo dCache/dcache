@@ -3,6 +3,7 @@ package dmg.cells.services.login;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.MoreExecutors;
 import javatunnel.UserValidatable;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,11 +48,13 @@ import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
 
 import org.dcache.auth.Subjects;
+import org.dcache.commons.util.NDC;
 import org.dcache.util.Args;
 import org.dcache.util.Version;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.net.InetAddresses.toUriString;
 
 /**
  * *
@@ -802,6 +806,8 @@ public class LoginManager
         public void run()
         {
             Thread t = Thread.currentThread();
+            InetSocketAddress remoteSocketAddress = (InetSocketAddress) _socket.getRemoteSocketAddress();
+            NDC.push(toUriString(remoteSocketAddress.getAddress()) + ":" + remoteSocketAddress.getPort());
             try {
                 LOGGER.info("acceptThread ({}): creating protocol engine", t);
 
@@ -858,6 +864,8 @@ public class LoginManager
                     _socket.close();
                 } catch (IOException ee) {/* dead any way....*/}
                 _loginFailures.incrementAndGet();
+            } finally {
+                NDC.pop();
             }
         }
     }
