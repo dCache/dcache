@@ -41,7 +41,7 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
 
     /**
     * Execute the the
-     * {@link PluginCaller.call(GPlazmaPlugin)}
+     * {@link PluginCaller#call(GPlazmaPluginElement)}
      * methods of the plugins supplied in
      * {@link PAMStyleStrategy(List<T>) constructor}
      *  in the order of the plugin elements in the list.
@@ -82,13 +82,8 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
      * module determines the overall PAM authentication for that module type.
      * </li>
      * </ul>
-      *
-     * @param sessionID
-     * @param authorizedPrincipals
-     * @param attrib
-     * @throws AuthenticationException
      */
-    public synchronized void callPlugins(PluginCaller<T> caller)
+    public void callPlugins(PluginCaller<T> caller)
             throws AuthenticationException
     {
         AuthenticationException firstRequiredPluginException=null;
