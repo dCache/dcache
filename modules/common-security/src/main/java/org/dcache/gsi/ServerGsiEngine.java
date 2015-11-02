@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -65,6 +66,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
     private final CertificateFactory cf;
 
     private boolean isUsingLegacyClose;
+    private boolean isOutboundClosed;
     private KeyPair keyPair;
 
     public ServerGsiEngine(SSLEngine delegate, CertificateFactory cf)
@@ -77,12 +79,7 @@ public class ServerGsiEngine extends InterceptingSSLEngine
     @Override
     public void closeOutbound()
     {
-        /* Our SRM client (or rather JGlobus) doesn't like a proper SSL shutdown. Throwing an exception
-         * here forces Jetty to abruptly close the socket just like in old versions of Jetty.
-         */
-        if (isUsingLegacyClose) {
-            throw new RuntimeException("Deliberately force the connection to close to workaround client bugs.");
-        }
+        isOutboundClosed = true;
         super.closeOutbound();
     }
 
@@ -91,6 +88,10 @@ public class ServerGsiEngine extends InterceptingSSLEngine
         return isUsingLegacyClose;
     }
 
+    /**
+     * Our SRM client (or rather JGlobus) doesn't like a proper SSL shutdown. If legacy close is
+     * enabled any closure handshake messages are suppressed.
+     */
     public void setUsingLegacyClose(boolean usingLegacyClose)
     {
         this.isUsingLegacyClose = usingLegacyClose;
@@ -106,6 +107,21 @@ public class ServerGsiEngine extends InterceptingSSLEngine
     {
         checkArgument(!isClientMode, "Only the server side of GSI is supported by this engine.");
         super.setUseClientMode(isClientMode);
+    }
+
+    @Override
+    public boolean isOutboundDone()
+    {
+        return (isUsingLegacyClose && isOutboundClosed) || super.isOutboundDone();
+    }
+
+    @Override
+    public SSLEngineResult wrap(ByteBuffer[] srcs, int offset, int length, ByteBuffer dst) throws SSLException
+    {
+        if (isOutboundDone()) {
+            return new SSLEngineResult(SSLEngineResult.Status.CLOSED, SSLEngineResult.HandshakeStatus.FINISHED, 0,0);
+        }
+        return super.wrap(srcs, offset, length, dst);
     }
 
     private ByteBuffer getCertRequest() throws SSLPeerUnverifiedException, GeneralSecurityException
