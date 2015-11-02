@@ -40,7 +40,7 @@ public class Base64TokenReader implements TokenReader
             return null;
         }
         if (!s.startsWith("enc ")) {
-            throw new IOException("Invalid framing: " + s);
+            throw new IOException("Invalid framing; expected enc command.");
         }
         return Base64.getDecoder().decode(s.substring(4));
     }
