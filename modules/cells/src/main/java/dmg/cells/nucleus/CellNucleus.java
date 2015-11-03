@@ -634,8 +634,9 @@ public class CellNucleus implements ThreadFactory
      */
     public void  threadGroupList() {
         Thread[] threads = new Thread[_threads.activeCount()];
-        _threads.enumerate(threads);
-        for(Thread thread : threads) {
+        int n = _threads.enumerate(threads);
+        for (int i = 0; i < n; i++) {
+            Thread thread = threads[i];
             LOGGER.warn("Thread: {} [{}{}{}] ({}) {}",
                     thread.getName(),
                     (thread.isAlive() ? "A" : "-"),
