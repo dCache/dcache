@@ -106,11 +106,11 @@ import org.dcache.util.ChecksumType;
 import org.dcache.util.PortRange;
 import org.dcache.vehicles.FileAttributes;
 
-public class RemoteGsiftpTransferProtocol_1
+public class RemoteGsiftpTransferProtocol
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
     private final static Logger _log =
-        LoggerFactory.getLogger(RemoteGsiftpTransferProtocol_1.class);
+        LoggerFactory.getLogger(RemoteGsiftpTransferProtocol.class);
     //timeout after 5 minutes if credentials not delegated
     private final static int SERVER_SOCKET_TIMEOUT = 60 * 5 *1000;
 
@@ -147,8 +147,8 @@ public class RemoteGsiftpTransferProtocol_1
     private String[] _bannedCiphers;
     private SslContextFactory _sslContextFactory;
 
-    public RemoteGsiftpTransferProtocol_1(CellEndpoint cell, PortRange portRange, String[] bannedCiphers,
-                                          SslContextFactory sslContextFactory)
+    public RemoteGsiftpTransferProtocol(CellEndpoint cell, PortRange portRange, String[] bannedCiphers,
+                                        SslContextFactory sslContextFactory)
     {
         _cell = cell;
         _portRange = portRange;

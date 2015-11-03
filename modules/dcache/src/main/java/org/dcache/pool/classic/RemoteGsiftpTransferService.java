@@ -29,7 +29,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 
 import org.dcache.pool.movers.MoverProtocol;
-import org.dcache.pool.movers.RemoteGsiftpTransferProtocol_1;
+import org.dcache.pool.movers.RemoteGsiftpTransferProtocol;
 import org.dcache.ssl.CanlContextFactory;
 import org.dcache.ssl.SslContextFactory;
 import org.dcache.util.PortRange;
@@ -42,7 +42,7 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
     private NamespaceCheckingMode namespaceMode;
     private long certificateAuthorityUpdateInterval;
     private TimeUnit certificateAuthorityUpdateIntervalUnit;
-    private SslContextFactory sslContextFactory;
+    private CanlContextFactory sslContextFactory;
     private String[] bannedCiphers;
     private PortRange portRange;
 
@@ -132,27 +132,30 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
         this.certificateAuthorityUpdateIntervalUnit = unit;
     }
 
-    public void init()
-    {
-        sslContextFactory =
-                CanlContextFactory.custom()
-                        .withCertificateAuthorityPath(caPath)
-                        .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval, certificateAuthorityUpdateIntervalUnit)
-                        .withCrlCheckingMode(crlCheckingMode)
-                        .withOcspCheckingMode(ocspCheckingMode)
-                        .withNamespaceMode(namespaceMode)
-                        .build();
-    }
-
     @Override
     protected MoverProtocol createMoverProtocol(ProtocolInfo info) throws Exception
     {
         MoverProtocol moverProtocol;
         if (info instanceof RemoteGsiftpTransferProtocolInfo) {
-            moverProtocol = new RemoteGsiftpTransferProtocol_1(getCellEndpoint(), portRange, bannedCiphers, sslContextFactory);
+            moverProtocol = new RemoteGsiftpTransferProtocol(getCellEndpoint(), portRange, bannedCiphers, getContextFactory());
         } else {
             throw new CacheException(27, "Could not create mover for " + info);
         }
         return moverProtocol;
+    }
+
+    private synchronized SslContextFactory getContextFactory()
+    {
+        if (sslContextFactory == null) {
+            sslContextFactory =
+                    CanlContextFactory.custom()
+                            .withCertificateAuthorityPath(caPath)
+                            .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval, certificateAuthorityUpdateIntervalUnit)
+                            .withCrlCheckingMode(crlCheckingMode)
+                            .withOcspCheckingMode(ocspCheckingMode)
+                            .withNamespaceMode(namespaceMode)
+                            .build();
+        }
+        return sslContextFactory;
     }
 }

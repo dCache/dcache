@@ -398,7 +398,7 @@
   </bean>
 
   <bean id="remote-http-transfer-service" class="org.dcache.pool.classic.RemoteHttpTransferService"
-          depends-on="rep" init-method="init" destroy-method="shutdown">
+          depends-on="rep" destroy-method="shutdown">
       <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
       <property name="postTransferService" ref="post-transfer-service"/>
@@ -416,7 +416,7 @@
   </bean>
 
   <bean id="remote-gsiftp-transfer-service" class="org.dcache.pool.classic.RemoteGsiftpTransferService"
-          depends-on="rep" init-method="init" destroy-method="shutdown">
+          depends-on="rep" destroy-method="shutdown">
       <property name="faultListener" ref="pool"/>
       <property name="checksumModule" ref="csm"/>
       <property name="postTransferService" ref="post-transfer-service"/>

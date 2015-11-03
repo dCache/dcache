@@ -31,7 +31,7 @@ import org.dcache.vehicles.FileAttributes;
 /**
  * A mover for transferring a file using HTTP over a TLS/SSL connection.
  */
-public class RemoteHttpsDataTransferProtocol_1 extends RemoteHttpDataTransferProtocol_1
+public class RemoteHttpsDataTransferProtocol extends RemoteHttpDataTransferProtocol
 {
     private final TrustManager trustManager;
     private final SecureRandom secureRandom;
@@ -39,8 +39,8 @@ public class RemoteHttpsDataTransferProtocol_1 extends RemoteHttpDataTransferPro
     private PrivateKey privateKey;
     private X509Certificate[] chain;
 
-    public RemoteHttpsDataTransferProtocol_1(CellEndpoint cell, X509CertChainValidator validator,
-                                             SecureRandom secureRandom)
+    public RemoteHttpsDataTransferProtocol(CellEndpoint cell, X509CertChainValidator validator,
+                                           SecureRandom secureRandom)
     {
         super(cell);
         this.secureRandom = secureRandom;

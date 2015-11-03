@@ -111,11 +111,11 @@ import static org.dcache.namespace.FileAttribute.CHECKSUM;
  * containing both the error in removing the remote file and the error that
  * triggered the delete.
  */
-public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
+public class RemoteHttpDataTransferProtocol implements MoverProtocol,
         ChecksumMover
 {
     private final static Logger _log =
-        LoggerFactory.getLogger(RemoteHttpDataTransferProtocol_1.class);
+        LoggerFactory.getLogger(RemoteHttpDataTransferProtocol.class);
 
     /** Maximum time to wait when establishing a connection. */
     private static final int CONNECTION_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
@@ -151,7 +151,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
     private static final String WANT_DIGEST_VALUE = "adler32;q=1, md5;q=0.8";
 
     protected static final String USER_AGENT = "dCache/" +
-            Version.of(RemoteHttpDataTransferProtocol_1.class).getVersion();
+            Version.of(RemoteHttpDataTransferProtocol.class).getVersion();
 
     // Pool-supplied factory for on-transfer checksums, null if disabled.
     private ChecksumFactory _onTransfer;
@@ -168,7 +168,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol,
 
     private CloseableHttpClient _client;
 
-    public RemoteHttpDataTransferProtocol_1(CellEndpoint cell)
+    public RemoteHttpDataTransferProtocol(CellEndpoint cell)
     {
         // constructor needed by Pool mover contract.
     }
