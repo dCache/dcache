@@ -41,8 +41,8 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
         String caDir = properties.getProperty(CADIR);
         String vomsDir = properties.getProperty(VOMSDIR);
 
-        checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
-        checkArgument(vomsDir != null, "Undefined property: " + CADIR);
+        checkArgument(caDir != null, "Undefined property: " + CADIR);
+        checkArgument(vomsDir != null, "Undefined property: " + VOMSDIR);
 
         VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
         X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
