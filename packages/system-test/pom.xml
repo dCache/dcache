@@ -57,14 +57,9 @@
                               <filterset id="filter">
                                   <filtersfile file="${project.basedir}/src/main/assembly/filter.properties" />
                                   <filter token="project.version" value="${project.version}" />
-                                  <filter token="TARGET" value="${project.build.directory}"/>
-                                  <filter token="SOURCE" value="${project.basedir}/src/main"/>
-                                  <filter token="DCACHE_LOAD_CONFIG" value='
-                                      DCACHE_HOME="${project.build.directory}/${project.build.finalName}"${line.separator}
-                                      DCACHE_CLASSPATH="${DCACHE_HOME}/share/classes/*"${line.separator}
-                                      DCACHE_DEFAULTS="${DCACHE_HOME}/share/defaults"${line.separator}
-                                      DCACHE_CACHED_CONFIG="${DCACHE_HOME}/var/config/cache"${line.separator}
-                                      . "${DCACHE_HOME}/share/lib/loadConfig.sh"'/>
+                                  <filter token="TARGET" value="${project.build.directory}" />
+                                  <filter token="SOURCE" value="${project.basedir}/src/main" />
+                                  <filter token="DCACHE_LOAD_CONFIG" value=" DCACHE_HOME=&quot;${project.build.directory}/${project.build.finalName}&quot;${line.separator}                                       DCACHE_CLASSPATH=&quot;${DCACHE_HOME}/share/classes/*&quot;${line.separator}                                       DCACHE_DEFAULTS=&quot;${DCACHE_HOME}/share/defaults&quot;${line.separator}                                       DCACHE_CACHED_CONFIG=&quot;${DCACHE_HOME}/var/config/cache&quot;${line.separator}                                       . &quot;${DCACHE_HOME}/share/lib/loadConfig.sh&quot;" />
                               </filterset>
 
                               <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
@@ -73,7 +68,7 @@
                                           <selector refid="binary.files" />
                                       </not>
                                   </fileset>
-                                  <filterset refid="filter"/>
+                                  <filterset refid="filter" />
                               </copy>
                               <copy todir="${filtered-skel}" overwrite="true" preservelastmodified="true">
                                   <fileset dir="${skel}">
@@ -85,9 +80,9 @@
                               </copy>
                               <copy todir="${project.build.directory}/bin" overwrite="true" preservelastmodified="true">
                                   <fileset dir="${project.basedir}/src/main/bin" />
-                                  <filterset refid="filter"/>
+                                  <filterset refid="filter" />
                               </copy>
-                              <chmod dir="${project.build.directory}/bin" perm="ugo+rx" includes="*"/>
+                              <chmod dir="${project.build.directory}/bin" perm="ugo+rx" includes="*" />
                           </target>
                       </configuration>
                       <goals>

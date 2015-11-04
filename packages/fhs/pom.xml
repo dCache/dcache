@@ -347,7 +347,7 @@
                                     <name>pkg.version</name>
                                     <value>${project.version}</value>
                                     <regex>-</regex>
-                                    <replacement/>
+                                    <replacement />
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
