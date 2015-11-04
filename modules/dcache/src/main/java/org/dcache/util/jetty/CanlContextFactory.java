@@ -40,6 +40,8 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.gsi.GsiFrameEngine;
 import org.dcache.gsi.KeyPairCache;
 import org.dcache.gsi.ServerGsiEngine;
@@ -265,6 +267,7 @@ public class CanlContextFactory extends SslContextFactory
                         .withCertificateAuthorityPath(certificateAuthorityPath)
                         .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval)
                         .withLazy(false)
+                        .withLoggingContext(new CDC()::restore)
                         .build()
                         .getTrustManagers();
             }

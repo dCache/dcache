@@ -17,6 +17,7 @@
  */
 package org.dcache.ssl;
 
+import com.google.common.base.Throwables;
 import eu.emi.security.authn.x509.CrlCheckingMode;
 import eu.emi.security.authn.x509.NamespaceCheckingMode;
 import eu.emi.security.authn.x509.OCSPCheckingMode;
@@ -45,6 +46,7 @@ import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static eu.emi.security.authn.x509.ValidationErrorCategory.*;
 import static eu.emi.security.authn.x509.ValidationErrorCategory.CRL;
@@ -108,6 +110,7 @@ public class CanlContextFactory implements SslContextFactory
         private Path certificatePath = FileSystems.getDefault().getPath("/etc/grid-security/hostcert.pem");
         private long credentialUpdateInterval = 1;
         private TimeUnit credentialUpdateIntervalUnit = TimeUnit.MINUTES;
+        private Supplier<AutoCloseable> contextSupplier = () -> () -> {};
 
         private Builder()
         {
@@ -179,6 +182,12 @@ public class CanlContextFactory implements SslContextFactory
             return this;
         }
 
+        public Builder withLoggingContext(Supplier<AutoCloseable> contextSupplier)
+        {
+            this.contextSupplier = contextSupplier;
+            return this;
+        }
+
         public CanlContextFactory build()
         {
             OCSPParametes ocspParameters = new OCSPParametes(ocspCheckingMode);
@@ -190,16 +199,20 @@ public class CanlContextFactory implements SslContextFactory
                                                   certificateAuthorityUpdateInterval,
                                                   validatorParams, lazyMode);
             v.addUpdateListener((location, type, level, cause) -> {
-                switch (level) {
-                case ERROR:
-                    LOGGER.error("Error loading {} from {}: ", type, location, cause);
-                    break;
-                case WARNING:
-                    LOGGER.warn("Problem loading {} from {}: ", type, location, cause);
-                    break;
-                case NOTIFICATION:
-                    LOGGER.info("Reloaded {} from {}: ", type, location);
-                    break;
+                try (AutoCloseable context = contextSupplier.get()) {
+                    switch (level) {
+                    case ERROR:
+                        LOGGER.error("Error loading {} from {}: ", type, location, cause);
+                        break;
+                    case WARNING:
+                        LOGGER.warn("Problem loading {} from {}: ", type, location, cause);
+                        break;
+                    case NOTIFICATION:
+                        LOGGER.info("Reloaded {} from {}: ", type, location);
+                        break;
+                    }
+                } catch (Exception e) {
+                    Throwables.propagate(e);
                 }
             });
             v.addValidationListener(error -> {

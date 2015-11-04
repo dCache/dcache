@@ -28,6 +28,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 
+import dmg.cells.nucleus.CDC;
+
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.RemoteGsiftpTransferProtocol;
 import org.dcache.ssl.CanlContextFactory;
@@ -150,10 +152,12 @@ public class RemoteGsiftpTransferService extends AbstractMoverProtocolTransferSe
             sslContextFactory =
                     CanlContextFactory.custom()
                             .withCertificateAuthorityPath(caPath)
-                            .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval, certificateAuthorityUpdateIntervalUnit)
+                            .withCertificateAuthorityUpdateInterval(certificateAuthorityUpdateInterval,
+                                                                    certificateAuthorityUpdateIntervalUnit)
                             .withCrlCheckingMode(crlCheckingMode)
                             .withOcspCheckingMode(ocspCheckingMode)
                             .withNamespaceMode(namespaceMode)
+                            .withLoggingContext(new CDC()::restore)
                             .build();
         }
         return sslContextFactory;
