@@ -1061,7 +1061,7 @@
                     <useNativeGit>false</useNativeGit>
                     <gitDescribe>
                         <always>true</always>
-                        <dirty>-dirty-${user.name}</dirty>
+                        <dirty>_dirty_${user.name}</dirty>
                     </gitDescribe>
                 </configuration>
             </plugin>
