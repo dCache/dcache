@@ -754,27 +754,17 @@ public class SRM {
      * @return request status assosiated with this request
      */
     public RequestStatus getRequestStatus(SRMUser user, int requestId) {
-        logger.debug(" getRequestStatus(" + user + "," + requestId + ")");
+        logger.trace("getRequestStatus({},{})", user, requestId);
         try {
             // Try to get the request with such id
-            logger.debug("getRequestStatus() Request.getRequest(" + requestId + ");");
             ContainerRequest<?> r = Job.getJob((long) requestId, ContainerRequest.class);
-            logger.debug("getRequestStatus() received Request  ");
-            if (r != null) {
-                // we found one make sure it is the same  user
-                SRMUser requestUser = r.getUser();
-                if (requestUser == null || requestUser.getId() == user.getId()) {
-                    // and return the request status
-                    RequestStatus rs = r.getRequestStatus();
-                    logger.debug("obtained request status, returning rs for request id=" + requestId);
-                    return rs;
-                } else {
-                    return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
-                            " owned by "+requestUser+" does not belong to user " + user, requestId);
-                }
+            if (!user.hasAccessTo(r)) {
+                return createFailedRequestStatus("getRequestStatus(): request #" + requestId +
+                        " owned by "+ r.getUser() +" does not belong to user " + user, requestId);
             }
-            return createFailedRequestStatus("getRequestStatus() request #" + requestId +
-                    " was not found", requestId);
+            RequestStatus rs = r.getRequestStatus();
+            logger.debug("obtained request status, returning rs for request id={}", requestId);
+            return rs;
         } catch (Exception e) {
             logger.error(e.toString());
             return createFailedRequestStatus("getting request #" + requestId +
@@ -924,10 +914,9 @@ public class SRM {
             ContainerRequest<?> r = Job.getJob((long)requestId, ContainerRequest.class);
 
             // check that user is the same
-            SRMUser req_user = r.getUser();
-            if (req_user != null && req_user.getId() != user.getId()) {
+            if (!user.hasAccessTo(r)) {
                 return createFailedRequestStatus(
-                        "request #" + requestId + " owned by "+req_user +" does not belong to user " + user);
+                        "request #" + requestId + " owned by "+r.getUser() +" does not belong to user " + user);
             }
             // get file request from request
             FileRequest<?> fr = r.getFileRequest(fileRequestId);

@@ -508,12 +508,6 @@ public abstract class Job  {
         }
     }
 
-    /** Getter for property creator.
-     * @return Value of property creator.
-     *
-     */
-    public abstract String getSubmitterId();
-
     /** Getter for property priority.
      * @return Value of property priority.
      *

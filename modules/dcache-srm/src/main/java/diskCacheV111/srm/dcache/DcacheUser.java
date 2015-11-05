@@ -108,9 +108,9 @@ public class DcacheUser implements SRMUser
     }
 
     @Override
-    public long getId()
+    public Long getId()
     {
-        return token.getId();
+        return (token == null) ? null : token.getId();
     }
 
     @Override
