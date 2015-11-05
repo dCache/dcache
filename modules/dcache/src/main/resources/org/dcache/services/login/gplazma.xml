@@ -54,6 +54,7 @@
   <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init">
     <description>Interfaces with gPlazma</description>
     <property name="configurationFile" value="${gplazma.configuration.file}"/>
+    <property name="cachePluginCreation" value="${gplazma.enable.plugin-creation-caching}"/>
     <property name="nameSpace" ref="namespace"/>
   </bean>
 </beans>
