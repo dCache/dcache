@@ -26,7 +26,6 @@ import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.configuration.ConfigurationItemType;
 import org.dcache.gplazma.configuration.ConfigurationLoadingStrategy;
 import org.dcache.gplazma.configuration.parser.FactoryConfigurationException;
-import org.dcache.gplazma.loader.CachingPluginLoaderDecorator;
 import org.dcache.gplazma.loader.PluginFactory;
 import org.dcache.gplazma.loader.PluginLoader;
 import org.dcache.gplazma.loader.PluginLoadingException;
@@ -98,8 +97,6 @@ public class GPlazma
     private SessionStrategy _sessionStrategy;
     private ValidationStrategy validationStrategy;
     private IdentityStrategy identityStrategy;
-
-    private boolean _shouldCachePluginCreation;
 
     /**
      * Storage class for failed login attempts.  This allows gPlazma to
@@ -222,11 +219,6 @@ public class GPlazma
              * problem if configuration file is edited.
              */
         }
-    }
-
-    public void setCachePluginCreation(boolean shouldCache)
-    {
-        _shouldCachePluginCreation = shouldCache;
     }
 
     public LoginReply login(Subject subject) throws AuthenticationException
@@ -441,9 +433,6 @@ public class GPlazma
         LOGGER.debug("reloading plugins");
 
         pluginLoader = XmlResourcePluginLoader.newPluginLoader();
-        if (_shouldCachePluginCreation) {
-            pluginLoader = new CachingPluginLoaderDecorator(pluginLoader);
-        }
         if(_customPluginFactory != null) {
             pluginLoader.setPluginFactory(_customPluginFactory);
         }
