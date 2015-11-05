@@ -199,13 +199,21 @@ public class CanlContextFactory implements SslContextFactory
                                                   certificateAuthorityUpdateInterval,
                                                   validatorParams, lazyMode);
             v.addUpdateListener((location, type, level, cause) -> {
-                try (AutoCloseable context = contextSupplier.get()) {
+                try (AutoCloseable ignored = contextSupplier.get()) {
                     switch (level) {
                     case ERROR:
-                        LOGGER.error("Error loading {} from {}: ", type, location, cause);
+                        if (cause != null) {
+                            LOGGER.error("Error loading {} from {}: {}", type, location, cause.getMessage());
+                        } else {
+                            LOGGER.error("Error loading {} from {}.", type, location);
+                        }
                         break;
                     case WARNING:
-                        LOGGER.warn("Problem loading {} from {}: ", type, location, cause);
+                        if (cause != null) {
+                            LOGGER.warn("Problem loading {} from {}: {}", type, location, cause.getMessage());
+                        } else {
+                            LOGGER.warn("Problem loading {} from {}.", type, location);
+                        }
                         break;
                     case NOTIFICATION:
                         LOGGER.info("Reloaded {} from {}: ", type, location);
