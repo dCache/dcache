@@ -154,11 +154,12 @@ public final class CanonicalizingByteArrayStore
     @Nullable
     public Token toToken(long id)
     {
-        locks.get(id).lock();
+        Lock lock = locks.get(id);
+        lock.lock();
         try {
             return (load(id) != null) ? makeToken(id) : null;
         } finally {
-            locks.get(id).unlock();
+            lock.unlock();
         }
     }
 
@@ -181,7 +182,8 @@ public final class CanonicalizingByteArrayStore
         do {
             HashCode hash = Hashing.sipHash24(K0, k1++).hashBytes(bytes);
             long id = hash.asLong();
-            locks.get(id).lock();
+            Lock lock = locks.get(id);
+            lock.lock();
             try {
                 byte[] canonical = load(id);
                 if (canonical == null) {
@@ -191,7 +193,7 @@ public final class CanonicalizingByteArrayStore
                     token = makeToken(id);
                 }
             } finally {
-                locks.get(id).unlock();
+                lock.unlock();
             }
         } while (token == null);
         return token;
@@ -207,7 +209,8 @@ public final class CanonicalizingByteArrayStore
     public byte[] readBytes(Token token)
     {
         long id = token.getId();
-        locks.get(id).lock();
+        Lock lock = locks.get(id);
+        lock.lock();
         try {
             byte[] bytes = load(id);
             if (bytes == null) {
@@ -215,7 +218,7 @@ public final class CanonicalizingByteArrayStore
             }
             return bytes;
         } finally {
-            locks.get(id).unlock();
+            lock.unlock();
         }
     }
 
@@ -262,14 +265,15 @@ public final class CanonicalizingByteArrayStore
         canonicalizationCache.cleanUp();
 
         for (Long id : ids) {
-            locks.get(id).lock();
+            Lock lock = locks.get(id);
+            lock.lock();
             try {
                 if (canonicalizationCache.getIfPresent(id) == null) {
                     cache.invalidate(id);
                     delete.accept(id);
                 }
             } finally {
-                locks.get(id).unlock();
+                lock.unlock();
             }
         }
     }
