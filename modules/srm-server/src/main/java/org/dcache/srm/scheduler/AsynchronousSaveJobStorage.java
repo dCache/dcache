@@ -13,6 +13,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.dcache.srm.request.Job;
+import org.dcache.srm.util.JDC;
 
 public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
 {
@@ -88,16 +89,18 @@ public class AsynchronousSaveJobStorage<J extends Job> implements JobStorage<J>
                         @Override
                         public void run()
                         {
-                            UpdateState state = states.put(job.getId(), UpdateState.PROCESSING);
-                            try {
-                                storage.saveJob(job, state == UpdateState.QUEUED_FORCED);
-                            } catch (DataAccessException e) {
-                                LOGGER.error("SQL statement failed: {}", e.getMessage());
-                            } catch (Throwable e) {
-                                Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-                            } finally {
-                                if (!states.remove(job.getId(), UpdateState.PROCESSING)) {
-                                    executor.execute(this);
+                            try (JDC ignored = job.applyJdc()) {
+                                UpdateState state = states.put(job.getId(), UpdateState.PROCESSING);
+                                try {
+                                    storage.saveJob(job, state == UpdateState.QUEUED_FORCED);
+                                } catch (DataAccessException e) {
+                                    LOGGER.error("SQL statement failed: {}", e.getMessage());
+                                } catch (Throwable e) {
+                                    Thread.currentThread().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+                                } finally {
+                                    if (!states.remove(job.getId(), UpdateState.PROCESSING)) {
+                                        executor.execute(this);
+                                    }
                                 }
                             }
                         }
