@@ -4,7 +4,25 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
 
-    <changeSet id="1" author="behrmann">
+    <changeSet id="0" author="behrmann">
+        <preConditions onFail="MARK_RAN" onFailMessage="Not renaming count column as lsrequests table does not exist (this is not an error)">
+            <tableExists tableName="lsrequests"/>
+        </preConditions>
+
+        <comment>Rename count column as it is an SQL keyword and causes challenges with quoting in liquibase</comment>
+
+        <sql>
+            ALTER TABLE lsrequests RENAME COLUMN "count" TO cnt;
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE lsrequests RENAME COLUMN cnt TO "count";
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1.11" author="behrmann">
         <preConditions onFail="MARK_RAN" onFailMessage="Not creating SRM schema as it already exists (this is not an error)">
             <not><tableExists tableName="srmjobstate"/></not>
         </preConditions>
@@ -478,7 +496,7 @@
             <column name="explanation" type="varchar(32762)"/>
             <column name="longformat" type="integer"/>
             <column name="numoflevels" type="integer"/>
-            <column name="count" type="integer"/>
+            <column name="cnt" type="integer"/> <!-- don't use 'count' as that is an SQL keyword and causes quoting challenges -->
             <column name="lsoffset" type="integer"/>
         </createTable>
 
