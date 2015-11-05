@@ -57,7 +57,6 @@ public class X509Plugin implements GPlazmaAuthenticationPlugin
         String enablePolicies = properties.getProperty(POLICY_PRINCIPALS_PROPERTY);
         checkArgument(enablePolicies != null, "Undefined property: " + POLICY_PRINCIPALS_PROPERTY);
         isPolicyPrincipalsEnabled = Boolean.parseBoolean(enablePolicies);
-        LOG.error("isPolicyPrincipalsEnabled: {} ({})", enablePolicies, isPolicyPrincipalsEnabled);
     }
 
     @Override
