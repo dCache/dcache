@@ -208,7 +208,7 @@ public class CanlContextFactory implements SslContextFactory
                         LOGGER.warn("Problem loading {} from {}: ", type, location, cause);
                         break;
                     case NOTIFICATION:
-                        LOGGER.info("Reloaded {} from {}: ", type, location);
+                        LOGGER.debug("Reloaded {} from {}: ", type, location);
                         break;
                     }
                 } catch (Exception e) {
