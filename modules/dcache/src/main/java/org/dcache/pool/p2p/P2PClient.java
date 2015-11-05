@@ -2,8 +2,6 @@
 
 package org.dcache.pool.p2p;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -13,8 +11,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -27,13 +25,16 @@ import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellMessageReceiver;
 
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.dcache.cells.CellStub;
 import org.dcache.pool.classic.ChecksumModule;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class P2PClient
     extends AbstractCellComponent
@@ -276,9 +277,7 @@ public class P2PClient
     public synchronized boolean cancel(int id)
     {
         Companion companion = _companions.get(id);
-        return (companion == null)
-                ? false
-                : companion.cancel("Transfer was cancelled");
+        return (companion != null) && companion.cancel("Transfer was cancelled");
     }
 
     /**
@@ -318,90 +317,145 @@ public class P2PClient
         }
     }
 
-    public static final String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
-    public synchronized String ac_pp_set_pnfs_timeout_$_1(Args args)
+    @Command(name="pp set pnfs timeout",
+            hint = "Obsolete Command",
+            description = "This command is obsolete.")
+    public class PpSetPnfsTimeoutCommand implements Callable<String>
     {
-        long timeout = Long.parseLong(args.argv(0));
-        _pnfs.setTimeout(timeout);
-        _pnfs.setTimeoutUnit(TimeUnit.SECONDS);
-        return "Pnfs timeout set to " + timeout + " seconds";
-    }
-
-    public static final String hh_pp_set_max_active = "<normalization>";
-    public synchronized String ac_pp_set_max_active_$_1(Args args)
-    {
-        _maxActive = Integer.parseInt(args.argv(0));
-        return "";
-    }
-
-    public static final String hh_pp_set_port = "<port> # Obsolete";
-    public synchronized String ac_pp_set_port_$_1(Args args)
-    {
-        return "'pp set port' is obsolete";
-    }
-
-    public static final String fh_pp_set_listen =
-        "The command is deprecated. Use 'pp interface' instead.";
-    public static final String hh_pp_set_listen = "<address> # Deprecated";
-    public synchronized String ac_pp_set_listen_$_1_2(Args args)
-        throws UnknownHostException
-    {
-        return ac_pp_interface_$_0_1(new Args(args.argv(0)));
-    }
-
-    public static final String fh_pp_interface =
-        "Specifies the interface used when connecting to other pools.\n\n" +
-        "For pool to pool transfers, the destination creates a TCP\n" +
-        "conection to the source pool. For this to work the source pool\n" +
-        "must select one of its network interfaces to which the destination\n" +
-        "pool can connect. For compatibility reasons this interface is\n" +
-        "not specified explicitly on the source pool. Instead an interface\n" +
-        "on the target pool is specified and the source pool selects an\n" +
-        "interface facing the target interface.\n\n" +
-        "If * is provided then an interface is selected automatically.";
-    public static final String hh_pp_interface = "[<address>]";
-    public synchronized String ac_pp_interface_$_0_1(Args args)
-        throws UnknownHostException
-    {
-        if (args.argc() == 1) {
-            String host = args.argv(0);
-            _interface =  host.equals("*") ? null : InetAddress.getByName(host);
+        @Override
+        public synchronized String call()
+        {
+            return "This command is obsolete.";
         }
-        return "PP interface is " + getInterface();
     }
 
-    public static final String hh_pp_get_file = "<pnfsId> <pool>";
-    public synchronized String ac_pp_get_file_$_2(Args args)
-        throws CacheException, IOException, InterruptedException
+    @Command(name="pp set max active",
+            hint = "set the maximum number of active pool-to-pool client transfers",
+            description = "Set the maximum number of active pool-to-pool " +
+                    "(client) concurrent transfers allowed. Any further " +
+                    "requests will be queued. This value will also be used by " +
+                    "the cost module for calculating the performance cost.")
+    public class PpSetMaxActiveCommand implements Callable<String>
     {
-        FileAttributes fileAttributes = new FileAttributes();
-        fileAttributes.setPnfsId(new PnfsId(args.argv(0)));
-        String pool = args.argv(1);
-        List<StickyRecord> stickyRecords = Collections.emptyList();
-        newCompanion(pool, fileAttributes, EntryState.CACHED, stickyRecords, null,
-                false, null);
-        return "Transfer Initiated";
-    }
+        @Argument(usage = "Specify the maximum number of active pool-to-pool " +
+                "client transfers.")
+        int maxActiveAllowed;
 
-    public static final String hh_pp_remove = "<id>";
-    public synchronized String ac_pp_remove_$_1(Args args)
-        throws NumberFormatException
-    {
-        int id = Integer.valueOf(args.argv(0));
-        if (!cancel(id)) {
-            throw new IllegalArgumentException("Id not found: " + id);
+        @Override
+        public synchronized String call() throws IllegalArgumentException
+        {
+            checkArgument(maxActiveAllowed > 0, "This value must be a positive integer.");
+            _maxActive = maxActiveAllowed;
+            return "";
         }
-        return "";
     }
 
-    public static final String hh_pp_ls = " # get the list of companions";
-    public synchronized String ac_pp_ls(Args args)
+    @Command(name = "pp set listen",
+            hint = "Obsolete Command",
+            description = "The command is Obsolete. Use 'pp interface' instead.")
+    public class PpSetListenCommand implements Callable<String>
     {
-        StringBuilder sb = new StringBuilder();
-
-        for (Companion c : _companions.values()) {
-            sb.append(c.toString()).append("\n");
+        @Override
+        public String call()
+        {
+            return "This command is obsolete. Use 'pp interface' instead.";
         }
-        return sb.toString();
+    }
+
+    @Command(name = "pp interface",
+            hint = "Specifies the interface used when connecting to other pools.",
+            description = "For pool to pool transfers, the destination creates a TCP " +
+                    "connection to the source pool. For this to work the source pool " +
+                    "must select one of its network interfaces to which the destination " +
+                    "pool can connect. For compatibility reasons this interface is " +
+                    "not specified explicitly on the source pool. Instead an interface " +
+                    "on the target pool is specified and the source pool selects an " +
+                    "interface facing the target interface.\n\n" +
+                    "If * is provided then an interface is selected automatically.")
+    public class PpInterfaceCommand implements Callable<String>
+    {
+        @Argument(required = false,
+                usage = "Specify the address to which the destination pool can connect.")
+        String address;
+
+        @Override
+        public synchronized String call() throws UnknownHostException
+        {
+            if (address != null) {
+                _interface =  address.equals("*") ? null : InetAddress.getByName(address);
+            }
+            return "PP interface is " + getInterface();
+        }
+    }
+
+    @Command(name = "pp get file",
+            hint = "initiate pool-to-pool client transfer request of a file",
+            description = "Transfer a file from a specified pool to this pool through " +
+                    "pool-to-pool client transfer request. The transferred file will " +
+                    "be marked cached.")
+    public class PpGetFileCommand implements Callable<String>
+    {
+        @Argument(index = 0,
+                usage = "Specify the pnfsID of the file to transfer.")
+        PnfsId pnfsId;
+
+        @Argument(index = 1, metaVar = "sourcePoolName",
+                usage = "Specify the source pool name where the file reside.")
+        String pool;
+
+        @Override
+        public synchronized String call() throws
+                IOException, CacheException, InterruptedException
+        {
+            FileAttributes fileAttributes = new FileAttributes();
+            fileAttributes.setPnfsId(pnfsId);
+            List<StickyRecord> stickyRecords = Collections.emptyList();
+            newCompanion(pool, fileAttributes, EntryState.CACHED, stickyRecords, null,
+                    false, null);
+            return "Transfer Initiated";
+        }
+    }
+
+    @Command(name = "pp remove",
+            hint = "cancel a pool-to-pool client transfer request",
+            description = "Terminate a specific pool-to-pool client transfer request by " +
+                    "specifying the session ID. This stop the transfer from completion. " +
+                    "An error is thrown if the file session ID is not found and " +
+                    "this might be due to either the file transfer is completed or " +
+                    "the session ID doesn't exist at all.")
+    public class PpRemoveCommand implements Callable<String>
+    {
+        @Argument(metaVar = "sessionID",
+                usage = "Specify the session ID identifying the transfer.")
+        int id;
+
+        @Override
+        public synchronized String call() throws IllegalArgumentException
+        {
+            if (!cancel(id)) {
+                throw new IllegalArgumentException("Session ID not found: " + id);
+            }
+            return "";
+        }
+    }
+
+    @Command(name = "pp ls",
+            hint = "list pool-to-pool client transfer request",
+            description = "Get the list of all active and waiting pool-to-pool client " +
+                    "transfer request. The return list comprise of: the session ID " +
+                    "identifying the transfer; the pnfsID of the file; " +
+                    "and the state of the state machine (which is driving the transfer).")
+    public class PpLsCommand implements Callable<String>
+    {
+        @Override
+        public synchronized String call()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (Companion c : _companions.values()) {
+                sb.append(c.toString()).append("\n");
+            }
+            return sb.toString();
+        }
     }
 }

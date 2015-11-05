@@ -38,5 +38,4 @@ mover set max active -queue=p2p 10
 #  Pool to Pool (P2P)
 #
 pp set max active 10
-pp set pnfs timeout 300
 pp interface 127.0.0.1
