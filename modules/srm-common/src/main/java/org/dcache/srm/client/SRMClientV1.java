@@ -225,6 +225,7 @@ public class SRMClientV1 implements diskCacheV111.srm.ISRM {
         SimpleProvider provider = new SimpleProvider();
         GsiHttpClientSender sender = new GsiHttpClientSender();
         sender.setSslContextFactory(CanlContextFactory.createDefault());
+        sender.init();
         provider.deployTransport(HttpClientTransport.DEFAULT_TRANSPORT_NAME, new SimpleTargetedChain(sender));
         org.dcache.srm.client.axis.SRMServerV1Locator sl = new org.dcache.srm.client.axis.SRMServerV1Locator(provider);
         URL url = new URL(service_url);
