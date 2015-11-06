@@ -216,7 +216,7 @@ public class CanlContextFactory implements SslContextFactory
                         }
                         break;
                     case NOTIFICATION:
-                        LOGGER.info("Reloaded {} from {}: ", type, location);
+                        LOGGER.debug("Reloaded {} from {}: ", type, location);
                         break;
                     }
                 } catch (Exception e) {
