@@ -67,7 +67,7 @@
       </constructor-arg>
   </bean>
 
-    <bean id="request-thread-pool" class="org.dcache.util.BoundedExecutor" destroy-method="shutdown">
+    <bean id="request-thread-pool" class="org.dcache.util.BoundedCachedExecutor" destroy-method="shutdown">
         <description>Thread pool for xrootd request processing</description>
         <constructor-arg value="${xrootd.limits.threads}"/>
     </bean>
