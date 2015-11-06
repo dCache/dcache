@@ -10,8 +10,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Use the <tt>META-INF/gplazma-plugins.xml</tt> file(s) available from the thread's
@@ -29,14 +29,14 @@ public class XmlResourcePluginRepositoryFactory implements
 
     @Override
     public PluginRepository newRepository() {
-        Set<URL> xmlResources = findXmlResources();
+        List<URL> xmlResources = findXmlResources();
         PluginRepository repository = new PluginRepository();
         addPlugins( repository, xmlResources);
         return repository;
     }
 
-    private Set<URL> findXmlResources() {
-        Set<URL> results = new HashSet<>();
+    private List<URL> findXmlResources() {
+        List<URL> results = new ArrayList<>();
 
         ClassLoader classLoader =
                 Thread.currentThread().getContextClassLoader();
@@ -55,7 +55,7 @@ public class XmlResourcePluginRepositoryFactory implements
         return results;
     }
 
-    private void addPlugins( PluginRepository repository, Set<URL> xmlResources) {
+    private void addPlugins( PluginRepository repository, List<URL> xmlResources) {
         for( URL xmlLocation : xmlResources) {
             tryAddingPluginsFromXml( repository, xmlLocation);
         }
