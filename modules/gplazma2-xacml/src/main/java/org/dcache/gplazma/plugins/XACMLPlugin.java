@@ -25,9 +25,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.security.Principal;
-import java.security.cert.CRLException;
 import java.security.cert.CertPath;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -118,8 +116,8 @@ import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
  *
  * @author arossi
  */
-public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
-
+public final class XACMLPlugin implements GPlazmaAuthenticationPlugin
+{
     /**
      * Simple struct to hold the extensions extracted from the certificate
      * chain.
@@ -331,18 +329,22 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
     /*
      * VOMS setup
      */
-    private final VOMSACValidator validator;
+    private VOMSACValidator validator;
 
     /**
      * Configures VOMS extension validation, XACML service location, local id
      * caching and storage resource information.
      */
-    public XACMLPlugin(Properties properties) throws ClassNotFoundException,
-            SocketException, CertificateException, CRLException, IOException {
+    public XACMLPlugin(Properties properties) {
         _properties = properties;
+        _mappingServiceURL = properties.getProperty(SERVICE_URL_PROPERTY);
+    }
 
-        String caDir = properties.getProperty(CADIR);
-        String vomsDir = properties.getProperty(VOMSDIR);
+    @Override
+    public void start() throws ClassNotFoundException, IOException
+    {
+        String caDir = _properties.getProperty(CADIR);
+        String vomsDir = _properties.getProperty(VOMSDIR);
 
         checkArgument(caDir != null, "Undefined property: " + VOMSDIR);
         checkArgument(vomsDir != null, "Undefined property: " + CADIR);
@@ -354,17 +356,15 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         /*
          * Adds SSL system properties required by privilege library.
          */
-        System.setProperty("sslCAFiles", properties.getProperty(SERVICE_CA) + "/*.0");
-        System.setProperty("sslCertfile", properties.getProperty(SERVICE_CERT));
-        System.setProperty("sslKey", properties.getProperty(SERVICE_KEY));
+        System.setProperty("sslCAFiles", _properties.getProperty(SERVICE_CA) + "/*.0");
+        System.setProperty("sslCertfile", _properties.getProperty(SERVICE_CERT));
+        System.setProperty("sslKey", _properties.getProperty(SERVICE_KEY));
 
         /*
          * XACML setup
          */
-        _mappingServiceURL = properties.getProperty(SERVICE_URL_PROPERTY);
-        checkArgument(_mappingServiceURL != null, "Undefined property: "
-                        + SERVICE_URL_PROPERTY);
-        setClientType(properties.getProperty(CLIENT_TYPE_PROPERTY));
+        checkArgument(_mappingServiceURL != null, "Undefined property: " + SERVICE_URL_PROPERTY);
+        setClientType(_properties.getProperty(CLIENT_TYPE_PROPERTY));
         configureTargetServiceInfo();
         configureResourceDNSHostName();
 
@@ -374,6 +374,12 @@ public final class XACMLPlugin implements GPlazmaAuthenticationPlugin {
         configureCache();
 
         logger.debug("XACML plugin now loaded for URL {}", _mappingServiceURL);
+    }
+
+    @Override
+    public void stop()
+    {
+        validator.shutdown();
     }
 
     /*

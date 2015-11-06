@@ -369,41 +369,41 @@ public class AccountStrategyTests
         return new Principal[0];
     }
 
-    private void givenStrategyWithPlugins(GPlazmaPluginElement<GPlazmaAccountPlugin>... plugins)
+    private void givenStrategyWithPlugins(GPlazmaPluginService<GPlazmaAccountPlugin>... plugins)
     {
         _strategy.setPlugins(Arrays.asList(plugins));
     }
 
-    private static GPlazmaPluginElement<GPlazmaAccountPlugin>[] noPlugins()
+    private static GPlazmaPluginService<GPlazmaAccountPlugin>[] noPlugins()
     {
-        return new GPlazmaPluginElement[0];
+        return new GPlazmaPluginService[0];
     }
 
-    private static GPlazmaPluginElement<GPlazmaAccountPlugin> sufficient(
+    private static GPlazmaPluginService<GPlazmaAccountPlugin> sufficient(
             Class<? extends GPlazmaAccountPlugin> type)
     {
         return configuredPlugin(type, ConfigurationItemControl.SUFFICIENT);
     }
 
-    private static GPlazmaPluginElement<GPlazmaAccountPlugin> required(
+    private static GPlazmaPluginService<GPlazmaAccountPlugin> required(
             Class<? extends GPlazmaAccountPlugin> type)
     {
         return configuredPlugin(type, ConfigurationItemControl.REQUIRED);
     }
 
-    private static GPlazmaPluginElement<GPlazmaAccountPlugin> requisite(
+    private static GPlazmaPluginService<GPlazmaAccountPlugin> requisite(
             Class<? extends GPlazmaAccountPlugin> type)
     {
         return configuredPlugin(type, ConfigurationItemControl.REQUISITE);
     }
 
-    private static GPlazmaPluginElement<GPlazmaAccountPlugin> optional(
+    private static GPlazmaPluginService<GPlazmaAccountPlugin> optional(
             Class<? extends GPlazmaAccountPlugin> type)
     {
         return configuredPlugin(type, ConfigurationItemControl.OPTIONAL);
     }
 
-    private static GPlazmaPluginElement<GPlazmaAccountPlugin> configuredPlugin(
+    private static GPlazmaPluginService<GPlazmaAccountPlugin> configuredPlugin(
             Class<? extends GPlazmaAccountPlugin> type,
             ConfigurationItemControl control)
     {
@@ -415,7 +415,7 @@ public class AccountStrategyTests
             throw new RuntimeException(e);
         }
 
-        return new GPlazmaPluginElement<>(plugin,
+        return new GPlazmaPluginService<>(plugin,
                 type.getSimpleName(), control);
     }
 

@@ -31,7 +31,7 @@ public class DefaultSessionStrategy implements SessionStrategy
      * @param plugins
      */
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaSessionPlugin>> plugins)
+    public void setPlugins(List<GPlazmaPluginService<GPlazmaSessionPlugin>> plugins)
     {
         pamStyleSessionStrategy = new PAMStyleStrategy<>(plugins);
     }
@@ -40,7 +40,7 @@ public class DefaultSessionStrategy implements SessionStrategy
      * Devegates execution of the
      * {@link GPlazmaSessionPlugin#session(SessionID, Set<Principal>,Set<Object>) GPlazmaSessionPlugin.session}
      * methods of the plugins supplied by
-     * {@link GPlazmaStrategy#setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
+     * {@link GPlazmaStrategy#setPlugins(List< GPlazmaPluginService <T>>) GPlazmaStrategy.setPlugins}
      *  to
      * {@link  PAMStyleStrategy#callPlugins(PluginCaller<T>) PAMStyleStrategy.callPlugins(PluginCaller<T>)}
      * by providing anonymous implementation of the
@@ -62,7 +62,7 @@ public class DefaultSessionStrategy implements SessionStrategy
         pamStyleSessionStrategy.callPlugins( new PluginCaller<GPlazmaSessionPlugin>()
         {
             @Override
-            public void call(GPlazmaPluginElement<GPlazmaSessionPlugin> pe)
+            public void call(GPlazmaPluginService<GPlazmaSessionPlugin> pe)
                     throws AuthenticationException
             {
                 monitor.sessionPluginBegins(pe.getName(), pe.getControl(),

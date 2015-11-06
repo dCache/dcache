@@ -28,20 +28,20 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
     private static final Logger logger =
             LoggerFactory.getLogger(PAMStyleStrategy.class);
 
-    public List<GPlazmaPluginElement<T>> pluginElements;
+    public List<GPlazmaPluginService<T>> pluginElements;
 
     /**
      * creates a new instance of the PAMStyleStrategy
      * @param pluginElements
      */
-    public PAMStyleStrategy(List<GPlazmaPluginElement<T>> pluginElements)
+    public PAMStyleStrategy(List<GPlazmaPluginService<T>> pluginElements)
     {
         this.pluginElements = Collections.unmodifiableList(pluginElements);
     }
 
     /**
     * Execute the the
-     * {@link PluginCaller#call(GPlazmaPluginElement)}
+     * {@link PluginCaller#call(GPlazmaPluginService)}
      * methods of the plugins supplied in
      * {@link PAMStyleStrategy(List<T>) constructor}
      *  in the order of the plugin elements in the list.
@@ -87,7 +87,7 @@ public class PAMStyleStrategy<T extends GPlazmaPlugin>
             throws AuthenticationException
     {
         AuthenticationException firstRequiredPluginException=null;
-        for(GPlazmaPluginElement<T> pluginElement: pluginElements) {
+        for(GPlazmaPluginService<T> pluginElement: pluginElements) {
             ConfigurationItemControl control = pluginElement.getControl();
             NDC ndc = NDC.cloneNdc();
 

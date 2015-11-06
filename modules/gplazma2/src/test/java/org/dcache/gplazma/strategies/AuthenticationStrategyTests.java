@@ -32,67 +32,67 @@ public class AuthenticationStrategyTests
     private static final LoginMonitor IGNORING_LOGIN_MONITOR =
             new IgnoringLoginMonitor();
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> empltyList =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> empltyList =
             Lists.newArrayList();
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> oneDoNothingPlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> oneDoNothingPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successRequiredPlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> successRequiredPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successOptionalPlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> successOptionalPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",OPTIONAL)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",OPTIONAL)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successRequisitePlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> successRequisitePlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUISITE)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUISITE)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> successSufficientPlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> successSufficientPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",SUFFICIENT)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",SUFFICIENT)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> failedPlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> failedPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> testOptionalFailingPlugins =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> testOptionalFailingPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",REQUIRED),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> testRequesitePlugins1 =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> testRequesitePlugins1 =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> testRequesitePlugins2 =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> testRequesitePlugins2 =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> sufficientPluginFollowedByFailedArray =
+    private List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> sufficientPluginFollowedByFailedArray =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",SUFFICIENT),
-            new GPlazmaPluginElement<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new AlwaysAuthenticateStrategy(),"always",SUFFICIENT),
+            new GPlazmaPluginService<GPlazmaAuthenticationPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
     @Before

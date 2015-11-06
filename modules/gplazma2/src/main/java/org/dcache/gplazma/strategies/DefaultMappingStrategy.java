@@ -27,7 +27,7 @@ public class DefaultMappingStrategy implements MappingStrategy
     private volatile PAMStyleStrategy<GPlazmaMappingPlugin> pamStyleMappingStrategy;
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaMappingPlugin>> plugins)
+    public void setPlugins(List<GPlazmaPluginService<GPlazmaMappingPlugin>> plugins)
     {
         pamStyleMappingStrategy = new PAMStyleStrategy<>(plugins);
     }
@@ -36,7 +36,7 @@ public class DefaultMappingStrategy implements MappingStrategy
      * Delegates execution of the
      * {@link GPlazmaMappingPlugin#map(Set<Principal>) GPlazmaMappingPlugin.map}
      * methods of the plugins supplied by
-     * {@link GPlazmaStrategy#setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
+     * {@link GPlazmaStrategy#setPlugins(List< GPlazmaPluginService <T>>) GPlazmaStrategy.setPlugins}
      *  to
      * {@link  PAMStyleStrategy#callPlugins(PluginCaller<T>) PAMStyleStrategy.callPlugins(PluginCaller<T>)}
      * by providing anonymous implementation of the
@@ -56,7 +56,7 @@ public class DefaultMappingStrategy implements MappingStrategy
         pamStyleMappingStrategy.callPlugins( new PluginCaller<GPlazmaMappingPlugin>()
         {
             @Override
-            public void call(GPlazmaPluginElement<GPlazmaMappingPlugin> pe)
+            public void call(GPlazmaPluginService<GPlazmaMappingPlugin> pe)
                     throws AuthenticationException
             {
                 monitor.mapPluginBegins(pe.getName(), pe.getControl(), principals);

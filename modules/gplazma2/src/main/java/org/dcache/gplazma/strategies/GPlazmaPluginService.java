@@ -1,21 +1,23 @@
 package org.dcache.gplazma.strategies;
 
+import com.google.common.util.concurrent.AbstractService;
+
 import org.dcache.gplazma.configuration.ConfigurationItemControl;
 import org.dcache.gplazma.plugins.GPlazmaPlugin;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * This class holds the information from a PAM-style configuration line.
+ * This class wraps a GPlazmaPlugin instance and controls the lifecycle calls to the
+ * plugin.
  */
-public class GPlazmaPluginElement<T extends GPlazmaPlugin>
+public class GPlazmaPluginService<T extends GPlazmaPlugin> extends AbstractService
 {
     private final T _plugin;
     private final ConfigurationItemControl _control;
     private final String _name;
 
-    public GPlazmaPluginElement(T plugin, String name,
-            ConfigurationItemControl control)
+    public GPlazmaPluginService(T plugin, String name, ConfigurationItemControl control)
     {
         checkNotNull(plugin, "plugin is null");
         checkNotNull(control, "control is null");
@@ -24,6 +26,28 @@ public class GPlazmaPluginElement<T extends GPlazmaPlugin>
         _plugin = plugin;
         _control = control;
         _name = name;
+    }
+
+    @Override
+    protected void doStart()
+    {
+        try {
+            _plugin.start();
+            notifyStarted();
+        } catch (Exception e) {
+            notifyFailed(e);
+        }
+    }
+
+    @Override
+    protected void doStop()
+    {
+        try {
+            _plugin.stop();
+            notifyStopped();
+        } catch (Exception e) {
+            notifyFailed(e);
+        }
     }
 
     /**
@@ -67,8 +91,8 @@ public class GPlazmaPluginElement<T extends GPlazmaPlugin>
             return false;
         }
 
-        GPlazmaPluginElement<?> aPluginElement =
-            (GPlazmaPluginElement<?>) anObject;
+        GPlazmaPluginService<?> aPluginElement =
+            (GPlazmaPluginService<?>) anObject;
         return (_plugin.equals(aPluginElement._plugin) &&
                 _control.equals(aPluginElement._control));
     }
