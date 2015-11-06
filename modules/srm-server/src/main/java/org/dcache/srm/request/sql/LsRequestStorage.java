@@ -52,7 +52,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
         "EXPLANATION ,"+
         "LONGFORMAT ,"+
         "NUMOFLEVELS ,"+
-        "COUNT ,"+
+        "CNT ,"+
         "LSOFFSET ) "+
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
@@ -98,7 +98,7 @@ public class LsRequestStorage extends DatabaseContainerRequestStorage<LsRequest,
                 " EXPLANATION=?,"+
                 " LONGFORMAT=?,"+
                 " NUMOFLEVELS=?,"+
-                " COUNT=?,"+
+                " CNT=?,"+
                 " LSOFFSET=? "+
                 " WHERE ID=?";
     @Override
