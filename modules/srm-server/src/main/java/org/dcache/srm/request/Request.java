@@ -323,11 +323,6 @@ public abstract class Request extends Job {
     }
 
     @Override
-    public String getSubmitterId() {
-        return Long.toString(user.getId());
-    }
-
-    @Override
     public void checkExpiration()
     {
         wlock();

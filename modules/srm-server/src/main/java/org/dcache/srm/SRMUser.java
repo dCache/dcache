@@ -77,7 +77,7 @@ import org.dcache.srm.request.Request;
 public interface SRMUser
 {
     int getPriority();
-    long getId();
+    Long getId();
     boolean isReadOnly();
 
     /**

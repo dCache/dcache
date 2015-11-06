@@ -306,27 +306,6 @@ public abstract class FileRequest<R extends ContainerRequest> extends Job {
 
     public abstract long extendLifetime(long newLifetime) throws SRMException ;
 
-    /**
-     *
-     * @return
-     */
-     @Override
-     public String getSubmitterId() {
-         try {
-            return Long.toString(getUser().getId());
-         } catch (Exception e) {
-             //
-             // Throwing the exception from this method
-             //  will prevent the change of the status of this request
-             //  to canceled, done or failed.
-             // Therefore we catch the exception and
-             // just report the submitter id as unknown
-             //
-             logger.error(e.toString());
-             return "unknown";
-         }
-     }
-
     @Override
     public JDC applyJdc()
     {
