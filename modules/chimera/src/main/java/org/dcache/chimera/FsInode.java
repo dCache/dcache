@@ -298,23 +298,16 @@ public class FsInode {
         return (_stat == null) ? stat() : _stat;
     }
 
-    public int write(long pos, byte[] data, int offset, int len) {
-        int ret = -1;
-        try {
-            ret = _fs.write(this, _level, pos, data, offset, len);
-            _stat = null;
-        } catch (ChimeraFsException e) {
-        }
+    public int write(long pos, byte[] data, int offset, int len) throws ChimeraFsException
+    {
+        int ret = _fs.write(this, _level, pos, data, offset, len);
+        _stat = null;
         return ret;
     }
 
-    public int read(long pos, byte[] data, int offset, int len) {
-        int ret = -1;
-        try {
-            ret = _fs.read(this, _level, pos, data, offset, len);
-        } catch (ChimeraFsException e) {
-        }
-        return ret;
+    public int read(long pos, byte[] data, int offset, int len) throws ChimeraFsException
+    {
+        return _fs.read(this, _level, pos, data, offset, len);
     }
 
     /**
