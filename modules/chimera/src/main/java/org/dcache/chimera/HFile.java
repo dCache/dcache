@@ -182,20 +182,20 @@ public class HFile extends File {
         return _inode;
     }
 
-    public int write(byte[] data) {
+    public int write(byte[] data) throws IOException {
         return write(0, data, 0, data.length);
     }
 
-    public int write(long pos, byte[] data, int offset, int len) {
+    public int write(long pos, byte[] data, int offset, int len) throws IOException {
         return _inode.write(pos, data, offset, len);
 
     }
 
-    public int read(byte[] data) {
+    public int read(byte[] data) throws IOException {
         return read(0, data, 0, data.length);
     }
 
-    public int read(long pos, byte[] data, int offset, int len) {
+    public int read(long pos, byte[] data, int offset, int len) throws IOException {
         return _inode.read(pos, data, offset, len);
     }
 
