@@ -34,67 +34,67 @@ public class SessionStrategyTests
     private static final LoginMonitor IGNORING_LOGIN_MONITOR =
             new IgnoringLoginMonitor();
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> emptyList =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> emptyList =
         Lists.newArrayList();
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> oneDoNothingPlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> oneDoNothingPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successRequiredPlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> successRequiredPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successOptionalPlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> successOptionalPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",OPTIONAL)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",OPTIONAL)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successRequisitePlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> successRequisitePlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUISITE)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUISITE)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> successSufficientPlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> successSufficientPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",SUFFICIENT)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",SUFFICIENT)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> failedPlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> failedPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testOptionalFailingPlugins =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> testOptionalFailingPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",REQUIRED),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testRequesitePlugins1 =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> testRequesitePlugins1 =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> testRequesitePlugins2 =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> testRequesitePlugins2 =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>> sufficientPluginFollowedByFailedArray =
+    private List<GPlazmaPluginService<GPlazmaSessionPlugin>> sufficientPluginFollowedByFailedArray =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",SUFFICIENT),
-            new GPlazmaPluginElement<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new AlwaysAssignAttributesStrategy(),"always",SUFFICIENT),
+            new GPlazmaPluginService<GPlazmaSessionPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
     @Before

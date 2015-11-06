@@ -1,10 +1,19 @@
 package org.dcache.gplazma.plugins;
 
+import eu.emi.security.authn.x509.X509CertChainValidatorExt;
+import org.italiangrid.voms.VOMSAttribute;
+import org.italiangrid.voms.VOMSValidators;
+import org.italiangrid.voms.ac.VOMSACValidator;
+import org.italiangrid.voms.store.VOMSTrustStore;
+import org.italiangrid.voms.store.VOMSTrustStores;
+import org.italiangrid.voms.util.CertificateValidatorBuilder;
+
 import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.CRLException;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateException;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -13,18 +22,8 @@ import org.dcache.gplazma.AuthenticationException;
 import org.dcache.gplazma.util.CertPaths;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import java.util.List;
-
 import static java.util.Arrays.asList;
 import static org.dcache.gplazma.util.Preconditions.checkAuthentication;
-
-import eu.emi.security.authn.x509.X509CertChainValidatorExt;
-import org.italiangrid.voms.VOMSAttribute;
-import org.italiangrid.voms.VOMSValidators;
-import org.italiangrid.voms.ac.VOMSACValidator;
-import org.italiangrid.voms.store.VOMSTrustStore;
-import org.italiangrid.voms.store.VOMSTrustStores;
-import org.italiangrid.voms.util.CertificateValidatorBuilder;
 
 /**
  * Validates and extracts FQANs from any X509Certificate certificate chain in
@@ -34,19 +33,31 @@ public class VomsPlugin implements GPlazmaAuthenticationPlugin {
 
     private static final String CADIR = "gplazma.vomsdir.ca";
     private static final String VOMSDIR = "gplazma.vomsdir.dir";
-    private final VOMSACValidator validator;
+    private final String caDir;
+    private final String vomsDir;
+    private VOMSACValidator validator;
 
-    public VomsPlugin(Properties properties) throws CertificateException,
-                    CRLException, IOException {
-        String caDir = properties.getProperty(CADIR);
-        String vomsDir = properties.getProperty(VOMSDIR);
-
+    public VomsPlugin(Properties properties)
+            throws CertificateException, CRLException, IOException
+    {
+        caDir = properties.getProperty(CADIR);
+        vomsDir = properties.getProperty(VOMSDIR);
         checkArgument(caDir != null, "Undefined property: " + CADIR);
         checkArgument(vomsDir != null, "Undefined property: " + VOMSDIR);
+    }
 
+    @Override
+    public void start()
+    {
         VOMSTrustStore vomsTrustStore = VOMSTrustStores.newTrustStore(asList(vomsDir));
         X509CertChainValidatorExt certChainValidator = new CertificateValidatorBuilder().trustAnchorsDir(caDir).build();
         validator = VOMSValidators.newValidator(vomsTrustStore, certChainValidator);
+    }
+
+    @Override
+    public void stop()
+    {
+        validator.shutdown();
     }
 
     @Override

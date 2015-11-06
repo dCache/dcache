@@ -27,7 +27,7 @@ public class DefaultAccountStrategy implements AccountStrategy
     private volatile PAMStyleStrategy<GPlazmaAccountPlugin> pamStyleAccountStrategy;
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaAccountPlugin>> plugins)
+    public void setPlugins(List<GPlazmaPluginService<GPlazmaAccountPlugin>> plugins)
     {
         pamStyleAccountStrategy = new PAMStyleStrategy<>(plugins);
     }
@@ -36,7 +36,7 @@ public class DefaultAccountStrategy implements AccountStrategy
      * Devegates execution of the
      * {@link GPlazmaAccountPlugin#account(SessionID, Set<Principal>) GPlazmaAccountPlugin.account}
      * methods of the plugins supplied by
-     * {@link GPlazmaStrategy#setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
+     * {@link GPlazmaStrategy#setPlugins(List< GPlazmaPluginService <T>>) GPlazmaStrategy.setPlugins}
      *  to
      * {@link  PAMStyleStrategy#callPlugins(PluginCaller<T>) PAMStyleStrategy.callPlugins(PluginCaller<T>)}
      * by providing anonymous implementation of the
@@ -57,7 +57,7 @@ public class DefaultAccountStrategy implements AccountStrategy
         pamStyleAccountStrategy.callPlugins(new PluginCaller<GPlazmaAccountPlugin>()
         {
             @Override
-            public void call(GPlazmaPluginElement<GPlazmaAccountPlugin> pe)
+            public void call(GPlazmaPluginService<GPlazmaAccountPlugin> pe)
                     throws AuthenticationException
             {
                 monitor.accountPluginBegins(pe.getName(), pe.getControl(),
