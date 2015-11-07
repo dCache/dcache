@@ -357,7 +357,6 @@ case "$1" in
 
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForPkcs8HostKey
         domains=$(printDomains "$@")
         reverse domains_backward $domains
         for domain in $domains_backward; do
