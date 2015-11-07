@@ -230,31 +230,6 @@ userForProcessOrDomain() # $1=pid, $2=domain
 }
 
 
-#  A simple check for a dCache instance with non-migrated
-#  configuration.  If the heuristics show this is likely then an error
-#  message is printed and the script aborts with a non-zero return
-#  code.
-checkForNonMigratedDcache()
-{
-    if [ -f "$(getProperty dcache.paths.config)/dCacheSetup" ] && \
-       [ -f "$(getProperty dcache.paths.etc)/node_config" ]; then
-
-        fail 1 "Cowardly refusing to do anything as you appear to have      \
-                upgraded from an old dCache version without adjusting the   \
-                configuration."                                             \
-                                                                            \
-               "Direct migration from 1.9.5 is only supported to version    \
-                1.9.12. It is recommended to first migrate to 1.9.12.       \
-                Please review the release notes for more information."      \
-                                                                            \
-               "If you are ABSOLUTELY CERTAIN you have HAND-WRITTEN your    \
-                new configuration then you may rename the redundant         \
-                configuration files, dCacheSetup and node_config, to allow  \
-                dCache to start."
-    fi
-}
-
-
 #  Starting with OpenSSL v1.0 (or there abouts) the 'pkcs12' utility
 #  (commands line that starts 'openssl pkcs12') will write private
 #  keys in PKCS#8 format.  Unfortunately, jGlobus 1.8 requires the
@@ -364,7 +339,6 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
@@ -383,7 +357,6 @@ case "$1" in
 
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         domains=$(printDomains "$@")
         reverse domains_backward $domains
@@ -403,7 +376,6 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
@@ -422,7 +394,6 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
@@ -445,7 +416,6 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         message=$(
             rc_0=0
@@ -485,7 +455,6 @@ case "$1" in
     services)
         shift
         . ${lib}/utils.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         (
             printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
@@ -513,7 +482,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/pool.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
 
         command=$1
@@ -631,7 +599,6 @@ case "$1" in
 
         . ${lib}/utils.sh
         . ${lib}/services.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
 
         command=$1
@@ -712,7 +679,6 @@ case "$1" in
         shift
 
         . ${lib}/utils.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
 
         if [ $# -eq 0 ]; then
@@ -732,7 +698,6 @@ case "$1" in
 
     ports)
         . ${lib}/utils.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         broker_domain=$(getProperty dcache.broker.domain)
         (
@@ -858,7 +823,6 @@ case "$1" in
 
         . ${lib}/utils.sh
         . ${lib}/database.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
 
         command=$1
@@ -1062,7 +1026,6 @@ case "$1" in
     check-config)
         shift
         . ${lib}/utils.sh
-        checkForNonMigratedDcache
         checkForPkcs8HostKey
         bootLoader check-config | while read line; do
             printpi "$line" "^[^:]*:[^:]*:"
