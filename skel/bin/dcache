@@ -255,39 +255,6 @@ checkForNonMigratedDcache()
 }
 
 
-#  Starting with OpenSSL v1.0 (or there abouts) the 'pkcs12' utility
-#  (commands line that starts 'openssl pkcs12') will write private
-#  keys in PKCS#8 format.  Unfortunately, jGlobus 1.8 requires the
-#  certificate to be in PKCS#1 format.  With earlier versions of
-#  OpenSSL, the pkcs12 utility used the PKCS#1 format for private
-#  keys.
-#
-#  The pkcs12 utility is commonly used to convert the file exported by
-#  web browsers [that contain both certificate(s) and private key(s)]
-#  into separate PEM-encoded certificate and private key files.
-#
-#  The OpenSSL 'rsa' command still writes private keys in PKCS#1
-#  format and is able to read PKCS#8-formatted private keys.
-#  Therefore a simple work-around is to run a PKCS#8-formatted private
-#  key through a 'openssl rsa' command that only alters the format.
-checkForPkcs8HostKey()
-{
-    if [ -r $(getProperty dcache.authn.hostcert.key) ] && \
-       grep "BEGIN PRIVATE KEY" $(getProperty dcache.authn.hostcert.key) >/dev/null; then
-
-        printp "The file $(getProperty dcache.authn.hostcert.key) is in PKCS#8        \
-                format.  Unfortunately, dCache requires the private key to  \
-                be stored in PKCS#1 format.  The following two commands     \
-                will convert the hostkey.pem file into PKCS#1 format:"
-        echo
-        echo "mv $(getProperty dcache.authn.hostcert.key) $(getProperty dcache.authn.hostcert.key)-pk8"
-        echo
-        echo "openssl rsa -in $(getProperty dcache.authn.hostcert.key)-pk8 -out $(getProperty dcache.authn.hostcert.key)"
-        exit 1
-    fi
-}
-
-
 # Checks for the existing of OOM heap dump files and generates
 # a warning for each file.
 checkForHeapDumpFiles()
@@ -365,7 +332,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/services.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
         for domain in $domains; do
@@ -403,7 +369,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/services.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
 
@@ -422,7 +387,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/services.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         checkForHeapDumpFiles
         domains=$(printDomains "$@")
 
@@ -445,7 +409,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/services.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         message=$(
             rc_0=0
             rc_1=0
@@ -485,7 +448,6 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         (
             printf "DOMAIN\tSERVICE\tCELL\tLOG\n"
             for domain in $(getProperty dcache.domains); do
@@ -513,7 +475,6 @@ case "$1" in
         . ${lib}/pool.sh
         . ${lib}/services.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -631,7 +592,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/services.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -712,7 +672,6 @@ case "$1" in
 
         . ${lib}/utils.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
 
         if [ $# -eq 0 ]; then
             CLASSPATH="$(getProperty dcache.paths.classpath)" quickJava org.dcache.auth.KAuthFile
@@ -732,7 +691,6 @@ case "$1" in
     ports)
         . ${lib}/utils.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         broker_domain=$(getProperty dcache.broker.domain)
         (
             printf "DOMAIN\tCELL\tSERVICE\tPROTO\tPORT\n"
@@ -858,7 +816,6 @@ case "$1" in
         . ${lib}/utils.sh
         . ${lib}/database.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
 
         command=$1
         shift
@@ -1062,7 +1019,6 @@ case "$1" in
         shift
         . ${lib}/utils.sh
         checkForNonMigratedDcache
-        checkForPkcs8HostKey
         bootLoader check-config | while read line; do
             printpi "$line" "^[^:]*:[^:]*:"
         done
