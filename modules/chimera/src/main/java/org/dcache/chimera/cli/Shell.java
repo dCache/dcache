@@ -795,7 +795,7 @@ public class Shell extends ShellApplication
         @Override
         public Serializable call() throws IOException
         {
-            byte[] bytes = data != null
+            byte[] bytes = data == null
                     ? toByteArray(System.in)
                     : newLineTerminated(data).getBytes();
             writeDataIntoFile(bytes);
