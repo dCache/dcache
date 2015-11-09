@@ -2,17 +2,14 @@ onerror shutdown
 
 check -strong pool.cell.name
 check -strong pool.cell.export
+check -strong pool.cell.max-message-threads
+check pool.cell.max-messages-queued
 check -strong pool.name
 check -strong pool.path
 check -strong pool.size
 check -strong pool.lfs
 check pool.queues
 check pool.tags
-check -strong pool.cell.limits.message.threads.min
-check -strong pool.cell.limits.message.threads.max
-check -strong pool.cell.limits.message.threads.max-idle-time
-check -strong pool.cell.limits.message.threads.max-idle-time.unit
-check -strong pool.cell.limits.message.queue.max
 
 check -strong pool.authn.capath
 check -strong pool.authn.capath.refresh
@@ -98,10 +95,10 @@ endDefine
 create org.dcache.cells.UniversalSpringCell "${pool.cell.name}" \
     "!PoolDefaults classpath:org/dcache/pool/classic/pool.xml \
     -export=${pool.cell.export} -cellClass=Pool -profiles=healthcheck-${pool.enable.repository-check} \
+    -cell.max-message-threads=${pool.cell.max-message-threads} -cell.max-messages-queued=${pool.cell.max-messages-queued} \
     -setupClass=pool -setupFile=\"${pool.path}/setup\" \
     -ftpAllowIncomingConnections=\"${pool.mover.ftp.allow-incoming-connections}\" \
     -allowMmap=\"${pool.mover.ftp.mmap}\" \
-    -messageExecutor=messageThreadPool \
     -waitForFiles=\"${pool.wait-for-files}\" \
 "
 

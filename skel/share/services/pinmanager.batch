@@ -2,6 +2,8 @@ onerror shutdown
 
 check -strong pinmanager.cell.name
 check -strong pinmanager.cell.export
+check -strong pinmanager.cell.max-message-threads
+check pinmanager.cell.max-messages-queued
 check -strong pinmanager.db.url
 check -strong pinmanager.db.user
 check -strong pinmanager.db.schema.auto
@@ -19,16 +21,11 @@ check -strong pinmanager.service.poolmanager.timeout.unit
 check -strong pinmanager.service.pnfsmanager
 check -strong pinmanager.service.pnfsmanager.timeout
 check -strong pinmanager.service.pnfsmanager.timeout.unit
-check -strong pinmanager.cell.threads.min
-check -strong pinmanager.cell.threads.max
-check -strong pinmanager.cell.threads.max-idle-time
-check -strong pinmanager.cell.threads.max-idle-time.unit
-check -strong pinmanager.cell.queue.max
 
 exec file:${dcache.paths.share}/cells/stage.fragment pinmanager doors
 
 create org.dcache.cells.UniversalSpringCell ${pinmanager.cell.name} \
        "classpath:org/dcache/pinmanager/pinmanager.xml \
         -export=${pinmanager.cell.export} \
-        -messageExecutor=message-thread-pool \
+        -cell.max-message-threads=${pinmanager.cell.max-message-threads} -cell.max-messages-queued=${pinmanager.cell.max-messages-queued} \
        "

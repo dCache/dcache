@@ -2,6 +2,7 @@ package dmg.cells.nucleus;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -75,6 +75,8 @@ public class CellAdapter
 {
     private static final Logger _log =
             LoggerFactory.getLogger(CellAdapter.class);
+    public static final String MAX_MESSAGE_THREADS = "cell.max-message-threads";
+    public static final String MAX_MESSAGES_QUEUED = "cell.max-messages-queued";
 
     private final CellVersion _version = new CellVersion(Version.of(this));
 
@@ -152,8 +154,16 @@ public class CellAdapter
                        String cellType,
                        Args args)
     {
+        this(cellName, cellType, args, null);
+    }
+
+    public CellAdapter(String cellName,
+                       String cellType,
+                       Args args,
+                       Executor executor)
+    {
         _args = args;
-        _nucleus = new CellNucleus(this, cellName, cellType);
+        _nucleus = new CellNucleus(this, cellName, cellType, executor);
         _nucleus.start();
         _autoSetup = cellName + "Setup";
 
@@ -192,6 +202,14 @@ public class CellAdapter
          */
         if (!_startGate.isOpen()) {
             executeSetupContext();
+
+            if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGE_THREADS))) {
+                _nucleus.setMaximumPoolSize(_args.getIntOption(MAX_MESSAGE_THREADS));
+            }
+            if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGES_QUEUED))) {
+                _nucleus.setMaximumPoolSize(_args.getIntOption(MAX_MESSAGES_QUEUED));
+            }
+
             _startGate.open();
 
             if (_args.getBooleanOption("export")) {
@@ -387,6 +405,11 @@ public class CellAdapter
     public Reader getDomainContextReader(String contextName)
         throws FileNotFoundException {
         return _nucleus.getDomainContextReader(contextName);
+    }
+
+    protected Future<?> invokeOnMessageThread(Runnable task)
+    {
+        return _nucleus.invokeOnMessageThread(task);
     }
 
     protected <T> Future<T> invokeOnMessageThread(Callable<T> task)

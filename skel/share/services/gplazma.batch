@@ -2,10 +2,11 @@
 
 onerror shutdown
 check -strong gplazma.cell.name
-check -strong gplazma.cell.limits.threads
+check -strong gplazma.cell.max-message-threads
+check gplazma.cell.max-messages-queued
 check -strong gplazma.configuration.file
 check -strong gplazma.service.pnfsmanager
 
 create org.dcache.cells.UniversalSpringCell "${gplazma.cell.name}" \
    "classpath:org/dcache/services/login/gplazma.xml \
-     -export=${gplazma.cell.export} -monitor -messageExecutor=message-thread-pool"
+     -export=${gplazma.cell.export} -monitor -cell.max-message-threads=${gplazma.cell.max-message-threads} -cell.max-messages-queued=${gplazma.cell.max-messages-queued}"

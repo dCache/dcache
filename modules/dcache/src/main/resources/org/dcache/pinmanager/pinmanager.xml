@@ -13,21 +13,6 @@
       <description>Undeliverable message logger</description>
   </bean>
 
-  <bean id="message-thread-pool"
-        class="java.util.concurrent.ThreadPoolExecutor"
-        destroy-method="shutdown">
-    <description>Thread pool for message processing</description>
-    <constructor-arg value="${pinmanager.cell.threads.min}"/>
-    <constructor-arg value="${pinmanager.cell.threads.max}"/>
-    <constructor-arg value="${pinmanager.cell.threads.max-idle-time}"/>
-    <constructor-arg value="${pinmanager.cell.threads.max-idle-time.unit}"/>
-    <constructor-arg>
-      <bean class="java.util.concurrent.ArrayBlockingQueue">
-        <constructor-arg value="${pinmanager.cell.queue.max}"/>
-      </bean>
-    </constructor-arg>
-  </bean>
-
   <bean id="scheduled-executor"
         class="org.dcache.util.CDCScheduledExecutorServiceDecorator">
       <description>Task scheduler</description>
@@ -84,8 +69,8 @@
       <property name="scheduledExecutor" ref="scheduled-executor"/>
       <property name="executor">
           <bean id="workerThreadPool"
-                class="org.dcache.util.CDCExecutorServiceDecorator">
-              <constructor-arg ref="message-thread-pool"/>
+                class="org.dcache.util.CDCExecutorDecorator">
+              <constructor-arg ref="message-executor"/>
           </bean>
       </property>
       <property name="stagePermission" ref="stage-permission"/>

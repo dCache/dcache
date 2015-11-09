@@ -20,6 +20,7 @@ package org.dcache.util;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * A BoundedExecutor that uses a cached thread pool to source threads.
@@ -30,12 +31,22 @@ public class BoundedCachedExecutor extends BoundedExecutor
 
     public BoundedCachedExecutor(int maxThreads)
     {
-        this(Executors.newCachedThreadPool(), maxThreads);
+        this(Executors.defaultThreadFactory(), maxThreads);
     }
 
     public BoundedCachedExecutor(int maxThreads, int maxQueued)
     {
-        this(Executors.newCachedThreadPool(), maxThreads, maxQueued);
+        this(Executors.defaultThreadFactory(), maxThreads, maxQueued);
+    }
+
+    public BoundedCachedExecutor(ThreadFactory threadFactory, int maxThreads)
+    {
+        this(Executors.newCachedThreadPool(threadFactory), maxThreads);
+    }
+
+    public BoundedCachedExecutor(ThreadFactory threadFactory, int maxThreads, int maxQueued)
+    {
+        this(Executors.newCachedThreadPool(threadFactory), maxThreads, maxQueued);
     }
 
     protected BoundedCachedExecutor(ExecutorService executor, int maxThreads)

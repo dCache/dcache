@@ -63,9 +63,8 @@ public class LineBasedDoor
     public LineBasedDoor(String cellName, Args args, LineBasedInterpreterFactory factory,
                          StreamEngine engine, ExecutorService executor)
     {
-        super(cellName, args);
+        super(cellName, args, executor);
 
-        getNucleus().setMessageExecutor(new SequentialExecutor(executor));
         this.factory = factory;
         this.engine = engine;
         this.executor = new CDCExecutorServiceDecorator<>(executor);

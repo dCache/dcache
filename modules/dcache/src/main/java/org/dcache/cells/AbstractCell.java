@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.Message;
@@ -205,12 +206,22 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
 
     public AbstractCell(String cellName, String arguments)
     {
-        this(cellName, new Args(arguments));
+        this(cellName, new Args(arguments), null);
+    }
+
+    public AbstractCell(String cellName, String arguments, Executor executor)
+    {
+        this(cellName, new Args(arguments), executor);
     }
 
     public AbstractCell(String cellName, Args arguments)
     {
-        this(cellName, getCellType(arguments), arguments);
+        this(cellName, getCellType(arguments), arguments, null);
+    }
+
+    public AbstractCell(String cellName, Args arguments, Executor executor)
+    {
+        this(cellName, getCellType(arguments), arguments, executor);
     }
 
     /**
@@ -222,7 +233,12 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
      */
     public AbstractCell(String cellName, String cellType, Args arguments)
     {
-        super(cellName, cellType, stripDefinedSetup(arguments));
+        this(cellName, cellType, arguments, null);
+    }
+
+    public AbstractCell(String cellName, String cellType, Args arguments, Executor executor)
+    {
+        super(cellName, cellType, stripDefinedSetup(arguments), executor);
         _definedSetup = getDefinedSetup(arguments);
         _optionParser = new OptionParser(arguments);
     }

@@ -13,8 +13,6 @@ import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,10 +29,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import dmg.util.Pinboard;
 import dmg.util.logback.FilterThresholdSet;
 import dmg.util.logback.RootFilterThresholds;
+
+import org.dcache.util.BoundedCachedExecutor;
+import org.dcache.util.BoundedExecutor;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -80,7 +79,7 @@ public class CellNucleus implements ThreadFactory
     private final  Map<UOID, CellLock> _waitHash = new HashMap<>();
     private String _cellClass;
 
-    private volatile ExecutorService _messageExecutor;
+    private final BoundedExecutor _messageExecutor;
     private final AtomicInteger _eventQueueSize = new AtomicInteger();
 
     /**
@@ -98,14 +97,9 @@ public class CellNucleus implements ThreadFactory
 
     private Pinboard _pinboard;
     private FilterThresholdSet _loggingThresholds;
-    private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<Runnable>());
+    private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<>());
 
-    public CellNucleus(Cell cell, String name) {
-
-        this(cell, name, "Generic");
-    }
-
-    public CellNucleus(Cell cell, String name, String type)
+    public CellNucleus(Cell cell, String name, String type, Executor executor)
     {
         setPinboard(new Pinboard(PINBOARD_DEFAULT_SIZE));
 
@@ -165,11 +159,7 @@ public class CellNucleus implements ThreadFactory
 
         _threads = new ThreadGroup(__cellGlue.getMasterThreadGroup(), _cellName + "-threads");
 
-        _messageExecutor =
-                new ThreadPoolExecutor(1, 1,
-                        0L, TimeUnit.MILLISECONDS,
-                        new LinkedBlockingQueue<Runnable>(),
-                        this);
+        _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
 
         LOGGER.info("Created {}", name);
     }
@@ -332,16 +322,24 @@ public class CellNucleus implements ThreadFactory
         return _pinboard;
     }
 
-    /**
-     * Executor used for incoming message delivery.
-     */
-    public synchronized void setMessageExecutor(ExecutorService executor)
+    public void setMaximumPoolSize(int size)
     {
-        checkNotNull(executor);
-        int state = _state.get();
-        checkState(state != REMOVING && state != DEAD);
-        _messageExecutor.shutdown();
-        _messageExecutor = executor;
+        _messageExecutor.setMaximumPoolSize(size);
+    }
+
+    public int getMaximumPoolSize()
+    {
+        return _messageExecutor.getMaximumPoolSize();
+    }
+
+    public void setMaximumQueueSize(int size)
+    {
+        _messageExecutor.setMaximumQueueSize(size);
+    }
+
+    public int getMaximumQueueSize()
+    {
+        return _messageExecutor.getMaximumQueueSize();
     }
 
     public void  sendMessage(CellMessage msg,
@@ -761,6 +759,14 @@ public class CellNucleus implements ThreadFactory
      * Submits a task for execution on the message thread.
      */
     <T> Future<T> invokeOnMessageThread(Callable<T> task)
+    {
+        return _messageExecutor.submit(wrapLoggingContext(task));
+    }
+
+    /**
+     * Submits a task for execution on the message thread.
+     */
+    Future<?> invokeOnMessageThread(Runnable task)
     {
         return _messageExecutor.submit(wrapLoggingContext(task));
     }

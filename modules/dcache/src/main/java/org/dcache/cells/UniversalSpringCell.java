@@ -25,6 +25,8 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -55,7 +57,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
 
 import diskCacheV111.util.CacheException;
 
@@ -228,13 +232,6 @@ public class UniversalSpringCell
          */
         createContext();
 
-        /* Cell threading is configurable through arguments to
-         * UniversalSpringCell. The executors have to be created as
-         * beans in the Spring file, however the names of the beans
-         * are provided as cell arguments.
-         */
-        setupCellExecutors(args.getOpt("messageExecutor"));
-
         /* This is a NOP except if somebody subclassed
          * UniversalSpringCell.
          */
@@ -275,16 +272,6 @@ public class UniversalSpringCell
         _infoProviders.clear();
         _setupProviders.clear();
         _lifeCycleAware.clear();
-    }
-
-    private void setupCellExecutors(String messageExecutor)
-    {
-        if (messageExecutor != null) {
-            Object executor = getBean(messageExecutor);
-            checkState(executor instanceof ExecutorService,
-                       "No such bean: " + messageExecutor);
-            getNucleus().setMessageExecutor((ExecutorService) executor);
-        }
     }
 
     private File firstMissing(File[] files)
@@ -1038,6 +1025,10 @@ public class UniversalSpringCell
             context.setConfigLocations(new String[]{args.argv(0)});
             context.addBeanFactoryPostProcessor(
                     beanFactory -> beanFactory.addBeanPostProcessor(UniversalSpringCell.this));
+            context.addBeanFactoryPostProcessor(
+                    beanFactory -> beanFactory.registerSingleton(
+                            "message-executor", (Executor) this::invokeOnMessageThread)
+            );
 
             ConfigurableEnvironment environment = context.getEnvironment();
             environment.getPropertySources().addFirst(
