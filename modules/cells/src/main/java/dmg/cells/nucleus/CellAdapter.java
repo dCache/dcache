@@ -369,32 +369,6 @@ public class CellAdapter
         _nucleus.setPinboard(new Pinboard(size <= 0 ? 200 : size));
     }
 
-    /**
-     *
-     *
-     * @param className Name of the cellClass which should be created
-     * @param cellName  Name of the cell instance
-     * @param args      An array of Objects which are passed to the
-     *                  constructor of the specified cellClass.
-     *
-     */
-    public Object  createNewCell(String className,
-                                 String cellName,
-                                 String [] argsClassNames,
-                                 Object [] args)
-        throws ClassNotFoundException,
-               NoSuchMethodException,
-               SecurityException,
-               InstantiationException,
-               InvocationTargetException,
-               IllegalAccessException,
-               ClassCastException                       {
-
-        return _nucleus.createNewCell(className, cellName,
-                                      argsClassNames, args);
-
-    }
-
     @Override
     public Map<String,Object> getDomainContext()
     {

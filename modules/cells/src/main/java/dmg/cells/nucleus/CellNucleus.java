@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -919,62 +920,6 @@ public class CellNucleus implements ThreadFactory
              */
             __cellGlue.destroy(CellNucleus.this);
             _state.set(DEAD);
-        }
-    }
-
-    ////////////////////////////////////////////////////////////
-    //
-    //   create new cell by different arguments
-    //   String, String [], Socket
-    //   can choose between systemLoader only or
-    //   Domain loader.
-    //
-    public Cell createNewCell(String cellClass,
-                              String cellName,
-                              String cellArgs,
-                              boolean systemOnly)
-        throws ClassNotFoundException,
-               NoSuchMethodException,
-               SecurityException,
-               InstantiationException,
-               InvocationTargetException,
-               IllegalAccessException,
-               ClassCastException
-    {
-        try {
-            Object [] args = new Object[1];
-            args[0] = cellArgs;
-            return __cellGlue._newInstance(
-                    cellClass, cellName, args);
-        } catch (InvocationTargetException e) {
-            Throwable t = e.getTargetException();
-            if (t instanceof RuntimeException) {
-                throw (RuntimeException) t;
-            }
-            if (t instanceof Error) {
-                throw (Error) t;
-            }
-            throw e;
-        }
-    }
-
-    public Cell  createNewCell(String className,
-                                 String cellName,
-                                 String [] argsClassNames,
-                                 Object [] args)
-        throws ClassNotFoundException,
-               NoSuchMethodException,
-               InstantiationException,
-               IllegalAccessException,
-               InvocationTargetException,
-               ClassCastException
-    {
-        if (argsClassNames == null) {
-            return __cellGlue._newInstance(
-                    className, cellName, args);
-        } else {
-            return __cellGlue._newInstance(
-                    className, cellName, argsClassNames, args);
         }
     }
 

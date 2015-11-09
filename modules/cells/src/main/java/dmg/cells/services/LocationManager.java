@@ -28,12 +28,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import dmg.cells.network.LocationManagerConnector;
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellRoute;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.Reply;
+import dmg.cells.services.login.LoginManager;
 
 import org.dcache.util.Args;
 
@@ -1006,47 +1008,40 @@ public class LocationManager extends CellAdapter {
       }
 
       private void startListener( int port , String securityContext ) throws Exception {
-         String cellName  = "l*" ;
-         String inetClass = "dmg.cells.services.login.LoginManager" ;
-         String cellClass = "dmg.cells.network.LocationMgrTunnel" ;
-         String protocol;
-         if( ( securityContext          == null ) ||
-             ( securityContext.length() == 0    ) ||
-             ( securityContext.equalsIgnoreCase("none") ) ){
-
-            protocol = "-prot=raw" ;
-
-         }else{
-            protocol = securityContext ;
-         }
-         String cellArgs  = ""+port+" "+cellClass+" "+protocol+" -lm="+getCellName();
-         _log.info(" LocationManager starting acceptor with "+cellArgs ) ;
-         Cell c = _nucleus.createNewCell( inetClass , cellName , cellArgs , true ) ;
-         _log.info( "Created : "+c ) ;
+          String cellName = "l*";
+          String cellClass = "dmg.cells.network.LocationMgrTunnel";
+          String protocol;
+          if ((securityContext == null) ||
+              (securityContext.length() == 0) ||
+              (securityContext.equalsIgnoreCase("none"))) {
+              protocol = "-prot=raw";
+          } else {
+              protocol = securityContext;
+          }
+          String cellArgs = port + " " + cellClass + " " + protocol + " -lm=" + getCellName();
+          _log.info(" LocationManager starting acceptor with {}", cellArgs);
+          LoginManager c = new LoginManager(cellName, cellArgs);
+          _log.info("Created : {}", c);
       }
 
        private void startConnector(final String remoteDomain)
            throws Exception
        {
-         String cellName  = "c-"+remoteDomain+"*";
-         String cellClass = "dmg.cells.network.LocationManagerConnector";
+           String cellName = "c-" + remoteDomain + "*";
+           String clientKey = _args.getOpt("clientKey");
+           clientKey = (clientKey != null) && (clientKey.length() > 0) ? ("-clientKey=" + clientKey) : "";
+           String clientName = _args.getOpt("clientUserName");
+           clientName = (clientName != null) && (clientName.length() > 0) ? ("-clientUserName=" + clientName) : "";
 
-         String clientKey = _args.getOpt("clientKey") ;
-                clientKey = ( clientKey != null ) && ( clientKey.length() > 0 ) ?
-                            ("-clientKey="+clientKey ) : "" ;
-         String clientName = _args.getOpt("clientUserName") ;
-                clientName = ( clientName != null ) && ( clientName.length() > 0 ) ?
-                            ("-clientUserName="+clientName ) : "" ;
+           String cellArgs =
+                   "-domain=" + remoteDomain + " "
+                   + "-lm=" + getCellName() + " "
+                   + clientKey + " "
+                   + clientName;
 
-         String cellArgs =
-             "-domain=" + remoteDomain + " "
-             + "-lm=" + getCellName() + " "
-             + clientKey + " "
-             + clientName;
-
-         _log.info("LocationManager starting connector with " + cellArgs);
-         Cell c = _nucleus.createNewCell(cellClass, cellName, cellArgs, true);
-         _log.info("Created : " + c);
+           _log.info("LocationManager starting connector with {}", cellArgs);
+           LocationManagerConnector c = new LocationManagerConnector(cellName, cellArgs);
+           _log.info("Created : {}", c);
        }
 
       private void setDefaultRoute( String domain )

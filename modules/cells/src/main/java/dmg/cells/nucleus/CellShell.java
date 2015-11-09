@@ -1,6 +1,7 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -934,14 +936,21 @@ public class CellShell extends CommandInterpreter
                InstantiationException, IllegalAccessException, InvocationTargetException,
                ClassCastException, CommandThrowableException
        {
+           Constructor<? extends Cell> constructor =
+                   Class.forName(className).asSubclass(Cell.class).getConstructor(String.class, String.class);
            try {
-               Cell cell = _nucleus.createNewCell(className, cellName, cellArg, true);
+               Cell cell = constructor.newInstance(cellName, cellArg);
                if (cell instanceof EnvironmentAware) {
                    ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
                }
                return "created : " + cell;
            } catch (InvocationTargetException e) {
-               throw new CommandThrowableException(e.getTargetException().getMessage(), e.getTargetException());
+               for (Class<?> clazz : constructor.getExceptionTypes()) {
+                   if (clazz.isAssignableFrom(e.getCause().getClass())) {
+                       throw new CommandThrowableException(e.getCause().getMessage(), e.getCause());
+                   }
+               }
+               throw Throwables.propagate(e.getTargetException());
            }
        }
    }

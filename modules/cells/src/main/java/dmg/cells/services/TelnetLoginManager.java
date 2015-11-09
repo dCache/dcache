@@ -1,10 +1,12 @@
 package  dmg.cells.services ;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -46,7 +48,7 @@ public class      TelnetLoginManager
   private int          _connectionAcceptionCounter;
   private Hashtable<Thread, Socket>    _connectionThreads = new Hashtable<>() ;
   private Args         _args ;
-  private String       _loginCellClass =  "dmg.cells.services.StreamLoginCell" ;
+  private Class<? extends Cell>  _loginCellClass =  dmg.cells.services.StreamLoginCell.class;
   private boolean      _opt_localhost , _opt_dummy ;
   private boolean      _opt_elch , _opt_anyuser , _opt_raw  ;
 
@@ -70,7 +72,7 @@ public class      TelnetLoginManager
           _listenPort = Integer.parseInt(_args.argv(0));
 
           if( _args.argc() > 1 ) {
-              _loginCellClass = _args.argv(1);
+              _loginCellClass = Class.forName(_args.argv(1)).asSubclass(Cell.class);
           }
 
           _opt_dummy     = false ;
@@ -163,12 +165,7 @@ public class      TelnetLoginManager
                      "): connection created for user "+name ) ;
        String cellName = "tn-"+name+"*" ;
 
-       String [] paraNames = new String[1] ;
-       Object [] parameter = new Object[1] ;
-       paraNames[0] = "dmg.util.StreamEngine" ;
-       parameter[0] = engine ;
-       createNewCell( _loginCellClass , cellName , paraNames , parameter ) ;
-
+        _loginCellClass.getConstructor(String.class, StreamEngine.class).newInstance(cellName, engine);
     }catch( Exception e ){
        _log.warn( "Exception in TelnetStreamEngine : "+e ) ;
        if( e instanceof InvocationTargetException ){
@@ -198,12 +195,12 @@ public class      TelnetLoginManager
 
   }
   public String toString(){
-       return "P="+_listenPort+";C="+_loginCellClass;
+       return "P="+_listenPort+";C="+_loginCellClass.getName();
   }
   @Override
   public void getInfo( PrintWriter pw){
     pw.println( " ListenPort     : "+_listenPort ) ;
-    pw.println( " LoginCellClass : "+_loginCellClass ) ;
+    pw.println( " LoginCellClass : "+_loginCellClass.getName()) ;
   }
   //
   // ssh server authetication
