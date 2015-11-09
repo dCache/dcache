@@ -18,7 +18,6 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
@@ -41,8 +40,6 @@ import java.util.concurrent.ExecutionException;
 
 import dmg.cells.network.PingMessage;
 import dmg.util.BufferedLineWriter;
-import dmg.util.ClassDataProvider;
-import dmg.util.ClassLoaderFactory;
 import dmg.util.CommandEvaluationException;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
@@ -70,7 +67,7 @@ import org.dcache.util.Args;
   * @version 0.1, 15 Feb 1998
   */
 public class CellShell extends CommandInterpreter
-       implements Replaceable, ClassDataProvider
+       implements Replaceable
 {
     private static final Logger _log =
         LoggerFactory.getLogger(CellShell.class);
@@ -90,9 +87,7 @@ public class CellShell extends CommandInterpreter
    private String       _doOnExit;
    private final Map<String, Object> _environment =
            new ConcurrentHashMap<>();
-    private final ClassLoaderFactory _classLoaderFactory  = new ClassLoaderFactory() ;
    private CommandInterpreter _externalInterpreter;
-   private String             _classProvider;
    private List<String>       _argumentVector      = new Vector<>() ;
 
    public CellShell( CellNucleus nucleus ){
@@ -960,124 +955,7 @@ public class CellShell extends CommandInterpreter
    {
        return "Obsolete; use log4j instead." ;
    }
-   public static final String hh_load_interpreter = "<interpreterClassName>" ;
-   public String ac_load_interpreter_$_1( Args args ) throws CommandException {
-      Object o = getDictionaryEntry( "classProvider" ) ;
 
-      if( ( o == null ) || ( ! ( o instanceof String ) ) ) {
-          throw new CommandException(34, "<classProvider> not set, or not a String");
-      }
-
-      Class<?> c;
-      String className     = args.argv(0) ;
-      String classProvider = (String) o ;
-      String providerType;
-
-      int pos = classProvider.indexOf( ':' ) ;
-      if( pos < 0 ){
-          providerType = "file" ;
-      }else{
-          providerType  = classProvider.substring( 0 , pos ) ;
-          classProvider = classProvider.substring( pos+1 ) ;
-      }
-
-       switch (providerType) {
-       case "file":
-           File directory = new File(classProvider);
-           if (!directory.isDirectory()) {
-               throw new CommandException(34, "<classDirectory> not a directory");
-           }
-
-           if ((c = _classLoaderFactory
-                   .loadClass(className, directory)) == null) {
-               throw new
-                       CommandException(35, "class not found in <" +
-                       _classLoaderFactory + "> : " + className);
-           }
-           break;
-       case "cell":
-           _classProvider = classProvider;
-           if ((c = _classLoaderFactory.loadClass(className, this)) == null) {
-               throw new
-                       CommandException(35, "class not found in <" +
-                       _classLoaderFactory + "> : " + className);
-           }
-           break;
-       default:
-           throw new CommandException(37, "Unknown class provider type : " + providerType);
-       }
-      //
-      // try to find an constructor who knows what a _nucleus is.
-      //
-      Class<?>[] paraList1 = { CellNucleus.class } ;
-      Class<?>[] paraList2 = { CellNucleus.class ,
-                               CellShell.class   } ;
-      Object      [] paras  ;
-      Constructor<?> con ;
-      Object         interObject ;
-      StringBuilder answer = new StringBuilder();
-      try{
-         con         = c.getConstructor( paraList2 ) ;
-         paras       = new Object[2] ;
-         paras[0]    = _nucleus ;
-         paras[1]    = this ;
-         interObject = con.newInstance( paras ) ;
-      }catch(Exception e0 ){
-         answer.append( e0.toString() ).append( '\n' ) ;
-         try{
-            con         = c.getConstructor( paraList1 ) ;
-            paras       = new Object[1] ;
-            paras[0]    = _nucleus ;
-            interObject = con.newInstance( paras ) ;
-         }catch(Exception e1 ){
-            answer.append( e1.toString() ).append( '\n' ) ;
-            try{
-               interObject = c.newInstance() ;
-               if( interObject == null ) {
-                   throw new CommandException(36, answer.toString());
-               }
-            }catch(Throwable e2 ){
-               answer.append( e2.toString() ).append( '\n' ) ;
-               throw new CommandException( 36 , answer.toString() ) ;
-            }
-         }
-      }
-      _externalInterpreter = new CommandInterpreter( interObject ) ;
-      return " !!! Your are now in a new Shell !!! " ;
-   }
-   @Override
-   public byte [] getClassData( String className ) throws IOException {
-       _log.info( "getClassData("+className+") send to classProvider" ) ;
-       CellMessage answer;
-       try{
-           answer = _nucleus.sendAndWait(
-                           new CellMessage(
-                                 new CellPath( _classProvider ) ,
-                                 "getclass "+className
-                               ) ,
-                           4000
-                       ) ;
-      }catch( ExecutionException | InterruptedException | NoRouteToCellException e ){
-         _log.info( "getClassData Exception : "+e ) ;
-         return null ;
-      }
-      if( answer == null ){
-         _log.info( "getClassData sendAndWait timed out" ) ;
-         return null ;
-      }
-      Object answerObject = answer.getMessageObject() ;
-      if( answerObject == null ) {
-          return null;
-      }
-
-      if( ! ( answerObject instanceof byte [] ) ){
-          _log.info( "getClassData sendAndWait got : "+answerObject.toString() ) ;
-          return null ;
-      }
-
-      return (byte [] )answerObject ;
-
-   }
    ////////////////////////////////////////////////////////////
    //
    //   this and that
