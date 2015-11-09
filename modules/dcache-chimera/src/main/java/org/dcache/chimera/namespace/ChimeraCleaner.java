@@ -630,7 +630,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     public String ac_set_processedAtOnce_$_1(Args args)
     {
         if (args.argc() > 0) {
-            int processAtOnce = Integer.valueOf(args.argv(0));
+            int processAtOnce = Integer.parseInt(args.argv(0));
             if (processAtOnce <= 0) {
                 throw new IllegalArgumentException("Number of files must be greater than 0 ");
             }
@@ -683,7 +683,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             return "HSM Cleaner is disabled.";
         }
         if (args.argc() > 0) {
-            int maxFilesPerRequest = Integer.valueOf(args.argv(0));
+            int maxFilesPerRequest = Integer.parseInt(args.argv(0));
             if (maxFilesPerRequest == 0) {
                 throw new
                         IllegalArgumentException("The number must be greater than 0 ");
@@ -702,7 +702,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             return "HSM Cleaner is disabled.";
         }
         if (args.argc() > 0) {
-            long timeOutHSM = Long.valueOf(args.argv(0));
+            long timeOutHSM = Long.parseLong(args.argv(0));
 
             _hsmTimeout = timeOutHSM;
             _hsmTimeoutUnit = SECONDS;
