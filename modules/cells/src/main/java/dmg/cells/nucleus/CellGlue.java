@@ -7,7 +7,6 @@ import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -47,7 +46,6 @@ class CellGlue
     private final TimebasedCounter _uniqueCounter = new TimebasedCounter();
     private final BaseEncoding COUNTER_ENCODING = BaseEncoding.base64Url().omitPadding();
     private CellNucleus _systemNucleus;
-    private ClassLoaderProvider _classLoader;
     private CellRoutingTable _routingTable = new CellRoutingTable();
     private ThreadGroup _masterThreadGroup;
 
@@ -71,7 +69,6 @@ class CellGlue
         }
         _cellDomainName = cellDomainNameLocal;
         _domainAddress = new CellAddressCore("*", _cellDomainName);
-        _classLoader = new ClassLoaderProvider();
         _masterThreadGroup = new ThreadGroup("Master-Thread-Group");
         _killerThreadGroup = new ThreadGroup("Killer-Thread-Group");
         ThreadFactory killerThreadFactory = new ThreadFactory()
@@ -114,62 +111,6 @@ class CellGlue
         return _systemNucleus;
     }
 
-    String[][] getClassProviders()
-    {
-        return _classLoader.getProviders();
-    }
-
-    void setClassProvider(String selection, String provider)
-    {
-        String type;
-        String value = null;
-        int pos = provider.indexOf(':');
-        if (pos < 0) {
-            if (provider.indexOf('/') >= 0) {
-                type = "dir";
-                value = provider;
-            } else if (provider.indexOf('@') >= 0) {
-                type = "cell";
-                value = provider;
-            } else if (provider.equals("system")) {
-                type = "system";
-            } else if (provider.equals("none")) {
-                type = "none";
-            } else {
-                throw new
-                        IllegalArgumentException("Can't determine provider type");
-            }
-        } else {
-            type = provider.substring(0, pos);
-            value = provider.substring(pos + 1);
-        }
-        switch (type) {
-        case "dir":
-            File file = new File(value);
-            if (!file.isDirectory()) {
-                throw new
-                        IllegalArgumentException("Not a directory : " + value);
-            }
-            _classLoader.addFileProvider(selection, new File(value));
-            break;
-        case "cell":
-            _classLoader.addCellProvider(selection,
-                                         _systemNucleus,
-                                         new CellPath(value));
-            break;
-        case "system":
-            _classLoader.addSystemProvider(selection);
-            break;
-        case "none":
-            _classLoader.removeSystemProvider(selection);
-            break;
-        default:
-            throw new
-                    IllegalArgumentException("Provider type not supported : " + type);
-        }
-
-    }
-
     void export(CellNucleus cell)
     {
         sendToAll(new CellEvent(cell.getCellName(), CellEvent.CELL_EXPORTED_EVENT));
@@ -180,20 +121,9 @@ class CellGlue
         routeAdd(new CellRoute(topic, cell.getThisAddress().toString(), CellRoute.TOPIC));
     }
 
-    private Class<?> _loadClass(String className) throws ClassNotFoundException
-    {
-        return _classLoader.loadClass(className);
-    }
-
-    public Class<?> loadClass(String className) throws ClassNotFoundException
-    {
-        return _classLoader.loadClass(className);
-    }
-
     Cell _newInstance(String className,
                       String cellName,
-                      Object[] args,
-                      boolean systemOnly)
+                      Object[] args)
             throws ClassNotFoundException,
             NoSuchMethodException,
             SecurityException,
@@ -202,12 +132,7 @@ class CellGlue
             IllegalAccessException,
             ClassCastException
     {
-        Class<? extends Cell> newClass;
-        if (systemOnly) {
-            newClass = Class.forName(className).asSubclass(Cell.class);
-        } else {
-            newClass = _loadClass(className).asSubclass(Cell.class);
-        }
+        Class<? extends Cell> newClass = Class.forName(className).asSubclass(Cell.class);
 
         Object[] arguments = new Object[args.length + 1];
         arguments[0] = cellName;
@@ -224,8 +149,7 @@ class CellGlue
     Cell _newInstance(String className,
                       String cellName,
                       String[] argsClassNames,
-                      Object[] args,
-                      boolean systemOnly)
+                      Object[] args)
             throws ClassNotFoundException,
             NoSuchMethodException,
             SecurityException,
@@ -234,12 +158,7 @@ class CellGlue
             IllegalAccessException,
             ClassCastException
     {
-        Class<? extends Cell> newClass;
-        if (systemOnly) {
-            newClass = Class.forName(className).asSubclass(Cell.class);
-        } else {
-            newClass = _loadClass(className).asSubclass(Cell.class);
-        }
+        Class<? extends Cell> newClass = Class.forName(className).asSubclass(Cell.class);
 
         Object[] arguments = new Object[args.length + 1];
         arguments[0] = cellName;

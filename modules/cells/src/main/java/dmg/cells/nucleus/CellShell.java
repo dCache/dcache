@@ -919,26 +919,20 @@ public class CellShell extends CommandInterpreter
                    "to instantiate the cell. This can be supply through the " +
                    "cellArg argument. If the configuration is more than one, " +
                    "since cellArg is a single argument, the configuration " +
-                   "settings must be inside a quotation mark.\n\n" +
-                   "If the option '-c' is indicated, the customised class " +
-                   "loader will be used instead of the system class loader. " +
-                   "This is particularly useful when a class is set up using " +
-                   "the `set classloader` command.")
+                   "settings must be inside a quotation mark.")
    public class CreateCommand implements Callable<String>
    {
-       @Argument(index = 0, usage = "Specify the fully qualified name of the " +
-               "desired class. For example, creating a topo cell requires " +
-               "specifying the following className: dmg.cells.network.TopoCell")
+       @Argument(index = 0, usage = "Fully qualified name of the cell class. For example, " +
+                                    "creating a topo cell requires specifying the following " +
+                                    "class name: dmg.cells.network.TopoCell")
        String className;
 
-       @Argument(index = 1, usage = "specify the name of the cell to be created")
+       @Argument(index = 1, usage = "Name of the cell to be created.")
        String cellName;
 
-       @Argument(index = 2, required = false, usage = "cell configuration arguments")
-       String cellArg;
-
-       @Option(name="c", usage = "load class through the customised class loader")
-       boolean c;
+       @Argument(index = 2, required = false, usage = "Arguments passed to the cell. The supported " +
+                                                      "arguments are cell specific.")
+       String cellArg = "";
 
        @Override
        public String call() throws ClassNotFoundException, NoSuchMethodException,
@@ -946,90 +940,16 @@ public class CellShell extends CommandInterpreter
                ClassCastException, CommandThrowableException
        {
            try {
-               Cell cell;
-               if( c ) {
-                   String[] argClasses = new String[1] ;
-                   Object[] argObjects = new Object[1] ;
-
-                   argClasses[0] = "java.lang.String" ;
-                   argObjects[0] = (cellArg != null)?cellArg:"" ;
-
-                   cell = _nucleus.createNewCell(className,
-                           cellName,
-                           argClasses,
-                           argObjects);
-               } else {
-                   cell = _nucleus.createNewCell(className,
-                           cellName,
-                           (cellArg != null)?cellArg:"",
-                           true);
-               }
-
+               Cell cell = _nucleus.createNewCell(className, cellName, cellArg, true);
                if (cell instanceof EnvironmentAware) {
                    ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
                }
-
                return "created : " + cell;
            } catch (InvocationTargetException e) {
                throw new CommandThrowableException(e.getTargetException().getMessage(), e.getTargetException());
            }
        }
    }
-
-   ////////////////////////////////////////////////////////////
-   //
-   //   domain class loader routines
-   //
-   @Command(name = "set classloader", hint = "add a package",
-           description = "Add and set the specified package name " +
-                   "to the classloader data provider (CDP) list. " +
-                   "This requires specifying the name of the " +
-                   "package and the \'provider\'. The provider " +
-                   "which is basically the address or path or " +
-                   "location of the package. There are four types " +
-                   "of provider types, which are cell, directory, " +
-                   "system and none (see usage in the provider " +
-                   "argument below).")
-   public class SetClassloaderCommand implements Callable<String>
-   {
-       @Argument(index =0, usage = "specify package name e.g. java.lang.*")
-       String packageName;
-
-       @Argument(index =1, usage = "specify the provider, for:\n" +
-               "cell\n" +
-               "\t\'cell:cellName@domainName\' or \'cellName@domainName.\'\n" +
-               "directory\n" +
-               "\t\'dir:/../.../../\' or \'/../.../../\'\n" +
-               "system or none\n" +
-               "\t\'system\'|\'none\'\n" +
-               "NOTE: pass the argument without the quotation marks.")
-       String provider;
-
-       @Override
-       public String call() throws IllegalArgumentException
-       {
-           _nucleus.setClassProvider(packageName, provider) ;
-           return "" ;
-       }
-   }
-
-    @Command(name = "show classloader", hint = "display the packages in CDP",
-            description = "Shows list of package and their provider in the " +
-                    "classloader data provider (CDP).")
-    public class ShowClassloaderCommand implements Callable<String>
-    {
-        @Override
-        public String call()
-        {
-            StringBuilder sb = new StringBuilder() ;
-            for (String[] classProvider : _nucleus.getClassProviders()) {
-                sb.append(Formats.field(classProvider[0], 20, Formats.LEFT)).
-                        append(classProvider[1]).
-                        append("\n");
-            }
-            return sb.toString() ;
-        }
-    }
 
    ////////////////////////////////////////////////////////////
    //
@@ -2204,6 +2124,36 @@ public class CellShell extends CommandInterpreter
         String getMessage();
     }
 
+
+    ////////////////////////////////////////////////////////////
+    //
+    //   domain class loader routines
+    //
+    @Command(name = "set classloader", hint = "obsolete", allowAnyOption = true)
+    public class SetClassloaderCommand implements Callable<String>
+    {
+        @Argument
+        String[] args;
+
+        @Override
+        public String call() throws IllegalArgumentException
+        {
+            return "obsolete";
+        }
+    }
+
+    @Command(name = "show classloader", hint = "obsolete", allowAnyOption = true)
+    public class ShowClassloaderCommand implements Callable<String>
+    {
+        @Argument
+        String[] args;
+
+        @Override
+        public String call()
+        {
+            return "obsolete";
+        }
+    }
 
     /**
      * Test if a cell is running.

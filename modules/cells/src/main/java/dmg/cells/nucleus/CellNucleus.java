@@ -14,7 +14,6 @@ import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
-import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -277,12 +276,7 @@ public class CellNucleus implements ThreadFactory
     public Object getDomainContext(String str) {
         return __cellGlue.getCellContext(str);
     }
-    public String [] [] getClassProviders() {
-        return __cellGlue.getClassProviders();
-    }
-    public synchronized void setClassProvider(String selection, String provider) {
-        __cellGlue.setClassProvider(selection, provider);
-    }
+
     Cell getThisCell() { return _cell; }
 
     CellInfo _getCellInfo() {
@@ -951,7 +945,7 @@ public class CellNucleus implements ThreadFactory
             Object [] args = new Object[1];
             args[0] = cellArgs;
             return __cellGlue._newInstance(
-                    cellClass, cellName, args, systemOnly);
+                    cellClass, cellName, args);
         } catch (InvocationTargetException e) {
             Throwable t = e.getTargetException();
             if (t instanceof RuntimeException) {
@@ -962,11 +956,6 @@ public class CellNucleus implements ThreadFactory
             }
             throw e;
         }
-    }
-
-    public Class<?> loadClass(String className) throws ClassNotFoundException
-    {
-        return __cellGlue.loadClass(className);
     }
 
     public Cell  createNewCell(String className,
@@ -982,33 +971,13 @@ public class CellNucleus implements ThreadFactory
     {
         if (argsClassNames == null) {
             return __cellGlue._newInstance(
-                    className, cellName, args, false);
+                    className, cellName, args);
         } else {
             return __cellGlue._newInstance(
-                    className, cellName, argsClassNames, args, false);
+                    className, cellName, argsClassNames, args);
         }
     }
 
-    public Cell createNewCell(String cellClass,
-                              String cellName,
-                              Socket socket,
-                              boolean systemOnly)
-        throws ClassNotFoundException,
-               NoSuchMethodException,
-               SecurityException,
-               InstantiationException,
-               InvocationTargetException,
-               IllegalAccessException,
-               ClassCastException          {
-
-        Object [] args = new Object[1];
-        args[0] = socket;
-
-        return __cellGlue._newInstance(cellClass,
-                                       cellName,
-                                       args,
-                                       systemOnly);
-    }
     ////////////////////////////////////////////////////////////
     //
     //
