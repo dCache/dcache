@@ -957,16 +957,6 @@ public class CellShell extends CommandInterpreter
 
    ////////////////////////////////////////////////////////////
    //
-   //   private class loader routines
-   //
-   public static final String hh_load_cellprinter = "<cellprinterClassName> # Obsolete" ;
-   public String ac_load_cellprinter_$_1( Args args )
-   {
-       return "Obsolete; use log4j instead." ;
-   }
-
-   ////////////////////////////////////////////////////////////
-   //
    //   this and that
    //
    public static final String hh_onerror = "shutdown|exit|continue" ;
