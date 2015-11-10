@@ -1,6 +1,7 @@
 package org.dcache.chimera.nfsv41.mover;
 
 import com.google.common.io.Files;
+
 import org.ietf.jgss.GSSException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import java.net.SocketException;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.DiskErrorCacheException;
@@ -27,6 +29,9 @@ import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import dmg.cells.nucleus.AbstractCellComponent;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellPath;
+
+import dmg.util.command.Command;
+import dmg.util.command.Option;
 
 import org.dcache.cells.CellStub;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
@@ -254,41 +259,60 @@ public class NfsTransferService extends AbstractCellComponent
         return addressesToUse;
     }
 
-    public static final String fh_nfs_stats =
-            "nfs stats [-c] # show nfs requests statstics\n\n" +
-            "  Print nfs operation statistics.\n" +
-            "    -c clear current statistics values";
-    public static final String hh_nfs_stats = " [-c] # show nfs mover statstics";
-    public String ac_nfs_stats(Args args) {
+    @Command(name = "nfs stats",
+             hint = "show nfs requests statistics",
+             description = "Displays statistics kept about NFS Client and Server activity. " +
+                     "Prints average/min/max execution time in ns, for example, for the following operations:\n" +
+                     "\tACCESS - Check Access Rights determines the access rights a user has " +
+                     "for an object,\n " +
+                     "EXCHANGE_ID - operation used by the client to register a particular " +
+                     "client owner with the server,\n"+
+                     "\tCREATE_SESSION - used by the client to create new session objects on " +
+                     "the server.\n"+
+                     "If the optional argument \"c\" is specified statistics is reset.")
+    public class NfsStatsCommand implements Callable<String>
+    {
+        @Option(name = "c",
+                usage = "Clears current statistics values.")
+        boolean clearStats;
+        @Override
+        public String call()
+        {
+            RequestExecutionTimeGauges<String> gauges = _nfsIO.getNFSServer().getStatistics();
+            StringBuilder sb = new StringBuilder();
+            sb.append("Stats:").append("\n").append(gauges.toString("ns"));
+            if (clearStats) {
+                gauges.reset();
+            }
+            return sb.toString();
 
-        RequestExecutionTimeGauges<String> gauges = _nfsIO.getNFSServer().getStatistics();
-        StringBuilder sb = new StringBuilder();
-        sb.append("Stats:").append("\n").append(gauges.toString("ns"));
-
-        if (args.hasOption("c")) {
-            gauges.reset();
         }
-
-        return sb.toString();
     }
 
-    public static final String hh_nfs_sessions = " # show nfs sessions";
-    public String ac_nfs_sessions(Args args) {
-
-       StringBuilder sb = new StringBuilder();
-        for (NFS4Client client : _nfsIO.getNFSServer().getStateHandler().getClients()) {
-            sb.append(client).append('\n');
-            for (NFSv41Session session : client.sessions()) {
-                sb.append("  ")
-                        .append(session)
-                        .append(" slots (max/used): ")
-                        .append(session.getHighestSlot())
-                        .append('/')
-                        .append(session.getHighestUsedSlot())
-                        .append('\n');
+    @Command(name = "nfs sessions",
+             hint = "show nfs sessions",
+             description = "Displays unique session identifier, maximum slot id" +
+                           " and the highest used slot id for the list of sessions created by client.")
+    public class NfsSessionsCommand implements Callable<String>
+    {
+        @Override
+        public String call()
+        {
+            StringBuilder sb = new StringBuilder();
+            for (NFS4Client client : _nfsIO.getNFSServer().getStateHandler().getClients()) {
+                sb.append(client).append('\n');
+                for (NFSv41Session session : client.sessions()) {
+                    sb.append("  ")
+                            .append(session)
+                            .append(" slots (max/used): ")
+                            .append(session.getHighestSlot())
+                            .append('/')
+                            .append(session.getHighestUsedSlot())
+                            .append('\n');
+                }
             }
+            return sb.toString();
         }
-        return sb.toString();
     }
 
     public verifier4 getBootVerifier() {
