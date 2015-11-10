@@ -4,6 +4,8 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import dmg.util.command.Argument;
+import dmg.util.command.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -24,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -524,19 +527,27 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    public static final String hh_rundelete = " # run Cleaner ";
-    public String ac_rundelete(Args args)
-        throws InterruptedException
+    @Command(name = "rundelete",
+            hint = "run cleaner",
+            description = "Delete all files found in the trash-table irrespective of the pool.")
+    public class RundeleteCommand implements Callable<String>
     {
-        runDelete(getPoolList());
-        return "";
+        @Override
+        public String call() throws InterruptedException
+        {
+            runDelete(getPoolList());
+            return "";
+        }
     }
 
-    public static final String hh_show_info = " # show info ";
-    public String ac_show_info(Args args)
+    @Command(name = "show info",
+            hint = "get cleaner service information")
+    public class ShowInfoCommand implements Callable<String>
     {
-
-        StringBuilder sb = new StringBuilder();
+        @Override
+        public String call()
+        {
+            StringBuilder sb = new StringBuilder();
 
             sb.append("Refresh Interval: ").append(_refreshInterval).append(" ").append(_refreshIntervalUnit).append("\n");
             sb.append("Reply Timeout: ").append(_replyTimeout).append(" ").append(_replyTimeoutUnit).append("\n");
@@ -547,30 +558,44 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                 sb.append("Timeout for cleaning requests to HSM-pools: ").append(_hsmTimeout).append(" ").append(_hsmTimeoutUnit).append("\n");
                 sb.append("Maximal number of concurrent requests to a single HSM : ").append(_hsmCleanerRequest);
             } else {
-               sb.append("\n HSM Cleaner disabled.");
+                sb.append("\n HSM Cleaner disabled.");
             }
-        return sb.toString();
+            return sb.toString();
+        }
     }
 
-
-    public static final String hh_ls_blacklist = " # list pools in the Black List";
-    public String ac_ls_blacklist(Args args)
+    @Command(name = "ls blacklist",
+            hint = "list blacklisted pools",
+            description = "Show a list of blacklisted pools. Blacklisted pool is a " +
+                    "pool that is down or do not exist.")
+    public class LsBlacklistCommand implements Callable<String>
     {
-        StringBuilder sb = new StringBuilder();
-        for (String pool : _poolsBlackList.keySet()) {
-            sb.append(pool).append("\n");
+        @Override
+        public String call()
+        {
+            StringBuilder sb = new StringBuilder();
+            for (String pool : _poolsBlackList.keySet()) {
+                sb.append(pool).append("\n");
+            }
+            return sb.toString();
         }
-        return sb.toString();
     }
 
-    public static final String hh_remove_from_blacklist = "<poolName> # remove this pool from the Black List";
-    public String ac_remove_from_blacklist_$_1(Args args)
+    @Command(name = "remove from blacklist",
+            hint = "remove a pool from the blacklist")
+    public class RemoveFromBlacklistCommand implements Callable<String>
     {
-        String poolName = args.argv(0);
-        if (_poolsBlackList.remove(poolName) != null) {
-            return "Pool " + poolName + " is removed from the Black List ";
+        @Argument(usage = "The name of the pool to be removed from the blacklist.")
+        String poolName;
+
+        @Override
+        public String call()
+        {
+            if (_poolsBlackList.remove(poolName) != null) {
+                return "Pool " + poolName + " is removed from the Black List ";
+            }
+            return "Pool " + poolName + " was not found in the Black List ";
         }
-        return "Pool " + poolName + " was not found in the Black List ";
     }
 
     public static final String hh_clean_file =
