@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -46,16 +45,6 @@ public class BoundedExecutor extends AbstractExecutorService
 
     private final Worker worker = new Worker();
     private boolean isShutdown;
-
-    public BoundedExecutor(int maxThreads)
-    {
-        this(Executors.newCachedThreadPool(), maxThreads);
-    }
-
-    public BoundedExecutor(int maxThreads, int maxQueued)
-    {
-        this(Executors.newCachedThreadPool(), maxThreads, maxQueued);
-    }
 
     public BoundedExecutor(Executor executor, int maxThreads)
     {
