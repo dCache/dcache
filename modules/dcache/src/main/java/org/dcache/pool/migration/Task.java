@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,7 @@ import dmg.cells.nucleus.CellPath;
 
 import org.dcache.cells.AbstractMessageCallback;
 import org.dcache.cells.CellStub;
+import org.dcache.namespace.FileAttribute;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
@@ -221,7 +223,7 @@ public class Task
      * Sets the list of pools on which a copy of the replica is known
      * to exist.
      */
-    private synchronized void setLocations(List<String> locations)
+    private synchronized void setLocations(Collection<String> locations)
     {
         Stream<String> pools = _parameters.poolList.getPools().stream().map(PoolManagerPoolInformation::getName);
         if (!_parameters.isEager) {
@@ -383,7 +385,12 @@ public class Task
      */
     public synchronized void run()
     {
-        _fsm.run();
+        if (_fileAttributes.isDefined(FileAttribute.LOCATIONS)) {
+            setLocations(_fileAttributes.getLocations());
+            _fsm.startWithLocations();
+        } else {
+            _fsm.startWithoutLocations();
+        }
     }
 
     /**

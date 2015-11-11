@@ -12,8 +12,17 @@
 %%
 Queued
 {
-        run
+        startWithoutLocations
                 GettingLocations
+                {
+                }
+        startWithLocations
+                [ ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                }
+        startWithLocations
+                InitiatingCopy
                 {
                 }
 }
