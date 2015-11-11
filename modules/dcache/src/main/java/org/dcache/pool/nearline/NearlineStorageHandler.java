@@ -1307,7 +1307,7 @@ public class NearlineStorageHandler extends AbstractCellComponent implements Cel
         @Override
         public void failed(Throwable exc, PnfsId pnfsId)
         {
-            reply("Failed to fetch " + pnfsId + ": " + exc);
+            reply("Failed to fetch " + pnfsId + ": " + (exc instanceof CacheException ? exc.getMessage() : exc));
         }
 
         @Override
