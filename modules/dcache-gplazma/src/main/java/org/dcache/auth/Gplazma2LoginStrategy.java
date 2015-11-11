@@ -111,6 +111,13 @@ public class Gplazma2LoginStrategy
             new GPlazma(configuration, getEnvironmentAsProperties(), _factory);
     }
 
+    public void shutdown()
+    {
+        if (_gplazma != null) {
+            _gplazma.shutdown();
+        }
+    }
+
     static LoginReply
         convertLoginReply(org.dcache.gplazma.LoginReply gPlazmaLoginReply)
     {

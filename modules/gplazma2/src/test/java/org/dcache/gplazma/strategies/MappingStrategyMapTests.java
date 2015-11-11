@@ -35,67 +35,67 @@ public class MappingStrategyMapTests
     private static final LoginMonitor IGNORING_LOGIN_MONITOR =
             new IgnoringLoginMonitor();
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> emptyList =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> emptyList =
             Lists.newArrayList();
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> oneDoNothingPlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> oneDoNothingPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successRequiredPlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successRequiredPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUIRED),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successOptionalPlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successOptionalPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",OPTIONAL)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",OPTIONAL),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",OPTIONAL)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successRequisitePlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successRequisitePlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUISITE)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",REQUISITE),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUISITE)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> successSufficientPlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> successSufficientPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",SUFFICIENT)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new DoNotingStrategy(),"nothing",SUFFICIENT),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",SUFFICIENT)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> failedPlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> failedPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> testOptionalFailingPlugins =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> testOptionalFailingPlugins =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",REQUIRED),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",OPTIONAL)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> testRequesitePlugins1 =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> testRequesitePlugins1 =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUISITE),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> testRequesitePlugins2 =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> testRequesitePlugins2 =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowTestAuthenticationExceptionStrategy(),"throw-test-auth",REQUIRED),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowAuthenticationExceptionStrategy(),"throw-auth",REQUISITE),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>> sufficientPluginFollowedByFailedArray =
+    private List<GPlazmaPluginService<GPlazmaMappingPlugin>> sufficientPluginFollowedByFailedArray =
         ImmutableList.of(
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",SUFFICIENT),
-            new GPlazmaPluginElement<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new AlwaysMapToCompleteSetStrategy(),"always",SUFFICIENT),
+            new GPlazmaPluginService<GPlazmaMappingPlugin>(new ThrowRuntimeExceptionStrategy(),"throw-run",REQUIRED)
         );
 
     @Before

@@ -19,11 +19,11 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
     private static final Logger _log =
             LoggerFactory.getLogger(DefaultIdentityStrategy.class);
 
-    private volatile List<GPlazmaPluginElement<GPlazmaIdentityPlugin>> ideStyleStrategies;
+    private volatile List<GPlazmaPluginService<GPlazmaIdentityPlugin>> ideStyleStrategies;
 
     @Override
     public Principal map(Principal principal) throws NoSuchPrincipalException {
-        for(GPlazmaPluginElement<GPlazmaIdentityPlugin> ideStyleStrategy: ideStyleStrategies) {
+        for(GPlazmaPluginService<GPlazmaIdentityPlugin> ideStyleStrategy: ideStyleStrategies) {
             try {
                 return ideStyleStrategy.getPlugin().map(principal);
             } catch(RuntimeException e) {
@@ -37,7 +37,7 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
 
     @Override
     public Set<Principal> reverseMap(Principal principal) throws NoSuchPrincipalException {
-        for(GPlazmaPluginElement<GPlazmaIdentityPlugin> ideStyleStrategy: ideStyleStrategies) {
+        for(GPlazmaPluginService<GPlazmaIdentityPlugin> ideStyleStrategy: ideStyleStrategies) {
             try {
                 return ideStyleStrategy.getPlugin().reverseMap(principal);
             } catch(RuntimeException e) {
@@ -50,7 +50,7 @@ public class DefaultIdentityStrategy implements IdentityStrategy {
     }
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaIdentityPlugin>> plugins) {
+    public void setPlugins(List<GPlazmaPluginService<GPlazmaIdentityPlugin>> plugins) {
         ideStyleStrategies = plugins;
     }
 

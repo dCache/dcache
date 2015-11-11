@@ -51,7 +51,7 @@
     <constructor-arg ref="pnfs-handler"/>
   </bean>
 
-  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init">
+  <bean id="login-strategy" class="org.dcache.auth.Gplazma2LoginStrategy" init-method="init" destroy-method="shutdown">
     <description>Interfaces with gPlazma</description>
     <property name="configurationFile" value="${gplazma.configuration.file}"/>
     <property name="nameSpace" ref="namespace"/>

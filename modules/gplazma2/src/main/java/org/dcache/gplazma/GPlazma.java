@@ -1,6 +1,8 @@
 package org.dcache.gplazma;
 
 import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Service;
+import com.google.common.util.concurrent.ServiceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +47,7 @@ import org.dcache.gplazma.plugins.GPlazmaPlugin;
 import org.dcache.gplazma.plugins.GPlazmaSessionPlugin;
 import org.dcache.gplazma.strategies.AccountStrategy;
 import org.dcache.gplazma.strategies.AuthenticationStrategy;
-import org.dcache.gplazma.strategies.GPlazmaPluginElement;
+import org.dcache.gplazma.strategies.GPlazmaPluginService;
 import org.dcache.gplazma.strategies.IdentityStrategy;
 import org.dcache.gplazma.strategies.MappingStrategy;
 import org.dcache.gplazma.strategies.SessionStrategy;
@@ -57,6 +59,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.Collections2.filter;
+import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Iterables.removeIf;
 
@@ -73,30 +76,15 @@ public class GPlazma
     private Properties _globalProperties;
     private boolean _globalPropertiesHaveUpdated;
 
-    private PluginLoader pluginLoader;
-
     private final PluginFactory _customPluginFactory;
 
     private GPlazmaInternalException _lastLoadPluginsProblem;
 
-    private List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>>
-            authenticationPluginElements;
-    private List<GPlazmaPluginElement<GPlazmaMappingPlugin>>
-            mappingPluginElements;
-    private List<GPlazmaPluginElement<GPlazmaAccountPlugin>>
-            accountPluginElements;
-    private List<GPlazmaPluginElement<GPlazmaSessionPlugin>>
-            sessionPluginElements;
-    private List<GPlazmaPluginElement<GPlazmaIdentityPlugin>>
-            identityPluginElements;
-
     private final ConfigurationLoadingStrategy configurationLoadingStrategy;
-    private AuthenticationStrategy _authStrategy;
-    private MappingStrategy _mapStrategy;
-    private AccountStrategy _accountStrategy;
-    private SessionStrategy _sessionStrategy;
+
     private ValidationStrategy validationStrategy;
-    private IdentityStrategy identityStrategy;
+
+    private Setup setup;
 
     /**
      * Storage class for failed login attempts.  This allows gPlazma to
@@ -212,12 +200,20 @@ public class GPlazma
         _globalProperties = properties;
         _customPluginFactory = factory;
         try {
-            loadPlugins();
+            reload();
         } catch (GPlazmaInternalException e) {
             /* Ignore this error.  Subsequent attempts to use gPlazma will
              * fail with the same error.  gPlazma will try to rectify the
              * problem if configuration file is edited.
              */
+        }
+    }
+
+    public void shutdown()
+    {
+        Setup setup = this.setup;
+        if (setup != null) {
+            setup.stop();
         }
     }
 
@@ -255,30 +251,23 @@ public class GPlazma
     {
         checkNotNull(subject, "subject is null");
 
-        AuthenticationStrategy authStrategy;
-        MappingStrategy mapStrategy;
-        AccountStrategy accountStrategy;
-        SessionStrategy sessionStrategy;
+        Setup setup;
 
         synchronized (configurationLoadingStrategy) {
             try {
                 checkPluginConfig();
             } catch(GPlazmaInternalException e) {
-                throw new AuthenticationException("internal gPlazma error: " +
-                        e.getMessage());
+                throw new AuthenticationException("internal gPlazma error: " + e.getMessage());
             }
 
-            authStrategy = _authStrategy;
-            mapStrategy = _mapStrategy;
-            accountStrategy = _accountStrategy;
-            sessionStrategy = _sessionStrategy;
+            setup = this.setup;
         }
 
         Set<Principal> principals = new HashSet<>();
-        doAuthPhase(authStrategy, monitor, subject, principals);
-        doMapPhase(mapStrategy, monitor, principals);
-        doAccountPhase(accountStrategy, monitor, principals);
-        Set<Object> attributes = doSessionPhase(sessionStrategy, monitor, principals);
+        setup.doAuthPhase(monitor, subject, principals);
+        setup.doMapPhase(monitor, principals);
+        setup.doAccountPhase(monitor, principals);
+        Set<Object> attributes = setup.doSessionPhase(monitor, principals);
         removeIf(principals, p -> !isPublic(p));
 
         return buildReply(monitor, subject, principals, attributes);
@@ -288,84 +277,6 @@ public class GPlazma
     {
         return Modifier.isPublic(p.getClass().getModifiers());
     }
-
-    private void doAuthPhase(AuthenticationStrategy strategy,
-            LoginMonitor monitor, Subject subject, Set<Principal> principals)
-            throws AuthenticationException
-    {
-        Set<Object> publicCredentials = subject.getPublicCredentials();
-        Set<Object> privateCredentials = subject.getPrivateCredentials();
-
-        principals.addAll(subject.getPrincipals());
-
-        NDC.push("AUTH");
-        Result result = Result.FAIL;
-        try {
-            monitor.authBegins(publicCredentials, privateCredentials,
-                    principals);
-            strategy.authenticate(monitor,
-                    publicCredentials, privateCredentials,
-                    principals);
-            result = Result.SUCCESS;
-        } finally {
-            NDC.pop();
-            monitor.authEnds(principals, result);
-        }
-    }
-
-
-    private void doMapPhase(MappingStrategy strategy,
-            LoginMonitor monitor, Set<Principal> principals)
-            throws AuthenticationException
-    {
-        NDC.push("MAP");
-        Result result = Result.FAIL;
-        try {
-            monitor.mapBegins(principals);
-            strategy.map(monitor, principals);
-            result = Result.SUCCESS;
-        } finally {
-            NDC.pop();
-            monitor.mapEnds(principals, result);
-        }
-    }
-
-
-    private void doAccountPhase(AccountStrategy strategy, LoginMonitor monitor,
-            Set<Principal> principals) throws AuthenticationException
-    {
-        NDC.push("ACCOUNT");
-        Result result = Result.FAIL;
-        try {
-            monitor.accountBegins(principals);
-            strategy.account(monitor, principals);
-            result = Result.SUCCESS;
-        } finally {
-            NDC.pop();
-            monitor.accountEnds(principals, result);
-        }
-    }
-
-    private Set<Object> doSessionPhase(SessionStrategy strategy,
-            LoginMonitor monitor, Set<Principal> principals)
-            throws AuthenticationException
-    {
-        Set<Object> attributes = new HashSet<>();
-
-        NDC.push("SESSION");
-        Result result = Result.FAIL;
-        try {
-            monitor.sessionBegins(principals);
-            strategy.session(monitor, principals, attributes);
-            result = Result.SUCCESS;
-        } finally {
-            NDC.pop();
-            monitor.sessionEnds(principals, attributes, result);
-        }
-
-        return attributes;
-    }
-
 
     public LoginReply buildReply(LoginMonitor monitor, Subject originalSubject,
             Set<Principal> principals, Set<Object> attributes)
@@ -424,94 +335,77 @@ public class GPlazma
     {
         synchronized (configurationLoadingStrategy) {
             checkPluginConfig();
-            return this.identityStrategy;
+            return setup.identityStrategy;
         }
     }
 
-    private void loadPlugins() throws GPlazmaInternalException
+    private void reload() throws GPlazmaInternalException
     {
         LOGGER.debug("reloading plugins");
 
-        pluginLoader = XmlResourcePluginLoader.newPluginLoader();
-        if(_customPluginFactory != null) {
-            pluginLoader.setPluginFactory(_customPluginFactory);
-        }
-        pluginLoader.init();
-
-        resetPlugins();
-
         try {
-            Configuration configuration = configurationLoadingStrategy.load();
-            List<ConfigurationItem> items = configuration.getConfigurationItemList();
+            validationStrategy = ValidationStrategyFactory.getInstance().newValidationStrategy();
 
-            for(ConfigurationItem item : items) {
-                String pluginName = item.getPluginName();
-
-                Properties pluginProperties = item.getPluginConfiguration();
-                Properties combinedProperties = new Properties(_globalProperties);
-                combinedProperties.putAll(pluginProperties);
-
-                GPlazmaPlugin plugin;
-
-                try {
-                    plugin = pluginLoader.newPluginByName(pluginName,
-                        combinedProperties);
-                } catch(PluginLoadingException e) {
-                    throw new PluginLoadingException("failed to create "
-                            + pluginName + ": " + e.getMessage(), e);
-                }
-
-                ConfigurationItemControl control = item.getControl();
-                ConfigurationItemType type = item.getType();
-
-                classifyPlugin(type, plugin, pluginName, control);
+            Setup newSetup = buildSetup();
+            try {
+                newSetup.start();
+            } catch (GPlazmaInternalException e) {
+                newSetup.stop();
+                throw e;
             }
 
-            initStrategies();
+            Setup oldSetup = this.setup;
+            if (oldSetup != null) {
+                oldSetup.stop();
+            }
+            this.setup = newSetup;
+
+            if(isPreviousLoadPluginsProblematic()) {
+                /* FIXME: this should be logged at info level but we want it to
+                 *        appear in the log file. */
+                LOGGER.warn("gPlazma configuration successfully loaded");
+                _lastLoadPluginsProblem = null;
+            }
         } catch(GPlazmaInternalException e) {
             LOGGER.error(e.getMessage());
             _lastLoadPluginsProblem = e;
             throw e;
         }
+    }
 
-
-        if(isPreviousLoadPluginsProblematic()) {
-            /* FIXME: this should be logged at info level but we want it to
-             *        appear in the log file. */
-            LOGGER.warn("gPlazma configuration successfully loaded");
-
-            _lastLoadPluginsProblem = null;
+    private Setup buildSetup() throws GPlazmaInternalException
+    {
+        PluginLoader pluginLoader = XmlResourcePluginLoader.newPluginLoader();
+        if (_customPluginFactory != null) {
+            pluginLoader.setPluginFactory(_customPluginFactory);
         }
-    }
+        pluginLoader.init();
 
+        SetupBuilder setup = new SetupBuilder();
+        Configuration configuration = configurationLoadingStrategy.load();
+        List<ConfigurationItem> items = configuration.getConfigurationItemList();
 
-    private void resetPlugins()
-    {
-        authenticationPluginElements = new ArrayList<>();
-        mappingPluginElements = new ArrayList<>();
-        accountPluginElements = new ArrayList<>();
-        sessionPluginElements = new ArrayList<>();
-        identityPluginElements = new ArrayList<>();
-    }
+        for (ConfigurationItem item : items) {
+            String pluginName = item.getPluginName();
 
+            Properties pluginProperties = item.getPluginConfiguration();
+            Properties combinedProperties = new Properties(_globalProperties);
+            combinedProperties.putAll(pluginProperties);
 
-    private void initStrategies() throws FactoryConfigurationException
-    {
-        StrategyFactory factory = StrategyFactory.getInstance();
-        _authStrategy = factory.newAuthenticationStrategy();
-        _authStrategy.setPlugins(authenticationPluginElements);
-        _mapStrategy = factory.newMappingStrategy();
-        _mapStrategy.setPlugins(mappingPluginElements);
-        _accountStrategy = factory.newAccountStrategy();
-        _accountStrategy.setPlugins(accountPluginElements);
-        _sessionStrategy = factory.newSessionStrategy();
-        _sessionStrategy.setPlugins(sessionPluginElements);
-        identityStrategy = factory.newIdentityStrategy();
-        identityStrategy.setPlugins(identityPluginElements);
+            GPlazmaPlugin plugin;
 
-        ValidationStrategyFactory validationFactory =
-                ValidationStrategyFactory.getInstance();
-        validationStrategy = validationFactory.newValidationStrategy();
+            try {
+                plugin = pluginLoader.newPluginByName(pluginName, combinedProperties);
+            } catch (PluginLoadingException e) {
+                throw new PluginLoadingException("failed to create " + pluginName + ": " + e.getMessage(), e);
+            }
+
+            ConfigurationItemControl control = item.getControl();
+            ConfigurationItemType type = item.getType();
+
+            setup.add(type, plugin, pluginName, control);
+        }
+        return setup.build();
     }
 
     private void checkPluginConfig() throws GPlazmaInternalException
@@ -519,7 +413,7 @@ public class GPlazma
         if (_globalPropertiesHaveUpdated || configurationLoadingStrategy.hasUpdated()) {
             _globalPropertiesHaveUpdated = false;
             _failedLogins.clear();
-            loadPlugins();
+            reload();
         }
 
         if(isPreviousLoadPluginsProblematic()) {
@@ -532,63 +426,188 @@ public class GPlazma
         return _lastLoadPluginsProblem != null;
     }
 
-    private void classifyPlugin( ConfigurationItemType type,
-            GPlazmaPlugin plugin, String pluginName,
-            ConfigurationItemControl control) throws PluginLoadingException
+    /**
+     * Container for plugins of a particular type.
+     */
+    private static class Plugins<T extends GPlazmaPlugin> extends ArrayList<GPlazmaPluginService<T>>
     {
-        if(!type.getType().isAssignableFrom(plugin.getClass())) {
-                    throw new PluginLoadingException("plugin " + pluginName +
-                            " (java class  " +
-                            plugin.getClass().getCanonicalName() +
-                            ") does not support being loaded as type " + type );
-        }
-        switch (type) {
-            case AUTHENTICATION:
-            {
-                storePluginElement(plugin, pluginName, control,
-                        authenticationPluginElements);
-                break;
-            }
-            case MAPPING:
-            {
-                storePluginElement(plugin, pluginName, control,
-                        mappingPluginElements);
-                break;
-            }
-            case ACCOUNT:
-            {
-                storePluginElement(plugin, pluginName, control,
-                        accountPluginElements);
-                break;
-            }
-            case SESSION:
-            {
-                storePluginElement(plugin, pluginName, control,
-                        sessionPluginElements);
-                break;
-            }
-            case IDENTITY: {
-                storePluginElement(plugin, pluginName, control,
-                        identityPluginElements);
-                break;
-            }
-            default:
-            {
-                throw new PluginLoadingException("unknown plugin type " + type);
-            }
+        private static final long serialVersionUID = 3696582098049455967L;
+
+        void add(T plugin, String pluginName, ConfigurationItemControl control)
+        {
+            add(new GPlazmaPluginService<>(plugin, pluginName, control));
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T extends GPlazmaPlugin> void storePluginElement(
-            GPlazmaPlugin plugin, String pluginName,
-            ConfigurationItemControl control,
-            List<GPlazmaPluginElement<T>> pluginElements)
+    private static class SetupBuilder
     {
-        // we are forced to use unchecked cast here, as the generics do not support
-        // instanceof, but we have checked the type before calling storePluginElement
-        T authPlugin = (T) plugin;
-        GPlazmaPluginElement<T> pluginElement = new GPlazmaPluginElement<>(authPlugin, pluginName, control);
-        pluginElements.add(pluginElement);
+        private final Plugins<GPlazmaAuthenticationPlugin> authenticationPlugins = new Plugins<>();
+        private final Plugins<GPlazmaMappingPlugin> mappingPlugins = new Plugins<>();
+        private final Plugins<GPlazmaAccountPlugin> accountPlugins = new Plugins<>();
+        private final Plugins<GPlazmaSessionPlugin> sessionPlugins = new Plugins<>();
+        private final Plugins<GPlazmaIdentityPlugin> identityPlugins = new Plugins<>();
+
+        void add(ConfigurationItemType type, GPlazmaPlugin plugin, String pluginName, ConfigurationItemControl control)
+                throws PluginLoadingException
+        {
+            if (!type.getType().isAssignableFrom(plugin.getClass())) {
+                throw new PluginLoadingException("plugin " + pluginName + " (java class  " +
+                                                 plugin.getClass().getCanonicalName() +
+                                                 ") does not support being loaded as type " + type);
+            }
+            switch (type) {
+            case AUTHENTICATION:
+                authenticationPlugins.add((GPlazmaAuthenticationPlugin) plugin, pluginName, control);
+                break;
+            case MAPPING:
+                mappingPlugins.add((GPlazmaMappingPlugin) plugin, pluginName, control);
+                break;
+            case ACCOUNT:
+                accountPlugins.add((GPlazmaAccountPlugin) plugin, pluginName, control);
+                break;
+            case SESSION:
+                sessionPlugins.add((GPlazmaSessionPlugin) plugin, pluginName, control);
+                break;
+            case IDENTITY:
+                identityPlugins.add((GPlazmaIdentityPlugin) plugin, pluginName, control);
+                break;
+            default:
+                throw new PluginLoadingException("unknown plugin type " + type);
+            }
+        }
+
+        Setup build() throws GPlazmaInternalException
+        {
+            return new Setup(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins, identityPlugins);
+        }
+    }
+
+    /**
+     * A particular gPlazma setup with plugins grouped into several phases.
+     */
+    private static class Setup extends ServiceManager.Listener
+    {
+        private final AuthenticationStrategy authStrategy;
+        private final MappingStrategy mapStrategy;
+        private final AccountStrategy accountStrategy;
+        private final SessionStrategy sessionStrategy;
+        private final IdentityStrategy identityStrategy;
+
+        private final ServiceManager manager;
+        private Throwable failure;
+
+        Setup(Plugins<GPlazmaAuthenticationPlugin> authenticationPlugins,
+              Plugins<GPlazmaMappingPlugin> mappingPlugins, Plugins<GPlazmaAccountPlugin> accountPlugins,
+              Plugins<GPlazmaSessionPlugin> sessionPlugins, Plugins<GPlazmaIdentityPlugin> identityPlugins)
+                throws FactoryConfigurationException
+        {
+            StrategyFactory factory = StrategyFactory.getInstance();
+            authStrategy = factory.newAuthenticationStrategy();
+            mapStrategy = factory.newMappingStrategy();
+            accountStrategy = factory.newAccountStrategy();
+            sessionStrategy = factory.newSessionStrategy();
+            identityStrategy = factory.newIdentityStrategy();
+            authStrategy.setPlugins(authenticationPlugins);
+            mapStrategy.setPlugins(mappingPlugins);
+            accountStrategy.setPlugins(accountPlugins);
+            sessionStrategy.setPlugins(sessionPlugins);
+            identityStrategy.setPlugins(identityPlugins);
+            manager = new ServiceManager(
+                    concat(authenticationPlugins, mappingPlugins, accountPlugins, sessionPlugins, identityPlugins));
+            manager.addListener(this);
+        }
+
+        @Override
+        public void failure(Service service)
+        {
+            failure = service.failureCause();
+        }
+
+        void start() throws GPlazmaInternalException
+        {
+            try {
+                manager.startAsync().awaitHealthy();
+            } catch (IllegalStateException e) {
+                if (failure != null) {
+                    throw new PluginLoadingException(failure.getMessage(), failure);
+                }
+                throw new PluginLoadingException(e.getMessage(), e);
+            }
+        }
+
+        void stop()
+        {
+            manager.stopAsync().awaitStopped();
+        }
+
+        void doAuthPhase(LoginMonitor monitor, Subject subject, Set<Principal> principals)
+                throws AuthenticationException
+        {
+            Set<Object> publicCredentials = subject.getPublicCredentials();
+            Set<Object> privateCredentials = subject.getPrivateCredentials();
+
+            principals.addAll(subject.getPrincipals());
+
+            NDC.push("AUTH");
+            Result result = Result.FAIL;
+            try {
+                monitor.authBegins(publicCredentials, privateCredentials, principals);
+                authStrategy.authenticate(monitor, publicCredentials, privateCredentials, principals);
+                result = Result.SUCCESS;
+            } finally {
+                NDC.pop();
+                monitor.authEnds(principals, result);
+            }
+        }
+
+
+        void doMapPhase(LoginMonitor monitor, Set<Principal> principals)
+                throws AuthenticationException
+        {
+            NDC.push("MAP");
+            Result result = Result.FAIL;
+            try {
+                monitor.mapBegins(principals);
+                mapStrategy.map(monitor, principals);
+                result = Result.SUCCESS;
+            } finally {
+                NDC.pop();
+                monitor.mapEnds(principals, result);
+            }
+        }
+
+        void doAccountPhase(LoginMonitor monitor, Set<Principal> principals)
+                throws AuthenticationException
+        {
+            NDC.push("ACCOUNT");
+            Result result = Result.FAIL;
+            try {
+                monitor.accountBegins(principals);
+                accountStrategy.account(monitor, principals);
+                result = Result.SUCCESS;
+            } finally {
+                NDC.pop();
+                monitor.accountEnds(principals, result);
+            }
+        }
+
+        Set<Object> doSessionPhase(LoginMonitor monitor, Set<Principal> principals)
+                throws AuthenticationException
+        {
+            Set<Object> attributes = new HashSet<>();
+
+            NDC.push("SESSION");
+            Result result = Result.FAIL;
+            try {
+                monitor.sessionBegins(principals);
+                sessionStrategy.session(monitor, principals, attributes);
+                result = Result.SUCCESS;
+            } finally {
+                NDC.pop();
+                monitor.sessionEnds(principals, attributes, result);
+            }
+
+            return attributes;
+        }
     }
 }

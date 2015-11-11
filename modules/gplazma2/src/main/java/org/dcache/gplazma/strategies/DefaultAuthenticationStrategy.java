@@ -27,7 +27,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
     private volatile PAMStyleStrategy<GPlazmaAuthenticationPlugin> pamStyleAuthentiationStrategy;
 
     @Override
-    public void setPlugins(List<GPlazmaPluginElement<GPlazmaAuthenticationPlugin>> plugins)
+    public void setPlugins(List<GPlazmaPluginService<GPlazmaAuthenticationPlugin>> plugins)
     {
         pamStyleAuthentiationStrategy = new PAMStyleStrategy<>(plugins);
     }
@@ -36,7 +36,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
      * Devegates execution of the
      * {@link GPlazmaAuthenticationPlugin#authenticate(SessionID, Set<Object>,Set<Object>, Set<Principal>) GPlazmaAuthenticationPlugin.authenticate}
      * methods of the plugins supplied by
-     * {@link GPlazmaStrategy#setPlugins(List<GPlazmaPluginElement<T>>) GPlazmaStrategy.setPlugins}
+     * {@link GPlazmaStrategy#setPlugins(List< GPlazmaPluginService <T>>) GPlazmaStrategy.setPlugins}
      *  to
      * {@link  PAMStyleStrategy#callPlugins(PluginCaller<T>) PAMStyleStrategy.callPlugins(PluginCaller<T>)}
      * by providing anonymous implementation of the
@@ -55,7 +55,7 @@ public class DefaultAuthenticationStrategy implements AuthenticationStrategy
         pamStyleAuthentiationStrategy.callPlugins(new PluginCaller<GPlazmaAuthenticationPlugin>()
         {
             @Override
-            public void call(GPlazmaPluginElement<GPlazmaAuthenticationPlugin> pe)
+            public void call(GPlazmaPluginService<GPlazmaAuthenticationPlugin> pe)
                     throws AuthenticationException
             {
                 monitor.authPluginBegins(pe.getName(), pe.getControl(),
