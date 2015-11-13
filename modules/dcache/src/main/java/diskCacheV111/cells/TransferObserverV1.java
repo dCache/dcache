@@ -303,7 +303,7 @@ public class TransferObserverV1
 
         int[] array = new int[list.length];
         for (int i = 0; i < list.length; i++) {
-            array[i] = Integer.valueOf(list[i]);
+            array[i] = Integer.parseInt(list[i]);
         }
 
         _tableHash.put(tableName, new TableEntry(tableName, array, header));

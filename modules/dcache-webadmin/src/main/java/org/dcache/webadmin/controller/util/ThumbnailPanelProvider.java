@@ -105,8 +105,8 @@ public final class ThumbnailPanelProvider extends
                     String imgWidth) {
         checkNotNull(plotsDirectoryPath);
         dir = new File(plotsDirectoryPath);
-        this.imgHeight = Integer.valueOf(imgHeight);
-        this.imgWidth = Integer.valueOf(imgWidth);
+        this.imgHeight = Integer.parseInt(imgHeight);
+        this.imgWidth = Integer.parseInt(imgWidth);
     }
 
     public int getNumCols() {

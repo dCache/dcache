@@ -882,8 +882,7 @@ public class HttpPoolMgrEngineV3 implements
 
                 return a.compareTo(b);
             } else if (_type.equals("i.start")) {
-                return Long.valueOf(i1.getStartTime()).compareTo(i2
-                        .getStartTime());
+                return Long.compare(i1.getStartTime(),i2.getStartTime());
             } else {
                 return i1.getName().compareTo(i2.getName());
             }

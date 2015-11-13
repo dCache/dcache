@@ -843,7 +843,7 @@ public class CellShell extends CommandInterpreter
    //
    public static final String hh_sleep = "<secondsToSleep>" ;
    public String ac_sleep_$_1( Args args ) throws InterruptedException {
-      int s = Integer.valueOf(args.argv(0));
+      int s = Integer.parseInt(args.argv(0));
       Thread.sleep( s*1000) ;
       return "Ready\n" ;
 
@@ -2117,7 +2117,7 @@ public class CellShell extends CommandInterpreter
        int    code = 0 ;
        if( args.argc() > 0 ){
          try{
-            code = new Integer(args.argv(0));
+            code = Integer.parseInt(args.argv(0));
          }catch( Exception e ){
             code = 0 ;
          }

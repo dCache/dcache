@@ -593,7 +593,7 @@ public class MigrationModule
             String owner = matcher.group(1);
             String lifetime = matcher.group(3);
             try {
-                long expire = (lifetime == null) ? -1 : Integer.valueOf(lifetime);
+                long expire = (lifetime == null) ? -1 : Integer.parseInt(lifetime);
                 if (expire < -1) {
                     throw new IllegalArgumentException(lifetime + ": Invalid lifetime");
                 } else if (expire > 0) {

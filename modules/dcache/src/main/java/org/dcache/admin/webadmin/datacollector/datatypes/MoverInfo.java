@@ -47,8 +47,7 @@ public class MoverInfo implements Comparable<MoverInfo> {
         if (tmp != 0) {
             return tmp;
         }
-        return Long.valueOf(_ioDoorEntry.getSerialId()).
-                compareTo(other._ioDoorEntry.getSerialId());
+        return Long.compare(_ioDoorEntry.getSerialId(), other._ioDoorEntry.getSerialId());
     }
 
     @Override

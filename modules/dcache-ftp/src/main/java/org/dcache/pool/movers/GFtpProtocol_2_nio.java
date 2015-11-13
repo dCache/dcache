@@ -722,11 +722,11 @@ public class GFtpProtocol_2_nio implements ConnectionMonitor,
     public static void main(String a[]) {
         try {
             Args args = new Args(a);
-            int port        = Integer.valueOf(getOption(args, "port", "2288"));
-            int bufferSize  = Integer.valueOf(getOption(args, "buffer", "0"));
-            int parallelism = Integer.valueOf(getOption(args, "streams", "1"));
-            long offset     = Long.valueOf(getOption(args, "offset", "0"));
-            long size       = Long.valueOf(getOption(args, "size", "0"));
+            int port        = Integer.parseInt(getOption(args, "port", "2288"));
+            int bufferSize  = Integer.parseInt(getOption(args, "buffer", "0"));
+            int parallelism = Integer.parseInt(getOption(args, "streams", "1"));
+            long offset     = Long.parseLong(getOption(args, "offset", "0"));
+            long size       = Long.parseLong(getOption(args, "size", "0"));
             String digest   = getOption(args, "digest", "");
 
             Role role = Role.Receiver;

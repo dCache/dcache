@@ -706,7 +706,7 @@ public class PnfsManagerV3
         public String call() throws CacheException
         {
             FileAttributes attributes = new FileAttributes();
-            attributes.setSize(Long.valueOf(newsize));
+            attributes.setSize(Long.parseLong(newsize));
 
             _nameSpaceProvider.setFileAttributes(ROOT, pnfsId, attributes,
                     EnumSet.noneOf(FileAttribute.class));

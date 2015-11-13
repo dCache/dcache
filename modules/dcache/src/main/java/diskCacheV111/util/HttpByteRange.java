@@ -122,10 +122,10 @@ public class HttpByteRange
         HttpByteRange ret;
 
         try{
-            long lowerV = Long.valueOf(bounds[0]);
+            long lowerV = Long.parseLong(bounds[0]);
             long upperV = bounds.length==1 ?
                                 upper :
-                                Math.min(upper,Long.valueOf(bounds[1]));
+                                Math.min(upper,Long.parseLong(bounds[1]));
             /* semantics check*/
             if(lowerV >= lower && lowerV<=upperV) {
                 ret = new HttpByteRange(lowerV, upperV);

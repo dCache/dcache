@@ -24,7 +24,7 @@ public class SnmpTest {
      }
    }else{
      String hostName = args[0] ;
-     int port = new Integer(args[1]);
+     int port = Integer.parseInt(args[1]);
      String oid ;
      if( args.length < 3 ) {
          oid = "1.3.6.1.2.1.1.3";

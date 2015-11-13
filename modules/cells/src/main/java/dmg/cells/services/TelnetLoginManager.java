@@ -67,7 +67,7 @@ public class      TelnetLoginManager
               throw new IllegalArgumentException("USAGE : ... " + __usage);
           }
 
-          _listenPort = new Integer(_args.argv(0));
+          _listenPort = Integer.parseInt(_args.argv(0));
 
           if( _args.argc() > 1 ) {
               _loginCellClass = _args.argv(1);

@@ -267,7 +267,7 @@ public class      StreamLoginCell
    }
    public String ac_set_timeout_$_1( Args args )
    {
-      _syncTimeout = new Integer(args.argv(0));
+      _syncTimeout = Integer.parseInt(args.argv(0));
       return "" ;
    }
    public String ac_set_sync_on( Args args ){

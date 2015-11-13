@@ -253,7 +253,7 @@ public class TransferCollector
             if (tmp != 0) {
                 return tmp;
             }
-            return Long.valueOf(o1.session.getSerialId()).compareTo(o2.session.getSerialId());
+            return Long.compare(o1.session.getSerialId(), o2.session.getSerialId());
         }
     }
 }

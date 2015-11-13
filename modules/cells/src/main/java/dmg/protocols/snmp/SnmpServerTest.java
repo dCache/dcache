@@ -59,7 +59,7 @@ public class SnmpServerTest implements SnmpEventListener {
         System.exit(4);
       }
       try{
-         new SnmpServerTest(new Integer(args[0])) ;
+         new SnmpServerTest(Integer.parseInt(args[0])) ;
       }catch( Exception e ){
          System.err.println( "Exception ; "+e ) ;
          System.exit(4);

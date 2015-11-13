@@ -387,7 +387,7 @@ public class      Snmp
    try{
       _argOID  = new SnmpOID( _oidText.getText() ) ;
       _argHost = InetAddress.getByName( _hostText.getText() ) ;
-      _argPort = new Integer(_portText.getText());
+      _argPort = Integer.parseInt(_portText.getText());
       _argCommunity = new SnmpOctetString( _communityText.getText() ) ;
       return true ;
    }catch( Exception ie ){

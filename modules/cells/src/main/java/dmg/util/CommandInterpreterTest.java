@@ -46,7 +46,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
       }
       int code ;
       try{
-        code = new Integer(args.argv(0));
+        code = Integer.parseInt(args.argv(0));
       }catch( Throwable e ){
         code = 0 ;
       }
@@ -85,7 +85,7 @@ public class CommandInterpreterTest extends CommandInterpreter {
       if( args.argc() == 2 ) {
           throw new CommandSyntaxException("Not yet installed");
       }
-      int i = new Integer(args.argv(0));
+      int i = Integer.parseInt(args.argv(0));
       return i == 0 ? null : "halloooo" ;
    }
    public String ac_set_values_mix_$_2_4( Args args ){ return "" ; }
