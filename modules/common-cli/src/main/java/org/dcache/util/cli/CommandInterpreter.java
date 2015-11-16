@@ -137,8 +137,9 @@ public class CommandInterpreter
         CommandEntry entry = _rootEntry;
         CommandEntry lastAcl = null;
         StringBuilder path = new StringBuilder();
-        while (args.argc() > 0) {
-            CommandEntry ce = entry.get(args.argv(0));
+        int i = 0;
+        while (i < args.argc()) {
+            CommandEntry ce = entry.get(args.argv(i));
             if (ce == null) {
                 break;
             }
@@ -147,8 +148,14 @@ public class CommandInterpreter
             }
             path.append(ce.getName()).append(' ');
             entry = ce;
-            args.shift();
+            i++;
         }
+
+        if (!entry.hasCommand()) {
+            throw new CommandSyntaxException("Command not found: " + args);
+        }
+
+        args.shift(i);
 
         String[] acls = lastAcl == null ? new String[0] : lastAcl.getACLs();
         try {
@@ -253,10 +260,6 @@ public class CommandInterpreter
         public Serializable execute(Args arguments)
                 throws CommandException
         {
-            if (_commandExecutor == null) {
-                throw new CommandSyntaxException("Command not found");
-            }
-
             return _commandExecutor.execute(arguments);
         }
 

@@ -254,9 +254,7 @@ public class Args implements Serializable
 
     public void shift(int n)
     {
-        while (n-- > 0) {
-            shift();
-        }
+        _arguments = _arguments.subList(Math.min(n, _arguments.size()), _arguments.size());
     }
 
     public ImmutableListMultimap<String,String> options()
