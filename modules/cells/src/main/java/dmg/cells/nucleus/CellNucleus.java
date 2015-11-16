@@ -244,7 +244,7 @@ public class CellNucleus implements ThreadFactory
         return __cellGlue.getCellInfo(name);
     }
     public CellInfo getCellInfo() {
-        return __cellGlue.getCellInfo(getCellName());
+        return _getCellInfo();
     }
 
     public Map<String, Object> getDomainContext()

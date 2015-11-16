@@ -164,7 +164,6 @@ public class CellAdapter
     {
         _args = args;
         _nucleus = new CellNucleus(this, cellName, cellType, executor);
-        _nucleus.start();
         _autoSetup = cellName + "Setup";
 
         if ((_args.argc() > 0) &&
@@ -201,6 +200,8 @@ public class CellAdapter
          * once we get better life cycle hooks.
          */
         if (!_startGate.isOpen()) {
+            _nucleus.start();
+
             executeSetupContext();
 
             if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGE_THREADS))) {

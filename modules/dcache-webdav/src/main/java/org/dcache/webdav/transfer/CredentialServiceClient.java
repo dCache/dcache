@@ -25,8 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.annotation.PostConstruct;
-
 import java.net.URI;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
@@ -39,6 +37,7 @@ import diskCacheV111.srm.dcache.SrmRequestCredentialMessage;
 import diskCacheV111.util.CacheException;
 
 import dmg.cells.nucleus.CellAddressCore;
+import dmg.cells.nucleus.CellLifeCycleAware;
 import dmg.cells.nucleus.CellMessageReceiver;
 import dmg.cells.nucleus.CellPath;
 
@@ -50,7 +49,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * This class acts as a client to credential services.
  */
 public class CredentialServiceClient
-    implements CellMessageReceiver
+    implements CellMessageReceiver, CellLifeCycleAware
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CredentialServiceClient.class);
 
@@ -64,10 +63,16 @@ public class CredentialServiceClient
         this.topic = topic;
     }
 
-    @PostConstruct
-    public void init()
+    @Override
+    public void afterStart()
     {
         topic.notify(new CredentialServiceRequest());
+    }
+
+    @Override
+    public void beforeStop()
+    {
+
     }
 
     public void messageArrived(CredentialServiceAnnouncement message)
