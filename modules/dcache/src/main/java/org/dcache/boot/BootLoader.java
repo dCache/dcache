@@ -137,10 +137,10 @@ public class BootLoader
             }
         } catch (IllegalArgumentException | CommandException | URISyntaxException | FileNotFoundException e) {
             handleFatalError(e.getMessage(), args);
-        } catch (IOException e) {
-            handleFatalError(e.toString(), args);
         } catch (RuntimeException e) {
             handleFatalError(e, args);
+        } catch (Exception e) {
+            handleFatalError(e.toString(), args);
         }
     }
 

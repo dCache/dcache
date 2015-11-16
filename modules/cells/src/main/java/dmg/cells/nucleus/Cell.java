@@ -13,6 +13,33 @@ package  dmg.cells.nucleus ;
 
   */
 public interface Cell {
+
+   /**
+    * {@code prepareStartup} is called exactly once by the nucleus during cell startup before
+    * message delivery begins and before the cell is visible to any other cell. It is
+    * called from the message thread of the nucleus.
+    *
+    * One may send messages from within the prepareStartup callback, but the cell
+    * will be unable to receive any replies, nor will it be able to receive notifications
+    * about delivery failures.
+    *
+    * If the method throws an exception, the cell will not start and {@link Cell#prepareRemoval}
+    * will be called right away.
+    *
+    * @param event
+    */
+   void prepareStartup(StartEvent event)
+      throws Exception;
+
+   /**
+    * {@code postStartup} is called once by the nucleus during cell startup after message
+    * delivery begins. It is only called if {@link Cell#prepareStartup} did not throw an
+    * exception. It is called from the message thread of the nucleus.
+    *
+    * @param event
+    */
+   void postStartup(StartEvent event);
+
    /**
      *  'getInfo' is frequently called by the Domain Kernel
      *  to obtain information out of the particular Cell.
@@ -27,20 +54,22 @@ public interface Cell {
      *  which is delivered by messageArrived will be a
      *  LastMessageEvent.
      */
-   void   messageArrived(MessageEvent me) ;
+   void messageArrived(MessageEvent me);
+
    /**
-     *  prepareRemoval is called by the kernel after a kill
-     *  of the cell has been initialized. The KillEvent contains
-     *  more informations about the initiater of the kill.
-     *  After the prepareRemoval returns, the threadGroup of the
-     *  cell is immediately stopped.
-     *
-     *  @param killEvent containing informations about the
-     *                   initiater.
-     *  @see  KillEvent
-     */
-   void   prepareRemoval(KillEvent killEvent) ;
-   void   exceptionArrived(ExceptionEvent ce) ;
+    * {@code prepareRemoval} is called by the nucleus after a kill of the cell has been
+    * initialized. The KillEvent contains more information about the initiator of the
+    * kill. After the prepareRemoval returns, the threadGroup of the cell is immediately
+    * stopped.
+    *
+    * This method is only called after {@link Cell#prepareStartup} has returned. It is
+    * called even if {@link Cell#prepareStartup} failed with an exception.
+    *
+    * @param killEvent containing informations about the initiater.
+    * @see  KillEvent
+    */
+   void prepareRemoval(KillEvent killEvent);
+   void exceptionArrived(ExceptionEvent ce);
 
     CellVersion getCellVersion();
 }

@@ -61,6 +61,10 @@ package org.dcache.alarms.logback;
 
 import org.slf4j.MDC;
 
+import dmg.cells.nucleus.KillEvent;
+import dmg.cells.nucleus.MessageEvent;
+import dmg.cells.nucleus.StartEvent;
+
 import org.dcache.cells.UniversalSpringCell;
 
 /**
@@ -73,15 +77,37 @@ import org.dcache.cells.UniversalSpringCell;
  *
  * @author arossi
  */
-public final class LogServerCell extends UniversalSpringCell {
+public final class LogServerCell extends UniversalSpringCell
+{
     public LogServerCell(String cellName, String arguments) {
         super(cellName, arguments);
     }
 
     @Override
-    protected void executeInit() throws Exception {
-        MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL,
-                AlarmsInternalFilter.ALARMS_INTERNAL);
-        super.executeInit();
+    public void prepareStartup(StartEvent event) throws Exception
+    {
+        MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL, AlarmsInternalFilter.ALARMS_INTERNAL);
+        super.prepareStartup(event);
+    }
+
+    @Override
+    public void postStartup(StartEvent event)
+    {
+        MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL, AlarmsInternalFilter.ALARMS_INTERNAL);
+        super.postStartup(event);
+    }
+
+    @Override
+    public void messageArrived(MessageEvent me)
+    {
+        MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL, AlarmsInternalFilter.ALARMS_INTERNAL);
+        super.messageArrived(me);
+    }
+
+    @Override
+    public void prepareRemoval(KillEvent ce)
+    {
+        MDC.put(AlarmsInternalFilter.ALARMS_INTERNAL, AlarmsInternalFilter.ALARMS_INTERNAL);
+        super.prepareRemoval(ce);
     }
 }

@@ -50,12 +50,13 @@ public class PoolInfoObserverV3 extends AbstractCell
         throws InterruptedException, ExecutionException
     {
         super(name, PoolInfoObserverV3.class.getName(), new Args(args));
-        doInit();
+        start();
     }
 
     @Override
-    protected void init()
+    protected void startUp() throws Exception
     {
+        super.startUp();
         _poolManager = new CellStub(this, new CellPath(POOL_MANAGER), 30000);
         _pool = new CellStub(this, null, 60000);
 
@@ -79,6 +80,11 @@ public class PoolInfoObserverV3 extends AbstractCell
                     }
                 }
             };
+    }
+
+    @Override
+    protected void started()
+    {
         _refreshThread.start();
     }
 

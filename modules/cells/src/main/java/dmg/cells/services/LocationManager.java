@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import dmg.cells.network.LocationManagerConnector;
-import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellRoute;

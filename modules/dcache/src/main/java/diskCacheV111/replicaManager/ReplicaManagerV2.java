@@ -6,6 +6,7 @@
 
 package diskCacheV111.replicaManager ;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import diskCacheV111.pools.PoolV2Mode;
@@ -380,7 +382,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     }
   }
 
-  public ReplicaManagerV2(String cellName, String args)
+  public ReplicaManagerV2(String cellName, String args) throws Exception
   {
     super(cellName, args);
 
@@ -415,8 +417,12 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     _adjThread.start();
 
     _log.info("Starting cell");
-    start();
-
+      try {
+          start();
+      } catch (ExecutionException e) {
+          Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+          throw Throwables.propagate(e.getCause());
+      }
   }
 
   // methods from the cellEventListener Interface

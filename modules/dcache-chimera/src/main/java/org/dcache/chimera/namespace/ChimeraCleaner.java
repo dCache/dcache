@@ -175,13 +175,14 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         throws InterruptedException, ExecutionException
     {
         super(cellName, args);
-        doInit();
+        start();
     }
 
     @Override
-    protected void init()
+    protected void startUp()
         throws Exception
     {
+        super.startUp();
         useInterpreter(true);
 
         _notificationStub = new CellStub(this);
@@ -214,12 +215,16 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
         addCommandListener(_pools);
 
         _poolStub = new CellStub(this, null, _replyTimeout, _replyTimeoutUnit);
+    }
 
+    @Override
+    protected void started()
+    {
         _cleanerTask =
-            _executor.scheduleWithFixedDelay(this,
-                                             _refreshInterval,
-                                             _refreshInterval,
-                                             _refreshIntervalUnit);
+                _executor.scheduleWithFixedDelay(this,
+                                                 _refreshInterval,
+                                                 _refreshInterval,
+                                                 _refreshIntervalUnit);
     }
 
     void dbInit(String jdbcUrl, String user, String pass )
@@ -246,7 +251,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     }
 
     @Override
-    public void cleanUp()
+    protected void cleanUp()
     {
         if (_requests != null) {
             _requests.shutdown();

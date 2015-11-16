@@ -116,7 +116,7 @@ public class Domain
     }
 
     public void start()
-        throws URISyntaxException, CommandException, IOException
+            throws Exception
     {
         initializeLogging();
 

@@ -163,7 +163,6 @@ public class CellAdapter
                        Executor executor)
     {
         _args = args;
-        _nucleus = new CellNucleus(this, cellName, cellType, executor);
         _autoSetup = cellName + "Setup";
 
         if ((_args.argc() > 0) &&
@@ -181,6 +180,14 @@ public class CellAdapter
             setCommandExceptionEnabled(false);
         }
 
+        _nucleus = new CellNucleus(this, cellName, cellType, executor);
+        if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGE_THREADS))) {
+            _nucleus.setMaximumPoolSize(_args.getIntOption(MAX_MESSAGE_THREADS));
+        }
+        if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGES_QUEUED))) {
+            _nucleus.setMaximumPoolSize(_args.getIntOption(MAX_MESSAGES_QUEUED));
+        }
+
         addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
         addCommandListener(_commandInterpreter.new HelpCommands());
     }
@@ -189,36 +196,12 @@ public class CellAdapter
      * starts the delivery of messages to this cell and
      * executes the auto and defined Setup context.
      * (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
-     * This method has to be called if the
-     * constructor has been used with the startNow
-     * argument set to 'false'.
      */
-    public synchronized void start()
+    public synchronized void start() throws ExecutionException, InterruptedException
     {
-        /* Suppress repeated open - in particular UniversalSpringCell will call
-         * open twice due to the way cell initialization is structured. REVISIT
-         * once we get better life cycle hooks.
-         */
+        // TODO: Temporary and imperfect workaround to tolerate duplucate start calls
         if (!_startGate.isOpen()) {
             _nucleus.start();
-
-            executeSetupContext();
-
-            if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGE_THREADS))) {
-                _nucleus.setMaximumPoolSize(_args.getIntOption(MAX_MESSAGE_THREADS));
-            }
-            if (!Strings.isNullOrEmpty(_args.getOption(MAX_MESSAGES_QUEUED))) {
-                _nucleus.setMaximumPoolSize(_args.getIntOption(MAX_MESSAGES_QUEUED));
-            }
-
-            _startGate.open();
-
-            if (_args.getBooleanOption("export")) {
-                export();
-            }
-            for (String topic : Splitter.on(",").omitEmptyStrings().split(_args.getOption("subscribe", ""))) {
-                subscribe(topic);
-            }
         }
     }
 
@@ -558,10 +541,20 @@ public class CellAdapter
         return sb.toString();
     }
 
-    protected void awaitStart()
-    {
-        _startGate.check();
-    }
+    /**
+     * has to be overwritten to perform any actions before this
+     * cell is started. 'startUp' is called before the first
+     * message arrives. The default behaviour is to do nothing.
+     */
+    protected void startUp() throws Exception {}
+
+    /**
+     * has to be overwritten to perform any actions after this
+     * cell is started. At this point message delivery has begun
+     * and the cell can receive requests and replies from other cells.
+     * The default behaviour is to do nothing.
+     */
+    protected void started() {}
 
     /**
      * has to be overwritten to perform any actions before this
@@ -569,7 +562,7 @@ public class CellAdapter
      * message has arrived. The default behaviour is to do nothing.
      *
      */
-    public void cleanUp() {  }
+    protected void cleanUp() {  }
     //
     // methods from the cellEventListener Interface
     //
@@ -708,6 +701,30 @@ public class CellAdapter
         }
     }
 
+    @Override
+    public void prepareStartup(StartEvent event) throws Exception
+    {
+        try {
+            startUp();
+            executeSetupContext();
+        } finally {
+            _startGate.open();
+        }
+    }
+
+    @Override
+    public void postStartup(StartEvent event)
+    {
+        if (_args.getBooleanOption("export")) {
+            export();
+        }
+        for (String topic : Splitter.on(",").omitEmptyStrings().split(_args.getOption("subscribe", ""))) {
+            subscribe(topic);
+        }
+
+        started();
+    }
+
     /**
      *   belongs to the Cell Interface.
      *   If this method is overwritten, the 'cleanUp'
@@ -764,6 +781,7 @@ public class CellAdapter
     public void   exceptionArrived(ExceptionEvent ce) {
         _log.info(" exceptionArrived "+ce);
     }
+
     /**
      *   belongs to the Cell Interface.
      *   If this method is overwritten, the getInfo(PrintWriter pw)
@@ -786,91 +804,80 @@ public class CellAdapter
      */
     @Override
     public void   messageArrived(MessageEvent me) {
-        if (!_startGate.isOpen()) {
-            CellMessage msg = me.getMessage();
-            if (!msg.isReply() && !(msg instanceof CellExceptionMessage)) {
-                NoRouteToCellException e =
-                        new NoRouteToCellException(msg, getCellName() + " is still initializing.");
-                msg.revertDirection();
-                msg.setMessageObject(e);
-                _nucleus.sendMessage(msg, true, true);
+        CellMessage msg = me.getMessage();
+        Serializable obj = msg.getMessageObject();
+
+        if (msg.isFinalDestination()) {
+            if (!msg.isReply() && msg.getLocalAge() > msg.getAdjustedTtl()) {
+                _log.warn("Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
+                          (obj instanceof CharSequence) ? '\'' + Ascii.truncate((CharSequence) obj, 50, "...") + '\'' : obj.getClass().getSimpleName(),
+                          msg.getLocalAge(), msg.getAdjustedTtl());
+                return;
             }
-        } else {
-            CellMessage msg = me.getMessage();
-            Serializable obj = msg.getMessageObject();
 
-            if (msg.isFinalDestination()) {
-                if (!msg.isReply() && msg.getLocalAge() > msg.getAdjustedTtl()) {
-                    _log.warn("Discarding {} because its age of {} ms exceeds its time to live of {} ms.",
-                              (obj instanceof CharSequence) ? '\'' + Ascii.truncate((CharSequence) obj, 50, "...") + '\'' : obj.getClass().getSimpleName(),
-                              msg.getLocalAge(), msg.getAdjustedTtl());
-                    return;
-                }
+            if (_useInterpreter && (! msg.isReply()) &&
+                ((obj instanceof String) ||
+                 (obj instanceof AuthorizedString))) {
 
-                if (_useInterpreter && (! msg.isReply()) &&
-                    ((obj instanceof String) ||
-                     (obj instanceof AuthorizedString))) {
-
-                    Serializable o;
-                    UOID uoid = msg.getUOID();
-                    EventLogger.deliverBegin(msg);
-                    try {
-                        o =  executeLocalCommand(obj);
-                        if (o == null) {
-                            return;
-                        }
-                    } catch (CommandThrowableException e) {
-                        o = e.getCause();
-                    } catch (CommandPanicException e) {
-                        o = e;
-                        _log.error("Command failed due to a bug, please contact support@dcache.org.", e);
-                    } catch (CommandException ce) {
-                        o = ce;
-                    } finally {
-                        EventLogger.deliverEnd(msg.getSession(), uoid);
-                    }
-
-                    if (o instanceof Reply) {
-                        Reply reply = (Reply) o;
-                        reply.deliver(this, msg);
-                    } else {
-                        msg.revertDirection();
-                        msg.setMessageObject(o);
-                        _nucleus.sendMessage(msg, true, true);
-                    }
-                } else if ((obj instanceof PingMessage) && _answerPing) {
-                    PingMessage ping = (PingMessage)obj;
-                    if (ping.isWayBack()) {
-                        messageArrived(msg);
-                        return;
-                    }
-                    ping.setWayBack();
-                    msg.revertDirection();
-                    _nucleus.sendMessage(msg, true, true);
-                } else {
-                    UOID uoid = msg.getUOID();
-                    EventLogger.deliverBegin(msg);
-                    try {
-                        messageArrived(msg);
-                    } finally {
-                        EventLogger.deliverEnd(msg.getSession(), uoid);
-                    }
-                }
-            } else if (obj instanceof PingMessage) {
-                msg.nextDestination();
-                _nucleus.sendMessage(msg, true, true);
-             } else {
+                Serializable o;
                 UOID uoid = msg.getUOID();
                 EventLogger.deliverBegin(msg);
                 try {
-                    messageToForward(msg);
+                    o =  executeLocalCommand(obj);
+                    if (o == null) {
+                        return;
+                    }
+                } catch (CommandThrowableException e) {
+                    o = e.getCause();
+                } catch (CommandPanicException e) {
+                    o = e;
+                    _log.error("Command failed due to a bug, please contact support@dcache.org.", e);
+                } catch (CommandException ce) {
+                    o = ce;
+                } finally {
+                    EventLogger.deliverEnd(msg.getSession(), uoid);
+                }
+
+                if (o instanceof Reply) {
+                    Reply reply = (Reply) o;
+                    reply.deliver(this, msg);
+                } else {
+                    msg.revertDirection();
+                    msg.setMessageObject(o);
+                    _nucleus.sendMessage(msg, true, true);
+                }
+            } else if ((obj instanceof PingMessage) && _answerPing) {
+                PingMessage ping = (PingMessage)obj;
+                if (ping.isWayBack()) {
+                    messageArrived(msg);
+                    return;
+                }
+                ping.setWayBack();
+                msg.revertDirection();
+                _nucleus.sendMessage(msg, true, true);
+            } else {
+                UOID uoid = msg.getUOID();
+                EventLogger.deliverBegin(msg);
+                try {
+                    messageArrived(msg);
                 } finally {
                     EventLogger.deliverEnd(msg.getSession(), uoid);
                 }
             }
+        } else if (obj instanceof PingMessage) {
+            msg.nextDestination();
+            _nucleus.sendMessage(msg, true, true);
+         } else {
+            UOID uoid = msg.getUOID();
+            EventLogger.deliverBegin(msg);
+            try {
+                messageToForward(msg);
+            } finally {
+                EventLogger.deliverEnd(msg.getSession(), uoid);
+            }
         }
-
     }
+
     private Serializable executeLocalCommand(Object command)
         throws CommandException  {
 

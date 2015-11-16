@@ -1,7 +1,6 @@
 package dmg.cells.nucleus ;
 
 import com.google.common.base.Throwables;
-import dmg.util.command.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,15 +12,16 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import dmg.util.AuthorizedString;
 import dmg.util.DomainInterruptHandler;
 import dmg.util.Gate;
+import dmg.util.command.Command;
 import dmg.util.logback.FilterShell;
 
 import org.dcache.alarms.AlarmMarkerFactory;
 import org.dcache.alarms.PredefinedAlarm;
-import org.dcache.util.Args;
 
 /**
   *
@@ -62,7 +62,8 @@ public class      SystemCell
          _log.info("Killer done");
       }
    }
-   public SystemCell( String cellDomainName  ){
+   public SystemCell( String cellDomainName  ) throws Exception
+   {
        super(cellDomainName, "");
 
        _nucleus   = getNucleus() ;
@@ -77,10 +78,12 @@ public class      SystemCell
 
        Thread.setDefaultUncaughtExceptionHandler(this);
 
-       start();
-//       setPrintoutLevel(0xff);
-
-//      addCellEventListener() ;
+       try {
+           start();
+       } catch (ExecutionException e) {
+           Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+           throw Throwables.propagate(e.getCause());
+       }
    }
 
    //

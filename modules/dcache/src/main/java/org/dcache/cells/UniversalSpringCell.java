@@ -25,8 +25,6 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -58,8 +56,6 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
 
 import diskCacheV111.util.CacheException;
 
@@ -188,7 +184,7 @@ public class UniversalSpringCell
              * cells and thus no other way to start the cell outside
              * the constructor.
              */
-            doInit();
+            start();
         } catch (InterruptedException e) {
             throw Throwables.propagate(e);
         } catch (ExecutionException e) {
@@ -197,9 +193,10 @@ public class UniversalSpringCell
     }
 
     @Override
-    protected void executeInit()
-        throws Exception
+    protected void startUp() throws Exception
     {
+        super.startUp();
+
         /* Process command line arguments.
          */
         Args args = getArgs();
@@ -207,15 +204,15 @@ public class UniversalSpringCell
 
         _setupController = args.getOpt("setupController");
         LOGGER.info("Setup controller set to "
-                + (_setupController == null ? "none" : _setupController));
+                    + (_setupController == null ? "none" : _setupController));
         _setupFile =
-            (!args.hasOption("setupFile"))
-            ? null
-            : new File(args.getOpt("setupFile"));
+                (!args.hasOption("setupFile"))
+                ? null
+                : new File(args.getOpt("setupFile"));
         _setupClass = args.getOpt("setupClass");
 
         checkArgument(_setupController == null || _setupClass != null,
-                "Setup class must be specified when a setup controller is used");
+                      "Setup class must be specified when a setup controller is used");
 
         if (_setupFile != null || _setupClass != null) {
             addCommandListener(new SetupCommandListener());
@@ -232,22 +229,16 @@ public class UniversalSpringCell
          */
         createContext();
 
-        /* This is a NOP except if somebody subclassed
-         * UniversalSpringCell.
-         */
-        init();
-
         /* The setup may be provided as static configuration in the
          * domain context, as a setup file on disk or through a setup
          * controller cell.
          */
         executeSetup();
+    }
 
-        /* Now that everything is instantiated and configured, we can
-         * start the cell.
-         */
-        start();
-
+    @Override
+    protected void started()
+    {
         /* Run the final initialisation hooks.
          */
         for (CellLifeCycleAware bean: _lifeCycleAware.values()) {
@@ -306,7 +297,7 @@ public class UniversalSpringCell
     private void executeSetup()
         throws IOException, CommandException
     {
-        executeDefinedSetup();
+        executeSetupContext();
 
         if( _setupFile != null && _setupFile.isFile() ) {
             for (CellSetupProvider provider: _setupProviders.values()) {

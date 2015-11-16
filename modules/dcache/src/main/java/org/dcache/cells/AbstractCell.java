@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import diskCacheV111.util.CacheException;
@@ -166,35 +164,6 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
     protected MessageProcessingMonitor _monitor;
 
     /**
-     * Strips the first argument if it starts with an exclamation
-     * mark.
-     */
-    private static Args stripDefinedSetup(Args args)
-    {
-        args = new Args(args);
-        if ((args.argc() > 0) && args.argv(0).startsWith("!")) {
-            args.shift();
-        }
-        return args;
-    }
-
-    /**
-     * Returns the defined setup declaration, or null if there is no
-     * defined setup.
-     *
-     * The defined setup is declared as the first argument and starts
-     * with an exclamation mark.
-     */
-    private static String getDefinedSetup(Args args)
-    {
-        if ((args.argc() > 0) && args.argv(0).startsWith("!")) {
-            return args.argv(0).substring(1);
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Returns the cell type specified as option 'cellType', or
      * "Generic" if the option was not given.
      */
@@ -238,112 +207,26 @@ public class AbstractCell extends CellAdapter implements CellMessageReceiver
 
     public AbstractCell(String cellName, String cellType, Args arguments, Executor executor)
     {
-        super(cellName, cellType, stripDefinedSetup(arguments), executor);
-        _definedSetup = getDefinedSetup(arguments);
+        super(cellName, cellType, arguments, executor);
         _optionParser = new OptionParser(arguments);
     }
 
-    /**
-     * Performs cell initialisation and starts cell message delivery.
-     *
-     * Initialisation is delegated to the <code>init</code> method,
-     * and subclasses should perform initilisation by overriding
-     * <code>init</code>. If the <code>init</code> method throws an
-     * exception, then the cell is immediately killed.
-     *
-     * @throws InterruptedException if the thread was interrupted
-     * @throws ExecutionException if init threw an exception
-     */
-    protected final void doInit()
-        throws InterruptedException, ExecutionException
+    @Override
+    protected void startUp() throws Exception
     {
-        try {
-            /* Execute initialisation in a different thread allocated
-             * from the correct thread group.
-             */
-            Callable<Void> task = new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    _optionParser.inject(AbstractCell.this);
+        _optionParser.inject(AbstractCell.this);
 
-                    _monitor = new MessageProcessingMonitor();
-                    _monitor.setCellEndpoint(AbstractCell.this);
-                    _monitor.setEnabled(_isMonitoringEnabled);
+        _monitor = new MessageProcessingMonitor();
+        _monitor.setCellEndpoint(AbstractCell.this);
+        _monitor.setEnabled(_isMonitoringEnabled);
 
-                    if (_cellClass != null) {
-                        getNucleus().setCellClass(_cellClass);
-                    }
-
-                    addMessageListener(AbstractCell.this);
-                    addCommandListener(_monitor);
-
-                    AbstractCell.this.executeInit();
-                    return null;
-                }
-            };
-            invokeOnMessageThread(task).get();
-
-            start();
-        } catch (InterruptedException e) {
-            LOGGER.info("Cell initialisation was interrupted.");
-            start();
-            kill();
-            throw e;
-        } catch (ExecutionException e) {
-            start();
-            kill();
-            throw e;
-        } catch (RuntimeException e) {
-            // A stacktrace from a RuntimeException is printed in Bootloader
-            start();
-            kill();
-            throw e;
+        if (_cellClass != null) {
+            getNucleus().setCellClass(_cellClass);
         }
-    }
 
-    /**
-     * Called from the initialization thread. By default the method
-     * first calls the <code>executeDefinedSetup</code> method,
-     * followed by the <code>init</code> method and the
-     * <code>startTimeoutTask</code> method. Subclasses may override
-     * this behaviour if they wish to modify when the defined setup is
-     * executed.
-     */
-    protected void executeInit()
-        throws Exception
-    {
-        executeDefinedSetup();
-        init();
+        addMessageListener(AbstractCell.this);
+        addCommandListener(_monitor);
     }
-
-    /**
-     * Executes the defined setup (specified with !variable in the
-     * argument string).
-     *
-     * By default, this method is called from
-     * <code>executeInit</code>.
-     */
-    protected void executeDefinedSetup()
-    {
-        if (_definedSetup != null) {
-            executeDomainContext(_definedSetup);
-        }
-    }
-
-    /**
-     * Initialize cell. This method should be overridden in subclasses
-     * to perform cell initialization.
-     *
-     * The method is called from the <code>executeInit</code> method,
-     * but using a thread belonging to the thread group of the
-     * associated cell nucleus. This ensures correct logging and
-     * correct thread group inheritance.
-     *
-     * It is valid for the method to call
-     * <code>CellAdapter.start</code> if early start of message
-     * delivery is needed.
-     */
-    protected void init() throws Exception {}
 
     /**
      * Returns the friendly cell name used for logging. It defaults to

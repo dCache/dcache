@@ -1,5 +1,7 @@
 package org.dcache.boot;
 
+import com.google.common.base.Throwables;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +44,16 @@ public class DomainConfigurationTest
         "b=2\n" +
         "c=5\n";
 
-    private final static SystemCell system = new SystemCell(DOMAIN_NAME);
+    private final static SystemCell system;
+
+    static {
+        try {
+            system = new SystemCell(DOMAIN_NAME);
+        } catch (Exception e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
     private static final String SOURCE = "source";
     private static final LineNumberReader EMPTY_READER =
             new LineNumberReader(new StringReader(""));

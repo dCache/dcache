@@ -1,5 +1,6 @@
 package dmg.cells.services;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -119,14 +121,19 @@ public class RoutingManager
      */
     private final ConcurrentMap<String, Collection<String>> _topicUpdates = Maps.newConcurrentMap();
 
-    public RoutingManager(String name, String arguments)
+    public RoutingManager(String name, String arguments) throws Exception
     {
         super(name,"System", arguments);
         _nucleus = getNucleus();
         _nucleus.addCellEventListener(this);
         Args args = getArgs();
         _watchCell = (args.argc() == 0) ? null : args.argv(0);
-        start();
+        try {
+            start();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+            throw Throwables.propagate(e.getCause());
+        }
     }
 
     @Override

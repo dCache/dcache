@@ -6,12 +6,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellAdapter;
@@ -57,7 +57,7 @@ public class      TelnetLoginManager
      "<port> {loginCell] [-dummy] [-localhost] [-anyuser] [-elch]" ;
   /**
   */
-  public TelnetLoginManager( String name , String args )
+  public TelnetLoginManager( String name , String args ) throws Exception
   {
        super(name, args);
        _nucleus       = getNucleus() ;
@@ -95,8 +95,12 @@ public class      TelnetLoginManager
           }
           _serverSocket  = new ServerSocket( _listenPort ) ;
        }catch( Exception e ){
-          start() ;
-          kill() ;
+           try {
+               start() ;
+           } catch (ExecutionException | InterruptedException e1) {
+               e.addSuppressed(e1);
+           }
+           kill() ;
           if( e instanceof IllegalArgumentException ) {
               throw (IllegalArgumentException) e;
           }
@@ -111,7 +115,12 @@ public class      TelnetLoginManager
 
 //       _nucleus.setPrintoutLevel( 0xf ) ;
 
-       start() ;
+      try {
+          start();
+      } catch (ExecutionException e) {
+          Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+          throw Throwables.propagate(e.getCause());
+      }
   }
   @Override
   public void cleanUp(){

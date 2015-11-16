@@ -36,8 +36,7 @@
         <property name="extractWAR" value="false"/>
     </bean>
 
-    <bean id="jetty" class="org.eclipse.jetty.server.Server"
-          init-method="start" destroy-method="stop">
+    <bean id="jetty" class="org.dcache.services.httpd.Server">
         <description>Embedded HTTP server</description>
         <constructor-arg ref="thread-pool"/>
         <property name="connectors" ref="connectors"/>

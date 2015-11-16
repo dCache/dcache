@@ -27,7 +27,6 @@ import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
@@ -42,7 +41,6 @@ import dmg.util.logback.RootFilterThresholds;
 import org.dcache.util.BoundedCachedExecutor;
 import org.dcache.util.BoundedExecutor;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.consumingIterable;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
@@ -162,35 +160,6 @@ public class CellNucleus implements ThreadFactory
         _messageExecutor = (executor == null) ? new BoundedCachedExecutor(this, 1) : new BoundedExecutor(executor, 1);
 
         LOGGER.info("Created {}", name);
-    }
-
-    /**
-     * Start the timeout task.
-     *
-     * Cells rely on periodic calls to executeMaintenanceTasks to implement
-     * message timeouts. This method starts a task which calls
-     * executeMaintenanceTasks every 20 seconds.
-     */
-    private void startTimeoutTask()
-    {
-        if (_timeoutTask != null) {
-            throw new IllegalStateException("Timeout task is already running");
-        }
-        _timeoutTask = new TimerTask() {
-            @Override
-            public void run()
-            {
-                try (CDC ignored = CDC.reset(CellNucleus.this)) {
-                    try {
-                        executeMaintenanceTasks();
-                    } catch (Throwable e) {
-                        Thread t = Thread.currentThread();
-                        t.getUncaughtExceptionHandler().uncaughtException(t, e);
-                    }
-                }
-            }
-        };
-        _timer.schedule(_timeoutTask, 20000, 20000);
     }
 
     /**
@@ -860,15 +829,50 @@ public class CellNucleus implements ThreadFactory
         }
     }
 
-    public void start()
+    /**
+     * Starts the cell. This includes calling the startup callbacks of the cell, registering
+     * the cell with the cell glue and initiate cell message delivery. If startup fails, the
+     * cell is torn down.
+     *
+     * Must only be called once.
+     */
+    public void start() throws ExecutionException, InterruptedException
     {
         checkState(_state.compareAndSet(INITIAL, ACTIVE));
+        try {
+            _messageExecutor.submit(wrapLoggingContext(this::doStart)).get();
+            _timeoutTask = new TimerTask() {
+                @Override
+                public void run()
+                {
+                    try (CDC ignored = CDC.reset(CellNucleus.this)) {
+                        try {
+                            executeMaintenanceTasks();
+                        } catch (Throwable e) {
+                            Thread t = Thread.currentThread();
+                            t.getUncaughtExceptionHandler().uncaughtException(t, e);
+                        }
+                    }
+                }
+            };
+            _timer.schedule(_timeoutTask, 20000, 20000);
+        } catch (InterruptedException | ExecutionException | RuntimeException e) {
+            shutdown(new KillEvent(new CellPath(_cellName), 0));
+            throw e;
+        }
+    }
 
-        //
-        // make ourself known to the world
-        //
+    private Void doStart() throws Exception
+    {
+        StartEvent event = new StartEvent(new CellPath(_cellName), 0);
+        _cell.prepareStartup(event);
         __cellGlue.addCell(_cellName, this);
-        startTimeoutTask();
+        try {
+            _cell.postStartup(event);
+        } catch (RuntimeException e) {
+            LOGGER.error("Cell post startup callback failed: " + e);
+        }
+        return null;
     }
 
     void shutdown(KillEvent event)
@@ -880,11 +884,7 @@ public class CellNucleus implements ThreadFactory
 
             /* Shut down message executor.
              */
-            ExecutorService executor;
-            synchronized (this) {
-                executor = _messageExecutor;
-            }
-            if (!MoreExecutors.shutdownAndAwaitTermination(executor, 2, TimeUnit.SECONDS)) {
+            if (!MoreExecutors.shutdownAndAwaitTermination(_messageExecutor, 2, TimeUnit.SECONDS)) {
                 LOGGER.warn("Failed to flush message queue during shutdown.");
             }
 

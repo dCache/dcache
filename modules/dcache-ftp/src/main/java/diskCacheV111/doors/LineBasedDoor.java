@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -17,7 +16,6 @@ import java.util.concurrent.ExecutorService;
 import dmg.cells.nucleus.CellCommandListener;
 import dmg.cells.nucleus.CellInfoProvider;
 import dmg.cells.nucleus.CellMessageReceiver;
-import dmg.cells.nucleus.CellMessageSender;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.CommandExitException;
 import dmg.util.StreamEngine;
@@ -70,7 +68,7 @@ public class LineBasedDoor
         this.executor = new CDCExecutorServiceDecorator<>(executor);
 
         try {
-            doInit();
+            start();
         } catch (InterruptedException e) {
             shutdownGate.countDown();
         } catch (ExecutionException e) {
@@ -80,10 +78,10 @@ public class LineBasedDoor
     }
 
     @Override
-    protected void init()
+    protected void startUp()
         throws Exception
     {
-        super.init();
+        super.startUp();
 
         Transfer.initSession(getArgs().getBooleanOption("hasSiteUniqueName"), true);
 
@@ -96,6 +94,11 @@ public class LineBasedDoor
         if (interpreter instanceof CellMessageReceiver) {
             addMessageListener((CellMessageReceiver) interpreter);
         }
+    }
+
+    @Override
+    protected void started()
+    {
         executor.execute(this);
     }
 
@@ -130,8 +133,6 @@ public class LineBasedDoor
     @Override
     public void run()
     {
-        awaitStart();
-
         try {
             SequentialExecutor executor = new SequentialExecutor(this.executor);
             try {

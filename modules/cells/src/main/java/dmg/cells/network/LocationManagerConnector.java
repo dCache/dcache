@@ -1,5 +1,6 @@
 package dmg.cells.network;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,7 @@ public class LocationManagerConnector
     private String _status = "disconnected";
     private int _retries;
 
-    public LocationManagerConnector(String cellName, String args)
+    public LocationManagerConnector(String cellName, String args) throws Exception
     {
         super(cellName, "System", args);
 
@@ -46,7 +47,12 @@ public class LocationManagerConnector
         _domain = a.getOpt("domain");
         _lm = a.getOpt("lm");
 
-        start();
+        try {
+            start();
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+            throw Throwables.propagate(e.getCause());
+        }
 
         _thread = getNucleus().newThread(this, "TunnelConnector");
         _thread.start();

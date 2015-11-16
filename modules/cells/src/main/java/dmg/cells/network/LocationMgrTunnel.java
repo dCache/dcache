@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellDomainInfo;
@@ -86,7 +87,11 @@ public class LocationMgrTunnel
             _rawOut = new BufferedOutputStream(engine.getOutputStream());
             _rawIn = new BufferedInputStream(engine.getInputStream());
         } catch (IOException e) {
-            start();
+            try {
+                start();
+            } catch (ExecutionException | InterruptedException e1) {
+                e.addSuppressed(e1);
+            }
             kill();
             throw e;
         }
@@ -171,8 +176,14 @@ public class LocationMgrTunnel
             _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
             _log.warn("Error while reading from tunnel: {}", e.toString());
+        } catch (ExecutionException e) {
+            _log.error("Error during tunnel startup: {}", e.toString());
         } finally {
-            start();
+            try {
+                start();
+            } catch (ExecutionException | InterruptedException e) {
+                _log.error("Error during tunnel startup: {}", e.toString());
+            }
             kill();
         }
     }

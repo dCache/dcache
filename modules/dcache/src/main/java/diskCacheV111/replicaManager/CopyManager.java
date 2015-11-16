@@ -6,6 +6,7 @@
 
 package diskCacheV111.replicaManager;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.util.PnfsId;
@@ -85,11 +87,16 @@ public class CopyManager extends CellAdapter {
        }
    }
 
-   public CopyManager( String cellName , String args )
+   public CopyManager( String cellName , String args ) throws Exception
    {
       super(cellName, args);
       _poolStub = new CellStub(this, null, 10, MINUTES);
-      start() ;
+       try {
+           start() ;
+       } catch (ExecutionException e) {
+           Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+           throw Throwables.propagate(e.getCause());
+       }
    }
 
    private void resetParameter( String from , String to , boolean precious ){

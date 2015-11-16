@@ -72,14 +72,14 @@ public class DirectoryLookUpPool extends AbstractCell
         _poolName = poolName;
         _args = getArgs();
 
-        doInit();
+        start();
     }
 
     @Override
-    protected void init()
-        throws IllegalArgumentException
+    protected void startUp() throws Exception
     {
-        _log.info("Lookup Pool " + _poolName + " starting");
+        _log.info("Lookup Pool {} starting", _poolName);
+        super.startUp();
 
         _pnfs = new PnfsHandler(this, _pnfsManager);
         ListDirectoryHandler listHandler = new ListDirectoryHandler(_pnfs);

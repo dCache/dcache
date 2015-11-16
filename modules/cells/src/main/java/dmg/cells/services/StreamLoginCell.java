@@ -1,5 +1,6 @@
 package dmg.cells.services ;
 
+import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,8 @@ public class      StreamLoginCell
   private String         _lastCommand    = "<init>" ;
   private Reader         _reader;
   private CellNucleus    _nucleus;
-  public StreamLoginCell( String name , StreamEngine engine ){
+  public StreamLoginCell( String name , StreamEngine engine ) throws Exception
+  {
      super(name, "");
 
      _engine  = engine ;
@@ -69,9 +71,14 @@ public class      StreamLoginCell
 
       useInterpreter(false) ;
 
-      start();
+      try {
+          start();
+      } catch (ExecutionException e) {
+          Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
+          throw Throwables.propagate(e.getCause());
+      }
 
-     _workerThread = _nucleus.newThread( this , "worker" ) ;
+      _workerThread = _nucleus.newThread( this , "worker" ) ;
      _workerThread.start() ;
   }
   @Override
