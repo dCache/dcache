@@ -36,6 +36,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.cells.nucleus.CellCommandListener;
@@ -289,9 +290,9 @@ public class HsmSet
 
     /**
      * Returns the name of an HSM accessible for this pool and which
-     * contains the given file. Returns null if no such HSM exists.
+     * contains the given file.
      */
-    public String getInstanceName(FileAttributes fileAttributes)
+    public String getInstanceName(FileAttributes fileAttributes) throws FileNotInCacheException
     {
         StorageInfo file = fileAttributes.getStorageInfo();
         if (file.locations().isEmpty() && _hsm.containsKey(file.getHsm())) {
@@ -303,7 +304,7 @@ public class HsmSet
                 return location.getAuthority();
             }
         }
-        return null;
+        throw new FileNotInCacheException("Pool does not have access to any of the HSM locations " + file.locations());
     }
 
     public static final String hh_hsm_create = "<type> [<name> [<provider>]] [-<key>=<value>] ...";
