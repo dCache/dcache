@@ -1,14 +1,12 @@
 package dmg.cells.nucleus;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Longs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -487,28 +485,32 @@ class CellGlue
         return false;
     }
 
-    private void sendException(CellMessage msg,
-                               String routeTarget)
+    private void sendException(CellMessage msg, String routeTarget)
             throws SerializationException
     {
-        if (msg instanceof CellExceptionMessage) {
-            LOGGER.warn(
-                    "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
-                    msg.getDestinationPath(), ((CellExceptionMessage) msg.decode()).getException().getDestinationPath(),
-                    routeTarget, _cellDomainName);
+        if (msg.getSourceAddress().getCellName().equals("*")) {
+            Serializable messageObject = msg.decode().getMessageObject();
+            if (messageObject instanceof NoRouteToCellException) {
+                LOGGER.warn(
+                        "Unable to notify {} about delivery failure of message sent to {}: No route for {} in {}.",
+                        msg.getDestinationPath(), ((NoRouteToCellException) messageObject).getDestinationPath(),
+                        routeTarget, _cellDomainName);
+            } else {
+                LOGGER.warn(
+                        "Message from {} could not be delivered because no route to {} is known.",
+                        msg.getSourcePath(), routeTarget);
+            }
         } else {
             LOGGER.debug(
                     "Message from {} could not be delivered because no route to {} is known; the sender will be notified.",
                     msg.getSourcePath(), routeTarget);
-            NoRouteToCellException exception =
-                    new NoRouteToCellException(msg,
-                            "Route for >" + routeTarget +
-                            "< not found at >" + _cellDomainName + "<");
-            CellPath retAddr = msg.getSourcePath().revert();
-            CellExceptionMessage ret = new CellExceptionMessage(retAddr, exception);
-            ret.setLastUOID(msg.getUOID());
-            ret.addSourceAddress(_domainAddress);
-            sendMessage(ret, true, true);
+            CellMessage envelope = new CellMessage(msg.getSourcePath().revert(),
+                                                   new NoRouteToCellException(msg,
+                                                                              "Route for >" + routeTarget +
+                                                                              "< not found at >" + _cellDomainName + "<"));
+            envelope.setLastUOID(msg.getUOID());
+            envelope.addSourceAddress(_domainAddress);
+            sendMessage(envelope, true, true);
         }
     }
 

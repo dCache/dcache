@@ -119,7 +119,13 @@ public boolean equals( Object obj ){
   public CellPath    getDestinationPath(){ return _destination ; }
   public CellPath    getSourcePath(){ return _source ; }
   public Serializable getMessageObject(){ return (Serializable) _message  ; }
-  public void        setMessageObject( Serializable obj ){ _message = obj ; }
+
+  public void setMessageObject(Serializable obj)
+  {
+      checkState(_mode == ORIGINAL_MODE);
+      _message = obj;
+  }
+
   public void        revertDirection(){
      _destination = _source.revert();
      _source      = new CellPath() ;
