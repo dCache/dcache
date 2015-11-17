@@ -1238,60 +1238,6 @@ class FsSqlDriver {
                      });
     }
 
-    /**
-     *
-     * @param inode
-     * @return Access Latency or null if not defined
-     */
-    AccessLatency getAccessLatency(FsInode inode) {
-        return _jdbc.query("SELECT iaccessLatency FROM t_access_latency WHERE ipnfsid=?",
-                           ps -> ps.setString(1, inode.toString()),
-                           rs -> rs.next() ? AccessLatency.getAccessLatency(rs.getInt("iaccessLatency")) : null);
-    }
-
-    /**
-     *
-     * @param inode
-     * @return Retention Policy or null if not defined
-     */
-    RetentionPolicy getRetentionPolicy(FsInode inode) {
-        return _jdbc.query("SELECT iretentionPolicy FROM t_retention_policy WHERE ipnfsid=?",
-                           ps -> ps.setString(1, inode.toString()),
-                           rs -> rs.next() ? RetentionPolicy.getRetentionPolicy(rs.getInt("iretentionPolicy")) : null);
-    }
-
-    void setAccessLatency(FsInode inode, AccessLatency accessLatency) {
-        int cnt = _jdbc.update("UPDATE t_access_latency SET iaccessLatency=? WHERE ipnfsid=?",
-                               ps -> {
-                                   ps.setInt(1, accessLatency.getId());
-                                   ps.setString(2, inode.toString());
-                               });
-        if (cnt == 0) {
-            // no records updated - insert a new one
-            _jdbc.update("INSERT INTO t_access_latency VALUES(?,?)",
-                         ps -> {
-                             ps.setString(1, inode.toString());
-                             ps.setInt(2, accessLatency.getId());
-                         });
-        }
-    }
-
-    void setRetentionPolicy(FsInode inode, RetentionPolicy accessLatency) {
-        int cnt = _jdbc.update("UPDATE t_retention_policy SET iretentionPolicy=? WHERE ipnfsid=?",
-                               ps -> {
-                                   ps.setInt(1, accessLatency.getId());
-                                   ps.setString(2, inode.toString());
-                               });
-        if (cnt == 0) {
-            // no records updated - insert a new one
-            _jdbc.update("INSERT INTO t_retention_policy VALUES(?,?)",
-                         ps -> {
-                             ps.setString(1, inode.toString());
-                             ps.setInt(2, accessLatency.getId());
-                         });
-        }
-    }
-
     void removeStorageInfo(FsInode inode) {
         _jdbc.update("DELETE FROM t_storageinfo WHERE ipnfsid=?", inode.toString());
     }
