@@ -275,7 +275,7 @@
         </rollback>
     </changeSet>
 
-    <changeSet author="behrmann" id="6" dbms="postgresql">
+    <changeSet author="behrmann" id="6.1" dbms="postgresql">
         <createProcedure>
             CREATE OR REPLACE FUNCTION
                 path2inodes(root varchar, path varchar, OUT inode t_inodes)
@@ -310,7 +310,7 @@
                     WHEN elements[i] = '.' THEN
                         CONTINUE;
                     WHEN elements[i] = '..' THEN
-                        IF id = '000000000000000000000000000000000000' THEN
+                        IF dir = '000000000000000000000000000000000000' THEN
                             CONTINUE;
                         ELSE
                             SELECT t_inodes.* INTO inode
