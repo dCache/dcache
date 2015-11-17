@@ -506,10 +506,10 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
             Who who = ace.getWho();
 
             if ((who == Who.EVERYONE)
-                    || (who == Who.OWNER & Subjects.hasUid(subject, owner))
-                    || (who == Who.OWNER_GROUP & Subjects.hasGid(subject, group))
-                    || (who == Who.GROUP & Subjects.hasGid(subject, ace.getWhoID()))
-                    || (who == Who.USER & Subjects.hasUid(subject, ace.getWhoID()))) {
+                    || (who == Who.OWNER && Subjects.hasUid(subject, owner))
+                    || (who == Who.OWNER_GROUP && Subjects.hasGid(subject, group))
+                    || (who == Who.GROUP && Subjects.hasGid(subject, ace.getWhoID()))
+                    || (who == Who.USER && Subjects.hasUid(subject, ace.getWhoID()))) {
 
                 if (ace.getType() == AceType.ACCESS_DENIED_ACE_TYPE) {
                     return Access.DENY;
