@@ -7,10 +7,12 @@ import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.util.cdb.CdbException;
 import dmg.util.cdb.CdbLockable;
 
 import org.dcache.util.Args;
@@ -51,46 +53,36 @@ public class       UserMgrCell
      "remove-denied:user:*" ,
 
   } ;
-  /**
-  */
-  public UserMgrCell( String name , String argString ) throws Exception {
 
-      super(name, argString);
+    public UserMgrCell(String name, String argString) throws ExecutionException, InterruptedException
+    {
+        super(name, argString);
 
-      _cellName      = name ;
+        _cellName = name;
+        _args = getArgs();
 
-      _args = getArgs() ;
+        start();
+    }
 
+    @Override
+    protected void startUp() throws Exception
+    {
+        if (_args.argc() < 1) {
+            throw new IllegalArgumentException("Usage : ... <dbPath>");
+        }
 
-      try{
-
-         if( _args.argc() < 1 ) {
-             throw new IllegalArgumentException("Usage : ... <dbPath>");
-         }
-
-         try{
-            _userDb = new UserDb( new File( _args.argv(0) ) , false ) ;
-         }catch( Exception eee ){
-            _userDb = new UserDb( new File( _args.argv(0) ) , true ) ;
+        try {
+            _userDb = new UserDb(new File(_args.argv(0)), false);
+        } catch (Exception eee) {
+            _userDb = new UserDb(new File(_args.argv(0)), true);
             //
             // not really necessary, because 'root' is trusted
             // anyway.
             //
-            createRootUser( _userDb ) ;
+            createRootUser(_userDb);
+        }
+    }
 
-         }
-
-//         setPrintoutLevel( 0xf ) ;
-
-      }catch( Exception e ){
-         start() ;
-         kill() ;
-         throw e ;
-      }
-
-      start() ;
-
-  }
   private void createRootUser( UserDb db )throws Exception {
       UserHandle user = db.createUser( "root" ) ;
       user.open( CdbLockable.WRITE ) ;

@@ -38,6 +38,8 @@ import dmg.cells.services.login.LoginManager;
 
 import org.dcache.util.Args;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class LocationManager extends CellAdapter {
 
    private static final Logger _log =
@@ -1199,52 +1201,48 @@ public class LocationManager extends CellAdapter {
      *   Server Options : -strict=[yes|no] -perm=<helpFilename> -setup=<setupFile>
      *
      */
-   public LocationManager( String name , String args )throws Exception {
+   public LocationManager(String name, String args) throws Exception
+   {
        super(name, "System", args);
-       _args      = getArgs() ;
-       _nucleus   = getNucleus() ;
-       try{
-           int    port;
-           InetAddress host;
-           if( _args.argc() < 1 ) {
-               throw new
-                       IllegalArgumentException("Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]");
-           }
-
-           if( _args.argc() == 1 ){
-              //
-              // we are a server and a client
-              //
-              port = Integer.parseInt( _args.argv(0) );
-              host = InetAddress.getLoopbackAddress();
-              _server = new Server( port , _args ) ;
-              _log.info("Server Setup Done") ;
-           }else{
-              port = Integer.parseInt( _args.argv(1) );
-              host = InetAddress.getByName( _args.argv(0) ) ;
-           }
-           if( !_args.hasOption("noclient") ){
-              _client = new Client( host , port , _args ) ;
-              _log.info("Client started");
-           }
-       } catch(IOException | IllegalArgumentException e) {
-           start();
-           kill();
-           throw e;
-       } catch(RuntimeException e){
-           _log.warn(e.toString(), e) ;
-           start();
-           kill();
-           throw e;
-       }
-       start() ;
-
-       if(_server != null) {
-           _server.start();
-       }
+       _args = getArgs();
+       _nucleus = getNucleus();
+       start();
    }
 
-   @Override
+    @Override
+    protected void startUp() throws Exception
+    {
+        int port;
+        InetAddress host;
+        checkArgument(_args.argc() >= 1, "Usage : ... [<host>] <port> [-noclient] [-clientPort=<UDP port number>]");
+
+        if (_args.argc() == 1) {
+            //
+            // we are a server and a client
+            //
+            port = Integer.parseInt(_args.argv(0));
+            host = InetAddress.getLoopbackAddress();
+            _server = new Server(port, _args);
+            _log.info("Server Setup Done");
+        } else {
+            port = Integer.parseInt(_args.argv(1));
+            host = InetAddress.getByName(_args.argv(0));
+        }
+        if (!_args.hasOption("noclient")) {
+            _client = new Client(host, port, _args);
+            _log.info("Client started");
+        }
+    }
+
+    @Override
+    protected void started()
+    {
+        if (_server != null) {
+            _server.start();
+        }
+    }
+
+    @Override
    public void getInfo( PrintWriter pw ){
       if( _client != null ){
         pw.println( "Client\n--------") ;

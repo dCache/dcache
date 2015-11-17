@@ -13,6 +13,7 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import diskCacheV111.vehicles.DCapProtocolInfo;
@@ -29,6 +30,8 @@ import dmg.util.Formats;
 import org.dcache.util.Args;
 import org.dcache.vehicles.FileAttributes;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
  /**
   *  @Author: Patrick Fuhrmann
   *
@@ -41,66 +44,58 @@ public class FileHoppingManager extends CellAdapter {
    private static final Logger _log =
        LoggerFactory.getLogger(FileHoppingManager.class);
 
-   private CellNucleus _nucleus;
-   private Args        _args;
+   private final CellNucleus _nucleus;
    private Map<String, Entry> _map           = new TreeMap<>() ;
    private final Object      _mapLock       = new Object() ;
    private int         _totalRequests;
-   private File        _configFile;
+   private final File        _configFile;
 
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
 
-   public FileHoppingManager( String name , String args )throws Exception {
+     public FileHoppingManager(String name, String arguments) throws ExecutionException, InterruptedException
+     {
+         super(name, FileHoppingManager.class.getName(), arguments);
 
-      super( name , FileHoppingManager.class.getName(), args);
+         Args args = getArgs();
+         checkArgument(args.argc() >= 1, "Usage : <configFileName> OPTIONS ");
+         _configFile = new File(args.argv(0));
+         _nucleus = getNucleus();
 
-      _args    = getArgs() ;
-      _nucleus = getNucleus() ;
-
-      try{
-
-         if( _args.argc() < 1 ) {
-             throw new
-                     IllegalArgumentException(
-                     "Usage : <configFileName> OPTIONS ");
-         }
-
-         _configFile = new File( _args.argv(0) ) ;
-
-         if( ! _configFile.exists() ){
-            File configDir = _configFile.getParentFile() ;
-            if( ( configDir == null ) || ! configDir.exists() ) {
-                throw new
-                        IllegalArgumentException("Config directory doesn't exit : " + configDir);
-            }
-
-            try{
-               if( ! _configFile.createNewFile() ) {
-                   throw new
-                           IllegalArgumentException("Couldn't create config file : " + _configFile);
-               }
-            }catch(Exception ee){
-               throw new
-                  IllegalArgumentException("Couldn't create config file : "+_configFile+" : "+ee.getMessage());
-            }
-         }
-
-      }catch(Exception ee){
-         ee.printStackTrace();
          start();
-         kill() ;
-         throw ee ;
-      }
+     }
 
+     @Override
+     protected void startUp() throws Exception
+     {
+         if (!_configFile.exists()) {
+             File configDir = _configFile.getParentFile();
+             if ((configDir == null) || !configDir.exists()) {
+                 throw new
+                         IllegalArgumentException("Config directory doesn't exit : " + configDir);
+             }
 
-      runSetupFile( _configFile ) ;
+             try {
+                 if (!_configFile.createNewFile()) {
+                     throw new
+                             IllegalArgumentException("Couldn't create config file : " + _configFile);
+                 }
+             } catch (Exception ee) {
+                 throw new
+                         IllegalArgumentException(
+                         "Couldn't create config file : " + _configFile + " : " + ee.getMessage());
+             }
+         }
 
-      _nucleus.export();
+         runSetupFile(_configFile);
+     }
 
-      start() ;
+     @Override
+     protected void started()
+     {
+         _nucleus.export();
+     }
 
-   }
-   private void runSetupFile( File setupFile ) throws Exception {
+     private void runSetupFile(File setupFile ) throws Exception {
 
       if( ! setupFile.exists() ) {
           throw new

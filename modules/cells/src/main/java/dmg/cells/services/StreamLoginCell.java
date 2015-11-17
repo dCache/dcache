@@ -54,33 +54,64 @@ public class      StreamLoginCell
   private String         _lastCommand    = "<init>" ;
   private Reader         _reader;
   private CellNucleus    _nucleus;
-  public StreamLoginCell( String name , StreamEngine engine ) throws Exception
-  {
-     super(name, "");
 
-     _engine  = engine ;
-     _nucleus = getNucleus() ;
-     _reader  = engine.getReader() ;
-     _in      = new ControlBufferedReader( _reader ) ;
-     _out     = new PrintWriter( engine.getWriter() ) ;
-     _subject    = engine.getSubject();
-     _host    = engine.getInetAddress() ;
+    public StreamLoginCell(String name, StreamEngine engine) throws ExecutionException, InterruptedException
+    {
+        super(name, "");
 
-     _shell        = new CellShell( _nucleus ) ;
-     _destination  = getCellName() ;
+        _engine = engine;
+        _nucleus = getNucleus();
 
-      useInterpreter(false) ;
+        start();
+    }
 
-      try {
-          start();
-      } catch (ExecutionException e) {
-          Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-          throw Throwables.propagate(e.getCause());
-      }
+    @Override
+    protected void startUp()
+    {
+        _reader = _engine.getReader();
+        _in = new ControlBufferedReader(_reader);
+        _out = new PrintWriter(_engine.getWriter());
+        _subject = _engine.getSubject();
+        _host = _engine.getInetAddress();
 
-      _workerThread = _nucleus.newThread( this , "worker" ) ;
-     _workerThread.start() ;
-  }
+        _shell = new CellShell(_nucleus);
+        _destination = getCellName();
+
+        useInterpreter(false);
+    }
+
+    @Override
+    protected void started()
+    {
+        _workerThread = _nucleus.newThread(this, "worker");
+        _workerThread.start();
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        _log.info("Clean up called");
+        println("");
+        if (_out != null) {
+            try {
+                _out.close();
+            } catch (Exception ee) {
+                _log.warn("ignoring exception on PrintWriter.close {}", ee.toString());
+            }
+        }
+        if (_workerThread != null) {
+            _workerThread.interrupt();
+        }
+        try {
+            if (!_engine.getSocket().isClosed()) {
+                _log.info("Close socket");
+                _engine.getSocket().close();
+            }
+        } catch (Exception ignored) {
+        }
+        _log.info("finished");
+    }
+
   @Override
   public void run(){
     if( Thread.currentThread() == _workerThread ){
@@ -117,28 +148,6 @@ public class      StreamLoginCell
 
     }
   }
-  @Override
-  public void cleanUp() {
-
-    _log.info("Clean up called");
-    println("");
-    try {
-        _out.close();
-     } catch (Exception ee) {
-        _log.warn("ignoring exception on PrintWriter.close {}", ee.toString());
-     }
-     _workerThread.interrupt() ;
-     try {
-         if (!_engine.getSocket().isClosed()) {
-             _log.info("Close socket");
-             _engine.getSocket().close();
-         }
-     } catch (Exception ee) {
-     }
-//     _readyGate.check() ;
-     _log.info( "finished" ) ;
-
-   }
   public void println( String str ){
      _out.println( str ) ;
      _out.flush() ;

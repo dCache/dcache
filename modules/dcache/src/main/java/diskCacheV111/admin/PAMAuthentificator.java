@@ -76,105 +76,101 @@ public class PAMAuthentificator  extends CellAdapter {
    private final Crypt _crypt  = new Crypt() ;
 
 
-   public PAMAuthentificator( String cellName , String args ) throws Exception
-   {
-      super(cellName, PAMAuthentificator.class.getName(), args);
+    public PAMAuthentificator(String cellName, String args) throws Exception
+    {
+        super(cellName, PAMAuthentificator.class.getName(), args);
 
-      _nucleus  = getNucleus() ;
-      _cellName = cellName;
-      _args     = getArgs() ;
+        _nucleus = getNucleus();
+        _cellName = cellName;
+        _args = getArgs();
 
-      useInterpreter( true ) ;
+        start();
+    }
 
-      try {
+    @Override
+    protected void startUp() throws Exception
+    {
+        // Usage: ... [-service=<login_service>]
+        //            [-syspassword=</etc/password>]
+        //            [-dcachepassword=<dCachePasswordFile>]
+        //            [-users=[file:]<passwordFilePath>|nis:<nisserver>|ldap:<ldapserver>]
+        //            [-provider=<nisProviderClass>]
+        //            [-external=<binToCheckPam>]
+        //            [-usepam]
+        //
 
-         // Usage: ... [-service=<login_service>]
-         //            [-syspassword=</etc/password>]
-         //            [-dcachepassword=<dCachePasswordFile>]
-         //            [-users=[file:]<passwordFilePath>|nis:<nisserver>|ldap:<ldapserver>]
-         //            [-provider=<nisProviderClass>]
-         //            [-external=<binToCheckPam>]
-         //            [-usepam]
-         //
-
-         _service = _args.getOpt( "service" ) ;
-         if( _service == null ){
+        _service = _args.getOpt("service");
+        if (_service == null) {
             _service = "dcache";
-            _log.info("'service' not defined. Using '"+_service+"' as default service");
-         }
+            _log.info("'service' not defined. Using '" + _service + "' as default service");
+        }
 
 
-         String tmp = _args.getOpt("external") ;
-         if( tmp == null ){
-
-             if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
-                _sysPassword = new UserPasswords( new File( tmp ) ) ;
-                _log.info( "using as SystemPasswordfile : "+tmp ) ;
+        String tmp = _args.getOpt("external");
+        if (tmp == null) {
+            if ((tmp = _args.getOpt("syspassword")) != null) {
+                _sysPassword = new UserPasswords(new File(tmp));
+                _log.info("using as SystemPasswordfile : {}", tmp);
             }
-            if( ( tmp = _args.getOpt( "dcachepassword"  ) ) != null ){
-                _egPassword  = new UserPasswords( new File( tmp ) ) ;
-                _log.info( "using as dCachePassword : "+tmp ) ;
-            }
-
-             if( ( tmp = _args.getOpt("usepam") ) != null ){
-                _pam = new PAM_Auth( _service );
-                _log.info( "using PAM mudule") ;
-             }
-         }else{
-            _execAuth = new ExecAuth(tmp) ;
-         }
-
-
-
-         if( ( tmp = _args.getOpt( "users"  ) ) != null ){
-            _log.info( "using as userService : "+tmp ) ;
-
-            if( tmp.startsWith("nis:") ){
-
-               String provider = _args.getOpt("provider") ;
-               provider = provider == null ? "com.sun.jndi.nis.NISCtxFactory" : provider ;
-               Hashtable<String, String> env = new Hashtable<>();
-               env.put(Context.INITIAL_CONTEXT_FACTORY, provider );
-               // String url = tmp.substring(tmp.indexOf(":")+1);
-               // url = "nis://nisserv6.desy.de/desy.afs" ;
-               env.put(Context.PROVIDER_URL, tmp );
-               try{
-                   _userServiceNIS = new InitialDirContext(env);
-               }catch( NamingException ne ){
-                   _log.warn("Can't InitialDirContext(env) "+ne ) ;
-                   throw ne ;
-               }
-               _userServiceType = USER_SERVICE_NIS ;
-            }else if( tmp.startsWith("ldap:") ){
-               throw new
-               IllegalArgumentException("LDap not yet supported" ) ;
-
-            }else if( tmp.startsWith("file:") ){
-               _userServiceFile = new UserPasswords( new File( tmp.substring(5) ) ) ;
-               _userServiceType = USER_SERVICE_FILE ;
-            }else if( tmp.startsWith("class:") ){
-               _userServiceProvider = initUserServiceProvider( tmp.substring(6) ) ;
-               _userServiceType   = USER_SERVICE_CLASS ;
-            }else if( (!tmp.contains(":")) ){
-               _userServiceFile = new UserPasswords( new File( tmp ) ) ;
-               _userServiceType = USER_SERVICE_FILE ;
-            }else {
-                throw new
-                        IllegalArgumentException("Invalid user service provider : " + tmp);
+            if ((tmp = _args.getOpt("dcachepassword")) != null) {
+                _egPassword = new UserPasswords(new File(tmp));
+                _log.info("using as dCachePassword : {}", tmp);
             }
 
-         }
+            if ((tmp = _args.getOpt("usepam")) != null) {
+                _pam = new PAM_Auth(_service);
+                _log.info("using PAM mudule");
+            }
+        } else {
+            _execAuth = new ExecAuth(tmp);
+        }
 
 
-      }catch(Exception e) {
-         start();
-         kill();
-         throw e;
-      }
-      export();
-      start() ;
-   }
-   private UserMetaDataProvider initUserServiceProvider( String className )
+        if ((tmp = _args.getOpt("users")) != null) {
+            _log.info("using as userService : {}", tmp);
+
+            if (tmp.startsWith("nis:")) {
+                String provider = _args.getOpt("provider");
+                provider = provider == null ? "com.sun.jndi.nis.NISCtxFactory" : provider;
+                Hashtable<String, String> env = new Hashtable<>();
+                env.put(Context.INITIAL_CONTEXT_FACTORY, provider);
+                // String url = tmp.substring(tmp.indexOf(":")+1);
+                // url = "nis://nisserv6.desy.de/desy.afs" ;
+                env.put(Context.PROVIDER_URL, tmp);
+                try {
+                    _userServiceNIS = new InitialDirContext(env);
+                } catch (NamingException ne) {
+                    _log.warn("Can't InitialDirContext(env) " + ne);
+                    throw ne;
+                }
+                _userServiceType = USER_SERVICE_NIS;
+            } else if (tmp.startsWith("ldap:")) {
+                throw new IllegalArgumentException("LDap not yet supported");
+
+            } else if (tmp.startsWith("file:")) {
+                _userServiceFile = new UserPasswords(new File(tmp.substring(5)));
+                _userServiceType = USER_SERVICE_FILE;
+            } else if (tmp.startsWith("class:")) {
+                _userServiceProvider = initUserServiceProvider(tmp.substring(6));
+                _userServiceType = USER_SERVICE_CLASS;
+            } else if ((!tmp.contains(":"))) {
+                _userServiceFile = new UserPasswords(new File(tmp));
+                _userServiceType = USER_SERVICE_FILE;
+            } else {
+                throw new IllegalArgumentException("Invalid user service provider : " + tmp);
+            }
+
+        }
+        useInterpreter(true);
+    }
+
+    @Override
+    protected void started()
+    {
+        export();
+    }
+
+    private UserMetaDataProvider initUserServiceProvider(String className )
       throws Exception {
 
       Class<?>[] argClasses = { CellAdapter.class } ;

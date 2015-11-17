@@ -83,7 +83,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
 
   // Resilient pool Group
 
-  private final ResilientPools _resilientPools;
+  private ResilientPools _resilientPools;
 
   public class ResilientPools {
     private List<String> _resPoolsList;
@@ -382,50 +382,50 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     }
   }
 
-  public ReplicaManagerV2(String cellName, String args) throws Exception
-  {
-    super(cellName, args);
+    public ReplicaManagerV2(String cellName, String args) throws ExecutionException, InterruptedException
+    {
+        super(cellName, args);
+        _args = getArgs();
+        _log.info("Starting cell");
+        start();
+    }
 
-// Instantiate classes
-    _args = getArgs();
+    @Override
+    protected void startUp() throws Exception
+    {
+        parseDBArgs();
 
-    parseDBArgs();
+        _log.debug("Setup database with: URL={} user={} passwd=********", _jdbcUrl, _user);
 
-    _log.debug("Setup database with: URL="+_jdbcUrl+" user="+_user+" passwd=********");
+        _dbrmv2 = new ReplicaDbV1(this, _jdbcUrl, _user, _pass);
 
-    _dbrmv2 = new ReplicaDbV1(this, _jdbcUrl, _user, _pass);
+        _adj = new Adjuster(_repMin, _repMax, _dbrmv2);
+        _watchPools = new WatchPools(_dbrmv2);
 
-    _adj        = new Adjuster( _repMin, _repMax, _dbrmv2);
-    _watchPools = new WatchPools(_dbrmv2);
+        _log.info("Parse arguments");
+        parseArgs();
 
-    _log.info("Parse arguments");
-    parseArgs();
+        _resilientPools = new ResilientPools(_args);
 
-    _resilientPools = new ResilientPools( _args );
+        _initDbRunnable = new InitDbRunnable(_delayDBStartTO);
 
-    _initDbRunnable = new InitDbRunnable( _delayDBStartTO );
+        _log.info("Create threads");
+        _dbThread = getNucleus().newThread(_initDbRunnable, "RepMgr-initDB");
+        _adjThread = getNucleus().newThread(_adj, "RepMgr-Adjuster");
+        _watchDog = getNucleus().newThread(_watchPools, "RepMgr-PoolWatchDog");
+    }
 
-    _log.info("Create threads");
-    _dbThread  = getNucleus().newThread(_initDbRunnable,"RepMgr-initDB");
-    _adjThread = getNucleus().newThread(_adj,           "RepMgr-Adjuster");
-    _watchDog  = getNucleus().newThread(_watchPools,    "RepMgr-PoolWatchDog");
+    @Override
+    protected void started()
+    {
+        _log.info("Start Init DB  thread");
+        _dbThread.start();
 
-    _log.info("Start Init DB  thread");
-    _dbThread.start();
+        _log.info("Start Adjuster thread");
+        _adjThread.start();
+    }
 
-    _log.info("Start Adjuster thread");
-    _adjThread.start();
-
-    _log.info("Starting cell");
-      try {
-          start();
-      } catch (ExecutionException e) {
-          Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-          throw Throwables.propagate(e.getCause());
-      }
-  }
-
-  // methods from the cellEventListener Interface
+    // methods from the cellEventListener Interface
   @Override
   public void cleanUp()
   {

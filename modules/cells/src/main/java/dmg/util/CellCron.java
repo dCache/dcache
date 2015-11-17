@@ -18,14 +18,6 @@ public class CellCron implements Runnable {
 
    private final TreeSet<TimerTask> _list = new TreeSet<>() ;
 
-   public CellCron(){ this(true);}
-   public CellCron(boolean autostart){
-
-       if( autostart ) {
-           new Thread(this).start();
-       }
-
-   }
    public  class TimerTask implements Comparable<TimerTask>  {
 
       private Long     _time;
@@ -163,89 +155,5 @@ public class CellCron implements Runnable {
       }
 
 
-   }
-
-
-   public static void main( String [] x ) throws Exception {
-
-        if( x.length < 2 ){
-	  System.out.println("Usage : <hour> <minute> [<hour> <minute> [..]] ");
-	  System.exit(4);
-	}
-      CellCron timer = new CellCron() ;
-
-
-      for( int i = 0 ; i < x.length ; i+=2 ){
-
-         timer.add( Integer.parseInt(x[i]) , Integer.parseInt(x[i+1]) ,
-                    new TaskRunnable(){
-                       @Override
-                       public void run( TimerTask task ){
-                           System.out.println("!!! Cron fired "+task);
-                           task.repeatNextHour();
-                       }
-                    } ,
-		    "Task-"+x[i]+"-"+x[i+1]
-                   ) ;
-
-      }
-       while(true){
-	   Iterator<TimerTask> i = timer.iterator() ;
-	   System.out.println("Now = "+new Date());
-	   while( i.hasNext() ){
-               System.out.println("    "+i.next().toString());
-	   }
-
-           Thread.sleep(10000L);
-
-       }
-
-/*	Calendar calendar = new GregorianCalendar();
-	Date trialTime = new Date();
-	calendar.setTime(trialTime);
-        calendar.set( Calendar.MINUTE , 59 ) ;
-        System.out.println("Data : "+calendar.getTime());
-	// print out a bunch of interesting things
-	System.out.println("ERA: " + calendar.get(Calendar.ERA));
-	System.out.println("YEAR: " + calendar.get(Calendar.YEAR));
-	System.out.println("MONTH: " + calendar.get(Calendar.MONTH));
-	System.out.println("WEEK_OF_YEAR: " + calendar.get(Calendar.WEEK_OF_YEAR));
-	System.out.println("WEEK_OF_MONTH: " + calendar.get(Calendar.WEEK_OF_MONTH));
-	System.out.println("DATE: " + calendar.get(Calendar.DATE));
-	System.out.println("DAY_OF_MONTH: " + calendar.get(Calendar.DAY_OF_MONTH));
-	System.out.println("DAY_OF_YEAR: " + calendar.get(Calendar.DAY_OF_YEAR));
-	System.out.println("DAY_OF_WEEK: " + calendar.get(Calendar.DAY_OF_WEEK));
-	System.out.println("DAY_OF_WEEK_IN_MONTH: "
-                	   + calendar.get(Calendar.DAY_OF_WEEK_IN_MONTH));
-	System.out.println("AM_PM: " + calendar.get(Calendar.AM_PM));
-	System.out.println("HOUR: " + calendar.get(Calendar.HOUR));
-	System.out.println("HOUR_OF_DAY: " + calendar.get(Calendar.HOUR_OF_DAY));
-	System.out.println("MINUTE: " + calendar.get(Calendar.MINUTE));
-	System.out.println("SECOND: " + calendar.get(Calendar.SECOND));
-	System.out.println("MILLISECOND: " + calendar.get(Calendar.MILLISECOND));
-	System.out.println("ZONE_OFFSET: "
-                	   + (calendar.get(Calendar.ZONE_OFFSET)/(60*60*1000)));
-	System.out.println("DST_OFFSET: "
-                	   + (calendar.get(Calendar.DST_OFFSET)/(60*60*1000)));
-
-
-        while( true ){
-	    System.out.println(" " + calendar.getTime());
-	    calendar.set(Calendar.DAY_OF_YEAR,calendar.get(Calendar.DAY_OF_YEAR)+1);
-	}
-       	if( x.length == 0 ){
-	  System.out.println("Usage : <pattern> [<example>]");
-	  System.exit(4);
-	}
-
-        DateFormat df = new SimpleDateFormat(x[0]) ;
-
-	System.out.println("Current data : "+df.format(new Date()));
-
-	if( x.length > 1 ){
-	   Date d = df.parse( x[1] ) ;
-	   System.out.println(d.toString());
-	}
-	*/
    }
 }

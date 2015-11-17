@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import dmg.cells.nucleus.CellAdapter;
@@ -59,47 +60,42 @@ public class      DCapDoor
     /**
      * DCAP command interpreter.
      */
-    private final DcapProtocolInterpreter _interpreter;
+    private DcapProtocolInterpreter _interpreter;
 
     /////////////////////////////////////////////////////////////////////
     //
     //         the constructor
     //
-    public DCapDoor( String name , StreamEngine engine , Args args )
-           throws Exception {
-	//
-        // the cell stuff
-        //
+    public DCapDoor( String name , StreamEngine engine , Args args ) throws ExecutionException, InterruptedException
+    {
         super(name , DCapDoor.class.getName(), args);
-        _nucleus = getNucleus() ;
+        _engine = engine;
+        _nucleus = getNucleus();
+        start();
+    }
 
-        try{
-           //
-           // all we need, to talk to the client.
-           //
-	   _engine   = engine;
-	   _reader   = engine.getReader();
-	   _in       = new BufferedReader( _reader );
-	   _out      = new PrintWriter(engine.getWriter(), true);
-            _subject = engine.getSubject();
-	   _host     = engine.getInetAddress().toString();
+    @Override
+    protected void startUp() throws Exception
+    {
+        //
+        // all we need, to talk to the client.
+        //
+        _reader   = _engine.getReader();
+        _in       = new BufferedReader( _reader );
+        _out      = new PrintWriter(_engine.getWriter(), true);
+        _subject = _engine.getSubject();
+        _host     = _engine.getInetAddress().toString();
 
-           _interpreter = new DCapDoorInterpreterV3(this, _out, _subject, engine.getInetAddress());
-           addCommandListener(_interpreter);
-        }catch(Exception ee ){
-           start() ;
-           kill() ;
-           throw ee ;
-        }
+        _interpreter = new DCapDoorInterpreterV3(this, _out, _subject, _engine.getInetAddress());
+        addCommandListener(_interpreter);
+
         //
         // we have to use CellAdapapter.newThread instead of
         // new Thread because we want to have the worker
         // thread to be a member of the cell ThreadGroup.
         //
-	_workerThread = _nucleus.newThread( this , "worker" );
-	_workerThread.start();
-
-        start() ;
+        _workerThread = _nucleus.newThread( this , "worker" );
+        _workerThread.start();
     }
 
     @Override

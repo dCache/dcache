@@ -62,31 +62,45 @@ public class      SystemCell
          _log.info("Killer done");
       }
    }
-   public SystemCell( String cellDomainName  ) throws Exception
-   {
-       super(cellDomainName, "");
 
-       _nucleus   = getNucleus() ;
-       _cellShell = new CellShell( getNucleus() ) ;
-       _cellShell.addCommandListener(this);
-       _cellShell.addCommandListener(new LogbackShell());
-       _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
-       _cellShell.addCommandListener(_cellShell.new HelpCommands());
-       useInterpreter( false ) ;
+    public SystemCell(String cellDomainName) throws ExecutionException, InterruptedException
+    {
+        super(cellDomainName, "");
 
-       _runtime.addShutdownHook( new TheKiller() ) ;
+        _nucleus = getNucleus();
+        _cellShell = new CellShell(getNucleus());
 
-       Thread.setDefaultUncaughtExceptionHandler(this);
+        start();
+    }
 
-       try {
-           start();
-       } catch (ExecutionException e) {
-           Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-           throw Throwables.propagate(e.getCause());
-       }
-   }
+    @Override
+    protected void startUp()
+    {
+        _cellShell.addCommandListener(this);
+        _cellShell.addCommandListener(new LogbackShell());
+        _cellShell.addCommandListener(new FilterShell(_nucleus.getLoggingThresholds()));
+        _cellShell.addCommandListener(_cellShell.new HelpCommands());
+        useInterpreter(false);
 
-   //
+        _runtime.addShutdownHook(new TheKiller());
+    }
+
+    @Override
+    protected void started()
+    {
+        Thread.setDefaultUncaughtExceptionHandler(this);
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        shutdownSystem();
+        _log.info("Opening shutdown lock");
+        _shutdownLock.open();
+        System.exit(0);
+    }
+
+    //
    // interface from Cell
    //
    public String toString(){
@@ -214,15 +228,6 @@ public class      SystemCell
                break;
            }
        }
-    }
-
-    @Override
-    public void cleanUp()
-    {
-        shutdownSystem();
-        _log.info("Opening shutdown lock");
-       _shutdownLock.open();
-       System.exit(0);
     }
 
     @Override

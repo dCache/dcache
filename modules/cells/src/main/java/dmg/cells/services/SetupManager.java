@@ -37,43 +37,37 @@ public class SetupManager extends CellAdapter {
    //   create dmg.cells.services.SetupManager setupManager
    //              "<configDirectory> [-defaultClass=<defaultClass>]"
    //
-   public SetupManager( String cellName , String args ) throws Exception {
-
+   public SetupManager(String cellName, String args) throws Exception
+   {
       super(cellName, args);
 
-      _cellName = cellName ;
-      _args     = getArgs() ;
-      _nucleus  = getNucleus() ;
+      _cellName = cellName;
+      _args = getArgs();
+      _nucleus = getNucleus();
 
-      try{
-
-         if( _args.argc() == 0 ) {
-             throw new
-                     IllegalArgumentException("Config directory not specified");
-         }
-
-         _config = new File( _configDirectory = _args.argv(0) ) ;
-         if( ! _config.isDirectory() ) {
-             throw new
-                     IllegalArgumentException("Config directory not found : " + _config);
-         }
-
-         _defaultClass = _args.getOpt("defaultClass") ;
-         _defaultClass = _defaultClass == null ? "default" : _defaultClass ;
-
-         _log.info("defaultClass set to '"+_defaultClass+"'");
-
-
-      }catch(Exception ee ){
-         start() ;
-         kill() ;
-         throw ee ;
-      }
-      useInterpreter( true ) ;
-      start() ;
-
+      start();
    }
-   private void getSetup( SetupInfoMessage info ) throws Exception {
+
+   @Override
+   protected void startUp() throws Exception
+   {
+      if (_args.argc() == 0) {
+         throw new IllegalArgumentException("Config directory not specified");
+      }
+
+      _config = new File(_configDirectory = _args.argv(0));
+      if (!_config.isDirectory()) {
+         throw new IllegalArgumentException("Config directory not found : " + _config);
+      }
+
+      _defaultClass = _args.getOpt("defaultClass");
+      _defaultClass = _defaultClass == null ? "default" : _defaultClass;
+
+      _log.info("defaultClass set to {}", _defaultClass);
+      useInterpreter(true);
+   }
+
+   private void getSetup(SetupInfoMessage info ) throws Exception {
       String className = info.getSetupClass() ;
       String name      = info.getSetupName() ;
       if( name == null ) {

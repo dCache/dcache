@@ -13,6 +13,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -52,33 +53,35 @@ public class      LoginCell
   private String         _lastCommand    = "<init>" ;
   private Reader         _reader;
 
-  public LoginCell( String name , StreamEngine engine , Args args )
-         throws Exception {
-     super(name, args);
-     _engine  = engine ;
+    public LoginCell(String name, StreamEngine engine, Args args) throws ExecutionException, InterruptedException
+    {
+        super(name, args);
+        _engine = engine;
+        start();
+    }
 
-     try{
-         _reader = engine.getReader() ;
-         _in   = new BufferedReader( _reader ) ;
-         _out  = new PrintWriter( engine.getWriter() ) ;
-         _subject = engine.getSubject();
-         _host = engine.getInetAddress() ;
+    @Override
+    protected void startUp() throws Exception
+    {
+        _reader = _engine.getReader();
+        _in = new BufferedReader(_reader);
+        _out = new PrintWriter(_engine.getWriter());
+        _subject = _engine.getSubject();
+        _host = _engine.getInetAddress();
 
-         _loadShells( args ) ;
+        _loadShells(getArgs());
 
-     }catch( Exception e ){
-        start() ;
-        kill() ;
-        throw e ;
-     }
-     useInterpreter(false) ;
-     _prompt  = getCellName() ;
-     _workerThread = new Thread( this ) ;
+        useInterpreter(false);
+        _prompt = getCellName();
+        _workerThread = new Thread(this);
+    }
 
-     _workerThread.start() ;
+    @Override
+    protected void started()
+    {
+        _workerThread.start();
+    }
 
-     start() ;
-  }
   private static final Class<?>[][] _signature = {
      {
        String.class ,

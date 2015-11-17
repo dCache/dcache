@@ -23,6 +23,8 @@ import dmg.cells.nucleus.CellNucleus;
 
 import org.dcache.util.Args;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class HsmControlOsm extends CellAdapter implements Runnable {
 
     private static final Logger _log =
@@ -30,8 +32,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
 
     private static final int MAX_QUEUE_SIZE = 100 ;
 
-    private CellNucleus _nucleus ;
-    private Args        _args ;
+    private final CellNucleus _nucleus ;
     private int         _requests;
     private int         _failed;
     private int         _outstandingRequests;
@@ -39,30 +40,30 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
 
     private final BlockingQueue<CellMessage>  _fifo = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
-    public HsmControlOsm( String name , String  args ) throws Exception {
-       super(name, args);
-       _nucleus = getNucleus() ;
-       _args    = getArgs() ;
-       try{
-          if( _args.argc() < 1 ) {
-              throw new
-                      IllegalArgumentException("Usage : ... <database>");
-          }
+    public HsmControlOsm(String name, String arguments) throws Exception
+    {
+        super(name, arguments);
+        _nucleus = getNucleus();
+        Args args = getArgs();
+        checkArgument(args.argc() >= 1, "Usage : ... <database>");
+        _database = new File(args.argv(0));
+        start();
+    }
 
-          _database = new File( _args.argv(0) ) ;
-          if( ! _database.isDirectory() ) {
-              throw new
-                      IllegalArgumentException("Not a directory : " + _database);
-          }
-       }catch(Exception e){
-          start() ;
-          kill() ;
-          throw e ;
-       }
-       useInterpreter( true );
-       _nucleus.newThread( this , "queueWatch").start() ;
-       start();
-       export();
+    @Override
+    protected void startUp() throws Exception
+    {
+        if (!_database.isDirectory()) {
+            throw new IllegalArgumentException("Not a directory : " + _database);
+        }
+        useInterpreter( true );
+        _nucleus.newThread( this , "queueWatch").start() ;
+    }
+
+    @Override
+    protected void started()
+    {
+        export();
     }
 
     @Override

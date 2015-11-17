@@ -73,21 +73,21 @@ public class LoginManager
 
     private final CellNucleus _nucleus;
     private final Args _args;
-    private final ListenThread _listenThread;
-    private final String _locationManager;
+    private ListenThread _listenThread;
+    private String _locationManager;
     private final AtomicInteger _connectionDeniedCounter = new AtomicInteger();
     private final AtomicInteger _loginCounter = new AtomicInteger();
     private final AtomicInteger _loginFailures = new AtomicInteger();
-    private final CellVersion _version;
-    private final Constructor<?> _authConstructor;
-    private final ScheduledExecutorService _scheduledExecutor;
-    private final ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
-    private final CellPath _authenticator;
-    private final KeepAliveTask _keepAlive;
-    private final LoginBrokerPublisher _loginBrokerPublisher;
-    private final String _protocol;
-    private final Class<?> _authClass;
-    private final LoginCellFactory _loginCellFactory;
+    private CellVersion _version;
+    private Constructor<?> _authConstructor;
+    private ScheduledExecutorService _scheduledExecutor;
+    private ConcurrentMap<String, Object> _children = new ConcurrentHashMap<>();
+    private CellPath _authenticator;
+    private KeepAliveTask _keepAlive;
+    private LoginBrokerPublisher _loginBrokerPublisher;
+    private String _protocol;
+    private Class<?> _authClass;
+    private LoginCellFactory _loginCellFactory;
 
     private volatile boolean _sending = true;
     private volatile int _maxLogin = -1;
@@ -118,127 +118,121 @@ public class LoginManager
 
         _nucleus = getNucleus();
         _args = getArgs();
-        try {
-            if (_args.argc() < 2) {
-                throw new
-                        IllegalArgumentException(
-                        "USAGE : ... <listenPort> <loginCell>" +
-                                " [-prot=telnet|raw] [-auth=<authCell>]" +
-                                " [-maxLogin=<n>|-1]" +
-                                " [-keepAlive=<seconds>]" +
-                                " [-acceptErrorWait=<msecs>]" +
-                                " [args givenToLoginClass]");
-            }
-
-            int listenPort = Integer.parseInt(_args.argv(0));
-            String loginCell = _args.argv(1);
-
-            Args childArgs = new Args(argString.replaceFirst("(^|\\s)-export(=true|=false)?($|\\s)", " -hasSiteUniqueName$2 "));
-            childArgs.shift();
-            childArgs.shift();
-
-            _protocol = checkProtocol(_args.getOpt("prot"));
-            LOGGER.info("Using protocol : {}", _protocol);
-
-            // get the authentication
-            _authenticator = new CellPath(_args.getOption("authenticator", "pam"));
-            _authClass = toAuthClass(_args.getOpt("auth"), _protocol);
-            Constructor<?> authConstructor;
-            if (_authClass != null) {
-                authConstructor = _authClass.getConstructor(AUTH_CON_SIGNATURE);
-                LOGGER.trace("Using authentication constructor: {}", authConstructor);
-            } else {
-                authConstructor = null;
-                LOGGER.trace("No authentication used");
-            }
-            _authConstructor = authConstructor;
-
-            String maxLogin = _args.getOpt("maxLogin");
-            if (maxLogin != null) {
-                try {
-                    _maxLogin = Integer.parseInt(maxLogin);
-                } catch (NumberFormatException ee) {/* bad values ignored */}
-            }
-
-            if (_maxLogin < 0) {
-                LOGGER.info("Maximum login feature disabled");
-            } else {
-                LOGGER.info("Maximum logins set to: {}", _maxLogin);
-            }
-
-            _scheduledExecutor = Executors.newSingleThreadScheduledExecutor(_nucleus);
-
-            // keep alive
-            long keepAlive = TimeUnit.SECONDS.toMillis(_args.getLongOption("keepAlive", 0L));
-            LOGGER.info("Keep alive set to {} ms", keepAlive);
-            _keepAlive = new KeepAliveTask();
-            _keepAlive.schedule(keepAlive);
-
-
-            // get the location manager
-            _locationManager = _args.getOpt("lm");
-
-            _loginCellFactory = new LoginCellFactoryBuilder()
-                    .setName(loginCell)
-                    .setLoginManagerName(getCellName())
-                    .setArgs(childArgs)
-                    .build();
-            _version = new CellVersion(Version.of(_loginCellFactory));
-
-            String topic = _args.getOpt("brokerTopic");
-            if (topic != null) {
-                Splitter byComma = Splitter.on(",").omitEmptyStrings();
-                Splitter byColon = Splitter.on(":").omitEmptyStrings();
-                _loginBrokerPublisher = new LoginBrokerPublisher();
-                _loginBrokerPublisher.beforeSetup();
-                _loginBrokerPublisher.setExecutor(_scheduledExecutor);
-                _loginBrokerPublisher.setTopic(topic);
-                _loginBrokerPublisher.setCellEndpoint(this);
-                _loginBrokerPublisher.setTags(byComma.splitToList(_args.getOption("brokerTags")));
-                _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
-                _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
-                _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
-                _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
-                _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
-                _loginBrokerPublisher.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
-                _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("root")));
-                _loginBrokerPublisher.setReadPaths(byColon.splitToList(_args.getOption("brokerReadPaths", "/")));
-                _loginBrokerPublisher.setWritePaths(byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
-                addCommandListener(_loginBrokerPublisher);
-                addCellEventListener(_loginBrokerPublisher);
-                _loginBrokerPublisher.afterSetup();
-
-                if (_maxLogin < 0) {
-                    _maxLogin = 100000;
-                }
-            } else {
-                _loginBrokerPublisher = null;
-            }
-
-            _nucleus.addCellEventListener(new LoginEventListener());
-
-            _listenThread = new ListenThread(listenPort);
-            _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
-
-            if (_locationManager != null) {
-                new AsynchronousLocationRegistrationTask(_locationManager).run();
-            }
-        } catch (IllegalArgumentException e) {
-            start();
-            kill();
-            throw e;
-        } catch (RuntimeException e) {
-            LOGGER.warn("LoginManger >" + getCellName() + "< got exception : " + e, e);
-            start();
-            kill();
-            throw e;
-        } catch (Exception e) {
-            start();
-            kill();
-            throw e;
-        }
 
         start();
+    }
+
+    @Override
+    protected void startUp() throws Exception
+    {
+        if (_args.argc() < 2) {
+            throw new
+                    IllegalArgumentException(
+                    "USAGE : ... <listenPort> <loginCell>" +
+                    " [-prot=telnet|raw] [-auth=<authCell>]" +
+                    " [-maxLogin=<n>|-1]" +
+                    " [-keepAlive=<seconds>]" +
+                    " [-acceptErrorWait=<msecs>]" +
+                    " [args givenToLoginClass]");
+        }
+
+        int listenPort = Integer.parseInt(_args.argv(0));
+        String loginCell = _args.argv(1);
+
+        Args childArgs = new Args(_args.toString().replaceFirst("(^|\\s)-export(=true|=false)?($|\\s)", " -hasSiteUniqueName$2 "));
+        childArgs.shift();
+        childArgs.shift();
+
+        _protocol = checkProtocol(_args.getOpt("prot"));
+        LOGGER.info("Using protocol : {}", _protocol);
+
+        // get the authentication
+        _authenticator = new CellPath(_args.getOption("authenticator", "pam"));
+        _authClass = toAuthClass(_args.getOpt("auth"), _protocol);
+        Constructor<?> authConstructor;
+        if (_authClass != null) {
+            authConstructor = _authClass.getConstructor(AUTH_CON_SIGNATURE);
+            LOGGER.trace("Using authentication constructor: {}", authConstructor);
+        } else {
+            authConstructor = null;
+            LOGGER.trace("No authentication used");
+        }
+        _authConstructor = authConstructor;
+
+        String maxLogin = _args.getOpt("maxLogin");
+        if (maxLogin != null) {
+            try {
+                _maxLogin = Integer.parseInt(maxLogin);
+            } catch (NumberFormatException ee) {/* bad values ignored */}
+        }
+
+        if (_maxLogin < 0) {
+            LOGGER.info("Maximum login feature disabled");
+        } else {
+            LOGGER.info("Maximum logins set to: {}", _maxLogin);
+        }
+
+        _scheduledExecutor = Executors.newSingleThreadScheduledExecutor(_nucleus);
+
+        // keep alive
+        long keepAlive = TimeUnit.SECONDS.toMillis(_args.getLongOption("keepAlive", 0L));
+        LOGGER.info("Keep alive set to {} ms", keepAlive);
+        _keepAlive = new KeepAliveTask();
+        _keepAlive.schedule(keepAlive);
+
+
+        // get the location manager
+        _locationManager = _args.getOpt("lm");
+
+        _loginCellFactory = new LoginCellFactoryBuilder()
+                .setName(loginCell)
+                .setLoginManagerName(getCellName())
+                .setArgs(childArgs)
+                .build();
+        _version = new CellVersion(Version.of(_loginCellFactory));
+
+        String topic = _args.getOpt("brokerTopic");
+        if (topic != null) {
+            Splitter byComma = Splitter.on(",").omitEmptyStrings();
+            Splitter byColon = Splitter.on(":").omitEmptyStrings();
+            _loginBrokerPublisher = new LoginBrokerPublisher();
+            _loginBrokerPublisher.beforeSetup();
+            _loginBrokerPublisher.setExecutor(_scheduledExecutor);
+            _loginBrokerPublisher.setTopic(topic);
+            _loginBrokerPublisher.setCellEndpoint(this);
+            _loginBrokerPublisher.setTags(byComma.splitToList(_args.getOption("brokerTags")));
+            _loginBrokerPublisher.setProtocolEngine(_loginCellFactory.getName());
+            _loginBrokerPublisher.setProtocolFamily(_args.getOption("protocolFamily", _protocol));
+            _loginBrokerPublisher.setProtocolVersion(_args.getOption("protocolVersion", "1.0"));
+            _loginBrokerPublisher.setUpdateTime(_args.getLongOption("brokerUpdateTime"));
+            _loginBrokerPublisher.setUpdateTimeUnit(TimeUnit.valueOf(_args.getOption("brokerUpdateTimeUnit")));
+            _loginBrokerPublisher.setUpdateThreshold(_args.getDoubleOption("brokerUpdateOffset"));
+            _loginBrokerPublisher.setRoot(Strings.emptyToNull(_args.getOption("root")));
+            _loginBrokerPublisher.setReadPaths(byColon.splitToList(_args.getOption("brokerReadPaths", "/")));
+            _loginBrokerPublisher.setWritePaths(byColon.splitToList(_args.getOption("brokerWritePaths", "/")));
+            addCommandListener(_loginBrokerPublisher);
+            addCellEventListener(_loginBrokerPublisher);
+            _loginBrokerPublisher.afterSetup();
+
+            if (_maxLogin < 0) {
+                _maxLogin = 100000;
+            }
+        } else {
+            _loginBrokerPublisher = null;
+        }
+
+        _nucleus.addCellEventListener(new LoginEventListener());
+
+        _listenThread = new ListenThread(listenPort);
+    }
+
+    @Override
+    protected void started()
+    {
+        _nucleus.newThread(_listenThread, getCellName() + "-listen").start();
+        if (_locationManager != null) {
+            new AsynchronousLocationRegistrationTask(_locationManager).run();
+        }
         if (_loginBrokerPublisher != null) {
             _loginBrokerPublisher.afterStart();
         }

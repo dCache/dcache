@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.vehicles.PoolLinkInfo;
@@ -172,40 +173,40 @@ public class StorageInfoQuotaObserver extends CellAdapter {
          _name = name ;
        }
    }
-   ////////////////////////////////////////////////////////////////////////////////////
-   //
-   //  The CELL , constructor and interface
-   // ---------------------------------------------
-   //
-   /**
-     *  The actual Cell. (as usual)
-     */
-   public StorageInfoQuotaObserver( String name , String args )throws Exception {
 
-      super(name, StorageInfoQuotaObserver.class.getName(), args);
+    ////////////////////////////////////////////////////////////////////////////////////
+    //
+    //  The CELL , constructor and interface
+    // ---------------------------------------------
+    //
+    public StorageInfoQuotaObserver(String name, String args) throws ExecutionException, InterruptedException
+    {
+        super(name, StorageInfoQuotaObserver.class.getName(), args);
 
-      _args    = getArgs() ;
-      _nucleus = getNucleus() ;
+        _args = getArgs();
+        _nucleus = getNucleus();
 
-      try{
-          String configName = _args.getOpt("config") ;
-          if( ( configName != null ) && ( ! configName.equals("") ) ) {
-              _configFile = new File(configName);
-          }
+        start();
+    }
 
-          _log.info("Query Engine will be started a bit delayed" ) ;
+    @Override
+    protected void startUp() throws Exception
+    {
+        String configName = _args.getOpt("config");
+        if ((configName != null) && (!configName.equals(""))) {
+            _configFile = new File(configName);
+        }
 
-          _nucleus.newThread( new DoDelayedOnStartup() , "init" ).start() ;
+        _log.info("Query Engine will be started a bit delayed");
+    }
 
-      }catch(Exception ee ){
-          _log.warn( "<init> of WebCollector reports : "+ee.getMessage(), ee);
-          start() ;
-          kill() ;
-          throw ee ;
-      }
-      start() ;
-   }
-   /**
+    @Override
+    protected void started()
+    {
+        _nucleus.newThread(new DoDelayedOnStartup(), "init").start();
+    }
+
+    /**
      *   main message switchboard.
      */
    @Override

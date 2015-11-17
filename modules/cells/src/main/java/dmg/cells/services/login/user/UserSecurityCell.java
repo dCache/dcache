@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -41,42 +42,30 @@ public class       UserSecurityCell
   private UserRelationable _userDb;
   private UserMetaDb       _userMetaDb;
 
-  public UserSecurityCell( String name , String argString ) throws Exception {
+    public UserSecurityCell(String name, String argString) throws ExecutionException, InterruptedException
+    {
+        super(name, argString);
 
-      super(name, argString);
+        _cellName = name;
+        _args = getArgs();
+        _nucleus = getNucleus();
 
-      _cellName  = name ;
-      _args      = getArgs() ;
-      _nucleus = getNucleus();
+        start();
+    }
 
-      try{
+    @Override
+    protected void startUp()
+    {
+        if (_args.argc() < 1) {
+            throw new IllegalArgumentException("Usage : ... <dbPath>");
+        }
 
-         if( _args.argc() < 1 ) {
-             throw new
-                     IllegalArgumentException("Usage : ... <dbPath>");
-         }
+        File dbBase = new File(_args.argv(0));
+        _aclDb = new AclDb(new File(dbBase, "acls"));
+        _userDb = new InMemoryUserRelation(new FileUserRelation(new File(dbBase, "relations")));
+        _userMetaDb = new UserMetaDb(new File(dbBase, "meta"));
+    }
 
-         File dbBase   = new File( _args.argv(0) ) ;
-           _aclDb      = new AclDb(
-                              new File( dbBase , "acls" ) ) ;
-           _userDb     = new InMemoryUserRelation(
-                              new FileUserRelation(
-                                  new File( dbBase , "relations" )
-                                                   )
-                          ) ;
-           _userMetaDb = new UserMetaDb(
-                              new File( dbBase , "meta" ) ) ;
-
-      }catch( Exception e ){
-         _log.warn( "Exception while <init> : "+e, e ) ;
-         start() ;
-         kill() ;
-         throw e ;
-      }
-
-      start() ;
-
-  }
   @Override
   public void messageArrived( CellMessage msg ){
 

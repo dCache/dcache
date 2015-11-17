@@ -197,7 +197,7 @@ public class CellAdapter
      * executes the auto and defined Setup context.
      * (&lt;cellName&gt;Setup and "!&lt;setupContextName&gt;)
      */
-    public synchronized void start() throws ExecutionException, InterruptedException
+    public void start() throws ExecutionException, InterruptedException
     {
         // TODO: Temporary and imperfect workaround to tolerate duplucate start calls
         if (!_startGate.isOpen()) {

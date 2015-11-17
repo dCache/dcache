@@ -31,59 +31,75 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private int     _current;
    private int     _maxFileSize = 1024 * 1024 ;
 
-   public MemoryWatch( String name , String args ) throws Exception {
+    public MemoryWatch(String name, String args) throws Exception
+    {
+        super(name, args);
+        _nucleus = getNucleus();
+        _args = getArgs();
+        start();
+    }
 
-      super(name, args);
-      _nucleus  = getNucleus() ;
-      try{
-         _args     = getArgs() ;
-         String var;
-         //
-         // update
-         //
-         if( ( var = _args.getOpt("update") ) != null ){
-            try{ _update = Integer.parseInt(var) ;
-            }catch(Exception ee ){
-               _log.warn( "Update not accepted : "+var ) ;
+    @Override
+    protected void startUp() throws Exception
+    {
+        String var;
+        //
+        // update
+        //
+        if ((var = _args.getOpt("update")) != null) {
+            try {
+                _update = Integer.parseInt(var);
+            } catch (Exception ee) {
+                _log.warn("Update not accepted : " + var);
             }
-         }
-         //
-         // filesize
-         //
-         if( ( var = _args.getOpt("maxFilesize") ) != null ){
-            try{ _maxFileSize = Integer.parseInt(var) ;
-            }catch(Exception ee ){
-               _log.warn( "New 'maxFilesize' not accepted : "+var ) ;
+        }
+        //
+        // filesize
+        //
+        if ((var = _args.getOpt("maxFilesize")) != null) {
+            try {
+                _maxFileSize = Integer.parseInt(var);
+            } catch (Exception ee) {
+                _log.warn("New 'maxFilesize' not accepted : " + var);
             }
-         }
-         //
-         // generations
-         //
-         if( ( var = _args.getOpt("generations") ) != null ){
-            try{ _generations = Integer.parseInt(var) ;
-            }catch(Exception ee ){
-               _log.warn( "New 'generations' not accepted : "+var ) ;
+        }
+        //
+        // generations
+        //
+        if ((var = _args.getOpt("generations")) != null) {
+            try {
+                _generations = Integer.parseInt(var);
+            } catch (Exception ee) {
+                _log.warn("New 'generations' not accepted : " + var);
             }
-         }
-         if( ( var = _args.getOpt("output" ) ) != null ){
-            _output = true ;
-            if( ! var.equals("") ) {
+        }
+        if ((var = _args.getOpt("output")) != null) {
+            _output = true;
+            if (!var.equals("")) {
                 _outputFile = var;
             }
-         }
-         //
-         // and  now the worker.
-         //
-         _queryThread = _nucleus.newThread( this , "queryThread" ) ;
-         _queryThread.start() ;
-      }catch(Exception eex ){
-         start() ;
-         kill() ;
-         throw eex ;
-      }
-      start() ;
-   }
-   public void say( String str ){
+        }
+        //
+        // and  now the worker.
+        //
+        _queryThread = _nucleus.newThread(this, "queryThread");
+    }
+
+    @Override
+    protected void started()
+    {
+        _queryThread.start();
+    }
+
+    @Override
+    protected void cleanUp()
+    {
+        if (_queryThread != null) {
+            _queryThread.interrupt();
+        }
+    }
+
+    public void say(String str ){
       if( _output ){
          if( _outputFile != null ){
            try{

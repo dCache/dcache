@@ -74,18 +74,22 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
    private RestoreHandlerInfo [] _currentInfo;
 
-   public WebPicturesV0( String name , String args )throws Exception {
+    public WebPicturesV0(String name, String args) throws Exception
+    {
+        super(name, args);
 
-      super(name, args);
-      _log.info("WebPictures started");
-      try{
-         _args        = getArgs() ;
-         _nucleus     = getNucleus() ;
-         _started     = new Date() ;
+        _args = getArgs();
+        _nucleus = getNucleus();
+        _started = new Date();
 
-         _cellContext = _nucleus.getDomainContext() ;
+        _cellContext = _nucleus.getDomainContext();
+        start();
+    }
 
-         System.setProperty( "java.awt.headless" , "true");
+    @Override
+    protected void startUp() throws Exception
+    {
+        System.setProperty("java.awt.headless", "true");
          /*
           *
           *    -imageSize=<xSize>:<ySize>
@@ -93,50 +97,47 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
           *    -archive=<archiveDirectory>
           */
 
-         String sizeRange = _args.getOpt("imageSize") ;
-         if( sizeRange != null ){
-            try{
-               int ind = sizeRange.indexOf(":") ;
-               if( ( ind <= 0 ) || ( ind == ( sizeRange.length() - 1 ) ) ) {
-                   throw new
-                           IllegalArgumentException("Not a size pair");
-               }
+        String sizeRange = _args.getOpt("imageSize");
+        if (sizeRange != null) {
+            try {
+                int ind = sizeRange.indexOf(":");
+                if ((ind <= 0) || (ind == (sizeRange.length() - 1))) {
+                    throw new IllegalArgumentException("Not a size pair");
+                }
 
-               int low  = Integer.parseInt( sizeRange.substring(0,ind) ) ;
-               int high = Integer.parseInt( sizeRange.substring(ind+1) ) ;
+                int low = Integer.parseInt(sizeRange.substring(0, ind));
+                int high = Integer.parseInt(sizeRange.substring(ind + 1));
 
-               _dimension = new Dimension( low , high ) ;
-            }catch(NumberFormatException ee ){
-                _log.warn("Invalid size string (command ignored) : "+sizeRange ) ;
+                _dimension = new Dimension(low, high);
+            } catch (NumberFormatException ee) {
+                _log.warn("Invalid size string (command ignored) : {}", sizeRange);
             }
-         }
-         _log.info("Image size : "+_dimension);
-         String intervalString = _args.getOpt("interval") ;
-         if( intervalString != null ) {
-             try {
-                 _sleep = 1000L * (long) Integer.parseInt(intervalString);
-             } catch (NumberFormatException ee) {
-                 _log.warn("Invalid 'interval' string (command ignored) : " + intervalString);
-             }
-         }
-         _log.info("Interval (msec) : "+_sleep);
+        }
+        _log.info("Image size : {}", _dimension);
+        String intervalString = _args.getOpt("interval");
+        if (intervalString != null) {
+            try {
+                _sleep = 1000L * (long) Integer.parseInt(intervalString);
+            } catch (NumberFormatException ee) {
+                _log.warn("Invalid 'interval' string (command ignored) : {}", intervalString);
+            }
+        }
+        _log.info("Interval (msec) : {}", _sleep);
+    }
 
-         if( _args.hasOption("dontstart") ){ // debug only
+    @Override
+    protected void started()
+    {
+        if (_args.hasOption("dontstart")) { // debug only
             _log.info("Worker Thread not started : -dontstart");
-         }else{
+        } else {
             _log.info("Starting worker Thread");
-            _nucleus.newThread( this , "Worker" ).start() ;
-            _wasStarted = true ;
-         }
+            _nucleus.newThread(this, "Worker").start();
+            _wasStarted = true;
+        }
+        _log.info("WebPictures started");
+    }
 
-      }catch(Exception ee){
-         start();
-         kill() ;
-         throw ee ;
-      }
-      start() ;
-
-   }
    public static final String hh_start = " # start worker thread";
    public String ac_start( Args args ){
       synchronized( this ){

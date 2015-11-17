@@ -187,7 +187,9 @@ public class PoolInfoObserverV3 extends AbstractCell
     @Override
     public void cleanUp()
     {
-        _refreshThread.interrupt();
+        if (_refreshThread != null) {
+            _refreshThread.interrupt();
+        }
     }
 
     @Override

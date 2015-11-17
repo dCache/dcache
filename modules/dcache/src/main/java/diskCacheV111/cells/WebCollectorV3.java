@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 import diskCacheV111.pools.PoolCellInfo;
@@ -176,50 +177,53 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
         }
     }
 
-    public WebCollectorV3(String name, String args) throws Exception
+    public WebCollectorV3(String name, String args) throws ExecutionException, InterruptedException
     {
         super(name, WebCollectorV3.class.getName(), args);
-        _args    = getArgs();
+        _args = getArgs();
         _nucleus = getNucleus();
-        try {
-            if( _args.hasOption( OPTION_REPEATHEADER)) {
-                String optionString = null;
-                try {
-                    optionString  = _args.getOpt( OPTION_REPEATHEADER);
-                    _repeatHeader = Math.max(0, Integer.parseInt(optionString));
-                } catch (NumberFormatException e) {
-                    _log.warn("Parsing error in " + OPTION_REPEATHEADER + " command : " + optionString);
-                }
-                _log.info("Repeat header set to "+_repeatHeader);
-            }
+        start();
+    }
 
-            String optionString = _args.getOpt("aggressive");
-            boolean aggressive =
+    @Override
+    protected void startUp()
+    {
+        if (_args.hasOption(OPTION_REPEATHEADER)) {
+            String optionString = null;
+            try {
+                optionString = _args.getOpt(OPTION_REPEATHEADER);
+                _repeatHeader = Math.max(0, Integer.parseInt(optionString));
+            } catch (NumberFormatException e) {
+                _log.warn("Parsing error in in {} command : {}", OPTION_REPEATHEADER, optionString);
+            }
+            _log.info("Repeat header set to {}", _repeatHeader);
+        }
+
+        String optionString = _args.getOpt("aggressive");
+        boolean aggressive =
                 (optionString != null) &&
                 (optionString.equals("off") || optionString.equals("false"));
 
-            aggressive = !aggressive;
+        aggressive = !aggressive;
 
-            _log.info("Aggressive mode : "+aggressive);
+        _log.info("Aggressive mode : {}", aggressive);
 
-            _sleepHandler = new SleepHandler(aggressive);
+        _sleepHandler = new SleepHandler(aggressive);
 
-            for (int i = 0; i < _args.argc(); i++) {
-                addQuery(new CellAddressCore(_args.argv(i)));
-            }
-
-            (_senderThread  = _nucleus.newThread(this, "sender")).start();
-            _log.info("Sender started");
-            _log.info("Collector will be started a bit delayed");
-            _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
-            _collectThread.start();
-        } catch (Exception e) {
-            _log.warn("<init> of WebCollector reports : " + e.getMessage(), e);
-            start();
-            kill();
-            throw e;
+        for (int i = 0; i < _args.argc(); i++) {
+            addQuery(new CellAddressCore(_args.argv(i)));
         }
-        start();
+    }
+
+    @Override
+    protected void started()
+    {
+        _senderThread = _nucleus.newThread(this, "sender");
+        _senderThread.start();
+        _log.info("Sender started");
+        _log.info("Collector will be started a bit delayed");
+        _collectThread = _nucleus.newThread(WebCollectorV3.this, "collector");
+        _collectThread.start();
     }
 
     private synchronized boolean addQuery(CellAddressCore address)

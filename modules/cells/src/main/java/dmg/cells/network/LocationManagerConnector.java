@@ -35,11 +35,11 @@ public class LocationManagerConnector
 
     private final String _domain;
     private final String _lm;
-    private final Thread _thread;
+    private Thread _thread;
     private String _status = "disconnected";
     private int _retries;
 
-    public LocationManagerConnector(String cellName, String args) throws Exception
+    public LocationManagerConnector(String cellName, String args) throws ExecutionException, InterruptedException
     {
         super(cellName, "System", args);
 
@@ -47,13 +47,12 @@ public class LocationManagerConnector
         _domain = a.getOpt("domain");
         _lm = a.getOpt("lm");
 
-        try {
-            start();
-        } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-            throw Throwables.propagate(e.getCause());
-        }
+        start();
+    }
 
+    @Override
+    protected void started()
+    {
         _thread = getNucleus().newThread(this, "TunnelConnector");
         _thread.start();
     }
@@ -206,6 +205,8 @@ public class LocationManagerConnector
     @Override
     public void cleanUp()
     {
-        _thread.interrupt();
+        if (_thread != null) {
+            _thread.interrupt();
+        }
     }
 }

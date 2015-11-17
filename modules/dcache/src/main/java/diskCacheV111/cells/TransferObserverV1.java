@@ -50,13 +50,13 @@ public class TransferObserverV1
     private final CellNucleus   _nucleus;
     private final CellStub      _cellStub;
     private final Args          _args;
-    private final TransferCollector _collector;
-    private final Thread        _workerThread;
-    private final LoginBrokerSubscriber _loginBrokerSource;
+    private TransferCollector _collector;
+    private Thread        _workerThread;
+    private LoginBrokerSubscriber _loginBrokerSource;
     private       long          _update         = 120000L;
     private       long          _timeUsed;
     private       long          _processCounter;
-    private final FieldMap      _fieldMap;
+    private FieldMap      _fieldMap;
     private final Map<String,TableEntry> _tableHash
         = new HashMap<>();
 
@@ -160,6 +160,16 @@ public class TransferObserverV1
         _cellStub = new CellStub(this, null, 30, SECONDS);
         _args    = getArgs();
 
+        start();
+    }
+
+    @Override
+    protected void startUp() throws Exception
+    {
+        if (_args.argc() < 0) {
+            throw new IllegalArgumentException("Usage : ... ");
+        }
+
         _loginBrokerSource = new LoginBrokerSubscriber();
         addCellEventListener(_loginBrokerSource);
         addCommandListener(_loginBrokerSource);
@@ -173,39 +183,41 @@ public class TransferObserverV1
 
         _collector = new TransferCollector(_cellStub, _loginBrokerSource.doors());
 
+        String updateString = _args.getOpt("update");
         try {
-            if (_args.argc() < 0) {
-                throw new IllegalArgumentException("Usage : ... ");
+            if (updateString != null) {
+                _update = Long.parseLong(updateString) * 1000L;
             }
-
-            String updateString = _args.getOpt("update");
-            try {
-                if (updateString != null) {
-                    _update = Long.parseLong(updateString) * 1000L;
-                }
-            } catch (NumberFormatException e) {
-                _log.warn("Illegal value for -update: " + updateString);
-            }
-
-            //
-            // if login broker is defined, the
-            // worker will add the 'fixed' door list to the
-            // list provided by the loginBroker.
-            //
-            //
-            _fieldMap = new FieldMap(_args.getOpt("fieldMap"), _args);
-            //
-            _workerThread = _nucleus.newThread(this, "worker");
-            _workerThread.start();
-            //
-        } catch (Exception e) {
-            start();
-            kill();
-            throw e;
+        } catch (NumberFormatException e) {
+            _log.warn("Illegal value for -update: " + updateString);
         }
+
+        //
+        // if login broker is defined, the
+        // worker will add the 'fixed' door list to the
+        // list provided by the loginBroker.
+        //
+        //
+        _fieldMap = new FieldMap(_args.getOpt("fieldMap"), _args);
+        //
         useInterpreter(true);
-        start();
+    }
+
+    @Override
+    protected void started()
+    {
+        _workerThread = _nucleus.newThread(this, "worker");
+        _workerThread.start();
         _loginBrokerSource.afterStart();
+    }
+
+    @Override
+    public void cleanUp()
+    {
+        if (_workerThread != null) {
+            _workerThread.interrupt();
+        }
+        _loginBrokerSource.beforeStop();
     }
 
     private static class TableEntry
@@ -271,15 +283,6 @@ public class TransferObserverV1
         {
             return _olderThan;
         }
-    }
-
-    @Override
-    public void cleanUp()
-    {
-        if (_workerThread != null) {
-            _workerThread.interrupt();
-        }
-        super.cleanUp();
     }
 
     public static final String hh_table_help = "";

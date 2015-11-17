@@ -42,6 +42,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellStub;
 import org.dcache.util.Args;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HsmFlushControlManager  extends CellAdapter {
@@ -50,7 +51,6 @@ public class HsmFlushControlManager  extends CellAdapter {
         LoggerFactory.getLogger(HsmFlushControlManager.class);
 
     private CellNucleus _nucleus;
-    private Args        _args;
     private int         _requests;
     private int         _failed;
     private File        _database;
@@ -67,7 +67,7 @@ public class HsmFlushControlManager  extends CellAdapter {
     private Map<String,Object>    _properties        = new HashMap<>() ;
     private final Object _propertyLock      = new Object() ;
     private long   _propertiesUpdated;
-    private final CellStub _poolManager;
+    private CellStub _poolManager;
 
     /**
       *   Usage : ... [options] <pgroup0> [<pgroup1>[...]]
@@ -79,66 +79,65 @@ public class HsmFlushControlManager  extends CellAdapter {
       *
       *                 Options are forwarded to the driver as well.
       */
-    public HsmFlushControlManager( String name , String  args ) throws Exception {
-       super(name, args);
-       _nucleus = getNucleus() ;
-       _args    = getArgs() ;
-       _poolManager = new CellStub(this, new CellPath("PoolManager"), 30, SECONDS);
-       try{
-          if( _args.argc() < 1 ) {
-              throw new
-                      IllegalArgumentException("Usage : ... <pgroup0> [<pgroup1>[...]]");
-          }
+    public HsmFlushControlManager(String name, String args) throws Exception
+    {
+        super(name, args);
+        _nucleus = getNucleus();
+        _poolCollector = new PoolCollector();
+        start();
+    }
 
-          for( int i = 0 , n = _args.argc() ; i <  n ; i++ ){
-              _poolGroupList.add(_args.argv(0));
-              _args.shift();
-           }
-           String tmp = _args.getOpt("scheduler") ;
-           if( ( tmp != null ) && ( ! tmp.equals("") ) ){
-               _eventDispatcher.loadHandler( tmp , false  , _args ) ;
-           }
+    @Override
+    protected void startUp() throws Exception
+    {
+        _poolManager = new CellStub(this, new CellPath("PoolManager"), 30, SECONDS);
+        Args args = getArgs();
+        checkArgument(args.argc() >= 1, "Usage : ... <pgroup0> [<pgroup1>[...]]");
 
-           _queueWatch = new QueueWatch() ;
+        for (int i = 0, n = args.argc(); i < n; i++) {
+            _poolGroupList.add(args.argv(0));
+            args.shift();
+        }
+        String tmp = args.getOpt("scheduler");
+        if ((tmp != null) && (!tmp.equals(""))) {
+            _eventDispatcher.loadHandler(tmp, false, args);
+        }
 
-           tmp = _args.getOpt("poolCollectionUpdate") ;
-           if( ( tmp != null ) && ( ! tmp.equals("") ) ){
-               try{
-                  _getPoolCollectionTicker = Long.parseLong(tmp) * 60L * 1000L ;
-               }catch(Exception ee ){
-                  _log.warn("Illegal value for poolCollectionUpdate : "+tmp+" (chosing "+_getPoolCollectionTicker+" millis)");
-               }
-           }
-           tmp = _args.getOpt("gainControlUpdate") ;
-           if( ( tmp != null ) && ( ! tmp.equals("") ) ){
-              long gainControlTicker = 0L ;
-               try{
-                  _queueWatch.setGainControlTicker( gainControlTicker = Long.parseLong(tmp) * 60L * 1000L ) ;
-               }catch(Exception ee ){
-                  _log.warn("Illegal value for gainControlUpdate : "+tmp+" (chosing "+gainControlTicker+" millis)");
-               }
-           }
-           tmp = _args.getOpt("timer") ;
-           if( ( tmp != null ) && ( ! tmp.equals("") ) ){
-               try{
-                  _timerInterval = Long.parseLong(tmp) * 1000L ;
-               }catch(Exception ee ){
-                  _log.warn("Illegal value for timer : "+tmp+" (chosing "+_timerInterval+" millis)");
-               }
-           }
+        _queueWatch = new QueueWatch();
 
-       }catch(Exception e){
-          start() ;
-          kill() ;
-          throw e ;
-       }
-       useInterpreter( true );
-       _nucleus.newThread( _queueWatch , "queueWatch").start() ;
+        tmp = args.getOpt("poolCollectionUpdate");
+        if ((tmp != null) && (!tmp.equals(""))) {
+            try {
+                _getPoolCollectionTicker = Long.parseLong(tmp) * 60L * 1000L;
+            } catch (Exception ee) {
+                _log.warn("Illegal value for poolCollectionUpdate : {} (choosing {} millis)", tmp, _getPoolCollectionTicker);
+            }
+        }
+        tmp = args.getOpt("gainControlUpdate");
+        if ((tmp != null) && (!tmp.equals(""))) {
+            long gainControlTicker = 0L;
+            try {
+                _queueWatch.setGainControlTicker(gainControlTicker = Long.parseLong(tmp) * 60L * 1000L);
+            } catch (Exception ee) {
+                _log.warn(
+                        "Illegal value for gainControlUpdate : {} (choosing {} millis)", tmp, gainControlTicker);
+            }
+        }
+        tmp = args.getOpt("timer");
+        if ((tmp != null) && (!tmp.equals(""))) {
+            try {
+                _timerInterval = Long.parseLong(tmp) * 1000L;
+            } catch (Exception ee) {
+                _log.warn("Illegal value for timer : {} (choosing {} millis)", tmp, _timerInterval);
+            }
+        }
+        useInterpreter(true);
+    }
 
-       start();
-
-       _poolCollector = new PoolCollector() ;
-
+    @Override
+    protected void started()
+    {
+        _nucleus.newThread( _queueWatch , "queueWatch").start() ;
     }
 
     private class QueueWatch implements Runnable {

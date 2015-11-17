@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -18,6 +19,7 @@ import org.dcache.util.Args;
 import dmg.util.Authorizable;
 import dmg.util.UserPasswords;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Arrays.asList;
 
 /**
@@ -34,10 +36,6 @@ public class       AclCell
   private static final Logger _log =
       LoggerFactory.getLogger(AclCell.class);
 
-  private String       _cellName ;
-  private CellNucleus  _nucleus ;
-  private Args         _args ;
-
   private AclDb            _aclDb;
   private UserRelationable _userDb;
   private UserMetaDb       _userMetaDb;
@@ -45,58 +43,42 @@ public class       AclCell
   private UserPasswords    _sysPassword;
   private UserPasswords    _egPassword;
   private Crypt            _crypt        = new Crypt() ;
-  public AclCell( String name , String argString ) throws Throwable {
 
-      super(name, argString);
+    public AclCell( String name , String argString ) throws ExecutionException, InterruptedException
+    {
+        super(name, argString);
+        start();
+    }
 
-      _cellName  = name ;
-      _args      = getArgs() ;
+    @Override
+    protected void startUp()
+    {
+        Args args = getArgs();
+        checkArgument(args.argc() >= 1, "Usage : ... <dbPath>");
 
+        File dbBase = new File(args.argv(0));
+        _aclDb = new AclDb(new File(dbBase, "acls"));
+        _userDb = new InMemoryUserRelation(new FileUserRelation(new File(dbBase, "relations")));
+        _userMetaDb = new UserMetaDb(new File(dbBase, "meta"));
 
-      try{
+        UserAdminCommands uac = new UserAdminCommands(_userDb, _aclDb, _userMetaDb);
+        addCommandListener(uac);
+        setCommandExceptionEnabled(true);
+        //
+        // read the password file information
+        //
+        String tmp;
+        if ((tmp = args.getOpt("syspassword")) != null) {
+            _sysPassword = new UserPasswords(new File(tmp));
+            _log.info("using as SystemPasswordfile : " + tmp);
+        }
+        if ((tmp = args.getOpt("egpassword")) != null) {
+            _egPassword = new UserPasswords(new File(tmp));
+            _log.info("using as EgPasswordfile : " + tmp);
+        }
+    }
 
-         if( _args.argc() < 1 ) {
-             throw new
-                     IllegalArgumentException("Usage : ... <dbPath>");
-         }
-
-         File dbBase   = new File( _args.argv(0) ) ;
-           _aclDb      = new AclDb(
-                              new File( dbBase , "acls" ) ) ;
-           _userDb     = new InMemoryUserRelation(
-                              new FileUserRelation(
-                                  new File( dbBase , "relations" )
-                                                   )
-                          ) ;
-           _userMetaDb = new UserMetaDb(
-                              new File( dbBase , "meta" ) ) ;
-
-          UserAdminCommands uac = new UserAdminCommands( _userDb , _aclDb , _userMetaDb ) ;
-          addCommandListener( uac ) ;
-          setCommandExceptionEnabled( true ) ;
-          //
-          // read the password file information
-          //
-          String tmp;
-          if( ( tmp = _args.getOpt( "syspassword" ) ) != null ){
-             _sysPassword = new UserPasswords( new File( tmp ) ) ;
-             _log.info( "using as SystemPasswordfile : "+tmp ) ;
-          }
-          if( ( tmp = _args.getOpt( "egpassword"  ) ) != null ){
-             _egPassword  = new UserPasswords( new File( tmp ) ) ;
-             _log.info( "using as EgPasswordfile : "+tmp ) ;
-          }
-      }catch( Throwable e ){
-         _log.warn( "Exception while <init> : "+e, e ) ;
-         start() ;
-         kill() ;
-         throw e ;
-      }
-
-      start() ;
-
-  }
-  //
+    //
   // for now we also serve the password checking request
   //
   @Override

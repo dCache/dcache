@@ -225,9 +225,9 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private static String _domainName = "dCache.Unknown.Org";
     private static String _bodyString = "<body bgcolor=white>";
 
-    private final CellStub _poolManager;
-    private final CellStub _billing;
-    private final CellStub _poolStub;
+    private CellStub _poolManager;
+    private CellStub _billing;
+    private CellStub _poolStub;
 
     private CellNucleus      _nucleus;
 
@@ -237,69 +237,78 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private File _htmlBase;
     private Map<String,Map<String,long[]>> _recentPoolStatistics;
     private boolean _createHtmlTree = true;
+    private Thread _cronTimer;
 
-    public PoolStatisticsV0(String name, String args)throws Exception {
+    public PoolStatisticsV0(String name, String args) throws Exception
+    {
         super(name, args);
-        Args _args = getArgs();
         _nucleus = getNucleus();
+        start();
+    }
+
+    @Override
+    protected void startUp() throws Exception
+    {
+        Args args = getArgs();
+        if (args.argc() < 1) {
+            throw new
+                    IllegalArgumentException(
+                    "Usage : ... <baseDirectory> " +
+                    "[-htmlBase=<htmlBase>|none] [-create] [-images=<images>]");
+        }
+
         _poolManager = new CellStub(this, new CellPath("PoolManager"), 20000);
         _billing = new CellStub(this, new CellPath("billing"), 20000);
         _poolStub = new CellStub(this, null, 20000);
 
-        try {
-            if (_args.argc() < 1) {
-                throw new
-                        IllegalArgumentException(
-                        "Usage : ... <baseDirectory> " +
-                                "[-htmlBase=<htmlBase>|none] [-create] [-images=<images>]");
-            }
+        _htmlBase = _dbBase = new File(args.argv(0));
 
-            _htmlBase = _dbBase = new File(_args.argv(0));
-
-            String tmp = _args.getOpt("htmlBase");
-            if ((tmp != null) && (tmp.length() > 0)) {
-                if (tmp.equals("none")) {
-                    _createHtmlTree = false;
-                } else {
-                    _htmlBase = new File(tmp);
-                }
-            }
-            tmp = _args.getOpt("domain");
-            if (tmp != null) {
-                _domainName = tmp;
-            }
-
-            if (_args.hasOption("create")) {
-
-                if (! _dbBase.exists()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    _dbBase.mkdirs();
-                }
-                if (_createHtmlTree && ! _htmlBase.exists()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    _htmlBase.mkdirs();
-                }
-
+        String tmp = args.getOpt("htmlBase");
+        if ((tmp != null) && (tmp.length() > 0)) {
+            if (tmp.equals("none")) {
+                _createHtmlTree = false;
             } else {
-
-                if ((! _dbBase.exists()) ||  (_createHtmlTree && ! _htmlBase.exists())) {
-                    throw new
-                            IllegalArgumentException("Either <baseDirectory> or <htmlBase> doesn't exist");
-                }
-
+                _htmlBase = new File(tmp);
             }
-            CellCron _cron = new CellCron(false);
-            Thread _cronTimer = _nucleus.newThread(_cron, "Cron");
-            _cronTimer.start();
-
-            _hourly = _cron.add(55, this, "Hour");
-
-        } catch(Exception ee) {
-            start();
-            kill();
-            throw ee;
         }
-        start();
+        tmp = args.getOpt("domain");
+        if (tmp != null) {
+            _domainName = tmp;
+        }
+
+        if (args.hasOption("create")) {
+            if (!_dbBase.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                _dbBase.mkdirs();
+            }
+            if (_createHtmlTree && !_htmlBase.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                _htmlBase.mkdirs();
+            }
+
+        } else {
+            if ((!_dbBase.exists()) || (_createHtmlTree && !_htmlBase.exists())) {
+                throw new IllegalArgumentException("Either <baseDirectory> or <htmlBase> doesn't exist");
+            }
+
+        }
+        CellCron _cron = new CellCron();
+        _cronTimer = _nucleus.newThread(_cron, "Cron");
+        _hourly = _cron.add(55, this, "Hour");
+    }
+
+    @Override
+    protected void started()
+    {
+        _cronTimer.start();
+    }
+
+    @Override
+    protected void cleanUp()
+    {
+        if (_cronTimer != null) {
+            _cronTimer.interrupt();
+        }
     }
 
     @Override

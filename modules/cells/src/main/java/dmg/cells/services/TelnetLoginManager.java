@@ -55,83 +55,72 @@ public class      TelnetLoginManager
 
   private static final String __usage =
      "<port> {loginCell] [-dummy] [-localhost] [-anyuser] [-elch]" ;
-  /**
-  */
-  public TelnetLoginManager( String name , String args ) throws Exception
-  {
-       super(name, args);
-       _nucleus       = getNucleus() ;
-       _args          = getArgs() ;
-       _cellName      = name ;
 
-       try{
-          if( _args.argc() < 1 ) {
-              throw new IllegalArgumentException("USAGE : ... " + __usage);
-          }
+    public TelnetLoginManager(String name, String args) throws Exception
+    {
+        super(name, args);
+        _nucleus = getNucleus();
+        _args = getArgs();
+        _cellName = name;
 
-          _listenPort = Integer.parseInt(_args.argv(0));
+        start();
+    }
 
-          if( _args.argc() > 1 ) {
-              _loginCellClass = Class.forName(_args.argv(1)).asSubclass(Cell.class);
-          }
+    @Override
+    protected void startUp() throws Exception
+    {
+        if (_args.argc() < 1) {
+            throw new IllegalArgumentException("USAGE : ... " + __usage);
+        }
 
-          _opt_dummy     = false ;
-          _opt_localhost = false ;
-          _opt_anyuser   = false ;
-          _opt_elch      = true ;
-          _opt_raw       = false ;
-          for( int i = 0 ; i < _args.optc() ; i++ ){
-             if( _args.optv(i).equals( "-dummy" ) ) {
-                 _opt_dummy = true;
-             } else if( _args.optv(i).equals( "-localhost" ) ) {
-                 _opt_localhost = true;
-             } else if( _args.optv(i).equals( "-elch" ) ) {
-                 _opt_elch = true;
-             } else if( _args.optv(i).equals( "-anyuser" ) ) {
-                 _opt_anyuser = true;
-             } else if( _args.optv(i).equals( "-raw" ) ) {
-                 _opt_raw = true;
-             }
-          }
-          _serverSocket  = new ServerSocket( _listenPort ) ;
-       }catch( Exception e ){
-           try {
-               start() ;
-           } catch (ExecutionException | InterruptedException e1) {
-               e.addSuppressed(e1);
-           }
-           kill() ;
-          if( e instanceof IllegalArgumentException ) {
-              throw (IllegalArgumentException) e;
-          }
+        _listenPort = new Integer(_args.argv(0));
 
-          throw new IllegalArgumentException( e.toString() ) ;
-       }
+        if (_args.argc() > 1) {
+            _loginCellClass = Class.forName(_args.argv(1)).asSubclass(Cell.class);
+        }
 
+        _opt_dummy = false;
+        _opt_localhost = false;
+        _opt_anyuser = false;
+        _opt_elch = true;
+        _opt_raw = false;
+        for (int i = 0; i < _args.optc(); i++) {
+            if (_args.optv(i).equals("-dummy")) {
+                _opt_dummy = true;
+            } else if (_args.optv(i).equals("-localhost")) {
+                _opt_localhost = true;
+            } else if (_args.optv(i).equals("-elch")) {
+                _opt_elch = true;
+            } else if (_args.optv(i).equals("-anyuser")) {
+                _opt_anyuser = true;
+            } else if (_args.optv(i).equals("-raw")) {
+                _opt_raw = true;
+            }
+        }
+        _serverSocket = new ServerSocket(_listenPort);
+    }
 
+    @Override
+    protected void started()
+    {
+        _listenThread = new Thread(this, "listenThread");
+        _listenThread.start();
+    }
 
-       _listenThread  = new Thread( this , "listenThread" ) ;
-       _listenThread.start() ;
+    @Override
+    public void cleanUp()
+    {
+        if (_serverSocket != null) {
+            try {
+                _log.info("Trying to close serverSocket");
+                _serverSocket.close();
+                _log.info("Trying serverSocket close returned");
+            } catch (Exception ee) {
+                _log.warn("ignoring exception on telnetoutputstream.write {}", ee.toString());
+            }
+        }
+    }
 
-//       _nucleus.setPrintoutLevel( 0xf ) ;
-
-      try {
-          start();
-      } catch (ExecutionException e) {
-          Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-          throw Throwables.propagate(e.getCause());
-      }
-  }
-  @Override
-  public void cleanUp(){
-      try {
-          _log.info("Trying to close serverSocket");
-          _serverSocket.close();
-          _log.info("Trying serverSocket close returned");
-      } catch (Exception ee) {
-          _log.warn("ignoring exception on telnetoutputstream.write {}", ee.toString());
-      }
-  }
   private void acceptConnections(){
          //
          // wait for all the keys
