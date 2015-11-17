@@ -4,8 +4,10 @@ import com.google.common.util.concurrent.AbstractService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
 
 import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellAdapter;
 import dmg.util.StreamEngine;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -15,10 +17,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class LegacyLoginCellFactory extends AbstractService implements LoginCellFactory
 {
-    private final Constructor<? extends Cell> _loginConstructor;
+    private final Constructor<? extends CellAdapter> _loginConstructor;
     private final String _cellName;
 
-    public LegacyLoginCellFactory(Constructor<? extends Cell> loginConstructor, String cellName)
+    public LegacyLoginCellFactory(Constructor<? extends CellAdapter> loginConstructor, String cellName)
     {
         this._cellName = checkNotNull(cellName);
         this._loginConstructor = checkNotNull(loginConstructor);
@@ -29,9 +31,13 @@ public class LegacyLoginCellFactory extends AbstractService implements LoginCell
             throws InvocationTargetException
     {
         try {
-            return _loginConstructor.newInstance(_cellName + "-" + userName + "*", engine);
+            CellAdapter cell = _loginConstructor.newInstance(_cellName + "-" + userName + "*", engine);
+            cell.start();
+            return cell;
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException("Failed to instantiate login cell: " + getName(), e);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new InvocationTargetException(e.getCause(), e.getMessage());
         }
     }
 

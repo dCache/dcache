@@ -36,8 +36,8 @@
   </bean>
 
   <task:scheduled-tasks scheduler="scheduler">
-    <task:scheduled ref="topology" method="update" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
-    <task:scheduled ref="hostnameService" method="updateHostnames" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
+    <task:scheduled ref="topology" method="update" initial-delay="1000" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
+    <task:scheduled ref="hostnameService" method="updateHostnames" initial-delay="5000" fixed-delay="#{ T(java.util.concurrent.TimeUnit).MILLISECONDS.convert(${topo.limits.refresh-period}, '${topo.limits.refresh-period.unit}') }"/>
   </task:scheduled-tasks>
 
   <task:scheduler id="scheduler" pool-size="1"/>

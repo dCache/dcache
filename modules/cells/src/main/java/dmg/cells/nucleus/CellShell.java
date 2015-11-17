@@ -934,23 +934,21 @@ public class CellShell extends CommandInterpreter
        @Override
        public String call() throws ClassNotFoundException, NoSuchMethodException,
                InstantiationException, IllegalAccessException, InvocationTargetException,
-               ClassCastException, CommandThrowableException
+               ClassCastException, CommandThrowableException, InterruptedException
        {
-           Constructor<? extends Cell> constructor =
-                   Class.forName(className).asSubclass(Cell.class).getConstructor(String.class, String.class);
+           Constructor<? extends CellAdapter> constructor =
+                   Class.forName(className).asSubclass(CellAdapter.class).getConstructor(String.class, String.class);
            try {
-               Cell cell = constructor.newInstance(cellName, cellArg);
+               CellAdapter cell = constructor.newInstance(cellName, cellArg);
                if (cell instanceof EnvironmentAware) {
                    ((EnvironmentAware) cell).setEnvironment(Collections.unmodifiableMap(_environment));
                }
+               cell.start();
                return "created : " + cell;
            } catch (InvocationTargetException e) {
-               for (Class<?> clazz : constructor.getExceptionTypes()) {
-                   if (clazz.isAssignableFrom(e.getCause().getClass())) {
-                       throw new CommandThrowableException(e.getCause().getMessage(), e.getCause());
-                   }
-               }
                throw Throwables.propagate(e.getTargetException());
+           } catch (ExecutionException e) {
+               throw new CommandThrowableException(e.getCause().getMessage(), e.getCause());
            }
        }
    }

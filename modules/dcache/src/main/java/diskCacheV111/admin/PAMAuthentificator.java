@@ -76,15 +76,12 @@ public class PAMAuthentificator  extends CellAdapter {
    private final Crypt _crypt  = new Crypt() ;
 
 
-    public PAMAuthentificator(String cellName, String args) throws Exception
+    public PAMAuthentificator(String cellName, String args)
     {
         super(cellName, PAMAuthentificator.class.getName(), args);
-
         _nucleus = getNucleus();
         _cellName = cellName;
         _args = getArgs();
-
-        start();
     }
 
     @Override

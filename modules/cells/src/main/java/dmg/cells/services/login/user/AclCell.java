@@ -44,10 +44,9 @@ public class       AclCell
   private UserPasswords    _egPassword;
   private Crypt            _crypt        = new Crypt() ;
 
-    public AclCell( String name , String argString ) throws ExecutionException, InterruptedException
+    public AclCell(String name, String argString)
     {
         super(name, argString);
-        start();
     }
 
     @Override

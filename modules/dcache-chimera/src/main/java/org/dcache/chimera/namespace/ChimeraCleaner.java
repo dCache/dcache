@@ -172,10 +172,8 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     private CellStub _poolStub;
 
     public ChimeraCleaner(String cellName, String args)
-        throws InterruptedException, ExecutionException
     {
         super(cellName, args);
-        start();
     }
 
     @Override

@@ -37,15 +37,12 @@ public class SetupManager extends CellAdapter {
    //   create dmg.cells.services.SetupManager setupManager
    //              "<configDirectory> [-defaultClass=<defaultClass>]"
    //
-   public SetupManager(String cellName, String args) throws Exception
+   public SetupManager(String cellName, String args)
    {
       super(cellName, args);
-
       _cellName = cellName;
       _args = getArgs();
       _nucleus = getNucleus();
-
-      start();
    }
 
    @Override

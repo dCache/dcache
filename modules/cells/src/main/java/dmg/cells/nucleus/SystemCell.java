@@ -63,14 +63,11 @@ public class      SystemCell
       }
    }
 
-    public SystemCell(String cellDomainName) throws ExecutionException, InterruptedException
+    public SystemCell(String cellDomainName)
     {
         super(cellDomainName, "");
-
         _nucleus = getNucleus();
         _cellShell = new CellShell(getNucleus());
-
-        start();
     }
 
     @Override

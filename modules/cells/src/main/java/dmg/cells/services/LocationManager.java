@@ -1201,12 +1201,11 @@ public class LocationManager extends CellAdapter {
      *   Server Options : -strict=[yes|no] -perm=<helpFilename> -setup=<setupFile>
      *
      */
-   public LocationManager(String name, String args) throws Exception
+   public LocationManager(String name, String args)
    {
        super(name, "System", args);
        _args = getArgs();
        _nucleus = getNucleus();
-       start();
    }
 
     @Override

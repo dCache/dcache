@@ -79,12 +79,11 @@ public class HsmFlushControlManager  extends CellAdapter {
       *
       *                 Options are forwarded to the driver as well.
       */
-    public HsmFlushControlManager(String name, String args) throws Exception
+    public HsmFlushControlManager(String name, String args)
     {
         super(name, args);
         _nucleus = getNucleus();
         _poolCollector = new PoolCollector();
-        start();
     }
 
     @Override

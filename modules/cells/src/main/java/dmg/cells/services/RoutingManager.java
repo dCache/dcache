@@ -121,19 +121,13 @@ public class RoutingManager
      */
     private final ConcurrentMap<String, Collection<String>> _topicUpdates = Maps.newConcurrentMap();
 
-    public RoutingManager(String name, String arguments) throws Exception
+    public RoutingManager(String name, String arguments)
     {
         super(name,"System", arguments);
         _nucleus = getNucleus();
         _nucleus.addCellEventListener(this);
         Args args = getArgs();
         _watchCell = (args.argc() == 0) ? null : args.argv(0);
-        try {
-            start();
-        } catch (ExecutionException e) {
-            Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-            throw Throwables.propagate(e.getCause());
-        }
     }
 
     @Override

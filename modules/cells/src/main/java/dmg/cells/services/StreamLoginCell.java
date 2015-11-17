@@ -55,14 +55,11 @@ public class      StreamLoginCell
   private Reader         _reader;
   private CellNucleus    _nucleus;
 
-    public StreamLoginCell(String name, StreamEngine engine) throws ExecutionException, InterruptedException
+    public StreamLoginCell(String name, StreamEngine engine)
     {
         super(name, "");
-
         _engine = engine;
         _nucleus = getNucleus();
-
-        start();
     }
 
     @Override

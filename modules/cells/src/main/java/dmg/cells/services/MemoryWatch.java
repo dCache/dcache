@@ -31,12 +31,11 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private int     _current;
    private int     _maxFileSize = 1024 * 1024 ;
 
-    public MemoryWatch(String name, String args) throws Exception
+    public MemoryWatch(String name, String args)
     {
         super(name, args);
         _nucleus = getNucleus();
         _args = getArgs();
-        start();
     }
 
     @Override

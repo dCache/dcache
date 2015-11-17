@@ -177,19 +177,6 @@ public class UniversalSpringCell
     public void setEnvironment(Map<String,Object> environment)
     {
         _environment = environment;
-
-        try {
-            /* FIXME: The following is a bad hack to workaround a
-             * cells problem: There are no explicit lifecycle calls in
-             * cells and thus no other way to start the cell outside
-             * the constructor.
-             */
-            start();
-        } catch (InterruptedException e) {
-            throw Throwables.propagate(e);
-        } catch (ExecutionException e) {
-            throw Throwables.propagate(e.getCause());
-        }
     }
 
     @Override

@@ -382,17 +382,16 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
     }
   }
 
-    public ReplicaManagerV2(String cellName, String args) throws ExecutionException, InterruptedException
+    public ReplicaManagerV2(String cellName, String args)
     {
         super(cellName, args);
         _args = getArgs();
-        _log.info("Starting cell");
-        start();
     }
 
     @Override
     protected void startUp() throws Exception
     {
+        _log.info("Starting cell");
         parseDBArgs();
 
         _log.debug("Setup database with: URL={} user={} passwd=********", _jdbcUrl, _user);

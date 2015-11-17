@@ -87,19 +87,13 @@ public class CopyManager extends CellAdapter {
        }
    }
 
-   public CopyManager( String cellName , String args ) throws Exception
+   public CopyManager(String cellName, String args)
    {
       super(cellName, args);
-      _poolStub = new CellStub(this, null, 10, MINUTES);
-       try {
-           start() ;
-       } catch (ExecutionException e) {
-           Throwables.propagateIfInstanceOf(e.getCause(), Exception.class);
-           throw Throwables.propagate(e.getCause());
-       }
+       _poolStub = new CellStub(this, null, 10, MINUTES);
    }
 
-   private void resetParameter( String from , String to , boolean precious ){
+    private void resetParameter(String from , String to , boolean precious ){
        _source         = from ;
        _destination    = new String[1] ;
        _destination[0] = to ;

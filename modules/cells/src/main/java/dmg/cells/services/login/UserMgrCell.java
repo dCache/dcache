@@ -54,14 +54,11 @@ public class       UserMgrCell
 
   } ;
 
-    public UserMgrCell(String name, String argString) throws ExecutionException, InterruptedException
+    public UserMgrCell(String name, String argString)
     {
         super(name, argString);
-
         _cellName = name;
         _args = getArgs();
-
-        start();
     }
 
     @Override

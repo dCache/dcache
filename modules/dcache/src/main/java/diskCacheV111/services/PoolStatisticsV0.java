@@ -239,11 +239,10 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
     private boolean _createHtmlTree = true;
     private Thread _cronTimer;
 
-    public PoolStatisticsV0(String name, String args) throws Exception
+    public PoolStatisticsV0(String name, String args)
     {
         super(name, args);
         _nucleus = getNucleus();
-        start();
     }
 
     @Override

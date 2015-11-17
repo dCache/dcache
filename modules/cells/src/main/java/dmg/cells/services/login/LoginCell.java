@@ -53,11 +53,10 @@ public class      LoginCell
   private String         _lastCommand    = "<init>" ;
   private Reader         _reader;
 
-    public LoginCell(String name, StreamEngine engine, Args args) throws ExecutionException, InterruptedException
+    public LoginCell(String name, StreamEngine engine, Args args)
     {
         super(name, args);
         _engine = engine;
-        start();
     }
 
     @Override

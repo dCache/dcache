@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.AbstractService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,7 +37,13 @@ public class LineBasedDoorFactory extends AbstractService implements LoginCellFa
     @Override
     public Cell newCell(StreamEngine engine, String userName) throws InvocationTargetException
     {
-        return new LineBasedDoor(parentCellName + "*", args, factory, engine, executor);
+        LineBasedDoor door = new LineBasedDoor(parentCellName + "*", args, factory, engine, executor);
+        try {
+            door.start();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new InvocationTargetException(e.getCause(), e.getMessage());
+        }
+        return door;
     }
 
     @Override

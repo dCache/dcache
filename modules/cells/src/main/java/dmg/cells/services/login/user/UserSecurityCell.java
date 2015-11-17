@@ -42,15 +42,12 @@ public class       UserSecurityCell
   private UserRelationable _userDb;
   private UserMetaDb       _userMetaDb;
 
-    public UserSecurityCell(String name, String argString) throws ExecutionException, InterruptedException
+    public UserSecurityCell(String name, String argString)
     {
         super(name, argString);
-
         _cellName = name;
         _args = getArgs();
         _nucleus = getNucleus();
-
-        start();
     }
 
     @Override

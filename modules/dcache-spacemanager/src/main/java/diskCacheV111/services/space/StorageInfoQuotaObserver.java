@@ -179,14 +179,11 @@ public class StorageInfoQuotaObserver extends CellAdapter {
     //  The CELL , constructor and interface
     // ---------------------------------------------
     //
-    public StorageInfoQuotaObserver(String name, String args) throws ExecutionException, InterruptedException
+    public StorageInfoQuotaObserver(String name, String args)
     {
         super(name, StorageInfoQuotaObserver.class.getName(), args);
-
         _args = getArgs();
         _nucleus = getNucleus();
-
-        start();
     }
 
     @Override

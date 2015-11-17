@@ -74,16 +74,13 @@ public class WebPicturesV0 extends CellAdapter implements Runnable {
 
    private RestoreHandlerInfo [] _currentInfo;
 
-    public WebPicturesV0(String name, String args) throws Exception
+    public WebPicturesV0(String name, String args)
     {
         super(name, args);
-
         _args = getArgs();
         _nucleus = getNucleus();
         _started = new Date();
-
         _cellContext = _nucleus.getDomainContext();
-        start();
     }
 
     @Override

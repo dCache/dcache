@@ -65,14 +65,10 @@ public class DirectoryLookUpPool extends AbstractCell
     protected CellPath _pnfsManager;
 
     public DirectoryLookUpPool(String poolName, String args)
-        throws InterruptedException, ExecutionException
     {
         super(poolName, args);
-
         _poolName = poolName;
         _args = getArgs();
-
-        start();
     }
 
     @Override

@@ -47,10 +47,8 @@ public class PoolInfoObserverV3 extends AbstractCell
     private CellStub _pool;
 
     public PoolInfoObserverV3(String name, String args)
-        throws InterruptedException, ExecutionException
     {
         super(name, PoolInfoObserverV3.class.getName(), new Args(args));
-        start();
     }
 
     @Override

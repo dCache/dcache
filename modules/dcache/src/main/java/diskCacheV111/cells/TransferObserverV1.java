@@ -152,15 +152,12 @@ public class TransferObserverV1
         }
     }
 
-    public TransferObserverV1(String name, String  args) throws Exception
+    public TransferObserverV1(String name, String  args)
     {
         super(name, TransferObserverV1.class.getName(), args);
-
         _nucleus = getNucleus();
         _cellStub = new CellStub(this, null, 30, SECONDS);
         _args    = getArgs();
-
-        start();
     }
 
     @Override

@@ -74,14 +74,13 @@ public class LocationMgrTunnel
     private int  _messagesToTunnel;
     private int  _messagesToSystem;
 
-    public LocationMgrTunnel(String cellName, StreamEngine engine, Args args) throws ExecutionException, InterruptedException
+    public LocationMgrTunnel(String cellName, StreamEngine engine, Args args)
     {
         super(cellName, "System", args);
         _nucleus = getNucleus();
         _socket = engine.getSocket();
         _rawOut = new BufferedOutputStream(engine.getOutputStream());
         _rawIn = new BufferedInputStream(engine.getInputStream());
-        start();
     }
 
     @Override

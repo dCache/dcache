@@ -40,14 +40,13 @@ public class HsmControlOsm extends CellAdapter implements Runnable {
 
     private final BlockingQueue<CellMessage>  _fifo = new LinkedBlockingQueue<>(MAX_QUEUE_SIZE);
 
-    public HsmControlOsm(String name, String arguments) throws Exception
+    public HsmControlOsm(String name, String arguments)
     {
         super(name, arguments);
         _nucleus = getNucleus();
         Args args = getArgs();
         checkArgument(args.argc() >= 1, "Usage : ... <database>");
         _database = new File(args.argv(0));
-        start();
     }
 
     @Override

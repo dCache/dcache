@@ -4,6 +4,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
 import dmg.cells.nucleus.Cell;
+import dmg.cells.nucleus.CellAdapter;
 import dmg.util.StreamEngine;
 
 import org.dcache.util.Args;
@@ -43,13 +44,13 @@ public class LegacyLoginCellProvider implements LoginCellProvider
     public LoginCellFactory createFactory(String name, Args args, String parentCellName)
     {
         try {
-            Class<? extends Cell> loginClass = Class.forName(name).asSubclass(Cell.class);
+            Class<? extends CellAdapter> loginClass = Class.forName(name).asSubclass(CellAdapter.class);
             try {
-                Constructor<? extends Cell> constructor = loginClass.getConstructor(LOGIN_CON_WITH_ARGS_SIGNATURE);
+                Constructor<? extends CellAdapter> constructor = loginClass.getConstructor(LOGIN_CON_WITH_ARGS_SIGNATURE);
                 checkConstructor(constructor);
                 return new LegacyWithArgsLoginCellFactory(constructor, args, parentCellName);
             } catch (NoSuchMethodException e) {
-                Constructor<? extends Cell> constructor = loginClass.getConstructor(LOGIN_CON_SIGNATURE);
+                Constructor<? extends CellAdapter> constructor = loginClass.getConstructor(LOGIN_CON_SIGNATURE);
                 checkConstructor(constructor);
                 return new LegacyLoginCellFactory(constructor, parentCellName);
             }

@@ -39,15 +39,12 @@ public class LocationManagerConnector
     private String _status = "disconnected";
     private int _retries;
 
-    public LocationManagerConnector(String cellName, String args) throws ExecutionException, InterruptedException
+    public LocationManagerConnector(String cellName, String args)
     {
         super(cellName, "System", args);
-
         Args a = getArgs();
         _domain = a.getOpt("domain");
         _lm = a.getOpt("lm");
-
-        start();
     }
 
     @Override
@@ -165,6 +162,7 @@ public class LocationManagerConnector
                     _retries++;
                     LocationMgrTunnel tunnel =
                         new LocationMgrTunnel(name, connect(_domain), args);
+                    tunnel.start();
                     _retries = 0;
                     setStatus("Connected");
                     tunnel.join();

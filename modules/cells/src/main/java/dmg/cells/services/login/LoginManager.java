@@ -112,14 +112,11 @@ public class LoginManager
      *         Both get their own copy.
      * </pre>
      */
-    public LoginManager(String name, String argString) throws Exception
+    public LoginManager(String name, String argString)
     {
         super(name, argString);
-
         _nucleus = getNucleus();
         _args = getArgs();
-
-        start();
     }
 
     @Override

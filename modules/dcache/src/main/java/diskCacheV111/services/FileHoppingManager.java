@@ -52,16 +52,13 @@ public class FileHoppingManager extends CellAdapter {
 
    private CellPath    _defaultDestinationPath = new CellPath("PoolManager");
 
-     public FileHoppingManager(String name, String arguments) throws ExecutionException, InterruptedException
+     public FileHoppingManager(String name, String arguments)
      {
          super(name, FileHoppingManager.class.getName(), arguments);
-
          Args args = getArgs();
          checkArgument(args.argc() >= 1, "Usage : <configFileName> OPTIONS ");
          _configFile = new File(args.argv(0));
          _nucleus = getNucleus();
-
-         start();
      }
 
      @Override

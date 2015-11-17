@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -57,6 +56,7 @@ public class LineBasedDoor
     private final Executor executor;
 
     private LineBasedInterpreter interpreter;
+    private volatile boolean isStartupCompleted;
 
     public LineBasedDoor(String cellName, Args args, LineBasedInterpreterFactory factory,
                          StreamEngine engine, ExecutorService executor)
@@ -66,24 +66,14 @@ public class LineBasedDoor
         this.factory = factory;
         this.engine = engine;
         this.executor = new CDCExecutorServiceDecorator<>(executor);
-
-        try {
-            start();
-        } catch (InterruptedException e) {
-            shutdownGate.countDown();
-        } catch (ExecutionException e) {
-            LOGGER.error(e.getCause().toString());
-            shutdownGate.countDown();
-        }
     }
 
     @Override
     protected void startUp()
         throws Exception
     {
-        super.startUp();
-
         Transfer.initSession(getArgs().getBooleanOption("hasSiteUniqueName"), true);
+        super.startUp();
 
         LOGGER.debug("Client host: {}", engine.getInetAddress().getHostAddress());
 
@@ -100,6 +90,7 @@ public class LineBasedDoor
     protected void started()
     {
         executor.execute(this);
+        isStartupCompleted = true;
     }
 
     private synchronized void shutdownInputStream()
@@ -204,17 +195,19 @@ public class LineBasedDoor
          */
         shutdownInputStream();
 
-        /* The FTP command processing thread will open the gate after
-         * shutdown.
-         */
-        try {
-            shutdownGate.await();
-        } catch (InterruptedException e) {
-            /* This should really not happen as nobody is supposed to
-             * interrupt the cell thread, but if it does happen then
-             * we better log it.
+        if (isStartupCompleted) {
+            /* The FTP command processing thread will open the gate after
+             * shutdown.
              */
-            LOGGER.error("Got interrupted exception shutting down input stream");
+            try {
+                shutdownGate.await();
+            } catch (InterruptedException e) {
+                /* This should really not happen as nobody is supposed to
+                 * interrupt the cell thread, but if it does happen then
+                 * we better log it.
+                 */
+                LOGGER.error("Got interrupted exception shutting down input stream");
+            }
         }
 
         try {

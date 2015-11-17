@@ -66,12 +66,11 @@ public class      DCapDoor
     //
     //         the constructor
     //
-    public DCapDoor( String name , StreamEngine engine , Args args ) throws ExecutionException, InterruptedException
+    public DCapDoor(String name, StreamEngine engine, Args args)
     {
-        super(name , DCapDoor.class.getName(), args);
+        super(name, DCapDoor.class.getName(), args);
         _engine = engine;
         _nucleus = getNucleus();
-        start();
     }
 
     @Override

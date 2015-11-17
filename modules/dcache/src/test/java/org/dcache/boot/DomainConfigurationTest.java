@@ -44,11 +44,11 @@ public class DomainConfigurationTest
         "b=2\n" +
         "c=5\n";
 
-    private final static SystemCell system;
+    private final static SystemCell system = new SystemCell(DOMAIN_NAME);
 
     static {
         try {
-            system = new SystemCell(DOMAIN_NAME);
+            system.start();
         } catch (Exception e) {
             throw Throwables.propagate(e);
         }

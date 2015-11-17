@@ -56,14 +56,12 @@ public class      TelnetLoginManager
   private static final String __usage =
      "<port> {loginCell] [-dummy] [-localhost] [-anyuser] [-elch]" ;
 
-    public TelnetLoginManager(String name, String args) throws Exception
+    public TelnetLoginManager(String name, String args)
     {
         super(name, args);
         _nucleus = getNucleus();
         _args = getArgs();
         _cellName = name;
-
-        start();
     }
 
     @Override
