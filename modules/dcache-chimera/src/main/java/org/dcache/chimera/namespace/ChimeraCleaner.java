@@ -340,7 +340,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
                     }
                 }
 
-                poolList.removeAll(_poolsBlackList.keySet());
+                poolList.removeAll(getBlacklistedPoolsList());
             }
 
             if (!poolList.isEmpty()) {
@@ -359,6 +359,9 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
             _log.info("Cleaner was interrupted");
         } catch (RuntimeException e) {
             _log.error("Bug detected" , e);
+        } catch (Throwable e) {
+            _log.error("Unexpected error detected, cleaner will stop, inform developers", e);
+            throw e;
         }
     }
 
@@ -648,7 +651,7 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
 
         StringBuilder sb = new StringBuilder();
 
-        for( String pool : _poolsBlackList.keySet() ) {
+        for( String pool : getBlacklistedPoolsList() ) {
             sb.append(pool).append("\n");
         }
 
@@ -836,6 +839,20 @@ public class ChimeraCleaner extends AbstractCell implements Runnable
     @Override
     public void getInfo( PrintWriter pw ){
         pw.println("ChimeraCleaner $Revision: 1.23 $");
+    }
+
+    /**
+     * Returns list of all currently blacklisted pools.
+     *
+     * We need this method, because Java 8 changed the way keySet()
+     * is implemented by ConcurrentHashMap,
+     *   http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ConcurrentHashMap.html#keySet%28%29
+     *   http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ConcurrentHashMap.html#keySet--
+     * so we can't rely on the Set() being returned on each version.
+     */
+    private List<String> getBlacklistedPoolsList()
+    {
+        return Collections.list(_poolsBlackList.keys());
     }
 
     //for HSM. delete files from trash-table
