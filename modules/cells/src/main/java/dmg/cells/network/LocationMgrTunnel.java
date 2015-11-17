@@ -74,28 +74,27 @@ public class LocationMgrTunnel
     private int  _messagesToTunnel;
     private int  _messagesToSystem;
 
-    public LocationMgrTunnel(String cellName, StreamEngine engine, Args args)
-        throws IOException
+    public LocationMgrTunnel(String cellName, StreamEngine engine, Args args) throws ExecutionException, InterruptedException
     {
         super(cellName, "System", args);
+        _nucleus = getNucleus();
+        _socket = engine.getSocket();
+        _rawOut = new BufferedOutputStream(engine.getOutputStream());
+        _rawIn = new BufferedInputStream(engine.getInputStream());
+        start();
+    }
 
-        try {
-            _nucleus = getNucleus();
-            _socket = engine.getSocket();
-            _socket.setTcpNoDelay(true);
+    @Override
+    protected void startUp() throws Exception
+    {
+        _socket.setTcpNoDelay(true);
+        handshake();
+    }
 
-            _rawOut = new BufferedOutputStream(engine.getOutputStream());
-            _rawIn = new BufferedInputStream(engine.getInputStream());
-        } catch (IOException e) {
-            try {
-                start();
-            } catch (ExecutionException | InterruptedException e1) {
-                e.addSuppressed(e1);
-            }
-            kill();
-            throw e;
-        }
-        getNucleus().newThread(this, "Tunnel").start();
+    @Override
+    protected void started()
+    {
+        _nucleus.newThread(this, "Tunnel").start();
     }
 
     private void handshake() throws IOException
@@ -162,9 +161,6 @@ public class LocationMgrTunnel
         }
 
         try {
-            handshake();
-            start();
-
             _tunnels.add(this);
             try {
                 receive();
@@ -176,14 +172,7 @@ public class LocationMgrTunnel
             _log.warn("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (IOException e) {
             _log.warn("Error while reading from tunnel: {}", e.toString());
-        } catch (ExecutionException e) {
-            _log.error("Error during tunnel startup: {}", e.toString());
         } finally {
-            try {
-                start();
-            } catch (ExecutionException | InterruptedException e) {
-                _log.error("Error during tunnel startup: {}", e.toString());
-            }
             kill();
         }
     }

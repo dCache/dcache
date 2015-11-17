@@ -170,7 +170,7 @@ public class LocationManagerConnector
                     tunnel.join();
                 } catch (InterruptedIOException e) {
                     throw e;
-                } catch (IOException e) {
+                } catch (ExecutionException | IOException e) {
                     _log.warn(AlarmMarkerFactory.getMarker(PredefinedAlarm.LOCATION_MANAGER_FAILURE,
                                                            name,
                                                            _domain,
