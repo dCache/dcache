@@ -135,6 +135,11 @@ public class SRMClientV2 implements ISRM {
     private String service_url;
     private String host;
 
+    static {
+        Call.setTransportForProtocol("http", HttpClientTransport.class);
+        Call.setTransportForProtocol("https", HttpClientTransport.class);
+    }
+
     /** Creates a new instance of SRMClientV2 */
     public SRMClientV2(URI srmurl,
                        X509Credential user_cred,
@@ -203,9 +208,6 @@ public class SRMClientV2 implements ISRM {
         else {
             service_url += "/"+webservice_path;
         }
-        Call.initialize();
-        Call.setTransportForProtocol("http", HttpClientTransport.class);
-        Call.setTransportForProtocol("https", HttpClientTransport.class);
         SimpleProvider provider = new SimpleProvider();
         GsiHttpClientSender sender = new GsiHttpClientSender();
         sender.setSslContextFactory(CanlContextFactory.custom().withCertificateAuthorityPath(caPath).build());

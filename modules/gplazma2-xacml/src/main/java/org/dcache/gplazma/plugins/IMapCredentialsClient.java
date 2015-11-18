@@ -1,5 +1,6 @@
 package org.dcache.gplazma.plugins;
 
+import org.apache.axis.EngineConfiguration;
 import org.opensaml.xacml.XACMLConstants;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.opensciencegrid.authz.xacml.common.LocalId;
@@ -109,4 +110,6 @@ public interface IMapCredentialsClient {
      *            , authority for the user DN
      */
     void setX509SubjectIssuer(String x509SubjectIssuer);
+
+    void setAxisConfiguration(EngineConfiguration axisConfiguration);
 }
