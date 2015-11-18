@@ -987,11 +987,7 @@ public class HttpPoolMgrEngineV3 implements
         }
         if (error) {
             html.endRow(false);
-            if (error) {
-                html.beginRow("error", "error odd");
-            } else {
-                html.beginRow(null, "odd");
-            }
+            html.beginRow("error", "error odd");
             html.td(7, "error", "Code = " + rc + "; Message = " + msg);
         }
         html.endRow();

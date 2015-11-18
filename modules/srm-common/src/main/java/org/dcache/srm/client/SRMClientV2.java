@@ -287,18 +287,14 @@ public class SRMClientV2 implements ISRM {
                     throw new RemoteException("RuntimeException in client",e);
                 }
             }
-            if(retry){
-                try {
-                    logger.debug("sleeping {} milliseconds before retrying", retrytimeout*i);
-                    Thread.sleep(retrytimeout*i);
-                }
-                catch(InterruptedException ie) {
-                }
-            }
-            else {
-                throw new RemoteException("Should not be here");
-            }
 
+            assert retry;
+
+            try {
+                logger.debug("sleeping {} milliseconds before retrying", retrytimeout*i);
+                Thread.sleep(retrytimeout*i);
+            } catch(InterruptedException ie) {
+            }
         }
     }
 

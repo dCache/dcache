@@ -851,8 +851,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2
          haveMore = runAdjustment();
 
          if( haveMore && ! dbUpdatedSnapshot && ! _throttleMsgs ) {
-             _log.info("Adjuster : pass finished, adjustment is  " +
-                     ((haveMore) ? "NOT complete" : "complete"));
+             _log.info("Adjuster : pass finished, adjustment is NOT complete");
          } else {
              _log.debug("Adjuster : pass finished haveMore=" + haveMore
                      + " dbUpdatedSnapshot=" + dbUpdatedSnapshot
