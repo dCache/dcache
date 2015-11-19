@@ -120,7 +120,7 @@ public class P2PClient
             /* The original p2p is no longer around, but maybe we can use the redirect
              * for another p2p transfer.
              */
-            String pnfsId = message.getPnfsId();
+            PnfsId pnfsId = new PnfsId(message.getPnfsId());
             for (Companion c : _companions.values()) {
                 if (c.getPnfsId().equals(pnfsId)) {
                     c.messageArrived(message);
