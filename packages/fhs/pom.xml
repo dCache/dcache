@@ -157,7 +157,7 @@
                                     <name>rpm.version</name>
                                     <value>${project.version}</value>
                                     <regex>-SNAPSHOT</regex>
-                                    <replacement>.\${git.commit.id.describe}</replacement>
+                                    <replacement>.\${git.commit.id.abbrev}</replacement>
                                     <failIfNoMatch>false</failIfNoMatch>
                                 </configuration>
                             </execution>
