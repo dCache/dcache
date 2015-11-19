@@ -88,7 +88,7 @@ public interface SpaceManagerDatabase
     SpaceCriterion spaces();
 
     /** Return space reservations matching criterion. */
-    List<Space> get(SpaceCriterion criterion, Integer limit);
+    List<Space> get(SpaceCriterion criterion, @Nullable Integer limit);
 
     /** Return space tokens of spaces matchin criterion. */
     List<Long> getSpaceTokensOf(SpaceCriterion criterion);
@@ -103,7 +103,7 @@ public interface SpaceManagerDatabase
     FileCriterion files();
 
     /** Get files matching the criterion. */
-    List<File> get(FileCriterion criterion, Integer limit);
+    List<File> get(FileCriterion criterion, @Nullable Integer limit);
 
     /** Return the number of files matching the criterion. */
     int count(FileCriterion criterion);

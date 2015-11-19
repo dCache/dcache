@@ -91,7 +91,9 @@ public class PluginChain implements EnvironmentAware
 
         for(Map.Entry<String,Object> entry : environment.entrySet()) {
             Object value = entry.getValue();
-            _properties.put(entry.getKey(), value == null ? null : value.toString());
+            if (value != null) {
+                _properties.put(entry.getKey(), value.toString());
+            }
         }
     }
 
