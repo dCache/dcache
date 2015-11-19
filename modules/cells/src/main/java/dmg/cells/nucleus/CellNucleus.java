@@ -96,6 +96,7 @@ public class CellNucleus implements ThreadFactory
     private Pinboard _pinboard;
     private FilterThresholdSet _loggingThresholds;
     private final Queue<Runnable> _deferredTasks = Queues.synchronizedQueue(new ArrayDeque<>());
+    private volatile long _lastQueueTime;
 
     public CellNucleus(Cell cell, String name, String type, Executor executor)
     {
@@ -260,7 +261,9 @@ public class CellNucleus implements ThreadFactory
         }
         info.setCellClass(_cellClass);
         try {
-            info.setEventQueueSize(getEventQueueSize());
+            int eventQueueSize = getEventQueueSize();
+            info.setEventQueueSize(eventQueueSize);
+            info.setExpectedQueueTime((eventQueueSize == 0) ? 0 : _lastQueueTime);
             info.setState(_state.get());
             info.setThreadCount(_threads.activeCount());
         } catch(Exception e) {
@@ -817,6 +820,24 @@ public class CellNucleus implements ThreadFactory
                 LOGGER.error("Dropping reply: {}", e.getMessage());
             }
         } else {
+            /* Fail fast for requests if the cell is busy. We consider the cell busy
+             * if the last queue time exceeds the TTL of the request.
+             */
+            if (_eventQueueSize.get() == 0) {
+                _lastQueueTime = 0;
+            } else if (!msg.isReply()) {
+                long queueTime = _lastQueueTime;
+                if (msg.getTtl() < queueTime) {
+                    msg.setMessageObject(
+                            new NoRouteToCellException(msg, getCellName() + "@" + getCellDomainName() +
+                                                            " is busy (its estimated response time of " +
+                                                            queueTime + " ms is longer than the message TTL of " +
+                                                            msg.getTtl() + " ms)."));
+                    msg.revertDirection();
+                    sendMessage(msg, true, true);
+                }
+            }
+
             try {
                 EventLogger.queueBegin(ce);
                 _eventQueueSize.incrementAndGet();
@@ -1015,6 +1036,7 @@ public class CellNucleus implements ThreadFactory
             try (CDC ignored = CDC.reset(CellNucleus.this)) {
                 try {
                     EventLogger.queueEnd(_event);
+                    _lastQueueTime = _event.getMessage().getLocalAge();
                     _eventQueueSize.decrementAndGet();
 
                     if (_event instanceof RoutedMessageEvent) {

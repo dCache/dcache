@@ -700,15 +700,17 @@ public class CellShell extends CommandInterpreter
                        continue;
                    }
                    if (full) {
-                       sb.append("  -- Short Info about Cell ").append(aCellName)
-                               .append(" --\n");
-                       sb.append(info.toString()).append("\n");
+                       sb.append("-- Info --\n");
+                       sb.append("   Cell         : ").append(info.getCellName()).append('@').append(info.getDomainName()).append('\n');
+                       sb.append("   Class        : ").append(info.getCellClass()).append('\n');
+                       sb.append("   State        : ").append(info.getStateName()).append('\n');
+                       sb.append("   Queue length : ").append(info.getEventQueueSize()).append('\n');
+                       sb.append("   Queue time   : ").append(info.getExpectedQueueTime()).append(" ms \n");
                        CellVersion version = info.getCellVersion();
                        if (version != null) {
-                           sb.append("  -- Version : ").append(version.toString())
-                                   .append("\n");
+                           sb.append("   Version      : ").append(version).append("\n");
                        }
-                       sb.append("  -- Threads --\n");
+                       sb.append("-- Threads --\n");
                        Thread[] threads = _nucleus.getThreads(aCellName);
                        for (int j = 0;
                             (j < threads.length) && (threads[j] != null); j++) {
@@ -719,7 +721,7 @@ public class CellShell extends CommandInterpreter
                                    .append(isAlive ? "  Alive" : "  Dead")
                                    .append("\n");
                        }
-                       sb.append("  -- Private Infos --\n");
+                       sb.append("-- Private Infos --\n");
                    }
                    sb.append(info.getPrivatInfo()).append("\n");
                }

@@ -22,6 +22,7 @@ public class CellInfo implements Serializable {
   private int    _state;
   private int    _eventQueueSize;
   private int    _threadCount;
+  private long   _expectedQueueTime;
   private CellVersion _version = new CellVersion() ;
 
   private static final String [] _stateNames =
@@ -37,6 +38,7 @@ public class CellInfo implements Serializable {
      _privateInfo    = info._privateInfo ;
      _state          = info._state ;
      _eventQueueSize = info._eventQueueSize ;
+     _expectedQueueTime = info._expectedQueueTime;
      _threadCount    = info._threadCount ;
      _version        = info._version ;
   }
@@ -50,10 +52,19 @@ public class CellInfo implements Serializable {
   public void setPrivateInfo( String info ){ _privateInfo  = info ; }
   public void setShortInfo( String info ){   _shortInfo    = info ; }
   public void setEventQueueSize( int size ){ _eventQueueSize = size ; }
+  public void setExpectedQueueTime(long millis) { _expectedQueueTime = millis; }
   public void setThreadCount( int threadCount ){ _threadCount = threadCount ; }
   public void setState( int state ){
      _state = ( state < 0 ) || ( _state >= _stateNames.length )  ?
               _stateNames.length : state  ;
+  }
+
+  public int getState() {
+      return _state;
+  }
+
+  public String getStateName() {
+      return _stateNames[_state];
   }
   //
   // and now the public getter's
@@ -69,6 +80,7 @@ public class CellInfo implements Serializable {
   public CellVersion getCellVersion(){ return _version ; }
   public String getPrivatInfo(){ return _privateInfo ; }
   public int    getEventQueueSize(){ return _eventQueueSize ; }
+  public long   getExpectedQueueTime(){ return _expectedQueueTime; }
   public String getCellName(){ return _cellName ; }
   public String getCellType(){ return _cellType ; }
   public String getCellClass(){ return _cellClass ; }
