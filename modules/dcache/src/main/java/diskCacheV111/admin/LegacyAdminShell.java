@@ -317,7 +317,7 @@ public class LegacyAdminShell
         } catch (CacheException | InterruptedException e) {
             throw new AclException("Problem: " + e.getMessage());
         }
-        if (r.length < 6 | !(r[5] instanceof Boolean)) {
+        if (r.length < 6 || !(r[5] instanceof Boolean)) {
             throw new AclException("Protocol violation 4456");
         }
 
